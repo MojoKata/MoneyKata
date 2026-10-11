@@ -13,8 +13,10 @@ Before calling a change done:
 
 1. Open every screen, tab, Settings section and dialog in a headless browser, and fail on any
    page error or console error.
-2. Check that a 390 px viewport has no horizontal scroll.
-3. Look at screenshots of what changed.
+2. Look at screenshots of what changed.
+
+The web app and its mockup are for desktop browsers. Phone layouts are not checked or fixed:
+phones will get a separate, focused PWA later (requirements §15.8).
 
 Once `web/ui` exists, the mockup is generated from the app (`web/ui/mockup/build.py`), and
 `web/check` fails while the mockup is out of date (requirements §15.9).

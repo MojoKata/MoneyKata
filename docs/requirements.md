@@ -28,7 +28,8 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
    Python runs the browser tests.
 2. **A single-page app at `/ui`**, dark-mode first, in one frame: a collapsible
    sidebar, the signed-in user at its foot, the theme button, a DEV pill in dev mode and an
-   update pill. It is usable at phone width (§15).
+   update pill. It is built for desktop browsers. Phones will get a separate, focused PWA
+   later, not the whole web app (§15.8, §22).
 3. **Context-sensitive help on every screen**: the F1 help pane, with one Markdown guide per
    screen or panel that follows the focused field (§15.7). A test fails when a field has
    no heading in its guide.
@@ -653,8 +654,8 @@ produces worksheets and exports. It never files, and says so (§1.16).
 
 # 12. Receipts
 
-1. **Upload** from the browser: drag and drop, the file picker, or the phone's camera
-   (`<input type=file accept="image/*,application/pdf" capture>`). One or many at once.
+1. **Upload** from the browser: drag and drop, or the file picker. One or many at once.
+   Taking a photo of a receipt with a phone belongs to the mobile PWA (§22).
    Formats: PDF, JPEG, PNG, WebP, HEIC (converted to JPEG for display). Each file is at most
    25 MB (a Setting).
 2. **Stored on disk**, not in the database, under the data directory as
@@ -1120,7 +1121,8 @@ preparer.
    where they appear.
 8. **Accessibility**: everything works by keyboard, every control is labelled, contrast
    meets WCAG AA, and `prefers-reduced-motion` turns transitions off. Dark theme first, with
-   light and system. Usable at phone width (the sidebar becomes a bottom bar). English only,
+   light and system. **Desktop browsers only**: phone layouts are not built or tested, since
+   phones will get a separate PWA with a narrower, focused set of features. English only,
    no i18n layer. Charts have a **table view** toggle (a screen reader reads the numbers) and
    honour `prefers-reduced-motion`.
 9. **The clickable mockup**: one HTML file that opens from disk and sends nothing anywhere,
@@ -1605,8 +1607,9 @@ Trading, order entry or any write to an institution. Real-time quotes and greeks
 payment, including making loan payments. Automatic valuations of homes, vehicles or
 collectables (values are typed or appraised). Refinancing or payoff advice: the payoff
 planner compares, and does not recommend. Shopping, wish-list or registry services for
-gifts. State 529 deduction rules. Tax filing or tax computation. Running a relay for links. Mobile apps (the web app
-works at phone width). Storing the private keys or seed phrases of crypto wallets, ever (MoneyKata's own recovery
+gifts. State 529 deduction rules. Tax filing or tax computation. Running a relay for links. Phone support in the web app: a
+mobile PWA with a narrower, focused set of features comes later, as its own piece of work.
+Storing the private keys or seed phrases of crypto wallets, ever (MoneyKata's own recovery
 phrases are words for its keys, not wallets). Opting users in or out of the list a server
 sends its linked peers (§13.3.3): every active user is listed, which suits a household; a
 server for more people would need it.

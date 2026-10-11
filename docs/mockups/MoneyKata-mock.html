@@ -1220,7 +1220,7 @@ SCREENS.receipts = () => {
   const f = state.filters.rc || 'All';
   const list = RECEIPTS.filter((r) => f === 'All' || (f === 'Inbox' && !r.link) || (f === 'Tax' && r.link && r.link.startsWith('Tax')));
   const reading = RECEIPTS.filter((r) => r.status === 'reading').length;
-  return `<div class="drop" data-act="dlg" data-v="upload">${icon('upload')}<div style="margin-top:6px"><b>Drop PDFs or photos here</b>, or click to choose. On a phone, take a picture.</div><div class="small">PDF, JPEG, PNG, WebP, HEIC · up to 25 MB each · read on this server, never sent anywhere</div></div>
+  return `<div class="drop" data-act="dlg" data-v="upload">${icon('upload')}<div style="margin-top:6px"><b>Drop PDFs or photos here</b>, or click to choose.</div><div class="small">PDF, JPEG, PNG, WebP, HEIC · up to 25 MB each · read on this server, never sent anywhere</div></div>
   <div class="toolbar mt">${filterChips('rc', ['All', 'Inbox', 'Tax'], 'All')}${reading ? `<span class="pill info reading">${reading} being read</span>` : ''}<span class="spacer"></span><input class="in" style="max-width:280px" placeholder="Search the receipts’ text, payee, amount…" aria-label="Search receipts"></div>
   <div class="receipts">${list.map(receiptCard).join('')}</div>`;
 };
@@ -1425,7 +1425,7 @@ DIALOGS.import = () => ({ title: 'Import transactions', wide: true, body: `<div 
   ${[['2026-10-08', 'DIVIDEND', 'VTI', '', 286.9, 'new'], ['2026-10-01', 'BUY', 'VXUS', '20', -1323.6, 'new'], ['2026-09-30', 'BUY', 'VTI', '5', -1496.1, 'already present'], ['2026-09-15', 'INTEREST', 'SPAXX', '', 9.81, 'already present']].map((r) => `<tr><td class="dim">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td class="num">${r[3]}</td><td class="num">${signed(r[4])}</td><td><span class="pill ${r[5] === 'new' ? 'ok' : ''}">${r[5]}</span></td></tr>`).join('')}</tbody></table>
   <p class="small dim">Imports are idempotent: rows already present are skipped by the file’s transaction id, or by date, amount and payee.</p>`, ok: 'Import 14 new' });
 const fromReceipt = (pctv) => `<span class="ocr">${icon('info')} read from the receipt · ${pctv}%</span>`;
-DIALOGS.upload = () => ({ title: 'Add receipts', body: `<div class="drop">${icon('upload')}<div><b>Drop files</b> or <a>choose</a> · <a>take a photo</a></div><div class="small">PDF, JPEG, PNG, WebP, HEIC · up to 25 MB · read on this server</div></div>
+DIALOGS.upload = () => ({ title: 'Add receipts', body: `<div class="drop">${icon('upload')}<div><b>Drop files</b> or <a>choose</a></div><div class="small">PDF, JPEG, PNG, WebP, HEIC · up to 25 MB · read on this server</div></div>
   <div class="list-item mt"><div class="tile t-other">${icon('receipt')}</div><div class="grow">dental-invoice.pdf<div class="small dim">212 KB · checked: PDF · text layer read, no OCR needed</div></div><span class="pill ok">read</span></div>
   <div class="list-item"><div class="tile t-other">${icon('receipt')}</div><div class="grow">IMG_2310.jpg<div class="small dim">3.1 MB · checked: JPEG · 1 ahead in the queue</div></div><span class="pill info reading">Reading…</span></div>
   <h4 style="margin:14px 0 8px">dental-invoice.pdf</h4>
