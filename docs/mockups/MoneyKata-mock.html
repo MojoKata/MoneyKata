@@ -218,6 +218,15 @@ input.in.bad { border-color: var(--deny); }
 .locked-card { text-align: center; max-width: 480px; margin: 32px auto; display: grid; justify-items: center; gap: 6px; }
 .locked-card h3 { margin: 4px 0 0; }
 .locked-card p { margin: 0; }
+.logo.hh { background: linear-gradient(135deg, #8fd3a6, #7aa7ff); color: #10131a; font-size: 12px; border-radius: 50%; }
+.app.peer .side { background: color-mix(in srgb, var(--peer) 13%, var(--bg-2)); border-right-color: color-mix(in srgb, var(--peer) 45%, var(--border)); }
+.app.peer .nav-item.active { background: color-mix(in srgb, var(--peer) 24%, transparent); color: var(--fg); }
+.peer-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 14px; margin-bottom: 14px; border-radius: 10px; font-size: 13px; background: color-mix(in srgb, var(--peer) 12%, var(--bg-2)); border: 1px solid color-mix(in srgb, var(--peer) 40%, var(--border)); }
+.hh-row { display: flex; align-items: center; gap: 10px; }
+.hh-av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #10131a; flex: none; }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.swatch { width: 40px; height: 40px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; }
+.swatch.on { border-color: var(--fg); }
 .avatar.av-remote { background: var(--bg-3); color: var(--fg-muted); border: 1px dashed var(--border-strong); }
 .words { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .words .word { display: flex; align-items: center; gap: 6px; }
@@ -570,7 +579,7 @@ const state = {
   user: 'alice', privacy: false, collapsed: false, stale: false,
   help: (() => { try { return localStorage.getItem('mk-help') !== '0'; } catch { return true; } })(),
   theme: (() => { try { return localStorage.getItem('mk-theme') || 'dark'; } catch { return 'dark'; } })(),
-  tabs: {}, filters: {}, newItems: 3, update: false, range: '1Y', year: 2026, taxBook: 'tb26', settings: 'general', scenario: 0, signedOut: false, locked: true, entered: { alice: true, bob: false, carol: false },
+  tabs: {}, filters: {}, newItems: 3, update: false, range: '1Y', year: 2026, taxBook: 'tb26', settings: 'general', scenario: 0, signedOut: false, locked: true, unlockedBy: 'Alice', peerHue: { alice: 'teal', bob: 'violet', carol: 'amber' },
   payoff: { extra: 300, yearly: 0, lump: 10000, biweekly: false, recast: false }, goal: { cost: 28000, years: 4, infl: 5, monthly: 500 },
 };
 function applyTheme() {
@@ -712,28 +721,24 @@ function shareMarks(a) {
   if (a.shares) return `<span class="mark">${icon('share')} shared by me · ${a.shares}</span>`;
   return '';
 }
-function isLocked(a) { return !!(a && a.linked && (state.locked || !state.entered[state.user])); }
-const needsWords = () => !state.entered[state.user];
+function isLocked(a) { return !!(a && a.linked && state.locked); }
+const HOUSEHOLD = { name: 'Alice & Bob', initials: 'AB' };
+const PEER_HUES = { teal: '#4fc6d6', violet: '#a98bff', amber: '#e0a93a', rose: '#e9799f', green: '#5fbf86', blue: '#6f9cf2' };
+const PEERS = { 'griffin-parents': { id: 'griffin-parents', name: 'Margaret & Tom', initials: 'MT', avBg: '#d9b98a', items: 7 } };
+const PEER_ACCTS = [
+  { id: 'mom', name: "Mom's Retirement", inst: 'Vanguard · Traditional IRA', bal: 412880, chg: 3010, group: 'retirement' },
+  { id: 'pchk', name: 'Joint Checking', inst: 'Chase · Checking', bal: 18240.55, chg: -312.4, group: 'banking' },
+];
+const PEER_TX = [['2026-10-09', 'Kroger', -142.18, 'Food › Groceries'], ['2026-10-08', 'Social Security', 3120, 'Income'], ['2026-10-06', 'St. Mark’s Parish', -250, 'Giving'], ['2026-10-03', 'Duke Energy', -188.4, 'Housing › Utilities'], ['2026-10-01', 'Vanguard IRA distribution', 2400, 'Income']];
+const PEER_BUDGET = [['Food › Groceries', 620, 800], ['Housing › Utilities', 388, 450], ['Health', 410, 600], ['Travel', 1250, 1500], ['Giving', 450, 750]];
+const PEER_DON = [['2026-10-06', 'St. Mark’s Parish', 'Cash', 250], ['2026-08-14', 'American Red Cross', 'Cash', 500], ['2026-05-02', 'Habitat for Humanity', 'Appreciated shares', 4200], ['2026-01-15', 'St. Mark’s Parish', 'Cash', 1450]];
+const peerHue = () => PEER_HUES[state.peerHue[state.user] || 'teal'];
+const hhAv = (P, size) => `<span class="hh-av" style="background:${P.avBg}${size ? `;width:${size}px;height:${size}px;font-size:${Math.round(size / 2.6)}px` : ''}">${P.initials}</span>`;
 const COPY_WORDS = ['harvest', 'lemon', 'ocean', 'ripple', 'tired', 'umbrella', 'cabin', 'glory', 'meadow', 'pistol', 'vague', 'donor'];
 const REMOTE = { 'griffin-parents': [{ name: 'Margaret Griffin', email: 'margaret@parents.home', lvl: 'Read' }, { name: 'Tom Griffin', email: 'tom@parents.home', lvl: 'None' }], 'ortiz-cpa': [{ name: 'Maria Ortiz', email: 'maria@ortizcpa.lan', lvl: 'None' }] };
 const LINK_SYNC = 'synced 41 min ago · 12 changes waiting';
-function lockedPanel(what) {
-  return `<div class="card locked-card"><div class="tile t-linked">${icon('lock')}</div><h3>Locked</h3>
-    <p class="dim">This ${what} comes from <b>griffin-parents</b>, shared with you by Margaret Griffin. It is kept encrypted on this server. ${needsWords() ? 'To open it, enter its access key: the 12 words your server’s admin keeps. You enter them once.' : 'Enter your password to open it again.'}</p>
-    <p class="small dim">${LINK_SYNC} · applied when you unlock</p>
-    <button class="btn primary mt" data-act="dlg" data-v="unlock">${icon('lock')} ${needsWords() ? 'Enter the access key' : 'Unlock linked data'}</button></div>`;
-}
-function lockedRow(a) {
-  return `<tr class="click" data-act="dlg" data-v="unlock">
-      <td><div class="acct-row"><div class="tile t-linked">${icon('lock')}</div><div><div class="name">Locked linked account</div><div class="sub">shared by Margaret Griffin · griffin-parents</div></div></div></td>
-      <td class="hide-sm"><span class="pill">${icon('lock')} locked</span></td>
-      <td class="small dim hide-sm">${LINK_SYNC}</td>
-      <td class="num hide-sm"></td>
-      <td class="num"><b class="dim">—</b></td>
-      <td class="num"><button class="btn sm" data-act="dlg" data-v="unlock">${needsWords() ? 'Enter key' : 'Unlock'}</button></td></tr>`;
-}
 function visibleAccounts() {
-  return ACCOUNTS.filter((a) => a.owner === state.user || a.sharedWith || a.linked || (state.user === 'bob' && a.shares));
+  return ACCOUNTS.filter((a) => !a.linked && (a.owner === state.user || a.sharedWith || (state.user === 'bob' && a.shares)));
 }
 function filterChips(key, opts, def) {
   const cur = state.filters[key] || def;
@@ -763,7 +768,7 @@ SCREENS.dashboard = () => {
   const groups = ['banking', 'investing', 'retirement', 'education', 'crypto', 'giving', 'liability', 'other'];
   return `
   <div class="grid g4">
-    <div class="card kpi"><div class="label">Net worth</div><div class="value">${money(assets + liab, { cents: false })}</div><div class="delta">${signed(18240, { cents: false })} · ${pct(1.59)} this month</div>${state.locked ? `<div class="small dim mt">Leaves out 1 locked linked account · <a data-act="dlg" data-v="unlock">Unlock</a></div>` : ''}</div>
+    <div class="card kpi"><div class="label">Net worth</div><div class="value">${money(assets + liab, { cents: false })}</div><div class="delta">${signed(18240, { cents: false })} · ${pct(1.59)} this month</div></div>
     <div class="card kpi"><div class="label">Investments</div><div class="value">${money(sum('investing') + sum('retirement') + sum('crypto'), { cents: false })}</div><div class="delta">${signed(6890.4)} today · ${pct(0.87)}</div></div>
     <div class="card kpi"><div class="label">Cash</div><div class="value">${money(sum('banking'), { cents: false })}</div><div class="delta dim">3 accounts · synced 9:12 AM</div></div>
     <div class="card kpi"><div class="label">October spending</div><div class="value">${money(5187.09, { cents: false })}</div><div class="bar mt" style="margin-top:8px"><i style="width:70%"></i></div><div class="delta dim">70% of ${money(7400, { cents: false })} budget · 21 days left</div></div>
@@ -805,17 +810,16 @@ SCREENS.accounts = () => {
   if (f === 'Mine') list = list.filter((a) => a.owner === state.user);
   if (f === 'Shared with me') list = list.filter((a) => a.owner !== state.user && !a.linked);
   if (f === 'Shared by me') list = list.filter((a) => a.owner === state.user && a.shares);
-  if (f === 'Linked') list = list.filter((a) => a.linked);
-  const groups = ['banking', 'investing', 'retirement', 'education', 'crypto', 'giving', 'liability', 'other', 'linked'];
+  const groups = ['banking', 'investing', 'retirement', 'education', 'crypto', 'giving', 'liability', 'other'];
   return `
-  <div class="toolbar">${filterChips('acct', ['All', 'Mine', 'Shared with me', 'Shared by me', 'Linked'], 'All')}<span class="spacer"></span>
+  <div class="toolbar">${filterChips('acct', ['All', 'Mine', 'Shared with me', 'Shared by me'], 'All')}<span class="spacer"></span>
     <button class="btn" data-act="dlg" data-v="import">${icon('upload')} Import</button>
     <button class="btn primary" data-act="dlg" data-v="newAccount">${icon('plus')} New account</button></div>
   ${groups.map((g) => {
     const as = list.filter((a) => a.group === g); if (!as.length) return '';
     return `<div class="group-head"><h2>${GROUP_META[g].label}</h2><span class="dim small">${as.length}</span><span class="num">${g === 'linked' && state.locked ? `<span class="dim small">${icon('lock')} locked</span>` : money(as.reduce((s, a) => s + a.bal, 0))}</span></div>
     <div class="card" style="padding:4px 8px"><div class="table-wrap"><table class="t"><tbody>
-    ${as.map((a) => isLocked(a) ? lockedRow(a) : `<tr class="click" data-go="account/${a.id}">
+    ${as.map((a) => `<tr class="click" data-go="account/${a.id}">
       <td><div class="acct-row">${acctTile(a)}<div><div class="name">${esc(a.name)}</div><div class="sub">${esc(a.inst)} · ${TYPE_LABEL[a.type] || a.type}${a.last4 ? ' · ' + esc(a.last4) : ''}</div></div></div></td>
       <td class="hide-sm">${shareMarks(a)}</td>
       <td class="small dim hide-sm">${a.linked ? '' : icon('sync') + ' '}${esc(a.sync)}</td>
@@ -823,13 +827,17 @@ SCREENS.accounts = () => {
       <td class="num"><b>${money(a.bal)}</b><div class="small">${signed(a.chg)} <span class="dim">30d</span></div></td>
       <td class="num">${a.owner === state.user && !a.linked ? `<button class="icon-btn" data-act="dlg" data-v="share" data-name="${esc(a.name)}" title="Share">${icon('share')}</button>` : ''}</td></tr>`).join('')}
     </tbody></table></div></div>`;
-  }).join('')}`;
+  }).join('')}
+  <div class="group-head"><h2>Linked households</h2><span class="dim small">1</span></div>
+  <div class="card"><p class="small dim" style="margin-top:0">What other households share with you opens in a window of its own, never mixed with your accounts.</p>${linkedHouseholdRows()}</div>`;
 };
+function linkedHouseholdRows() {
+  return Object.values(PEERS).map((P) => `<a class="list-item" href="#/linked/${P.id}" target="mk-linked-${P.id}" style="color:inherit">${hhAv(P)}<div class="grow"><b>${P.name}</b><div class="small dim">${P.id} · ${P.items} items shared with you · synced 41 min ago</div></div><span class="pill">${state.locked ? `${icon('lock')} locked` : 'unlocked'}</span><span class="btn sm">Open ${icon('link')}</span></a>`).join('');
+}
 
 function acctById(id) { return ACCOUNTS.find((a) => a.id === id) || ACCOUNTS[3]; }
 SCREENS.account = (id) => {
   const a = acctById(id);
-  if (isLocked(a)) return lockedPanel('account');
   const loan = LOAN_TYPES.includes(a.type), edu = a.type === '529', phys = a.group === 'other';
   const invest = ['investing', 'retirement', 'crypto', 'linked', 'education', 'giving'].includes(a.group);
   const list = ['Overview', ...(loan ? ['Schedule', 'Payoff'] : []), ...(invest ? ['Holdings'] : []), ...(invest && !edu && a.group !== 'giving' ? ['Positions'] : []), ...(edu ? ['Contributions', 'Withdrawals', 'Goal'] : []), ...(phys ? ['Items'] : []), 'Transactions', 'Receipts', ...(a.linked ? [] : ['Sharing', 'Settings'])];
@@ -1040,7 +1048,6 @@ SCREENS.portfolios = (id) => {
     { id: 'all', name: 'All my accounts', desc: 'Everything I own', v: 1059720, d: 1.21, mine: true },
     { id: 'retire', name: 'Retirement', desc: 'Roth IRA, Rollover IRA, 401(k), HSA', v: 478741, d: 1.02, mine: true, shares: 'Bob · read' },
     { id: 'household', name: 'Household', desc: 'Alice and Bob together', v: 662150, d: 0.94, mine: false, owner: 'bob', level: 'write' },
-    { id: 'mom', name: "Mom's portfolio", desc: 'griffin-parents · as of 2 h ago', v: 412880, d: 0.4, linked: true },
   ];
   return `<div class="toolbar"><span class="spacer"></span><button class="btn primary" data-act="dlg" data-v="newPortfolio">${icon('plus')} New portfolio</button></div>
   <div class="grid g2">${ps.map((p) => p.linked && state.locked ? `<div class="card" style="cursor:pointer" data-act="dlg" data-v="unlock"><h3><div class="tile t-linked">${icon('lock')}</div><div><div>Locked linked portfolio</div><div class="small dim" style="font-weight:400">shared by Margaret Griffin · griffin-parents</div></div><span class="spacer"></span><span class="pill">${icon('lock')} locked</span></h3>
@@ -1048,7 +1055,6 @@ SCREENS.portfolios = (id) => {
     <div class="row"><div><div style="font-size:22px;font-weight:650">${money(p.v, { cents: false })}</div><div class="small">${pct(p.d)} today</div></div><div style="text-align:right">${sparkline(p.v % 97, true).replace('width="80"', 'width="160"').replace('height="24"', 'height="40"')}</div></div></div>`).join('')}</div>`;
 };
 function portfolioPage(id) {
-  if (id === 'mom' && state.locked) return lockedPanel('portfolio');
   const name = { all: 'All my accounts', retire: 'Retirement', household: 'Household', mom: "Mom's portfolio" }[id] || 'Portfolio';
   const [cur, bar] = tabs('pf', ['Performance', 'Allocation', 'Income', 'Holdings'], 'Performance');
   const lab = rangeSlice(MONTHS);
@@ -1108,7 +1114,7 @@ SCREENS.budgets = () => {
   if (cur === 'This month') {
     const plan = BUDGET.reduce((s, b) => s + b.plan, 0), act = BUDGET.reduce((s, b) => s + b.act, 0);
     body = `<div class="grid g3"><div class="card kpi"><div class="label">Income</div><div class="value">${money(10340, { cents: false })}</div><div class="delta dim">expected ${money(9640, { cents: false })}</div></div><div class="card kpi"><div class="label">Spent</div><div class="value">${money(act, { cents: false })}</div><div class="delta dim">of ${money(plan, { cents: false })} planned</div></div><div class="card kpi"><div class="label">Left to spend</div><div class="value">${money(plan - act, { cents: false })}</div><div class="delta dim">21 days left in October</div></div></div>
-    <div class="card mt"><h3>Categories<span class="spacer"></span><span class="small dim">Budget: Household · shared with Bob (write)</span><button class="btn sm" data-act="toast" data-v="Edit the plan: amounts per category, rollover on or off">Edit plan</button></h3>
+    <div class="card mt"><h3>Categories<span class="spacer"></span><span class="small dim">Budget: Household · shared with Bob (write)</span><button class="btn sm" data-act="dlg" data-v="share" data-name="Household budget">${icon('share')} Share</button><button class="btn sm" data-act="toast" data-v="Edit the plan: amounts per category, rollover on or off">Edit plan</button></h3>
       ${BUDGET.map((b) => { const p = b.act / b.plan; return `<div class="budget-row"><div>${b.cat}</div><div class="bar"><i class="${p > 1 ? 'over' : p > 0.9 ? 'warn' : ''}" style="width:${Math.min(p, 1) * 100}%"></i></div><div class="num small">${money(b.act)} <span class="dim">of ${money(b.plan, { cents: false })}</span>${p > 1 ? ` <span class="pill bad">over</span>` : ''}</div></div>`; }).join('')}</div>`;
   } else if (cur === 'Cash flow') body = `<div class="card"><h3>September: where the money went</h3>${sankey([{ name: 'Salary', v: 9640, color: 'var(--c2)' }, { name: 'Dividends', v: 520, color: 'var(--c1)' }, { name: 'Interest', v: 180, color: 'var(--c5)' }], [{ name: 'Housing', v: 3410, color: 'var(--c3)' }, { name: 'Food', v: 1180, color: 'var(--c7)' }, { name: 'Transport', v: 420, color: 'var(--c4)' }, { name: 'Health', v: 310, color: 'var(--c6)' }, { name: 'Other spending', v: 1150, color: 'var(--c8)' }, { name: 'Saved & invested', v: 3870, color: 'var(--c2)' }])}</div>`;
   else if (cur === 'Trends') body = `<div class="card"><h3>Spending by month<span class="spacer"></span>${sel(['All categories', 'Food', 'Housing', 'Transport'], 'All categories').replace('class="in"', 'class="in" style="max-width:180px" aria-label="Category"')}</h3>${bars({ labels: MONTHS.slice(-12).map((m) => m.split(' ')[0]), series: [{ name: 'Planned', color: 'var(--border-strong)', values: Array(12).fill(6500) }, { name: 'Actual', color: 'var(--c1)', values: [6120, 6840, 5980, 7210, 6390, 6020, 6610, 7480, 6230, 5890, 6670, 5187] }] })}</div>`;
@@ -1264,7 +1270,7 @@ SCREENS.giving = () => {
     const pace = months.map((_, i) => (i < 9 ? (G.target * (i + 1)) / 12 : G.pace));
     const causes = [['In the DAF, to grant', 6480, 'var(--hue-giving)'], ['Faith', 2000, 'var(--c3)'], ['Relief', 1500, 'var(--c1)'], ['Hunger', 1350, 'var(--c2)'], ['Education (DAF grant)', 1000, 'var(--c5)'], ['Local', 635, 'var(--c4)']];
     body = `<div class="grid g4">
-      <div class="card kpi"><div class="label">Target ${state.year}</div><div class="value">${money(G.target, { cents: false })}</div><div class="delta dim">${GIVING.pct}% of gross income (${money(GIVING.income, { cents: false })}) · <a data-act="dlg" data-v="givingPlan">Edit</a></div></div>
+      <div class="card kpi"><div class="label">Target ${state.year}</div><div class="value">${money(G.target, { cents: false })}</div><div class="delta dim">${GIVING.pct}% of gross income (${money(GIVING.income, { cents: false })}) · <a data-act="dlg" data-v="givingPlan">Edit</a> · <a data-act="dlg" data-v="share" data-name="Giving plan ${state.year}">Share</a></div></div>
       <div class="card kpi"><div class="label">Given</div><div class="value">${money(GIVEN, { cents: false })}</div><div class="bar mt" style="margin-top:8px"><i style="width:${G.pct}%"></i></div><div class="delta dim">${G.pct}% of the target</div></div>
       <div class="card kpi"><div class="label">Pace to date</div><div class="value">${money(G.pace, { cents: false })}</div><div class="delta"><span class="down">${money(G.behind, { cents: false })} behind</span></div></div>
       <div class="card kpi"><div class="label">Projected year end</div><div class="value">${money(GIVEN + 850, { cents: false })}</div><div class="delta dim">with ${money(850, { cents: false })} of pledges due</div></div></div>
@@ -1317,18 +1323,19 @@ SCREENS.settings = () => {
     <div class="card mt"><h3>Shared from griffin-parents</h3><p class="small dim" style="margin-top:-6px">The owner chooses who here sees each share. Names and amounts stay inside the encrypted copy.</p>
     <div class="list-item"><div class="grow"><b>An account</b> <span class="small dim">shared by Margaret Griffin on 2026-09-14</span></div><span class="small">with Alice Griffin, Bob Griffin</span></div>
     <div class="list-item"><div class="grow"><b>A portfolio</b> <span class="small dim">shared by Margaret Griffin on 2026-09-14</span></div><span class="small">with Alice Griffin</span></div></div>
-    <div class="card mt"><h3>Linked copies</h3><p class="small dim" style="margin-top:-6px">Each link’s copy is encrypted under its own <b>access key</b>: 12 words made here once, which you keep and give to the people its shares name. Each of them enters the words once; after that, signing in opens it. This server’s master key can’t open it.</p>
-    <div class="table-wrap"><table class="t"><thead><tr><th>Link</th><th>Copy</th><th>Waiting</th><th>Access key</th><th>Entered by</th></tr></thead><tbody>
-    <tr><td style="white-space:nowrap"><b>griffin-parents</b></td><td class="small" style="white-space:nowrap">184 MB · 6 receipts</td><td class="small" style="white-space:nowrap">12 changes</td><td class="small" style="white-space:nowrap">2026-09-14<div class="dim">by Alice</div></td><td class="small"><div style="display:grid;gap:6px;justify-items:start"><span class="mark"><span class="avatar sm av-alice">AG</span> Alice ${icon('check')}</span><span class="mark"><span class="avatar sm av-bob">BG</span> Bob · not yet</span></div></td></tr>
+    <div class="card mt"><h3>Linked copies</h3><p class="small dim" style="margin-top:-6px">Each link’s copy is encrypted under its own <b>access key</b>: 12 words made here once and kept in the household’s password manager. The first person a share names who opens it enters the words; it then stays unlocked for everyone it shares with until it goes unused. This server’s master key can’t open it.</p>
+    <div class="table-wrap"><table class="t"><thead><tr><th>Link</th><th>Copy</th><th>Waiting</th><th>Access key</th><th>State</th></tr></thead><tbody>
+    <tr><td style="white-space:nowrap"><b>griffin-parents</b></td><td class="small" style="white-space:nowrap">184 MB · 6 receipts</td><td class="small" style="white-space:nowrap">${state.locked ? '12 changes' : 'none'}</td><td class="small" style="white-space:nowrap">2026-09-14<div class="dim">by Alice</div></td><td class="small">${state.locked ? `<span class="pill">${icon('lock')} locked</span>` : `<span class="pill info">unlocked</span><div class="dim">by ${state.unlockedBy} at 14:05 · locks after an hour unused</div><button class="btn sm mt" data-act="lock">Lock now</button>`}</td></tr>
     <tr><td style="white-space:nowrap"><b>ortiz-cpa</b></td><td class="small dim">none yet</td><td class="small" style="white-space:nowrap">1 share arrived</td><td colspan="2"><button class="btn sm primary" data-act="dlg" data-v="copyKey" data-link="ortiz-cpa">${icon('lock')} Create the access key</button></td></tr>
     </tbody></table></div>
-    <div class="toolbar mt"><button class="btn sm danger" data-act="toast" data-v="Copy deleted; new access key made; pulling everything again from griffin-parents">Reset copy</button><span class="small dim">If the words are lost. New words are made and everything is pulled again; each person enters the new words once. The source keeps the data.</span></div></div>`;
+    ${field('Release linked keys after', sel(['15 minutes unused', '1 hour unused', '4 hours unused'], '1 hour unused'), 'An unlocked copy’s key is dropped from memory after this long without anyone viewing it. Lock now and a restart lock it too.')}
+    <div class="toolbar mt"><button class="btn sm danger" data-act="toast" data-v="Copy deleted; new access key made; pulling everything again from griffin-parents">Reset copy</button><span class="small dim">If the words are lost. New words are made and everything is pulled again. The source keeps the data.</span></div></div>`;
   else if (s === 'tax') body = `<div class="card"><h3>Tax tables<span class="spacer"></span>${sel(['2026', '2025'], '2026').replace('class="in"', 'class="in" style="max-width:100px" aria-label="Year"')}</h3><p class="small dim" style="margin-top:-6px">Shipped with MoneyKata 0.1.0 and updated with it. Correct a figure here if the IRS changes it before an update.</p>
     <table class="t"><tbody>${[['IRA contribution limit', '$7,000'], ['IRA catch-up (50+)', '$1,000'], ['401(k) employee deferral', '$23,500'], ['401(k) catch-up (50–59, 64+)', '$7,500'], ['401(k) catch-up (60–63)', '$11,250'], ['HSA family', '$8,550'], ['Roth IRA phase-out (MFJ)', '$236,000 – $246,000'], ['RMD starting age', '73'], ['Annual gift exclusion', '$19,000'], ['529 to Roth IRA, lifetime', '$35,000'], ['QCD limit', '$111,000'], ['Collectables rate (max)', '28%'], ['College cost, public in-state', '$28,000 a year']].map((r) => `<tr><td>${r[0]}</td><td class="num"><input class="in" style="max-width:180px;text-align:right" value="${r[1]}" aria-label="${r[0]}"></td></tr>`).join('')}</tbody></table></div>`;
   else if (s === 'backups') body = `<div class="card"><h3>Backups</h3>${field('Time of day', inp('03:15'))}${field('Copies kept', inp('14'))}<div class="notice">${icon('check')}<div>Last backup 03:15 today · database 48 MB + receipts 1.2 GB · encrypted · verified. Opens with the master key’s recovery phrase. Directory (set on the host): <code>/srv/backup/moneykata</code></div></div></div>`;
   else if (s === 'sync') body = `<div class="card"><h3>SimpleFIN Bridge</h3>${field('Enabled', sw(true))}<p class="small dim">Each user connects their own SimpleFIN token from an account’s Settings tab. Read-only; MoneyKata never moves money.</p>${field('Sync every', sel(['4 hours', '12 hours', '24 hours'], '12 hours'))}</div>`;
   else if (s === 'crypto') body = `<div class="card"><h3>Chain explorers</h3>${field('Bitcoin explorer (Esplora)', inp('https://mempool.space/api'))}${field('EVM explorer (Etherscan-compatible)', inp('https://api.etherscan.io/v2/api'))}${field('Etherscan API key', inp('', '••••••• set', 'password'))}</div>`;
-  else if (s === 'general') body = `<div class="card"><h3>General</h3>${field('Server name', inp('griffin-home'), 'Shown under the brand and to linked servers.')}${field('Public URL', inp('https://money.griffin.ts.net'), 'Links in emails are built from it, never from the request.')}${field('Default reporting currency', sel(['USD', 'EUR', 'GBP', 'CAD'], 'USD'))}<button class="btn primary" data-act="toast" data-v="Saved">Save</button></div>`;
+  else if (s === 'general') body = `<div class="card"><h3>General</h3>${field('Server name', inp('griffin-home'), 'Shown to linked servers.')}<div class="field"><label>Household</label><div class="hh-row"><span class="logo hh" style="width:40px;height:40px">${HOUSEHOLD.initials}</span><button class="btn sm">Change avatar</button></div></div>${field('Household name', inp(HOUSEHOLD.name), 'Shown at the top of the sidebar, and to linked servers with the avatar.')}${field('Public URL', inp('https://money.griffin.ts.net'), 'Links in emails are built from it, never from the request.')}${field('Default reporting currency', sel(['USD', 'EUR', 'GBP', 'CAD'], 'USD'))}<button class="btn primary" data-act="toast" data-v="Saved">Save</button></div>`;
   else if (s === 'signin') body = `<div class="card"><h3>Sign-in and sessions</h3><div class="row">${field('Idle timeout', sel(['1 hour', '8 hours', '24 hours'], '8 hours'), 'Signed out after this long without using MoneyKata.')}${field('Longest session', sel(['7 days', '30 days', '90 days'], '30 days'), 'Signed out after this long, used or not.')}</div><div class="row">${field('Failed sign-ins before a lockout', inp('10'))}${field('Lockout', sel(['5 minutes', '15 minutes', '1 hour'], '15 minutes'))}</div><button class="btn primary" data-act="toast" data-v="Saved">Save</button></div>`;
   else if (s === 'signup') body = `<div class="card"><h3>Sign-up</h3><div class="list-item"><span class="grow">Sign-up<div class="small dim">People can ask for an account from the sign-in screen; an admin approves or rejects each request. Needs email (SMTP).</div></span>${sw(false)}</div>${field('Allowed email domains', inp('griffin.home', 'any domain'), 'Optional. Requests from other domains are refused.')}<button class="btn primary" data-act="toast" data-v="Saved">Save</button></div>`;
   else if (s === 'passwords') body = `<div class="card"><h3>Passwords</h3>${field('Minimum length', inp('12'), 'At least 8. The only password rule: no character classes, no expiry.')}<button class="btn primary" data-act="toast" data-v="Saved">Save</button></div>`;
@@ -1361,9 +1368,7 @@ SCREENS.profile = () => { const u = USERS[state.user]; return `<div class="grid 
   ${field('Display name', inp(u.name))}${field('Email address', inp(u.email))}${field('Reporting currency', sel(['USD', 'EUR', 'GBP'], 'USD'))}${field('Birth year', inp('1979'), 'Used for contribution catch-up limits and RMDs.')}${field('Spouse for wash sales', sel(['None', 'Bob Griffin'], 'Bob Griffin'), 'Wash sales are checked across your accounts and your spouse’s shared accounts.')}<button class="btn primary" data-act="toast" data-v="Saved">Save</button></div>
   <div class="grid"><div class="card"><h3>Password</h3>${field('Current password', inp('', '', 'password'))}${field('New password', inp('', 'at least 12 characters', 'password'))}<button class="btn">Change password</button></div>
   <div class="card"><h3>Two-step sign-in <span class="pill ok">on</span></h3><p class="small dim">A code from your authenticator app after your password. 8 recovery codes left.</p><button class="btn">New recovery codes</button> <button class="btn danger">Turn off</button></div>
-  <div class="card"><h3>Linked data<span class="spacer"></span>${isLocked({ linked: true }) ? `<span class="pill">${icon('lock')} locked</span>` : `<span class="pill info">unlocked</span>`}</h3>
-    <p class="small dim" style="margin-top:0">What linked servers share with you is encrypted on this server. ${needsWords() ? 'Open it once with its access key, the 12 words your server’s admin keeps.' : 'You entered griffin-parents’ access key on 2026-09-14, so signing in opens it. After a password reset, you enter the words again.'}</p>
-    <div class="list-item"><div class="tile t-linked">${icon('server')}</div><div class="grow">griffin-parents<div class="small dim">2 shares · ${LINK_SYNC}</div></div>${isLocked({ linked: true }) ? `<button class="btn sm primary" data-act="dlg" data-v="unlock">${needsWords() ? 'Enter the access key' : 'Unlock'}</button>` : `<button class="btn sm" data-act="lock">Lock now</button>`}</div></div></div></div>`; };
+  </div></div>`; };
 
 SCREENS.signin = () => `<div class="auth"><div class="card"><div class="acct-row"><div class="logo">M</div><div><b style="font-size:17px">MoneyKata</b><div class="small dim">griffin-home</div></div><span class="spacer"></span><span class="pill-mock" data-act="mock">MOCK</span></div>
   <h2>Sign in</h2><p class="small dim" style="margin-top:0">Your household’s finances, on your own server.</p>
@@ -1378,15 +1383,15 @@ DIALOGS.share = (d) => {
   const users = Object.values(USERS).filter((u) => u.username !== state.user && !(tb && taxBook().filers.includes(u.username)));
   const lvl = tb ? { dave: 'Write' } : { bob: 'Read', dave: 'Read' };
   return { title: `Share “${d.name || 'Individual Brokerage'}”`, body: `<div class="share-list">
-    <h4>People</h4><div class="why">They see it in their lists. <b>Write</b> lets them add, import and categorise; never delete, re-share or see its keys.</div>
+    <h4>People</h4><div class="why">They see it in their lists. <b>Write</b> lets them change what it holds; never delete it, re-share it or see its keys.</div>
     ${users.map((u) => `<div class="list-item"><span class="avatar av-${u.username}">${u.initials}</span><div class="grow">${u.name}<div class="small dim">${u.username}</div></div>${segLevel(lvl[u.username] || 'None')}</div>`).join('')}
     <h4>Groups</h4><div class="why">The same, for every member while they are in the group.</div>
     ${GROUPS.filter((g) => g.name !== 'Admins').map((g) => `<div class="list-item"><div class="tile t-other">${icon('users')}</div><div class="grow">${g.name}<div class="small dim">${g.members.length} member${g.members.length > 1 ? 's' : ''}</div></div>${segLevel('None')}</div>`).join('')}
-    ${tb ? `<div class="notice mt">${icon('info')}<div>The filers own this tax book. <b>Write</b> lets a helper edit filings, attach documents and resolve issues. A tax book is never shared with a linked server.</div></div></div>` : `<h4>People on linked servers</h4><div class="why">Read only, always. Each server confirms who its people are. There it is kept encrypted, and opens with that copy’s access key.</div>
+    ${tb ? `<div class="notice mt">${icon('info')}<div>The filers own this tax book. <b>Write</b> lets a helper edit filings, attach documents and resolve issues.</div></div>` : ''}<h4>People on linked servers</h4><div class="why">Read only, always. Each server confirms who its people are. There it is kept encrypted, and opens with that copy’s access key.</div>
     ${Object.entries(REMOTE).map(([srv, ps]) => `<div class="small dim" style="margin:10px 0 2px">${icon('server')} <b>${srv}</b> · ${srv === 'griffin-parents' ? 'active · pulled 41 min ago' : 'unreachable since 08:10'}</div>
     ${ps.map((r) => `<div class="list-item"><span class="avatar av-remote">${r.name.split(' ').map((w) => w[0]).join('')}</span><div class="grow">${r.name}<div class="small dim">${r.email}</div></div>${segLevel(r.lvl, true)}</div>`).join('')}
-    ${ps.some((r) => r.lvl === 'Read') ? `<div class="list-item sub-row"><span class="grow">Include receipts<div class="small dim">Sends this account’s receipts and the text read from them to ${srv}. Off by default.</div></span>${sw(false)}</div>` : ''}`).join('')}
-    </div>`}`, note: 'When someone loses access it ends on their next request.', ok: 'Save' };
+    ${ps.some((r) => r.lvl === 'Read') ? `<div class="list-item sub-row"><span class="grow">Include receipts<div class="small dim">Sends its receipts (a tax book’s documents too) and the text read from them to ${srv}. Off by default.</div></span>${sw(false)}</div>` : ''}`).join('')}
+    </div>`, note: 'When someone loses access it ends on their next request.', ok: 'Save' };
 };
 function segLevel(cur, readOnly) { return `<div class="seg" role="radiogroup">${['None', 'Read', 'Write'].map((l) => `<button class="${cur === l ? 'on' : ''}" data-act="seg" ${readOnly && l === 'Write' ? 'disabled title="Links are read-only"' : ''}>${l}</button>`).join('')}</div>`; }
 DIALOGS.newAccount = () => ({ title: 'New account', wide: true, body: `<p class="small dim" style="margin-top:0">Choose the type. It decides the fields, the tax treatment and how the account can be kept current.</p><div class="type-grid">
@@ -1446,23 +1451,20 @@ DIALOGS.receipt = (d) => {
     ${r.text ? `<details class="mt"><summary class="small">Text read from the receipt (searchable)</summary><div class="ocr-text mt">${esc(r.text)}</div></details>` : ''}</div>
     <div style="flex:0 1 260px">${side}</div></div>`, ok: 'Save' };
 };
-DIALOGS.unlock = () => needsWords()
-  ? { title: 'Enter the access key', body: `<p class="small dim" style="margin-top:0">What <b>griffin-parents</b> shares with you is encrypted on this server under its own access key: 12 words that your server’s admin keeps. Enter them once. After that, signing in opens it.</p>
+DIALOGS.unlock = () => ({ title: 'Enter the access key', body: `<p class="small dim" style="margin-top:0">What <b>Margaret & Tom</b> share with you is encrypted on this server under its own access key: 12 words kept in your household’s password manager. Once entered, it stays open for everyone it’s shared with until it goes unused for an hour.</p>
   <div class="field"><label for="f-access-key">Access key</label><div class="words">${COPY_WORDS.map((w, i) => `<label class="word"><span>${i + 1}</span><input class="in" ${i ? '' : 'id="f-access-key"'} autocomplete="off" spellcheck="false" aria-label="Word ${i + 1}"></label>`).join('')}</div><div class="hint">Each word is recognised by its first four letters. The last word checks the others.</div></div>
-  <div class="list-item"><div class="tile t-linked">${icon('server')}</div><div class="grow">griffin-parents<div class="small dim">Mom’s Retirement shared with you · 12 changes waiting, applied when it opens</div></div></div>`, ok: 'Unlock' }
-  : { title: 'Unlock linked data', body: `<p class="small dim" style="margin-top:0">Linked data locked when the server restarted or when you pressed <b>Lock now</b>. Your password opens it again, until you sign out.</p>
-  ${field('Password', inp('', '', 'password'))}
-  <div class="list-item"><div class="tile t-linked">${icon('server')}</div><div class="grow">griffin-parents<div class="small dim">Mom’s Retirement, Mom’s portfolio · 12 changes waiting, applied when you unlock</div></div></div>`, ok: 'Unlock' };
+  <div class="list-item">${hhAv(PEERS['griffin-parents'])}<div class="grow">griffin-parents<div class="small dim">7 items shared with you · 12 changes waiting, applied when it opens</div></div></div>`, ok: 'Unlock' });
+DIALOGS.householdColour = () => ({ title: 'Colour for Margaret & Tom', body: `<p class="small dim" style="margin-top:0">Tints this household’s window for you. Other people choose their own.</p><div class="field"><label for="f-colour">Colour</label><div class="swatches">${Object.entries(PEER_HUES).map(([k, v], i) => `<button class="swatch ${state.peerHue[state.user] === k ? 'on' : ''}" ${i ? '' : 'id="f-colour"'} style="background:${v}" data-act="hue" data-v="${k}" title="${k}" aria-label="${k}"></button>`).join('')}</div></div>`, ok: null });
 DIALOGS.copyKey = (d) => {
   const link = d.link || 'ortiz-cpa';
   return { title: `Access key for ${link}`, body: `<div class="notice" style="margin-bottom:12px">${icon('link')}<div><b>${link}</b> has shared something with people here. Its copy is kept encrypted under these 12 words. <b>They are shown once.</b></div></div>
   <div class="words">${COPY_WORDS.map((w, i) => `<div class="word"><span>${i + 1}</span><b>${w}</b></div>`).join('')}</div>
-  <p class="small dim">Save them in your household’s password manager and give them to the people its shares name: <b>Alice Griffin</b> and <b>Bob Griffin</b>. Each enters them once. You can open only what is shared with you. If the words are lost, <b>Reset copy</b> makes new ones.</p>
+  <p class="small dim">Save them in your household’s password manager, where the people its shares name can reach them. Whoever opens it first enters them. The words open only what is shared with each person. If they are lost, <b>Reset copy</b> makes new ones.</p>
   <label class="list-item" style="cursor:pointer"><input type="checkbox"> <span class="grow">I have saved the 12 words</span></label>`, ok: 'Done, words saved' };
 };
 DIALOGS.person = (d) => {
   const x = personById(d.who) || { name: '', rel: '' };
-  return { title: x.name ? x.name : 'Add a person', body: `${field('Name', inp(x.name, 'Emma Griffin'))}<div class="row">${field('Relationship', sel(['Daughter', 'Son', 'Husband', 'Wife', 'Partner', 'Parents', 'Sibling', 'Friend', 'Other'], (x.rel || 'Friend').split(' ·')[0]))}${field('Linked user', sel(['None', 'Bob Griffin', 'Carol Griffin'], x.user === 'bob' ? 'Bob Griffin' : x.user === 'carol' ? 'Carol Griffin' : 'None'), 'Gifts for a linked user are never shown to them.')}</div>
+  return { title: x.name ? x.name : 'Add a person', body: `${field('Name', inp(x.name, 'Emma Griffin'))}<div class="row">${field('Relationship', sel(['Daughter', 'Son', 'Husband', 'Wife', 'Partner', 'Parents', 'Sibling', 'Friend', 'Other'], (x.rel || 'Friend').split(' ·')[0]))}${field('Linked user', sel(['None', 'Bob Griffin', 'Carol Griffin', 'Margaret Griffin (griffin-parents)', 'Tom Griffin (griffin-parents)'], x.user === 'bob' ? 'Bob Griffin' : x.user === 'carol' ? 'Carol Griffin' : 'None'), 'Gifts for a linked user are never shown to them, here or on their own server.')}</div>
     <div class="row">${field('Birthday', inp(x.id === 'emma' ? '2018-10-20' : '', 'year optional', 'text'))}${field('Anniversary', inp(x.id === 'parents' ? '1981-11-02 · wedding' : '', 'date · what for'))}</div>
     <div class="field"><label>Holidays</label><div class="chips">${['Christmas', 'Hanukkah', 'Diwali', 'Lunar New Year', 'Eid al-Fitr', 'Valentine’s Day', 'Mother’s Day', 'Father’s Day'].map((h) => `<button class="chip ${(x.dates || '').includes(h) ? 'on' : ''}" data-act="switch">${h}</button>`).join('')}<button class="chip" data-act="toast" data-v="Custom occasion added (mock)">+ Custom</button></div></div>
     <div class="row">${field('Yearly gift budget', inp(x.budget ? String(x.budget) : '', '600'))}${field('Remind me', sel(['7 days before', '14 days before', '30 days before'], '14 days before'))}</div>
@@ -1576,11 +1578,11 @@ const GUIDES = {
     <h2 id="h-needs-attention">Needs attention</h2><p>Options expiring within a week, uncategorised transactions, receipts in the inbox, and lots without a cost basis.</p>
     <blockquote>Values derived from prices show their age on hover. The dot by the time at the top turns amber when prices are stale.</blockquote>`,
   accounts: `<h1>Accounts</h1><p>Every account you own or that someone has shared with you, grouped by kind.</p><div class="shot">screenshot · accounts</div>
-    <h2 id="h-filters">Filters</h2><p><b>Mine</b>, <b>Shared with me</b> (an eye for read, a pencil for write), <b>Shared by me</b>, and <b>Linked</b>: read-only copies from other MoneyKata servers.</p>
+    <h2 id="h-filters">Filters</h2><p><b>Mine</b>, <b>Shared with me</b> (an eye for read, a pencil for write), and <b>Shared by me</b>.</p>
     <h2 id="h-import">Import</h2><p>OFX, QFX or CSV from your bank or broker. Re-importing the same file adds only what’s new.</p>
     <h2 id="h-new-account">New account</h2><p>Pick the type first. It decides the fields, the tax treatment, and how the account can be kept current.</p>
     <h2 id="h-share">Share</h2><p>The share button on a row opens the Share dialog for that account.</p>
-    <h2>Locked</h2><p>Accounts from a linked server are kept encrypted on this server. The first time, you open them with their access key, the 12 words your server’s admin keeps; after that, signing in opens them. While locked they show only who shared them, with no names or amounts, and they’re left out of your totals. They keep syncing while locked.</p>`,
+    <h2>Linked households</h2><p>What another household shares with you opens in a window of its own, never mixed with your accounts or totals.</p>`,
   account: `<h1>Account</h1><p>One account: its balance over time, what it holds, its transactions and positions, its receipts, and who it’s shared with.</p><div class="shot">screenshot · account</div>
     <h2 id="h-name">Name</h2><p>How the account appears everywhere. Only you see it as named; people you share it with see the same name.</p>
     <h2 id="h-lot-method">Lot method</h2><p>Which lots a sale uses: <b>FIFO</b> (oldest first, the default), <b>LIFO</b>, <b>HIFO</b> (highest cost first, usually the smallest gain), <b>Specific identification</b> (you pick at each sale), or <b>Average cost</b> (mutual funds).</p>
@@ -1712,7 +1714,7 @@ const GUIDES = {
   activity: `<h1>Activity</h1><p>What changed and who did it. Amounts are never shown here.</p>`,
   users: `<h1>Users and Groups</h1><p>Admins invite people, approve sign-ups, and make groups to share with. Admins see only the money shared with them.</p>`,
   settings: `<h1>Settings</h1><p>The server’s configuration, for admins. Each section has its own guide in the app.</p><div class="shot">screenshot · settings</div>
-    <h2 id="h-server-name">Server name</h2><p>Shown under the brand and to linked servers.</p>
+    <h2 id="h-server-name">Server name</h2><p>Shown to linked servers.</p>
     <h2 id="h-public-url">Public URL</h2><p>The address people use. Links in emails are built from it, never from the request.</p>
     <h2 id="h-idle-timeout">Idle timeout</h2><p>How long a session lasts without use.</p><h2 id="h-minimum-length">Minimum length</h2><p>The only password rule. 12 by default, at least 8.</p>
     <h2 id="h-allowed-email-domains">Allowed email domains</h2><p>Limits sign-up requests to these domains.</p>
@@ -1722,8 +1724,11 @@ const GUIDES = {
     <h2 id="h-link-code">Link code</h2><p>From the other server’s admin. Valid once, for 24 hours.</p>
     <h2 id="h-this-server-s-link-address">This server’s link address</h2><p>Must be reachable by the other server: a forwarded port, a reverse proxy, or both on Tailscale or WireGuard.</p>
     <h2>Shared from a linked server</h2><p>The owner on the other server chooses who here sees each share, from this server’s list of users, which links exchange. You see only the kind, the owner, the date and who it names.</p>
-    <h2>Linked copies</h2><p>Each link’s data is kept in its own encrypted copy, under its own <b>access key</b>: 12 words. The master key can’t open it. <b>Waiting</b> counts changes pulled while it was locked. <b>Entered by</b> shows who has entered the words; the others are asked the first time they open something shared with them.</p>
-    <h2>Create the access key</h2><p>When a link’s first share arrives. MoneyKata shows the 12 words once: save them in the household’s password manager and give them to the people the shares name. Knowing the words opens nothing without a share.</p>
+    <h2>Linked copies</h2><p>Each link’s data is kept in its own encrypted copy, under its own <b>access key</b>: 12 words. The master key can’t open it. <b>Waiting</b> counts changes pulled while it was locked. Once someone enters the words, the copy is unlocked for everyone it shares with, until it goes unused.</p>
+    <h2>Create the access key</h2><p>When a link’s first share arrives. MoneyKata shows the 12 words once: save them in the household’s password manager. Knowing the words opens nothing without a share.</p>
+    <h2 id="h-release-linked-keys-after">Release linked keys after</h2><p>How long an unlocked copy’s key stays in memory with nobody viewing it. One hour by default. Background syncing doesn’t count as viewing.</p>
+    <h2 id="h-household">Household</h2><p>Your household’s avatar: shown at the top of the sidebar, and on linked servers, which always show it as you set it.</p>
+    <h2 id="h-household-name">Household name</h2><p>Shown with the avatar, here and on linked servers.</p>
     <h2>Reset copy</h2><p>If the words are lost. Deletes the copy, makes new words, and pulls everything again. Each person enters the new words once. Nothing is lost: the other server keeps the data.</p>
     <h2 id="h-tax-tables">Tax tables</h2><p>Contribution limits and thresholds by year, shipped with the app.</p>
     <h2 id="h-read-receipts">Read receipts</h2><p>Reads each uploaded receipt on this server with RapidOCR and suggests its fields and transaction. On by default.</p>
@@ -1732,17 +1737,19 @@ const GUIDES = {
     <h2 id="h-key-storage">Key storage</h2><p>The database, the receipt files, the backups and every secret are encrypted. All of it opens with the <b>master key</b>, a file on the host, through a data key it wraps. Linked copies are not under the master key; their own access keys open them.</p>
     <h2 id="h-recovery-phrase">Recovery phrase</h2><p>The master key written as 12 words. MoneyKata shows it at install and asks for three words back. Keep it in two places, one offline, never beside the backups. <code>moneykata keys phrase</code> shows it again; <code>keys verify</code> checks a copy.</p><blockquote>Without the key file or its recovery phrase, the data and every backup are lost. Nobody can recover them.</blockquote>
     <h2 id="h-re-encrypt">Re-encrypt</h2><p>Makes a new data key: re-keys the database, re-encrypts the receipt files, and gives every secret a fresh key. Rarely needed. Rotating the master key is a different job, done on the host with <code>moneykata keys rotate</code>; if a key may have leaked, first replace the API keys and tokens themselves.</p>`,
+  linked: `<h1>Linked household</h1><p>What another household shares with you, in a window of its own. Everything here is read only, as their server worked it out, and never mixed with your own accounts or totals.</p>
+    <h2 id="h-access-key">Access key</h2><p>The copy’s 12 words, kept in your household’s password manager. Whoever opens it first enters them; it then stays open for everyone it shares with until nobody has viewed it for an hour. Each word is recognised by its first four letters.</p>
+    <h2>Who sees what</h2><p>The owner on the other server chooses who here sees each item. Once it’s open, you see only what is shared with you.</p>
+    <h2>Lock now</h2><p>Locks the copy for everyone at once. It also locks after an hour unused and when the server restarts.</p>
+    <h2 id="h-colour">Colour</h2><p>Tints this household’s window for you. The name and avatar always come from their server.</p>
+    <blockquote>A locked copy keeps syncing. Changes wait, encrypted, and are applied when it opens.</blockquote>`,
   profile: `<h1>Profile</h1><p>Your name, email, password and two-step sign-in, and the facts the tax screens need.</p>
     <h2 id="h-reporting-currency">Reporting currency</h2><p>Totals and charts are shown in it.</p><h2 id="h-birth-year">Birth year</h2><p>For catch-up contribution limits and RMDs.</p><h2 id="h-spouse-for-wash-sales">Spouse for wash sales</h2><p>Their shared accounts are included in wash-sale checks.</p>
-    <h2>Linked data</h2><p>What linked servers share with you is kept encrypted on this server.</p>
-    <h2 id="h-access-key">Access key</h2><p>A linked copy’s 12 words, from your server’s admin. You enter them once; MoneyKata then keeps the copy’s key locked to your password, so signing in opens it. Each word is recognised by its first four letters.</p>
-    <h2 id="h-password">Password</h2><p>Opens your linked data again after the server restarts or after <b>Lock now</b>. A password reset can’t open it: after one, you enter the words again.</p>
-    <h2>Lock now</h2><p>Locks your linked data at once. It also locks when you sign out and when the server restarts.</p>
-    <blockquote>Linked data keeps syncing while it is locked. Changes wait, encrypted, and are applied when anyone with access unlocks it.</blockquote>`,
-  share: `<h1>Share</h1><p>Give people, groups or linked servers access to this account or portfolio.</p><h2>Read</h2><p>They see everything about it and can’t change it.</p><h2>Write</h2><p>They can also add and import transactions, categorise, and attach receipts. They can’t delete it, share it on, or see its keys.</p><h2>People on linked servers</h2><p>Read only, always. You choose the people; their server confirms who they are, and keeps it encrypted under the copy’s access key, which their admin holds.</p><h2>Include receipts</h2><p>Off by default. When on, the account’s receipts and the text read from them go to that server too, stored there as encrypted files.</p>
-    <h2>A tax book</h2><p>Shared with users and groups only. The filers own it; give <b>Write</b> to someone who helps prepare the return.</p>`,
+`,
+  share: `<h1>Share</h1><p>Give people, groups or people on linked servers access to this item.</p><h2>Read</h2><p>They see everything about it and can’t change it.</p><h2>Write</h2><p>They can also add and import transactions, categorise, and attach receipts. They can’t delete it, share it on, or see its keys.</p><h2>What can be shared</h2><p>Accounts, portfolios, budgets, people with their gifts, giving plans and tax books, each shared on its own.</p><h2>People on linked servers</h2><p>Read only, always. You choose the people; their server confirms who they are, keeps it encrypted, and shows it in a window of its own.</p><h2>Include receipts</h2><p>Off by default. When on, the account’s receipts and the text read from them go to that server too, stored there as encrypted files.</p>
+    <h2>A tax book</h2><p>The filers own it; give <b>Write</b> to someone who helps prepare the return.</p>`,
 };
-const HELP_ALIAS = { taxBook: 'taxes', filing: 'taxes', taxDoc: 'taxes', unlock: 'profile', copyKey: 'settings', person: 'gifts', gift: 'gifts', donation: 'giving', givingPlan: 'giving', assetItem: 'account', account: 'account', portfolios: 'portfolios', trade: 'positions', acctForm: 'account', newAccount: 'accounts', import: 'transactions', upload: 'receipts', receipt: 'receipts', linkInvite: 'settings', linkAccept: 'settings', share: 'share', rules: 'transactions' };
+const HELP_ALIAS = { taxBook: 'taxes', filing: 'taxes', taxDoc: 'taxes', unlock: 'linked', householdColour: 'linked', copyKey: 'settings', person: 'gifts', gift: 'gifts', donation: 'giving', givingPlan: 'giving', assetItem: 'account', account: 'account', portfolios: 'portfolios', trade: 'positions', acctForm: 'account', newAccount: 'accounts', import: 'transactions', upload: 'receipts', receipt: 'receipts', linkInvite: 'settings', linkAccept: 'settings', share: 'share', rules: 'transactions' };
 function helpFor(dialog) {
   const pane = $('#help-body'); if (!pane) return;
   const key = dialog ? HELP_ALIAS[dialog] || route().screen : route().screen;
@@ -1759,17 +1766,18 @@ function render() {
   applyTheme();
   const { screen, param } = route();
   if (state.signedOut || screen === 'signin') { $('#root').innerHTML = SCREENS.signin(); return; }
+  if (screen === 'linked') { renderLinked(); return; }
   const u = USERS[state.user];
-  const title = { dashboard: 'Dashboard', accounts: 'Accounts', account: `<span class="crumb">Accounts ›</span> ${esc(isLocked(acctById(param)) ? 'Locked linked account' : acctById(param).name)}`, transactions: 'Transactions', portfolios: param ? `<span class="crumb">Portfolios ›</span> Portfolio` : 'Portfolios', positions: 'Positions', budgets: 'Budgets', projections: 'Projections', gifts: 'Gifts', giving: 'Giving', taxes: 'Taxes', receipts: 'Receipts', watchlist: 'Watchlist', activity: 'Activity', users: 'Users and Groups', settings: 'Settings', profile: 'Profile' }[screen] || 'Not found';
+  const title = { dashboard: 'Dashboard', accounts: 'Accounts', account: `<span class="crumb">Accounts ›</span> ${esc(acctById(param).name)}`, transactions: 'Transactions', portfolios: param ? `<span class="crumb">Portfolios ›</span> Portfolio` : 'Portfolios', positions: 'Positions', budgets: 'Budgets', projections: 'Projections', gifts: 'Gifts', giving: 'Giving', taxes: 'Taxes', receipts: 'Receipts', watchlist: 'Watchlist', activity: 'Activity', users: 'Users and Groups', settings: 'Settings', profile: 'Profile' }[screen] || 'Not found';
   const navActive = screen === 'account' ? 'accounts' : screen;
   const themeIcon = { dark: 'moon', light: 'bulb', system: 'palette' }[state.theme];
   const item = ([k, l, ic, badge]) => `<a class="nav-item ${navActive === k ? 'active' : ''}" data-go="${k}" title="${l}">${icon(ic)}<span class="nav-label">${l}</span>${badge ? `<span class="nav-badge">${badge}</span>` : ''}</a>`;
   $('#root').innerHTML = `<div class="app ${state.collapsed ? 'collapsed' : ''} ${state.help ? 'help-open' : ''}">
     <aside class="side">
-      <div class="brand"><div class="logo">M</div><div class="brand-text"><div class="brand-name">MoneyKata <span class="pill-mock" data-act="mock" title="Mockup controls">MOCK</span></div><div class="brand-ver">0.1.0-mock · griffin-home${state.update ? ' <span class="pill new" data-act="update" title="An update is available. Reload the page to update">update</span>' : ''}</div></div></div>
+      <div class="brand"><div class="logo hh">${HOUSEHOLD.initials}</div><div class="brand-text"><div class="brand-name">${HOUSEHOLD.name} <span class="pill-mock" data-act="mock" title="Mockup controls">MOCK</span></div><div class="brand-ver">MoneyKata 0.1.0-mock${state.update ? ' <span class="pill new" data-act="update" title="An update is available. Reload the page to update">update</span>' : ''}</div></div></div>
       <button class="collapse-btn" data-act="collapse" title="Collapse sidebar">${icon('chev')}</button>
-      <nav aria-label="Main">${NAV.map(item).join('')}${u.admin ? `<div class="nav-head">Admin</div>${ADMIN_NAV.map(item).join('')}` : ''}</nav>
-      <div class="user-tile"><span class="avatar av-${u.username}">${u.initials}</span><div class="user-text" data-go="profile"><b>${u.name}</b><span>${u.admin ? 'admin' : u.username}</span></div>${isLocked({ linked: true }) ? '' : `<button class="icon-btn" data-act="lock" title="Lock linked data now">${icon('lock')}</button>`}<button class="icon-btn" data-act="theme" title="Theme: ${state.theme}">${icon(themeIcon)}</button></div>
+      <nav aria-label="Main">${NAV.map(item).join('')}<div class="nav-head">Linked households</div>${Object.values(PEERS).map((P) => `<a class="nav-item" href="#/linked/${P.id}" target="mk-linked-${P.id}" title="${P.name} (opens in its own window)">${hhAv(P, 22)}<span class="nav-label">${P.name}</span></a>`).join('')}${u.admin ? `<div class="nav-head">Admin</div>${ADMIN_NAV.map(item).join('')}` : ''}</nav>
+      <div class="user-tile"><span class="avatar av-${u.username}">${u.initials}</span><div class="user-text" data-go="profile"><b>${u.name}</b><span>${u.admin ? 'admin' : u.username}</span></div><button class="icon-btn" data-act="theme" title="Theme: ${state.theme}">${icon(themeIcon)}</button></div>
     </aside>
     <main>
       <div class="help-corner" data-act="help" title="Show help (F1)"><span></span></div>
@@ -1784,12 +1792,65 @@ function render() {
   helpFor(openDialog ? null : null);
 }
 
+/* ---------- linked household window ---------- */
+const PEER_NAV = [['dashboard', 'Dashboard', 'dashboard'], ['accounts', 'Accounts', 'bank'], ['portfolios', 'Portfolios', 'pie'], ['transactions', 'Transactions', 'tx'], ['budgets', 'Budgets', 'target'], ['gifts', 'Gifts', 'gift'], ['giving', 'Giving', 'heart'], ['taxes', 'Taxes', 'tax'], ['receipts', 'Receipts', 'receipt']];
+const PEER_SCREENS = {
+  dashboard: (P) => `<div class="grid g4">
+    <div class="card kpi"><div class="label">Accounts shared with you</div><div class="value">${money(PEER_ACCTS.reduce((t, a) => t + a.bal, 0), { cents: false })}</div><div class="delta dim">2 accounts</div></div>
+    <div class="card kpi"><div class="label">Budget · October</div><div class="value">${money(3118, { cents: false })}</div><div class="delta dim">of ${money(4100, { cents: false })} planned</div></div>
+    <div class="card kpi"><div class="label">Giving ${state.year}</div><div class="value">${money(6400, { cents: false })}</div><div class="delta dim">71% of the ${money(9000, { cents: false })} target</div></div>
+    <div class="card kpi"><div class="label">Next occasion</div><div class="value" style="font-size:20px">Emma’s birthday</div><div class="delta dim">Oct 20 · riding lessons bought</div></div></div>
+    <div class="card mt"><h3>Shared with you</h3>${[['account/mom', 'retirement', 'Mom’s Retirement', 'Account'], ['account/pchk', 'banking', 'Joint Checking', 'Account'], ['portfolios/ret', 'investing', 'Margaret’s retirement', 'Portfolio'], ['budgets', 'banking', 'Household budget', 'Budget'], ['gifts', 'giving', 'Emma Griffin', 'Person'], ['giving', 'giving', 'Giving ' + state.year, 'Giving plan'], ['taxes', 'other', '2026 · Margaret & Tom (joint)', 'Tax book']].map((r) => `<div class="list-item click" data-go="linked/${P.id}/${r[0]}"><div class="tile t-${r[1]}">${icon({ Account: 'bank', Portfolio: 'pie', Budget: 'target', Person: 'gift', 'Giving plan': 'heart', 'Tax book': 'tax' }[r[3]])}</div><div class="grow"><b>${r[2]}</b><div class="small dim">${r[3]} · shared by Margaret Griffin</div></div><span style="display:inline-flex;transform:rotate(180deg)">${icon('chev')}</span></div>`).join('')}</div>`,
+  accounts: (P) => `<div class="card" style="padding:4px 8px"><div class="table-wrap"><table class="t"><tbody>${PEER_ACCTS.map((a) => `<tr class="click" data-go="linked/${P.id}/account/${a.id}"><td><div class="acct-row"><div class="tile t-${a.group}">${icon(a.group === 'banking' ? 'bank' : 'trend')}</div><div><div class="name">${a.name}</div><div class="sub">${a.inst} · shared by Margaret Griffin</div></div></div></td><td class="num"><b>${money(a.bal)}</b><div class="small">${signed(a.chg)} <span class="dim">30d</span></div></td></tr>`).join('')}</tbody></table></div></div>`,
+  account: (P, id) => { const a = PEER_ACCTS.find((x) => x.id === id) || PEER_ACCTS[0]; return `<div class="toolbar"><b style="font-size:16px">${a.name}</b><span class="small dim">${a.inst} · as of 41 min ago</span></div><div class="grid g-main"><div class="card"><h3>Balance</h3>${lineChart({ labels: MONTHS.slice(-12), series: [{ name: a.name, color: 'var(--c1)', values: walk(12, a.bal, 0.03, 0.01, a.id.length), tipfmt: (v) => '$' + nf0.format(v) }], h: 220 })}</div>
+    <div class="card"><h3>${a.id === 'mom' ? 'Holdings' : 'Recent'}</h3>${a.id === 'mom' ? [['VTI', 'Total stock market', 247728], ['BND', 'Total bond market', 123864], ['VMFXX', 'Money market', 41288]].map((h) => `<div class="list-item"><div class="grow"><b>${h[0]}</b><div class="small dim">${h[1]}</div></div>${money(h[2], { cents: false })}</div>`).join('') : PEER_TX.slice(0, 4).map((t) => `<div class="list-item"><div class="grow">${t[1]}<div class="small dim">${t[0]} · ${t[3]}</div></div>${signed(t[2])}</div>`).join('')}</div></div>`; },
+  portfolios: (P, id) => id ? `<div class="toolbar"><b style="font-size:16px">Margaret’s retirement</b><span class="small dim">as of 41 min ago</span></div><div class="grid g-main"><div class="card"><h3>Value</h3>${lineChart({ labels: MONTHS.slice(-12), series: [{ name: 'Value', color: 'var(--c1)', values: walk(12, 599280, 0.03, 0.01, 11), tipfmt: (v) => '$' + nf0.format(v) }], h: 220 })}</div>
+    <div class="card"><h3>Accounts in it</h3><div class="list-item"><div class="grow">Mom’s Retirement<div class="small dim">shared with you</div></div>${money(412880, { cents: false })}</div><div class="list-item"><div class="grow">One account not shared with you<div class="small dim">its value only</div></div>${money(186400, { cents: false })}</div></div></div>`
+    : `<div class="grid g2"><div class="card" style="cursor:pointer" data-go="linked/${P.id}/portfolios/ret"><h3>Margaret’s retirement</h3><div style="font-size:22px;font-weight:650">${money(599280, { cents: false })}</div><div class="small dim">2 accounts · shared by Margaret Griffin</div></div></div>`,
+  transactions: () => `<div class="card" style="padding:4px 8px"><div class="table-wrap"><table class="t"><thead><tr><th>Date</th><th>Payee</th><th>Category</th><th class="num">Amount</th></tr></thead><tbody>${PEER_TX.map((t) => `<tr><td class="dim">${t[0]}</td><td>${t[1]}<div class="small dim">Joint Checking</div></td><td class="small">${t[3]}</td><td class="num">${signed(t[2])}</td></tr>`).join('')}</tbody></table></div></div>`,
+  budgets: () => `<div class="card"><h3>Household budget · October 2026<span class="spacer"></span><span class="small dim">shared by Margaret Griffin</span></h3>${PEER_BUDGET.map((b) => { const p = b[1] / b[2]; return `<div class="budget-row"><div>${b[0]}</div><div class="bar"><i class="${p > 0.9 ? 'warn' : ''}" style="width:${Math.min(p, 1) * 100}%"></i></div><div class="num small">${money(b[1])} <span class="dim">of ${money(b[2], { cents: false })}</span></div></div>`; }).join('')}<p class="small dim">Worked out on griffin-parents from accounts that may not be shared with you.</p></div>`,
+  gifts: () => `<div class="card"><h3>Emma Griffin<span class="spacer"></span><span class="small dim">granddaughter · shared by Margaret Griffin</span></h3><div class="list-item"><span class="grow dim">Next</span>Birthday · Tue Oct 20 (turns 8)</div>
+    ${[['Birthday 2026', 'Riding lessons (4)', 'bought', 180], ['Christmas 2026', 'Art easel', 'idea', 95], ['Christmas 2025', 'Bike', 'given', 210]].map((g) => `<div class="list-item"><div class="grow">${g[1]}<div class="small dim">${g[0]}</div></div>${statusPill(g[2])} ${money(g[3])}</div>`).join('')}
+    <div class="notice mt">${icon('info')}<div>Gifts Margaret plans for you are never sent to this server.</div></div></div>`,
+  giving: () => `<div class="grid g3"><div class="card kpi"><div class="label">Target ${state.year}</div><div class="value">${money(9000, { cents: false })}</div><div class="delta dim">6% of gross income</div></div><div class="card kpi"><div class="label">Given</div><div class="value">${money(6400, { cents: false })}</div><div class="delta dim">71%</div></div><div class="card kpi"><div class="label">On pace</div><div class="value">${money(7000, { cents: false })}</div><div class="delta dim">by today</div></div></div>
+    <div class="card mt" style="padding:4px 8px"><div class="table-wrap"><table class="t"><thead><tr><th>Date</th><th>Organisation</th><th>Type</th><th class="num">Amount</th></tr></thead><tbody>${PEER_DON.map((d) => `<tr><td class="dim">${d[0]}</td><td>${d[1]}</td><td class="small">${d[2]}</td><td class="num">${money(d[3])}</td></tr>`).join('')}</tbody></table></div></div>`,
+  taxes: () => `<div class="toolbar"><b style="font-size:16px">2026 · Margaret & Tom (joint)</b><span class="small dim">tax book · shared by Margaret Griffin</span></div><div class="grid g2"><div class="card"><h3>Filings</h3><div class="list-item"><div class="grow">Federal · Form 1040<div class="small dim">due Apr 15, 2027</div></div>${filingPill('not started')}</div><div class="list-item"><div class="grow">Ohio · IT 1040<div class="small dim">due Apr 15, 2027</div></div>${filingPill('not started')}</div></div>
+    <div class="card"><h3>Summary</h3><div class="list-item"><span class="grow dim">Dividends</span>${money(9840, { cents: false })}</div><div class="list-item"><span class="grow dim">IRA distributions</span>${money(28800, { cents: false })}</div><div class="list-item"><span class="grow dim">Charitable gifts</span>${money(6400, { cents: false })}</div><div class="list-item"><span class="grow dim">Documents received</span>3 of 6</div></div></div>`,
+  receipts: () => `<div class="card"><p class="small dim" style="margin-top:0">Margaret includes receipts with Joint Checking.</p>${[['2026-10-06', 'St. Mark’s Parish', 250], ['2026-10-03', 'Duke Energy', 188.4]].map((r) => `<div class="list-item">${icon('receipt')}<div class="grow">${r[1]}<div class="small dim">${r[0]} · PDF</div></div>${money(r[2])}</div>`).join('')}</div>`,
+};
+function renderLinked() {
+  const parts = location.hash.replace(/^#\/?/, '').split('/');
+  const P = PEERS[parts[1]] || PEERS['griffin-parents'], sub = parts[2] || 'dashboard', sp = parts[3];
+  const u = USERS[state.user], themeIcon = { dark: 'moon', light: 'bulb', system: 'palette' }[state.theme];
+  const navActive = sub === 'account' ? 'accounts' : sub;
+  const item = ([k, l, ic]) => `<a class="nav-item ${navActive === k ? 'active' : ''}" data-go="linked/${P.id}/${k}" title="${l}">${icon(ic)}<span class="nav-label">${l}</span></a>`;
+  const title = state.locked ? 'Locked' : ({ dashboard: 'Dashboard', accounts: 'Accounts', account: 'Account', portfolios: 'Portfolios', transactions: 'Transactions', budgets: 'Budgets', gifts: 'Gifts', giving: 'Giving', taxes: 'Taxes', receipts: 'Receipts' }[sub] || 'Not found');
+  const body = state.locked ? `<div class="card locked-card">${hhAv(P, 56)}<h3>${P.name}</h3><p class="dim">What ${P.name} share with you is kept encrypted on this server. To open it, enter its access key: the 12 words in your household’s password manager.</p><p class="small dim">${LINK_SYNC} · applied when it opens</p><button class="btn primary mt" data-act="dlg" data-v="unlock">${icon('lock')} Enter the access key</button></div>`
+    : `<div class="peer-strip">${icon('link')}<b>${P.id}</b><span>read only</span><span class="dim">synced 41 min ago</span><span class="dim">unlocked by ${state.unlockedBy} at 14:05 · locks after an hour unused</span><span class="spacer"></span><button class="btn sm" data-act="lock">${icon('lock')} Lock now</button></div>${(PEER_SCREENS[sub] || (() => '<div class="empty">Nothing here.</div>'))(P, sp)}`;
+  $('#root').innerHTML = `<div class="app peer ${state.collapsed ? 'collapsed' : ''} ${state.help ? 'help-open' : ''}" style="--peer:${peerHue()}">
+    <aside class="side">
+      <div class="brand">${hhAv(P)}<div class="brand-text"><div class="brand-name">${P.name} <span class="pill-mock" data-act="mock" title="Mockup controls">MOCK</span></div><div class="brand-ver">${P.id} · read only</div></div></div>
+      <button class="collapse-btn" data-act="collapse" title="Collapse sidebar">${icon('chev')}</button>
+      <nav aria-label="${P.name}">${state.locked ? '' : PEER_NAV.map(item).join('')}</nav>
+      <div class="user-tile"><span class="avatar av-${u.username}">${u.initials}</span><div class="user-text"><b>${u.name}</b><span>viewing ${P.id}</span></div><button class="icon-btn" data-act="dlg" data-v="householdColour" title="Colour for ${P.name}">${icon('palette')}</button><button class="icon-btn" data-act="theme" title="Theme: ${state.theme}">${icon(themeIcon)}</button></div>
+    </aside>
+    <main>
+      <div class="help-corner" data-act="help" title="Show help (F1)"><span></span></div>
+      <div class="topbar"><h1><span class="crumb">${P.name} ›</span> ${title}</h1><button class="icon-btn" data-act="privacy" title="${state.privacy ? 'Show amounts' : 'Hide amounts (privacy mode)'}">${icon(state.privacy ? 'eye-off' : 'eye')}</button></div>
+      <div class="content">${body}</div>
+    </main>
+    <aside class="help" aria-label="Help"><button class="icon-btn help-close" data-act="help" title="Hide help (F1)">${icon('x')}</button><div id="help-body"></div></aside>
+  </div>`;
+  document.body.classList.toggle('privacy', state.privacy);
+  helpFor(null);
+}
+
 /* ---------- mock menu ---------- */
 function mockMenu(anchor) {
   closeMenu();
   const m = document.createElement('div'); m.className = 'menu'; m.id = 'menu';
-  const screens = [['dashboard', 'Dashboard'], ['accounts', 'Accounts'], ['account/fid', 'Account · brokerage'], ['account/cold', 'Account · self-custody wallet'], ['account/mom', 'Account · from a linked server'], ['account/mort', 'Account · mortgage (payoff planner)'], ['account/529', 'Account · 529 plan'], ['account/metals', 'Account · precious metals'], ['account/collect', 'Account · collectables'], ['account/house', 'Account · real estate'], ['gifts', 'Gifts'], ['giving', 'Giving'], ['transactions', 'Transactions'], ['portfolios', 'Portfolios'], ['portfolios/retire', 'Portfolio page'], ['positions', 'Positions'], ['budgets', 'Budgets'], ['projections', 'Projections'], ['taxes', 'Taxes'], ['receipts', 'Receipts'], ['watchlist', 'Watchlist'], ['activity', 'Activity'], ['users', 'Users and Groups'], ['settings', 'Settings'], ['profile', 'Profile'], ['signin', 'Sign in']];
-  const dialogs = [['receipt', 'Receipt (read, with a match)'], ['share', 'Share'], ['newAccount', 'New account'], ['trade', 'Record trade (option)'], ['import', 'Import'], ['upload', 'Add receipts'], ['linkInvite', 'Invite a server'], ['unlock', 'Unlock linked data'], ['copyKey', 'Linked copy access key (admin)'], ['person', 'Person'], ['gift', 'Gift'], ['donation', 'Record donation (shares)'], ['givingPlan', 'Giving plan'], ['assetItem', 'Physical-asset item'], ['taxBook', 'New tax book'], ['filing', 'Filing (federal, in progress)'], ['taxDoc', 'Add a tax document'], ['rebalance', 'Rebalance suggestion'], ['rules', 'Categorisation rules']];
+  const screens = [['dashboard', 'Dashboard'], ['accounts', 'Accounts'], ['account/fid', 'Account · brokerage'], ['account/cold', 'Account · self-custody wallet'], ['account/mort', 'Account · mortgage (payoff planner)'], ['account/529', 'Account · 529 plan'], ['account/metals', 'Account · precious metals'], ['account/collect', 'Account · collectables'], ['account/house', 'Account · real estate'], ['gifts', 'Gifts'], ['giving', 'Giving'], ['linked/griffin-parents', 'Linked household window'], ['linked/griffin-parents/portfolios/ret', 'Linked household · portfolio'], ['transactions', 'Transactions'], ['portfolios', 'Portfolios'], ['portfolios/retire', 'Portfolio page'], ['positions', 'Positions'], ['budgets', 'Budgets'], ['projections', 'Projections'], ['taxes', 'Taxes'], ['receipts', 'Receipts'], ['watchlist', 'Watchlist'], ['activity', 'Activity'], ['users', 'Users and Groups'], ['settings', 'Settings'], ['profile', 'Profile'], ['signin', 'Sign in']];
+  const dialogs = [['receipt', 'Receipt (read, with a match)'], ['share', 'Share'], ['newAccount', 'New account'], ['trade', 'Record trade (option)'], ['import', 'Import'], ['upload', 'Add receipts'], ['linkInvite', 'Invite a server'], ['unlock', 'Unlock linked data'], ['copyKey', 'Linked copy access key (admin)'], ['householdColour', 'Colour for a linked household'], ['person', 'Person'], ['gift', 'Gift'], ['donation', 'Record donation (shares)'], ['givingPlan', 'Giving plan'], ['assetItem', 'Physical-asset item'], ['taxBook', 'New tax book'], ['filing', 'Filing (federal, in progress)'], ['taxDoc', 'Add a tax document'], ['rebalance', 'Rebalance suggestion'], ['rules', 'Categorisation rules']];
   m.innerHTML = `<div class="mh">Signed in as</div>${Object.values(USERS).slice(0, 2).map((u) => `<button data-act="as" data-v="${u.username}" class="${state.user === u.username ? 'on' : ''}"><span class="avatar sm av-${u.username}">${u.initials}</span>${u.name} ${u.admin ? '(admin)' : ''}</button>`).join('')}
     <div class="mh">State</div><button data-act="stale" class="${state.stale ? 'on' : ''}">Prices stale</button><button data-act="privacy" class="${state.privacy ? 'on' : ''}">Privacy mode</button><button data-act="mupdate" class="${state.update ? 'on' : ''}">Update available</button><button data-act="mnew">3 new rows arrive</button><button data-act="mupload">Upload a receipt (reads it)</button><button data-act="mlock" class="${state.locked ? 'on' : ''}">Linked data locked</button>
     <div class="mh">Dialogs</div>${dialogs.map(([k, l]) => `<button data-act="dlg" data-v="${k}">${l}</button>`).join('')}
@@ -1835,11 +1896,12 @@ document.addEventListener('click', (e) => {
     case 'dlg': e.stopPropagation(); showDialog(v, { ...t.dataset }); break;
     case 'close': closeDialog(); break;
     case 'taxbook-go': { const b = TAX_BOOKS.find((x) => x.id === v); state.taxBook = b.id; state.year = b.year; render(); break; }
-    case 'lock': state.locked = true; render(); toast('Linked data locked'); break;
+    case 'lock': state.locked = true; render(); toast('griffin-parents locked for everyone'); break;
+    case 'hue': state.peerHue[state.user] = v; closeDialog(); render(); break;
     case 'mlock': state.locked = !state.locked; render(); break;
     case 'pfsw': state.payoff[v] = !state.payoff[v]; render(); break;
     case 'goalcost': state.goal.cost = +v; render(); break;
-    case 'ok': closeDialog(); if (v === 'Upload') simulateUpload(); else if (v === 'Unlock') { const first = needsWords(); state.entered[state.user] = true; state.locked = false; render(); toast(first ? 'Access key accepted · from now on, signing in opens it' : 'Unlocked · applied 12 changes from griffin-parents'); } else if (v === 'Done, words saved') toast('Access key made · pulling from ortiz-cpa'); else toast(v === 'Done' ? 'Waiting for the other server' : `${v}: done (mock)`); break;
+    case 'ok': closeDialog(); if (v === 'Upload') simulateUpload(); else if (v === 'Unlock') { state.locked = false; state.unlockedBy = USERS[state.user].name.split(' ')[0]; render(); toast('Unlocked · applied 12 changes from griffin-parents'); } else if (v === 'Done, words saved') toast('Access key made · pulling from ortiz-cpa'); else toast(v === 'Done' ? 'Waiting for the other server' : `${v}: done (mock)`); break;
     case 'newitems': state.newItems = 0; render(); toast('Loaded the newest rows'); break;
     case 'update': toast('Reloading to the new version (mock)'); state.update = false; render(); break;
     case 'pgsize': break;

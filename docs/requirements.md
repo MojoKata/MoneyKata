@@ -75,8 +75,9 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
     2026-10-11). Each link's shared data lives in its own **linked copy**: a SQLCipher
     database plus one encrypted file per receipt, in a folder of its own, never in the main
     database. It opens with the copy's own **access key**, 12 generated words that the
-    receiving admin keeps and gives to their household, never with the master key. The copy
-    keeps syncing while it is locked (§14.9).
+    receiving household keeps in its password manager, never with the master key. The key
+    protects the copy at rest; who sees what is decided by the owner's shares. The copy
+    keeps syncing while it is locked, and its key is released after an hour unused (§14.9).
 19. **Beyond investments** (decided 2026-10-11): MoneyKata also covers **529 plans** (§4.8),
     **mortgages and other loans** with payoff and overpayment projections (§4.9, §9.7),
     **physical assets** such as precious metals, collectables, property and vehicles, with
@@ -94,11 +95,12 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
     any amendment. Another user can be given write access to help prepare it (§11.14).
     MoneyKata still prepares worksheets only and never files.
 22. **Owners choose people on other servers** (decided 2026-10-11). Linked servers exchange
-    their lists of active users, so an owner shares an account or portfolio with named people
-    on another server, as they do with people on their own (§13.3). A linked user opens what
-    is shared with them by entering the linked copy's access key once. After that, signing
-    in unlocks it (§14.9). This suits household servers; a server for more than a household
-    would need users to opt in to being listed (§22).
+    their lists of active users, so an owner shares any of the six shareable kinds (account,
+    portfolio, budget, person, giving plan, tax book) with named people on another server,
+    as they do with people on their own (§13.3). What a household shares is shown in a
+    **window of its own**, never mixed with this household's data (§15.10). This suits
+    household servers; a server for more than a household would need users to opt in to
+    being listed (§22).
 
 # 2. Terminology
 
@@ -123,10 +125,10 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
 9. **Share:** a grant of one account or portfolio to a user, a group or a linked server, at a
    **level**: `read` or `write` (§13). A share to a linked server is always `read`.
 10. **Linked server (peer):** another MoneyKata server this one has a **link** with (§14).
-    What a link brings in is kept in that link's **linked copy**, which is encrypted under
-    its own **access key**: 12 generated words that the receiving admin keeps. A user who
-    is shared something there enters the words once, and from then on signing in unlocks it
-    (§14.9).
+    What a link brings in is kept in that link's **linked copy**, encrypted under its own
+    **access key**: 12 generated words that the receiving household keeps. The copy is
+    **locked** until someone it shares with enters the words, and locks again after an hour
+    unused. It is shown in its own **linked household** window (§14.9, §15.10).
 11. **Price provider:** a source of prices for one or more instrument classes (§7).
 12. **Projection:** a saved scenario of contributions, returns and withdrawals over time
     (§9).
@@ -410,7 +412,10 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
 1. **A portfolio** is a named set of accounts (or chosen holdings of them), owned by a user
    and shareable like an account (§13). A portfolio may include an account shared with its
    owner at `read`. Viewers of the portfolio see that account only if it is also shared with
-   them, otherwise as one line with its value alone *(open, §21.6)*.
+   them, otherwise as one line with its value alone *(open, §21.6)*. A portfolio never
+   includes an account from a linked server: linked data is shown only in its own window
+   (§15.10). A portfolio shared across a link shows the accounts in it that are not shared
+   with the viewer as one line each, with its value alone.
 2. **Charts each portfolio has:**
    1. **Value over time** (line or area; 1M, 3M, YTD, 1Y, 5Y, All, and a range brush), with
       contributions shown apart from growth, against a **benchmark** (SPY, VT, a 60/40 mix);
@@ -493,7 +498,7 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
 7. **People and occasions.** Each user keeps their own list of **people** (on the Gifts
    screen):
    1. **A person has** a name, a relationship (child, parent, sibling, partner, friend, …),
-      an optional link to a user of this server, a **birthday** (the year optional, for
+      an optional link to a user of this server or of a linked server (§14), a **birthday** (the year optional, for
       their age), **anniversaries** (wedding, or any other, each with its own date), the
       **holidays** they get gifts for, a yearly **gift budget** or one per occasion, a
       reminder lead time (14 days by default), and notes (sizes, likes, what they already
@@ -521,7 +526,9 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
    5. **Privacy**: the people list and gifts are their owner's alone. A user may share a
       person (with their gifts) with another user or group, read or write, so a couple plans
       their children's gifts together. A gift for a person who is linked to a user is
-      **never shown to that user**, even through a share, so a surprise stays one.
+      **never shown to that user**, even through a share, so a surprise stays one. For a
+      user of a linked server, the owner's server leaves those gifts out before sending, so
+      they never reach the other server.
    6. **Gift-tax flag**: money given to one person in a year (cash gifts, and 529
       contributions, §4.8.2) above the annual exclusion is flagged for Form 709 (§11.11).
 9. **Charitable giving.**
@@ -783,19 +790,24 @@ produces worksheets and exports. It never files, and says so (§1.16).
    sees only the accounts and portfolios shared with them. Deactivating a user keeps their data.
    Deleting a user's data is a separate, confirmed action that names what will go *(open,
    §21.10)*.
-3. **What can be shared**: an **account** (with its transactions, holdings, positions and
-   receipts) or a **portfolio** (its charts and the accounts in it as §8.1 says), with a
-   **user** or a **group**, at:
+3. **What can be shared**: six kinds of item, each with one owner and its own list of shares:
+   | Kind | A share includes |
+   |---|---|
+   | **Account** | its transactions, holdings, positions and receipts; a loan's payoff plans and a physical-asset account's items |
+   | **Portfolio** | its charts and the accounts in it, as §8.1 says |
+   | **Budget** | its categories, plan, actuals and trends (§10.1) |
+   | **Person** | their occasions and gifts (§10.8.5) |
+   | **Giving plan** | its target, pace, donations and organisations (§10.9.1) |
+   | **Tax book** | its panels, filings and documents (§11.14.3) |
+
+   Each can be shared with a **user** or a **group**, at:
    1. **read**: see everything about it. A read share cannot change it, attach receipts or
       re-share it.
-   2. **write**: also add and edit transactions, import, categorise, attach receipts, and
-      edit its budget. A write share cannot delete the account, change its sharing, or see or
-      change its secrets (sync tokens, API keys), which stay the owner's.
-
-   A loan's payoff plans and a physical-asset account's items go with the account. A
-   **person** with their gifts (§10.8.5) and a **giving plan** (§10.9.1) are shared the same
-   way, with users and groups only, and so is a **tax book** (§11.14.3).
-   3. **People on linked servers**: an account or portfolio can also be shared with named
+   2. **write**: also change what the item holds: for an account, add and edit transactions,
+      import, categorise and attach receipts; for the other kinds, edit their entries. A
+      write share cannot delete the item, change its sharing, or see or change its secrets
+      (sync tokens, API keys), which stay the owner's.
+   3. **People on linked servers**: any of the six kinds can also be shared with named
       users of a linked server (§14), always **read**. Each server sends its peers its list
       of active users (display name, username and email), so they can be chosen like local
       users. Groups are not sent. When a remote user is deactivated, their shares are
@@ -817,9 +829,9 @@ produces worksheets and exports. It never files, and says so (§1.16).
    Shared by me, From linked servers.
 7. **A receiver's totals** (net worth, Dashboard) include shared accounts only if the
    receiver ticks **Count in my totals** on them, which is off by default. A spouse's accounts
-   then count once, and a parent's shared accounts don't inflate a child's net worth. A linked
-   account counts only while its linked copy is unlocked; while it is locked, the total says
-   it leaves out *N locked linked accounts* (§14.9).
+   then count once, and a parent's shared accounts don't inflate a child's net worth. What a
+   linked server shares never counts in this household's totals: it is shown only in its
+   own window (§15.10).
 8. **Activity** lists the changes worth showing, each naming who made it and what it is about,
    to the people concerned (the owner, the receivers, and admins for users and groups): shares given or taken away, accounts created, closed
    or deleted, imports, rule changes, links made or ended, and who did each. Amounts are
@@ -858,10 +870,18 @@ preparer.
    name, who it names and the date it was shared: its name and figures stay inside the
    encrypted linked copy (§14.9). A linked share cannot be re-shared on the other side, not
    even with another link. Each server also sends the other its **list of active users**
-   (display name, username, email and stable id), refreshed at every pull.
+   (display name, username, email and stable id) and its **household name and avatar**
+   (§19.1), refreshed at every pull.
+   1. **Each item travels as its screens show it, worked out at the source.** A budget's
+      actuals, a giving plan's pace and a tax book's panels are computed from accounts that
+      may not be shared themselves. The owner's server sends the figures and the entries
+      that make them up (a donation's date, organisation and amount; a Form 8949 row), never
+      the accounts behind them. An account shared as well arrives as its own item. The
+      receiving server never recomputes; it shows what arrived, with its age.
 4. **How data moves**: the receiving server **pulls a snapshot** of each linked share on a
-   schedule (hourly by default, and on demand). The snapshot holds accounts, balances,
-   holdings, positions, transactions and series, and receipts when the share includes them.
+   schedule (hourly by default, and on demand). The snapshot holds each shared item as
+   §14.3.1 says (for an account: balances, holdings, positions, transactions and series),
+   and receipts and documents when the share includes them.
    It is versioned, and only changes travel. Each change is **signed by the source's link
    key**, so the receiver can check it again when it applies it later. The receiver keeps
    its last copy in the link's encrypted **linked copy** (§14.9) and shows its age (*as of
@@ -869,39 +889,42 @@ preparer.
    unreachable, the copy stays, marked stale. When the share or the link is removed, the
    copy is deleted at the next pull, or at once by the receiving admin.
 5. **What crosses a link, and what never does**:
-   1. **Receipts** cross only when the owner ticks **Include receipts** on the share to that
-      link (off by default). Receipts are large and personal, so sending them is a choice
+   1. **Receipts** (and a tax book's document files) cross only when the owner ticks
+      **Include receipts** on the share to that link (off by default). Receipts are large and personal, so sending them is a choice
       made per share. They then travel with their dates, amounts, payees and the text read
       from them (§12.8), so the receiving side never runs OCR on them. Without the tick, the
       other side sees only how many receipts a transaction has.
-   2. **Never**: secrets, budgets' categories or rules (not shared by links *(open,
-      §21.11)*), people, gifts and giving plans, tax books, groups, and anything not shared
-      with someone on that server. Of the source's users, only the active-user list
-      (§14.3) crosses. Prices travel only as values already computed, with their
+   2. **Never**: secrets, categorisation rules, groups, gifts for a person linked to a user
+      of that server (§10.8.5), the accounts behind a shared item's figures unless they are
+      shared too, and anything not shared with someone on that server. Of the source's
+      users, only the active-user list (§14.3) crosses. Prices travel only as values already computed, with their
       `as_of` (§7.8).
 6. **Ending a link**: either admin ends it on their own side. The other side learns at its
    next call and deletes its copies. Ending a link deletes nothing on the source.
 7. **Settings › Linked servers** lists each link: the peer's name and address, its
    fingerprint, state (active, unreachable since…, ended), the last pull, and what flows each
    way, with *Pull now*, *Pause* and *End link*. For the linked copy it shows the changes
-   waiting to be applied, when its access key was made and by whom, which named users have
-   entered it and which have not yet, with *Create the access key* (§14.9.2) and *Reset
-   copy* (§14.9.8).
+   waiting to be applied, when its access key was made and by whom, and whether it is
+   unlocked (by whom, and when it will lock), with *Create the access key* (§14.9.2), *Lock
+   now* and *Reset copy* (§14.9.8). The section also sets **Release linked keys after**
+   (§14.9.4), one hour unused by default.
 8. **Audit**: each pull is recorded on both sides (who, when, which shares, how much
    changed). The receiving side records who viewed linked data, as for any account, and
-   every unlock, failed unlock, access key entered, access key made, and reset of a linked
-   copy.
+   every unlock (who), failed unlock, release (unused, Lock now or restart), access key made,
+   and reset of a linked copy.
 9. **Linked copies: kept apart and encrypted** (decided 2026-10-10). What a link brings in is
    someone else's money. A copy of it should not sit readable on this server's disk or in
-   its backups. The receiving admin keeps its access key, but can open only what is shared
-   with them.
+   its backups, or be readable by malware on this server while nobody is using it. Its
+   access key protects it at rest. Who sees what in it is decided by the owner's shares,
+   not by the key.
    1. **The linked copy.** Each link's received shares live in one folder under the data
       directory, `links/<link-id>/`, never in the main database:
 
       ```
       links/<link-id>/
         shared.db                 SQLCipher: accounts, holdings, positions, transactions,
-                                  series, receipt records, the text read from receipts,
+                                  series, budgets, people and gifts, giving plans, tax
+                                  books, receipt records, the text read from receipts,
                                   thumbnails, and what has been applied
         receipts/<random-id>.mkr  one encrypted file per receipt (§14.9.6)
         inbox/<sequence>.mks      sealed changes waiting to be applied (§14.9.5)
@@ -909,54 +932,53 @@ preparer.
 
       The main database holds only what is needed while the copy is locked: the link, the
       shared items' ids, kinds, owner's display name and the people they name (not their
-      names or values), the copy's public key, its keyslots, and the inbox's length and
-      newest `as_of`. File names are random, so the folder shows
+      names or values), the household's name and avatar, the copy's public key, and the
+      inbox's length and newest `as_of`. File names are random, so the folder shows
       no names, payees or dates.
    2. **The access key.** Each linked copy has a random 128-bit **copy key**, shown once as
       **12 words** from the BIP39 English word list (the last word carries a checksum). The
       words are the copy's **access key**.
       1. **Made by the receiving admin**, when the link's first share arrives: Settings ›
          Linked servers › **Create the access key**. The server makes the copy key, shows the
-         words once, and asks the admin to confirm they have saved them, for example in the
-         household's password manager. The admin gives the words to the people the shares
-         name. Pulls into the copy begin then.
+         words once, and asks the admin to confirm they have saved them, typically in the
+         household's password manager, where the people the shares name can reach them.
+         Pulls into the copy begin then.
       2. Separate keys are derived from the copy key with HKDF-SHA256, each under its own
          label: the **database key**, which SQLCipher uses as its raw key (`PRAGMA key =
          "x'…'"`), and the **copy's private key** (X25519), whose public half is stored in
          the main database.
-      3. The copy key is never stored as it is. Besides the words the admin keeps, it
-         exists only in **keyslots**, one for each user who has entered the words. There is
-         **no master-key slot**: the master key (§18) cannot open a linked copy.
-   3. **Entering the words once.** A user opens something shared with them from a linked
-      server. The first time, the server asks for the copy's 12 words.
-      1. The server checks the checksum and that the words derive the copy's stored public
-         key, then seals a keyslot for that user. Entering the words opens only what is
-         shared with that user. Knowing the words without a share opens nothing.
-      2. A keyslot is the copy key sealed to the user's **personal key pair** (X25519): an
-         X25519 exchange with a one-time key, HKDF-SHA256 over the result, then AES-256-GCM,
-         with associated data naming the link and the user.
-      3. The personal key pair is made the first time the user enters any copy's words. Its
-         private half is stored encrypted with AES-256-GCM under a key derived from the
-         user's **password** with Argon2id (64 MiB, 3 passes, a random 16-byte salt). The
-         password is not stored, so no admin can open it.
-      4. Changing the password re-encrypts only the personal private key. A **password
-         reset** cannot open it, so a reset makes a new key pair and deletes the user's
-         keyslots. They enter the words again for each copy.
-      5. Five wrong entries of the words in a row make the user wait 15 minutes.
-   4. **Locked and unlocked.**
-      1. Signing in opens the user's personal private key, which opens their keyslots. The
-         copy keys are then held **in the server's memory only**, for that user's session.
-         Nothing about them reaches the browser.
-      2. The copies lock again at sign-out, at **Lock now** (in the user menu and in
-         Profile), and when the server restarts. A copy's keys leave memory when the last
-         session holding them locks. A session that outlives a restart, or a Lock now, asks
-         for the password again through **Unlock linked data**.
-      3. Until a copy is unlocked, the items shared from it appear in lists by kind and
-         owner only, marked **Locked**, without names or values.
-      4. While a copy is locked for a user, nothing from it appears anywhere for them: not
-         in search, totals, charts, Activity or the Dashboard. A copy unlocked by one user
-         stays locked for everyone else.
-      5. Every unlock and every failure is recorded (§14.8).
+      3. The copy key is **never stored**, in any form. The server holds it only in memory
+         while the copy is unlocked. There is **no master-key slot**: the master key (§18)
+         cannot open a linked copy.
+   3. **Unlocking.** The copy is unlocked for the whole server, not per user.
+      1. When someone the copy's shares name opens its window (§15.10) while it is locked,
+         the server asks them for the 12 words. It checks the checksum and that the words
+         derive the copy's stored public key, then holds the copy key in memory. Nothing
+         about it reaches the browser.
+      2. While it is unlocked, **the owner's shares alone decide who sees what** (§14.3):
+         each user sees only the items that name them. Anyone named can open the window
+         without the words until the copy locks again. Knowing the words without a share
+         opens nothing.
+      3. **Wrong words**: five in a row make that user wait 15 minutes, and the copy
+         accepts at most 20 attempts an hour from all users together.
+   4. **Locking.**
+      1. The key is **released after it goes unused** for the time set in Settings › Linked
+         servers (§14.7), one hour by default. *Used* means a read made for a person: a
+         screen or export in the linked household's window. Background work, such as
+         applying a pull, does not count.
+      2. A sweeper task checks every minute and locks each copy past its time. Locking closes
+         the copy's SQLCipher connections, which wipes SQLCipher's own copy of the key, and
+         overwrites the server's copy of the key bytes. Python cannot promise that no other
+         copy lingers in memory until it is reclaimed, so this is a release, overwritten
+         where possible, not a guaranteed erasure.
+      3. It also locks at **Lock now** (in the linked household's window, and in Settings ›
+         Linked servers for admins), which anyone the copy shares with can press, and when
+         the server restarts.
+      4. While a copy is locked, its window asks for the words. Nothing from it appears
+         anywhere else at any time (§15.10).
+      5. The window's header says who unlocked it and when it will lock: *unlocked by Alice
+         at 14:05 · locks after an hour unused*. Every unlock, failure and release is
+         recorded (§14.8).
    5. **Staying in sync while locked.** Pulls (§14.4) never wait for an unlock.
       1. Each pulled change, still carrying the source's signature, is **sealed** to the
          copy's public key and written to `inbox/` as the next numbered file. Sealing needs
@@ -964,8 +986,8 @@ preparer.
          sealed.
       2. Receipts are written straight into `receipts/` in the same way. They never wait in
          the inbox.
-      3. The inbox is **applied** in order, in one transaction, as soon as any user holding a
-         keyslot unlocks the copy. Each change's signature is checked first, and a change that
+      3. The inbox is **applied** in order, in one transaction, as soon as the copy is
+         unlocked. Each change's signature is checked first, and a change that
          fails stops the apply and is reported. Applied files are deleted. While a copy stays
          unlocked, new pulls are applied as they arrive.
       4. If the inbox grows past 1,000 changes or 500 MB, the server discards it and asks the
@@ -995,32 +1017,25 @@ preparer.
       7. This is the AES-GCM-HKDF streaming construction (the one Tink uses), built on the
          `cryptography` library. It needs no further dependency.
    7. **Who can open what.** The owner's shares decide what each user sees (§14.3), and the
-      words decide whether the copy can be opened at all. Both are needed.
-      1. A user named in a share who has not yet entered the words sees *enter the access
-         key from your server's admin to open it*.
-      2. Removing a share hides the item from that user at once. Their keyslot stays while
-         anything else in the copy is shared with them, and is deleted when nothing is.
-         Users never see the copy key after entering the words, so removal needs no
-         re-keying. New words are needed only if the words reach someone who could also read
-         this server's disk (§14.9.10).
-   8. **Lost words.** The words are needed only by users who have not entered them yet, so
-      losing them changes nothing for anyone else.
-      1. **Reset copy** (Settings › Linked servers, admins) deletes the folder and every
-         keyslot, makes a new copy key with new words, and pulls everything again from the
-         source. Each user enters the new words once.
-      2. Nothing is lost. The linked copy is only a copy, and the source keeps the data. The
-         master key has a recovery phrase because it is the only way into this server's own
-         data (§18.6); a copy key does not need one.
+      words decide whether the copy can be opened at all. Removing a share hides the item
+      from that user at once, with no re-keying. New words are needed only if they reach
+      someone who could also read this server's disk (§14.9.10).
+   8. **Lost words.** **Reset copy** (Settings › Linked servers, admins) deletes the folder,
+      makes a new copy key with new words, and pulls everything again from the source.
+      Nothing is lost: the linked copy is only a copy, and the source keeps the data. The
+      master key has a recovery phrase because it is the only way into this server's own
+      data (§18.6); a copy key does not need one.
    9. **Backups** leave linked copies out (§17.6). After a restore, the admin makes a new
       access key for each link, and each copy is pulled in full from its source.
    10. **What this protects against, and what it does not.** A stolen disk, a backup that
        leaves the house, and this server's admin or root reading files while the copy is
        locked reveal nothing of a linked copy beyond its size, its number of receipts and
        when changes arrived, unless they also have the words. It does **not** protect
-       against root on the running server while a user has the copy unlocked (the keys are
-       then in the server's memory, and no design changes that), or against the receiving
-       admin, who keeps the words, reading the copy's files outside the app. The source's
-       owner is trusting the people they name and the household's admin.
+       against root, or malware running as the server, while the copy is unlocked: the key is
+       then in the server's memory, and no design changes that. Releasing the key after an
+       hour unused keeps that window short. Nor does it protect against someone with the
+       words reading the copy's files outside the app. The source's owner is trusting the
+       people they name and the household that keeps the words.
    11. **The engine**: SQLCipher through the `sqlcipher3` wheel, which bundles SQLCipher,
        opened as a second SQLAlchemy engine for each unlocked copy. Each copy keeps its own
        Alembic history (§17.1), which is applied when it is unlocked.
@@ -1029,8 +1044,9 @@ preparer.
 
 1. **Frame**: drawn once around every signed-in screen, from one list of navigation entries;
    no screen draws or changes it.
-   1. A **sidebar** pinned to the viewport: the brand with the version (and a red **DEV** pill
-      in dev mode), the navigation with count badges, and at its foot the signed-in user's
+   1. A **sidebar** pinned to the viewport: the household's avatar and name with the version
+      (and a red **DEV** pill in dev mode), the navigation with count badges, the **Linked
+      households** list (§15.10), and at its foot the signed-in user's
       tile with the **theme** button (crescent moon for dark, lightbulb for light, palette
       for the system's; a click moves to the next). A round button on its edge collapses it
       to icons and opens it again; the browser remembers which.
@@ -1075,9 +1091,8 @@ preparer.
    12. **Watchlist** *(small)*: instruments the user follows without holding them;
    13. **Activity**: the changes of §13.8, newest first, filtered by account and person;
    14. **Users and Groups**, **Settings** (admins);
-   15. the user tile opens **Profile** (name, email, avatar, password, two-step, linked
-       copies opened, reporting currency, birth year, spouse for wash sales), **Lock now**
-       while any linked copy is unlocked (§14.9.4), and **Sign out**.
+   15. the user tile opens **Profile** (name, email, avatar, password, two-step, reporting
+       currency, birth year, spouse for wash sales) and **Sign out**.
 3. **Privacy mode**: a button in the header (an eye) blurs every amount on the page until
    clicked again, for using the app with someone looking over your shoulder. The browser
    remembers it.
@@ -1132,6 +1147,36 @@ preparer.
    into `docs/mockups/MoneyKata-mock.html`, and `web/check` fails while
    it is out of date. Until `web/ui` exists, the file is hand-written (as now) and is the
    reference for the screens.
+10. **Linked households.** What another household shares is a world of its own, so it is
+    never shown together with this household's data. It opens in a **window of its own**.
+    1. **Where to find them**: the sidebar's **Linked households** list, under the
+       navigation, and a card on Accounts. Each row shows the household's avatar and name,
+       how many items it shares with you, and when it last synced. It shows no names or
+       amounts. A household that shares nothing with you is not listed.
+    2. **Opening one** follows a plain link to `/ui/linked/<link-id>/` with
+       `target="mk-linked-<link-id>"`, so a pop-up blocker doesn't stop it, a second click
+       goes to the window already open, and it can be bookmarked. Whether it opens as a
+       window or a tab is the browser's choice. It uses the same sign-in, so signing out in
+       either ends both.
+    3. **The window** is the same frame, read only:
+       1. the household's **avatar and name** in place of this household's, always as the
+          source server sets them (§19.1);
+       2. the sidebar tinted with **a colour each user chooses** for that household, from a
+          fixed palette that reads well in dark and light themes. A new household gets the
+          next unused colour. The name, avatar and a header strip always show as well, so
+          colour is never the only sign;
+       3. a **header strip**: *griffin-parents · read only · synced 41 min ago · unlocked by
+          Alice at 14:05 · Lock now*;
+       4. the screens for the kinds shared with you: Dashboard (only what is shared with
+          you), Accounts, Portfolios, Positions, Transactions, Budgets, Gifts, Giving, Taxes
+          and Receipts. The navigation lists only the kinds you have something from. There is
+          no Settings, Profile, Watchlist, import, sharing or editing;
+       5. the user tile shows you, the local user, *viewing griffin-parents*.
+    4. **Locked**: the window shows only the household's name and avatar and the request for
+       the access key (§14.9.3). If the copy locks while the window is open, the window
+       returns to that request.
+    5. **Never mixed**: nothing from a linked household appears in this household's lists,
+       totals, charts, search, portfolios, budgets, taxes or Activity.
 
 # 16. Architecture
 
@@ -1419,8 +1464,10 @@ what key rotation does.
 One screen with a section list on the left, **General first** and selected when Settings
 opens. Each section has its own help guide. In this order:
 
-1. **General**: server name (shown under the brand and to linked servers), public URL (links in
-   emails are built from it, never from the request), default reporting currency.
+1. **General**: server name (shown to linked servers), the **household name and avatar** (an
+   image, or initials; shown at the top of the sidebar here, and sent to linked servers,
+   which always show them as set here, §15.10), public URL (links in emails are built from
+   it, never from the request), default reporting currency.
 2. **Email (SMTP)**: host, port, security, username, password (a secret), from address, and
    **Send a test email**.
 3. **Sign-in and sessions**: idle and absolute session lifetimes, lockout after failed
@@ -1432,8 +1479,9 @@ opens. Each section has its own help guide. In this order:
 7. **Sync sources**: SimpleFIN and others, and how often they run.
 8. **Crypto**: chain-explorer addresses and keys.
 9. **Linked servers** (§14.7): the links, and each linked copy's state: changes waiting, its
-   access key (*Create the access key*, made when and by whom), which named users have
-   entered it, and *Reset copy*.
+   access key (*Create the access key*, made when and by whom), locked or unlocked (by whom,
+   and when it will lock), *Lock now* and *Reset copy*, and **Release linked keys after**
+   (one hour unused by default).
 10. **Receipts**: the size limit and allowed types; **Read receipts** on or off, jobs at a
     time, the reading queue, and **Re-read all receipts** (§12.8.7).
 11. **Tax tables**: per year, shipped and correctable: contribution limits and thresholds,
@@ -1584,7 +1632,8 @@ opens. Each section has its own help guide. In this order:
 8. **New server dependencies**: ofxtools and pillow-heif.
 9. **OCR** of receipts: *decided 2026-10-10*, RapidOCR on the server (§12.8).
 10. **Deleting a user's data**: who can do it, and with what confirmation and grace period?
-11. **Budgets across a link**: should a linked share ever carry a budget's figures?
+11. **Budgets across a link**: *decided 2026-10-11*, yes. A budget is one of the six kinds
+    that can be shared across a link, as its screens show it (§14.3.1).
 12. **An agent interface** (MCP or REST with access tokens bound to one account or portfolio) so an AI assistant can
     read, but not change, a user's finances: later, never, or from the start?
 13. **Packaging**: RPM, OCI image, or both?
