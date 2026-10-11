@@ -18,8 +18,8 @@ purple **MOCK** pill jumps to any screen, switches between users, and opens the 
 
 # 1. Decisions
 
-These are the starting rulings (2026-10-10). Later sections apply them. Rulings marked
-*(proposed)* are recommendations waiting for a decision.
+The rulings the rest of this document applies. Rulings marked *(proposed)* are
+recommendations waiting for a decision.
 
 1. **The stack** (§20): a Python server (FastAPI under Hypercorn), SQLite through
    **SQLAlchemy** with **Alembic** migrations, and a browser app with **no build step** (Preact,
@@ -55,7 +55,7 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
     phrase, only public addresses or extended public keys (§4.6).
 12. **Receipts are files on the server**, PDF or image, uploaded from the browser and attached
     to transactions, tax items or nothing (§12).
-13. **Everything the server stores is encrypted at rest** (decided 2026-10-11): the database
+13. **Everything the server stores is encrypted at rest**: the database
     (SQLCipher), the receipt files, and each secret on its own. All of it opens with one
     **master key**, kept in a file on the host outside the database and its backups, and
     backed up as a **12-word recovery phrase** (§18). The server's own account reads the key
@@ -68,33 +68,32 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
 16. **MoneyKata informs and does not advise.** Tax reports, projections and gain/loss figures
     are worksheets for the user or their preparer. They are not tax, legal or investment
     advice, and the screens say so where it matters (§11.18).
-17. **Receipts are read on the server with RapidOCR** (decided 2026-10-10): open source, CPU
+17. **Receipts are read on the server with RapidOCR**: open source, CPU
     only, models shipped with the app, run as a sandboxed background job. Results are
     suggestions the user confirms (§12.8).
-18. **What a link brings in is kept apart and encrypted** (decided 2026-10-10, revised
-    2026-10-11). Each link's shared data lives in its own **linked copy**: a SQLCipher
+18. **What a link brings in is kept apart and encrypted**. Each link's shared data lives in its own **linked copy**: a SQLCipher
     database plus one encrypted file per receipt, in a folder of its own, never in the main
     database. It opens with the copy's own **access key**, 12 generated words that the
     receiving household keeps in its password manager, never with the master key. The key
     protects the copy at rest; who sees what is decided by the owner's shares. The copy
     keeps syncing while it is locked, and its key is released after an hour unused (§14.9).
-19. **Beyond investments** (decided 2026-10-11): MoneyKata also covers **529 plans** (§4.8),
+19. **Beyond investments**: MoneyKata also covers **529 plans** (§4.8),
     **mortgages and other loans** with payoff and overpayment projections (§4.9, §9.7),
     **physical assets** such as precious metals, collectables, property and vehicles, with
     notes, purchase dates and cost basis (§4.10), **gifts** to the people in a user's life
     for their birthdays, anniversaries and holidays (§10.7, §10.8), and **charitable giving**
     against a target set as a percentage of income (§10.9).
-20. **Schema conventions** (decided 2026-10-11): tables are declared with SQLAlchemy Core,
+20. **Schema conventions**: tables are declared with SQLAlchemy Core,
     with no logic beside them, and mapped onto plain dataclasses (§17.1). Table names are
     singular and capitalized, field names camelCase, and primary keys a short prefix plus a
     Crockford-encoded UUIDv7, such as `User_01k7ab4vstfggspkjt3my8wzr2`.
     [`schema.md`](schema.md) holds the conventions and the list of prefixes.
-21. **Taxes are kept in tax books** (decided 2026-10-11): one per user, or married couple,
+21. **Taxes are kept in tax books**: one per user, or married couple,
     and year. A tax book holds the documents received and one **filing** per return
     (federal, state, local), each with the forms as filed, the tax authority's letters and
     any amendment. Another user can be given write access to help prepare it (§11.14).
     MoneyKata still prepares worksheets only and never files.
-22. **Owners choose people on other servers** (decided 2026-10-11). Linked servers exchange
+22. **Owners choose people on other servers**. Linked servers exchange
     their lists of active users, so an owner shares any of the six shareable kinds (account,
     portfolio, budget, person, giving plan, tax book) with named people on another server,
     as they do with people on their own (§13.3). What a household shares is shown in a
@@ -214,7 +213,7 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
    2. **file import**: OFX/QFX/QBO, CSV (with a saved column mapping per institution), and
       brokers' trade-history CSVs. Imports are idempotent: a re-imported file adds only what is
       new, matched by the file's transaction id or by date, amount and payee;
-   3. **sync** *(open, §21.3)*: a bank-aggregation service such as **SimpleFIN Bridge**
+   3. **sync** *(open, §21.1)*: a bank-aggregation service such as **SimpleFIN Bridge**
       (inexpensive, read-only, a token per user). Its token is a secret (§17.4);
    4. **exchange API** (crypto exchanges): read-only API keys, balances and trades (§4.5);
    5. **chain watch** (self-custody wallets): balances and transactions read from public
@@ -385,8 +384,8 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
    | **Finnhub** | US equities: delayed quotes | free key | 60 calls/min free |
    | **Alpha Vantage** | equities, FX, crypto | free key | 25 calls/day free: only as a fallback |
    | **CoinGecko** | crypto prices and history | free demo key | the default for coins |
-   | **Stooq** (metals) | gold, silver, platinum and palladium spot (`XAUUSD`, `XAGUSD`, `XPTUSD`, `XPDUSD`): daily | none | metals as FX pairs, for §4.10's spot valuation; to be confirmed (§21.17) |
-   | **Tradier** | **options chains and quotes** (delayed) | free developer account | the likeliest free source of option marks; to be confirmed (§21.4) |
+   | **Stooq** (metals) | gold, silver, platinum and palladium spot (`XAUUSD`, `XAGUSD`, `XPTUSD`, `XPDUSD`): daily | none | metals as FX pairs, for §4.10's spot valuation; to be confirmed (§21.12) |
+   | **Tradier** | **options chains and quotes** (delayed) | free developer account | the likeliest free source of option marks; to be confirmed (§21.2) |
    | **Yahoo Finance** (unofficial) | everything | none | no API terms and breaks without notice; **not shipped**, at most an opt-in dev plugin |
    | **manual** | anything | — | a price typed in, such as a 401(k) fund's unit value from a statement |
 
@@ -412,7 +411,7 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
 1. **A portfolio** is a named set of accounts (or chosen holdings of them), owned by a user
    and shareable like an account (§13). A portfolio may include an account shared with its
    owner at `read`. Viewers of the portfolio see that account only if it is also shared with
-   them, otherwise as one line with its value alone *(open, §21.6)*. A portfolio never
+   them, otherwise as one line with its value alone *(open, §21.4)*. A portfolio never
    includes an account from a linked server: linked data is shown only in its own window
    (§15.10). A portfolio shared across a link shows the accounts in it that are not shared
    with the viewer as one line each, with its value alone.
@@ -452,7 +451,7 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
 4. **Scenarios compare** side by side, for example retiring at 60 against 65, or contributing
    $500 more a month.
 5. The **computation runs on the server** (pure Python, seeded, so a scenario's figures are
-   reproducible) and returns percentiles per year. NumPy is an open question (§21.7).
+   reproducible) and returns percentiles per year. NumPy is an open question (§21.5).
 6. The screen states its assumptions in full under the chart and says plainly that it is a
    model, not a forecast.
 7. **Loan payoff planner** (on each loan's *Payoff* tab, §4.9.5). It compares the schedule
@@ -510,7 +509,7 @@ These are the starting rulings (2026-10-10). Later sections apply them. Rulings 
    3. **Upcoming occasions**: the next 60 days of everyone's dates, each with its budget,
       the gifts planned so far, and what is still missing. Those inside their lead time show
       on the Dashboard (*Emma's birthday in 9 days, no gift yet*). Email reminders wait for
-      notifications (§21.18).
+      notifications (§21.13).
 8. **Gifts.**
    1. **A gift** is for one or more people and an occasion (and its year): a description,
       a **status** (*idea*, *planned*, *bought*, *given*), its cost, where it was bought, a
@@ -688,7 +687,7 @@ produces worksheets and exports. It never files, and says so (§1.16).
 7. **Retention**: a receipt is deleted only by its owner and only when nothing links to it.
    The file is removed when no receipt row names its hash. Backups include the receipts
    directory (§17.6).
-8. **Reading receipts (OCR)** (decided 2026-10-10): MoneyKata reads the date, total and merchant
+8. **Reading receipts (OCR)**: MoneyKata reads the date, total and merchant
    from each receipt **on the server, with RapidOCR**, and suggests the transaction it belongs
    to. Nothing leaves the server, and no external service, model download or GPU is involved.
    1. **What it produces**: the receipt's full text, and **suggested fields**: date, total,
@@ -789,7 +788,7 @@ produces worksheets and exports. It never files, and says so (§1.16).
 2. **Admins are not superusers of money.** An admin manages users, groups and Settings, and
    sees only the accounts and portfolios shared with them. Deactivating a user keeps their data.
    Deleting a user's data is a separate, confirmed action that names what will go *(open,
-   §21.10)*.
+   §21.7)*.
 3. **What can be shared**: six kinds of item, each with one owner and its own list of shares:
    | Kind | A share includes |
    |---|---|
@@ -912,7 +911,7 @@ preparer.
    changed). The receiving side records who viewed linked data, as for any account, and
    every unlock (who), failed unlock, release (unused, Lock now or restart), access key made,
    and reset of a linked copy.
-9. **Linked copies: kept apart and encrypted** (decided 2026-10-10). What a link brings in is
+9. **Linked copies: kept apart and encrypted**. What a link brings in is
    someone else's money. A copy of it should not sit readable on this server's disk or in
    its backups, or be readable by malware on this server while nobody is using it. Its
    access key protects it at rest. Who sees what in it is decided by the owner's shares,
@@ -1045,8 +1044,8 @@ preparer.
 1. **Frame**: drawn once around every signed-in screen, from one list of navigation entries;
    no screen draws or changes it.
    1. A **sidebar** pinned to the viewport: the household's avatar and name with the version
-      (and a red **DEV** pill in dev mode), the navigation with count badges, the **Linked
-      households** list (§15.10), and at its foot the signed-in user's
+      (and a red **DEV** pill in dev mode), the navigation with count badges, and at its
+      foot the signed-in user's
       tile with the **theme** button (crescent moon for dark, lightbulb for light, palette
       for the system's; a click moves to the next). A round button on its edge collapses it
       to icons and opens it again; the browser remembers which.
@@ -1145,14 +1144,16 @@ preparer.
    pill goes) jumps to any screen, switches users, opens dialogs and changes state (prices
    stale, privacy mode). `web/ui/mockup/build.py` inlines the app and an in-page fake backend
    into `docs/mockups/MoneyKata-mock.html`, and `web/check` fails while
-   it is out of date. Until `web/ui` exists, the file is hand-written (as now) and is the
+   it is out of date. Until `web/ui` exists, the file is hand-written and is the
    reference for the screens.
 10. **Linked households.** What another household shares is a world of its own, so it is
     never shown together with this household's data. It opens in a **window of its own**.
-    1. **Where to find them**: the sidebar's **Linked households** list, under the
-       navigation, and a card on Accounts. Each row shows the household's avatar and name,
-       how many items it shares with you, and when it last synced. It shows no names or
-       amounts. A household that shares nothing with you is not listed.
+    1. **Where to find them**: a click on the household's avatar at the top of the sidebar
+       opens a menu of the linked households, with no title. A **Linked households** card on
+       Accounts lists them too. Each entry shows the household's avatar and name, how many
+       items it shares with you, and when it last synced, and no names or amounts. A
+       household that shares nothing with you is not listed. With none, the avatar opens no
+       menu.
     2. **Opening one** follows a plain link to `/ui/linked/<link-id>/` with
        `target="mk-linked-<link-id>"`, so a pop-up blocker doesn't stop it, a second click
        goes to the window already open, and it can be bookmarked. Whether it opens as a
@@ -1183,7 +1184,7 @@ preparer.
 1. One HTTPS address. `/` redirects to `/ui`. `/ui/*` serves the app and `/ui/api/*` its API.
    `/link/*` is the linked-server API (§14). `/healthz` is the health check. There are no
    agent tokens *(an MCP endpoint for agents is an open question,
-   §21.12)*.
+   §21.8)*.
 2. **Authentication**: server-side sessions for `/ui/api` (a random token stored hashed, in an
    HttpOnly, Secure, SameSite=Strict cookie, with an `Origin` check on every change; idle and
    absolute lifetimes are Settings). Signed peer requests for
@@ -1255,8 +1256,7 @@ preparer.
    restore is documented, and tested by a check. Linked copies (`links/`) are left out: they
    can't be checked without their access keys, and they are pulled again from their sources
    after a restore (§14.9.9).
-7. **Financial data at rest** is encrypted with the rest of the database (decided
-   2026-10-11, §18.1). Ordinary SQLite tools can't read it. `moneykata db shell` opens it,
+7. **Financial data at rest** is encrypted with the rest of the database (§18.1). Ordinary SQLite tools can't read it. `moneykata db shell` opens it,
    as root on the host, with the key from the key file.
 8. **Export**: a user can export their own data (accounts, transactions, lots, receipts) as a
    ZIP of CSVs and files, at any time. This is the way out, and the backup a single user can
@@ -1285,10 +1285,9 @@ what key rotation does.
    7. **Not encrypted**: the configuration file, the logs, which must never hold amounts,
       names or secrets, and the key file itself (§18.4).
 2. **No external key service.** MoneyKata keeps its master key in a file on the host.
-   HashiCorp Vault, cloud KMSs (AWS, GCP, Azure), HSMs and TPM sealing are **not supported**
-   (decided 2026-10-10). On a household server, an external service adds a dependency that
-   must be running, backed up and secured itself, for little gain over a key file with
-   good offline backups.
+   HashiCorp Vault, cloud KMSs (AWS, GCP, Azure), HSMs and TPM sealing are **not supported**.
+   On a household server, an external service adds a dependency that must be running,
+   backed up and secured itself, for little gain over a key file with good offline backups.
 3. **How it works: three levels of keys.**
    1. **The master key**: 128 random bits in one file on the host (§18.4), made once at
       install. It is backed up as its **recovery phrase**: the same 128 bits written as 12
@@ -1529,7 +1528,7 @@ opens. Each section has its own help guide. In this order:
    §14.9), **rapidocr** with **onnxruntime** (receipt reading, §12.8). rapidocr brings
    numpy, opencv-python-headless, shapely, pyclipper and pyyaml with it, about 100 MB in all;
    the RPM or image carries them, and they load only in the receipt worker. Proposed:
-   **ofxtools** (OFX/QFX parsing, pure Python) and perhaps **pillow-heif** (HEIC) (§21.8).
+   **ofxtools** (OFX/QFX parsing, pure Python) and perhaps **pillow-heif** (HEIC) (§21.6).
    Standard library for email (`smtplib`), config (`tomllib`), logging and the command line.
    Pinned exactly in `uv.lock`, Python 3.12.
 3. **The browser app: no build step.** The files in `web/ui` are the files the browser loads.
@@ -1607,47 +1606,39 @@ opens. Each section has its own help guide. In this order:
    one machine. Emails are written to `web/.dev/mail/` and their links printed. A red **DEV**
    pill shows on every screen. Dev mode refuses to run as root or on an installed server's
    data directory, and never calls a real provider unless one is configured.
-8. **Packaging and deployment** *(open, §21.13)*: a self-contained RPM (its own CPython and
+8. **Packaging and deployment** *(open, §21.9)*: a self-contained RPM (its own CPython and
    venv), or an OCI image, since a home
    server is more likely a NAS, a Raspberry Pi or a Proxmox container than RHEL. The Python is
    portable either way; the decision is about the installer.
 
 # 21. Open questions
 
-1. **The keys process**: *decided 2026-10-11*, none. The server's own account reads the key
-   file (§18.4).
-2. **Whole-database encryption**: *decided 2026-10-11*, yes, with SQLCipher under the data
-   key (§18.3).
-3. **Bank sync**: SimpleFIN Bridge (about $15/year per user, read-only, simple), something
+1. **Bank sync**: SimpleFIN Bridge (about $15/year per user, read-only, simple), something
    else, or file import only to start?
-4. **Option prices**: confirm Tradier's free developer access for delayed chains, or settle
+2. **Option prices**: confirm Tradier's free developer access for delayed chains, or settle
    for manual and intrinsic marks.
-5. **Which crypto exchanges and chains first.** A proposal: Coinbase and Kraken; Bitcoin
+3. **Which crypto exchanges and chains first.** A proposal: Coinbase and Kraken; Bitcoin
    (xpub) and Ethereum.
-6. **A portfolio including an account its viewers can't see**: hide it, or show it as one
+4. **A portfolio including an account its viewers can't see**: hide it, or show it as one
    value line?
-7. **NumPy** for Monte Carlo, or pure Python (1000 × 50 years is fine)? NumPy is installed
-   anyway as a dependency of receipt reading (§12.8), so size no longer argues against it;
+5. **NumPy** for Monte Carlo, or pure Python (1000 × 50 years is fine)? NumPy is installed
+   anyway as a dependency of receipt reading (§12.8), so size doesn't argue against it;
    the question is only whether the server process should import it.
-8. **New server dependencies**: ofxtools and pillow-heif.
-9. **OCR** of receipts: *decided 2026-10-10*, RapidOCR on the server (§12.8).
-10. **Deleting a user's data**: who can do it, and with what confirmation and grace period?
-11. **Budgets across a link**: *decided 2026-10-11*, yes. A budget is one of the six kinds
-    that can be shared across a link, as its screens show it (§14.3.1).
-12. **An agent interface** (MCP or REST with access tokens bound to one account or portfolio) so an AI assistant can
-    read, but not change, a user's finances: later, never, or from the start?
-13. **Packaging**: RPM, OCI image, or both?
-14. **Multi-currency depth**: reporting currency only, or full FX gain and loss for foreign
+6. **New server dependencies**: ofxtools and pillow-heif.
+7. **Deleting a user's data**: who can do it, and with what confirmation and grace period?
+8. **An agent interface** (MCP or REST with access tokens bound to one account or portfolio)
+   so an AI assistant can read, but not change, a user's finances: later, never, or from
+   the start?
+9. **Packaging**: RPM, OCI image, or both?
+10. **Multi-currency depth**: reporting currency only, or full FX gain and loss for foreign
     accounts?
-15. **Name and port**: package `moneykata`, command `moneykata`, dev port 7880?
-16. **This server's own receipts, encrypted**: *decided 2026-10-11*, yes, in the format of
-    §14.9.6 under the data key (§12.2, §18.3).
-17. **Metals spot prices**: Stooq's metals pairs (daily, no key) are the proposal. Confirm
+11. **Name and port**: package `moneykata`, command `moneykata`, dev port 7880?
+12. **Metals spot prices**: Stooq's metals pairs (daily, no key) are the proposal. Confirm
     them, or choose another free source; manual spot is the fallback.
-18. **Notifications**: occasion reminders (§10.7.3), and others such as an option expiring,
+13. **Notifications**: occasion reminders (§10.7.3), and others such as an option expiring,
     a sync failing or a pledge due, are in-app for now. Should they be emailed, and how does
     each user choose which?
-19. **College-cost averages** shipped for §9.8: which published source, and how often it is
+14. **College-cost averages** shipped for §9.8: which published source, and how often it is
     updated?
 
 # 22. Not in scope
@@ -1662,3 +1653,33 @@ Storing the private keys or seed phrases of crypto wallets, ever (MoneyKata's ow
 phrases are words for its keys, not wallets). Opting users in or out of the list a server
 sends its linked peers (§13.3.3): every active user is listed, which suits a household; a
 server for more people would need it.
+
+# 23. Rejected ideas
+
+Ideas that were weighed and turned down, kept so they are not raised again without a new
+reason.
+
+1. **A separate keys process** that alone reads the master key and wraps and unwraps keys over
+   a Unix socket. A compromised web process could then not copy the key, but it costs a
+   second account and a socket, and the web process can already read everything the key
+   protects while it runs. The server's own account reads the key file (§18.4).
+2. **External key services** (HashiCorp Vault, cloud KMSs, HSMs, TPM sealing): another
+   service to run, back up and secure, for little gain over a key file with offline backups
+   (§18.2).
+3. **Leaving the financial data unencrypted** and relying on disk encryption and encrypted
+   backups. Backups leave the house, so the database and receipts are encrypted by MoneyKata
+   (§18.1).
+4. **The master key written as base32** on a recovery sheet. Twelve BIP39 words are easier
+   to write down, read back and type, and catch typos better (§18.6.1).
+5. **A personal access key per user for linked copies**, with the copy key sealed to each
+   user (by a passphrase of their own, or by their password). The owner's shares already
+   decide who sees what, so the key only has to protect the copy at rest. One key per copy,
+   unlocked for the server, is simpler and recovers more easily (§14.9.3).
+6. **The receiving admin choosing who sees each linked share.** Servers exchange their user
+   lists, so the owner names the people (§14.3).
+7. **Linked accounts shown among this household's own**, as locked rows, in totals or inside
+   local portfolios. Another household's data is a world of its own and opens in its own
+   window (§15.10).
+8. **SQLModel** for the tables. It merges the table, the API model and the entity into one
+   class. Tables are declared with SQLAlchemy Core and mapped onto plain dataclasses, so the
+   schema carries no logic (§17.1).

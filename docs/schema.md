@@ -1,7 +1,7 @@
 # MoneyKata: database schema conventions
 
-Status: decided 2026-10-11. These conventions apply to the main database and to every linked
-copy (requirements §14.9, §17.1). The tables are declared with SQLAlchemy Core in
+These conventions apply to the main database and to every linked copy (requirements §14.9,
+§17.1). The tables are declared with SQLAlchemy Core in
 `web/server/src/moneykata/store/tables/` (requirements §20.1).
 
 ## 1. Naming

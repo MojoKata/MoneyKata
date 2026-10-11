@@ -21,6 +21,15 @@ phones will get a separate, focused PWA later (requirements §15.8).
 Once `web/ui` exists, the mockup is generated from the app (`web/ui/mockup/build.py`), and
 `web/check` fails while the mockup is out of date (requirements §15.9).
 
+## Requirements are a statement, not a changelog
+
+`docs/requirements.md` says what MoneyKata is and does, in the present tense. It carries no
+dates of decisions, no "now", "no longer" or "revised", and no record of what changed: git
+holds the history. When an open question (§21) is answered, the answer goes into the section
+it belongs to and the question is removed, renumbering §21 and the references to it. An idea
+that was weighed and turned down goes to **Rejected ideas** at the end, with the reason, so it
+is not raised again without a new one. `docs/schema.md` follows the same rule.
+
 ## Free standing
 
 This repository is self-contained. Docs, mockups and code describe MoneyKata in its own terms

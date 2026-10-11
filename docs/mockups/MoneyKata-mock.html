@@ -218,7 +218,7 @@ input.in.bad { border-color: var(--deny); }
 .locked-card { text-align: center; max-width: 480px; margin: 32px auto; display: grid; justify-items: center; gap: 6px; }
 .locked-card h3 { margin: 4px 0 0; }
 .locked-card p { margin: 0; }
-.logo.hh { background: linear-gradient(135deg, #8fd3a6, #7aa7ff); color: #10131a; font-size: 12px; border-radius: 50%; }
+.logo.hh { border: 0; cursor: pointer; background: linear-gradient(135deg, #8fd3a6, #7aa7ff); color: #10131a; font-size: 12px; border-radius: 50%; }
 .app.peer .side { background: color-mix(in srgb, var(--peer) 13%, var(--bg-2)); border-right-color: color-mix(in srgb, var(--peer) 45%, var(--border)); }
 .app.peer .nav-item.active { background: color-mix(in srgb, var(--peer) 24%, transparent); color: var(--fg); }
 .peer-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 14px; margin-bottom: 14px; border-radius: 10px; font-size: 13px; background: color-mix(in srgb, var(--peer) 12%, var(--bg-2)); border: 1px solid color-mix(in srgb, var(--peer) 40%, var(--border)); }
@@ -288,6 +288,8 @@ input.in.bad { border-color: var(--deny); }
 .menu .mh { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-muted); padding: 8px 10px 4px; }
 .menu button { display: flex; width: 100%; align-items: center; gap: 8px; text-align: left; border: 0; background: transparent; padding: 7px 10px; border-radius: 6px; cursor: pointer; }
 .menu button:hover { background: var(--bg-4); }
+.menu a.hh-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: inherit; }
+.menu a.hh-item:hover { background: var(--bg-4); text-decoration: none; }
 .menu button.on::after { content: '✓'; margin-left: auto; color: var(--accent); }
 .toasts { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 70; }
 .toast { background: var(--bg-4); border: 1px solid var(--border-strong); padding: 10px 16px; border-radius: 10px; box-shadow: var(--shadow); font-size: 13px; }
@@ -1582,7 +1584,7 @@ const GUIDES = {
     <h2 id="h-import">Import</h2><p>OFX, QFX or CSV from your bank or broker. Re-importing the same file adds only what’s new.</p>
     <h2 id="h-new-account">New account</h2><p>Pick the type first. It decides the fields, the tax treatment, and how the account can be kept current.</p>
     <h2 id="h-share">Share</h2><p>The share button on a row opens the Share dialog for that account.</p>
-    <h2>Linked households</h2><p>What another household shares with you opens in a window of its own, never mixed with your accounts or totals.</p>`,
+    <h2>Linked households</h2><p>What another household shares with you opens in a window of its own, never mixed with your accounts or totals. Open one from here, or from your household’s avatar at the top of the sidebar.</p>`,
   account: `<h1>Account</h1><p>One account: its balance over time, what it holds, its transactions and positions, its receipts, and who it’s shared with.</p><div class="shot">screenshot · account</div>
     <h2 id="h-name">Name</h2><p>How the account appears everywhere. Only you see it as named; people you share it with see the same name.</p>
     <h2 id="h-lot-method">Lot method</h2><p>Which lots a sale uses: <b>FIFO</b> (oldest first, the default), <b>LIFO</b>, <b>HIFO</b> (highest cost first, usually the smallest gain), <b>Specific identification</b> (you pick at each sale), or <b>Average cost</b> (mutual funds).</p>
@@ -1774,9 +1776,9 @@ function render() {
   const item = ([k, l, ic, badge]) => `<a class="nav-item ${navActive === k ? 'active' : ''}" data-go="${k}" title="${l}">${icon(ic)}<span class="nav-label">${l}</span>${badge ? `<span class="nav-badge">${badge}</span>` : ''}</a>`;
   $('#root').innerHTML = `<div class="app ${state.collapsed ? 'collapsed' : ''} ${state.help ? 'help-open' : ''}">
     <aside class="side">
-      <div class="brand"><div class="logo hh">${HOUSEHOLD.initials}</div><div class="brand-text"><div class="brand-name">${HOUSEHOLD.name} <span class="pill-mock" data-act="mock" title="Mockup controls">MOCK</span></div><div class="brand-ver">MoneyKata 0.1.0-mock${state.update ? ' <span class="pill new" data-act="update" title="An update is available. Reload the page to update">update</span>' : ''}</div></div></div>
+      <div class="brand"><button class="logo hh" data-act="households" title="Linked households" aria-haspopup="menu">${HOUSEHOLD.initials}</button><div class="brand-text"><div class="brand-name">${HOUSEHOLD.name} <span class="pill-mock" data-act="mock" title="Mockup controls">MOCK</span></div><div class="brand-ver">MoneyKata 0.1.0-mock${state.update ? ' <span class="pill new" data-act="update" title="An update is available. Reload the page to update">update</span>' : ''}</div></div></div>
       <button class="collapse-btn" data-act="collapse" title="Collapse sidebar">${icon('chev')}</button>
-      <nav aria-label="Main">${NAV.map(item).join('')}<div class="nav-head">Linked households</div>${Object.values(PEERS).map((P) => `<a class="nav-item" href="#/linked/${P.id}" target="mk-linked-${P.id}" title="${P.name} (opens in its own window)">${hhAv(P, 22)}<span class="nav-label">${P.name}</span></a>`).join('')}${u.admin ? `<div class="nav-head">Admin</div>${ADMIN_NAV.map(item).join('')}` : ''}</nav>
+      <nav aria-label="Main">${NAV.map(item).join('')}${u.admin ? `<div class="nav-head">Admin</div>${ADMIN_NAV.map(item).join('')}` : ''}</nav>
       <div class="user-tile"><span class="avatar av-${u.username}">${u.initials}</span><div class="user-text" data-go="profile"><b>${u.name}</b><span>${u.admin ? 'admin' : u.username}</span></div><button class="icon-btn" data-act="theme" title="Theme: ${state.theme}">${icon(themeIcon)}</button></div>
     </aside>
     <main>
@@ -1845,6 +1847,17 @@ function renderLinked() {
   helpFor(null);
 }
 
+/* ---------- linked households menu ---------- */
+function householdsMenu(anchor) {
+  closeMenu();
+  const m = document.createElement('div'); m.className = 'menu'; m.id = 'menu'; m.setAttribute('role', 'menu');
+  m.innerHTML = Object.values(PEERS).map((P) => `<a class="hh-item" role="menuitem" href="#/linked/${P.id}" target="mk-linked-${P.id}">${hhAv(P)}<span><b>${P.name}</b><div class="small dim">${P.items} items shared with you · synced 41 min ago</div></span></a>`).join('');
+  document.body.append(m);
+  const r = anchor.getBoundingClientRect(), Z = zoomOf();
+  m.style.left = r.left / Z + 'px'; m.style.top = r.bottom / Z + 6 + 'px';
+  const first = m.querySelector('a'); if (first) first.focus();
+}
+
 /* ---------- mock menu ---------- */
 function mockMenu(anchor) {
   closeMenu();
@@ -1865,7 +1878,7 @@ function closeMenu() { const m = $('#menu'); if (m) m.remove(); }
 /* ---------- events ---------- */
 document.addEventListener('click', (e) => {
   const t = e.target.closest('[data-act],[data-go]');
-  if (!t) { if (!e.target.closest('#menu')) closeMenu(); return; }
+  if (!t) { if (!e.target.closest('#menu')) closeMenu(); else if (e.target.closest('#menu a[href]')) setTimeout(closeMenu); return; }
   const inMenu = !!t.closest('#menu');
   if (t.dataset.go != null && !t.dataset.act) {
     e.preventDefault(); closeMenu(); closeDialog();
@@ -1877,6 +1890,7 @@ document.addEventListener('click', (e) => {
   if (a !== 'mock') closeMenu();
   switch (a) {
     case 'mock': e.stopPropagation(); $('#menu') ? closeMenu() : mockMenu(t); break;
+    case 'households': e.stopPropagation(); $('#menu') ? closeMenu() : householdsMenu(t); break;
     case 'collapse': state.collapsed = !state.collapsed; render(); break;
     case 'help': state.help = !state.help; try { localStorage.setItem('mk-help', state.help ? '1' : '0'); } catch { /* private window */ } render(); break;
     case 'theme': state.theme = { dark: 'light', light: 'system', system: 'dark' }[state.theme]; try { localStorage.setItem('mk-theme', state.theme); } catch { /* private window */ } render(); break;
