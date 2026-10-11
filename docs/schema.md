@@ -66,6 +66,7 @@ are not listed.
 | Prefix | Table       | Description                                                                       |
 |--------|-------------|-----------------------------------------------------------------------------------|
 | Acct   | Account     | One place money is held, owned by one user, with an account type.                 |
+| Alert  | Alert       | Something that needs a user's attention, open until its cause clears.             |
 | AsItm  | AssetItem   | One item in a physical-asset account, with its cost basis and valuations.         |
 | Bdgt   | Budget      | A period's planned amounts per category.                                          |
 | Cat    | Category    | A budget category given to bank transactions.                                     |
@@ -85,11 +86,55 @@ are not listed.
 | Rcpt   | Receipt     | An uploaded file with a date, an amount and links to what it supports.            |
 | Share  | Share       | A grant of an account or portfolio to a user, group or linked server.             |
 | TaxBk  | TaxBook     | One user's, or a married couple's, tax records for one tax year.                  |
+| Token  | AccessToken | A user's read-only token for the MCP endpoint, stored as a hash.                  |
 | TxDoc  | TaxDocument | A tax document received (W-2, 1099) or filed (a return, a notice), with its file. |
 | Txn    | Transaction | One dated movement in an account.                                                 |
-| User   | User        | A person who signs in to this server.                                             |
+| User   | User        | A person who signs in here, or a user of a linked server (with `linkId`).         |
 
-## 4. Checks
+## 4. Soft deletes
+
+Records are never removed from the database: they are marked deleted. The exceptions are in
+§4.4.
+
+1. **Fields.** Every table, many-to-many tables included, has:
+
+   | Field         | Type      | Meaning                                                  |
+   |---------------|-----------|----------------------------------------------------------|
+   | `deleted`     | boolean   | the record itself was deleted                            |
+   | `deletedAt`   | timestamp | when; null while `deleted` is false                      |
+   | `deletedById` | `User` FK | who; null when the server deleted it (a sync, a job)     |
+
+   A `CHECK` keeps them consistent: `deleted = (deletedAt IS NOT NULL)`, and `deletedById` is
+   null while `deleted` is false. Restoring a record clears all three. Re-adding a row that
+   a many-to-many table already holds as deleted restores it.
+2. **Effective deletion.** A record is also deleted when something it belongs to is: a
+   transaction when its account is, a gift when its person is. *Belongs to* is a foreign key
+   declared `ondelete="CASCADE"` to a soft-deletable table. Each table has a view, named
+   `<Table>Effective` (`TransactionEffective`), with every column of the table plus:
+   1. `effectiveDeleted`: the record's own `deleted`, or the `effectiveDeleted` of any record
+      it belongs to;
+   2. `effectiveDeletedAt`: the earliest `deletedAt` along that chain.
+
+   The views are generated from the table declarations, chaining each parent's view, so a
+   new cascading foreign key changes the view with it. Code reads through the views and
+   leaves out effectively deleted records unless it asks for them.
+3. **Uniqueness** ignores deleted records: a unique index is partial, `WHERE NOT deleted`, so
+   a deleted name or username can be used again.
+4. **Exceptions**, removed outright:
+   1. **sessions and one-time tokens** (invitation, sign-up confirmation, reset, email
+      change), when used or expired;
+   2. **a secret's old ciphertext** when the secret is replaced or removed, so an old API key
+      or token can't be recovered from the database or a later backup;
+   3. **linked copies**: another household's data, removed with the share or link it came
+      by, at **Reset copy**, and an inbox change once it is applied (requirements §14.9);
+   4. **work queues and counters**: receipt-reading jobs, sign-in and access-key attempt
+      counters, and the live stream's state;
+   5. **caches**, rebuilt from the records: thumbnails, and computed series kept for speed.
+
+   Activity entries and alerts are never deleted at all: Activity is kept as it was
+   written, and alerts are resolved, then age out of the list (requirements §15.11).
+
+## 5. Checks
 
 A test fails when:
 
@@ -97,3 +142,5 @@ A test fails when:
 2. a table with an `id` has no row in §3, a row in §3 names no table, or §3 is not sorted
    by prefix;
 3. a table with an `id` lacks the `WITHOUT ROWID` option or the ID's `CHECK` constraint.
+4. a table outside the exceptions of §4.4 lacks the fields of §4.1 or their `CHECK`, or its
+   `<Table>Effective` view is missing or does not match its cascading foreign keys.

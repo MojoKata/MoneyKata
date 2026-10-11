@@ -100,6 +100,14 @@ recommendations waiting for a decision.
     **window of its own**, never mixed with this household's data (§15.10). This suits
     household servers; a server for more than a household would need users to opt in to
     being listed (§22).
+23. **US dollars only.** Every account, price, total and report is in USD. There are no
+    foreign accounts and no currency conversion (§7.7, §22).
+24. **Records are soft-deleted.** Deleting marks a record deleted, with when and by whom, and
+    a view per table works out whether it is deleted through what it belongs to. The few
+    exceptions are listed in [`schema.md`](schema.md) (§17.1.5).
+25. **Alerts** tell people when something needs them, above all admins when a sync has
+    failed for more than 48 hours. They show as a live count on the **Alerts** screen, and
+    each user chooses to be emailed each one, a daily summary, or nothing (§15.11).
 
 # 2. Terminology
 
@@ -111,7 +119,7 @@ recommendations waiting for a decision.
 3. **Holding:** what an account holds of one **instrument** (cash, a stock, a fund, a coin, an
    option contract) at a point in time: its quantity, cost basis and value.
 4. **Instrument:** a thing with a price, such as `AAPL`, `VTI`, `BTC`, or `AAPL 2026-12-18
-   250 C`. Cash in a currency is an instrument with price 1 in that currency.
+   250 C`. Cash is an instrument with a price of $1.
 5. **Lot:** one acquisition of an instrument: date, quantity, cost, and what remains open.
    Gains, holding periods and wash sales are computed per lot.
 6. **Transaction:** one dated movement in an account: deposit, withdrawal, purchase, sale,
@@ -206,14 +214,14 @@ recommendations waiting for a decision.
    **Count in net worth** on the account overrides that.
 
 2. **Every account has** a name, its type, the institution, an optional masked number (last
-   4), its currency (USD by default), its owner, an **active** switch (a closed account stays
+   4), its owner, an **active** switch (a closed account stays
    for history and taxes), notes, and how it is kept current (§4.3).
 3. **How an account is kept current**, one or more of:
    1. **manual**: transactions and balance snapshots typed in;
    2. **file import**: OFX/QFX/QBO, CSV (with a saved column mapping per institution), and
       brokers' trade-history CSVs. Imports are idempotent: a re-imported file adds only what is
       new, matched by the file's transaction id or by date, amount and payee;
-   3. **sync** *(open, §21.1)*: a bank-aggregation service such as **SimpleFIN Bridge**
+   3. **sync** *(open, §21.1.1)*: a bank-aggregation service such as **SimpleFIN Bridge**
       (inexpensive, read-only, a token per user). Its token is a secret (§17.4);
    4. **exchange API** (crypto exchanges): read-only API keys, balances and trades (§4.5);
    5. **chain watch** (self-custody wallets): balances and transactions read from public
@@ -314,7 +322,7 @@ recommendations waiting for a decision.
 # 5. Holdings, lots and transactions
 
 1. **Instruments** are kept once per server: symbol, name, class (`cash`, `equity`, `etf`,
-   `mutual-fund`, `bond`, `option`, `crypto`, `metal`, `other`), currency, and for options the
+   `mutual-fund`, `bond`, `option`, `crypto`, `metal`, `other`), and for options the
    underlying, right (call/put), strike, expiry and multiplier (100 by default). An option's
    symbol follows OCC (`AAPL  261218C00250000`) and is shown as `AAPL 18 Dec 26 250 C`.
 2. **Lots** are created by buys and by transfers in with a cost basis. A transfer in without a
@@ -384,8 +392,8 @@ recommendations waiting for a decision.
    | **Finnhub** | US equities: delayed quotes | free key | 60 calls/min free |
    | **Alpha Vantage** | equities, FX, crypto | free key | 25 calls/day free: only as a fallback |
    | **CoinGecko** | crypto prices and history | free demo key | the default for coins |
-   | **Stooq** (metals) | gold, silver, platinum and palladium spot (`XAUUSD`, `XAGUSD`, `XPTUSD`, `XPDUSD`): daily | none | metals as FX pairs, for §4.10's spot valuation; to be confirmed (§21.12) |
-   | **Tradier** | **options chains and quotes** (delayed) | free developer account | the likeliest free source of option marks; to be confirmed (§21.2) |
+   | **Stooq** (metals) | gold, silver, platinum and palladium spot (`XAUUSD`, `XAGUSD`, `XPTUSD`, `XPDUSD`): daily | none | metals as FX pairs, for §4.10's spot valuation; to be confirmed (§21.1.4) |
+   | **Tradier** | **options chains and quotes** (delayed) | free developer account | the likeliest free source of option marks; to be confirmed (§21.1.2) |
    | **Yahoo Finance** (unofficial) | everything | none | no API terms and breaks without notice; **not shipped**, at most an opt-in dev plugin |
    | **manual** | anything | — | a price typed in, such as a 401(k) fund's unit value from a statement |
 
@@ -401,8 +409,9 @@ recommendations waiting for a decision.
 6. **Every price carries its source and `as_of`.** The UI shows *delayed* or *as of 4:00 PM*
    on every value derived from it. A price older than a threshold (2 trading days for a
    stock) is marked stale.
-7. **Currencies**: each account has a currency and each user a **reporting currency** (USD
-   by default). FX rates are prices too (Stooq or Tiingo).
+7. **US dollars only**: every account, holding, price and total is in USD. Prices are fetched
+   in USD, including crypto and metals spot. An instrument that trades only in another
+   currency is priced by hand.
 8. **Linked servers never call providers for each other.** A peer's shared data carries its
    own values and their `as_of` (§14.5).
 
@@ -410,11 +419,16 @@ recommendations waiting for a decision.
 
 1. **A portfolio** is a named set of accounts (or chosen holdings of them), owned by a user
    and shareable like an account (§13). A portfolio may include an account shared with its
-   owner at `read`. Viewers of the portfolio see that account only if it is also shared with
-   them, otherwise as one line with its value alone *(open, §21.4)*. A portfolio never
-   includes an account from a linked server: linked data is shown only in its own window
-   (§15.10). A portfolio shared across a link shows the accounts in it that are not shared
-   with the viewer as one line each, with its value alone.
+   owner at `read`.
+   1. **Viewers see only the accounts in it that are shared with them.** The others are
+      hidden, and left out of every figure, chart and holding the viewer sees, so the
+      portfolio's value is the value of what they can see. This holds across a link too.
+   2. **Sharing a portfolio** whose accounts are not all shared with the people chosen: the
+      Share dialog names the accounts each of them can't see and offers **Share these
+      accounts too** (at read, and only for accounts the owner may share). Declining keeps
+      them hidden from those people.
+   3. A portfolio never includes an account from a linked server: linked data is shown only
+      in its own window (§15.10).
 2. **Charts each portfolio has:**
    1. **Value over time** (line or area; 1M, 3M, YTD, 1Y, 5Y, All, and a range brush), with
       contributions shown apart from growth, against a **benchmark** (SPY, VT, a 60/40 mix);
@@ -451,7 +465,7 @@ recommendations waiting for a decision.
 4. **Scenarios compare** side by side, for example retiring at 60 against 65, or contributing
    $500 more a month.
 5. The **computation runs on the server** (pure Python, seeded, so a scenario's figures are
-   reproducible) and returns percentiles per year. NumPy is an open question (§21.5).
+   reproducible) and returns percentiles per year. It uses NumPy.
 6. The screen states its assumptions in full under the chart and says plainly that it is a
    model, not a forecast.
 7. **Loan payoff planner** (on each loan's *Payoff* tab, §4.9.5). It compares the schedule
@@ -492,8 +506,8 @@ recommendations waiting for a decision.
    category over 12 months, and the uncategorised transactions to sort.
 5. **Recurring** transactions (rent, subscriptions, salary) are detected from history and
    listed with their next expected date and amount. A missed or changed one is flagged.
-6. **Alerts** *(later)*: a category passing a threshold, a large transaction, a low balance.
-   Shown in-app and optionally emailed.
+6. **Budget alerts** *(later)*: a category passing a threshold, a large transaction, a low
+   balance, raised as alerts (§15.11).
 7. **People and occasions.** Each user keeps their own list of **people** (on the Gifts
    screen):
    1. **A person has** a name, a relationship (child, parent, sibling, partner, friend, …),
@@ -508,8 +522,8 @@ recommendations waiting for a decision.
       al-Fitr) from shipped tables, plus **custom occasions** with a date of their own.
    3. **Upcoming occasions**: the next 60 days of everyone's dates, each with its budget,
       the gifts planned so far, and what is still missing. Those inside their lead time show
-      on the Dashboard (*Emma's birthday in 9 days, no gift yet*). Email reminders wait for
-      notifications (§21.13).
+      on the Dashboard (*Emma's birthday in 9 days, no gift yet*), and an occasion entering
+      its lead time raises an alert (§15.11).
 8. **Gifts.**
    1. **A gift** is for one or more people and an occasion (and its year): a description,
       a **status** (*idea*, *planned*, *bought*, *given*), its cost, where it was bought, a
@@ -662,7 +676,8 @@ produces worksheets and exports. It never files, and says so (§1.16).
 
 1. **Upload** from the browser: drag and drop, or the file picker. One or many at once.
    Taking a photo of a receipt with a phone belongs to the mobile PWA (§22).
-   Formats: PDF, JPEG, PNG, WebP, HEIC (converted to JPEG for display). Each file is at most
+   Formats: PDF, JPEG, PNG, WebP, and HEIC, the format of iPhone photos (converted to JPEG
+   for display, with the photo's orientation applied). Each file is at most
    25 MB (a Setting).
 2. **Stored on disk**, not in the database, under the data directory as
    `receipts/<random-id>.mkr`, **encrypted** (§18.3) and written once, never changed. The
@@ -685,11 +700,11 @@ produces worksheets and exports. It never files, and says so (§1.16).
    when the owner ticks **Include receipts** on that share, and then only as encrypted files
    in the other side's linked copy (§14.5, §14.9).
 7. **Retention**: a receipt is deleted only by its owner and only when nothing links to it.
-   The file is removed when no receipt row names its hash. Backups include the receipts
-   directory (§17.6).
-8. **Reading receipts (OCR)**: MoneyKata reads the date, total and merchant
-   from each receipt **on the server, with RapidOCR**, and suggests the transaction it belongs
-   to. Nothing leaves the server, and no external service, model download or GPU is involved.
+   The file stays while any receipt row names its hash, deleted or not (`schema.md` §4).
+   Backups include the receipts directory (§17.6).
+8. **Reading receipts (OCR)**: MoneyKata reads the date, total and merchant from each receipt
+   **on the server, with RapidOCR**, and suggests the transaction it belongs to. Nothing
+   leaves the server, and no external service, model download or GPU is involved.
    1. **What it produces**: the receipt's full text, and **suggested fields**: date, total,
       merchant, and where printed, tax and the card's last four digits. Each field carries a
       confidence. These are **suggestions**: they fill the receipt's empty fields, marked
@@ -755,7 +770,7 @@ produces worksheets and exports. It never files, and says so (§1.16).
       small to run it), the number of jobs at a time, and the queue's state (waiting,
       failed, last run).
    8. **Not in this version**: line items, handwriting, multi-receipt photos, currencies
-      other than the account's, and non-Latin scripts. A receipt that the parser can't
+      other than USD, and non-Latin scripts. A receipt that the parser can't
       make sense of still has its searchable text.
 
 # 13. Users, groups and sharing
@@ -777,18 +792,21 @@ produces worksheets and exports. It never files, and says so (§1.16).
    6. **Two-step sign-in**, optional for everyone: a TOTP code from an authenticator app after
       the password, set up with a QR code; ten recovery codes shown once; and an admin's
       reset as the last resort.
-   7. **Deactivation.** Admins switch a user off and on. Deactivation ends their sessions at
-      once and shows an *account is disabled* screen, from which they can request
-      reactivation (once a week). Users and groups are deactivated, never deleted.
+   7. **Active.** Each user has an **active** flag, which admins switch off and on. An
+      inactive user cannot sign in, and cannot be added to a share, here or from a linked
+      server; shares they already hold give them nothing while they are inactive. Switching
+      it off ends their sessions at once and shows an *account is disabled* screen, from which
+      they can ask to be reactivated (once a week). Users and groups are deactivated rather
+      than deleted.
    8. **Groups**: admins make named groups of users. Being an admin is membership of the
       built-in **Admins** group. The last active admin cannot be removed or deactivated.
    9. **Emails** (plain text): invitation, sign-up confirmation and decision, reset,
-      email-change confirmation, password changed, two-step turned on or off, reactivated.
+      email-change confirmation, password changed, two-step turned on or off, reactivated,
+      and alerts (§15.11).
       In dev mode they are written to a folder (§20.7).
 2. **Admins are not superusers of money.** An admin manages users, groups and Settings, and
-   sees only the accounts and portfolios shared with them. Deactivating a user keeps their data.
-   Deleting a user's data is a separate, confirmed action that names what will go *(open,
-   §21.7)*.
+   sees only the accounts and portfolios shared with them. Users are not deleted: a user
+   who leaves is made inactive (§13.1.7), and their data stays.
 3. **What can be shared**: six kinds of item, each with one owner and its own list of shares:
    | Kind | A share includes |
    |---|---|
@@ -811,6 +829,16 @@ produces worksheets and exports. It never files, and says so (§1.16).
       of active users (display name, username and email), so they can be chosen like local
       users. Groups are not sent. When a remote user is deactivated, their shares are
       suspended. When the link ends, the shares are removed.
+      1. **A remote user is a `User` record** with its `linkId` set, so it appears wherever
+         a share is chosen, beside local users, under its server's name. It has no password,
+         two-step or sessions (a `CHECK` enforces it), and its fields come only from its
+         server (§14.3).
+      2. **Only local users** appear where a user signs in, owns or changes something here:
+         sign-in, Users and Groups, group membership (a group can hold write shares, and a
+         remote user only ever reads), the Admins group, tax-book filers (§11.14.1), the
+         spouse for wash sales, the owner of anything, and who receives alerts (§15.11). A
+         person on the Gifts screen can be linked to a user of either kind (§10.7.1).
+      3. **Settings › Linked servers** lists each link's users, read only.
 4. **The Share dialog** lists every active user, then every active group, then the people on
    each linked server, each list alphabetical under a heading with a line on what sharing
    gives. Local users and groups have a three-way switch **None · Read · Write**. People on
@@ -835,6 +863,22 @@ produces worksheets and exports. It never files, and says so (§1.16).
    to the people concerned (the owner, the receivers, and admins for users and groups): shares given or taken away, accounts created, closed
    or deleted, imports, rule changes, links made or ended, and who did each. Amounts are
    never named (§3.8).
+9. **Agents (MCP).** An AI assistant can read, and never change, what a user can see,
+   through a **Model Context Protocol** endpoint at `/mcp` (Streamable HTTP).
+   1. **Access tokens**: each user makes their own in **Profile › Access tokens**: a name,
+      what it can read (everything the user can see, or chosen items), and an expiry (30
+      days, 90 days by default, or a year). The token is shown once and stored as a hash.
+      The list shows each token's name, scope, expiry and last use, with **Revoke**.
+   2. **Read only, always.** There is no write scope. The tools list and read accounts,
+      balances, holdings, transactions, portfolios, budgets, gifts, giving and tax panels,
+      through the user's shares at the moment of the call. A write share gives a token no
+      more than read.
+   3. **Never through a token**: secrets, Settings, other users' data that isn't shared with
+      the user, and linked households, whose access key is for a person at the screen
+      (§14.9).
+   4. A token works only at `/mcp`, never at `/ui/api`. It stops when it is revoked or
+      expires, and when its user is made inactive. Each call is recorded in Activity under
+      the token's name, and calls are limited to 60 a minute per token.
 
 # 14. Linked servers
 
@@ -870,7 +914,11 @@ preparer.
    encrypted linked copy (§14.9). A linked share cannot be re-shared on the other side, not
    even with another link. Each server also sends the other its **list of active users**
    (display name, username, email and stable id) and its **household name and avatar**
-   (§19.1), refreshed at every pull.
+   (§19.1), at every pull. The receiving server keeps each remote user as a record, updated
+   by its id: a new user is added, a changed name, username, email or active flag is updated
+   in place, and a user no longer on the list is soft-deleted, and restored if they return.
+   When the link ends, its users are soft-deleted. Shares that name a remote user keep
+   pointing at the same record throughout.
    1. **Each item travels as its screens show it, worked out at the source.** A budget's
       actuals, a giving plan's pace and a tax book's panels are computed from accounts that
       may not be shared themselves. The owner's server sends the figures and the entries
@@ -1090,20 +1138,21 @@ preparer.
    12. **Watchlist** *(small)*: instruments the user follows without holding them;
    13. **Activity**: the changes of §13.8, newest first, filtered by account and person;
    14. **Users and Groups**, **Settings** (admins);
-   15. the user tile opens **Profile** (name, email, avatar, password, two-step, reporting
-       currency, birth year, spouse for wash sales) and **Sign out**.
+   15. **Alerts**: what needs the user's attention, with a live count on its badge (§15.11);
+   16. the user tile opens **Profile** (name, email, avatar, password, two-step, alert
+       emails, birth year, spouse for wash sales) and **Sign out**.
 3. **Privacy mode**: a button in the header (an eye) blurs every amount on the page until
    clicked again, for using the app with someone looking over your shoulder. The browser
    remembers it.
-4. **Numbers**: tabular figures, right-aligned, with the currency sign. Gains are green and
+4. **Numbers**: tabular figures, right-aligned, with the dollar sign. Gains are green and
    losses red, *and* signed with + or −, so colour is never the only cue. Large values are
    abbreviated in charts only ($1.2M), never in tables.
 5. **Every value derived from a price** shows its age on hover, and the header shows the last
    price refresh with a dot that turns amber when prices are stale (§7.6).
 6. **Live updates**: the frame keeps one Server-Sent Events stream open (`GET
    /ui/api/events`). It carries fingerprints and counts, never data: prices refreshed, an
-   import finished, a sync result, a share received or removed, a linked pull done, the
-   badges' counts, and the server's version. A screen whose data changed reloads it through
+   import finished, a sync result, a share received or removed, a linked pull done, a new
+   alert, the badges' counts (Alerts among them), and the server's version. A screen whose data changed reloads it through
    its usual routes. The stream never extends the session, ends after a few minutes (the
    browser reconnects), and takes the page to sign-in or *account is disabled* when the
    session ends.
@@ -1178,23 +1227,56 @@ preparer.
        returns to that request.
     5. **Never mixed**: nothing from a linked household appears in this household's lists,
        totals, charts, search, portfolios, budgets, taxes or Activity.
+11. **Alerts** tell someone that something needs them. Activity records what happened; an
+    alert asks for an action.
+    1. **What raises one**:
+       1. **for admins**: a sync source that has failed for longer than the threshold in
+          Settings › Alerts (48 hours by default): a bank-sync connection, an exchange, a
+          chain explorer, a price provider, or a linked server's pulls; a backup that failed;
+          a link's first share waiting for its access key (§14.9.2); and the yearly check of
+          the master key's recovery phrase (§18.6.5). An admin's alert about someone else's
+          account names its owner and source, never the account's name or figures (§13.2);
+       2. **for an account's owner**: their own sync failing for longer than the threshold,
+          and a token or key that needs entering again;
+       3. **for each user**: an occasion entering its lead time (§10.7.3), an option
+          expiring within a week, a pledge due (§10.9), and budget alerts when they come
+          (§10.6).
+    2. **One alert per cause.** A failing sync raises one alert, not one per attempt. It
+       stays **open** while the cause lasts and is **resolved** by itself when the cause
+       clears (the sync succeeds). A user can **dismiss** an open alert for themselves.
+       Resolved alerts stay listed for 90 days.
+    3. **The Alerts screen** lists open alerts first, newest first, then resolved ones. Each
+       shows what it is about, since when, a link to the place to fix it, and **Dismiss**.
+       Opening the screen marks the user's alerts as seen.
+    4. **The badge** on the Alerts entry counts the open alerts the user has not seen. A new
+       alert reaches the badge through the live stream (§15.6) without a reload, with a toast.
+    5. **Emails**: each user chooses in Profile how alerts reach them by email:
+       1. **each alert**: one email when an alert opens (not when it repeats or resolves);
+       2. **daily summary**: one email a day at the time set in Settings › Alerts (07:00 by
+          default) listing the alerts opened since the last one, and none on a day without
+          any;
+       3. **none**: on screen only.
+
+       Admins start on *each alert*, other users on *daily summary*. Without SMTP set up, the
+       choice is shown but nothing is sent. Alert emails name the kind and the thing it is
+       about, never amounts.
 
 # 16. Architecture
 
 1. One HTTPS address. `/` redirects to `/ui`. `/ui/*` serves the app and `/ui/api/*` its API.
-   `/link/*` is the linked-server API (§14). `/healthz` is the health check. There are no
-   agent tokens *(an MCP endpoint for agents is an open question,
-   §21.8)*.
+   `/link/*` is the linked-server API (§14). `/mcp` is the read-only endpoint for agents
+   (§13.9). `/healthz` is the health check.
 2. **Authentication**: server-side sessions for `/ui/api` (a random token stored hashed, in an
    HttpOnly, Secure, SameSite=Strict cookie, with an `Origin` check on every change; idle and
    absolute lifetimes are Settings). Signed peer requests for
    `/link` (§14.1). Neither is accepted on the other's path.
-3. **Two listener modes**, one switch in `moneykata.toml`: **`proxy`**, plain HTTP on
-   loopback or a Unix socket behind haproxy, Caddy or nginx, which ends TLS (forwarded headers
-   are trusted only from the configured proxy addresses, and the server refuses to start bound
-   anywhere else); or **`tls`**, its own HTTPS listener with HTTP/2 (forwarded headers
-   ignored). For a home server, `tls` with a certificate from the household's
-   reverse proxy or Tailscale's `tailscale cert` is the expected setup.
+3. **Port 37373**, on all of the container's interfaces; the host's port mapping and firewall
+   decide what reaches it. **Two listener modes**, one switch in `moneykata.toml`:
+   **`proxy`**, plain HTTP behind haproxy, Caddy or nginx, which ends TLS (forwarded headers
+   are trusted only from the configured proxy addresses); or **`tls`**, its own HTTPS
+   listener with HTTP/2 (forwarded headers ignored). **`proxy`** is the expected setup.
+   **`tls`** is for testing on a local network: given no certificate, the server makes a
+   self-signed one on first start and keeps it in the data directory.
 4. **Background tasks** in the server process: price refresh (§7.3), sync and exchange or
    chain pulls (§4.3), link pulls (§14.4), option expiry (§6.6), recurring detection (§10.5),
    backups (§17.6), receipt reading (§12.8, in its own worker process), and pruning. Each records its last run and error, which Settings shows.
@@ -1206,8 +1288,8 @@ preparer.
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
    cannot start for a reason only an operator can fix (a config file it can't use, a file
    mode, a database from a newer release, a certificate it can't load), it says why in one
-   `refusing to start:` line and exits 78 (`EX_CONFIG`), which the systemd unit names in
-   `RestartPreventExitStatus=` so it isn't restarted in a loop.
+   `refusing to start:` line and exits 78 (`EX_CONFIG`). The example `compose.yaml` restarts
+   it only on failure, three times at most, so a refused start isn't retried in a loop.
 
 # 17. Storage and secrets
 
@@ -1231,10 +1313,13 @@ preparer.
    4. **Access:** each table has a repository module. A unit of work is `Database.tx()`
       (`BEGIN IMMEDIATE`) or `Database.read()` (`PRAGMA query_only`, which refuses any
       write). Foreign keys are on, with a 10-second busy timeout.
+   5. **Soft deletes**: records are never removed. Deleting one sets its `deleted`,
+      `deletedAt` and `deletedById`, and each table's view works out whether a record is
+      deleted through the records it belongs to. [`schema.md`](schema.md) (§4) sets the
+      fields, the views and the few exceptions.
 2. **Receipts** are files beside it (§12.2), owned by the server's account, mode 0600 in a
    0700 directory.
-3. **Decimals**: money is stored as **integer minor units** (cents) with the currency's
-   exponent, and quantities and prices as **decimal text** validated to a fixed scale (18
+3. **Decimals**: money is stored as **integer cents**, and quantities and prices as **decimal text** validated to a fixed scale (18
    places, enough for wei), through a small SQLAlchemy column type. JSON carries both as
    strings. Python uses `decimal.Decimal` with a context of 34 digits and rounds `HALF_EVEN`
    except where a tax rule says otherwise. Floats are refused at the API's edge.
@@ -1333,13 +1418,13 @@ what key rotation does.
       backups are kept apart (§18.6), and why §18.8 says to revoke secrets at their source
       when a key may have leaked.
 4. **The key file.**
-   1. **Where**: `/etc/moneykata/master.key` by default, named in `moneykata.toml` under
-      `[keys]`. It must be outside the data directory and outside the backup directory, so it
-      never lands in a database backup.
-   2. **Owner and mode**: readable only by the server's own account (`moneykata:moneykata`,
-      mode `0400`, in a `0700` directory owned by root). There is no separate keys process.
-      Never world- or group-readable, never writable by the server.
-   3. **Made by** `sudo moneykata keys init`, which writes 16 bytes from the operating
+   1. **Where**: `/etc/moneykata/master.key` in the container, from a key directory on the
+      host mounted there (§20.8), named in `moneykata.toml` under `[keys]`. It must be outside
+      the data directory and outside the backup directory, so it never lands in a backup.
+   2. **Owner and mode**: readable only by the server's account (uid 10001, mode `0400`).
+      The running server mounts the key directory read only. There is no separate keys
+      process. Never world- or group-readable, never writable by the server.
+   3. **Made by** `moneykata keys init`, which writes 16 bytes from the operating
       system's random source with those modes, makes and wraps the data key, and refuses to
       overwrite an existing key. It then shows the **recovery phrase** and asks for three of
       its words back (§18.6.1). Until they are typed correctly, the key is not saved and the
@@ -1349,10 +1434,12 @@ what key rotation does.
       anyone but its account, sits inside the data or backup directory, or does not unwrap
       the data key. `moneykata keys
       check` runs the same checks without starting the server.
-   5. **In a container**: mount the key file read-only from the host or as the runtime's
-      secret (`docker secret`, a Kubernetes Secret), never baked into the image, an
-      environment variable, or a volume that is backed up with the data.
-   6. **Commands** (root only; nothing an admin does day to day): `moneykata keys init`,
+   5. **Never** baked into the image, passed as an environment variable, or kept in a volume
+      that is backed up with the data. A Docker secret works in place of the mounted
+      directory.
+   6. **Commands**, run on the host as one-off containers of the same image (`docker compose
+      run --rm moneykata keys verify`); only `init` and `rotate` mount the key directory
+      writable. Nothing an admin does day to day: `moneykata keys init`,
       `check`, `fingerprint`, `phrase` (shows the recovery phrase again), `verify` and
       `rotate` (§18.6, §18.7), and `moneykata db shell` (§17.7).
 5. **What losing it costs.** Everything this server holds is encrypted under the master
@@ -1360,17 +1447,17 @@ what key rotation does.
    database, the receipts and every backup. There is no back door, and no one can recover
    it, including the people who make MoneyKata.
    1. **The key file lost, the phrase kept** (a failed disk, a rebuilt host): write the key
-      back from the phrase with `sudo moneykata keys init --from-phrase` and restore. Nothing
+      back from the phrase with `moneykata keys init --from-phrase` and restore. Nothing
       is lost.
    2. **The phrase lost, the key file kept**: nothing is lost yet, but the next failure will
-      be. Show the phrase again with `sudo moneykata keys phrase` and back it up at once, or
+      be. Show the phrase again with `moneykata keys phrase` and back it up at once, or
       rotate the key (§18.7) and back up the new phrase.
    3. Linked copies are not affected either way: they open with their own access keys, and
       are pulled again from their sources (§14.9.9).
 6. **Backing up and protecting the master key.**
    1. **Back it up as it is made.** `keys init` and `keys rotate` show the **recovery
       phrase**, 12 numbered words, with the fingerprint, the server's name and the date, and
-      will not finish until three words chosen at random are typed back. `sudo moneykata keys
+      will not finish until three words chosen at random are typed back. `moneykata keys
       phrase` shows it again at any time, and `--file PATH` writes it as a recovery sheet to
       print. Each word is recognised by its first four letters, and the last word's checksum
       catches most mistakes when the phrase is typed back in.
@@ -1385,7 +1472,7 @@ what key rotation does.
       database and the key protects nothing.
    4. **Never put it** in git, a ticket, a chat message, email, a shared drive, a container
       image, or a screenshot.
-   5. **Check the backup.** `sudo moneykata keys verify` asks for the whole phrase and says
+   5. **Check the backup.** `moneykata keys verify` asks for the whole phrase and says
       whether it matches the running key, without changing anything. Settings › Key storage
       records each confirmation: who, which fingerprint, and when. Check the copies once a
       year: that the sheet is readable, and that the password manager entry still verifies.
@@ -1400,7 +1487,7 @@ what key rotation does.
       encrypted, so they can go to a NAS or a cloud bucket as they are, as long as the
       recovery phrase never goes with them.
    8. **Restoring onto a new host**: install MoneyKata, write the key from the recovery
-      phrase with `sudo moneykata keys init --from-phrase` (which checks the checksum and,
+      phrase with `moneykata keys init --from-phrase` (which checks the checksum and,
       given the backup, the fingerprint, and sets the owner and mode), restore the data
       directory from the backup, and start. At start the server unwraps the data key, opens
       the database, and reports anything it cannot open. `operations.md` has the step-by-step runbook, and a check rehearses
@@ -1409,7 +1496,7 @@ what key rotation does.
    1. **Rotating the master key** replaces the key file and its recovery phrase, and
       re-wraps the data key under the new key. Nothing else is re-encrypted. It is done on
       the host:
-      1. `sudo moneykata keys rotate` makes a new key, shows its recovery phrase and asks for
+      1. `moneykata keys rotate` makes a new key, shows its recovery phrase and asks for
          three words back, re-wraps the data key in one step, and moves the current key to
          the `previous` list in `moneykata.toml` (with its fingerprint);
       2. **back up the new phrase at once** (§18.6), then restart the server;
@@ -1466,7 +1553,7 @@ opens. Each section has its own help guide. In this order:
 1. **General**: server name (shown to linked servers), the **household name and avatar** (an
    image, or initials; shown at the top of the sidebar here, and sent to linked servers,
    which always show them as set here, §15.10), public URL (links in emails are built from
-   it, never from the request), default reporting currency.
+   it, never from the request).
 2. **Email (SMTP)**: host, port, security, username, password (a secret), from address, and
    **Send a test email**.
 3. **Sign-in and sessions**: idle and absolute session lifetimes, lockout after failed
@@ -1493,6 +1580,8 @@ opens. Each section has its own help guide. In this order:
     **Re-encrypt**. The master key itself is only ever changed on the host.
 14. **Network**: address ranges allowed to `/ui` and to `/link`.
 15. **TLS** (in `tls` mode): the listener's certificate and key.
+16. **Alerts** (§15.11): how long a sync source may fail before it raises an alert (48 hours
+    by default), and the time of the daily summary email (07:00 by default).
 
 # 20. Implementation
 
@@ -1518,7 +1607,7 @@ opens. Each section has its own help guide. In this order:
                          gifts/ (people, occasions, holiday tables), giving/,
                          taxes/ (8949, txf, limits tables), receipts/ (storage, thumbnails,
                          ocr/: worker, parser, models/), links/, mail/, dev/
-     install/            systemd unit, tmpfiles, moneykata.toml, reverse-proxy examples
+     install/            Dockerfile, compose.yaml, moneykata.toml, reverse-proxy examples
    ```
 
 2. **Server dependencies**, each a ruling, kept short because each runs with the database: fastapi, pydantic,
@@ -1527,8 +1616,11 @@ opens. Each section has its own help guide. In this order:
    §12.5, §12.8), **sqlcipher3** (the wheel that bundles SQLCipher, for linked copies,
    §14.9), **rapidocr** with **onnxruntime** (receipt reading, §12.8). rapidocr brings
    numpy, opencv-python-headless, shapely, pyclipper and pyyaml with it, about 100 MB in all;
-   the RPM or image carries them, and they load only in the receipt worker. Proposed:
-   **ofxtools** (OFX/QFX parsing, pure Python) and perhaps **pillow-heif** (HEIC) (§21.6).
+   the image carries them, and they load only in the receipt worker. Proposed:
+   **ofxtools** (OFX/QFX parsing, pure Python, §21.1.6). **pi-heif** reads iPhone photos
+   (HEIC): it decodes only, so it carries libheif and libde265 (LGPL) without the x265
+   encoder (GPL) that pillow-heif bundles. **numpy** is a direct dependency for projections
+   (§9) as well as RapidOCR's.
    Standard library for email (`smtplib`), config (`tomllib`), logging and the command line.
    Pinned exactly in `uv.lock`, Python 3.12.
 3. **The browser app: no build step.** The files in `web/ui` are the files the browser loads.
@@ -1597,7 +1689,7 @@ opens. Each section has its own help guide. In this order:
    versions and hashes of the dev-only downloads (Deno, Playwright's Chromium).
 7. **Dev mode** (`web/dev.sh run --seed --stubs`, `moneykata dev`) runs the whole server from a
    checkout as the current user, relaxing the surroundings, never the rules: sessions, CSP,
-   encryption and sharing behave as in production. `https://localhost:7880` with a
+   encryption and sharing behave as in production. `https://localhost:37373` with a
    self-signed certificate, `web/.dev/` for data, receipts and mail, seed users
    (`admin`, `alice`, `bob`, a *Household* group), a year of seeded transactions across every
    account type, open and closed option positions with an assignment and a wash sale, budgets,
@@ -1606,44 +1698,47 @@ opens. Each section has its own help guide. In this order:
    one machine. Emails are written to `web/.dev/mail/` and their links printed. A red **DEV**
    pill shows on every screen. Dev mode refuses to run as root or on an installed server's
    data directory, and never calls a real provider unless one is configured.
-8. **Packaging and deployment** *(open, §21.9)*: a self-contained RPM (its own CPython and
-   venv), or an OCI image, since a home
-   server is more likely a NAS, a Raspberry Pi or a Proxmox container than RHEL. The Python is
-   portable either way; the decision is about the installer.
+8. **Packaging: one Docker (OCI) image** holding its own Python and venv, the browser app,
+   RapidOCR's models and the `moneykata` command, running as an unprivileged user (uid
+   10001). It serves on port 37373 and takes three mounts: the **data directory** (database,
+   receipts, linked copies), the **backup directory**, and the **key directory**, read only
+   for the server and kept out of the backups (§18.4). `moneykata.toml` is mounted too;
+   secrets never come from environment variables. `install/compose.yaml` is the example to
+   start from.
+   1. **Architectures**: one multi-architecture image for **amd64** and **arm64**, both built
+      on an amd64 build server with `docker buildx` (arm64 under QEMU emulation). Every
+      dependency must install from a published wheel for both (onnxruntime, opencv, numpy,
+      pi-heif, sqlcipher3 among them), since compiling under emulation is too slow; a check
+      fails when one has no arm64 wheel.
+   2. **No registry.** The image is built locally and carried to its host (`docker save` and
+      `docker load`), or built on the host itself.
+   3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
+      on) and **TrueNAS** (a custom app from the compose file). `operations.md` covers
+      both: mounts, the key directory, backups and upgrades.
+   4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
+      reverse proxy. A second example runs `tls` mode with a self-signed certificate for
+      testing on a local network (§16.3).
 
 # 21. Open questions
 
-1. **Bank sync**: SimpleFIN Bridge (about $15/year per user, read-only, simple), something
-   else, or file import only to start?
-2. **Option prices**: confirm Tradier's free developer access for delayed chains, or settle
-   for manual and intrinsic marks.
-3. **Which crypto exchanges and chains first.** A proposal: Coinbase and Kraken; Bitcoin
-   (xpub) and Ethereum.
-4. **A portfolio including an account its viewers can't see**: hide it, or show it as one
-   value line?
-5. **NumPy** for Monte Carlo, or pure Python (1000 × 50 years is fine)? NumPy is installed
-   anyway as a dependency of receipt reading (§12.8), so size doesn't argue against it;
-   the question is only whether the server process should import it.
-6. **New server dependencies**: ofxtools and pillow-heif.
-7. **Deleting a user's data**: who can do it, and with what confirmation and grace period?
-8. **An agent interface** (MCP or REST with access tokens bound to one account or portfolio)
-   so an AI assistant can read, but not change, a user's finances: later, never, or from
-   the start?
-9. **Packaging**: RPM, OCI image, or both?
-10. **Multi-currency depth**: reporting currency only, or full FX gain and loss for foreign
-    accounts?
-11. **Name and port**: package `moneykata`, command `moneykata`, dev port 7880?
-12. **Metals spot prices**: Stooq's metals pairs (daily, no key) are the proposal. Confirm
-    them, or choose another free source; manual spot is the fallback.
-13. **Notifications**: occasion reminders (§10.7.3), and others such as an option expiring,
-    a sync failing or a pledge due, are in-app for now. Should they be emailed, and how does
-    each user choose which?
-14. **College-cost averages** shipped for §9.8: which published source, and how often it is
-    updated?
+1. **Data sources**: which outside sources MoneyKata reads, and how.
+   1. **Bank sync**: SimpleFIN Bridge (about $15/year per user, read-only, simple), something
+      else, or file import only to start?
+   2. **Option prices**: confirm Tradier's free developer access for delayed chains, or
+      settle for manual and intrinsic marks.
+   3. **Crypto exchanges and chains first.** A proposal: Coinbase and Kraken; Bitcoin (xpub)
+      and Ethereum.
+   4. **Metals spot prices**: Stooq's metals pairs (daily, no key) are the proposal. Confirm
+      them, or choose another free source; manual spot is the fallback.
+   5. **College-cost averages** shipped for §9.8: which published source, and how often it
+      is updated?
+   6. **OFX parsing**: ofxtools (pure Python), or a parser of our own?
 
 # 22. Not in scope
 
-Trading, order entry or any write to an institution. Real-time quotes and greeks. Bill
+Foreign accounts, and currencies other than the US dollar. Deleting a user and their data: a
+user who leaves is made inactive. Trading, order entry or any write
+to an institution. Real-time quotes and greeks. Bill
 payment, including making loan payments. Automatic valuations of homes, vehicles or
 collectables (values are typed or appraised). Refinancing or payoff advice: the payoff
 planner compares, and does not recommend. Shopping, wish-list or registry services for
@@ -1683,3 +1778,10 @@ reason.
 8. **SQLModel** for the tables. It merges the table, the API model and the entity into one
    class. Tables are declared with SQLAlchemy Core and mapped onto plain dataclasses, so the
    schema carries no logic (§17.1).
+9. **A portfolio showing an account its viewer can't see** as one line with its value. It
+   still discloses a figure the owner didn't share; viewers see only what is shared with
+   them, and the Share dialog offers to share the rest (§8.1).
+10. **Write access for agents.** An agent reads through a token and can never change
+    anything, whatever shares its user holds (§13.9).
+11. **An RPM** with its own Python, beside or in place of the Docker image. A home server is
+    far more often a NAS, a Raspberry Pi or a container host than a RHEL machine (§20.8).
