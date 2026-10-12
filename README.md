@@ -61,8 +61,9 @@ web/check                        # every check, as CI runs it
 docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) --load .
 ```
 
-and `web/install/compose.yaml` is the example to run it from. A running server serves the
-clickable mockup at `/demo`.
+and `web/install/compose.yaml` is the example to run it from. A new server has one user,
+`admin`, with the published password `moneykata-setup`: its first sign-in leads only to choosing
+a password and an email address. A running server serves the clickable mockup at `/demo`.
 
 ## License
 

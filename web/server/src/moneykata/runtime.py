@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from . import listener, settings, timezones
 from .app import Server, create_app
+from .auth import users
 from .config import Config
 from .store import maintenance
 from .store.entities.core import TaskRun
@@ -65,6 +66,9 @@ def register_tasks(server: Server) -> None:
 def build(config: Config) -> Server:
     store = maintenance.open_store(config)
     server = Server(config=config, store=store)
+    with server.db.tx() as s:
+        if users.ensure_default_admin(s):
+            log.info("made the default admin: sign in as %s to set it up", users.DEFAULT_ADMIN)
     register_tasks(server)
     return server
 

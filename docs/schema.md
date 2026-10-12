@@ -72,6 +72,7 @@ The prefixes of the tables that exist.
 | Prefix | Table         | Description                                                                |
 |--------|---------------|----------------------------------------------------------------------------|
 | Actv   | Activity      | A change worth showing: who made it and what it is about, never an amount. |
+| Group  | Group         | A named set of users that shares are granted to.                           |
 | Secr   | Secret        | A secret sealed on its own: an API key, a password or a private key.       |
 | User   | User          | A person who signs in here, or a user of a linked server (with `linkId`).  |
 
@@ -91,7 +92,6 @@ designed yet. A row moves to §3.1 when its table is.
 | Dnatn  | Donation      | One charitable gift to an organisation, or a donor-advised fund grant.            |
 | Filng  | Filing        | One return in a tax book (federal, state or local), with its progress and result. |
 | Gift   | Gift          | A gift to or from a person for an occasion, from idea to given.                   |
-| Group  | Group         | A named set of users that shares are granted to.                                  |
 | Hold   | Holding       | What an account holds of one instrument at a point in time.                       |
 | Instr  | Instrument    | A thing with a price: a stock, fund, coin, option contract or currency.           |
 | Link   | Link          | A link with another MoneyKata server.                                             |

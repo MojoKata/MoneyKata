@@ -2,6 +2,12 @@
 server copies the database (verified), then migrates it one revision per transaction, then
 regenerates the Effective views. A database from a newer release refuses the start.
 
+Until the first release there is one revision, 0001, regenerated as tables are added; from
+the first release on, revisions are only ever added.
+
+Migrations run with foreign keys off, as SQLite's table rebuilds need, and a foreign-key check
+must come back clean before they are switched on again.
+
     python -m moneykata.store.migrate revise "message"   a new revision, generated from the
                                                          tables and reviewed by hand
 """
@@ -78,8 +84,18 @@ def upgrade(engine: Engine, db_path: Path, key: str | None, copies_dir: Path | N
         for sql in views.drop_all_sql(conn):
             conn.exec_driver_sql(sql)
         conn.commit()
-        command.upgrade(alembic_config(conn), "head")
-        conn.commit()
+        conn.exec_driver_sql("PRAGMA foreign_keys = OFF")
+        try:
+            command.upgrade(alembic_config(conn), "head")
+            conn.commit()
+            broken = conn.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+            if broken:
+                raise RefuseStart(
+                    f"the migration left {len(broken)} broken references; "
+                    "restore the copy made before it"
+                )
+        finally:
+            conn.exec_driver_sql("PRAGMA foreign_keys = ON")
     with engine.begin() as conn:
         _sync_views(conn)
     log.info("migrated the database from %s to %s", rev or "nothing", target)

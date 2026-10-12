@@ -1,3 +1,4 @@
+import datetime as dt
 from dataclasses import dataclass
 
 from . import Record
@@ -10,3 +11,54 @@ class User(Record):
     displayName: str
     email: str | None = None
     active: bool = True
+    passwordHash: str | None = None
+    passwordChangedAt: dt.datetime | None = None
+    needsSetup: bool = False
+    avatar: str | None = None
+    timeZone: str = "auto"
+    theme: str = "dark"
+    birthYear: int | None = None
+    spouseId: str | None = None
+    alertEmails: str = "daily"
+    lastSignInAt: dt.datetime | None = None
+    reactivationAskedAt: dt.datetime | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class Group(Record):
+    id: str
+    name: str
+    active: bool = True
+    builtIn: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class UserGroup:
+    userId: str
+    groupId: str
+    createdAt: dt.datetime
+    deleted: bool = False
+    deletedAt: dt.datetime | None = None
+    deletedById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class Session:
+    tokenHash: str
+    userId: str
+    createdAt: dt.datetime
+    lastSeenAt: dt.datetime
+    expiresAt: dt.datetime
+    authAt: dt.datetime
+    admin: bool = False
+    needsSetup: bool = False
+
+
+@dataclass(kw_only=True, eq=False)
+class OneTimeToken:
+    tokenHash: str
+    purpose: str
+    userId: str
+    createdAt: dt.datetime
+    expiresAt: dt.datetime
+    data: str | None = None

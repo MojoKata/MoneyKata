@@ -6,10 +6,12 @@ from dataclasses import dataclass, field
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from . import errors, middleware, net, paths, ratelimit, static
+from . import errors, middleware, net, paths, ratelimit, settings, static
+from .auth.users import Services
 from .config import Config
-from .events import Broker
+from .events import STREAM_SECONDS, Broker
 from .jobs import Jobs
+from .mail import Mailer
 from .store.maintenance import Store
 from .tasks import Tasks
 from .ui.conventions import Idempotency
@@ -26,6 +28,7 @@ class Server:
     version: str = field(default_factory=paths.version)
     ready: bool = False
     upload_limit: int = 25 * 1024 * 1024
+    stream_seconds: float = STREAM_SECONDS
     events: Broker = field(default_factory=Broker)
     tasks: Tasks = field(default_factory=Tasks)
     jobs: Jobs = field(default_factory=Jobs)
@@ -41,6 +44,18 @@ class Server:
                 "job", {"id": job.id, "state": job.state}, users=[job.userId]
             )
         )
+        self.services = Services(self.config, Mailer(self.config))
+
+    def badges(self, caller) -> dict[str, int]:
+        """The navigation's counts (§15.1.1), sent on the live stream; they grow with the
+        screens that have them."""
+        return {}
+
+    def session_max_age(self) -> int:
+        if self.store is None:
+            return 30 * 86400
+        with self.db.read() as s:
+            return settings.get(s, "sessionAbsoluteDays") * 86400
 
     @property
     def db(self):
@@ -77,10 +92,17 @@ def create_app(server: Server) -> FastAPI:
             headers={"Cache-Control": "no-store"},
         )
 
+    from .ui import profile, session, users
+    from .ui import settings as settings_routes
+
+    for module in (session, users, profile, settings_routes):
+        app.include_router(module.router)
+    # Last: its catch-alls answer for paths no route above has.
     app.include_router(static.router(static.Static(server.version, server.config.dev)))
 
     # The last added runs first: the client's address, then the log, the headers, the Origin
     # check and the body limit.
+    app.add_middleware(middleware.SessionCookie, max_age=server.session_max_age)
     app.add_middleware(middleware.BodyLimit, upload_limit=lambda: server.upload_limit)
     app.add_middleware(middleware.OriginCheck)
     app.add_middleware(middleware.SecurityHeaders, tls=server.config.mode == "tls")

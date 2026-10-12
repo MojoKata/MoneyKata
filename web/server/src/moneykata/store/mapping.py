@@ -5,7 +5,7 @@ from sqlalchemy.orm import registry
 
 from .entities import Record, _now
 from .entities.core import Activity, Secret, Setting, TaskRun
-from .entities.users import User
+from .entities.users import Group, OneTimeToken, Session, User, UserGroup
 from .tables import activity, core, users
 
 mapper_registry = registry()
@@ -22,6 +22,10 @@ def map_all() -> None:
         return
     _done = True
     _versioned(User, users.User)
+    _versioned(Group, users.Group)
+    mapper_registry.map_imperatively(UserGroup, users.UserGroups)
+    mapper_registry.map_imperatively(Session, users.Session)
+    mapper_registry.map_imperatively(OneTimeToken, users.OneTimeToken)
     _versioned(Setting, core.Setting)
     mapper_registry.map_imperatively(Secret, core.Secret)
     mapper_registry.map_imperatively(TaskRun, core.TaskRun)

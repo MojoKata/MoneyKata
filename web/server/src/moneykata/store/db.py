@@ -82,10 +82,9 @@ class Database:
         """A read under PRAGMA query_only: any write in it fails."""
         with Session(self.engine, expire_on_commit=False, autoflush=False) as s:
             s.connection(execution_options={"mk_mode": "read"})
-            try:
-                yield s
-            finally:
-                s.rollback()
+            # Leaving the block closes the session: the pool rolls the connection back, and
+            # what was read stays loaded (a rollback here would expire it).
+            yield s
 
     def dispose(self) -> None:
         self.engine.dispose()

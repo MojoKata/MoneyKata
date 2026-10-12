@@ -141,6 +141,11 @@ def check_database(connection, metadata: MetaData) -> list[str]:
         ).scalar()
         if sql is None:
             problems.append(f"table {t.name} is missing from the database")
-        elif "id" in t.c and "WITHOUT ROWID" not in sql.upper():
-            problems.append(f"table {t.name} is not WITHOUT ROWID in the database")
+        else:
+            if "id" in t.c and "WITHOUT ROWID" not in sql.upper():
+                problems.append(f"table {t.name} is not WITHOUT ROWID in the database")
+            for c in t.constraints:
+                check = getattr(c, "sqltext", None)
+                if check is not None and str(check) not in sql:
+                    problems.append(f"table {t.name} lacks CHECK ({check}) in the database")
     return problems

@@ -240,3 +240,38 @@ class AccessLog:
                 user,
                 (time.monotonic() - start) * 1000,
             )
+
+
+class SessionCookie:
+    """Writes the session cookie a route or dependency asked for (request.state.set_cookie):
+    HttpOnly, Secure, SameSite=Strict, Path=/ui (§16.7.1). An empty value clears it."""
+
+    def __init__(self, app, max_age: Callable[[], int]):
+        self.app = app
+        self.max_age = max_age
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def wrapped(message):
+            if message["type"] == "http.response.start":
+                token = scope.get("state", {}).get("set_cookie")
+                if token is not None:
+                    if token:
+                        cookie = (
+                            f"mk_session={token}; Path=/ui; Max-Age={self.max_age()}; "
+                            "HttpOnly; Secure; SameSite=Strict"
+                        )
+                    else:
+                        cookie = (
+                            "mk_session=; Path=/ui; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
+                        )
+                    message = dict(
+                        message,
+                        headers=[*message.get("headers", []), (b"set-cookie", cookie.encode())],
+                    )
+            await send(message)
+
+        await self.app(scope, receive, wrapped)
