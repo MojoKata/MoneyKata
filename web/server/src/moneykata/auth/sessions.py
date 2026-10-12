@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as Db
 
-from .. import settings
+from .. import clock, settings
 from ..store.entities.users import Session
 from .tokens import digest, new_token
 
@@ -17,7 +17,7 @@ COOKIE = "mk_session"
 
 
 def now() -> dt.datetime:
-    return dt.datetime.now(dt.UTC)
+    return clock.now()
 
 
 def create(

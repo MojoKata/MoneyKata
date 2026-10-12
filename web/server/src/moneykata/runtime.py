@@ -7,7 +7,7 @@ import logging
 
 from sqlalchemy import delete, select
 
-from . import listener, settings, timezones
+from . import figures, listener, settings, timezones
 from .app import Server, create_app
 from .auth import sessions, users
 from .config import Config
@@ -81,6 +81,16 @@ def register_tasks(server: Server) -> None:
         "prices", lambda ctx: pricing.refresh(server, ctx), Daily(price_time), last.get("prices")
     )
 
+    def reencrypt(ctx: TaskContext) -> None:
+        """Settings › Key storage › Re-encrypt: only when asked (§18.7.2)."""
+        server.store = maintenance.reencrypt(server.config, server.store)
+        with server.db.tx() as s:
+            from . import activity
+
+            activity.record(s, "keys.reencrypted", actor=None, for_admins=True)
+
+    server.tasks.register("reencrypt", reencrypt, None, last.get("reencrypt"))
+
 
 def build(config: Config) -> Server:
     store = maintenance.open_store(config)
@@ -90,6 +100,7 @@ def build(config: Config) -> Server:
         if users.ensure_default_admin(s):
             log.info("made the default admin: sign in as %s to set it up", users.DEFAULT_ADMIN)
         ledger.ensure_categories(s)
+        figures.ensure_benchmarks(s)
     if config.dev and config.stubs:
         from .dev import devmode
 

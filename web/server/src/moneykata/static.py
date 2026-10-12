@@ -67,6 +67,7 @@ class Static:
         self.ui = ui.resolve()
         self.demo = demo
         self.template = (ui / "index.html").read_text()
+        self._cache: dict[Path, bytes] = {}
 
     def page(self) -> HTMLResponse:
         nonce = secrets.token_urlsafe(18)
@@ -104,8 +105,16 @@ class Static:
         media = TYPES.get(target.suffix)
         if media is None:
             raise Problem(404, "not-found", "Not found")
+        # Served from memory, on the event loop: a file read on a worker thread would wait
+        # behind the API's requests when they are busy, and the page couldn't load.
+        if self.dev:
+            body = target.read_bytes()
+        else:
+            body = self._cache.get(target)
+            if body is None:
+                body = self._cache[target] = target.read_bytes()
         cache = "no-cache" if self.dev else YEAR
-        return FileResponse(target, media_type=media, headers={"Cache-Control": cache})
+        return Response(body, media_type=media, headers={"Cache-Control": cache})
 
     def demo_page(self) -> Response:
         if not self.demo.is_file():

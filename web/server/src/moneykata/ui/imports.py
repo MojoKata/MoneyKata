@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy import false, select
 
-from .. import access, ids, settings
+from .. import access, clock, ids, settings
 from ..errors import Problem, refuse
 from ..importers import csvfile, ofx
 from ..importers.parsed import ReadError
@@ -93,7 +93,7 @@ def _accepted(job: Job) -> JSONResponse:
 
 def _hold(data: bytes, account_id: str, user_id: str, name: str) -> str:
     key = "Upl_" + secrets.token_urlsafe(18)
-    now = dt.datetime.now(dt.UTC)
+    now = clock.now()
     with _held_lock:
         for k in [k for k, h in _held.items() if h.until < now]:
             del _held[k]
@@ -229,7 +229,7 @@ def apply_mapping(upload_id: str, body: MappingIn, request: Request, c: Caller =
     srv = server(request)
     with _held_lock:
         held = _held.get(upload_id)
-    if held is None or held.userId != c.id or held.until < dt.datetime.now(dt.UTC):
+    if held is None or held.userId != c.id or held.until < clock.now():
         raise Problem(404, "upload-gone", "That upload has expired; choose the file again.")
     problems = csvfile.check_mapping(body.mapping)
     if problems:

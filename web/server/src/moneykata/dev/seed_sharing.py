@@ -1,10 +1,8 @@
 """Dev mode's shares and portfolios (requirements §20.7), so every sharing mark shows."""
 
-import datetime as dt
-
 from sqlalchemy import func, select
 
-from .. import activity, ids
+from .. import activity, clock, ids
 from ..store.entities.accounts import Account, Import, Transaction
 from ..store.entities.sharing import CountedAccount, Portfolio, PortfolioAccount, Share
 from ..store.entities.users import Group
@@ -14,7 +12,7 @@ def seed_sharing(s, people: dict) -> None:
     alice, bob = people["alice"], people["bob"]
     acct = {a.name: a for a in s.scalars(select(Account))}
     household = s.scalars(select(Group).where(Group.name == "Household")).one()
-    now = dt.datetime.now(dt.UTC)
+    now = clock.now()
 
     def grant(kind, item, level, user=None, group=None, by=alice):
         s.add(

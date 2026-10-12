@@ -14,6 +14,7 @@ from decimal import Decimal
 from sqlalchemy import false, select
 from sqlalchemy.orm import Session
 
+from . import clock
 from .ledger import balances
 from .money import CENT
 from .store.entities.accounts import Holding, Instrument, Transaction
@@ -45,7 +46,7 @@ def use_closes(lookup: CloseLookup, history: CloseHistory | None = None) -> None
 
 def prices(s: Session, instrument_ids: list[str], day: dt.date | None = None) -> dict[str, Price]:
     """The latest price on or before the day for each instrument."""
-    day = day or dt.date.today()
+    day = day or clock.today()
     ids_ = list(dict.fromkeys(instrument_ids))
     out: dict[str, Price] = {}
     if not ids_:

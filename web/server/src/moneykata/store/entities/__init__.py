@@ -4,9 +4,11 @@ store/mapping.py maps each onto its table."""
 import datetime as dt
 from dataclasses import dataclass, field
 
+from ... import clock
+
 
 def _now() -> dt.datetime:
-    return dt.datetime.now(dt.UTC)
+    return clock.now()
 
 
 @dataclass(kw_only=True, eq=False)

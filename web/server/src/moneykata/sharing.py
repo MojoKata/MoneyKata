@@ -5,13 +5,12 @@ until Save, which replaces the item's grants as a whole. Removing a share ends t
 access on their next request and deletes their own annotations on the item (their tags).
 """
 
-import datetime as dt
 from dataclasses import dataclass, field
 
 from sqlalchemy import false, select
 from sqlalchemy.orm import Session
 
-from . import access, activity, ids
+from . import access, activity, clock, ids
 from .errors import FieldError, Problem
 from .store.entities.accounts import Account, Transaction, TransactionTag
 from .store.entities.sharing import Portfolio, PortfolioAccount, Share
@@ -218,7 +217,7 @@ def _share_accounts_too(s: Session, by: User, p: Portfolio) -> int:
 
 def _drop_annotations(s: Session, user_id: str, account_id: str) -> None:
     """A removed receiver's own tags on the account's transactions are deleted (§13.4)."""
-    now = dt.datetime.now(dt.UTC)
+    now = clock.now()
     for tag in s.scalars(
         select(TransactionTag)
         .join(Transaction, Transaction.id == TransactionTag.transactionId)

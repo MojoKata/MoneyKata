@@ -6,6 +6,7 @@ import hashlib
 import math
 from decimal import Decimal
 
+from .. import clock
 from .base import Ref, TickerSource, register
 
 START = dt.date(2020, 1, 1)
@@ -39,7 +40,7 @@ class Stub(TickerSource):
         day = start
         trading = ref.instrumentClass == "crypto"
         # A close exists once its market day has closed: today's comes tomorrow.
-        end = min(end, dt.date.today() - dt.timedelta(days=0 if trading else 1))
+        end = min(end, clock.today() - dt.timedelta(days=0 if trading else 1))
         while day <= end:
             if trading or day.weekday() < 5:
                 out.append((day, walk(ref.symbol, day)))

@@ -35,34 +35,43 @@ def set_cookie(request: Request, token: str | None) -> None:
 
 
 def _resolve(request: Request, allow_setup: bool, touch: bool) -> Caller:
+    """Most requests only read: a write (and its lock) is taken only to remove an ended
+    session, to rotate the token, or to note the session's use once a minute."""
     srv = server(request)
     token = request.cookies.get(sessions.COOKIE)
-    refusal: Problem | None = None
-    with srv.db.tx() as s:
+    with srv.db.read() as s:
         found = sessions.find(s, token)
         user = s.get(User, found.session.userId) if found else None
-        if found is None:
-            refusal = Problem(401, "not-signed-in", "Sign in to continue.")
-        elif found.ended:
-            # Removed outright, and committed before the refusal (schema.md §4.4.1).
-            sessions.end(s, found.session.tokenHash)
-            refusal = Problem(401, "session-expired", "Your session ended. Sign in again.")
-        elif user is None or user.deleted or not user.active:
-            sessions.end_all(s, found.session.userId)
-            refusal = Problem(401, "account-disabled", "This account is disabled.")
-        else:
-            row = found.session
-            admin = is_admin(s, user.id)
-            if admin != row.admin or user.needsSetup != row.needsSetup:
-                # A change of privilege: a new token, so the old one never works again.
-                new = sessions.rotate(s, row, admin, user.needsSetup)
-                set_cookie(request, new)
-                row = sessions.find(s, new).session
-            now = sessions.now()
-            if touch and (now - row.lastSeenAt).total_seconds() >= TOUCH_SECONDS:
-                row.lastSeenAt = now
-    if refusal:
-        raise refusal
+        admin = is_admin(s, user.id) if user is not None else False
+    if found is None:
+        raise Problem(401, "not-signed-in", "Sign in to continue.")
+    row = found.session
+    gone = user is None or user.deleted or not user.active
+    rotate = (
+        not found.ended and not gone and (admin != row.admin or user.needsSetup != row.needsSetup)
+    )
+    stale_touch = touch and (sessions.now() - row.lastSeenAt).total_seconds() >= TOUCH_SECONDS
+    if found.ended or gone or rotate or stale_touch:
+        with srv.db.tx() as s:
+            if found.ended:
+                # Removed outright, and committed before the refusal (schema.md §4.4.1).
+                sessions.end(s, row.tokenHash)
+            elif gone:
+                sessions.end_all(s, row.userId)
+            else:
+                live = s.get(Session, row.tokenHash)
+                if live is not None and rotate:
+                    # A change of privilege: a new token; the old one never works again.
+                    new = sessions.rotate(s, live, admin, user.needsSetup)
+                    set_cookie(request, new)
+                    live = sessions.find(s, new).session
+                if live is not None and stale_touch:
+                    live.lastSeenAt = sessions.now()
+                row = live or row
+    if found.ended:
+        raise Problem(401, "session-expired", "Your session ended. Sign in again.")
+    if gone:
+        raise Problem(401, "account-disabled", "This account is disabled.")
     if row.needsSetup and not allow_setup:
         raise Problem(403, "setup-required", "Finish setting up the admin account first.")
     srv.api_limit.check(row.tokenHash, "requests")

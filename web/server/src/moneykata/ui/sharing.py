@@ -1,6 +1,5 @@
 """The Share dialog and a receiver's Count in my totals (requirements §13.4–§13.7)."""
 
-import datetime as dt
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Request
@@ -8,7 +7,7 @@ from fastapi.responses import Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, sharing
+from .. import access, clock, sharing
 from ..errors import Problem
 from ..store.entities.accounts import Account
 from ..store.entities.sharing import CountedAccount
@@ -182,7 +181,7 @@ def set_counted(account_id: str, body: Counted, request: Request, c: Caller = De
                     userId=c.id,
                     accountId=a.id,
                     counted=body.counted,
-                    createdAt=dt.datetime.now(dt.UTC),
+                    createdAt=clock.now(),
                 )
             )
         else:

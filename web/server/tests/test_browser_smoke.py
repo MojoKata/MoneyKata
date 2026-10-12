@@ -38,9 +38,10 @@ backups = "{tmp / "backups"}"
 master = "{tmp / "keys" / "master.key"}"
 """)
     keys_cli.init(load(config), say=lambda _: None, confirm=False)
+    log = open(tmp / "server.log", "wb")  # noqa: SIM115 - a file: an unread pipe fills up
     proc = subprocess.Popen(
         [sys.executable, "-m", "moneykata.main", "--config", str(config), "serve"],
-        stdout=subprocess.PIPE,
+        stdout=log,
         stderr=subprocess.STDOUT,
     )
     base = f"http://127.0.0.1:{port}"
@@ -52,8 +53,7 @@ master = "{tmp / "keys" / "master.key"}"
         except httpx.TransportError:
             pass
         if proc.poll() is not None:
-            out = proc.stdout.read().decode() if proc.stdout else ""
-            pytest.fail(f"server exited: {out}")
+            pytest.fail(f"server exited: {(tmp / 'server.log').read_text()}")
         time.sleep(0.1)
     yield base
     proc.terminate()  # SIGTERM: a clean stop within the 5-second grace (§16.6)
@@ -74,7 +74,24 @@ def open_page(browser, url):
     page = browser.new_page(viewport={"width": 1440, "height": 900})
     problems = []
     page.on("pageerror", lambda e: problems.append(f"page error: {e}"))
-    page.on("console", lambda m: m.type == "error" and problems.append(f"console: {m.text}"))
+    # The session check before signing in answers 401 by design; its "Failed to load resource"
+    # carries no address, so failed responses are checked by address instead.
+    page.on(
+        "console",
+        lambda m: (
+            m.type == "error"
+            and "Failed to load resource" not in m.text
+            and problems.append(f"console: {m.text}")
+        ),
+    )
+    page.on(
+        "response",
+        lambda r: (
+            r.status >= 400
+            and not r.url.endswith("/ui/api/session")
+            and problems.append(f"{r.status} for {r.url}")
+        ),
+    )
     page.goto(url)
     return page, problems
 

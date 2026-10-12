@@ -24,9 +24,9 @@ def setup_logging(verbose: bool = False) -> None:
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
-def dev_config(port: int, stubs: bool, peer: bool) -> Config:
+def dev_config(port: int, stubs: bool, peer: bool, base: Path | None = None) -> Config:
     """Dev mode (requirements §20.7): the whole server from a checkout, as the current user."""
-    base = paths.WEB / (".dev-peer" if peer else ".dev")
+    base = base or paths.WEB / (".dev-peer" if peer else ".dev")
     return Config(
         name="dev-peer" if peer else "dev",
         mode="tls",
@@ -61,7 +61,7 @@ def cmd_serve(args) -> int:
 
 def cmd_dev(args) -> int:
     port = args.port or (37374 if args.peer else 37373)
-    config = dev_config(port, args.stubs, args.peer)
+    config = dev_config(port, args.stubs, args.peer, Path(args.data) if args.data else None)
     refuse_dev(config)
     return serve(config, seed=args.seed)
 
@@ -107,6 +107,7 @@ def parser() -> argparse.ArgumentParser:
     d.add_argument("--stubs", action="store_true", help="use the stub price source")
     d.add_argument("--peer", action="store_true", help="a second server, for links")
     d.add_argument("--port", type=int)
+    d.add_argument("--data", help="where dev mode keeps its data (default web/.dev)")
     d.set_defaults(func=cmd_dev)
 
     h = sub.add_parser("health", help="check that the running server answers")

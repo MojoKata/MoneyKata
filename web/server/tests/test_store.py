@@ -310,3 +310,38 @@ def test_migration_copies_the_database_first(store, keyed_config, monkeypatch):
 
 def test_database_class_requires_a_unit_of_work(db):
     assert isinstance(db, Database)
+
+
+def test_the_pool_keeps_connections_apart_across_threads(db):
+    """Many requests at once each get their own connection, never a closed one."""
+    import threading
+
+    from sqlalchemy.pool import QueuePool
+
+    assert isinstance(db.engine.pool, QueuePool)
+    with db.tx() as s:
+        new_user(s)
+    failures = []
+
+    def read():
+        try:
+            for _ in range(20):
+                with db.read() as s:
+                    s.scalars(select(User)).all()
+        except Exception as e:
+            failures.append(e)
+
+    threads = [threading.Thread(target=read) for _ in range(16)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert failures == []
+
+
+def test_a_backup_after_reads_still_writes_its_copy(store, keyed_config):
+    """A pooled connection returns writable after a read (the backup's export needs it)."""
+    for _ in range(5):
+        with store.db.read() as s:
+            s.scalars(select(User)).all()
+    maintenance.backup(keyed_config, store)

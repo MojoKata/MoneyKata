@@ -9,7 +9,7 @@ from pathlib import Path
 import sqlcipher3
 from sqlalchemy import Engine, and_, create_engine, event, false, select
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import QueuePool
 
 from . import views
 
@@ -41,12 +41,26 @@ def connect(path: Path, key: str | None) -> sqlcipher3.Connection:
 
 
 def make_engine(path: Path, key: str | None) -> Engine:
+    # The URL names no file (the creator opens it with its key), which SQLAlchemy would take for
+    # an in-memory database and give a SingletonThreadPool; that pool closes connections other
+    # threads still use. A QueuePool keeps one connection per checkout.
     engine = create_engine(
         "sqlite://",
         creator=lambda: connect(path, key),
         module=sqlcipher3,
-        poolclass=NullPool if path.name == ":memory:" else None,
+        poolclass=QueuePool,
+        # More connections than the server has worker threads (40), so a thread never waits
+        # for one; SQLite in WAL mode serves many readers at once.
+        pool_size=16,
+        max_overflow=32,
+        pool_timeout=30,
     )
+
+    @event.listens_for(engine, "checkin")
+    def checkin(dbapi_connection, record):
+        # A connection goes back to the pool writable: a read leaves PRAGMA query_only on,
+        # and a raw connection taken later (a backup's export) runs no BEGIN to reset it.
+        dbapi_connection.execute("PRAGMA query_only = OFF")
 
     @event.listens_for(engine, "begin")
     def begin(conn):

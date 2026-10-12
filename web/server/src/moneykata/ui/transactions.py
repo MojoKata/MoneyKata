@@ -10,7 +10,7 @@ from pydantic import Field
 from sqlalchemy import and_, false, func, or_, select, type_coerce
 from sqlalchemy.orm import Session
 
-from .. import access, activity, ids
+from .. import access, activity, clock, ids
 from ..errors import FieldError, Problem, refuse
 from ..ledger import types as atypes
 from ..store.entities.accounts import (
@@ -375,6 +375,29 @@ def list_transactions(
         return Page[TxnOut](items=shape(s, c.id, page, visible), next=nxt)
 
 
+class Newer(Model):
+    count: int
+
+
+@router.get("/transactions/newer", response_model=Newer)
+def newer_transactions(
+    request: Request, c: Caller = Depends(caller), since: dt.datetime = Query(...)
+):
+    """How many transactions arrived after the page loaded: the +N new pill (§15.1.3)."""
+    with server(request).db.read() as s:
+        visible = [a.id for a, _ in access.visible_accounts(s, c.id)]
+        n = s.scalar(
+            select(func.count())
+            .select_from(Transaction)
+            .where(
+                Transaction.accountId.in_(visible),
+                Transaction.deleted == false(),
+                Transaction.createdAt > since,
+            )
+        )
+        return Newer(count=n or 0)
+
+
 # ---------- writing ----------
 
 
@@ -458,7 +481,7 @@ def _set_tags(s: Session, t: Transaction, user_id: str, tags: list[str]) -> None
             )
         )
     }
-    now = dt.datetime.now(dt.UTC)
+    now = clock.now()
     for tag in wanted:
         if tag in current:
             if current[tag].deleted:
@@ -559,7 +582,7 @@ def create_transaction(body: TxnIn, request: Request, c: Caller = Depends(caller
                         saleId=t.id,
                         lotId=lot.id,
                         quantity=p.quantity,
-                        createdAt=dt.datetime.now(dt.UTC),
+                        createdAt=clock.now(),
                     )
                 )
         _set_splits(s, t, body.splits, c.id)

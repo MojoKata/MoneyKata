@@ -11,13 +11,14 @@ import json
 import logging
 from decimal import Decimal
 
-from sqlalchemy import and_, false, func, select
+from sqlalchemy import and_, false, func, insert, select
 from sqlalchemy.orm import Session
 
-from .. import valuation
+from .. import clock, valuation
 from ..store.entities.accounts import Account, Holding, Instrument, Transaction
 from ..store.entities.prices import Price, PriceSource
 from ..store.repos import secrets as secret_repo
+from ..store.tables import prices as prices_table
 from ..tasks import TaskContext
 from .base import SOURCES, Ref, SourceError, TickerSource
 
@@ -64,7 +65,7 @@ def stored_closes(
         .join(latest, and_(latest.c.instrumentId == Price.instrumentId, latest.c.d == Price.date))
         .join(Instrument, Instrument.id == Price.instrumentId)
     ).all()
-    today = dt.date.today()
+    today = clock.today()
     return {
         p.instrumentId: valuation.Price(
             p.close,
@@ -147,7 +148,7 @@ def priced(s: Session) -> list[tuple[Instrument, dt.date]]:
         .group_by(Holding.instrumentId)
     ):
         firsts[iid] = min(day, firsts.get(iid, day))
-    today = dt.date.today()
+    today = clock.today()
     for inst in s.scalars(
         select(Instrument).where(Instrument.symbol.in_(BENCHMARKS), Instrument.deleted == false())
     ):
@@ -173,6 +174,10 @@ def last_stored(s: Session) -> dict[str, dt.date]:
 def store(
     s: Session, instrument_id: str, closes: list[tuple[dt.date, Decimal]], source: str
 ) -> int:
+    """New closes are inserted in bulk; a fetched close that changed replaces the old one, but
+    never a typed price."""
+    if not closes:
+        return 0
     have = {
         p.date: p
         for p in s.scalars(
@@ -181,18 +186,25 @@ def store(
             )
         )
     }
-    n = 0
-    now = dt.datetime.now(dt.UTC)
+    now = clock.now()
+    fresh = [
+        {
+            "instrumentId": instrument_id,
+            "date": day,
+            "close": close,
+            "source": source,
+            "fetchedAt": now,
+            "updatedAt": now,
+        }
+        for day, close in closes
+        if day not in have
+    ]
+    if fresh:
+        s.execute(insert(prices_table.Price), fresh)
+    n = len(fresh)
     for day, close in closes:
         old = have.get(day)
-        if old is None:
-            s.add(
-                Price(
-                    instrumentId=instrument_id, date=day, close=close, source=source, fetchedAt=now
-                )
-            )
-            n += 1
-        elif old.source != "manual" and old.close != close:
+        if old is not None and old.source != "manual" and old.close != close:
             old.close, old.source, old.fetchedAt = close, source, now
             n += 1
     return n
@@ -218,7 +230,7 @@ def build(server, src: PriceSource, ctx: TaskContext | None) -> TickerSource:
 def refresh(server, ctx: TaskContext | None = None) -> dict:
     """Load what is missing up to today for every priced instrument."""
     dev = server.config.dev
-    today = dt.date.today()
+    today = clock.today()
     with server.db.read() as s:
         sources = enabled(s, dev)
         wanted = priced(s)
@@ -255,7 +267,7 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
             with server.db.tx() as s:
                 stored += store(s, inst.id, closes, src.name)
             break
-    now = dt.datetime.now(dt.UTC)
+    now = clock.now()
     with server.db.tx() as s:
         for src in s.scalars(select(PriceSource).where(PriceSource.id.in_(list(runs)))):
             run = runs[src.id]
@@ -277,6 +289,6 @@ def status(s: Session, dev: bool) -> dict:
     rows = enabled(s, dev)
     last = max((r.lastOkAt for r in rows if r.lastOkAt), default=None)
     ids = [i.id for i, _ in priced(s)]
-    closes = stored_closes(s, ids, dt.date.today())
+    closes = stored_closes(s, ids, clock.today())
     stale = any(p.stale for p in closes.values()) or (bool(ids) and len(closes) < len(ids))
     return {"lastRefresh": last, "stale": stale and bool(ids), "sources": len(rows)}

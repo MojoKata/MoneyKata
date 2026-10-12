@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, ids, valuation
+from .. import access, activity, clock, ids, valuation
 from ..errors import FieldError, Problem, refuse
 from ..ledger import reconcile
 from ..ledger import types as atypes
@@ -260,7 +260,7 @@ def context(s, user_id: str, account_ids: list[str]) -> Context:
         user_id,
         {u.id: u for u in s.scalars(select(User))},
         repo.latest_activity(s, account_ids),
-        dt.date.today(),
+        clock.today(),
         counted_for(s, user_id),
     )
 
@@ -466,7 +466,7 @@ def account_series(
     c: Caller = Depends(caller),
     range: str = Query("1Y", pattern="^(1M|3M|YTD|1Y|5Y|All)$"),
 ):
-    today = dt.date.today()
+    today = clock.today()
     with server(request).db.read() as s:
         a, _ = access.account(s, c.id, account_id)
         ledger = repo.load(s, a)
@@ -521,7 +521,7 @@ def account_holdings(account_id: str, request: Request, c: Caller = Depends(call
                             basis=x.basis,
                             basisMissing=x.basisMissing,
                             standIn=x.standIn,
-                            longTerm=(dt.date.today() - x.acquiredOn).days > 365,
+                            longTerm=(clock.today() - x.acquiredOn).days > 365,
                         )
                         for x in sorted(lots, key=lambda x: x.acquiredOn)
                     ],
@@ -609,9 +609,7 @@ def account_reconcile(account_id: str, request: Request, c: Caller = Depends(cal
                 )
                 for k in checks
             ],
-            needsAnchor=reconcile.needs_anchor(
-                ledger.anchors, ledger.transactions, dt.date.today()
-            ),
+            needsAnchor=reconcile.needs_anchor(ledger.anchors, ledger.transactions, clock.today()),
             openingStandIn=start.standIn,
             reconciliations=[_reconciliation_row(s, r) for r in recs],
         )
@@ -620,7 +618,7 @@ def account_reconcile(account_id: str, request: Request, c: Caller = Depends(cal
 @router.post("/accounts/{account_id}/anchors", status_code=201)
 def add_anchor(account_id: str, body: NewAnchor, request: Request, c: Caller = Depends(caller)):
     """A balance typed from the institution's site (§4.11.2)."""
-    if body.date > dt.date.today():
+    if body.date > clock.today():
         raise refuse("date", "date-in-future", "A reported balance can't be in the future.")
     with server(request).db.tx() as s:
         a, _ = access.account(s, c.id, account_id, "write")
@@ -729,7 +727,7 @@ def finish_reconciliation(
                 )
             ):
                 t.reconciliationId = r.id
-            r.finishedAt, r.finishedById = dt.datetime.now(dt.UTC), c.id
+            r.finishedAt, r.finishedById = clock.now(), c.id
             activity.record(
                 s,
                 "account.reconciled",

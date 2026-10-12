@@ -21,6 +21,7 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
+from .. import clock
 from ..config import Config, RefuseStart
 
 KEY_BYTES = 16
@@ -54,7 +55,7 @@ def _unb64(s: str) -> bytes:
 
 
 def now() -> dt.datetime:
-    return dt.datetime.now(dt.UTC).replace(microsecond=0)
+    return clock.now().replace(microsecond=0)
 
 
 # ---------- the key file ----------

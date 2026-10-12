@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from sqlalchemy import delete, false, func, select
 from sqlalchemy.orm import Session as Db
 
-from .. import activity, ids, settings
+from .. import activity, clock, ids, settings
 from ..config import Config
 from ..errors import FieldError, Problem, refuse
 from ..mail import Email, Mailer, base_url, link
@@ -32,7 +32,7 @@ EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 def now() -> dt.datetime:
-    return dt.datetime.now(dt.UTC)
+    return clock.now()
 
 
 # ---------- reading ----------

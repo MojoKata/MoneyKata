@@ -1,0 +1,136 @@
+// New account (requirements §15.2.2): a type picker, then the account form.
+import { useState } from 'preact/hooks';
+import { html } from '../app/html.js';
+import { api } from '../api/client.js';
+import { useSubmit } from '../app/hooks.js';
+import { Dialog } from '../components/dialog.js';
+import { useDialogGuide } from '../components/help.js';
+import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
+import { Tile } from '../components/bits.js';
+import { toast } from '../components/toast.js';
+import { BY_TYPE, TYPES } from '../account-types/index.js';
+
+export const LOT_METHODS = /** @type {[string, string][]} */ ([
+  ['fifo', 'FIFO (first in, first out)'],
+  ['lifo', 'LIFO (last in, first out)'],
+  ['hifo', 'HIFO (highest cost first)'],
+  ['specific', 'Specific identification'],
+  ['average', 'Average cost'],
+]);
+export const KEPT_BY = /** @type {[string, string][]} */ ([
+  ['file', 'File import (OFX, QFX or CSV)'],
+  ['manual', 'Manual'],
+]);
+
+/** @param {{ close: (v?: any) => void }} p */
+export function NewAccount({ close }) {
+  const [type, setType] = useState(/** @type {string | null} */ (null));
+  useDialogGuide(type ? 'dialog-account-form' : 'dialog-new-account');
+  if (!type) {
+    return html`
+      <${Dialog} title="New account" wide close=${close} footer=${null}>
+        <p class="small dim" style=${{
+          marginTop: 0,
+        }}>Choose the type. It decides the fields, the tax
+              treatment and how the account can be kept current.</p>
+        <div class="type-grid">${TYPES.map((t) =>
+          html`<button type="button" class="type-card" onClick=${() => setType(t.type)}>
+          <${Tile} group=${t.group} icon=${t.icon} /><div style=${{
+            textAlign: 'left',
+          }}><div>${t.label}</div>
+          <div class="sub">${t.hint}</div></div></button>`
+        )}</div>
+        </${Dialog}>
+    `;
+  }
+  return html`<${AccountForm} type=${type} close=${close} back=${() => setType(null)} />`;
+}
+
+/** @param {{ type: string, close: (v?: any) => void, back: () => void }} p */
+function AccountForm({ type, close, back }) {
+  const t = BY_TYPE[type];
+  const [f, setF] = useState({
+    name: '',
+    institution: '',
+    mask: '',
+    keptBy: 'file',
+    lotMethod: 'fifo',
+    openingBalance: '',
+    openingDate: '',
+  });
+  const set = (/** @type {string} */ k) => (/** @type {string} */ v) => setF({ ...f, [k]: v });
+  const save = useSubmit(async () => {
+    const body = {
+      name: f.name,
+      type,
+      institution: f.institution || null,
+      mask: f.mask || null,
+      keptBy: [f.keptBy],
+      lotMethod: f.lotMethod,
+      openingBalance: f.openingBalance ? f.openingBalance.replace(/[$,\s]/g, '') : null,
+      openingDate: f.openingDate || null,
+    };
+    const a = await api.post('/accounts', body, { idempotent: true });
+    toast(`${a.name} made`);
+    close(a);
+    location.assign(`/ui/accounts/${a.id}`);
+  });
+  const e = save.error;
+  return html`
+    <${Dialog} title=${`New ${t.label} account`} close=${close} onSubmit=${() =>
+      save.run().catch(() => {})} footer=${html`
+      <button type="button" class="btn" onClick=${back}>Back</button>
+      <button class="btn primary" disabled=${save.busy}>Create</button>
+    `}>
+      <${Field} label="Name" error=${errAt(e, 'name')}>
+        <${Input} value=${f.name} onInput=${set('name')}
+          placeholder=${t.investing ? 'Individual brokerage' : 'Everyday checking'} required />
+        </${Field}>
+        <div class="row">
+          <${Field} label="Institution" error=${errAt(e, 'institution')}>
+            <${Input} value=${f.institution}
+              onInput=${set('institution')} placeholder="The bank or broker" />
+            </${Field}>
+            <${Field} label="Last 4" id="mask" error=${errAt(e, 'mask')}>
+              <${Input} value=${f.mask}
+                onInput=${set('mask')} inputmode="numeric" placeholder="4821" />
+              </${Field}>
+              </div>
+              <${Field} label="Keep it current by" id="kept-by" error=${errAt(
+                e,
+                'keptBy',
+              )}><${Select}
+          value=${f.keptBy} onChange=${set('keptBy')} options=${KEPT_BY} /></${Field}>
+        ${t.investing
+          ? html`
+            <${Field} label="Lot method" error=${errAt(e, 'lotMethod')}
+              hint="How sales pick lots. The method in force at a sale is recorded with it.">
+              <${Select}
+                value=${f.lotMethod} onChange=${set('lotMethod')} options=${LOT_METHODS} />
+              </${Field}>
+          `
+          : null}
+        <div class="row">
+          <${Field} label="Opening balance" error=${errAt(e, 'openingBalance')}
+            hint="Optional. Without it, the first imported balance stands in."><${Input}
+            value=${f.openingBalance} onInput=${set(
+              'openingBalance',
+            )} inputmode="decimal" placeholder="0.00" /></${Field}>
+          <${Field} label="Opening balance date" id="opening-date" error=${errAt(
+            e,
+            'openingDate',
+          )}><${Input}
+            type="date" value=${f.openingDate} onInput=${set('openingDate')} /></${Field}>
+        </div>
+        <${FormError} error=${e} shown=${[
+          'name',
+          'institution',
+          'mask',
+          'keptBy',
+          'lotMethod',
+          'openingBalance',
+          'openingDate',
+        ]} />
+      </${Dialog}>
+  `;
+}

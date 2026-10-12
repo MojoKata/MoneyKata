@@ -7,7 +7,7 @@ from decimal import Decimal
 from sqlalchemy import Integer, Text
 from sqlalchemy.types import TypeDecorator
 
-from .. import money
+from .. import clock, money
 
 
 class Cents(TypeDecorator):
@@ -84,4 +84,4 @@ class Day(TypeDecorator):
 
 
 def utcnow() -> dt.datetime:
-    return dt.datetime.now(dt.UTC)
+    return clock.now()

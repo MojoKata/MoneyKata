@@ -47,15 +47,17 @@ def balance_on(day: dt.date, start: Opening, transactions: list) -> Decimal:
 def daily(
     start: Opening, transactions: list, first: dt.date, last: dt.date
 ) -> list[tuple[dt.date, Decimal]]:
-    """The end-of-day balance for every day from first to last."""
+    """The end-of-day balance for every day from first to last. Before the account's history
+    begins (its opening date, or its first transaction) there is nothing to count: zero."""
     by_day: dict[dt.date, Decimal] = {}
     for t in transactions:
         by_day[t.date] = by_day.get(t.date, ZERO) + t.amount
+    begins = start.date or min(by_day, default=None)
     running = start.balance + sum((v for d, v in by_day.items() if d < first), ZERO)
     out = []
     day = first
     while day <= last:
         running += by_day.get(day, ZERO)
-        out.append((day, running))
+        out.append((day, running if begins is None or day >= begins else ZERO))
         day += dt.timedelta(days=1)
     return out

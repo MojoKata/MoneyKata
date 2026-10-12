@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, ids
+from .. import access, activity, clock, ids
 from ..errors import FieldError, Problem, refuse
 from ..prices import SOURCES
 from ..prices import refresh as pricing
@@ -306,7 +306,7 @@ def _held_writable(s, user_id: str, instrument_id: str) -> bool:
 @router.post("/instruments/{instrument_id}/prices", status_code=201)
 def type_price(instrument_id: str, body: TypedPrice, request: Request, c: Caller = Depends(caller)):
     """A price from a statement, or typed, with its date (§7.3)."""
-    if body.date > dt.date.today():
+    if body.date > clock.today():
         raise refuse("date", "date-in-future", "A price can't be dated in the future.")
     if body.price < 0:
         raise refuse("price", "price-negative", "A price can't be negative.")

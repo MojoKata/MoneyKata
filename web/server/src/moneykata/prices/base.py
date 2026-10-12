@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import ClassVar
 
+from .. import clock
 from ..net import Client
 from ..tasks import TaskError
 
@@ -63,7 +64,7 @@ class TickerSource(ABC):
     def quotes(self, refs: list[Ref]) -> dict[str, Quote]:
         """The latest close for each instrument, by its id."""
         out = {}
-        today = dt.date.today()
+        today = clock.today()
         for ref in refs:
             closes = self.history(ref, today - dt.timedelta(days=10), today)
             if closes:

@@ -99,6 +99,35 @@
  */
 
 /**
+ * @typedef {Object} Attention
+ * @property {string} kind
+ * @property {number} count
+ * @property {string} text
+ * @property {string} link
+ */
+
+/**
+ * @typedef {Object} BackupOut
+ * @property {string} name
+ * @property {string} made
+ * @property {number} bytes
+ * @property {number} files
+ * @property {string} masterKey
+ */
+
+/**
+ * @typedef {Object} Backups
+ * @property {string} directory
+ * @property {string} time
+ * @property {number} copies
+ * @property {Array<BackupOut>} backups
+ * @property {(string | null)} lastRun
+ * @property {(string | null)} lastError
+ * @property {(string | null)} nextRun
+ * @property {boolean} running
+ */
+
+/**
  * @typedef {Object} Body_upload_ui_api_accounts__account_id__imports_post
  * @property {string} file
  */
@@ -117,6 +146,20 @@
  * @property {(string | null)} parentId
  * @property {(string | null)} taxTag
  * @property {string} path
+ */
+
+/**
+ * @typedef {Object} Change
+ * @property {(string | null)} day
+ * @property {(string | null)} month
+ * @property {(string | null)} year
+ */
+
+/**
+ * @typedef {Object} CheckOut
+ * @property {string} name
+ * @property {boolean} ok
+ * @property {string} detail
  */
 
 /**
@@ -139,8 +182,28 @@
  */
 
 /**
+ * @typedef {Object} Confirmation
+ * @property {string} at
+ * @property {string} fingerprint
+ * @property {boolean} matched
+ */
+
+/**
  * @typedef {Object} Counted
  * @property {boolean} counted
+ */
+
+/**
+ * @typedef {Object} Dashboard
+ * @property {string} netWorth
+ * @property {Change} change
+ * @property {string} investments
+ * @property {(string | null)} investmentsDay
+ * @property {string} cash
+ * @property {number} cashAccounts
+ * @property {(string | null)} lastUpdated
+ * @property {Array<GroupTotal>} groups
+ * @property {Array<Attention>} attention
  */
 
 /**
@@ -169,6 +232,13 @@
  */
 
 /**
+ * @typedef {Object} GroupPoint
+ * @property {string} date
+ * @property {string} total
+ * @property {Object<string, string>} groups
+ */
+
+/**
  * @typedef {Object} GroupRow
  * @property {string} id
  * @property {string} name
@@ -177,6 +247,14 @@
  * @property {Array<string>} memberIds
  * @property {string} createdAt
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} GroupTotal
+ * @property {string} group
+ * @property {string} total
+ * @property {Array<string>} accounts
+ * @property {boolean} inNetWorth
  */
 
 /**
@@ -198,6 +276,24 @@
  * @property {(string | null)} value
  * @property {(string | null)} gain
  * @property {Array<LotRow>} lots
+ */
+
+/**
+ * @typedef {Object} HoldingTotal
+ * @property {string} instrumentId
+ * @property {string} symbol
+ * @property {(string | null)} name
+ * @property {string} instrumentClass
+ * @property {string} quantity
+ * @property {(string | null)} price
+ * @property {(string | null)} priceAsOf
+ * @property {(string | null)} priceSource
+ * @property {boolean} stale
+ * @property {(string | null)} value
+ * @property {(string | null)} costBasis
+ * @property {(string | null)} gain
+ * @property {(string | null)} weight
+ * @property {Array<string>} accounts
  */
 
 /**
@@ -254,6 +350,29 @@
  */
 
 /**
+ * @typedef {Object} KeyStorage
+ * @property {string} keyFile
+ * @property {string} fingerprint
+ * @property {string} created
+ * @property {number} ageDays
+ * @property {number} reminderMonths
+ * @property {boolean} reminderDue
+ * @property {string} dataKeyCreated
+ * @property {Array<PreviousKeyOut>} previous
+ * @property {Array<Confirmation>} confirmations
+ * @property {number} databaseBytes
+ * @property {number} secrets
+ * @property {number} receipts
+ * @property {boolean} reencrypting
+ */
+
+/**
+ * @typedef {Object} KeyTest
+ * @property {boolean} ok
+ * @property {Array<CheckOut>} checks
+ */
+
+/**
  * @typedef {Object} Login
  * @property {string} login
  */
@@ -287,6 +406,12 @@
  * @property {string} timeZone
  * @property {string} zone
  * @property {string} theme
+ */
+
+/**
+ * @typedef {Object} NetWorthSeries
+ * @property {Array<GroupPoint>} points
+ * @property {Array<string>} groups
  */
 
 /**
@@ -420,6 +545,13 @@
  */
 
 /**
+ * @typedef {Object} PortfolioHoldings
+ * @property {Array<HoldingTotal>} holdings
+ * @property {string} cash
+ * @property {string} total
+ */
+
+/**
  * @typedef {Object} PortfolioRow
  * @property {string} id
  * @property {string} name
@@ -434,6 +566,25 @@
  * @property {number} sharedWith
  * @property {(string | null)} notes
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} PortfolioSeries
+ * @property {Array<SeriesPoint>} points
+ * @property {string} benchmark
+ * @property {(string | null)} twr
+ * @property {(string | null)} irr
+ * @property {string} contributed
+ * @property {string} growth
+ * @property {string} start
+ * @property {string} end
+ */
+
+/**
+ * @typedef {Object} PreviousKeyOut
+ * @property {string} fingerprint
+ * @property {string} path
+ * @property {(string | null)} removableAfter
  */
 
 /**
@@ -501,6 +652,13 @@
  */
 
 /**
+ * @typedef {Object} ReturnRow
+ * @property {string} id
+ * @property {string} name
+ * @property {Object<string, (string | null)>} periods
+ */
+
+/**
  * @typedef {Object} Saved
  * @property {ShareView} view
  * @property {number} alsoShared
@@ -516,6 +674,14 @@
  * @typedef {Object} Series
  * @property {Array<Point>} points
  * @property {string} asOf
+ */
+
+/**
+ * @typedef {Object} SeriesPoint
+ * @property {string} date
+ * @property {string} value
+ * @property {string} contributions
+ * @property {(string | null)} benchmark
  */
 
 /**

@@ -1,0 +1,58 @@
+// The app's screens and their addresses. Each screen is a module loaded by import() on its
+// first visit, so the first screen stays small (requirements §20.3.4).
+import { lazy, Route, Router } from 'preact-iso';
+import { html } from './html.js';
+
+const screen = (/** @type {string} */ name) => lazy(() => import(`../screens/${name}.js`));
+
+const Dashboard = screen('dashboard');
+const Accounts = screen('accounts');
+const Account = screen('account');
+const Transactions = screen('transactions');
+const Portfolios = screen('portfolios');
+const Portfolio = screen('portfolio');
+const Activity = screen('activity');
+const Users = screen('users');
+const Settings = screen('settings');
+const Profile = screen('profile');
+const NotFound = screen('notfound');
+
+export function Screens() {
+  return html`
+    <${Router}>
+      <${Route} path="/ui/" component=${Dashboard} />
+      <${Route} path="/ui/accounts" component=${Accounts} />
+      <${Route} path="/ui/accounts/:id" component=${Account} />
+      <${Route} path="/ui/accounts/:id/:tab" component=${Account} />
+      <${Route} path="/ui/transactions" component=${Transactions} />
+      <${Route} path="/ui/portfolios" component=${Portfolios} />
+      <${Route} path="/ui/portfolios/:id" component=${Portfolio} />
+      <${Route} path="/ui/portfolios/:id/:tab" component=${Portfolio} />
+      <${Route} path="/ui/activity" component=${Activity} />
+      <${Route} path="/ui/users" component=${Users} />
+      <${Route} path="/ui/settings" component=${Settings} />
+      <${Route} path="/ui/settings/:section" component=${Settings} />
+      <${Route} path="/ui/profile" component=${Profile} />
+      <${Route} default component=${NotFound} />
+      </${Router}>
+  `;
+}
+
+const SignIn = screen('signin');
+const Welcome = screen('welcome');
+const Reset = screen('reset');
+const ConfirmEmail = screen('confirm-email');
+
+/** What can be opened without a session: sign-in, and the links emails carry. */
+export function PublicScreens() {
+  return html`
+    <${Router}>
+      <${Route} path="/ui/welcome" component=${Welcome} />
+      <${Route} path="/ui/reset" component=${Reset} />
+      <${Route} path="/ui/confirm-email" component=${ConfirmEmail} />
+      <${Route} default component=${SignIn} />
+      </${Router}>
+  `;
+}
+
+export const PUBLIC_PATHS = ['/ui/welcome', '/ui/reset', '/ui/confirm-email'];

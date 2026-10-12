@@ -1,12 +1,15 @@
 """Settings, for admins (requirements §19). Each section of the screen reads and writes its
 own keys; secrets and the sources come with their sections' routes."""
 
+import datetime as dt
+import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import Response
 from sqlalchemy import select
 
-from .. import activity, settings, timezones
+from .. import activity, clock, settings, timezones
 from ..errors import FieldError, Problem
 from ..store.entities.core import Setting
 from .conventions import Model
@@ -65,3 +68,219 @@ def change_settings(body: dict[str, Any], request: Request, c: Caller = Depends(
             )
         s.flush()
         return view(s)
+
+
+# ---------- Key storage (§19.13, §18) ----------
+
+
+class PreviousKeyOut(Model):
+    fingerprint: str
+    path: str
+    removableAfter: dt.date | None
+
+
+class Confirmation(Model):
+    at: dt.datetime
+    fingerprint: str
+    matched: bool
+
+
+class KeyStorage(Model):
+    keyFile: str
+    fingerprint: str
+    created: dt.datetime
+    ageDays: int
+    reminderMonths: int
+    reminderDue: bool
+    dataKeyCreated: dt.datetime
+    previous: list[PreviousKeyOut]
+    confirmations: list[Confirmation]
+    databaseBytes: int
+    secrets: int
+    receipts: int
+    reencrypting: bool
+
+
+class CheckOut(Model):
+    name: str
+    ok: bool
+    detail: str
+
+
+class KeyTest(Model):
+    ok: bool
+    checks: list[CheckOut]
+
+
+@router.get("/settings/keys", response_model=KeyStorage)
+def key_storage(request: Request, c: Caller = Depends(admin)):
+    """Read only: the master key is changed only on the host (§18.4.6)."""
+    from sqlalchemy import func
+
+    from ..keys import master
+    from ..store.entities.core import Activity, Secret
+
+    srv = server(request)
+    ring = srv.store.keys.ring
+    now = clock.now()
+    with srv.db.read() as s:
+        rotated = s.scalars(
+            select(Activity).where(Activity.kind == "key.rotated").order_by(Activity.at.desc())
+        ).first()
+        keep_days = settings.get(s, "backupCopies")
+        months = settings.get(s, "keyReminderMonths")
+        confirmations = [
+            Confirmation(
+                at=a.at,
+                fingerprint=json.loads(a.detail).get("fingerprint", ""),
+                matched=a.kind == "key.verified",
+            )
+            for a in s.scalars(
+                select(Activity)
+                .where(Activity.kind.in_(("key.verified", "key.verify-failed")))
+                .order_by(Activity.at.desc())
+                .limit(10)
+            )
+        ]
+        secrets = s.scalar(select(func.count()).select_from(Secret))
+    age = (now - ring.master_created).days
+    removable = (rotated.at + dt.timedelta(days=keep_days)).date() if rotated else None
+    receipts_dir = srv.config.receipts_dir
+    return KeyStorage(
+        keyFile=str(srv.config.key_file),
+        fingerprint=master.fingerprint(srv.store.keys.master_id),
+        created=ring.master_created,
+        ageDays=age,
+        reminderMonths=months,
+        reminderDue=bool(months) and age > months * 30.4,
+        dataKeyCreated=ring.data_key_created,
+        previous=[
+            PreviousKeyOut(fingerprint=p.fingerprint, path=str(p.path), removableAfter=removable)
+            for p in srv.config.previous_keys
+        ],
+        confirmations=confirmations,
+        databaseBytes=srv.config.db_path.stat().st_size if srv.config.db_path.exists() else 0,
+        secrets=secrets,
+        receipts=sum(1 for _ in receipts_dir.rglob("*") if _.is_file())
+        if receipts_dir.is_dir()
+        else 0,
+        reencrypting=srv.tasks.status().get("reencrypt", {}).get("running", False),
+    )
+
+
+@router.post("/settings/keys/test", response_model=KeyTest)
+def key_test(request: Request, c: Caller = Depends(admin)):
+    """Test: the key file passes its checks, unwraps the data key, and opens the database
+    and a secret."""
+    from ..config import RefuseStart
+    from ..keys import master
+    from ..keys import secrets as sealing
+    from ..store.db import WrongKey, connect
+    from ..store.entities.core import Secret
+
+    srv = server(request)
+    cfg = srv.config
+    checks = []
+    try:
+        key = master.check_key_file(cfg.key_file, cfg.data_dir, cfg.backup_dir)
+        checks.append(CheckOut(name="Key file", ok=True, detail="present, 16 bytes, mode 0400"))
+        data_key = master.unwrap(key, master.read_keyring(cfg.keyring_path))
+        checks.append(CheckOut(name="Data key", ok=True, detail="unwrapped by the master key"))
+        conn = connect(cfg.db_path, master.DataKeys.derive(data_key).sqlcipher_key)
+        conn.close()
+        checks.append(CheckOut(name="Database", ok=True, detail="opens with the data key"))
+    except (RefuseStart, ValueError, WrongKey) as e:
+        checks.append(CheckOut(name="Key storage", ok=False, detail=str(e)))
+    with srv.db.read() as s:
+        row = s.scalars(select(Secret)).first()
+        if row is not None:
+            try:
+                sealing.open_sealed(
+                    srv.keys.secrets,
+                    sealing.Sealed(row.ciphertext, row.nonce, row.wrappedKey),
+                    row.recordType,
+                    row.recordId,
+                    row.field,
+                )
+                checks.append(CheckOut(name="Secrets", ok=True, detail="a secret opens"))
+            except sealing.SecretError:
+                checks.append(CheckOut(name="Secrets", ok=False, detail="a secret does not open"))
+    with srv.db.tx() as s:
+        activity.record(s, "keys.tested", actor=c.id, for_admins=True)
+    return KeyTest(ok=all(x.ok for x in checks), checks=checks)
+
+
+@router.post("/settings/keys/reencrypt", status_code=202)
+def key_reencrypt(request: Request, c: Caller = Depends(admin)):
+    """Re-encrypt (§18.7.2): a new data key for the database and every secret."""
+    srv = server(request)
+    with srv.db.tx() as s:
+        activity.record(s, "keys.reencrypt-started", actor=c.id, for_admins=True)
+    srv.tasks.run_now("reencrypt")
+    return Response(status_code=202)
+
+
+# ---------- Backups (§19.12, §17.6) ----------
+
+
+class BackupOut(Model):
+    name: str
+    made: dt.datetime
+    bytes: int
+    files: int
+    masterKey: str
+
+
+class Backups(Model):
+    directory: str
+    time: str
+    copies: int
+    backups: list[BackupOut]
+    lastRun: dt.datetime | None
+    lastError: str | None
+    nextRun: dt.datetime | None
+    running: bool
+
+
+@router.get("/settings/backups", response_model=Backups)
+def backups(request: Request, c: Caller = Depends(admin)):
+    from ..store import maintenance
+
+    srv = server(request)
+    out = []
+    for path in reversed(maintenance.backups(srv.config)):
+        try:
+            meta = json.loads((path / "manifest.json").read_text())
+        except (OSError, ValueError):
+            continue
+        out.append(
+            BackupOut(
+                name=path.name,
+                made=dt.datetime.fromisoformat(meta["made"]),
+                bytes=sum(f["bytes"] for f in meta["files"].values()),
+                files=len(meta["files"]),
+                masterKey=meta.get("masterKey", ""),
+            )
+        )
+    status = srv.tasks.status().get("backups", {})
+    with srv.db.read() as s:
+        return Backups(
+            directory=str(srv.config.backup_dir),
+            time=settings.get(s, "backupTime"),
+            copies=settings.get(s, "backupCopies"),
+            backups=out,
+            lastRun=status.get("lastRun"),
+            lastError=status.get("lastError"),
+            nextRun=status.get("nextRun"),
+            running=status.get("running", False),
+        )
+
+
+@router.post("/settings/backups/run", status_code=202)
+def backup_now(request: Request, c: Caller = Depends(admin)):
+    srv = server(request)
+    if not srv.tasks.run_now("backups"):
+        raise Problem(503, "not-available", "Backups can't run right now.")
+    with srv.db.tx() as s:
+        activity.record(s, "backups.started", actor=c.id, for_admins=True)
+    return Response(status_code=202)

@@ -5,13 +5,14 @@ counts only those. *All my accounts* is everyone's implicit first portfolio."""
 import datetime as dt
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, ids, valuation
+from .. import access, activity, clock, figures, ids, valuation
 from ..errors import FieldError, Problem
+from ..ledger import performance as perf
 from ..ledger import types as atypes
 from ..store.entities.accounts import Account
 from ..store.entities.sharing import Portfolio, PortfolioAccount
@@ -160,7 +161,7 @@ def _set_members(s, p: Portfolio, wanted: list[str], by: str) -> None:
         m.accountId: m
         for m in s.scalars(select(PortfolioAccount).where(PortfolioAccount.portfolioId == p.id))
     }
-    now = dt.datetime.now(dt.UTC)
+    now = clock.now()
     for aid in dict.fromkeys(wanted):
         m = current.get(aid)
         if m is None:
@@ -243,7 +244,7 @@ def change_portfolio(
             if lvl != "owner":
                 raise Problem(403, "owner-only", "Only the owner chooses the accounts.")
             _set_members(s, p, body.accountIds, c.id)
-            p.updatedAt = dt.datetime.now(dt.UTC)
+            p.updatedAt = clock.now()
             fields.append("accounts")
         if fields:
             activity.record(
@@ -280,3 +281,205 @@ def delete_portfolio(
             owner=p.ownerId,
         )
     return Response(status_code=204)
+
+
+# ---------- performance and holdings (§8.2) ----------
+
+
+class SeriesPoint(Model):
+    date: dt.date
+    value: Money
+    contributions: Money
+    benchmark: Money | None
+
+
+class PortfolioSeries(Model):
+    points: list[SeriesPoint]
+    benchmark: str
+    twr: str | None
+    irr: str | None
+    contributed: Money
+    growth: Money
+    start: Money
+    end: Money
+
+
+class ReturnRow(Model):
+    id: str
+    name: str
+    periods: dict[str, str | None]
+
+
+class HoldingTotal(Model):
+    instrumentId: str
+    symbol: str
+    name: str | None
+    instrumentClass: str
+    quantity: str
+    price: str | None
+    priceAsOf: dt.date | None
+    priceSource: str | None
+    stale: bool
+    value: Money | None
+    costBasis: Money | None
+    gain: Money | None
+    weight: str | None
+    accounts: list[str]
+
+
+class PortfolioHoldings(Model):
+    holdings: list[HoldingTotal]
+    cash: Money
+    total: Money
+
+
+def _target(s, c: Caller, portfolio_id: str) -> tuple[Portfolio | None, list[Account], str]:
+    if portfolio_id == ALL:
+        return None, all_mine(s, c.id), "VT"
+    p, _ = access.portfolio(s, c.id, portfolio_id)
+    return p, seen_accounts(s, c.id, p), p.benchmark
+
+
+@router.get("/portfolios/{portfolio_id}/series", response_model=PortfolioSeries)
+def portfolio_series(
+    portfolio_id: str,
+    request: Request,
+    c: Caller = Depends(caller),
+    metric: str = Query("value", pattern="^value$"),
+    range: str = Query("1Y", pattern="^(1M|3M|YTD|1Y|5Y|All)$"),
+):
+    """Value over time with contributions apart from growth, against the benchmark, and the
+    period's time- and money-weighted returns (§8.2.1, §8.2.3)."""
+    today = figures.today()
+    with server(request).db.read() as s:
+        _, accounts, bench = _target(s, c, portfolio_id)
+        first = figures.first_day(range, today, figures.earliest(s, accounts))
+        comb = figures.combine(s, accounts, first, today, figures.step_for(first, today))
+        values = comb.values
+        contrib = figures.contributions(values, comb.flow)
+        index = figures.benchmark_index(s, bench, first, today)
+        bench_values = dict(perf.benchmark(values, comb.flow, index))
+        start = values[0][1] if values else Decimal(0)
+        end = values[-1][1] if values else Decimal(0)
+        put_in = (contrib[-1][1] - start) if contrib else Decimal(0)
+        rate = perf.irr(values[0][0], start, comb.flow, values[-1][0], end) if values else None
+        return PortfolioSeries(
+            points=[
+                SeriesPoint(date=d, value=v, contributions=cv, benchmark=bench_values.get(d))
+                for (d, v), (_, cv) in zip(values, contrib, strict=True)
+            ],
+            benchmark=bench,
+            twr=figures.fmt_rate(perf.twr(values, comb.flow)),
+            irr=figures.fmt_rate(rate),
+            contributed=put_in,
+            growth=end - start - put_in,
+            start=start,
+            end=end,
+        )
+
+
+@router.get("/portfolios/{portfolio_id}/returns", response_model=list[ReturnRow])
+def portfolio_returns(portfolio_id: str, request: Request, c: Caller = Depends(caller)):
+    """Time-weighted returns per period, per account and for the portfolio (§8.2.3)."""
+    today = figures.today()
+    with server(request).db.read() as s:
+        p, accounts, _ = _target(s, c, portfolio_id)
+        first = today - dt.timedelta(days=figures.RANGE_DAYS["5Y"])
+        step = 7
+        rows = []
+        total = figures.combine(s, accounts, first, today, step)
+        for a in accounts:
+            led = repo.load(s, a)
+            series = total.byAccount[a.id]
+            rows.append(
+                ReturnRow(
+                    id=a.id,
+                    name=a.name,
+                    periods={
+                        k: figures.fmt_rate(v)
+                        for k, v in figures.period_returns(
+                            series, perf.flows(led.transactions), today
+                        ).items()
+                    },
+                )
+            )
+        rows.append(
+            ReturnRow(
+                id=portfolio_id,
+                name=p.name if p else "All my accounts",
+                periods={
+                    k: figures.fmt_rate(v)
+                    for k, v in figures.period_returns(total.values, total.flow, today).items()
+                },
+            )
+        )
+        return rows
+
+
+@router.get("/portfolios/{portfolio_id}/holdings", response_model=PortfolioHoldings)
+def portfolio_holdings(portfolio_id: str, request: Request, c: Caller = Depends(caller)):
+    """What the portfolio's visible accounts hold, added up by instrument."""
+    from ..money import quantity_str
+    from ..store.entities.accounts import Instrument
+
+    with server(request).db.read() as s:
+        _, accounts, _ = _target(s, c, portfolio_id)
+        by: dict[str, dict] = {}
+        cash = Decimal(0)
+        for a in accounts:
+            led = repo.load(s, a)
+            cash += led.balance()
+            if not atypes.investing(a.type):
+                continue
+            for pos in valuation.positions(s, led):
+                h = by.setdefault(
+                    pos.instrumentId,
+                    {
+                        "qty": Decimal(0),
+                        "value": Decimal(0),
+                        "basis": Decimal(0),
+                        "known": True,
+                        "priced": True,
+                        "price": pos.price,
+                        "accounts": [],
+                    },
+                )
+                h["qty"] += pos.quantity
+                if pos.value is None:
+                    h["priced"] = False
+                else:
+                    h["value"] += pos.value
+                if pos.costBasis is None:
+                    h["known"] = False
+                else:
+                    h["basis"] += pos.costBasis
+                h["accounts"].append(a.name)
+        insts = {i.id: i for i in s.scalars(select(Instrument).where(Instrument.id.in_(by)))}
+        total = cash + sum((h["value"] for h in by.values()), Decimal(0))
+        out = []
+        for iid, h in sorted(by.items(), key=lambda kv: -kv[1]["value"]):
+            inst = insts[iid]
+            value = h["value"] if h["priced"] else None
+            basis = h["basis"] if h["known"] else None
+            price = h["price"]
+            out.append(
+                HoldingTotal(
+                    instrumentId=iid,
+                    symbol=inst.symbol,
+                    name=inst.name,
+                    instrumentClass=inst.instrumentClass,
+                    quantity=quantity_str(h["qty"]),
+                    price=quantity_str(price.price) if price else None,
+                    priceAsOf=price.asOf if price else None,
+                    priceSource=price.source if price else None,
+                    stale=bool(price and price.stale),
+                    value=value,
+                    costBasis=basis,
+                    gain=value - basis if value is not None and basis is not None else None,
+                    weight=str((value / total * 100).quantize(Decimal("0.1")))
+                    if value is not None and total
+                    else None,
+                    accounts=sorted(set(h["accounts"])),
+                )
+            )
+        return PortfolioHoldings(holdings=out, cash=cash, total=total)

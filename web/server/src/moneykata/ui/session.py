@@ -1,6 +1,7 @@
 """Signing in and out, the default admin's setup, invitations, password reset and the live
 stream (requirements §13.1, §15.6, §16.7)."""
 
+import asyncio
 import time
 
 from fastapi import APIRouter, Depends, Request
@@ -287,15 +288,21 @@ def events(request: Request, c: Caller = Depends(caller_quiet)):
     token_hash = c.session.tokenHash
     sub = srv.events.subscribe(c.id, token_hash)
 
-    async def ended() -> str | None:
+    token = request.cookies.get(sessions.COOKIE)
+
+    def check() -> str | None:
         with srv.db.read() as s:
-            found = sessions.find(s, request.cookies.get(sessions.COOKIE))
+            found = sessions.find(s, token)
             if found is None:
                 return "signed-out"
             if found.ended:
                 return "expired"
             user = s.get(User, c.id)
             return None if user and user.active else "disabled"
+
+    async def ended() -> str | None:
+        # On a worker thread: a database call on the event loop would hold up every request.
+        return await asyncio.to_thread(check)
 
     hello = {"version": srv.version, "badges": srv.badges(c)}
     return StreamingResponse(

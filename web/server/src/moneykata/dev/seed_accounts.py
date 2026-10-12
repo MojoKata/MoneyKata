@@ -7,7 +7,7 @@ from decimal import Decimal as D
 
 from sqlalchemy import select
 
-from .. import ids
+from .. import clock, ids
 from ..prices.stub import walk
 from ..store.entities.accounts import (
     Account,
@@ -108,7 +108,7 @@ class Book:
 
 
 def seed_accounts(s, people: dict, today: dt.date | None = None) -> None:
-    b = Book(s, today or dt.date.today())
+    b = Book(s, today or clock.today())
     alice, bob = people["alice"], people["bob"]
     months = b.months()
     start = months[0]
@@ -458,4 +458,4 @@ def seed_accounts(s, people: dict, today: dt.date | None = None) -> None:
     )
     s.flush()
     for a in (checking, savings, card, brokerage, roth, k401, hsa, bob_checking, bob_ira):
-        a.updatedAt = dt.datetime.now(dt.UTC)
+        a.updatedAt = clock.now()

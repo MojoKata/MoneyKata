@@ -95,6 +95,7 @@ def create_app(server: Server) -> FastAPI:
     from .ui import (
         accounts,
         activity,
+        dashboard,
         imports,
         portfolios,
         prices,
@@ -118,6 +119,7 @@ def create_app(server: Server) -> FastAPI:
         sharing,
         portfolios,
         activity,
+        dashboard,
     ):
         app.include_router(module.router)
     # Last: its catch-alls answer for paths no route above has.

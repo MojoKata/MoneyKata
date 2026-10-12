@@ -686,6 +686,145 @@
         "title": "ActivityItem",
         "type": "object"
       },
+      "Attention": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "link": {
+            "title": "Link",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "count",
+          "text",
+          "link"
+        ],
+        "title": "Attention",
+        "type": "object"
+      },
+      "BackupOut": {
+        "additionalProperties": false,
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "files": {
+            "title": "Files",
+            "type": "integer"
+          },
+          "made": {
+            "format": "date-time",
+            "title": "Made",
+            "type": "string"
+          },
+          "masterKey": {
+            "title": "Masterkey",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "made",
+          "bytes",
+          "files",
+          "masterKey"
+        ],
+        "title": "BackupOut",
+        "type": "object"
+      },
+      "Backups": {
+        "additionalProperties": false,
+        "properties": {
+          "backups": {
+            "items": {
+              "$ref": "#/components/schemas/BackupOut"
+            },
+            "title": "Backups",
+            "type": "array"
+          },
+          "copies": {
+            "title": "Copies",
+            "type": "integer"
+          },
+          "directory": {
+            "title": "Directory",
+            "type": "string"
+          },
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lasterror"
+          },
+          "lastRun": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrun"
+          },
+          "nextRun": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextrun"
+          },
+          "running": {
+            "title": "Running",
+            "type": "boolean"
+          },
+          "time": {
+            "title": "Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "directory",
+          "time",
+          "copies",
+          "backups",
+          "lastRun",
+          "lastError",
+          "nextRun",
+          "running"
+        ],
+        "title": "Backups",
+        "type": "object"
+      },
       "Body_upload_ui_api_accounts__account_id__imports_post": {
         "properties": {
           "file": {
@@ -780,6 +919,87 @@
           "path"
         ],
         "title": "CategoryOut",
+        "type": "object"
+      },
+      "Change": {
+        "additionalProperties": false,
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "day",
+          "month",
+          "year"
+        ],
+        "title": "Change",
+        "type": "object"
+      },
+      "CheckOut": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "ok",
+          "detail"
+        ],
+        "title": "CheckOut",
         "type": "object"
       },
       "CheckRow": {
@@ -887,6 +1107,31 @@
         "title": "Close",
         "type": "object"
       },
+      "Confirmation": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "fingerprint": {
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "matched": {
+            "title": "Matched",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "at",
+          "fingerprint",
+          "matched"
+        ],
+        "title": "Confirmation",
+        "type": "object"
+      },
       "Counted": {
         "additionalProperties": false,
         "properties": {
@@ -899,6 +1144,96 @@
           "counted"
         ],
         "title": "Counted",
+        "type": "object"
+      },
+      "Dashboard": {
+        "additionalProperties": false,
+        "properties": {
+          "attention": {
+            "items": {
+              "$ref": "#/components/schemas/Attention"
+            },
+            "title": "Attention",
+            "type": "array"
+          },
+          "cash": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Cash",
+            "type": "string"
+          },
+          "cashAccounts": {
+            "title": "Cashaccounts",
+            "type": "integer"
+          },
+          "change": {
+            "$ref": "#/components/schemas/Change"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupTotal"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "investments": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Investments",
+            "type": "string"
+          },
+          "investmentsDay": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investmentsday"
+          },
+          "lastUpdated": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastupdated"
+          },
+          "netWorth": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Networth",
+            "type": "string"
+          }
+        },
+        "required": [
+          "netWorth",
+          "change",
+          "investments",
+          "investmentsDay",
+          "cash",
+          "cashAccounts",
+          "lastUpdated",
+          "groups",
+          "attention"
+        ],
+        "title": "Dashboard",
         "type": "object"
       },
       "Done": {
@@ -1001,6 +1336,42 @@
         "title": "GroupGrant",
         "type": "object"
       },
+      "GroupPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "groups": {
+            "additionalProperties": {
+              "examples": [
+                "1234.50"
+              ],
+              "format": "money",
+              "type": "string"
+            },
+            "title": "Groups",
+            "type": "object"
+          },
+          "total": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "total",
+          "groups"
+        ],
+        "title": "GroupPoint",
+        "type": "object"
+      },
       "GroupRow": {
         "additionalProperties": false,
         "properties": {
@@ -1054,6 +1425,42 @@
           "version"
         ],
         "title": "GroupRow",
+        "type": "object"
+      },
+      "GroupTotal": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "inNetWorth": {
+            "title": "Innetworth",
+            "type": "boolean"
+          },
+          "total": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "group",
+          "total",
+          "accounts",
+          "inNetWorth"
+        ],
+        "title": "GroupTotal",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -1209,6 +1616,157 @@
           "lots"
         ],
         "title": "HoldingRow",
+        "type": "object"
+      },
+      "HoldingTotal": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "costBasis": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costbasis"
+          },
+          "gain": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gain"
+          },
+          "instrumentClass": {
+            "title": "Instrumentclass",
+            "type": "string"
+          },
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "priceAsOf": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priceasof"
+          },
+          "priceSource": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricesource"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          }
+        },
+        "required": [
+          "instrumentId",
+          "symbol",
+          "name",
+          "instrumentClass",
+          "quantity",
+          "price",
+          "priceAsOf",
+          "priceSource",
+          "stale",
+          "value",
+          "costBasis",
+          "gain",
+          "weight",
+          "accounts"
+        ],
+        "title": "HoldingTotal",
         "type": "object"
       },
       "Holdings": {
@@ -1466,6 +2024,110 @@
         "title": "JobOut",
         "type": "object"
       },
+      "KeyStorage": {
+        "additionalProperties": false,
+        "properties": {
+          "ageDays": {
+            "title": "Agedays",
+            "type": "integer"
+          },
+          "confirmations": {
+            "items": {
+              "$ref": "#/components/schemas/Confirmation"
+            },
+            "title": "Confirmations",
+            "type": "array"
+          },
+          "created": {
+            "format": "date-time",
+            "title": "Created",
+            "type": "string"
+          },
+          "dataKeyCreated": {
+            "format": "date-time",
+            "title": "Datakeycreated",
+            "type": "string"
+          },
+          "databaseBytes": {
+            "title": "Databasebytes",
+            "type": "integer"
+          },
+          "fingerprint": {
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "keyFile": {
+            "title": "Keyfile",
+            "type": "string"
+          },
+          "previous": {
+            "items": {
+              "$ref": "#/components/schemas/PreviousKeyOut"
+            },
+            "title": "Previous",
+            "type": "array"
+          },
+          "receipts": {
+            "title": "Receipts",
+            "type": "integer"
+          },
+          "reencrypting": {
+            "title": "Reencrypting",
+            "type": "boolean"
+          },
+          "reminderDue": {
+            "title": "Reminderdue",
+            "type": "boolean"
+          },
+          "reminderMonths": {
+            "title": "Remindermonths",
+            "type": "integer"
+          },
+          "secrets": {
+            "title": "Secrets",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "keyFile",
+          "fingerprint",
+          "created",
+          "ageDays",
+          "reminderMonths",
+          "reminderDue",
+          "dataKeyCreated",
+          "previous",
+          "confirmations",
+          "databaseBytes",
+          "secrets",
+          "receipts",
+          "reencrypting"
+        ],
+        "title": "KeyStorage",
+        "type": "object"
+      },
+      "KeyTest": {
+        "additionalProperties": false,
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckOut"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "checks"
+        ],
+        "title": "KeyTest",
+        "type": "object"
+      },
       "Login": {
         "additionalProperties": false,
         "properties": {
@@ -1638,6 +2300,31 @@
           "theme"
         ],
         "title": "Me",
+        "type": "object"
+      },
+      "NetWorthSeries": {
+        "additionalProperties": false,
+        "properties": {
+          "groups": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/GroupPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "points",
+          "groups"
+        ],
+        "title": "NetWorthSeries",
         "type": "object"
       },
       "NewAccount": {
@@ -2260,6 +2947,41 @@
         "title": "PortfolioChange",
         "type": "object"
       },
+      "PortfolioHoldings": {
+        "additionalProperties": false,
+        "properties": {
+          "cash": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Cash",
+            "type": "string"
+          },
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingTotal"
+            },
+            "title": "Holdings",
+            "type": "array"
+          },
+          "total": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "holdings",
+          "cash",
+          "total"
+        ],
+        "title": "PortfolioHoldings",
+        "type": "object"
+      },
       "PortfolioRow": {
         "additionalProperties": false,
         "properties": {
@@ -2353,6 +3075,120 @@
           "version"
         ],
         "title": "PortfolioRow",
+        "type": "object"
+      },
+      "PortfolioSeries": {
+        "additionalProperties": false,
+        "properties": {
+          "benchmark": {
+            "title": "Benchmark",
+            "type": "string"
+          },
+          "contributed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Contributed",
+            "type": "string"
+          },
+          "end": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "End",
+            "type": "string"
+          },
+          "growth": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Growth",
+            "type": "string"
+          },
+          "irr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Irr"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/SeriesPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "start": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Start",
+            "type": "string"
+          },
+          "twr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Twr"
+          }
+        },
+        "required": [
+          "points",
+          "benchmark",
+          "twr",
+          "irr",
+          "contributed",
+          "growth",
+          "start",
+          "end"
+        ],
+        "title": "PortfolioSeries",
+        "type": "object"
+      },
+      "PreviousKeyOut": {
+        "additionalProperties": false,
+        "properties": {
+          "fingerprint": {
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "removableAfter": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removableafter"
+          }
+        },
+        "required": [
+          "fingerprint",
+          "path",
+          "removableAfter"
+        ],
+        "title": "PreviousKeyOut",
         "type": "object"
       },
       "PriceStatus": {
@@ -2739,6 +3575,40 @@
         "title": "ReconciliationRow",
         "type": "object"
       },
+      "ReturnRow": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "periods": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Periods",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "periods"
+        ],
+        "title": "ReturnRow",
+        "type": "object"
+      },
       "Saved": {
         "additionalProperties": false,
         "properties": {
@@ -2805,6 +3675,55 @@
           "asOf"
         ],
         "title": "Series",
+        "type": "object"
+      },
+      "SeriesPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "benchmark": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark"
+          },
+          "contributions": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Contributions",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "value",
+          "contributions",
+          "benchmark"
+        ],
+        "title": "SeriesPoint",
         "type": "object"
       },
       "SessionInfo": {
@@ -5475,6 +6394,72 @@
         ]
       }
     },
+    "/ui/api/dashboard": {
+      "get": {
+        "operationId": "dashboard_ui_api_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Dashboard",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/ui/api/dashboard/series": {
+      "get": {
+        "description": "Net worth over time, with its composition by account group (§8.3).",
+        "operationId": "net_worth_series_ui_api_dashboard_series_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "default": "1Y",
+              "pattern": "^(1M|3M|YTD|1Y|5Y|All)$",
+              "title": "Range",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthSeries"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Net Worth Series",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
     "/ui/api/email-change/confirm": {
       "post": {
         "operationId": "email_change_confirm_ui_api_email_change_confirm_post",
@@ -6259,6 +7244,161 @@
         ]
       }
     },
+    "/ui/api/portfolios/{portfolio_id}/holdings": {
+      "get": {
+        "description": "What the portfolio's visible accounts hold, added up by instrument.",
+        "operationId": "portfolio_holdings_ui_api_portfolios__portfolio_id__holdings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioHoldings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Portfolio Holdings",
+        "tags": [
+          "portfolios"
+        ]
+      }
+    },
+    "/ui/api/portfolios/{portfolio_id}/returns": {
+      "get": {
+        "description": "Time-weighted returns per period, per account and for the portfolio (§8.2.3).",
+        "operationId": "portfolio_returns_ui_api_portfolios__portfolio_id__returns_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReturnRow"
+                  },
+                  "title": "Response Portfolio Returns Ui Api Portfolios  Portfolio Id  Returns Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Portfolio Returns",
+        "tags": [
+          "portfolios"
+        ]
+      }
+    },
+    "/ui/api/portfolios/{portfolio_id}/series": {
+      "get": {
+        "description": "Value over time with contributions apart from growth, against the benchmark, and the\nperiod's time- and money-weighted returns (§8.2.1, §8.2.3).",
+        "operationId": "portfolio_series_ui_api_portfolios__portfolio_id__series_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "metric",
+            "required": false,
+            "schema": {
+              "default": "value",
+              "pattern": "^value$",
+              "title": "Metric",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "default": "1Y",
+              "pattern": "^(1M|3M|YTD|1Y|5Y|All)$",
+              "title": "Range",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioSeries"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Portfolio Series",
+        "tags": [
+          "portfolios"
+        ]
+      }
+    },
     "/ui/api/price-sources": {
       "get": {
         "operationId": "list_sources_ui_api_price_sources_get",
@@ -6890,6 +8030,110 @@
         ]
       }
     },
+    "/ui/api/settings/backups": {
+      "get": {
+        "operationId": "backups_ui_api_settings_backups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Backups"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Backups",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/backups/run": {
+      "post": {
+        "operationId": "backup_now_ui_api_settings_backups_run_post",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Backup Now",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/keys": {
+      "get": {
+        "description": "Read only: the master key is changed only on the host (§18.4.6).",
+        "operationId": "key_storage_ui_api_settings_keys_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyStorage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Key Storage",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/keys/reencrypt": {
+      "post": {
+        "description": "Re-encrypt (§18.7.2): a new data key for the database and every secret.",
+        "operationId": "key_reencrypt_ui_api_settings_keys_reencrypt_post",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Key Reencrypt",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/keys/test": {
+      "post": {
+        "description": "Test: the key file passes its checks, unwraps the data key, and opens the database\nand a secret.",
+        "operationId": "key_test_ui_api_settings_keys_test_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyTest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Key Test",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
     "/ui/api/shares/{kind}/{item_id}": {
       "get": {
         "operationId": "get_shares_ui_api_shares__kind___item_id__get",
@@ -7307,6 +8551,50 @@
           }
         },
         "summary": "Categorise",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
+    "/ui/api/transactions/newer": {
+      "get": {
+        "description": "How many transactions arrived after the page loaded: the +N new pill (§15.1.3).",
+        "operationId": "newer_transactions_ui_api_transactions_newer_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "since",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Since",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Newer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Newer Transactions",
         "tags": [
           "transactions"
         ]
