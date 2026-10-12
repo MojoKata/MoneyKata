@@ -1,6 +1,7 @@
 // Sign in (requirements §13.1.1), Forgot password? (§13.1.5) and the account-is-disabled screen
 // with its request to be made active again (§13.1.7).
 import { useState } from 'preact/hooks';
+import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useSubmit } from '../app/hooks.js';
@@ -9,6 +10,7 @@ import { AuthCard } from '../components/auth.js';
 import { errAt, Field, FormError, Input } from '../components/fields.js';
 
 export default function SignIn() {
+  const { path, route } = useLocation();
   const [mode, setMode] = useState(ended.value === 'disabled' ? 'disabled' : 'signin');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +20,7 @@ export default function SignIn() {
       const info = await api.post('/session', { login, password });
       ended.value = '';
       setSession(info);
-      if (location.pathname === '/ui/signin') history.replaceState(null, '', '/ui/');
+      if (path === '/ui/signin') route('/ui/', true);
     } catch (e) {
       if (/** @type {any} */ (e).code === 'account-disabled') setMode('disabled');
       throw e;

@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from . import ids
+from . import clock, ids
 
 JobState = Literal["waiting", "running", "done", "failed"]
 KEEP = dt.timedelta(days=1)
@@ -23,7 +23,7 @@ class Job:
     progress: float = 0.0
     result: Any = None
     error: dict | None = None
-    created: dt.datetime = field(default_factory=lambda: dt.datetime.now(dt.UTC))
+    created: dt.datetime = field(default_factory=clock.now)
     finished: dt.datetime | None = None
 
 
@@ -50,11 +50,11 @@ class Jobs:
         for k, v in changes.items():
             setattr(job, k, v)
         if job.state in ("done", "failed"):
-            job.finished = dt.datetime.now(dt.UTC)
+            job.finished = clock.now()
             if self._announce:
                 self._announce(job)
 
     def _prune(self) -> None:
-        cutoff = dt.datetime.now(dt.UTC) - KEEP
+        cutoff = clock.now() - KEEP
         for k in [k for k, j in self._jobs.items() if j.finished and j.finished < cutoff]:
             del self._jobs[k]

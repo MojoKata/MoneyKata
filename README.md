@@ -22,7 +22,11 @@ only, in a window of their own.
    mockup, the design reference for every screen. Open it in a browser from disk; it sends
    nothing anywhere. The purple **MOCK** pill jumps to any screen, switches users, changes
    state and opens every dialog. **F1** toggles the help pane.
-4. [`CLAUDE.md`](CLAUDE.md): the working rules: keep the mockup in step with the
+4. [`docs/mockups/MoneyKata-app.html`](docs/mockups/MoneyKata-app.html): the mockup generated
+   from the app for the screens built so far (`web/dev.sh mockup`), on recorded sample data.
+   It opens from disk too; its **MOCK** pill jumps to screens and dialogs and switches users.
+   The help guides' screenshots are made from it (`web/dev.sh help-shots`).
+5. [`CLAUDE.md`](CLAUDE.md): the working rules: keep the mockup in step with the
    requirements, keep the requirements a statement rather than a changelog, keep the repo
    free standing, and track gaps by id.
 

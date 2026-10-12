@@ -15,6 +15,10 @@ def today() -> dt.date:
     return now().date()
 
 
+def frozen() -> bool:
+    return _fixed is not None
+
+
 def fix(at: dt.datetime | None) -> None:
     """Freeze the clock (the mockup's build), or release it with None."""
     global _fixed

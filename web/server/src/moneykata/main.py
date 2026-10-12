@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import datetime as dt
 import logging
 import os
 import sys
@@ -63,6 +64,11 @@ def cmd_dev(args) -> int:
     port = args.port or (37374 if args.peer else 37373)
     config = dev_config(port, args.stubs, args.peer, Path(args.data) if args.data else None)
     refuse_dev(config)
+    if args.frozen:
+        from . import clock, ids
+
+        clock.fix(dt.datetime.fromisoformat(args.frozen))
+        ids.repeatable()
     return serve(config, seed=args.seed)
 
 
@@ -108,6 +114,11 @@ def parser() -> argparse.ArgumentParser:
     d.add_argument("--peer", action="store_true", help="a second server, for links")
     d.add_argument("--port", type=int)
     d.add_argument("--data", help="where dev mode keeps its data (default web/.dev)")
+    d.add_argument(
+        "--frozen",
+        metavar="WHEN",
+        help="a fixed clock and repeatable ids, for the generated mockup (an ISO time with zone)",
+    )
     d.set_defaults(func=cmd_dev)
 
     h = sub.add_parser("health", help="check that the running server answers")

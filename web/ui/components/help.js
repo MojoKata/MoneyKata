@@ -4,7 +4,7 @@
 import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
-import { base } from '../app/config.js';
+import { guides } from '../app/config.js';
 import { helpOpen, helpWidth } from '../store/prefs.js';
 import { assemble, render } from './markdown.js';
 import { Icon } from './icon.js';
@@ -45,7 +45,7 @@ function load(name) {
   if (!cache.has(name)) {
     cache.set(
       name,
-      fetch(`${base}/guides/${name}.md`).then((r) => {
+      fetch(`${guides}/${name}.md`).then((r) => {
         if (!r.ok) throw new Error(`no guide ${name}`);
         return r.text();
       }),
@@ -113,7 +113,7 @@ export function HelpPane() {
         onClick=${() => (helpOpen.value = false)}><${Icon} name="x" /></button>
       <div class="guide" data-guide=${key}>${md === null
         ? null
-        : render(md, (src) => /^https?:|^\//.test(src) ? src : `${base}/guides/${src}`)}</div>
+        : render(md, (src) => /^https?:|^\//.test(src) ? src : `${guides}/${src}`)}</div>
     </aside>
   `;
 }

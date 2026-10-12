@@ -27,10 +27,10 @@ deno() { "$WEB/dev.sh" deno "$@"; }
 step "uv.lock matches pyproject.toml" bash -c "cd '$SERVER' && uv lock --check --quiet"
 step "every dependency has amd64 and arm64 wheels" py python -m moneykata.dev.wheels
 step "vendored browser libraries" python3 "$WEB/ui/vendor/vendor.py" extract
-step "ruff" py ruff check src tests
-step "ruff format" py ruff format --check --quiet src tests
+step "ruff" py ruff check src tests ../ui/mockup ../../docs/mockups
+step "ruff format" py ruff format --check --quiet src tests ../ui/mockup ../../docs/mockups
 js_dirs=()
-for d in app api store screens components charts account-types tests; do
+for d in app api store screens components charts account-types mockup tests; do
   [[ -d "$WEB/ui/$d" ]] && js_dirs+=("$WEB/ui/$d/")
 done
 step "deno check" deno check --quiet --config "$WEB/ui/deno.json" "${js_dirs[@]}"

@@ -57,3 +57,13 @@ def test_refused_start_exits_78_with_one_line(tmp_path, capsys):
     assert code == 78
     err = capsys.readouterr().err.strip().splitlines()
     assert err[-1].startswith("refusing to start: ")
+
+
+def test_a_connection_is_not_closed_after_a_thousand_requests(tmp_path):
+    """Over HTTP/2 everything a browser asks travels on one connection; Hypercorn's default
+    cap of 1,000 requests closed it under the live stream and stranded requests in flight."""
+    from moneykata.listener import hypercorn_config
+    from moneykata.main import dev_config
+
+    hc = hypercorn_config(dev_config(37373, stubs=False, peer=False, base=tmp_path))
+    assert hc.keep_alive_max_requests >= 1_000_000

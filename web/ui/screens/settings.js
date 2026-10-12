@@ -505,8 +505,7 @@ function Keys() {
   }</div>
     <div class="list-item"><span class="grow dim">Encrypted under it</span>the database (${
     (v.databaseBytes / 1048576).toFixed(1)
-  } MB),
-      ${v.receipts} receipt file${v.receipts === 1 ? '' : 's'}, ${v.secrets} secret${
+  } MB), ${v.receipts} receipt file${v.receipts === 1 ? '' : 's'}, ${v.secrets} secret${
     v.secrets === 1 ? '' : 's'
   }
       <span class="small dim">· passwords are hashed</span></div>

@@ -1,0 +1,156 @@
+// The generated mockup's backend (requirements §15.9), run before the app: the answers recorded
+// from a seeded server for each sample user, the guides, a clock that starts on the day they
+// were recorded, and a stream that never sends. Nothing leaves the page. It then loads the app
+// from the modules the page carries.
+(() => {
+  const data = JSON.parse(
+    /** @type {HTMLElement} */ (document.getElementById('mk-data')).textContent || '{}',
+  );
+
+  // The day the answers were recorded, so "3 days ago" and the date fields agree with them.
+  const RealDate = Date;
+  const shift = RealDate.parse(data.now) - RealDate.now();
+  class MockDate extends RealDate {
+    /** @param {any[]} args */
+    constructor(...args) {
+      super(.../** @type {[any]} */ (args.length ? args : [RealDate.now() + shift]));
+    }
+    /** @override */
+    static now() {
+      return RealDate.now() + shift;
+    }
+  }
+  globalThis.Date = /** @type {any} */ (MockDate);
+
+  const KEY = 'mk-mockup-user';
+  const stored = () => {
+    try {
+      return localStorage.getItem(KEY);
+    } catch {
+      return null;
+    }
+  };
+  let user = stored() || data.users[0].username;
+  if (!data.api[user]) user = data.users[0].username;
+  let signedIn = true;
+  const STALE = 'mk-mockup-stale';
+  let stale = false;
+  try {
+    stale = localStorage.getItem(STALE) === '1';
+  } catch {
+    // no storage: prices are fresh
+  }
+
+  /** A request's key: its path and its query in order, less what only says "now". */
+  const keyOf = (/** @type {string} */ url) => {
+    const u = new URL(url, 'https://moneykata.invalid');
+    const q = [...u.searchParams].filter(([k]) => k !== 'since').sort((a, b) =>
+      a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
+    );
+    return u.pathname + (q.length ? '?' + new URLSearchParams(q) : '');
+  };
+
+  const json = (/** @type {number} */ status, /** @type {any} */ body) =>
+    new Response(status === 204 ? null : JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  const missing = (/** @type {string} */ what) =>
+    json(404, { title: 'Not in the mockup', detail: `${what} was not recorded.`, code: 'mockup' });
+
+  /**
+   * @param {any} input
+   * @param {RequestInit} [init]
+   */
+  globalThis.fetch = (input, init = {}) => {
+    const url = String(input);
+    const method = (init.method || 'GET').toUpperCase();
+    const guide = url.match(/\/guides\/([\w-]+)\.md$/);
+    if (guide) {
+      const md = data.guides[guide[1]];
+      return Promise.resolve(
+        md === undefined ? new Response('', { status: 404 }) : new Response(md),
+      );
+    }
+    const key = keyOf(url);
+    if (key === '/ui/api/session') {
+      if (method === 'DELETE') signedIn = false;
+      if (method === 'POST') signedIn = true;
+      if (!signedIn) return Promise.resolve(json(401, { code: 'signed-out' }));
+    }
+    if (method === 'GET' || key === '/ui/api/session') {
+      const hit = data.api[user]['GET ' + key];
+      if (hit && stale && key === '/ui/api/prices/status') {
+        return Promise.resolve(json(hit.status, { ...hit.body, stale: true }));
+      }
+      return Promise.resolve(hit ? json(hit.status, hit.body) : missing(key));
+    }
+    // A change succeeds and changes nothing: the answer echoes what was sent.
+    if (method === 'DELETE') return Promise.resolve(json(204, null));
+    let body = {};
+    try {
+      body = typeof init.body === 'string' ? JSON.parse(init.body) : {};
+    } catch {
+      // a form: an upload
+    }
+    return Promise.resolve(json(200, { id: 'mock_0', version: 1, ...body }));
+  };
+
+  /** The live stream: it says hello with the navigation's counts, then stays quiet. */
+  class MockEventSource extends EventTarget {
+    /** @param {string} url */
+    constructor(url) {
+      super();
+      this.url = url;
+      /** @type {((e: Event) => void) | null} */
+      this.onerror = null;
+      const hello = data.events[user];
+      setTimeout(() =>
+        this.dispatchEvent(new MessageEvent('hello', { data: JSON.stringify(hello || {}) }))
+      );
+    }
+    close() {}
+  }
+  globalThis.EventSource = /** @type {any} */ (MockEventSource);
+
+  /** @type {any} */ (globalThis).mkMockup = {
+    users: data.users,
+    user,
+    stale,
+    setStale(/** @type {boolean} */ on) {
+      try {
+        localStorage.setItem(STALE, on ? '1' : '0');
+      } catch {
+        // without storage the page comes back fresh
+      }
+      location.reload();
+    },
+    signInAs(/** @type {string} */ name) {
+      try {
+        localStorage.setItem(KEY, name);
+      } catch {
+        // without storage the page comes back as the first user
+      }
+      user = name;
+      location.reload();
+    },
+  };
+
+  // The app's modules sit in the page as text. Each gets a blob: address, an import map names
+  // them all, and then the app starts.
+  /** @type {Record<string, string>} */
+  const urls = {};
+  for (const s of document.querySelectorAll('script[data-module]')) {
+    const name = /** @type {HTMLElement} */ (s).dataset.module || '';
+    urls[name] = URL.createObjectURL(new Blob([s.textContent || ''], { type: 'text/javascript' }));
+  }
+  for (const [name, target] of Object.entries(data.aliases)) urls[name] = urls[target];
+  const map = document.createElement('script');
+  map.type = 'importmap';
+  map.textContent = JSON.stringify({ imports: urls });
+  document.head.append(map);
+  const main = document.createElement('script');
+  main.type = 'module';
+  main.textContent = `import '${data.main}';`;
+  document.body.append(main);
+})();

@@ -10,6 +10,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
+from .. import clock
 from ..config import Config, RefuseStart
 from ..keys import master
 from . import copy, mapping, migrate
@@ -151,7 +152,7 @@ def _sha256(path: Path) -> str:
 def backup(config: Config, store: Store, now: dt.datetime | None = None) -> Path:
     """One verified copy of the database, the keyring and the receipts directory. Every file
     in it is as encrypted as the data is: it opens only with the master key or its phrase."""
-    now = now or dt.datetime.now(dt.UTC)
+    now = now or clock.now()
     name = BACKUP_PREFIX + now.strftime("%Y%m%d-%H%M%S")
     config.backup_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     part = config.backup_dir / (name + ".part")

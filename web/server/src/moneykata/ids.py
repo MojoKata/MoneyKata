@@ -1,17 +1,22 @@
 """Record ids (schema.md §2): a prefix, an underscore, and a UUIDv7 in 26 lowercase Crockford
 base-32 digits, most significant first, so ids sort by creation time."""
 
+import hashlib
 import os
 import re
 import threading
 import time
 import uuid
 
+from . import clock
+
 ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"
 _DECODE = {c: i for i, c in enumerate(ALPHABET)}
 PREFIX = re.compile(r"^[A-Z][A-Za-z]{0,4}$")
 _lock = threading.Lock()
 _last = (0, 0)
+# The mockup's build: a count per prefix instead of chance, so the same run makes the same ids.
+_counts: dict[str, int] | None = None
 
 
 def uuid7() -> uuid.UUID:
@@ -52,10 +57,27 @@ def decode(text: str) -> uuid.UUID:
     return uuid.UUID(int=n)
 
 
+def repeatable(on: bool = True) -> None:
+    """Make ids from the clock and a count per prefix (the generated mockup's build), so a run
+    that makes the same records makes the same ids; or from the time and chance again."""
+    global _counts
+    _counts = {} if on else None
+
+
+def _counted(prefix: str) -> uuid.UUID:
+    with _lock:
+        assert _counts is not None
+        n = _counts[prefix] = _counts.get(prefix, 0) + 1
+    ms = int(clock.now().timestamp() * 1000)
+    rand = int.from_bytes(hashlib.sha256(f"{prefix}{n}".encode()).digest()[:8]) & ((1 << 62) - 1)
+    value = (ms << 80) | (0x7 << 76) | ((n & 0xFFF) << 64) | (0b10 << 62) | rand
+    return uuid.UUID(int=value)
+
+
 def new_id(prefix: str) -> str:
     if not PREFIX.match(prefix):
         raise ValueError(f"bad prefix {prefix!r}")
-    return f"{prefix}_{encode(uuid7())}"
+    return f"{prefix}_{encode(_counted(prefix) if _counts is not None else uuid7())}"
 
 
 def prefix_of(record_id: str) -> str:

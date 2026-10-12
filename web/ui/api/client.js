@@ -41,7 +41,8 @@ export function whenSignedOut(fn) {
  *   form?: FormData }} [opts]
  */
 async function call(method, path, opts = {}) {
-  const url = new URL('/ui/api' + path, location.origin);
+  // A placeholder base: only the path and query are sent, so this works without an origin.
+  const url = new URL('/ui/api' + path, 'https://moneykata.invalid');
   for (const [k, v] of Object.entries(opts.params || {})) {
     if (Array.isArray(v)) v.forEach((x) => url.searchParams.append(k, String(x)));
     else if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
@@ -56,7 +57,12 @@ async function call(method, path, opts = {}) {
   }
   if (opts.version !== undefined) headers['If-Match'] = `"${opts.version}"`;
   if (opts.idempotent) headers['Idempotency-Key'] = crypto.randomUUID();
-  const r = await fetch(url, { method, headers, body, credentials: 'same-origin' });
+  const r = await fetch(url.pathname + url.search, {
+    method,
+    headers,
+    body,
+    credentials: 'same-origin',
+  });
   if (r.status === 204 || r.status === 201 && r.headers.get('content-length') === '0') {
     return null;
   }

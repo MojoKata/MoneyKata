@@ -13,6 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from zoneinfo import ZoneInfo
 
+from . import clock
+
 log = logging.getLogger("moneykata.tasks")
 
 TICK_SECONDS = 15
@@ -136,7 +138,7 @@ class Tasks:
         self,
         record: RecordFn | None = None,
         workers: int = 4,
-        now: Callable[[], dt.datetime] = lambda: dt.datetime.now(dt.UTC),
+        now: Callable[[], dt.datetime] = clock.now,
     ) -> None:
         self._tasks: dict[str, Task] = {}
         self._record = record

@@ -2,10 +2,13 @@
 relaxes the surroundings, never the rules: sessions, CSP, encryption and sharing behave as in
 production."""
 
+import hashlib
 import logging
 
+from .. import clock
 from ..config import Config
 from ..keys import cli as keys_cli
+from ..keys import phrase
 
 log = logging.getLogger("moneykata.dev")
 
@@ -16,7 +19,13 @@ def prepare(config: Config) -> None:
     for d in (config.data_dir, config.backup_dir, config.mail_dir, config.key_file.parent):
         d.mkdir(mode=0o700, parents=True, exist_ok=True)
     if not config.key_file.exists():
-        keys_cli.init(config, say=lambda _: None, confirm=False)
+        if clock.frozen():
+            # The generated mockup's build: a key made from fixed words, so its fingerprint
+            # comes out the same every time.
+            words = " ".join(phrase.to_words(hashlib.sha256(b"mockup").digest()[:16]))
+            keys_cli.init(config, ask=lambda _: words, say=lambda _: None, from_phrase=True)
+        else:
+            keys_cli.init(config, say=lambda _: None, confirm=False)
         log.info("dev: made a master key in %s", config.key_file)
 
 

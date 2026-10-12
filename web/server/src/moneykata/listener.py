@@ -73,6 +73,10 @@ def hypercorn_config(config: Config) -> HypercornConfig:
         f"[{config.host}]:{config.port}" if ":" in config.host else f"{config.host}:{config.port}"
     ]
     hc.graceful_timeout = GRACE_SECONDS
+    # Over HTTP/2 a browser sends everything on one connection, the live stream included; the
+    # default cap of 1,000 requests a connection would end it every few minutes of use and
+    # strand the requests in flight.
+    hc.keep_alive_max_requests = 1_000_000
     hc.h11_max_incomplete_size = HEADER_LIMIT
     hc.h2_max_header_list_size = HEADER_LIMIT
     hc.accesslog = None

@@ -51,6 +51,16 @@ export function quantity(s) {
 }
 
 /**
+ * A price: dollars with at least two places, more when it has them: "$424.10", "$0.0345".
+ * @param {string | null | undefined} s
+ */
+export function price(s) {
+  if (s == null) return '—';
+  const { neg, whole, frac } = parts(String(s));
+  return (neg ? '−' : '') + '$' + group(whole) + '.' + frac.replace(/0+$/, '').padEnd(2, '0');
+}
+
+/**
  * A percentage string ("5.12") as "+5.12%".
  * @param {string | null | undefined} s
  */

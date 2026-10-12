@@ -1,0 +1,112 @@
+"""Makes the help guides' screenshots (requirements §15.7.5) from the generated mockup:
+docs/mockups/MoneyKata-app.html opened from disk in headless Chromium, dark theme, 1280 px
+wide, saved as WebP in web/ui/guides/shots/. Run web/dev.sh mockup first when the app changed.
+
+    python web/ui/mockup/help_shots.py [key ...]   every screenshot, or the ones named
+"""
+
+import argparse
+import base64
+import re
+import sys
+from pathlib import Path
+
+UI = Path(__file__).resolve().parents[1]
+ROOT = UI.parents[1]
+PAGE = ROOT / "docs" / "mockups" / "MoneyKata-app.html"
+SHOTS = UI / "guides" / "shots"
+SIZE = {"width": 1280, "height": 800}
+SETTINGS = ("general", "sessions", "passwords", "prices", "imports", "backups", "keys")
+
+TO_WEBP = """async (png) => {
+  const img = new Image();
+  img.src = 'data:image/png;base64,' + png;
+  await img.decode();
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  c.getContext('2d').drawImage(img, 0, 0);
+  return c.toDataURL('image/webp', 0.85).split(',')[1];
+}"""
+
+
+def wanted() -> set[str]:
+    """Every screenshot a guide shows."""
+    keys = set()
+    for md in (UI / "guides").glob("*.md"):
+        keys |= set(re.findall(r"\(shots/([\w-]+)\.webp\)", md.read_text()))
+    return keys
+
+
+def routes(page) -> dict[str, str]:
+    accounts = page.evaluate("async () => (await (await fetch('/ui/api/accounts')).json())")
+    ports = page.evaluate("async () => (await (await fetch('/ui/api/portfolios')).json())")
+    by_type = {a["type"]: a["id"] for a in accounts}
+    checking, brokerage, port = by_type["checking"], by_type["brokerage"], ports[0]["id"]
+    out = {
+        "dashboard": "/ui/",
+        "accounts": "/ui/accounts",
+        "transactions": "/ui/transactions",
+        "portfolios": "/ui/portfolios",
+        "activity": "/ui/activity",
+        "users": "/ui/users",
+        "profile": "/ui/profile",
+        "account-overview": f"/ui/accounts/{checking}/overview",
+        "account-transactions": f"/ui/accounts/{checking}/transactions",
+        "account-reconcile": f"/ui/accounts/{checking}/reconcile",
+        "account-sharing": f"/ui/accounts/{checking}/sharing",
+        "account-settings": f"/ui/accounts/{checking}/settings",
+        "account-holdings": f"/ui/accounts/{brokerage}/holdings",
+        "portfolio-performance": f"/ui/portfolios/{port}/performance",
+        "portfolio-holdings": f"/ui/portfolios/{port}/holdings",
+    }
+    out.update({f"settings-{s}": f"/ui/settings/{s}" for s in SETTINGS})
+    return out
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    p.add_argument("keys", nargs="*", help="only these screenshots")
+    args = p.parse_args(argv)
+    if not PAGE.exists():
+        sys.exit(f"no {PAGE.relative_to(ROOT)}: run web/dev.sh mockup first")
+    keys = set(args.keys) or wanted()
+
+    from playwright.sync_api import sync_playwright
+
+    SHOTS.mkdir(exist_ok=True)
+    problems: list[str] = []
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        ctx = browser.new_context(viewport=SIZE, color_scheme="dark", reduced_motion="reduce")
+        # The screen alone: the help pane is where the screenshot is shown.
+        ctx.add_init_script("localStorage.setItem('mk-help-open', 'false')")
+        page = ctx.new_page()
+        page.on("pageerror", lambda e: problems.append(f"page error: {e}"))
+        url = PAGE.as_uri() + "#"
+        page.goto(url + "/ui/")
+        page.wait_for_selector(".side")
+        paths = routes(page)
+        unknown = sorted(keys - paths.keys())
+        if unknown:
+            sys.exit(f"no screen for {', '.join(unknown)}: add it to routes() in help_shots.py")
+        for key in sorted(keys):
+            page.goto(url + paths[key])
+            page.wait_for_selector(".content > *")
+            for _ in range(100):
+                if not page.evaluate("!!document.querySelector('[aria-busy=\"true\"]')"):
+                    break
+                page.wait_for_timeout(50)
+            page.wait_for_timeout(600)
+            png = base64.b64encode(page.screenshot()).decode()
+            (SHOTS / f"{key}.webp").write_bytes(base64.b64decode(page.evaluate(TO_WEBP, png)))
+            print(f"shots/{key}.webp")
+        browser.close()
+    if problems:
+        print("\n".join(problems), file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

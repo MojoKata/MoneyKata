@@ -19,6 +19,7 @@
     "@preact/signals-core": "./vendor/signals-core/dist/signals-core.d.ts",
     "@preact/signals": "./vendor/signals/dist/signals.d.ts",
     "preact-iso": "./vendor/preact-iso/src/index.d.ts",
+    "@mk/preact-iso": "./vendor/preact-iso/src/index.d.ts",
     "echarts": "./charts/echarts.d.ts"
   },
   "fmt": {
@@ -33,6 +34,7 @@
       "components/",
       "charts/",
       "account-types/",
+      "mockup/",
       "tests/"
     ],
     "exclude": [
@@ -48,6 +50,7 @@
       "components/",
       "charts/",
       "account-types/",
+      "mockup/",
       "tests/"
     ],
     "rules": {

@@ -1,5 +1,6 @@
 // Portfolios (requirements §8.1, §15.2.4): the user's portfolios and those shared with them, with
 // All my accounts first.
+import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { useApi } from '../app/hooks.js';
 import { useTitle } from '../components/frame.js';
@@ -13,6 +14,7 @@ import { PortfolioDialog } from './portfolio-dialog.js';
 export default function Portfolios() {
   useTitle('Portfolios');
   useGuide('portfolios');
+  const { route } = useLocation();
   const res = useApi('/portfolios', {}, ['share', 'prices', 'import']);
   const list = /** @type {any[] | null} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
@@ -20,9 +22,7 @@ export default function Portfolios() {
   return html`
     <div class="toolbar"><span class="spacer"></span><button type="button" class="btn primary"
         onClick=${() =>
-          openDialog(PortfolioDialog, {}).then((p) =>
-            p && location.assign(`/ui/portfolios/${p.id}`)
-          )}>
+          openDialog(PortfolioDialog, {}).then((p) => p && route(`/ui/portfolios/${p.id}`))}>
         <${Icon} name="plus" /> New portfolio</button></div>
     <div class="grid g2">${list.map((p) =>
       html`<a class="card" href=${`/ui/portfolios/${p.id}`} style=${{ color: 'inherit' }}>

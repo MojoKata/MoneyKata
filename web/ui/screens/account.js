@@ -5,7 +5,7 @@ import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { ago, date, quantity } from '../app/format.js';
+import { ago, date, price, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -164,7 +164,7 @@ function Holdings({ a }) {
                       ? 'A typed price'
                       : 'The last trade'
                   } · as of ${date(x.priceAsOf)}`
-                  : 'No price yet'}>${x.price ? '$' + quantity(x.price) : '—'}</td>
+                  : 'No price yet'}>${x.price ? price(x.price) : '—'}</td>
                 <td class="num">
                   <${Amt} v=${x.value} />
                 </td>

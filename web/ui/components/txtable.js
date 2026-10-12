@@ -5,7 +5,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi } from '../app/hooks.js';
-import { date, quantity } from '../app/format.js';
+import { date, price, quantity } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Icon } from './icon.js';
 import { openDialog } from './dialog.js';
@@ -81,7 +81,7 @@ export function TxTable({ rows, showAccount = true, onChanged, accounts = [] }) 
           ${
               t.symbol && t.quantity
                 ? html`<div class="small dim">${quantity(t.quantity)} ${t.symbol}${
-                  t.price ? [' at ', html`<span class="amt">$${quantity(t.price)}</span>`] : null
+                  t.price ? [' at ', html`<span class="amt">${price(t.price)}</span>`] : null
                 }</div>`
                 : null
             }

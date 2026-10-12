@@ -4,5 +4,9 @@ const meta = (/** @type {string} */ name) =>
 
 export const version = meta('mk-version');
 export const dev = meta('mk-dev') === '1';
+/** The generated mockup (§15.9): the app on recorded answers, with the MOCK pill. */
+export const mockup = meta('mk-mockup') === '1';
 /** Where the app's own files are: versioned, cached for a year (§20.3.5). */
 export const base = `/ui/v/${version}`;
+/** Where the help guides and their screenshots are; the generated mockup points elsewhere. */
+export const guides = meta('mk-guides') || `${base}/guides`;

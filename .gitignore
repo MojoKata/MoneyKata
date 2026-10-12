@@ -1,4 +1,5 @@
 shots/
+!web/ui/guides/shots/
 __pycache__/
 web/.tools/
 web/.dev/

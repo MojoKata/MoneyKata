@@ -4,7 +4,7 @@ import { signal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
-import { dev, version } from '../app/config.js';
+import { dev, mockup, version } from '../app/config.js';
 import { ago, initials } from '../app/format.js';
 import { badges, changes, updated } from '../app/stream.js';
 import { api } from '../api/client.js';
@@ -122,7 +122,14 @@ export function Frame({ children, onSignOut }) {
         <${HouseholdAvatar} house=${s.household} />
         <div class="brand-text"><div class="brand-name">${s.household.name}</div>
           <div class="brand-ver">MoneyKata ${version} ${
-    dev
+    mockup
+      ? html`<button type="button" class="pill-mock" aria-haspopup="menu" onClick=${(
+        /** @type {MouseEvent} */ e,
+      ) => {
+        const at = /** @type {HTMLElement} */ (e.currentTarget);
+        import('../mockup/menu.js').then((m) => m.openMockMenu(at, nav, route));
+      }}>MOCK</button>`
+      : dev
       ? html`<span class="pill-dev" data-tip="Dev mode: the rules are the same as production">DEV</span>`
       : null
   }</div></div>

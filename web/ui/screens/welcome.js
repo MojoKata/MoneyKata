@@ -17,8 +17,7 @@ export default function Welcome() {
   }, [token]);
   const accept = useSubmit(async () => {
     setSession(await api.post('/invitations/accept', { token, password }));
-    history.replaceState(null, '', '/ui/');
-    location.reload();
+    location.replace('/ui/');
   });
   if (bad) {
     return html`

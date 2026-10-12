@@ -1,6 +1,7 @@
 // Transactions (requirements §15.2.3): every account's transactions together, filtered by
 // account, category, date, amount, payee and tag, with bulk categorise and Import.
 import { useEffect, useState } from 'preact/hooks';
+import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi } from '../app/hooks.js';
@@ -21,8 +22,8 @@ const EMPTY = { account: '', category: '', from: '', to: '', min: '', max: '', p
 export default function Transactions() {
   useTitle('Transactions');
   useGuide('transactions');
-  const start = new URLSearchParams(location.search);
-  const [f, setF] = useState({ ...EMPTY, category: start.get('category') || '' });
+  const { query } = useLocation();
+  const [f, setF] = useState({ ...EMPTY, category: query.category || '' });
   const [typing, setTyping] = useState(f.payee);
   const [after, setAfter] = useState(/** @type {(string | null)[]} */ ([null]));
   const [since, setSince] = useState(() => new Date().toISOString());

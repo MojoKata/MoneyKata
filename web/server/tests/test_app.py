@@ -7,6 +7,7 @@ import socket
 import subprocess
 import sys
 import time
+from collections import deque
 from pathlib import Path
 
 import httpx
@@ -17,7 +18,10 @@ pytestmark = pytest.mark.browser
 # A failed request shows in the console without its address; failed responses are checked by
 # address instead, where the session check before signing in may answer 401.
 LOAD_FAILED = re.compile(r"Failed to load resource")
-EXPECTED_FAILURES = re.compile(r"/ui/api/session$|/guides/shots/")
+EXPECTED_FAILURES = re.compile(r"/ui/api/session$")
+# The API allows a session 600 requests a minute (§16.7.5); a test opens screens far faster
+# than a person, so it keeps under that instead.
+API_PER_MINUTE = 500
 
 
 def free_port() -> int:
@@ -74,6 +78,8 @@ def page(dev_server):
         ctx = browser.new_context(ignore_https_errors=True, viewport={"width": 1440, "height": 900})
         pg = ctx.new_page()
         pg.problems = []
+        pg.api_times = deque()
+        pg.on("request", lambda r: "/ui/api/" in r.url and pg.api_times.append(time.monotonic()))
         pg.on("pageerror", lambda e: pg.problems.append(f"page error on {pg.url}: {e}"))
         pg.on(
             "console",
@@ -133,6 +139,7 @@ def check_guide(page, scope: str, where: str) -> None:
 def visit(page, path: str) -> None:
     """Open a screen and wait until what it loads has arrived, as a person would, so the
     server isn't left with a queue of abandoned requests."""
+    pace(page)
     page.goto(page.base + path)
     try:
         page.wait_for_selector(".content > *", timeout=15000)
@@ -144,6 +151,15 @@ def visit(page, path: str) -> None:
             break
         page.wait_for_timeout(50)
     page.wait_for_timeout(300)
+
+
+def pace(page) -> None:
+    """Wait while this session is near the API's limit."""
+    times = page.api_times
+    while times and time.monotonic() - times[0] > 60:
+        times.popleft()
+    if len(times) >= API_PER_MINUTE:
+        page.wait_for_timeout(1000 * (61 - (time.monotonic() - times[0])))
 
 
 def account_ids(page) -> dict[str, str]:

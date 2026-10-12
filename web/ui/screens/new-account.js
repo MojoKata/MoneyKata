@@ -1,5 +1,6 @@
 // New account (requirements §15.2.2): a type picker, then the account form.
 import { useState } from 'preact/hooks';
+import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useSubmit } from '../app/hooks.js';
@@ -48,6 +49,7 @@ export function NewAccount({ close }) {
 
 /** @param {{ type: string, close: (v?: any) => void, back: () => void }} p */
 function AccountForm({ type, close, back }) {
+  const { route } = useLocation();
   const t = BY_TYPE[type];
   const [f, setF] = useState({
     name: '',
@@ -73,7 +75,7 @@ function AccountForm({ type, close, back }) {
     const a = await api.post('/accounts', body, { idempotent: true });
     toast(`${a.name} made`);
     close(a);
-    location.assign(`/ui/accounts/${a.id}`);
+    route(`/ui/accounts/${a.id}`);
   });
   const e = save.error;
   return html`
