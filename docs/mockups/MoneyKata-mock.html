@@ -108,6 +108,8 @@ main { overflow-y: auto; min-width: 0; position: relative; }
 .help h1 { font-size: 18px; margin: 0 0 6px; }
 .help h2 { font-size: 14px; margin: 18px 0 4px; padding: 4px 6px; margin-left: -6px; border-radius: 6px; transition: background .6s; }
 .help h2.flash { background: var(--accent-dim); }
+.help h2.active { font-weight: 900; text-decoration: underline; text-underline-offset: 3px; }
+.help h2.active::before { content: ''; display: inline-block; width: .6em; height: .7em; margin-right: 7px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .help p, .help li { color: var(--fg-dim); font-size: 13px; }
 .help code { font-family: var(--mono); font-size: 12px; background: var(--bg-3); padding: 1px 5px; border-radius: 4px; }
 .help blockquote { margin: 10px 0; border-left: 3px solid var(--info); padding: 4px 12px; background: var(--info-bg); border-radius: 0 6px 6px 0; }
@@ -200,6 +202,9 @@ table.t { width: 100%; border-collapse: collapse; }
 .field .err { font-size: 12px; color: var(--deny); }
 input.in, select.in, textarea.in { height: var(--control); border-radius: 8px; border: 1px solid var(--border-strong); background: var(--inset); padding: 0 10px; width: 100%; }
 textarea.in { height: auto; padding: 8px 10px; min-height: 64px; }
+.pw { position: relative; display: block; }
+.pw input.in { padding-right: 38px; }
+.pw .icon-btn { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; }
 input.in:focus, select.in:focus, textarea.in:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 input.in.bad { border-color: var(--deny); }
 .row { display: flex; gap: 12px; } .row > * { flex: 1; min-width: 0; }
@@ -799,7 +804,10 @@ function tabs(key, list, def) {
 }
 function field(label, input, hint) { return `<div class="field"><label for="f-${slug(label)}">${label}</label>${input.replace('<input', `<input id="f-${slug(label)}"`).replace('<select', `<select id="f-${slug(label)}"`).replace('<textarea', `<textarea id="f-${slug(label)}"`)}${hint ? `<div class="hint">${hint}</div>` : ''}</div>`; }
 function sel(opts, cur) { return `<select class="in">${opts.map((o) => `<option ${o === cur ? 'selected' : ''}>${o}</option>`).join('')}</select>`; }
-function inp(v = '', ph = '', type = 'text') { return `<input class="in" type="${type}" value="${esc(v)}" placeholder="${esc(ph)}">`; }
+function inp(v = '', ph = '', type = 'text') {
+  const el = `<input class="in" type="${type}" value="${esc(v)}" placeholder="${esc(ph)}">`;
+  return type === 'password' ? `<span class="pw">${el}<button type="button" class="icon-btn" data-act="reveal" aria-label="Show password" aria-pressed="false">${icon('eye')}</button></span>` : el;
+}
 function sw(on) { return `<button class="switch ${on ? 'on' : ''}" data-act="switch" role="switch" aria-checked="${on}"></button>`; }
 
 /* ---------- screens ---------- */
@@ -2011,7 +2019,7 @@ function helpFor(dialog) {
 document.addEventListener('focusin', (e) => {
   const el = e.target; if (!el.id || !el.id.startsWith('f-')) return;
   const h = document.getElementById('h-' + el.id.slice(2));
-  if (h) { h.scrollIntoView({ behavior: 'smooth', block: 'start' }); h.classList.add('flash'); setTimeout(() => h.classList.remove('flash'), 900); }
+  if (h) { document.querySelectorAll('.help h2.active').forEach((a) => a !== h && a.classList.remove('active')); h.classList.add('active'); h.scrollIntoView({ behavior: 'smooth', block: 'start' }); h.classList.add('flash'); setTimeout(() => h.classList.remove('flash'), 900); }
 });
 
 /* ---------- render ---------- */
@@ -2151,6 +2159,7 @@ document.addEventListener('click', (e) => {
     case 'help': state.help = !state.help; try { localStorage.setItem('mk-help', state.help ? '1' : '0'); } catch { /* private window */ } render(); break;
     case 'theme': state.theme = { dark: 'light', light: 'system', system: 'dark' }[state.theme]; try { localStorage.setItem('mk-theme', state.theme); } catch { /* private window */ } render(); break;
     case 'privacy': state.privacy = !state.privacy; render(); break;
+    case 'reveal': { const f = t.previousElementSibling, show = f.type === 'password'; f.type = show ? 'text' : 'password'; t.setAttribute('aria-pressed', String(show)); t.setAttribute('aria-label', show ? 'Hide password' : 'Show password'); t.innerHTML = icon(show ? 'eye-off' : 'eye'); break; }
     case 'stale': state.stale = !state.stale; render(); break;
     case 'mupdate': state.update = !state.update; render(); break;
     case 'mnew': state.newItems = 3; render(); break;

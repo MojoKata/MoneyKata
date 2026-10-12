@@ -1,8 +1,10 @@
 // Form fields: a label, the control, a hint and the server's refusal at that field (§3.7).
 // Each control's id is "f-" and its label's slug, which the help pane follows (§15.7.3).
 import { cloneElement, isValidElement } from 'preact';
+import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { slug } from '../app/format.js';
+import { Icon } from './icon.js';
 
 /**
  * @param {{ label: string, id?: string, hint?: any, error?: string | null, help?: string,
@@ -32,16 +34,26 @@ export function Field({ label, id, hint, error, help, children }) {
 }
 
 /**
- * A text input bound to a value.
+ * A text input bound to a value. A password input carries an eye button that shows what was
+ * typed and hides it again (§15.1.3).
  * @param {{ value: any, onInput: (v: string) => void, type?: string, placeholder?: string,
  *   bad?: boolean, autocomplete?: string, id?: string, inputmode?: string, required?: boolean }} p
  */
 export function Input({ value, onInput, type = 'text', placeholder, bad, ...rest }) {
-  return html`
-    <input class=${'in' + (bad ? ' bad' : '')} type=${type} value=${value ?? ''}
+  const [shown, setShown] = useState(false);
+  const input = html`
+    <input class=${'in' + (bad ? ' bad' : '')} type=${type === 'password' && shown
+      ? 'text'
+      : type} value=${value ?? ''}
       placeholder=${placeholder} onInput=${(/** @type {any} */ e) => onInput(e.currentTarget.value)}
       ...${rest} />
   `;
+  if (type !== 'password') return input;
+  return html`<span class="pw">${input}<button type="button" class="icon-btn"
+    aria-label=${shown ? 'Hide password' : 'Show password'} aria-pressed=${shown ? 'true' : 'false'}
+    onClick=${() => setShown(!shown)}><${Icon} name=${
+    shown ? 'eye-off' : 'eye'
+  } /></button></span>`;
 }
 
 /**

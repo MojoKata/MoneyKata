@@ -117,6 +117,8 @@ main { overflow-y: auto; min-width: 0; position: relative; }
 .help h1 { font-size: 18px; margin: 0 0 6px; }
 .help h2 { font-size: 14px; margin: 18px 0 4px; padding: 4px 6px; margin-left: -6px; border-radius: 6px; transition: background .6s; }
 .help h2.flash { background: var(--accent-dim); }
+.help h2.active { font-weight: 900; text-decoration: underline; text-underline-offset: 3px; }
+.help h2.active::before { content: ''; display: inline-block; width: .6em; height: .7em; margin-right: 7px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .help p, .help li { color: var(--fg-dim); font-size: 13px; }
 .help code { font-family: var(--mono); font-size: 12px; background: var(--bg-3); padding: 1px 5px; border-radius: 4px; }
 .help blockquote { margin: 10px 0; border-left: 3px solid var(--info); padding: 4px 12px; background: var(--info-bg); border-radius: 0 6px 6px 0; }
@@ -209,6 +211,9 @@ table.t { width: 100%; border-collapse: collapse; }
 .field .err { font-size: 12px; color: var(--deny); }
 input.in, select.in, textarea.in { height: var(--control); border-radius: 8px; border: 1px solid var(--border-strong); background: var(--inset); padding: 0 10px; width: 100%; }
 textarea.in { height: auto; padding: 8px 10px; min-height: 64px; }
+.pw { position: relative; display: block; }
+.pw input.in { padding-right: 38px; }
+.pw .icon-btn { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; }
 input.in:focus, select.in:focus, textarea.in:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 input.in.bad { border-color: var(--deny); }
 .row { display: flex; gap: 12px; } .row > * { flex: 1; min-width: 0; }
@@ -2256,15 +2261,12 @@ import { api, whenSignedOut } from '@mk/api/client.js';
 import { applyTheme, helpOpen, theme } from '@mk/store/prefs.js';
 import { ended, loadSession, session } from '@mk/store/session.js';
 import { connect, disconnect } from '@mk/app/stream.js';
-import { PUBLIC_PATHS, PublicScreens, Screens } from '@mk/app/router.js';
+import { PUBLIC_PATHS, PublicScreens, Screens, SetupScreen } from '@mk/app/router.js';
 import { Frame } from '@mk/components/frame.js';
 import { DialogHost } from '@mk/components/dialog.js';
 import { MenuHost } from '@mk/components/menu.js';
 import { Toasts } from '@mk/components/toast.js';
 import { installTooltips, TooltipHost } from '@mk/components/tooltip.js';
-import { lazy } from 'preact-iso';
-
-const Setup = lazy(() => import('@mk/screens/setup.js'));
 
 function signOutLocally(/** @type {string} */ why) {
   disconnect();
@@ -2282,7 +2284,7 @@ function App() {
 
   if (PUBLIC_PATHS.some((p) => path.startsWith(p))) return html`<${PublicScreens} />`;
   if (!s) return ended.value ? html`<${PublicScreens} />` : null;
-  if (s.user.needsSetup) return html`<${Setup} />`;
+  if (s.user.needsSetup) return html`<${SetupScreen} />`;
   return html`
     <${Frame} onSignOut=${async () => {
       try {
@@ -2385,6 +2387,18 @@ export function PublicScreens() {
       <${Route} path="/ui/reset" component=${Reset} />
       <${Route} path="/ui/confirm-email" component=${ConfirmEmail} />
       <${Route} default component=${SignIn} />
+      </${Router}>
+  `;
+}
+
+// The default admin's setup step, at whatever address it was reached. It is in a Router too,
+// which is what waits for a lazy screen's module.
+const Setup = screen('setup');
+
+export function SetupScreen() {
+  return html`
+    <${Router}>
+      <${Route} default component=${Setup} />
       </${Router}>
   `;
 }
@@ -2874,8 +2888,10 @@ export function Dialog({ title, wide, close, footer, note, children, onSubmit })
 // Form fields: a label, the control, a hint and the server's refusal at that field (§3.7).
 // Each control's id is "f-" and its label's slug, which the help pane follows (§15.7.3).
 import { cloneElement, isValidElement } from 'preact';
+import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { slug } from '@mk/app/format.js';
+import { Icon } from '@mk/components/icon.js';
 
 /**
  * @param {{ label: string, id?: string, hint?: any, error?: string | null, help?: string,
@@ -2905,16 +2921,26 @@ export function Field({ label, id, hint, error, help, children }) {
 }
 
 /**
- * A text input bound to a value.
+ * A text input bound to a value. A password input carries an eye button that shows what was
+ * typed and hides it again (§15.1.3).
  * @param {{ value: any, onInput: (v: string) => void, type?: string, placeholder?: string,
  *   bad?: boolean, autocomplete?: string, id?: string, inputmode?: string, required?: boolean }} p
  */
 export function Input({ value, onInput, type = 'text', placeholder, bad, ...rest }) {
-  return html`
-    <input class=${'in' + (bad ? ' bad' : '')} type=${type} value=${value ?? ''}
+  const [shown, setShown] = useState(false);
+  const input = html`
+    <input class=${'in' + (bad ? ' bad' : '')} type=${type === 'password' && shown
+      ? 'text'
+      : type} value=${value ?? ''}
       placeholder=${placeholder} onInput=${(/** @type {any} */ e) => onInput(e.currentTarget.value)}
       ...${rest} />
   `;
+  if (type !== 'password') return input;
+  return html`<span class="pw">${input}<button type="button" class="icon-btn"
+    aria-label=${shown ? 'Hide password' : 'Show password'} aria-pressed=${shown ? 'true' : 'false'}
+    onClick=${() => setShown(!shown)}><${Icon} name=${
+    shown ? 'eye-off' : 'eye'
+  } /></button></span>`;
 }
 
 /**
@@ -3280,15 +3306,28 @@ export function HelpPane() {
     };
   }, [key, JSON.stringify(vars)]);
 
+  // The active topic: the focused field's heading stays marked until another field's heading
+  // takes over (§15.7.3). Headings are reused across guides, so a new guide marks afresh.
+  const heading = (/** @type {Element | null} */ el) => {
+    const id = el?.id?.startsWith('f-') ? el.id.slice(2) : el?.closest?.('[data-help]')
+      ?.getAttribute('data-help');
+    return id && ref.current ? ref.current.querySelector(`[data-anchor="${id}"]`) : null;
+  };
+  const mark = (/** @type {Element | null} */ target) => {
+    ref.current?.querySelectorAll('h2.active').forEach((a) =>
+      a !== target && a.classList.remove('active')
+    );
+    target?.classList.add('active');
+  };
+
+  useEffect(() => mark(heading(document.activeElement)), [md]);
+
   useEffect(() => {
     const follow = (/** @type {FocusEvent} */ e) => {
-      const el = /** @type {HTMLElement} */ (e.target);
-      const id = el?.id?.startsWith('f-') ? el.id.slice(2) : el?.closest?.('[data-help]')
-        ?.getAttribute('data-help');
-      if (!id || !ref.current) return;
-      const target = ref.current.querySelector(`[data-anchor="${id}"]`);
+      const target = heading(/** @type {HTMLElement} */ (e.target));
       if (!target) return;
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      mark(target);
       target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
       target.classList.add('flash');
       setTimeout(() => target.classList.remove('flash'), 1200);

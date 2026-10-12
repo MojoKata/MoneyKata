@@ -55,4 +55,16 @@ export function PublicScreens() {
   `;
 }
 
+// The default admin's setup step, at whatever address it was reached. It is in a Router too,
+// which is what waits for a lazy screen's module.
+const Setup = screen('setup');
+
+export function SetupScreen() {
+  return html`
+    <${Router}>
+      <${Route} default component=${Setup} />
+      </${Router}>
+  `;
+}
+
 export const PUBLIC_PATHS = ['/ui/welcome', '/ui/reset', '/ui/confirm-email'];

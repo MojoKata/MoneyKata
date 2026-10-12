@@ -71,15 +71,28 @@ export function HelpPane() {
     };
   }, [key, JSON.stringify(vars)]);
 
+  // The active topic: the focused field's heading stays marked until another field's heading
+  // takes over (§15.7.3). Headings are reused across guides, so a new guide marks afresh.
+  const heading = (/** @type {Element | null} */ el) => {
+    const id = el?.id?.startsWith('f-') ? el.id.slice(2) : el?.closest?.('[data-help]')
+      ?.getAttribute('data-help');
+    return id && ref.current ? ref.current.querySelector(`[data-anchor="${id}"]`) : null;
+  };
+  const mark = (/** @type {Element | null} */ target) => {
+    ref.current?.querySelectorAll('h2.active').forEach((a) =>
+      a !== target && a.classList.remove('active')
+    );
+    target?.classList.add('active');
+  };
+
+  useEffect(() => mark(heading(document.activeElement)), [md]);
+
   useEffect(() => {
     const follow = (/** @type {FocusEvent} */ e) => {
-      const el = /** @type {HTMLElement} */ (e.target);
-      const id = el?.id?.startsWith('f-') ? el.id.slice(2) : el?.closest?.('[data-help]')
-        ?.getAttribute('data-help');
-      if (!id || !ref.current) return;
-      const target = ref.current.querySelector(`[data-anchor="${id}"]`);
+      const target = heading(/** @type {HTMLElement} */ (e.target));
       if (!target) return;
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      mark(target);
       target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
       target.classList.add('flash');
       setTimeout(() => target.classList.remove('flash'), 1200);

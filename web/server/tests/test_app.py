@@ -261,6 +261,13 @@ def test_the_help_pane_follows_the_focus_and_f1_toggles_it(page):
     visit(page, "/ui/profile")
     page.focus("#f-birth-year")
     page.wait_for_selector('.help [data-anchor="birth-year"].flash')
+    page.wait_for_selector('.help [data-anchor="birth-year"]:not(.flash)')
+    assert page.locator(".help h2.active").evaluate_all("hs => hs.map(h => h.dataset.anchor)") == [
+        "birth-year"
+    ]
+    page.focus("#f-display-name")
+    page.wait_for_selector('.help [data-anchor="display-name"].active')
+    assert page.locator(".help h2.active").count() == 1
     page.keyboard.press("F1")
     page.wait_for_selector(".help", state="detached")
     assert page.is_visible(".help-corner")
@@ -275,6 +282,19 @@ def test_privacy_mode_blurs_amounts(page):
     blur = page.evaluate("getComputedStyle(document.querySelector('.amt')).filter")
     assert "blur" in blur
     page.get_by_role("button", name="Show amounts").click()
+
+
+def test_every_password_field_has_an_eye_that_reveals_it(page):
+    visit(page, "/ui/profile")
+    fields = page.locator("input.in[type=password]")
+    assert fields.count() == 2
+    assert page.locator(".pw > input.in + button.icon-btn").count() == fields.count()
+    page.fill("#f-current-password", "secret words")
+    page.locator("#f-current-password + button").click()
+    assert page.get_attribute("#f-current-password", "type") == "text"
+    page.get_by_role("button", name="Hide password").click()
+    assert page.get_attribute("#f-current-password", "type") == "password"
+    assert page.input_value("#f-current-password") == "secret words"
 
 
 def test_categorise_and_share_through_the_app(page):

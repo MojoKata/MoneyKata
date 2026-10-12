@@ -8,15 +8,12 @@ import { api, whenSignedOut } from '../api/client.js';
 import { applyTheme, helpOpen, theme } from '../store/prefs.js';
 import { ended, loadSession, session } from '../store/session.js';
 import { connect, disconnect } from './stream.js';
-import { PUBLIC_PATHS, PublicScreens, Screens } from './router.js';
+import { PUBLIC_PATHS, PublicScreens, Screens, SetupScreen } from './router.js';
 import { Frame } from '../components/frame.js';
 import { DialogHost } from '../components/dialog.js';
 import { MenuHost } from '../components/menu.js';
 import { Toasts } from '../components/toast.js';
 import { installTooltips, TooltipHost } from '../components/tooltip.js';
-import { lazy } from 'preact-iso';
-
-const Setup = lazy(() => import('../screens/setup.js'));
 
 function signOutLocally(/** @type {string} */ why) {
   disconnect();
@@ -34,7 +31,7 @@ function App() {
 
   if (PUBLIC_PATHS.some((p) => path.startsWith(p))) return html`<${PublicScreens} />`;
   if (!s) return ended.value ? html`<${PublicScreens} />` : null;
-  if (s.user.needsSetup) return html`<${Setup} />`;
+  if (s.user.needsSetup) return html`<${SetupScreen} />`;
   return html`
     <${Frame} onSignOut=${async () => {
       try {

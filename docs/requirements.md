@@ -1238,7 +1238,10 @@ preparer.
       outside), dialogs that trap focus and return it, styled tooltips that also show on
       keyboard focus and reach screen readers, and a **pager** for long lists (Transactions,
       Activity): a page size of 100, 500 or 1000 kept per browser, and rows that arrive while
-      reading counted on an orange **+N new** pill instead of shifting the page.
+      reading counted on an orange **+N new** pill instead of shifting the page. Every
+      password field (a password, an API key, the SMTP or node password) carries an **eye**
+      button at its right end that shows what was typed and hides it again (the eye struck
+      through while shown), labelled for screen readers.
    4. An orange **update** pill under the brand when the server was upgraded since the page
       loaded; a click reloads.
 2. **Navigation** (in this order):
@@ -1308,7 +1311,9 @@ preparer.
       (`{{account-type settings}}`), and each price source has its own part for Settings ›
       Prices.
    3. **It follows the page.** As focus moves to a field, the pane scrolls smoothly to that
-      field's heading and highlights it for a moment. A field is matched to a `##` heading by
+      field's heading and highlights it for a moment. That heading stays marked as the
+      **active topic** (extra bold, underlined, with a solid ▶ to its left) until focus moves
+      to another field with a heading of its own. A field is matched to a `##` heading by
       its label turned into an id ("Lot method" → `lot-method`), or to an id the heading lists
       (`## Lot method {#lots}`). Guides keep the page's order, so moving down the page never
       moves the guide up.
