@@ -12,14 +12,21 @@ touches the server's internals needs no mockup change. Say so when you skip it.
 Before calling a change done:
 
 1. Open every screen, tab, Settings section and dialog in a headless browser, and fail on any
-   page error or console error.
+   page error or console error: `python docs/mockups/check.py shots/` does this and writes
+   a screenshot of each to `shots/` (it needs Playwright for Python and its Chromium).
 2. Look at screenshots of what changed.
+
+The mockup's `html` element carries `zoom: 2`. Viewport units, breakpoints and pointer
+positions in it account for that, so check and screenshot at 2880×1800 (what a 1440×900
+window shows).
 
 The web app and its mockup are for desktop browsers. Phone layouts are not checked or fixed:
 phones will get a separate, focused PWA later (requirements §15.8).
 
-Once `web/ui` exists, the mockup is generated from the app (`web/ui/mockup/build.py`), and
-`web/check` fails while the mockup is out of date (requirements §15.9).
+While the app is being built there are two mockups (requirements §15.9): the hand-written
+`MoneyKata-mock.html`, which stays the design reference and is updated with every UI-facing
+change, and `MoneyKata-app.html`, generated from the app by `web/ui/mockup/build.py` for the
+screens built so far, which `web/check` keeps current.
 
 ## Requirements are a statement, not a changelog
 
@@ -29,6 +36,10 @@ holds the history. When an open question (§21) is answered, the answer goes int
 it belongs to and the question is removed, renumbering §21 and the references to it. An idea
 that was weighed and turned down goes to **Rejected ideas** at the end, with the reason, so it
 is not raised again without a new one. `docs/schema.md` follows the same rule.
+
+The **Gaps** section (§22) tracks areas named but not yet specified, each with a lasting id
+(G1, G2, …). When a gap is specified, the text goes into its section and the gap's row is
+removed; its id is never reused, and new gaps take the next number.
 
 ## Free standing
 

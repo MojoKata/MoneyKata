@@ -8,8 +8,8 @@ the numbers a tax return needs. Several people use one server. They share accoun
 portfolios with each other, read-only or read/write, and share read-only with people on
 **other MoneyKata servers** on other LANs.
 
-§3 states the design's principles, §20 the technical stack, §21 the open questions and §22
-what is out of scope.
+§3 states the design's principles, §20 the technical stack, §21 the open questions, §22 the
+gaps still to design, and §23 what is out of scope.
 
 **Mockup:** [`mockups/MoneyKata-mock.html`](mockups/MoneyKata-mock.html) is the clickable
 mockup. It is one file that opens from disk and sends nothing anywhere. For now it is
@@ -29,7 +29,7 @@ recommendations waiting for a decision.
 2. **A single-page app at `/ui`**, dark-mode first, in one frame: a collapsible
    sidebar, the signed-in user at its foot, the theme button, a DEV pill in dev mode and an
    update pill. It is built for desktop browsers. Phones will get a separate, focused PWA
-   later, not the whole web app (§15.8, §22).
+   later, not the whole web app (§15.8, §23).
 3. **Context-sensitive help on every screen**: the F1 help pane, with one Markdown guide per
    screen or panel that follows the focused field (§15.7). A test fails when a field has
    no heading in its guide.
@@ -60,8 +60,8 @@ recommendations waiting for a decision.
     backed up as a **12-word recovery phrase** (§18). The server's own account reads the key
     file. There is no separate keys process, and **no Vault or other external key service**
     (§18.2).
-14. **Charts: Apache ECharts** *(proposed)*, vendored and loaded only by the screens that draw
-    charts. uPlot and TradingView Lightweight Charts are the alternatives (§20.4).
+14. **Charts: Apache ECharts**, vendored and loaded only by the screens that draw charts
+    (§20.4).
 15. **The code lives in `web/`**: `web/ui` (the browser app) and `web/server` (the Python
     package `moneykata`). The docs are in `docs/` (§20.1).
 16. **MoneyKata informs and does not advise.** Tax reports, projections and gain/loss figures
@@ -98,15 +98,20 @@ recommendations waiting for a decision.
     as they do with people on their own (§13.3). What a household shares is shown in a
     **window of its own**, never mixed with this household's data (§15.10). This suits
     household servers; a server for more than a household would need users to opt in to
-    being listed (§22).
+    being listed (§23).
 23. **US dollars only.** Every account, price, total and report is in USD. There are no
-    foreign accounts and no currency conversion (§7.8, §22).
+    foreign accounts and no currency conversion (§7.8, §23).
 24. **Records are soft-deleted.** Deleting marks a record deleted, with when and by whom, and
     a view per table works out whether it is deleted through what it belongs to. The few
     exceptions are listed in [`schema.md`](schema.md) (§17.1.5).
-25. **Alerts** tell people when something needs them, above all admins when a sync has
+25. **Alerts** tell people when something needs them, above all admins when a source has
     failed for more than 48 hours. They show as a live count on the **Alerts** screen, and
     each user chooses to be emailed each one, a daily summary, or nothing (§15.11).
+26. **Account data comes from files the user brings.** Bank, card, brokerage and exchange
+    accounts are kept current from files: OFX/QFX and CSV downloads, PDF statements, and
+    photos of statements read on the server. There is no bank-aggregation service (§4.3,
+    §24). **Bitcoin** is the one chain watched, through a public explorer or the household's
+    own node; other coins and exchanges' APIs come later (§4.5, §4.6).
 
 # 2. Terminology
 
@@ -168,8 +173,8 @@ recommendations waiting for a decision.
 # 3. Design principles
 
 1. **One server, on the household's own LAN.** All data stays on hardware its users control.
-   The only outbound calls are to price sources, sync sources and linked servers that a user
-   or admin set up, and each is visible in Settings (§19).
+   The only outbound calls are to price sources, the bitcoin explorer or node, and linked
+   servers that a user or admin set up, and each is visible in Settings (§19).
 2. **The ledger is the truth.** Holdings, balances, positions, gains and charts are derived
    from transactions and lots. A **balance snapshot** may stand in for history where none is
    available, such as an opening balance or a 401(k) statement, and it is marked as such.
@@ -178,10 +183,10 @@ recommendations waiting for a decision.
 4. **Least privilege in sharing.** A share grants one account or portfolio, at one level, to
    whom it names. It is never re-shared. Revoking it ends access on the next request.
 5. **Safe defaults.** A new account is shared with no one. A new link carries nothing until
-   something is shared with it. Sync and price sources are off until configured.
+   something is shared with it. Price sources and the bitcoin explorer are off until
+   configured.
 6. **Never hold the keys to the money.** There are no private keys, seed phrases or trading
-   permissions. Exchange API keys must be read-only, and MoneyKata refuses a key that the
-   exchange reports as able to trade or withdraw, where the exchange says so (§4.5).
+   permissions, and no credentials for a bank or an exchange.
 7. **One store, live on the next request.** There are no caches between the database and a
    request, so a change (a share revoked, a rule edited) applies to the very next one. A record
    is validated as a whole when saved, every change is saved explicitly, and a refusal names
@@ -208,7 +213,7 @@ recommendations waiting for a decision.
    | `529` (college savings) | Education | funds, cash, for one beneficiary (§4.8) | tax-free for qualified education |
    | `daf` (donor-advised fund) | Giving | funds, cash | deducted when contributed; grants are not deductible again (§10.9) |
    | `crypto-exchange` | Crypto | coins, fiat cash | taxable |
-   | `crypto-wallet` (self-custody) | Crypto | coins on one chain | taxable |
+   | `crypto-wallet` (self-custody) | Crypto | bitcoin | taxable |
    | `precious-metals`, `collectables`, `real-estate`, `vehicle`, `other-asset` | Physical assets | items, each with its own basis and value (§4.10) | gains on collectables and metals: the collectables rate |
 
    A `daf` counts in no one's net worth by default: its money is already given away.
@@ -219,31 +224,46 @@ recommendations waiting for a decision.
    for history and taxes), notes, and how it is kept current (§4.3).
 3. **How an account is kept current**, one or more of:
    1. **manual**: transactions and balance snapshots typed in;
-   2. **file import**: OFX/QFX/QBO, CSV (with a saved column mapping per institution), and
-      brokers' trade-history CSVs. Imports are idempotent: a re-imported file adds only what is
-      new, matched by the file's transaction id or by date, amount and payee;
-   3. **sync** *(open, §21.1.1)*: a bank-aggregation service such as **SimpleFIN Bridge**
-      (inexpensive, read-only, a token per user). Its token is a secret (§17.4);
-   4. **exchange API** (crypto exchanges): read-only API keys, balances and trades (§4.5);
-   5. **chain watch** (self-custody wallets): balances and transactions read from public
-      blockchain APIs by address or xpub (§4.6).
+   2. **file import**: **OFX and QFX** files (the structured downloads most US banks and
+      brokers offer; brokers' files also carry positions and trades), read with ofxtools;
+      CSV, with a saved column mapping per institution; and brokers' and exchanges'
+      trade-history CSVs. Imports are idempotent: a re-imported file adds only what is new,
+      matched by the file's transaction id (an OFX file's `FITID`) or by date, amount and
+      payee;
+   3. **statement import**: a **PDF statement**, read from its text layer, or a **photo or
+      scan** of one, read with RapidOCR as receipts are (§12.8), all on the server. MoneyKata
+      finds the statement's period, its transactions and its opening and closing balances,
+      and shows them for the user to check and correct before anything is saved. The
+      transactions must add up from the opening to the closing balance; where they don't,
+      the difference is shown and nothing is saved until it is resolved or accepted. What it
+      learns about an institution's layout is kept per institution, so the next statement
+      needs fewer corrections. Imports are idempotent here too. The statement file is kept as
+      a receipt attached to the account (§12);
+   4. **bitcoin watch** (self-custody wallets): balances and transactions read by address or
+      xpub (§4.6).
+
+   No bank-aggregation service is used: the user brings the files (§24).
 4. **Retirement accounts** also carry: the **contribution year** of each contribution (a
    contribution made 2027-03-01 may be for 2026), employer match and vesting for a 401(k), and
    the account holder's **birth year** (from the profile) for limits and RMDs. Contribution
    limits per year are a table shipped with the app and updated with it, which an admin can
    correct in Settings (§11.6).
-5. **Crypto exchanges** (Coinbase, Kraken, Gemini, and others as needed): one module
-   per exchange under `sync/exchanges/`, each with its own form fields, help guide and icon,
-   so adding an exchange touches one module on each side. Each holds only
-   **read-only** keys. Where the exchange's API reports a key's permissions, a key that can
-   trade or withdraw is refused (`key-too-powerful`), and the dialog says how to make a
-   read-only one.
-6. **Self-custody wallets**: the chain (Bitcoin, Ethereum and EVM chains, Solana, …) and
-   either addresses or, for Bitcoin, an **xpub/ypub/zpub** from which addresses are derived.
-   Balances and history come from public explorers (Blockstream/mempool.space Esplora for
-   Bitcoin, an Etherscan-compatible API for EVM). Each is a provider in the sense of §7 with an
-   optional API key. The form **refuses anything that looks like a private key or seed phrase**
-   (WIF, 64 hex digits, 12 or 24 BIP-39 words), says why, and never stores or logs it.
+5. **Crypto exchanges** (Coinbase, Kraken and the like) are kept current from their CSV
+   exports and statements, one import mapping per exchange. Reading an exchange through its
+   API comes later (§23).
+6. **Self-custody wallets** hold **bitcoin**. Other coins and chains come later (§23).
+   1. **What the account holds**: addresses, or an **xpub/ypub/zpub** from which addresses
+      are derived (with a gap limit of 20 unused addresses by default).
+   2. **Where balances and history come from**, set by an admin in Settings › Bitcoin:
+      1. a **public explorer** with the Esplora API (mempool.space by default, or
+         Blockstream);
+      2. **the household's own node**: its own mempool or Esplora instance, an **Electrum
+         server** (Fulcrum, electrs), or **Bitcoin Core** over RPC with a watch-only
+         descriptor wallet. An own node keeps the household's addresses private, and is
+         recommended. Its address is named by the admin, so the egress guard (§16.5) lets
+         MoneyKata reach it on the LAN; its credentials are a secret (§17.4).
+   3. The form **refuses anything that looks like a private key or seed phrase** (WIF, 64
+      hex digits, 12 or 24 BIP-39 words), says why, and never stores or logs it.
 7. **Transfers** between two of a user's accounts are matched (same amount, a few days apart),
    so they count neither as spending nor as income, nor as a buy or sell of cash.
 8. **529 plans.** A `529` account holds funds and cash like a brokerage account, plus:
@@ -319,6 +339,31 @@ recommendations waiting for a decision.
     6. **An account's chart** is its items' total value over time. The Items tab lists the
        items with cost basis, value, gain and age, and opens each one with its history,
        notes and documents.
+11. **Reconciliation** keeps an account's balance in step with the institution's, for banking,
+    card, brokerage-cash and loan accounts. For a user who only imports files it is a set of
+    quiet, automatic checks; ticking off transactions by hand is an option.
+    1. **Coverage**: each import records the dates it covers. The account's *Reconcile* tab
+       shows a timeline of covered and uncovered periods, and flags a **gap** (*nothing
+       between Aug 3 and Aug 14*) and an **overlap**.
+    2. **Balance anchors**: a balance the institution reported, on a date, from (in order of
+       preference) a CSV's **running-balance column** (every row is then an anchor), an
+       OFX file's ledger balance, a statement's closing balance (§4.3.3), or a balance the
+       user **types** from the institution's site. When an account has had no anchor for 45
+       days, it asks for one.
+    3. **The check**: at each anchor, MoneyKata's balance for that day is compared with the
+       anchor. A match stays quiet. A **mismatch** shows the difference, the window between
+       the last matching anchor and this one, and what is suspect inside it: likely
+       duplicates, amounts that changed between imports, and coverage gaps. With a
+       running-balance column, it names the first row where the balances part.
+    4. **Resolving** a mismatch: import the missing file, remove a duplicate, correct a
+       transaction, or accept the difference as a **balance adjustment** with a note, which
+       shows as such in the account and in Activity. An account with an open mismatch is
+       marked in Accounts, and raises an alert after 7 days (§15.11).
+    5. **Duplicate suspects** are flagged, never merged silently: two identical rows on one
+       day ask *both real?* the first time, and the answer is kept.
+    6. **Ticking off** (optional, for accounts kept by hand): pick a statement's closing date
+       and balance, tick transactions as cleared until the difference is zero, and the period
+       is marked **reconciled**. Editing a transaction inside a reconciled period asks first.
 
 # 5. Holdings, lots and transactions
 
@@ -410,7 +455,7 @@ recommendations waiting for a decision.
    | Silver, platinum and palladium spot | **SLV**, **PPLT** and **PALL** from Tiingo, divided by each fund's metal per share | free | the metal per share ships with the tax tables (§19.11) and is updated with them; within a fraction of a percent of spot |
    | Options | **Massive** (formerly Polygon.io), Basic plan | free | end-of-day prices and two years of history; 5 calls a minute, each page of a result counting as one |
    | Treasuries, I bonds and EE bonds | computed | — | from the Treasury's published yield curve and savings-bond rates, which are free official data |
-   | No free ticker: 529 portfolios, 401(k) collective trusts, individual corporate and municipal bonds | **manual** | — | a value from a statement, an import or a bank-sync balance, or a typed price, with its date. A statement value older than 90 days is marked stale and raises an alert (§15.11) |
+   | No free ticker: 529 portfolios, 401(k) collective trusts, individual corporate and municipal bonds | **manual** | — | a value from a statement or an import, or a typed price, with its date. A statement value older than 90 days is marked stale and raises an alert (§15.11) |
 
 4. **Schedule**: once a day, after the US market close (6:00 PM Eastern by default), a
    background task loads the day's close for every **held or watched** instrument, and
@@ -420,7 +465,8 @@ recommendations waiting for a decision.
    for that class; Settings shows the last error, and a failure lasting past the alert
    threshold raises an alert (§15.11). Intraday quotes are not fetched.
 5. **Option marks**: the day's close from the source that serves options, else manual or
-   intrinsic value (§6.7). A close older than the last trading day is marked stale. Greeks are out of scope (§22).
+   intrinsic value (§6.7). A close older than the last trading day is marked stale. Greeks
+   are out of scope (§23).
 6. **Stored prices** are kept: daily closes for ever.
    Charts read stored prices only, never a price source during a request.
 7. **Every price carries its source and `as_of`.** The UI shows *delayed* or *as of 4:00 PM*
@@ -483,8 +529,11 @@ recommendations waiting for a decision.
       95 by default), and the balance by age.
    2. **Education**, for one beneficiary, built on their 529 accounts (§4.8). The
       beneficiary's birth year gives the first year of school. The user sets the years of
-      school and the yearly cost in today's dollars (typed, or a shipped average for public
-      in-state, public out-of-state and private four-year colleges), and the contributions,
+      school and the yearly cost in today's dollars: typed, or a shipped average of tuition,
+      fees, room and board for public four-year (in-state) and private nonprofit four-year
+      colleges, from the National Center for Education Statistics' *Digest of Education
+      Statistics* (table 330.10, public domain, updated yearly and shipped with the tax
+      tables), and the contributions,
       flagged where one person's gifts pass the annual exclusion (§4.8.2). The answer: the
       projected balance against the cost, the **percentage funded**, and the monthly
       contribution that would fund it fully. A 529's **Goal** tab shows this projection.
@@ -761,7 +810,7 @@ produces worksheets and exports. It never files, and says so (§1.16).
 # 12. Receipts
 
 1. **Upload** from the browser: drag and drop, or the file picker. One or many at once.
-   Taking a photo of a receipt with a phone belongs to the mobile PWA (§22).
+   Taking a photo of a receipt with a phone belongs to the mobile PWA (§23).
    Formats: PDF, JPEG, PNG, WebP, and HEIC, the format of iPhone photos (converted to JPEG
    for display, with the photo's orientation applied). Each file is at most
    25 MB (a Setting).
@@ -910,7 +959,7 @@ produces worksheets and exports. It never files, and says so (§1.16).
    2. **write**: also change what the item holds: for an account, add and edit transactions,
       import, categorise and attach receipts; for the other kinds, edit their entries. A
       write share cannot delete the item, change its sharing, or see or change its secrets
-      (sync tokens, API keys), which stay the owner's.
+      (keys and credentials), which stay the owner's.
    3. **People on linked servers**: any of the seven kinds can also be shared with named
       users of a linked server (§14), always **read**. Each server sends its peers its list
       of active users (display name, username and email), so they can be chosen like local
@@ -990,7 +1039,7 @@ preparer.
       **serves** and the other **pulls**;
    2. both on one overlay network, such as **Tailscale**, **WireGuard** or ZeroTier. This is
       the recommended setup and needs no open port;
-   3. *(not now)* a relay. MoneyKata does not run one (§22).
+   3. *(not now)* a relay. MoneyKata does not run one (§23).
 
    A link works when **either** side can reach the other: the side that can't be reached pulls.
 3. **What a link carries**: only what a user on one server has shared with named people on
@@ -1197,13 +1246,14 @@ preparer.
       allocation, accounts by group with balances, this month's budget, upcoming recurring
       transactions, occasions inside their reminder time (§10.7.3), giving against its
       target, the **Plans** card of active projections (§9.8), and stale prices, stale
-      valuations or sync problems;
+      valuations, or sources and imports that need attention;
    2. **Accounts**: every account the user owns or holds a share of, grouped (Banking,
       Investing, Retirement, Education, Crypto, Giving, Liabilities, Physical assets), each with its type icon,
-      institution, balance, change, sync state, and sharing marks. **New account** offers a
+      institution, balance, change, when it was last updated, and sharing marks. **New account** offers a
       type picker, then the account form. An **account page** has the tabs *Overview*
       (balance chart), *Holdings* (investing only), *Transactions*, *Positions* (investing
-      only), *Receipts*, *Sharing* and *Settings* (sync, lot method, import mappings).
+      only), *Receipts*, *Reconcile* (banking, card, brokerage and loan accounts, §4.11),
+      *Sharing* and *Settings* (how it is kept current, lot method, import mappings).
       Some types add tabs: a loan *Schedule* and *Payoff* (§4.9, §9.10); a 529
       *Contributions*, *Withdrawals* and *Goal* (§4.8); a physical-asset account *Items*
       (§4.10);
@@ -1229,7 +1279,8 @@ preparer.
    14. **Users and Groups**, **Settings** (admins);
    15. **Alerts**: what needs the user's attention, with a live count on its badge (§15.11);
    16. the user tile opens **Profile** (name, email, avatar, password, two-step, alert
-       emails, assumptions for projections (§9.3), access tokens, birth year, spouse for
+       emails, time zone (§17.9), assumptions for projections (§9.3), access tokens, birth
+       year, spouse for
        wash sales) and **Sign out**.
 3. **Privacy mode**: a button in the header (an eye) blurs every amount on the page until
    clicked again, for using the app with someone looking over your shoulder. The browser
@@ -1241,7 +1292,7 @@ preparer.
    price refresh with a dot that turns amber when prices are stale (§7.7).
 6. **Live updates**: the frame keeps one Server-Sent Events stream open (`GET
    /ui/api/events`). It carries fingerprints and counts, never data: prices refreshed, an
-   import finished, a sync result, a share received or removed, a linked pull done, a new
+   import finished, a statement read, a share received or removed, a linked pull done, a new
    alert, the badges' counts (Alerts among them), and the server's version. A screen whose data changed reloads it through
    its usual routes. The stream never extends the session, ends after a few minutes (the
    browser reconnects), and takes the page to sign-in or *account is disabled* when the
@@ -1281,10 +1332,16 @@ preparer.
 9. **The clickable mockup**: one HTML file that opens from disk and sends nothing anywhere,
    showing every screen and dialog on sample data. Its purple **MOCK** pill (where the DEV
    pill goes) jumps to any screen, switches users, opens dialogs and changes state (prices
-   stale, privacy mode). `web/ui/mockup/build.py` inlines the app and an in-page fake backend
-   into `docs/mockups/MoneyKata-mock.html`, and `web/check` fails while
-   it is out of date. Until `web/ui` exists, the file is hand-written and is the
-   reference for the screens.
+   stale, privacy mode). There are two files while the app is being built:
+   1. **`docs/mockups/MoneyKata-mock.html`**, hand-written: the design reference for every
+      screen. A change to what users see updates it in the same change.
+   2. **`docs/mockups/MoneyKata-app.html`**, generated: `web/ui/mockup/build.py` inlines the
+      app and an in-page fake backend, for the screens built so far, and `web/check` fails
+      while it is out of date.
+
+   When the generated file covers every screen, it replaces the hand-written one and takes
+   its name. `docs/mockups/check.py` opens every screen, tab, Settings section and dialog of
+   the hand-written mockup in headless Chromium and fails on any page or console error.
 10. **Linked households.** What another household shares is a world of its own, so it is
     never shown together with this household's data. It opens in a **window of its own**.
     1. **Where to find them**: a click on the household's avatar at the top of the sidebar
@@ -1320,20 +1377,22 @@ preparer.
 11. **Alerts** tell someone that something needs them. Activity records what happened; an
     alert asks for an action.
     1. **What raises one**:
-       1. **for admins**: a sync source that has failed for longer than the threshold in
-          Settings › Alerts (48 hours by default): a bank-sync connection, an exchange, a
-          chain explorer, a price source, or a linked server's pulls; a backup that failed;
+       1. **for admins**: a source that has failed for longer than the threshold in Settings
+          › Alerts (48 hours by default): the bitcoin explorer or node, a price source, or a
+          linked server's pulls; a backup that failed;
           a link's first share waiting for its access key (§14.9.2); and the yearly check of
           the master key's recovery phrase (§18.6.5). An admin's alert about someone else's
           account names its owner and source, never the account's name or figures (§13.2);
-       2. **for an account's owner**: their own sync failing for longer than the threshold,
-          and a token or key that needs entering again;
+       2. **for an account's owner**: their wallet's explorer or node failing for longer
+          than the threshold, and an account whose latest statement or import is older than
+          its expected interval (a month and a half for a monthly statement), and a
+          reconciliation mismatch left open for 7 days (§4.11);
        3. **for each user**: an occasion entering its lead time (§10.7.3), an option
           expiring within a week, a pledge due (§10.9), an active projection falling
           behind (§9.7.5), and budget alerts when they come (§10.6).
-    2. **One alert per cause.** A failing sync raises one alert, not one per attempt. It
+    2. **One alert per cause.** A failing source raises one alert, not one per attempt. It
        stays **open** while the cause lasts and is **resolved** by itself when the cause
-       clears (the sync succeeds). A user can **dismiss** an open alert for themselves.
+       clears (the source answers again). A user can **dismiss** an open alert for themselves.
        Resolved alerts stay listed for 90 days.
     3. **The Alerts screen** lists open alerts first, newest first, then resolved ones. Each
        shows what it is about, since when, a link to the place to fix it, and **Dismiss**.
@@ -1343,7 +1402,7 @@ preparer.
     5. **Emails**: each user chooses in Profile how alerts reach them by email:
        1. **each alert**: one email when an alert opens (not when it repeats or resolves);
        2. **daily summary**: one email a day at the time set in Settings › Alerts (07:00 by
-          default) listing the alerts opened since the last one, and none on a day without
+          default, in each user's time zone, §17.9) listing the alerts opened since the last one, and none on a day without
           any;
        3. **none**: on screen only.
 
@@ -1367,12 +1426,13 @@ preparer.
    listener with HTTP/2 (forwarded headers ignored). **`proxy`** is the expected setup.
    **`tls`** is for testing on a local network: given no certificate, the server makes a
    self-signed one on first start and keeps it in the data directory.
-4. **Background tasks** in the server process: price refresh (§7.4), sync and exchange or
-   chain pulls (§4.3), link pulls (§14.4), option expiry (§6.6), recurring detection (§10.5),
-   backups (§17.6), receipt reading (§12.8, in its own worker process), and pruning. Each records its last run and error, which Settings shows.
+4. **Background tasks** in the server process: price refresh (§7.4), bitcoin wallet reads
+   (§4.6), link pulls (§14.4), option expiry (§6.6), recurring detection (§10.5), backups
+   (§17.6), receipt and statement reading (§12.8, §4.3, in its own worker process), and
+   pruning. Each records its last run and error, which Settings shows.
    They run in a thread pool with per-provider rate limits and never block a request.
 5. **Outbound calls** go through one httpx client with an **egress guard**: only the hosts of
-   enabled providers, sync sources and links; never loopback, link-local or cloud metadata
+   enabled price sources, the bitcoin explorer or node, and links; never loopback, link-local or cloud metadata
    addresses unless an admin allows one by name; with timeouts and response-size ceilings.
 6. **Stopping**: on SIGTERM the server ends every event stream, lets requests in flight finish
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
@@ -1380,6 +1440,91 @@ preparer.
    mode, a database from a newer release, a certificate it can't load), it says why in one
    `refusing to start:` line and exits 78 (`EX_CONFIG`). The example `compose.yaml` restarts
    it only on failure, three times at most, so a refused start isn't retried in a loop.
+7. **Security policies** *(proposed, for review)*. One place for the rules every request
+   passes through; other sections refer here.
+   1. **Sessions**: a 256-bit random token in a cookie named `mk_session`, `HttpOnly`,
+      `Secure`, `SameSite=Strict`, `Path=/ui`, stored as its SHA-256. A new token at sign-in
+      and at every change of privilege (two-step passed, made admin), so a token from before
+      sign-in never works after it. Idle lifetime 8 hours and absolute 30 days by default
+      (Settings › Sign-in and sessions). Signing out, a password change and deactivation end
+      every session of that user at once.
+   2. **Re-authentication**: changing the password, the email address or two-step, making an
+      access token, creating a linked copy's access key, sharing with a linked server, and
+      exporting data each need the password again if it was last given more than 10 minutes
+      ago.
+   3. **Passwords**: argon2id (64 MiB, 3 passes, parallelism 1), the minimum length of
+      §19.5, and no other rules. Checked against a shipped list of the 100,000 most common
+      passwords, which are refused.
+   4. **Cross-site requests**: `SameSite=Strict` plus an `Origin` check on every request
+      that changes something; a missing or foreign `Origin` is refused with 403. No CORS: the
+      API answers only its own origin.
+   5. **Rate limits**, per client address and per user, answered with 429 and a
+      `Retry-After`:
+      1. sign-in, two-step codes and password-reset requests: 10 failures in 15 minutes lock
+         that username for 15 minutes and slow that address (§13.1);
+      2. linked copies' access keys: §14.9.3.3;
+      3. the API: 600 requests a minute per session; uploads: 60 files an hour per user;
+      4. `/mcp`: 60 calls a minute per token (§13.9.4); `/link`: 60 calls a minute per
+         link.
+   6. **Request limits**: JSON bodies up to 1 MB, uploads up to the size in Settings
+      (25 MB by default), at most 100 MB of uploads in flight per user, and request headers
+      up to 16 KB. Each upload's type is checked from its content, never its name (§12.1).
+   7. **Response headers** on every response: the CSP of §20.3.3,
+      `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
+      `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`,
+      `Permissions-Policy` denying camera, microphone, geolocation and payment, and
+      `frame-ancestors 'none'`. In `tls` mode, `Strict-Transport-Security` for a year.
+      Receipt and statement files are served with `Content-Disposition`, their checked type,
+      and a `sandbox` CSP, so a PDF can't run script in the app's origin.
+   8. **Errors** never include a stack trace, a SQL statement, a path on the host or a
+      secret. Each error carries an id that is also in the log, so an admin can find the
+      detail.
+   9. **Logging**: no amounts, names of accounts or payees, secrets, tokens or passwords;
+      user ids, record ids, routes and outcomes only (§3.8). Sign-ins, failures, lockouts and
+      every admin action are logged and recorded in Activity.
+   10. **TLS** (in `tls` mode): TLS 1.2 and 1.3 only, with the server's default modern cipher
+       suites; HTTP/2.
+   11. **Supply chain**: Python dependencies pinned with hashes in `uv.lock`; browser
+       libraries vendored with their hashes in `manifest.json` (§20.3.1); the image built
+       from a pinned base and rebuilt for security updates.
+8. **API conventions** *(proposed, for review)*, for `/ui/api` and, where they apply, `/mcp`.
+   The OpenAPI document is generated from the routes (§3.9).
+   1. **Resources and methods**: plural nouns (`/ui/api/accounts`, `/ui/api/accounts/{id}`).
+      `GET` reads, `POST` creates, `PATCH` changes the fields it sends, `DELETE`
+      soft-deletes (`schema.md` §4) and returns 204. An action that is not a change of
+      fields is a `POST` to a verb under the resource (`/ui/api/links/{id}/pull`).
+   2. **Names and values in JSON**: field names camelCase, as in the database (`schema.md`
+      §1). Ids are the prefixed strings of `schema.md` §2. Money is a decimal **string** in
+      dollars with two places (`"1234.50"`); quantities and prices are decimal strings to
+      their own scale (§17.3); floats are refused. Dates are `YYYY-MM-DD`; timestamps are
+      RFC 3339 in UTC (`2026-10-12T14:05:00Z`, §17.9). A field with no value is `null`, never
+      left out.
+   3. **Errors** are `application/problem+json` (RFC 9457): `type`, `title`, `status`,
+      `detail`, the error id of §16.7.8, and `errors`, a list of `{field, code, message}` so
+      the UI shows each refusal at its field (§3.7). Codes are stable strings
+      (`key-too-short`, `share-not-allowed`), listed in the OpenAPI document.
+   4. **Status codes**: 200, 201 with `Location`, 202 for work that continues (§16.8.7),
+      204, 400 for a malformed request, 401 when not signed in, 403 when not allowed, 404 for
+      what doesn't exist *or* isn't visible to the caller (never revealing which), 409 for a
+      conflict, 412 for a stale version, 413, 415, 422 for a valid request that breaks a rule,
+      429, and 503 while the server is starting or a linked copy is locked.
+   5. **Paging**: by cursor. `?limit=` (100 by default; 500 and 1000 allowed, §15.1.3) and
+      `?after=<cursor>`; the response has `items` and `next` (a cursor, or `null`). Sorting
+      with `?sort=field` or `-field` on the fields each list declares; filters as named query
+      parameters.
+   6. **Concurrency**: each record has a `version` that changes with every save. `PATCH` and
+      `DELETE` send it in `If-Match`; a stale one gets 412 with the current record, so the UI
+      can show what changed.
+   7. **Long work** (an import, a statement read, a projection run, a reset copy) answers
+      202 with a job resource (`/ui/api/jobs/{id}`: state, progress, result), and the live
+      stream announces its end (§15.6).
+   8. **Idempotency**: a `POST` that creates may carry `Idempotency-Key`; a repeat within 24
+      hours returns the first answer. Imports are idempotent by their content (§4.3).
+   9. **Versioning**: `/ui/api` is served with the app and changes with it, so it carries no
+      version; the OpenAPI document states the release. `/mcp` and `/link` are versioned in
+      their own protocol (G1, G7).
+   10. **Visibility**: every read goes through the caller's shares (§13.3) and the soft-delete
+       views (`schema.md` §4.2). A list never counts or hints at what the caller can't see.
 
 # 17. Storage and secrets
 
@@ -1413,8 +1558,8 @@ preparer.
    places, enough for wei), through a small SQLAlchemy column type. JSON carries both as
    strings. Python uses `decimal.Decimal` with a context of 34 digits and rounds `HALF_EVEN`
    except where a tax rule says otherwise. Floats are refused at the API's edge.
-4. **Secrets** (price-source keys, exchange API keys and secrets, sync tokens, the SMTP
-   password, link private keys) are encrypted each on its own with AES-256-GCM under a data
+4. **Secrets** (price-source keys, the bitcoin node's credentials, the SMTP password, link
+   private keys) are encrypted each on its own with AES-256-GCM under a data
    key of their own, wrapped under a key derived from the master key, with associated data
    naming the record
    and field, so a ciphertext copied onto another record fails to decrypt (§18.3). Secrets are
@@ -1436,6 +1581,24 @@ preparer.
 8. **Export**: a user can export their own data (accounts, transactions, lots, receipts) as a
    ZIP of CSVs and files, at any time. This is the way out, and the backup a single user can
    keep.
+9. **Times and dates.**
+   1. **Every timestamp is stored in UTC** (`deletedAt`, a session's start, an alert's
+      opening, a price's `as_of`), and shown in the viewer's time zone.
+   2. **Each user's time zone** is set in Profile: **Auto**, the server's time zone (from
+      the host, shown in Settings › General), or a zone they choose by name
+      (`America/Denver`).
+   3. **Calendar dates have no time zone**: a transaction's date, a statement's period, a
+      birthday and a due date are dates as the institution or the user wrote them, never
+      shifted.
+   4. **A trading day** is the US market's, in New York time: a daily close is dated by its
+      market day, whatever the viewer's zone (§7.4).
+   5. **"Today" for a user** follows their time zone: the year a tax year screen opens on,
+      when an occasion's lead time starts, and the hour their daily summary email goes out
+      (§15.11.5).
+10. **Retention**: nothing is removed for at least **seven years**, the audit period: not
+    records, soft-deleted records (`schema.md` §4), Activity, receipts or statements. How
+    data older than that is retired is a later feature (G5). Backups keep their own, shorter
+    retention (§17.6), and price history is kept for ever (§7.6).
 
 # 18. Encryption and the master key
 
@@ -1448,8 +1611,8 @@ what key rotation does.
       from receipts and the thumbnails.
    2. **The receipt files**: each in its own encrypted file (§12.2).
    3. **Secrets, each on its own as well**: every *secret* the server holds so it can act for
-      its users: price-source API keys, exchange API keys and secrets, bank-sync tokens,
-      chain-explorer keys, the SMTP password, and this server's private link key (§14.1).
+      its users: price-source API keys, the bitcoin node's credentials, the SMTP password,
+      and this server's private link key (§14.1).
    4. **Backups**, which are copies of the encrypted database and files (§17.6).
    5. **Encrypted under their own access keys, not the master key**: everything a link
       brings in, in its linked copy (§14.9). The master key cannot open it, so neither losing
@@ -1485,7 +1648,7 @@ what key rotation does.
       96-bit nonce. The **associated data** names where the secret belongs: record type, the
       record's stable id, and field. The secret's data key is then wrapped under the secrets
       key. The row stores the ciphertext, its nonce and the wrapped key.
-   4. **Using a secret**: only when a task needs it (a price refresh, a sync, an email). The
+   4. **Using a secret**: only when a task needs it (a price refresh, a bitcoin wallet read, an email). The
       server unwraps its data key, decrypts the value, uses it for that one call and discards
       it. GCM authenticates every step, so a tampered ciphertext, a wrong key, or a ciphertext
       copied onto another record or field fails to decrypt instead of producing a wrong value.
@@ -1603,7 +1766,7 @@ what key rotation does.
       rarely needed: only when the data key may have been exposed, such as a memory dump or
       a debugging session on the live server.
    3. **What rotation does not do**:
-      1. It does not change the secrets themselves. An exchange API key is the same key after
+      1. It does not change the secrets themselves. A price source's API key is the same key after
          rotation, and anyone who already read it can still use it.
       2. It does not protect copies made before it. A backup taken before a master-key
          rotation can still be opened with the old key, which is why the old key is
@@ -1624,8 +1787,8 @@ what key rotation does.
       adding security. Settings shows the key's age and reminds admins after a
       configurable period (12 months by default; off is allowed).
    3. **When a key may have leaked, rotation is the second step, not the first.** First
-      **revoke and reissue the secrets at their source**: new exchange API keys, a new
-      SimpleFIN token, new provider keys, a new SMTP password. Then rotate the master key, so
+      **revoke and reissue the secrets at their source**: new price-source keys, a new
+      password for the bitcoin node, a new SMTP password. Then rotate the master key, so
       future copies are wrapped under a key nobody else has. Rotation alone leaves every
       secret readable from any old copy.
    4. **Never rotate without a tested backup of the new key.** Rotate when there is time to
@@ -1643,7 +1806,7 @@ opens. Each section has its own help guide. In this order:
 1. **General**: server name (shown to linked servers), the **household name and avatar** (an
    image, or initials; shown at the top of the sidebar here, and sent to linked servers,
    which always show them as set here, §15.10), public URL (links in emails are built from
-   it, never from the request).
+   it, never from the request), and the server's time zone, read from the host (§17.9).
 2. **Email (SMTP)**: host, port, security, username, password (a secret), from address, and
    **Send a test email**.
 3. **Sign-in and sessions**: idle and absolute session lifetimes, lockout after failed
@@ -1652,8 +1815,11 @@ opens. Each section has its own help guide. In this order:
 5. **Passwords**: the minimum length (12 by default, at least 8).
 6. **Prices** (§7.2.3): the enabled sources with their classes, keys, order, last run and
    error; **Add a source**; and the time of the daily refresh (6:00 PM Eastern by default).
-7. **Sync sources**: SimpleFIN and others, and how often they run.
-8. **Crypto**: chain-explorer addresses and keys.
+7. **Bitcoin** (§4.6): the explorer or node for self-custody wallets: a public Esplora
+   (mempool.space by default) or the household's own node, with its address, credentials and
+   a **Test** button.
+8. **Imports** (§4.3): the file types and size accepted for statement import, and whether
+   statements are read on the server (sharing the receipt reader's jobs, §12.8).
 9. **Linked servers** (§14.7): the links, and each linked copy's state: changes waiting, its
    access key (*Create the access key*, made when and by whom), locked or unlocked (by whom,
    and when it will lock), *Lock now* and *Reset copy*, and **Release linked keys after**
@@ -1671,8 +1837,9 @@ opens. Each section has its own help guide. In this order:
     **Re-encrypt**. The master key itself is only ever changed on the host.
 14. **Network**: address ranges allowed to `/ui` and to `/link`.
 15. **TLS** (in `tls` mode): the listener's certificate and key.
-16. **Alerts** (§15.11): how long a sync source may fail before it raises an alert (48 hours
-    by default), and the time of the daily summary email (07:00 by default).
+16. **Alerts** (§15.11): how long a source may fail before it raises an alert (48 hours
+    by default), and the time of the daily summary email (07:00 by default, in each user's
+    time zone).
 
 # 20. Implementation
 
@@ -1692,8 +1859,8 @@ opens. Each section has its own help guide. In this order:
      server/             src/moneykata/: main.py, app.py, config.py, listener.py, middleware.py,
                          static.py, settings.py, ui/ (routes per area), auth/, store/
                          (tables/, entities/, mapping.py, alembic/), ledger/ (lots, gains, wash sales, corporate
-                         actions), prices/ (one TickerSource per source), sync/ (simplefin,
-                         exchanges/, chains/), importers/ (ofx, csv), budgets/, projections/, loans/
+                         actions), prices/ (one TickerSource per source), bitcoin/ (esplora,
+                         electrum, core), importers/ (ofx, csv, statements), budgets/, projections/, loans/
                          (schedules, payoff planner), assets/ (items, valuations),
                          gifts/ (people, occasions, holiday tables), giving/,
                          taxes/ (8949, txf, limits tables), receipts/ (storage, thumbnails,
@@ -1707,10 +1874,9 @@ opens. Each section has its own help guide. In this order:
    §12.5, §12.8), **sqlcipher3** (the wheel that bundles SQLCipher, for linked copies,
    §14.9), **rapidocr** with **onnxruntime** (receipt reading, §12.8). rapidocr brings
    numpy, opencv-python-headless, shapely, pyclipper and pyyaml with it, about 100 MB in all;
-   the image carries them, and they load only in the receipt worker. Proposed:
-   **ofxtools** (OFX/QFX parsing, pure Python, §21.1.4). **pi-heif** reads iPhone photos
-   (HEIC): it decodes only, so it carries libheif and libde265 (LGPL) without the x265
-   encoder (GPL) that pillow-heif bundles. **numpy** is a direct dependency for projections
+   the image carries them, and they load only in the receipt worker. **ofxtools** reads OFX
+   and QFX files (pure Python, GPL-3.0-only, compatible with MoneyKata's GPLv3). **pi-heif** reads iPhone photos
+   (HEIC): it decodes only, so it is smaller than pillow-heif, which also encodes. **numpy** is a direct dependency for projections
    (§9) as well as RapidOCR's.
    Standard library for email (`smtplib`), config (`tomllib`), logging and the command line.
    Pinned exactly in `uv.lock`, Python 3.12.
@@ -1752,7 +1918,7 @@ opens. Each section has its own help guide. In this order:
    | Accessibility | ARIA description generation built in | none | none |
    | Catch | size; a large API surface | we write and maintain the non-time-series charts | **requires a TradingView attribution link on the chart**; only covers prices |
 
-   **Recommendation: Apache ECharts**, lazily imported by the chart screens through a small
+   **Apache ECharts**, lazily imported by the chart screens through a small
    `app/charts/` wrapper (theme from tokens, table-view toggle, number formatting). Sign-in and
    the first screen's budget (§20.3.4: under 150 KB) stay unaffected. It is the only one
    of the three that covers every chart in §8–§10 without code of our own. **uPlot** is the
@@ -1809,22 +1975,71 @@ opens. Each section has its own help guide. In this order:
    4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
       reverse proxy. A second example runs `tls` mode with a self-signed certificate for
       testing on a local network (§16.3).
+9. **Milestones** *(proposed)*. The requirements describe the finished product; this is the
+   order to build it in. Each milestone ends with `web/check` passing, a Docker image that
+   runs, and the generated mockup covering what was built.
+   1. **Milestone 1, the foundation and one household's accounts:**
+      1. **Repository and tooling**: the layout of §20.1, `web/dev.sh`, `web/check`
+         (pytest, ruff, Deno, Playwright, OpenAPI and typedef drift), `uv.lock`, and the
+         Docker image for amd64 and arm64 with `compose.yaml` (§20.8).
+      2. **Server core**: configuration, the listener in both modes (§16.3), the refused
+         start (§16.6), the security policies (§16.7), the API conventions (§16.8), the live
+         stream (§15.6), background tasks (§16.4) and dev mode with seed data (§20.7).
+      3. **Storage and keys**: the SQLCipher database, the master key with its recovery
+         phrase, `keys` commands and data key (§18), Alembic, the schema conventions with
+         prefixed ids, soft-delete fields and `<Table>Effective` views, and the schema
+         checks (`schema.md`); backups (§17.6).
+      4. **Users**: the default admin's setup, invitations (email written to a folder until
+         SMTP is set), sign-in, sessions, password reset, the active flag, groups, and
+         Profile (time zone, theme). Two-step sign-in can wait for milestone 2.
+      5. **Accounts and transactions**: account types for banking, cards, brokerage and
+         retirement (§4.1, without loans, 529s, physical assets or crypto); manual entry,
+         CSV and OFX/QFX import (§4.3.1–4.3.2); transactions with categories; holdings and
+         lots from brokers' files (§5); transfers matched (§4.7); reconciliation's coverage
+         and anchors (§4.11).
+      6. **Prices**: the `TickerSource` interface with Tiingo, Coinbase, manual and the dev
+         stub (§7), the daily refresh, stored closes and staleness.
+      7. **Sharing between users**: accounts and portfolios, read and write, users and
+         groups (§13.3–13.7), and Activity (§13.8).
+      8. **The app**: the frame, navigation, help pane with its guides, theme and privacy
+         mode (§15); Dashboard (net worth, accounts, needs attention), Accounts, an account's
+         Overview, Transactions and Reconcile, the Transactions screen, Portfolios with
+         Performance and Holdings, Settings (General, Sign-in and sessions, Passwords,
+         Prices, Imports, Backups, Key storage) and Users and Groups.
+      9. **The mockup** generated from the app for these screens (§15.9); the hand-written
+         mockup stays the reference for everything not built yet.
+   2. **Milestone 2**: two-step sign-in, SMTP and emails, Alerts, budgets, receipts with
+      reading (§12), statement import (§4.3.3, G8), projections and assumptions (§9).
+   3. **Milestone 3**: taxes and tax books (§11), loans and the payoff planner, 529s,
+      physical assets, gifts and giving.
+   4. **Milestone 4**: positions and options (§6), bitcoin wallets and own node (§4.6, G9),
+      the MCP endpoint (§13.9).
+   5. **Milestone 5**: linked servers and linked households (§14, §15.10, G1).
 
 # 21. Open questions
 
-1. **Data sources**: which outside sources MoneyKata reads, and how. Price sources are
-   settled (§7.3).
-   1. **Bank sync**: SimpleFIN Bridge (about $15/year per user, read-only, simple), something
-      else, or file import only to start?
-   2. **Crypto exchanges and chains first.** A proposal: Coinbase and Kraken; Bitcoin (xpub)
-      and Ethereum.
-   3. **College-cost averages** shipped for §9.2.2: which published source, and how often it
-      is updated?
-   4. **OFX parsing**: ofxtools (pure Python), or a parser of our own?
+None at present. A question raised later is added here, and removed once its answer is
+written into the section it belongs to.
 
-# 22. Not in scope
+# 22. Gaps
 
-Foreign accounts, and currencies other than the US dollar. Deleting a user and their data: a
+Areas the requirements name but don't yet specify. Each keeps its id for good: a gap that is
+closed is removed, and its id is not used again.
+
+| Id | Gap | What is missing | Touches |
+|---|---|---|---|
+| **G1** | Link protocol and version skew | `docs/link-protocol.md`: the messages, their signing, and what two linked servers on different MoneyKata versions do | §14 |
+| **G2** | Web security in one place | the policies of §16.7 are proposed and await review | §16, §17 |
+| **G5** | Data sunset | how data older than the seven-year audit period is retired: what goes, what is summarised, who decides, and how it is confirmed (§17.10) | §17, `schema.md` §4 |
+| **G6** | Operations | `docs/operations.md`: upgrades and migrations in the Docker image, health checks, logs, monitoring, restore drills | §16, §18, §20.8 |
+| **G7** | API conventions and reference | the conventions of §16.8 are proposed and await review; `docs/api.md` grows with the code, beside the generated OpenAPI, and documents the MCP tools | §13.9, §16, §20.5 |
+| **G8** | Statement import | how statement layouts are found in PDFs and photos, what is kept per institution, multi-page and multi-account statements, and card and brokerage statements | §4.3 |
+| **G9** | Bitcoin node integration | the details of each node kind (Esplora, Electrum server, Bitcoin Core watch-only descriptors), xpub gap limits, and testing a node | §4.6 |
+
+# 23. Not in scope
+
+Foreign accounts, and currencies other than the US dollar. Coins and chains other than
+bitcoin, and reading crypto exchanges through their APIs (later). Deleting a user and their data: a
 user who leaves is made inactive. Trading, order entry or any write
 to an institution. Real-time quotes and greeks. Bill
 payment, including making loan payments. Automatic valuations of homes, vehicles or
@@ -1837,7 +2052,7 @@ phrases are words for its keys, not wallets). Opting users in or out of the list
 sends its linked peers (§13.3.3): every active user is listed, which suits a household; a
 server for more people would need it.
 
-# 23. Rejected ideas
+# 24. Rejected ideas
 
 Ideas that were weighed and turned down, kept so they are not raised again without a new
 reason.
@@ -1880,3 +2095,6 @@ reason.
     need a key obtained through a captcha, with a daily quota, which a server can't keep up
     (§7.3).
 14. **Yahoo Finance** (unofficial). It has no API terms and breaks without notice.
+15. **Bank aggregation** (SimpleFIN Bridge and the like). It costs each user a subscription
+    and gives a third party standing read access to their accounts. Statements and exports
+    the user downloads cover the same ground (§4.3).
