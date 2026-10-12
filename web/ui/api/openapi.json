@@ -1,0 +1,9 @@
+{
+  "info": {
+    "description": "The browser app's API, /ui/api (requirements §16.8). It is served with the app and carries no version of its own.",
+    "title": "MoneyKata",
+    "version": "see web/VERSION"
+  },
+  "openapi": "3.1.0",
+  "paths": {}
+}

@@ -1414,7 +1414,9 @@ preparer.
 
 1. One HTTPS address. `/` redirects to `/ui`. `/ui/*` serves the app and `/ui/api/*` its API.
    `/link/*` is the linked-server API (§14). `/mcp` is the read-only endpoint for agents
-   (§13.9). `/healthz` is the health check.
+   (§13.9). `/healthz` is the health check. `/demo` serves the clickable mockup (§15.9) to
+   anyone, without signing in: it holds only sample data, runs in a sandbox with an opaque
+   origin, and can reach neither the app's cookie nor its API.
 2. **Authentication**: server-side sessions for `/ui/api` (a random token stored hashed, in an
    HttpOnly, Secure, SameSite=Strict cookie, with an `Origin` check on every change; idle and
    absolute lifetimes are Settings). Signed peer requests for
@@ -1475,7 +1477,9 @@ preparer.
       `Permissions-Policy` denying camera, microphone, geolocation and payment, and
       `frame-ancestors 'none'`. In `tls` mode, `Strict-Transport-Security` for a year.
       Receipt and statement files are served with `Content-Disposition`, their checked type,
-      and a `sandbox` CSP, so a PDF can't run script in the app's origin.
+      and a `sandbox` CSP, so a PDF can't run script in the app's origin. `/demo` has a CSP of
+      its own: `sandbox allow-scripts allow-popups`, inline script and style allowed (the
+      mockup is one file), and `connect-src 'none'`.
    8. **Errors** never include a stack trace, a SQL statement, a path on the host or a
       secret. Each error carries an id that is also in the log, so an admin can find the
       detail.

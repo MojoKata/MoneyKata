@@ -8,7 +8,7 @@ receipts and tax books, and prepares the numbers a tax return needs. Several peo
 server, and households on other MoneyKata servers can share with named people here, read
 only, in a window of their own.
 
-**Status:** design complete for the first milestone; no code yet.
+**Status:** the first milestone (requirements §20.9.1) is being built in `web/`.
 
 ## Where to start
 
@@ -43,6 +43,26 @@ tables mapped onto plain dataclasses, Alembic migrations) and a browser app with
 (Preact, HTM, signals and preact-iso as vendored ES modules under a strict CSP, charts with
 Apache ECharts). Deno type-checks the JavaScript, and Playwright for Python runs the browser
 tests. No Node.js. One Docker image for amd64 and arm64, on port 37373. See requirements §20.
+
+## Development
+
+Needs Python 3.12, [uv](https://docs.astral.sh/uv/) and curl; `setup` fetches the pinned Deno
+and Playwright's Chromium.
+
+```
+web/dev.sh setup                 # once
+web/dev.sh run --seed --stubs    # https://localhost:37373, seed users and stub prices
+web/check                        # every check, as CI runs it
+```
+
+`web/dev.sh` alone lists its commands. The image builds from the repository's root:
+
+```
+docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) --load .
+```
+
+and `web/install/compose.yaml` is the example to run it from. A running server serves the
+clickable mockup at `/demo`.
 
 ## License
 

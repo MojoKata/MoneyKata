@@ -1,0 +1,20 @@
+# MoneyKata with its own HTTPS listener and a self-signed certificate, for testing on a local
+# network (requirements §16.3, §20.8.4). Use compose.yaml behind a reverse proxy for real use.
+# Copy moneykata.toml to moneykata-tls.toml and set mode = "tls" in it first.
+
+services:
+  moneykata:
+    image: moneykata:0.1.0
+    restart: on-failure:3
+    ports:
+      - "37373:37373"
+    volumes:
+      - ./data:/var/lib/moneykata
+      - ./backups:/var/backups/moneykata
+      - ./keys:/etc/moneykata:ro
+      - ./moneykata-tls.toml:/etc/moneykata.toml:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]

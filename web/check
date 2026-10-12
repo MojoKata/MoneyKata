@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Every check, as CI runs it (requirements §20.5). No Node.js: pytest, ruff, Deno and
+# Playwright for Python. Run `web/dev.sh setup` once first.
+set -uo pipefail
+
+WEB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(dirname "$WEB")"
+SERVER="$WEB/server"
+unset VIRTUAL_ENV
+failed=()
+
+step() {
+  local name="$1"
+  shift
+  printf '\n== %s\n' "$name"
+  if "$@"; then
+    printf '   ok\n'
+  else
+    printf '   FAILED: %s\n' "$name"
+    failed+=("$name")
+  fi
+}
+
+py() { (cd "$SERVER" && uv run --frozen --quiet "$@"); }
+deno() { "$WEB/dev.sh" deno "$@"; }
+
+step "uv.lock matches pyproject.toml" bash -c "cd '$SERVER' && uv lock --check --quiet"
+step "every dependency has amd64 and arm64 wheels" py python -m moneykata.dev.wheels
+step "vendored browser libraries" python3 "$WEB/ui/vendor/vendor.py" extract
+step "ruff" py ruff check src tests
+step "ruff format" py ruff format --check --quiet src tests
+js_dirs=()
+for d in app api store screens components charts account-types tests; do
+  [[ -d "$WEB/ui/$d" ]] && js_dirs+=("$WEB/ui/$d/")
+done
+step "deno check" deno check --quiet --config "$WEB/ui/deno.json" "${js_dirs[@]}"
+step "deno lint" deno lint --quiet --config "$WEB/ui/deno.json"
+step "deno fmt" deno fmt --check --quiet --config "$WEB/ui/deno.json"
+step "OpenAPI and typedef drift" py python -m moneykata.contract check
+if [[ -f "$WEB/ui/mockup/build.py" ]]; then
+  step "generated mockup drift" py python "$WEB/ui/mockup/build.py" --check
+fi
+step "pytest (server, schema, browser)" py pytest
+step "hand-written mockup" py python "$ROOT/docs/mockups/check.py" "$WEB/.dev/check-shots"
+
+if ((${#failed[@]})); then
+  printf '\nFAILED: %s\n' "${failed[*]}"
+  exit 1
+fi
+printf '\nall checks passed\n'

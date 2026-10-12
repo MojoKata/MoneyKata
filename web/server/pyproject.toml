@@ -1,0 +1,58 @@
+[project]
+name = "moneykata"
+dynamic = ["version"]
+description = "A self-hosted personal finance server for a household"
+license = "GPL-3.0-only"
+requires-python = "==3.12.*"
+dependencies = [
+    "fastapi",
+    "pydantic",
+    "hypercorn",
+    "sqlalchemy",
+    "alembic",
+    "argon2-cffi",
+    "cryptography",
+    "httpx",
+    "sqlcipher3",
+    "ofxtools",
+    "pillow",
+    "numpy",
+]
+
+[project.scripts]
+moneykata = "moneykata.main:main"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+    "playwright",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "../VERSION"
+pattern = "(?P<version>.+)"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/moneykata"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["browser: drives headless Chromium through Playwright"]
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient` is deprecated"]

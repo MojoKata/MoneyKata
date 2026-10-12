@@ -1,0 +1,14 @@
+# The image is built from the repository's root; only what the Dockerfile copies matters.
+.git
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+shots
+web/.dev
+web/.dev-peer
+web/.tools
+web/ui/vendor/*
+!web/ui/vendor/*.tgz
+!web/ui/vendor/manifest.json
+!web/ui/vendor/vendor.py

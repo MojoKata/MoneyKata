@@ -1,0 +1,134 @@
+"""The `moneykata` command."""
+
+import argparse
+import asyncio
+import logging
+import os
+import sys
+from pathlib import Path
+
+from . import paths
+from .config import DEFAULT_CONFIG, Config, RefuseStart, load
+
+EX_CONFIG = 78
+log = logging.getLogger("moneykata")
+
+
+def setup_logging(verbose: bool = False) -> None:
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        stream=sys.stderr,
+    )
+    for noisy in ("httpx", "httpcore", "hpack", "hypercorn.access"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
+
+def dev_config(port: int, stubs: bool, peer: bool) -> Config:
+    """Dev mode (requirements §20.7): the whole server from a checkout, as the current user."""
+    base = paths.WEB / (".dev-peer" if peer else ".dev")
+    return Config(
+        name="dev-peer" if peer else "dev",
+        mode="tls",
+        host="127.0.0.1",
+        port=port,
+        data_dir=base / "data",
+        backup_dir=base / "backups",
+        key_file=base / "keys" / "master.key",
+        mail_folder=base / "mail",
+        dev=True,
+        stubs=stubs,
+    )
+
+
+def refuse_dev(config: Config) -> None:
+    if os.geteuid() == 0:
+        raise RefuseStart("dev mode does not run as root")
+    installed = Path("/var/lib/moneykata")
+    if config.data_dir.resolve().is_relative_to(installed):
+        raise RefuseStart("dev mode does not run on an installed server's data directory")
+
+
+def serve(config: Config, seed: bool = False) -> int:
+    from .runtime import start
+
+    return asyncio.run(start(config, seed=seed))
+
+
+def cmd_serve(args) -> int:
+    return serve(load(Path(args.config)))
+
+
+def cmd_dev(args) -> int:
+    port = args.port or (37374 if args.peer else 37373)
+    config = dev_config(port, args.stubs, args.peer)
+    refuse_dev(config)
+    return serve(config, seed=args.seed)
+
+
+def cmd_health(args) -> int:
+    """The image's health check: is this container's server answering /healthz?"""
+    import httpx
+
+    config = load(Path(args.config))
+    scheme = "https" if config.mode == "tls" else "http"
+    try:
+        # Loopback to this container's own listener; its certificate may be self-signed.
+        r = httpx.get(f"{scheme}://127.0.0.1:{config.port}/healthz", verify=False, timeout=4)  # noqa: S501
+    except httpx.HTTPError as e:
+        print(f"unhealthy: {e}", file=sys.stderr)
+        return 1
+    print(r.json().get("status", r.status_code))
+    return 0 if r.status_code == 200 else 1
+
+
+def cmd_openapi(args) -> int:
+    from .contract import openapi_json
+
+    sys.stdout.write(openapi_json())
+    return 0
+
+
+def parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="moneykata", description="MoneyKata server")
+    p.add_argument(
+        "--config",
+        default=os.fspath(DEFAULT_CONFIG),
+        help=f"the config file (default {DEFAULT_CONFIG})",
+    )
+    p.add_argument("-v", "--verbose", action="store_true")
+    sub = p.add_subparsers(dest="command")
+
+    s = sub.add_parser("serve", help="run the server (the default)")
+    s.set_defaults(func=cmd_serve)
+
+    d = sub.add_parser("dev", help="run the server from a checkout, for development")
+    d.add_argument("--seed", action="store_true", help="seed users and a year of data")
+    d.add_argument("--stubs", action="store_true", help="use the stub price source")
+    d.add_argument("--peer", action="store_true", help="a second server, for links")
+    d.add_argument("--port", type=int)
+    d.set_defaults(func=cmd_dev)
+
+    h = sub.add_parser("health", help="check that the running server answers")
+    h.set_defaults(func=cmd_health)
+
+    o = sub.add_parser("openapi", help="print the API's OpenAPI document")
+    o.set_defaults(func=cmd_openapi)
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parser().parse_args(argv)
+    setup_logging(args.verbose)
+    func = getattr(args, "func", cmd_serve)
+    try:
+        return func(args)
+    except RefuseStart as e:
+        print(f"refusing to start: {e}", file=sys.stderr)
+        return EX_CONFIG
+    except KeyboardInterrupt:
+        return 130
+
+
+if __name__ == "__main__":
+    sys.exit(main())

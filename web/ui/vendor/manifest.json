@@ -1,0 +1,81 @@
+{
+  "packages": {
+    "preact": {
+      "version": "10.29.8",
+      "tarball": "preact-10.29.8.tgz",
+      "integrity": "sha512-ej2aVZ+vZ8WO7tvlQWRM9N63A0KzF9q4mWJfDUHgYaIofWY9hu74QdnQrjoPMmZi2/nZ5gN0bJCQF49xQqx09Q==",
+      "dir": "preact",
+      "files": [
+        "LICENSE",
+        "dist/preact.mjs",
+        "hooks/dist/hooks.mjs",
+        "src/index.d.ts",
+        "src/jsx.d.ts",
+        "src/dom.d.ts",
+        "hooks/src/index.d.ts"
+      ]
+    },
+    "htm": {
+      "version": "3.1.1",
+      "tarball": "htm-3.1.1.tgz",
+      "integrity": "sha512-983Vyg8NwUE7JkZ6NmOqpCZ+sh1bKv2iYTlUkzlWmA5JD2acKoxd4KVxbMmxX/85mtfdnDmTFoNKcg5DGAvxNQ==",
+      "dir": "htm",
+      "files": [
+        "LICENSE",
+        "dist/htm.mjs",
+        "dist/htm.d.ts"
+      ]
+    },
+    "@preact/signals-core": {
+      "version": "1.14.4",
+      "tarball": "preact-signals-core-1.14.4.tgz",
+      "integrity": "sha512-HNB6HYeYKhQbJ1aKl+YRjrS4+QWHLKX6qKoUsfS/m0vqzsVaEBiZiaKbG/e+NKk2ch5ALQr/ihWaMHxiCuuWHA==",
+      "dir": "signals-core",
+      "files": [
+        "LICENSE",
+        "dist/signals-core.mjs",
+        "dist/signals-core.d.ts"
+      ]
+    },
+    "@preact/signals": {
+      "version": "2.11.3",
+      "tarball": "preact-signals-2.11.3.tgz",
+      "integrity": "sha512-mttwFM98G/JiriTgMwU+UWygL6sfVmYEiNcPSKkUnv4PxPpZhmP2ugGC4qi360+ZIHyQ8NY05bfJT3b4RUIGlw==",
+      "dir": "signals",
+      "files": [
+        "LICENSE",
+        "dist/signals.mjs",
+        "dist/signals.d.ts"
+      ]
+    },
+    "preact-iso": {
+      "version": "2.12.2",
+      "tarball": "preact-iso-2.12.2.tgz",
+      "integrity": "sha512-qit+qSMiZ41K0EQkLNa3MSxnWVCm5yXvy9m3CcGf/zF1QhVJzSwVCbpiz52VSbWpg8v8nYNIYDrXJZPNFpM1uw==",
+      "dir": "preact-iso",
+      "files": [
+        "LICENSE",
+        "src/index.js",
+        "src/router.js",
+        "src/lazy.js",
+        "src/hydrate.js",
+        "src/index.d.ts",
+        "src/router.d.ts",
+        "src/lazy.d.ts",
+        "src/hydrate.d.ts",
+        "src/prerender.d.ts"
+      ]
+    },
+    "echarts": {
+      "version": "6.1.0",
+      "tarball": "echarts-6.1.0.tgz",
+      "integrity": "sha512-q0yaFPggC9FUdsWH4blavRWFmxdrIodbkoKNAjJudAI6CA9gNPxHtV2RcZNEepZVlk4yvBYkOkbk6HIVpIyHZA==",
+      "dir": "echarts",
+      "files": [
+        "LICENSE",
+        "NOTICE",
+        "dist/echarts.esm.min.mjs"
+      ]
+    }
+  }
+}
