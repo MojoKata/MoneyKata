@@ -20,7 +20,7 @@ def setup_logging(verbose: bool = False) -> None:
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
         stream=sys.stderr,
     )
-    for noisy in ("httpx", "httpcore", "hpack", "hypercorn.access"):
+    for noisy in ("httpx", "httpcore", "hpack", "hypercorn.access", "alembic"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
@@ -114,6 +114,12 @@ def parser() -> argparse.ArgumentParser:
 
     o = sub.add_parser("openapi", help="print the API's OpenAPI document")
     o.set_defaults(func=cmd_openapi)
+
+    from .keys import cli as keys_cli
+    from .store import cli as db_cli
+
+    keys_cli.register(sub)
+    db_cli.register(sub)
     return p
 
 

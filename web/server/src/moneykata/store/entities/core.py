@@ -1,0 +1,54 @@
+import datetime as dt
+from dataclasses import dataclass, field
+
+from . import Record, _now
+
+
+@dataclass(kw_only=True, eq=False)
+class Setting:
+    key: str
+    value: str
+    version: int = 1
+    updatedAt: dt.datetime = field(default_factory=_now)
+    updatedById: str | None = None
+    deleted: bool = False
+    deletedAt: dt.datetime | None = None
+    deletedById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class Secret:
+    id: str
+    recordType: str
+    recordId: str
+    field: str
+    ciphertext: bytes
+    nonce: bytes
+    wrappedKey: bytes
+    setAt: dt.datetime = field(default_factory=_now)
+    setById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class TaskRun:
+    name: str
+    startedAt: dt.datetime
+    finishedAt: dt.datetime | None = None
+    error: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class Activity:
+    id: str
+    kind: str
+    at: dt.datetime = field(default_factory=_now)
+    actorId: str | None = None
+    via: str | None = None
+    subjectKind: str | None = None
+    subjectId: str | None = None
+    ownerId: str | None = None
+    forAdmins: bool = False
+    detail: str = "{}"
+
+
+__all__ = ["Activity", "Record", "Secret", "Setting", "TaskRun"]

@@ -10,6 +10,7 @@ from . import errors, middleware, net, paths, ratelimit, static
 from .config import Config
 from .events import Broker
 from .jobs import Jobs
+from .store.maintenance import Store
 from .tasks import Tasks
 from .ui.conventions import Idempotency
 
@@ -21,6 +22,7 @@ class Server:
     """Everything a request may reach, built once at start (main.py) and kept on app.state."""
 
     config: Config
+    store: Store | None = None
     version: str = field(default_factory=paths.version)
     ready: bool = False
     upload_limit: int = 25 * 1024 * 1024
@@ -39,6 +41,16 @@ class Server:
                 "job", {"id": job.id, "state": job.state}, users=[job.userId]
             )
         )
+
+    @property
+    def db(self):
+        assert self.store is not None, "this server was made without a database"
+        return self.store.db
+
+    @property
+    def keys(self):
+        assert self.store is not None
+        return self.store.keys.keys
 
     def http(self) -> net.Client:
         """A client for outbound calls, behind the egress guard (§16.5)."""

@@ -8,6 +8,9 @@ import time
 import httpx
 import pytest
 
+from moneykata.config import load
+from moneykata.keys import cli as keys_cli
+
 pytestmark = pytest.mark.browser
 
 
@@ -34,6 +37,7 @@ backups = "{tmp / "backups"}"
 [keys]
 master = "{tmp / "keys" / "master.key"}"
 """)
+    keys_cli.init(load(config), say=lambda _: None, confirm=False)
     proc = subprocess.Popen(
         [sys.executable, "-m", "moneykata.main", "--config", str(config), "serve"],
         stdout=subprocess.PIPE,

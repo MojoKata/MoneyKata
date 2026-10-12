@@ -47,6 +47,9 @@ there's no layer that translates names.
   CHECK (id GLOB 'User_*' AND length(id) = 31)
   ```
   The length is the prefix's length + 1 + 26.
+- **Record fields.** Each table with an `id` also has `version` (an integer that changes with
+  every save, which the API's `If-Match` compares, requirements §16.8.6), `createdAt` and
+  `updatedAt`.
 - **IDs reveal when a row was created.** File names and anything else visible on disk,
   such as receipt files and a linked copy's files (requirements §14.9), use separate random
   names and never an ID.
@@ -59,9 +62,23 @@ Transaction ID: Txn_01k7ab4vstfggspkjt3my8wzr2
 
 ## 3. Prefixes
 
-This first list covers the entities named in requirements §2 (Terminology). It grows as
-tables are designed. Tables for many-to-many relationships have no prefix (§1.2), so they
-are not listed.
+Tables for many-to-many relationships have no prefix (§1.2), so they are not listed. Each
+list is sorted by prefix, and a prefix is unique across both.
+
+### 3.1 Tables
+
+The prefixes of the tables that exist.
+
+| Prefix | Table         | Description                                                                |
+|--------|---------------|----------------------------------------------------------------------------|
+| Actv   | Activity      | A change worth showing: who made it and what it is about, never an amount. |
+| Secr   | Secret        | A secret sealed on its own: an API key, a password or a private key.       |
+| User   | User          | A person who signs in here, or a user of a linked server (with `linkId`).  |
+
+### 3.2 Reserved
+
+The prefixes of the entities named in requirements §2 (Terminology) whose tables are not
+designed yet. A row moves to §3.1 when its table is.
 
 | Prefix | Table         | Description                                                                       |
 |--------|---------------|-----------------------------------------------------------------------------------|
@@ -90,7 +107,6 @@ are not listed.
 | Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |
 | TxDoc  | TaxDocument   | A tax document received (W-2, 1099) or filed (a return, a notice), with its file. |
 | Txn    | Transaction   | One dated movement in an account.                                                 |
-| User   | User          | A person who signs in here, or a user of a linked server (with `linkId`).         |
 
 ## 4. Soft deletes
 
@@ -129,7 +145,7 @@ Records are never removed from the database: they are marked deleted. The except
    3. **linked copies**: another household's data, removed with the share or link it came
       by, at **Reset copy**, and an inbox change once it is applied (requirements §14.9);
    4. **work queues and counters**: receipt-reading jobs, sign-in and access-key attempt
-      counters, and the live stream's state;
+      counters, the background tasks' last runs, and the live stream's state;
    5. **caches**, rebuilt from the records: thumbnails, and computed series kept for speed.
 
    Activity entries and alerts are never deleted at all: Activity is kept as it was
@@ -140,8 +156,8 @@ Records are never removed from the database: they are marked deleted. The except
 A test fails when:
 
 1. a table or field name breaks §1;
-2. a table with an `id` has no row in §3, a row in §3 names no table, or §3 is not sorted
-   by prefix;
+2. a table with an `id` has no row in §3.1, a row in §3.1 names no table, a prefix is listed
+   twice, or a list in §3 is not sorted by prefix;
 3. a table with an `id` lacks the `WITHOUT ROWID` option or the ID's `CHECK` constraint.
 4. a table outside the exceptions of §4.4 lacks the fields of §4.1 or their `CHECK`, or its
    `<Table>Effective` view is missing or does not match its cascading foreign keys.
