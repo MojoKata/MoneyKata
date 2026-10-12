@@ -78,7 +78,7 @@ recommendations waiting for a decision.
     protects the copy at rest; who sees what is decided by the owner's shares. The copy
     keeps syncing while it is locked, and its key is released after an hour unused (§14.9).
 19. **Beyond investments**: MoneyKata also covers **529 plans** (§4.8),
-    **mortgages and other loans** with payoff and overpayment projections (§4.9, §9.7),
+    **mortgages and other loans** with payoff and overpayment projections (§4.9, §9.10),
     **physical assets** such as precious metals, collectables, property and vehicles, with
     notes, purchase dates and cost basis (§4.10), **gifts** to the people in a user's life
     for their birthdays, anniversaries and holidays (§10.7, §10.8), and **charitable giving**
@@ -94,8 +94,8 @@ recommendations waiting for a decision.
     any amendment. Another user can be given write access to help prepare it (§11.14).
     MoneyKata still prepares worksheets only and never files.
 22. **Owners choose people on other servers**. Linked servers exchange
-    their lists of active users, so an owner shares any of the six shareable kinds (account,
-    portfolio, budget, person, giving plan, tax book) with named people on another server,
+    their lists of active users, so an owner shares any of the seven shareable kinds (account,
+    portfolio, budget, person, giving plan, tax book, projection) with named people on another server,
     as they do with people on their own (§13.3). What a household shares is shown in a
     **window of its own**, never mixed with this household's data (§15.10). This suits
     household servers; a server for more than a household would need users to opt in to
@@ -137,8 +137,9 @@ recommendations waiting for a decision.
     **locked** until someone it shares with enters the words, and locks again after an hour
     unused. It is shown in its own **linked household** window (§14.9, §15.10).
 11. **Price provider:** a source of prices for one or more instrument classes (§7).
-12. **Projection:** a saved scenario of contributions, returns and withdrawals over time
-    (§9).
+12. **Projection:** how money will grow toward a goal (retirement, education or a savings
+    target), from contributions, returns and withdrawals over time. An **active** projection
+    is the plan being followed, tracked against its baseline (§9).
 13. **Budget:** a period's planned amounts per category, compared with the actual
     transactions (§10).
 14. **Receipt:** an uploaded file (PDF, JPEG, PNG, HEIC, WebP) with a date, an amount and
@@ -260,7 +261,7 @@ recommendations waiting for a decision.
    4. **Rollover to a Roth IRA**: once the account has been open 15 years, it shows how much
       could still roll over to the beneficiary's Roth IRA under the lifetime limit (in the
       tax tables), excluding contributions of the last five years.
-   5. **An education goal** projects the account against the expected cost (§9.8).
+   5. **The Goal tab** shows the beneficiary's education projection (§9.2.2).
    6. A 529 counts in its **owner's** net worth, not the beneficiary's.
 9. **Loans and mortgages.** A loan account carries its **terms**:
    1. **Terms**: the original principal, the start date, the term (months), the interest
@@ -281,7 +282,7 @@ recommendations waiting for a decision.
       payment, a wrong rate).
    5. **The loan's screen** shows the balance, the rate, the payoff date, interest paid to
       date and still to pay, principal paid this year, the schedule, and the **payoff
-      planner** (§9.7). A mortgage linked to a `real-estate` item shows the **equity** and the
+      planner** (§9.10). A mortgage linked to a `real-estate` item shows the **equity** and the
       **loan-to-value**, and when PMI can be dropped (on request at 80% of the original
       value; automatically at 78%).
    6. **Taxes**: mortgage interest, points and PMI (Form 1098), and student-loan interest
@@ -449,47 +450,90 @@ recommendations waiting for a decision.
 
 # 9. Projections
 
-1. **A projection** is a saved scenario: starting balances (from chosen accounts or
-   portfolios, or typed), **contributions** (amount, frequency, growth per year, until an age
-   or date, per account type, capped by the limits of §4.4), **expected return** and
-   **volatility** per asset class or one blended figure, **inflation**, **withdrawals** (an
-   amount, a percentage, or a 4% rule from an age), fees, and the horizon.
-2. **Models:**
+1. **A projection** asks how money will grow and what it will pay for. It has an owner, a
+   name, a **goal type** (§9.2), what it is **built on**, and whether it is **active**
+   (§9.7). It is shared like an account (§13.3).
+   1. **Built on** chosen accounts, a portfolio, or a typed amount for a what-if. Built on
+      accounts or a portfolio, it starts from their **current values** each time it opens,
+      with their *as of*, and from their allocation by asset class.
+   2. **Contributions**: an amount, its frequency, growth per year, and until when. For
+      retirement accounts they are capped by the limits of §4.4.
+2. **Goal types.** All three use the same models (§9.4).
+   1. **Retirement**, for one person or a **couple**: each person's birth year and
+      retirement age, and the accounts that are theirs. After retirement come
+      **withdrawals** (the 4% rule, a fixed amount rising with inflation, or a percentage
+      of the balance) set against **other income**: Social Security from an age, a pension,
+      each with its amount. The answer: the **chance the money lasts** to the horizon (age
+      95 by default), and the balance by age.
+   2. **Education**, for one beneficiary, built on their 529 accounts (§4.8). The
+      beneficiary's birth year gives the first year of school. The user sets the years of
+      school and the yearly cost in today's dollars (typed, or a shipped average for public
+      in-state, public out-of-state and private four-year colleges), and the contributions,
+      flagged where one person's gifts pass the annual exclusion (§4.8.2). The answer: the
+      projected balance against the cost, the **percentage funded**, and the monthly
+      contribution that would fund it fully. A 529's **Goal** tab shows this projection.
+   3. **Savings target**: an amount by a date (a house deposit, a car), built on any
+      accounts. The answer: the **chance of reaching it** by the date, and the monthly
+      saving that would.
+3. **Assumptions**, kept once per user in **Profile › Assumptions**: expected return and
+   volatility for each asset class (US stocks, international stocks, bonds, cash, crypto,
+   real estate, metals), general inflation (2.5% by default) and education inflation (5% by
+   default). Every projection uses them unless it overrides a figure, so the user's
+   projections and the payoff planner (§9.10) agree with each other. Fees per projection.
+4. **Models:**
    1. **deterministic**: future value at a constant rate, in nominal and today's dollars;
    2. **Monte Carlo**: *N* runs (1000 by default) drawing yearly returns from the asset
       classes' mean and volatility (normal or log-normal; historical bootstrap later), showing
-      the 10th/50th/90th percentile **fan** and the **probability of success** (money lasting
-      to the horizon).
-3. **Tax-aware buckets** (later): taxable, deferred and free balances projected apart, with
+      the 10th/50th/90th percentile **fan** and the type's answer (§9.2).
+   3. **Glide path** *(later)*: the allocation shifting toward bonds as the goal nears, as
+      age-based 529 portfolios and target-date funds do.
+5. **Tax-aware buckets** (later): taxable, deferred and free balances projected apart, with
    RMDs from the required age and an assumed tax rate on withdrawals.
-4. **Scenarios compare** side by side, for example retiring at 60 against 65, or contributing
-   $500 more a month.
-5. The **computation runs on the server** (pure Python, seeded, so a scenario's figures are
-   reproducible) and returns percentiles per year. It uses NumPy.
-6. The screen states its assumptions in full under the chart and says plainly that it is a
-   model, not a forecast.
-7. **Loan payoff planner** (on each loan's *Payoff* tab, §4.9.5). It compares the schedule
-   with the user's **overpayment** plans:
-   1. **Plans**, combined freely: an extra amount every month (from a date, until a date),
-      an extra amount once a year (a bonus month), one-time **lump sums** on dates,
-      **biweekly** payments (26 half-payments a year), and rounding each payment up.
-   2. **Results** for each plan against the schedule: the new payoff date, months saved,
-      **interest saved**, total paid, and the balance over time as two lines on one chart,
-      with the amortization table of each.
-   3. **Recast**: after a lump sum, a mortgage can be **recast** (the term kept, the payment
-      lowered) instead of shortened. The planner shows both, with the servicer's recast fee.
-   4. **Against investing the extra**: the same money invested at an expected return (from
-      a projection, §9.1) shows its value at the payoff date next to the interest saved.
-      It is a comparison, not advice, and says so (§1.16).
-   5. **Saved plans** are kept per loan. One can be marked **the plan I'm following**, and
-      the loan's screen then shows whether actual overpayments are ahead of it or behind.
-   6. Rates for an ARM's future resets are the user's assumption, shown as such.
-8. **Education goal** (on a 529's *Goal* tab, §4.8.5): the beneficiary's birth year gives
-   the first year of school. The user sets the years of school, the yearly cost in today's
-   dollars (typed, or a shipped average for public in-state, public out-of-state and private
-   four-year colleges), education inflation (5% by default), and planned contributions. The
-   result: the projected balance against the cost (deterministic and Monte Carlo, §9.2), the
-   percentage funded, and the monthly contribution that would fund it fully.
+6. **Scenarios compare** side by side, for example retiring at 60 against 65, or contributing
+   $500 more a month. Projections that are not active are the scenarios.
+7. **Active projections** are the plans being followed.
+   1. **At most one per subject**: one retirement projection per person or couple, one
+      education projection per beneficiary, one per savings target. Making one active asks
+      before turning off the one it replaces.
+   2. **The baseline**: making a projection active stores its median path and its 10th–90th
+      percentile band as of that day.
+   3. **Tracking**: the actual balance of what it is built on, plotted against the baseline
+      to date, and a status: **on track** inside the band, **ahead** above it, **behind**
+      below it. Beside it, the type's answer run again from today's balance.
+   4. **Changing an active projection's inputs** asks whether to **re-baseline**. Without
+      it, tracking keeps comparing against the plan as it was made active.
+   5. **Falling behind** raises an alert (§15.11), checked monthly, and resolves when the
+      balance is back inside the band.
+8. **Where active projections show:**
+   1. the **Dashboard's Plans** card: one row each, with the type and name, the status, the
+      type's headline figure (*87% chance of success*, *64% funded*, *$28,000 of $40,000 by
+      2028*), and a small chart of the actual balance against the baseline;
+   2. **on what it is built on**, when that is one account or one portfolio: a 529's Goal
+      tab, an account's Overview, or a portfolio's *Projections* tab. A projection built on
+      several accounts shows only on the Dashboard and the Projections screen;
+   3. an active projection **shared with you** shows on your Dashboard only when you tick
+      **Show on my Dashboard** on it, which is off by default, as **Count in my totals** is
+      for accounts (§13.7). A linked household's projections show only in its window
+      (§15.10).
+9. **The computation runs on the server**, seeded so a scenario's figures are
+   reproducible, and returns percentiles per year. It uses NumPy. The screen states its
+   assumptions in full under the chart and says plainly that it is a model, not a forecast.
+10. **Loan payoff planner** (on each loan's *Payoff* tab, §4.9.5). It compares the schedule
+    with the user's **overpayment** plans:
+    1. **Plans**, combined freely: an extra amount every month (from a date, until a date),
+       an extra amount once a year (a bonus month), one-time **lump sums** on dates,
+       **biweekly** payments (26 half-payments a year), and rounding each payment up.
+    2. **Results** for each plan against the schedule: the new payoff date, months saved,
+       **interest saved**, total paid, and the balance over time as two lines on one chart,
+       with the amortization table of each.
+    3. **Recast**: after a lump sum, a mortgage can be **recast** (the term kept, the payment
+       lowered) instead of shortened. The planner shows both, with the servicer's recast fee.
+    4. **Against investing the extra**: the same money invested at the user's expected
+       return (§9.3) shows its value at the payoff date next to the interest saved.
+       It is a comparison, not advice, and says so (§1.16).
+    5. **Saved plans** are kept per loan. One can be marked **the plan I'm following**, and
+       the loan's screen then shows whether actual overpayments are ahead of it or behind.
+    6. Rates for an ARM's future resets are the user's assumption, shown as such.
 
 # 10. Budgets, gifts and giving
 
@@ -807,7 +851,7 @@ produces worksheets and exports. It never files, and says so (§1.16).
 2. **Admins are not superusers of money.** An admin manages users, groups and Settings, and
    sees only the accounts and portfolios shared with them. Users are not deleted: a user
    who leaves is made inactive (§13.1.7), and their data stays.
-3. **What can be shared**: six kinds of item, each with one owner and its own list of shares:
+3. **What can be shared**: seven kinds of item, each with one owner and its own list of shares:
    | Kind | A share includes |
    |---|---|
    | **Account** | its transactions, holdings, positions and receipts; a loan's payoff plans and a physical-asset account's items |
@@ -816,6 +860,7 @@ produces worksheets and exports. It never files, and says so (§1.16).
    | **Person** | their occasions and gifts (§10.8.5) |
    | **Giving plan** | its target, pace, donations and organisations (§10.9.1) |
    | **Tax book** | its panels, filings and documents (§11.14.3) |
+   | **Projection** | its inputs, results and tracking (§9) |
 
    Each can be shared with a **user** or a **group**, at:
    1. **read**: see everything about it. A read share cannot change it, attach receipts or
@@ -824,7 +869,7 @@ produces worksheets and exports. It never files, and says so (§1.16).
       import, categorise and attach receipts; for the other kinds, edit their entries. A
       write share cannot delete the item, change its sharing, or see or change its secrets
       (sync tokens, API keys), which stay the owner's.
-   3. **People on linked servers**: any of the six kinds can also be shared with named
+   3. **People on linked servers**: any of the seven kinds can also be shared with named
       users of a linked server (§14), always **read**. Each server sends its peers its list
       of active users (display name, username and email), so they can be chosen like local
       users. Groups are not sent. When a remote user is deactivated, their shares are
@@ -1109,25 +1154,27 @@ preparer.
    1. **Dashboard**: net worth and its change (day, month, year), the net-worth chart,
       allocation, accounts by group with balances, this month's budget, upcoming recurring
       transactions, occasions inside their reminder time (§10.7.3), giving against its
-      target, and stale prices, stale valuations or sync problems;
+      target, the **Plans** card of active projections (§9.8), and stale prices, stale
+      valuations or sync problems;
    2. **Accounts**: every account the user owns or holds a share of, grouped (Banking,
       Investing, Retirement, Education, Crypto, Giving, Liabilities, Physical assets), each with its type icon,
       institution, balance, change, sync state, and sharing marks. **New account** offers a
       type picker, then the account form. An **account page** has the tabs *Overview*
       (balance chart), *Holdings* (investing only), *Transactions*, *Positions* (investing
       only), *Receipts*, *Sharing* and *Settings* (sync, lot method, import mappings).
-      Some types add tabs: a loan *Schedule* and *Payoff* (§4.9, §9.7); a 529
+      Some types add tabs: a loan *Schedule* and *Payoff* (§4.9, §9.10); a 529
       *Contributions*, *Withdrawals* and *Goal* (§4.8); a physical-asset account *Items*
       (§4.10);
    3. **Transactions**: every account's transactions together, filtered by account, category,
       date, amount, payee and tag, with bulk categorise, split, attach receipt, and **Import**;
    4. **Portfolios**: the user's portfolios and those shared with them; a portfolio page with
-      the charts of §8.2 and its holdings;
+      the charts of §8.2, its holdings, and its *Projections*;
    5. **Positions**: open and closed positions across accounts, with stocks, options and
       crypto as filters, and P/L per §6.9. **Record trade** opens the trade dialog, which has
       an option leg builder;
    6. **Budgets**: the month view, cash flow, trends, recurring transactions and rules;
-   7. **Projections**: scenarios, each with its inputs and the fan chart;
+   7. **Projections**: active projections first, with their tracking, then the scenarios;
+      each with its inputs and the fan chart (§9);
    8. **Gifts**: *Upcoming* occasions, *People*, *Gifts* (ideas to given, and received), and
       *Spending* by person, occasion and year (§10.7, §10.8);
    9. **Giving**: the year's target and progress, donations, organisations and the DAF
@@ -1140,7 +1187,8 @@ preparer.
    14. **Users and Groups**, **Settings** (admins);
    15. **Alerts**: what needs the user's attention, with a live count on its badge (§15.11);
    16. the user tile opens **Profile** (name, email, avatar, password, two-step, alert
-       emails, birth year, spouse for wash sales) and **Sign out**.
+       emails, assumptions for projections (§9.3), access tokens, birth year, spouse for
+       wash sales) and **Sign out**.
 3. **Privacy mode**: a button in the header (an eye) blurs every amount on the page until
    clicked again, for using the app with someone looking over your shoulder. The browser
    remembers it.
@@ -1218,8 +1266,8 @@ preparer.
        3. a **header strip**: *griffin-parents · read only · synced 41 min ago · unlocked by
           Alice at 14:05 · Lock now*;
        4. the screens for the kinds shared with you: Dashboard (only what is shared with
-          you), Accounts, Portfolios, Positions, Transactions, Budgets, Gifts, Giving, Taxes
-          and Receipts. The navigation lists only the kinds you have something from. There is
+          you), Accounts, Portfolios, Positions, Transactions, Projections, Budgets, Gifts,
+          Giving, Taxes and Receipts. The navigation lists only the kinds you have something from. There is
           no Settings, Profile, Watchlist, import, sharing or editing;
        5. the user tile shows you, the local user, *viewing griffin-parents*.
     4. **Locked**: the window shows only the household's name and avatar and the request for
@@ -1239,8 +1287,8 @@ preparer.
        2. **for an account's owner**: their own sync failing for longer than the threshold,
           and a token or key that needs entering again;
        3. **for each user**: an occasion entering its lead time (§10.7.3), an option
-          expiring within a week, a pledge due (§10.9), and budget alerts when they come
-          (§10.6).
+          expiring within a week, a pledge due (§10.9), an active projection falling
+          behind (§9.7.5), and budget alerts when they come (§10.6).
     2. **One alert per cause.** A failing sync raises one alert, not one per attempt. It
        stays **open** while the cause lasts and is **resolved** by itself when the cause
        clears (the sync succeeds). A user can **dismiss** an open alert for themselves.
@@ -1572,7 +1620,7 @@ opens. Each section has its own help guide. In this order:
     time, the reading queue, and **Re-read all receipts** (§12.8.7).
 11. **Tax tables**: per year, shipped and correctable: contribution limits and thresholds,
     the annual gift exclusion, the 529-to-Roth lifetime limit, the QCD limit, the
-    collectables rate, and the shipped college-cost averages (§9.8).
+    collectables rate, and the shipped college-cost averages (§9.2.2).
 12. **Backups**: the time of day and the copies kept; the backup directory is set on the host.
 13. **Key storage** (§18): read-only. The master key's fingerprint and age, who confirmed
     its recovery phrase and when, rotation progress and the date the previous key can go, the
@@ -1730,7 +1778,7 @@ opens. Each section has its own help guide. In this order:
       and Ethereum.
    4. **Metals spot prices**: Stooq's metals pairs (daily, no key) are the proposal. Confirm
       them, or choose another free source; manual spot is the fallback.
-   5. **College-cost averages** shipped for §9.8: which published source, and how often it
+   5. **College-cost averages** shipped for §9.2.2: which published source, and how often it
       is updated?
    6. **OFX parsing**: ofxtools (pure Python), or a parser of our own?
 

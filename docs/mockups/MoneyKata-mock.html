@@ -174,7 +174,7 @@ table.t { width: 100%; border-collapse: collapse; }
 .t-giving { background: color-mix(in srgb, var(--hue-giving) 18%, transparent); color: var(--hue-giving); }
 .status { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; white-space: nowrap; background: var(--bg-3); color: var(--fg-dim); }
 .status.idea { background: var(--bg-3); } .status.planned { background: var(--info-bg); color: var(--info); }
-.status.bought { background: var(--ask-bg); color: var(--warn); } .status.given { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.status.bought { background: var(--ask-bg); color: var(--ask); } .status.given { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 .status.received { background: color-mix(in srgb, var(--hue-giving) 18%, transparent); color: var(--hue-giving); }
 .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .kv > div { background: var(--bg-3); border-radius: 8px; padding: 10px 12px; }
@@ -228,6 +228,7 @@ input.in.bad { border-color: var(--deny); }
 .swatch { width: 40px; height: 40px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; }
 .swatch.on { border-color: var(--fg); }
 .avatar.av-remote { background: var(--bg-3); color: var(--fg-muted); border: 1px dashed var(--border-strong); }
+.list-item.sel { background: var(--bg-3); border-radius: 8px; }
 .words { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .words .word { display: flex; align-items: center; gap: 6px; }
 .words .word span { width: 20px; text-align: right; font-size: 12px; color: var(--fg-muted); }
@@ -582,7 +583,7 @@ const state = {
   user: 'alice', privacy: false, collapsed: false, stale: false,
   help: (() => { try { return localStorage.getItem('mk-help') !== '0'; } catch { return true; } })(),
   theme: (() => { try { return localStorage.getItem('mk-theme') || 'dark'; } catch { return 'dark'; } })(),
-  tabs: {}, filters: {}, newItems: 3, update: false, range: '1Y', year: 2026, taxBook: 'tb26', settings: 'general', scenario: 0, signedOut: false, locked: true, unlockedBy: 'Alice', peerHue: { alice: 'teal', bob: 'violet', carol: 'amber' },
+  tabs: {}, filters: {}, newItems: 3, update: false, range: '1Y', year: 2026, taxBook: 'tb26', settings: 'general', scenario: 0, proj: 'ret62', showShared: false, signedOut: false, locked: true, unlockedBy: 'Alice', peerHue: { alice: 'teal', bob: 'violet', carol: 'amber' },
   alertsUnseen: { alice: 2, bob: 1, carol: 0 }, dismissed: [], payoff: { extra: 300, yearly: 0, lump: 10000, biweekly: false, recast: false }, goal: { cost: 28000, years: 4, infl: 5, monthly: 500 },
 };
 function applyTheme() {
@@ -731,10 +732,34 @@ const ALERTS = [
   { id: 'a3', for: 'bob', open: true, icon: 'sync', title: 'Your SimpleFIN sync has failed for 2 days', about: 'Joint Household · token may need entering again', since: 'Oct 11, 09:12', go: 'account/joint', fix: 'Open the account' },
   { id: 'a4', for: 'alice', open: true, icon: 'gift', title: 'Emma’s birthday in 9 days', about: '1 idea, nothing bought', since: 'Oct 6, 07:00', go: 'gifts', fix: 'Plan a gift' },
   { id: 'a5', for: 'alice', open: true, icon: 'alert', title: 'MSFT 16 Oct 480 P expires in 6 days', about: 'Options Account · out of the money', since: 'Oct 9, 07:00', go: 'positions', fix: 'See the position' },
+  { id: 'a8', for: 'alice', open: true, icon: 'grad', title: 'Emma’s college is behind its plan', about: 'below the band of the baseline set Sep 1, 2025', since: 'Oct 1, 07:00', go: 'account/529', fix: 'See the goal' },
   { id: 'a6', for: 'admins', open: false, icon: 'sync', title: 'Coinbase sync failing for 2 days', about: 'Alice Griffin’s exchange connection', since: 'Sep 30', resolved: 'Oct 3, 08:15 · the sync succeeded', go: 'settings' },
   { id: 'a7', for: 'admins', open: false, icon: 'alert', title: 'Backup failed', about: 'backup directory full', since: 'Sep 27', resolved: 'Sep 28, 03:15 · the next backup succeeded', go: 'settings' },
 ];
 const alertsFor = (user) => ALERTS.filter((a) => (a.for === 'admins' ? USERS[user].admin : a.for === user) && !state.dismissed.includes(a.id + user));
+const PROJ = [
+  { id: 'ret62', type: 'retirement', name: 'Retire at 62', subject: 'Alice & Bob (couple)', on: 'Retirement portfolio', onGo: 'portfolios/retire', active: true, status: 'on track', head: '87% chance the money lasts to 95', since: 'Jan 4, 2026', share: 'Bob · write', sc: 0, age: 62, actual: [478, 482, 489, 494, 501, 507, 512, 519, 525] },
+  { id: 'ret60', type: 'retirement', name: 'Retire at 60', subject: 'Alice & Bob (couple)', on: 'Retirement portfolio', onGo: 'portfolios/retire', active: false, head: '78% chance the money lasts to 95', sc: 2, age: 60 },
+  { id: 'ret65', type: 'retirement', name: 'Retire at 65', subject: 'Alice & Bob (couple)', on: 'Retirement portfolio', onGo: 'portfolios/retire', active: false, head: '96% chance the money lasts to 95', sc: 1, age: 65 },
+  { id: 'emma', type: 'education', name: 'Emma’s college', subject: 'Emma Griffin', on: 'Emma’s 529', onGo: 'account/529', active: true, status: 'behind', head: '', since: 'Sep 1, 2025', actual: [31, 31.2, 31.3, 31.5, 31.6, 31.7, 31.8, 31.9, 32] },
+  { id: 'house', type: 'savings', name: 'House deposit', subject: 'House deposit', on: 'High-Yield Savings', onGo: 'account/sav', active: true, status: 'ahead', head: '$38,200 of $60,000 by Jun 2028 · 81% chance', since: 'Feb 1, 2026', actual: [22, 24, 26, 28, 30, 32, 34, 36, 38] },
+  { id: 'carolapt', type: 'savings', name: 'Carol’s first apartment', subject: 'Carol’s first apartment', on: 'Carol’s savings', active: true, status: 'on track', head: '$6,100 of $9,000 by Aug 2027', since: 'Mar 1, 2026', sharedBy: 'Carol Griffin', actual: [2, 2.5, 3, 3.6, 4.1, 4.6, 5.1, 5.6, 6.1] },
+];
+const PROJ_ICON = { retirement: 'retire', education: 'grad', savings: 'target' };
+const PROJ_TILE = { retirement: 'retirement', education: 'education', savings: 'banking' };
+const projHead = (x) => (x.type === 'education' ? `${goalCalc().funded}% funded` : x.head);
+const statusTone = (st) => ({ 'on track': 'ok', ahead: 'info', behind: 'warn' }[st] || '');
+function trackSpark(x) {
+  if (!x.actual) return '';
+  const base = x.actual.map((_, i) => x.actual[0] * (1 + i * 0.018)), hi = base.map((v) => v * 1.06), lo = base.map((v) => v * 0.94);
+  const all = [...hi, ...lo, ...x.actual], mn = Math.min(...all), mx = Math.max(...all), W = 120, H = 32;
+  const pt = (arr) => arr.map((v, i) => `${(i / (arr.length - 1)) * W},${H - ((v - mn) / (mx - mn || 1)) * H}`).join(' ');
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-label="actual against the baseline"><polygon points="${pt(hi)} ${pt(lo).split(' ').reverse().join(' ')}" fill="var(--fg-muted)" opacity=".18"/><polyline points="${pt(base)}" fill="none" stroke="var(--fg-muted)" stroke-dasharray="3 3"/><polyline points="${pt(x.actual)}" fill="none" stroke="var(--${x.status === 'behind' ? 'ask' : 'accent'})" stroke-width="2"/></svg>`;
+}
+function planRow(x, compact) {
+  return `<div class="list-item click" data-act="openproj" data-v="${x.id}"><div class="tile t-${PROJ_TILE[x.type]}">${icon(PROJ_ICON[x.type])}</div><div class="grow"><b>${x.name}</b> <span class="pill ${statusTone(x.status)}">${x.status}</span><div class="small dim">${projHead(x)}${compact ? '' : ` · on ${x.on}`}${x.sharedBy ? ` · shared by ${x.sharedBy}` : ''}</div>${compact ? `<div style="margin-top:4px">${trackSpark(x)}</div>` : ''}</div>${compact ? '' : trackSpark(x)}</div>`;
+}
+const dashPlans = () => PROJ.filter((x) => x.active && (!x.sharedBy || state.showShared));
 const HOUSEHOLD = { name: 'Alice & Bob', initials: 'AB' };
 const PEER_HUES = { teal: '#4fc6d6', violet: '#a98bff', amber: '#e0a93a', rose: '#e9799f', green: '#5fbf86', blue: '#6f9cf2' };
 const PEERS = { 'griffin-parents': { id: 'griffin-parents', name: 'Margaret & Tom', initials: 'MT', avBg: '#d9b98a', items: 7 } };
@@ -799,6 +824,7 @@ SCREENS.dashboard = () => {
       ${groups.map((g) => { const as = accts.filter((a) => a.group === g); if (!as.length) return ''; return `<div class="list-item"><div class="tile t-${g}">${icon(GROUP_META[g].icon)}</div><div class="grow"><b>${GROUP_META[g].label}</b>${g === 'giving' ? ' <span class="small dim">· not in net worth</span>' : ''}<div class="small dim">${as.map((a) => esc(a.name)).join(' · ')}</div></div><div class="num"><b>${money(sum(g))}</b></div></div>`; }).join('')}
     </div>
     <div class="grid">
+      <div class="card"><h3>Plans<span class="spacer"></span><a class="small" data-go="projections" style="font-weight:400">All projections</a></h3>${dashPlans().map((x) => planRow(x, true)).join('') || '<p class="small dim">No active projections.</p>'}</div>
       <div class="card"><h3>Needs attention</h3>
         <div class="list-item">${icon('alert', 'warn')}<div class="grow small">MSFT 16 Oct 480 P expires in 6 days <span class="dim">· out of the money</span></div><a data-go="positions">View</a></div>
         <div class="list-item">${icon('info')}<div class="grow small">3 transactions to categorise</div><a data-go="transactions">Sort</a></div>
@@ -864,7 +890,7 @@ SCREENS.account = (id) => {
       <div class="list-item"><span class="grow dim">Kept current by</span>${esc(a.sync)}</div>
       ${loan ? loanDetails(a) : phys ? physDetails(a) : edu ? eduDetails() : invest ? `<div class="list-item"><span class="grow dim">Lot method</span>FIFO</div><div class="list-item"><span class="grow dim">Unrealized gain</span>${signed(a.bal * 0.21)}</div><div class="list-item"><span class="grow dim">Realized ${state.year}</span>${signed(a.id === 'sch' ? 825 : 1840.22)}</div>` : `<div class="list-item"><span class="grow dim">Interest YTD</span>${money(a.id === 'sav' ? 1311.4 : 2.18)}</div>`}
       ${a.linked ? `<div class="notice mt">${icon('link')}<div>Read-only copy from <b>griffin-parents</b>, shared by Margaret Griffin, kept encrypted on this server. Pulled 2 hours ago. <a data-act="lock">Lock now</a></div></div>` : ''}
-    </div></div>`;
+    </div></div>${PROJ.filter((x) => x.active && x.onGo === 'account/' + a.id && x.type !== 'education').map((x) => `<div class="card mt"><h3>Projection</h3>${planRow(x)}</div>`).join('')}`;
   } else if (cur === 'Holdings') body = holdingsTable();
   else if (cur === 'Positions') body = positionsTable(true);
   else if (cur === 'Schedule') body = scheduleTab(a);
@@ -963,7 +989,8 @@ function goalCalc() {
 function goalTab() {
   const G = state.goal, g = goalCalc();
   const gIn = (label, k, hint) => field(label, `<input class="in" data-goal="${k}" inputmode="decimal" value="${G[k]}">`, hint);
-  return `<div class="grid g-main"><div class="card"><h3>Emma’s college fund<span class="spacer"></span><span class="pill ${g.funded >= 100 ? 'ok' : 'warn'}">${g.funded}% funded</span></h3>
+  const ep = PROJ.find((x) => x.id === 'emma');
+  return `<div class="toolbar"><span class="small dim">Education projection <b>${ep.name}</b> · active since ${ep.since}</span><span class="pill ${statusTone(ep.status)}">${ep.status}</span>${trackSpark(ep)}<span class="spacer"></span><a class="small" data-act="openproj" data-v="emma">See its tracking</a></div><div class="grid g-main"><div class="card"><h3>Emma’s college fund<span class="spacer"></span><span class="pill ${g.funded >= 100 ? 'ok' : 'warn'}">${g.funded}% funded</span></h3>
     ${lineChart({ labels: g.labels, series: [{ name: 'Projected balance', color: 'var(--hue-education)', values: g.proj }, { name: 'Needed', color: 'var(--fg-muted)', values: g.need, dash: true, width: 1.5 }], h: 240 })}
     <div class="legend mt"><span><i style="background:var(--hue-education)"></i>Projected balance</span><span><i style="background:var(--fg-muted)"></i>Needed to pay for every year of school</span></div>
     <div class="kv mt"><div><div class="k">At the start of school</div><div class="v">${money(g.atStart, { cents: false })}</div></div><div><div class="k">Needed then</div><div class="v">${money(g.target, { cents: false })}</div></div><div><div class="k">Cost of ${G.years} years</div><div class="v">${money(g.total, { cents: false })}</div></div><div><div class="k">Monthly to fund it fully</div><div class="v">${money(g.monthlyNeeded, { cents: false })}</div></div></div>
@@ -1068,10 +1095,11 @@ SCREENS.portfolios = (id) => {
 };
 function portfolioPage(id) {
   const name = { all: 'All my accounts', retire: 'Retirement', household: 'Household', mom: "Mom's portfolio" }[id] || 'Portfolio';
-  const [cur, bar] = tabs('pf', ['Performance', 'Allocation', 'Income', 'Holdings'], 'Performance');
+  const [cur, bar] = tabs('pf', ['Performance', 'Allocation', 'Income', 'Holdings', 'Projections'], 'Performance');
   const lab = rangeSlice(MONTHS);
   let body = '';
-  if (cur === 'Performance') body = `<div class="grid g4">
+  if (cur === 'Projections') { const ps = PROJ.filter((x) => x.onGo === 'portfolios/' + id); body = `<div class="card"><h3>Projections built on this portfolio<span class="spacer"></span><button class="btn sm" data-act="dlg" data-v="newProjection">${icon('plus')} New projection</button></h3>${ps.length ? ps.map((x) => x.active ? planRow(x) : `<div class="list-item click" data-act="openproj" data-v="${x.id}"><div class="tile t-${PROJ_TILE[x.type]}">${icon(PROJ_ICON[x.type])}</div><div class="grow"><b>${x.name}</b> <span class="pill">scenario</span><div class="small dim">${x.head}</div></div></div>`).join('') : '<p class="small dim">None yet.</p>'}</div>`; }
+  else if (cur === 'Performance') body = `<div class="grid g4">
       <div class="card kpi"><div class="label">Value</div><div class="value">${money(525140, { cents: false })}</div><div class="delta">${signed(4112, { cents: false })} today</div></div>
       <div class="card kpi"><div class="label">Time-weighted return (${state.range})</div><div class="value">${pct(14.82)}</div><div class="delta dim">Benchmark VT ${pct(12.1)}</div></div>
       <div class="card kpi"><div class="label">Money-weighted (IRR)</div><div class="value">${pct(13.4)}</div><div class="delta dim">annualised</div></div>
@@ -1136,32 +1164,44 @@ SCREENS.budgets = () => {
 };
 
 SCREENS.projections = () => {
-  const scen = ['Retire at 60', 'Retire at 65', 'Retire at 60 + $500/mo'];
+  const x = PROJ.find((p) => p.id === state.proj) || PROJ[0];
+  const actives = PROJ.filter((p) => p.active), scen = PROJ.filter((p) => !p.active);
+  const list = `<div class="grid g2"><div class="card"><h3>Active<span class="spacer"></span><span class="small dim" style="font-weight:400">the plans being followed</span></h3>${actives.map((p) => `<div class="list-item ${p.id === x.id ? 'sel' : ''}" style="cursor:pointer" data-act="openproj" data-v="${p.id}"><div class="tile t-${PROJ_TILE[p.type]}">${icon(PROJ_ICON[p.type])}</div><div class="grow"><b>${p.name}</b> <span class="pill ${statusTone(p.status)}">${p.status}</span><div class="small dim">${projHead(p)} · on ${p.on}${p.sharedBy ? ` · shared by ${p.sharedBy}` : ''}</div></div>${p.sharedBy ? `<span class="small dim" style="white-space:nowrap">Show on my Dashboard</span>${sw(state.showShared).replace('data-act="switch"', 'data-act="showshared"')}` : trackSpark(p)}</div>`).join('')}</div>
+    <div class="card"><h3>Scenarios<span class="spacer"></span><button class="btn sm" data-act="dlg" data-v="newProjection">${icon('plus')} New projection</button></h3>${scen.map((p) => `<div class="list-item ${p.id === x.id ? 'sel' : ''}" style="cursor:pointer" data-act="openproj" data-v="${p.id}"><div class="tile t-${PROJ_TILE[p.type]}">${icon(PROJ_ICON[p.type])}</div><div class="grow"><b>${p.name}</b><div class="small dim">${p.head} · ${p.subject}</div></div><button class="btn sm" data-act="dlg" data-v="makeActive" data-p="${p.id}">Make active</button></div>`).join('')}</div></div>`;
+  const head = `<div class="toolbar mt"><div class="tile t-${PROJ_TILE[x.type]}">${icon(PROJ_ICON[x.type])}</div><b style="font-size:16px">${x.name}</b><span class="small dim">${x.type === 'savings' ? 'savings target' : x.type} · ${x.subject} · on ${x.on}</span>${x.active ? `<span class="pill ${statusTone(x.status)}">active · ${x.status}</span>` : '<span class="pill">scenario</span>'}<span class="spacer"></span>${x.sharedBy ? '' : `<button class="btn" data-act="dlg" data-v="share" data-name="${esc(x.name)}">${icon('share')} Share</button>`}${x.active && !x.sharedBy ? '<button class="btn" data-act="toast" data-v="Re-baselined: tracking now compares against today’s plan">Re-baseline</button>' : ''}${!x.active ? `<button class="btn primary" data-act="dlg" data-v="makeActive" data-p="${x.id}">Make active</button>` : ''}</div>`;
+  const tracking = x.active && x.actual ? `<div class="card mt"><h3>Tracking since ${x.since}<span class="spacer"></span><span class="pill ${statusTone(x.status)}">${x.status}</span></h3>${lineChart({ labels: MONTHS.slice(-x.actual.length), series: [{ name: 'Actual', color: x.status === 'behind' ? 'var(--ask)' : 'var(--accent)', values: x.actual.map((v) => v * 1000), width: 2.5, tipfmt: (v) => '$' + nf0.format(v) }, { name: 'Baseline median', color: 'var(--fg-muted)', values: x.actual.map((_, i) => x.actual[0] * 1000 * (1 + i * 0.018)), dash: true, width: 1.5 }], bands: [{ lo: x.actual.map((_, i) => x.actual[0] * 1000 * (1 + i * 0.018) * 0.94), hi: x.actual.map((_, i) => x.actual[0] * 1000 * (1 + i * 0.018) * 1.06), color: 'var(--fg-muted)', opacity: 0.15 }], area: false, h: 200 })}<div class="legend mt"><span><i style="background:var(--accent)"></i>Actual balance</span><span><i style="background:var(--fg-muted)"></i>Baseline median, with its 10th–90th band</span></div><p class="small dim">The baseline was fixed when this projection was made active. Inside the band is on track, above it ahead, below it behind.</p></div>` : '';
+  if (x.type === 'education') return `${list}${head}${tracking}<div class="card mt"><p style="margin:0">This projection is worked out on <b>Emma’s 529</b>’s Goal tab, where its inputs live. <a data-act="gogoal">Open the Goal tab</a></p></div>`;
+  if (x.type === 'savings') {
+    return `${list}${head}${tracking}<div class="grid g-main mt"><div class="card"><h3>Chance of reaching the target by the date</h3><div style="font-size:30px;font-weight:650">81%</div><p class="small dim">Saving $900 a month. $1,050 a month would reach it with a 90% chance. A model, not a forecast.</p></div>
+      <div class="card"><h3>Inputs</h3>${field('Built on', sel(['High-Yield Savings ($38,200)', 'Choose accounts…', 'Typed amount…'], 'High-Yield Savings ($38,200)'))}<div class="row">${field('Target amount', inp('$60,000'))}${field('Target date', inp('2028-06-01', '', 'text'))}</div>${field('Contribution per month', inp('$900'))}<button class="btn primary" data-act="toast" data-v="Recomputed: 1,000 runs, seed 41">Run</button></div></div>`;
+  }
+  state.scenario = x.sc;
   const years = Array.from({ length: 41 }, (_, i) => String(2026 + i));
-  const r = rng(5 + state.scenario), start = 478741, contrib = state.scenario === 2 ? 36000 : 30000, retire = state.scenario === 1 ? 19 : 14;
+  const start = 478741, contrib = state.scenario === 2 ? 36000 : 30000, retire = x.age - 52;
   const p50 = [], p10 = [], p90 = [], p25 = [], p75 = [];
   let v = start;
   years.forEach((_, i) => {
     v = i === 0 ? v : v * 1.062 + (i <= retire ? contrib : -Math.max(80000, v * 0.04));
     const spread = Math.sqrt(i) * 0.11;
     p50.push(Math.max(0, v)); p10.push(Math.max(0, v * (1 - spread * 1.6))); p90.push(v * (1 + spread * 2.1)); p25.push(Math.max(0, v * (1 - spread * 0.8))); p75.push(v * (1 + spread * 0.95));
-    void r;
   });
-  const success = [88, 96, 93][state.scenario];
-  return `<div class="toolbar">${scen.map((s, i) => `<button class="chip ${state.scenario === i ? 'on' : ''}" data-act="scenario" data-v="${i}" style="border:1px solid var(--border-strong)">${s}</button>`).join('')}<span class="spacer"></span><button class="btn">Compare</button><button class="btn primary">${icon('plus')} New scenario</button></div>
-  <div class="grid g-main">
+  const success = parseInt(x.head, 10);
+  return `${list}${head}${tracking}
+  <div class="grid g-main mt">
     <div class="card"><h3>Projected value · Monte Carlo, 1,000 runs<span class="spacer"></span><div class="chips"><button class="chip on" data-act="seg">Nominal</button><button class="chip" data-act="seg">Today’s dollars</button></div></h3>
       ${lineChart({ labels: years, series: [{ name: 'Median', color: 'var(--accent)', values: p50, width: 2.5 }], bands: [{ lo: p10, hi: p90, color: 'var(--accent)', opacity: 0.12 }, { lo: p25, hi: p75, color: 'var(--accent)', opacity: 0.2 }], area: false, h: 280 })}
       <div class="legend mt"><span><i style="background:var(--accent)"></i>Median</span><span><i style="background:var(--accent);opacity:.4"></i>25th–75th percentile</span><span><i style="background:var(--accent);opacity:.18"></i>10th–90th percentile</span></div>
-      <p class="small dim">A model, not a forecast. Returns drawn from a log-normal distribution with the means and volatilities below; contributions stop and withdrawals start at retirement; inflation 2.5%; fees 0.10%. Seeded, so the same inputs give the same figures.</p></div>
+      <p class="small dim">A model, not a forecast. Returns from your assumptions in Profile (stocks 7%, bonds 4%, …), log-normal; contributions stop and withdrawals start at each retirement; inflation 2.5%; fees 0.10%. Seeded, so the same inputs give the same figures.</p></div>
     <div class="grid">
-      <div class="card kpi"><div class="label">Probability money lasts to age 95</div><div class="value ${success > 90 ? 'up' : ''}">${success}%</div><div class="delta dim">median at retirement ${money(p50[retire], { cents: false })}</div></div>
+      <div class="card kpi"><div class="label">Chance the money lasts to 95</div><div class="value ${success > 90 ? 'up' : ''}">${success}%</div><div class="delta dim">median at retirement ${money(p50[Math.max(0, retire)], { cents: false })}</div></div>
       <div class="card"><h3>Inputs</h3>
-        ${field('Starting balance', sel(['Portfolio: Retirement ($478,741)', 'Portfolio: All my accounts', 'Typed amount…'], 'Portfolio: Retirement ($478,741)'))}
+        ${field('Built on', sel(['Portfolio: Retirement ($478,741)', 'Portfolio: All my accounts', 'Choose accounts…', 'Typed amount…'], 'Portfolio: Retirement ($478,741)'))}
+        ${field('Who', sel(['Alice & Bob (couple)', 'Alice Griffin', 'Bob Griffin'], 'Alice & Bob (couple)'))}
+        <div class="row">${field('Retirement age', inp(String(x.age)), 'Alice, born 1979')}${field('Partner retirement age', inp(String(x.age)), 'Bob, born 1977')}</div>
         <div class="row">${field('Contribution per year', inp('$' + nf0.format(contrib)))}${field('Grows yearly by', inp('3%'))}</div>
-        <div class="row">${field('Retirement age', inp(String(state.scenario === 1 ? 65 : 60)))}${field('Withdrawal', sel(['4% of balance', 'Fixed $80,000/yr', 'Fixed % …'], '4% of balance'))}</div>
-        <div class="row">${field('Expected return', inp('6.2%'))}${field('Volatility', inp('14%'))}</div>
-        ${field('Inflation', inp('2.5%'))}
+        ${field('Withdrawal', sel(['4% of balance', 'Fixed $80,000/yr, rising with inflation', 'Fixed % …'], '4% of balance'))}
+        ${field('Other income', inp('Social Security: Alice from 67, $2,900/mo · Bob from 67, $2,400/mo'), 'Social Security and pensions, each from an age.')}
+        <div class="row">${field('Expected return', inp('from Profile (6.2% blended)'))}${field('Volatility', inp('from Profile (14%)'))}</div>
         <button class="btn primary" data-act="toast" data-v="Recomputed: 1,000 runs, seed 41">Run</button></div></div></div>`;
 };
 
@@ -1391,6 +1431,9 @@ SCREENS.settings = () => {
 SCREENS.profile = () => { const u = USERS[state.user]; return `<div class="grid g2"><div class="card"><h3>Profile</h3><div class="acct-row" style="margin-bottom:14px"><span class="avatar av-${u.username}" style="width:56px;height:56px;font-size:18px">${u.initials}</span><button class="btn sm">Change avatar</button></div>
   ${field('Display name', inp(u.name))}${field('Email address', inp(u.email))}${field('Alert emails', sel(['Each alert', 'Daily summary', 'None'], u.admin ? 'Each alert' : 'Daily summary'), 'Alerts always show on the Alerts screen. This is only about email.')}${field('Birth year', inp('1979'), 'Used for contribution catch-up limits and RMDs.')}${field('Spouse for wash sales', sel(['None', 'Bob Griffin'], 'Bob Griffin'), 'Wash sales are checked across your accounts and your spouse’s shared accounts.')}<button class="btn primary" data-act="toast" data-v="Saved">Save</button></div>
   <div class="grid"><div class="card"><h3>Password</h3>${field('Current password', inp('', '', 'password'))}${field('New password', inp('', 'at least 12 characters', 'password'))}<button class="btn">Change password</button></div>
+  <div class="card"><h3>Assumptions</h3><p class="small dim" style="margin-top:0">Used by all your projections and the payoff planner, unless a projection overrides one.</p>
+    <table class="t"><thead><tr><th>Asset class</th><th class="num">Expected return</th><th class="num">Volatility</th></tr></thead><tbody>${[['US stocks', '7.0%', '16%'], ['International stocks', '7.0%', '18%'], ['Bonds', '4.0%', '6%'], ['Cash', '3.0%', '1%'], ['Crypto', '8.0%', '65%'], ['Real estate', '4.5%', '10%'], ['Metals', '3.0%', '15%']].map((r) => `<tr><td>${r[0]}</td><td class="num"><input class="in" style="max-width:90px;text-align:right" value="${r[1]}" aria-label="${r[0]} expected return"></td><td class="num"><input class="in" style="max-width:90px;text-align:right" value="${r[2]}" aria-label="${r[0]} volatility"></td></tr>`).join('')}</tbody></table>
+    <div class="row mt">${field('General inflation', inp('2.5%'))}${field('Education inflation', inp('5.0%'))}</div><button class="btn primary" data-act="toast" data-v="Saved · projections recompute when opened">Save</button></div>
   <div class="card"><h3>Access tokens<span class="spacer"></span><button class="btn sm" data-act="dlg" data-v="newToken">${icon('plus')} New token</button></h3><p class="small dim" style="margin-top:0">Let an AI assistant read, never change, what you can see, through MCP.</p>
     <div class="list-item"><div class="grow"><b>Claude on my laptop</b><div class="small dim">everything I can see · expires Jan 9, 2027 · last used 2 hours ago</div></div><button class="btn sm danger" data-act="toast" data-v="Token revoked">Revoke</button></div>
     <div class="list-item"><div class="grow"><b>Retirement check-ins</b><div class="small dim">Retirement portfolio only · expires Nov 2, 2026 · never used</div></div><button class="btn sm danger" data-act="toast" data-v="Token revoked">Revoke</button></div></div>
@@ -1483,6 +1526,10 @@ DIALOGS.unlock = () => ({ title: 'Enter the access key', body: `<p class="small 
   <div class="field"><label for="f-access-key">Access key</label><div class="words">${COPY_WORDS.map((w, i) => `<label class="word"><span>${i + 1}</span><input class="in" ${i ? '' : 'id="f-access-key"'} autocomplete="off" spellcheck="false" aria-label="Word ${i + 1}"></label>`).join('')}</div><div class="hint">Each word is recognised by its first four letters. The last word checks the others.</div></div>
   <div class="list-item">${hhAv(PEERS['griffin-parents'])}<div class="grow">griffin-parents<div class="small dim">7 items shared with you · 12 changes waiting, applied when it opens</div></div></div>`, ok: 'Unlock' });
 DIALOGS.householdColour = () => ({ title: 'Colour for Margaret & Tom', body: `<p class="small dim" style="margin-top:0">Tints this household’s window for you. Other people choose their own.</p><div class="field"><label for="f-colour">Colour</label><div class="swatches">${Object.entries(PEER_HUES).map(([k, v], i) => `<button class="swatch ${state.peerHue[state.user] === k ? 'on' : ''}" ${i ? '' : 'id="f-colour"'} style="background:${v}" data-act="hue" data-v="${k}" title="${k}" aria-label="${k}"></button>`).join('')}</div></div>`, ok: null });
+DIALOGS.newProjection = () => ({ title: 'New projection', body: `<div class="field"><label>Goal type</label><div class="seg"><button class="on" data-act="seg">Retirement</button><button data-act="seg">Education</button><button data-act="seg">Savings target</button></div></div>
+  ${field('Name', inp('', 'Retire at 63'))}${field('Built on', sel(['Portfolio: Retirement', 'Portfolio: All my accounts', 'Choose accounts…', 'Typed amount…'], 'Portfolio: Retirement'))}${field('Who', sel(['Alice & Bob (couple)', 'Alice Griffin', 'Bob Griffin'], 'Alice & Bob (couple)'))}
+  <p class="small dim">It starts as a scenario. Make it active to follow it.</p>`, ok: 'Create' });
+DIALOGS.makeActive = (d) => { const x = PROJ.find((p) => p.id === d.p) || PROJ[1]; const cur = PROJ.find((p) => p.active && p.subject === x.subject && p.type === x.type); return { title: `Make “${x.name}” active?`, body: `<p style="margin-top:0">${cur ? `<b>${cur.name}</b> stops being the active ${x.type === 'savings' ? 'plan' : x.type + ' plan'} for ${x.subject}. Its tracking ends, and it stays as a scenario.` : `It becomes the active plan for ${x.subject}.`}</p><p class="small dim">Its median path and 10th–90th band as of today become the baseline it is tracked against.</p>`, ok: 'Make active' }; };
 DIALOGS.sharePortfolio = () => DIALOGS.share({ name: 'Retirement', kind: 'portfolio' });
 DIALOGS.newToken = () => ({ title: 'New access token', body: `<p class="small dim" style="margin-top:0">For an AI assistant or another tool that speaks MCP. It can read, never change, and only what you choose here.</p>
   ${field('Token name', inp('', 'Claude on my laptop'))}${field('Can read', sel(['Everything I can see', 'Chosen items…'], 'Everything I can see'), 'Never secrets, Settings or linked households.')}${field('Expires', sel(['In 30 days', 'In 90 days', 'In a year'], 'In 90 days'))}`, ok: 'Create token' });
@@ -1683,14 +1730,26 @@ const GUIDES = {
     <h2 id="h-categories">Categories</h2><p>Green until 90%, amber to 100%, red over. A household budget shared with a group at <b>write</b> lets everyone in it edit.</p>
     <h2 id="h-cash-flow">Cash flow</h2><p>Income on the left, where it went on the right. Transfers between your own accounts aren’t spending.</p>
     <h2 id="h-recurring">Recurring</h2><p>Detected from history. A missed or changed payment is flagged.</p>`,
-  projections: `<h1>Projections</h1><p>What your savings might become, under assumptions you choose. A model, not a forecast.</p><div class="shot">screenshot · projections</div>
-    <h2 id="h-starting-balance">Starting balance</h2><p>A portfolio’s value today, or an amount you type.</p>
-    <h2 id="h-contribution-per-year">Contribution per year</h2><p>Added until the retirement age, capped by the account limits in Settings › Tax tables.</p>
+  projections: `<h1>Projections</h1><p>How your money might grow toward a goal: retirement, education or a savings target. A model, not a forecast.</p><div class="shot">screenshot · projections</div>
+    <h2>Active</h2><p>The plans you follow: at most one per person or couple for retirement, per child for education, per savings target. Each shows on the Dashboard’s Plans card, and on the account or portfolio it is built on.</p>
+    <h2>Scenarios</h2><p>Projections that aren’t active: what-ifs to compare. <b>Make active</b> fixes a new baseline and replaces the active plan for the same goal.</p>
+    <h2>Tracking</h2><p>Your actual balance against the baseline fixed when the plan became active: on track inside its 10th–90th band, ahead above it, behind below it. Falling behind raises an alert.</p>
+    <h2>Re-baseline</h2><p>Makes today’s plan the one you’re tracked against, after you change its inputs.</p>
+    <h2>Show on my Dashboard</h2><p>For a plan someone shares with you. Off by default, so other people’s plans don’t fill your Dashboard.</p>
+    <h2 id="h-built-on">Built on</h2><p>A portfolio or chosen accounts, read at their current values each time, or a typed amount for a what-if.</p>
+    <h2 id="h-who">Who</h2><p>One person, or a couple: each with their own birth year, retirement age and Social Security.</p>
     <h2 id="h-retirement-age">Retirement age</h2><p>Contributions stop and withdrawals start.</p>
+    <h2 id="h-partner-retirement-age">Partner retirement age</h2><p>For a couple, the second person’s.</p>
+    <h2 id="h-contribution-per-year">Contribution per year</h2><p>Added until retirement, capped by the account limits in Settings › Tax tables.</p>
+    <h2 id="h-grows-yearly-by">Grows yearly by</h2><p>How much the contribution rises each year, such as with pay rises.</p>
     <h2 id="h-withdrawal">Withdrawal</h2><p>A percentage of the balance each year, or a fixed amount that rises with inflation.</p>
-    <h2 id="h-expected-return">Expected return</h2><p>Average yearly return before inflation. Try 5–7% for a stock-heavy mix.</p>
-    <h2 id="h-volatility">Volatility</h2><p>How much a year can swing. About 15% for stocks, 5% for bonds.</p>
-    <h2 id="h-inflation">Inflation</h2><p>Used for <i>today’s dollars</i> and for rising withdrawals.</p>`,
+    <h2 id="h-other-income">Other income</h2><p>Social Security and pensions, each from an age, which reduce what the savings must pay.</p>
+    <h2 id="h-expected-return">Expected return</h2><p>From your assumptions in Profile unless you override it here.</p>
+    <h2 id="h-volatility">Volatility</h2><p>How much a year can swing. From your assumptions unless overridden.</p>
+    <h2 id="h-target-amount">Target amount</h2><p>What the savings target needs, such as a house deposit.</p>
+    <h2 id="h-target-date">Target date</h2><p>When it’s needed.</p>
+    <h2 id="h-contribution-per-month">Contribution per month</h2><p>What you plan to add each month.</p>
+    <h2 id="h-name">Name</h2><p>How the projection is listed.</p>`,
   taxes: `<h1>Taxes</h1><p>For one tax book: what a preparer or tax software needs, from your own records.</p><div class="shot">screenshot · taxes</div>
     <h2 id="h-tax-book">Tax book</h2><p>One user, or a married couple filing jointly, for one tax year. It holds the documents received and a filing per return. Each family member who files has their own; a couple filing separately has two.</p>
     <h2 ${hid('Year')}>Year</h2><p>The calendar year the returns are for.</p>
@@ -1784,15 +1843,18 @@ const GUIDES = {
     <h2>Emails</h2><p>Each alert, a daily summary, or none: your choice in Profile. They never show amounts.</p>`,
   profile: `<h1>Profile</h1><p>Your name, email, password and two-step sign-in, and the facts the tax screens need.</p>
     <h2 id="h-alert-emails">Alert emails</h2><p><b>Each alert</b>: an email when an alert opens. <b>Daily summary</b>: one email a day listing new alerts, and none on a quiet day. <b>None</b>: on screen only. Emails never show amounts.</p>
+    <h2>Assumptions</h2><p>Expected return and volatility per asset class, and inflation, shared by all your projections and the payoff planner, so they agree.</p>
+    <h2 id="h-general-inflation">General inflation</h2><p>For today’s dollars and rising withdrawals. 2.5% by default.</p>
+    <h2 id="h-education-inflation">Education inflation</h2><p>College costs rise faster. 5% by default.</p>
     <h2 id="h-access-tokens">Access tokens</h2><p>Let an AI assistant read your finances through MCP. A token reads only, never changes anything, and sees only what you can see, or the items you choose.</p>
     <h2 id="h-token-name">Token name</h2><p>So you can tell your tokens apart, and see each one’s calls in Activity.</p>
     <h2 id="h-can-read">Can read</h2><p>Everything you can see, or chosen items. Never secrets, Settings or linked households.</p>
     <h2 id="h-expires">Expires</h2><p>30 days, 90 days or a year. Revoke a token at any time.</p><h2 id="h-birth-year">Birth year</h2><p>For catch-up contribution limits and RMDs.</p><h2 id="h-spouse-for-wash-sales">Spouse for wash sales</h2><p>Their shared accounts are included in wash-sale checks.</p>
 `,
-  share: `<h1>Share</h1><p>Give people, groups or people on linked servers access to this item.</p><h2>Read</h2><p>They see everything about it and can’t change it.</p><h2>Write</h2><p>They can also add and import transactions, categorise, and attach receipts. They can’t delete it, share it on, or see its keys.</p><h2>What can be shared</h2><p>Accounts, portfolios, budgets, people with their gifts, giving plans and tax books, each shared on its own.</p><h2>People on linked servers</h2><p>Read only, always. You choose the people; their server confirms who they are, keeps it encrypted, and shows it in a window of its own.</p><h2>Include receipts</h2><p>Off by default. When on, the account’s receipts and the text read from them go to that server too, stored there as encrypted files.</p>
+  share: `<h1>Share</h1><p>Give people, groups or people on linked servers access to this item.</p><h2>Read</h2><p>They see everything about it and can’t change it.</p><h2>Write</h2><p>They can also add and import transactions, categorise, and attach receipts. They can’t delete it, share it on, or see its keys.</p><h2>What can be shared</h2><p>Accounts, portfolios, budgets, people with their gifts, giving plans, tax books and projections, each shared on its own.</p><h2>People on linked servers</h2><p>Read only, always. You choose the people; their server confirms who they are, keeps it encrypted, and shows it in a window of its own.</p><h2>Include receipts</h2><p>Off by default. When on, the account’s receipts and the text read from them go to that server too, stored there as encrypted files.</p>
     <h2>Sharing a portfolio</h2><p>People see only the accounts in it that are shared with them; the rest are hidden and left out of its value. The dialog names them and offers to share them too.</p><h2>A tax book</h2><p>The filers own it; give <b>Write</b> to someone who helps prepare the return.</p>`,
 };
-const HELP_ALIAS = { taxBook: 'taxes', filing: 'taxes', taxDoc: 'taxes', unlock: 'linked', newToken: 'profile', tokenShown: 'profile', sharePortfolio: 'share', householdColour: 'linked', copyKey: 'settings', person: 'gifts', gift: 'gifts', donation: 'giving', givingPlan: 'giving', assetItem: 'account', account: 'account', portfolios: 'portfolios', trade: 'positions', acctForm: 'account', newAccount: 'accounts', import: 'transactions', upload: 'receipts', receipt: 'receipts', linkInvite: 'settings', linkAccept: 'settings', share: 'share', rules: 'transactions' };
+const HELP_ALIAS = { taxBook: 'taxes', filing: 'taxes', taxDoc: 'taxes', unlock: 'linked', newProjection: 'projections', makeActive: 'projections', newToken: 'profile', tokenShown: 'profile', sharePortfolio: 'share', householdColour: 'linked', copyKey: 'settings', person: 'gifts', gift: 'gifts', donation: 'giving', givingPlan: 'giving', assetItem: 'account', account: 'account', portfolios: 'portfolios', trade: 'positions', acctForm: 'account', newAccount: 'accounts', import: 'transactions', upload: 'receipts', receipt: 'receipts', linkInvite: 'settings', linkAccept: 'settings', share: 'share', rules: 'transactions' };
 function helpFor(dialog) {
   const pane = $('#help-body'); if (!pane) return;
   const key = dialog ? HELP_ALIAS[dialog] || route().screen : route().screen;
@@ -1904,7 +1966,7 @@ function mockMenu(anchor) {
   closeMenu();
   const m = document.createElement('div'); m.className = 'menu'; m.id = 'menu';
   const screens = [['dashboard', 'Dashboard'], ['accounts', 'Accounts'], ['account/fid', 'Account · brokerage'], ['account/cold', 'Account · self-custody wallet'], ['account/mort', 'Account · mortgage (payoff planner)'], ['account/529', 'Account · 529 plan'], ['account/metals', 'Account · precious metals'], ['account/collect', 'Account · collectables'], ['account/house', 'Account · real estate'], ['gifts', 'Gifts'], ['giving', 'Giving'], ['linked/griffin-parents', 'Linked household window'], ['linked/griffin-parents/portfolios/ret', 'Linked household · portfolio'], ['transactions', 'Transactions'], ['portfolios', 'Portfolios'], ['portfolios/retire', 'Portfolio page'], ['positions', 'Positions'], ['budgets', 'Budgets'], ['projections', 'Projections'], ['taxes', 'Taxes'], ['receipts', 'Receipts'], ['watchlist', 'Watchlist'], ['activity', 'Activity'], ['alerts', 'Alerts'], ['users', 'Users and Groups'], ['settings', 'Settings'], ['profile', 'Profile'], ['signin', 'Sign in']];
-  const dialogs = [['receipt', 'Receipt (read, with a match)'], ['share', 'Share'], ['newAccount', 'New account'], ['trade', 'Record trade (option)'], ['import', 'Import'], ['upload', 'Add receipts'], ['linkInvite', 'Invite a server'], ['unlock', 'Unlock linked data'], ['copyKey', 'Linked copy access key (admin)'], ['householdColour', 'Colour for a linked household'], ['sharePortfolio', 'Share a portfolio (some accounts hidden)'], ['newToken', 'New access token (MCP)'], ['tokenShown', 'Access token, shown once'], ['person', 'Person'], ['gift', 'Gift'], ['donation', 'Record donation (shares)'], ['givingPlan', 'Giving plan'], ['assetItem', 'Physical-asset item'], ['taxBook', 'New tax book'], ['filing', 'Filing (federal, in progress)'], ['taxDoc', 'Add a tax document'], ['rebalance', 'Rebalance suggestion'], ['rules', 'Categorisation rules']];
+  const dialogs = [['receipt', 'Receipt (read, with a match)'], ['share', 'Share'], ['newAccount', 'New account'], ['trade', 'Record trade (option)'], ['import', 'Import'], ['upload', 'Add receipts'], ['linkInvite', 'Invite a server'], ['unlock', 'Unlock linked data'], ['copyKey', 'Linked copy access key (admin)'], ['householdColour', 'Colour for a linked household'], ['sharePortfolio', 'Share a portfolio (some accounts hidden)'], ['newProjection', 'New projection'], ['makeActive', 'Make a projection active'], ['newToken', 'New access token (MCP)'], ['tokenShown', 'Access token, shown once'], ['person', 'Person'], ['gift', 'Gift'], ['donation', 'Record donation (shares)'], ['givingPlan', 'Giving plan'], ['assetItem', 'Physical-asset item'], ['taxBook', 'New tax book'], ['filing', 'Filing (federal, in progress)'], ['taxDoc', 'Add a tax document'], ['rebalance', 'Rebalance suggestion'], ['rules', 'Categorisation rules']];
   m.innerHTML = `<div class="mh">Signed in as</div>${Object.values(USERS).slice(0, 2).map((u) => `<button data-act="as" data-v="${u.username}" class="${state.user === u.username ? 'on' : ''}"><span class="avatar sm av-${u.username}">${u.initials}</span>${u.name} ${u.admin ? '(admin)' : ''}</button>`).join('')}
     <div class="mh">State</div><button data-act="stale" class="${state.stale ? 'on' : ''}">Prices stale</button><button data-act="privacy" class="${state.privacy ? 'on' : ''}">Privacy mode</button><button data-act="mupdate" class="${state.update ? 'on' : ''}">Update available</button><button data-act="mnew">3 new rows arrive</button><button data-act="malert">A new alert arrives (live)</button><button data-act="mupload">Upload a receipt (reads it)</button><button data-act="mlock" class="${state.locked ? 'on' : ''}">Linked data locked</button>
     <div class="mh">Dialogs</div>${dialogs.map(([k, l]) => `<button data-act="dlg" data-v="${k}">${l}</button>`).join('')}
@@ -1940,6 +2002,9 @@ document.addEventListener('click', (e) => {
     case 'mupdate': state.update = !state.update; render(); break;
     case 'mnew': state.newItems = 3; render(); break;
     case 'malert': { ALERTS.unshift({ id: 'n' + ALERTS.length, for: 'admins', open: true, icon: 'sync', title: 'Kraken API key rejected', about: 'Alice Griffin’s exchange connection · enter the key again', since: 'just now', go: 'settings', fix: 'Sync sources' }); state.alertsUnseen[state.user] = (state.alertsUnseen[state.user] || 0) + 1; render(); toast('New alert: Kraken API key rejected'); break; }
+    case 'openproj': state.proj = v; if (route().screen !== 'projections') go('projections'); else render(); break;
+    case 'gogoal': state.tabs['acct-529'] = 'Goal'; go('account/529'); break;
+    case 'showshared': state.showShared = !state.showShared; render(); break;
     case 'dismiss': state.dismissed.push(v + state.user); render(); toast('Dismissed for you'); break;
     case 'mupload': simulateUpload(); break;
     case 'as': state.user = v; state.signedOut = false; if (!USERS[v].admin && ['users', 'settings'].includes(route().screen)) go('dashboard'); render(); toast(`Signed in as ${USERS[v].name}`); break;
@@ -1958,7 +2023,7 @@ document.addEventListener('click', (e) => {
     case 'mlock': state.locked = !state.locked; render(); break;
     case 'pfsw': state.payoff[v] = !state.payoff[v]; render(); break;
     case 'goalcost': state.goal.cost = +v; render(); break;
-    case 'ok': closeDialog(); if (v === 'Upload') simulateUpload(); else if (v === 'Unlock') { state.locked = false; state.unlockedBy = USERS[state.user].name.split(' ')[0]; render(); toast('Unlocked · applied 12 changes from griffin-parents'); } else if (v === 'Done, words saved') toast('Access key made · pulling from ortiz-cpa'); else if (v === 'Create token') showDialog('tokenShown'); else toast(v === 'Done' ? 'Waiting for the other server' : `${v}: done (mock)`); break;
+    case 'ok': closeDialog(); if (v === 'Upload') simulateUpload(); else if (v === 'Unlock') { state.locked = false; state.unlockedBy = USERS[state.user].name.split(' ')[0]; render(); toast('Unlocked · applied 12 changes from griffin-parents'); } else if (v === 'Done, words saved') toast('Access key made · pulling from ortiz-cpa'); else if (v === 'Create token') showDialog('tokenShown'); else if (v === 'Make active') toast('Active · baseline set today'); else toast(v === 'Done' ? 'Waiting for the other server' : `${v}: done (mock)`); break;
     case 'newitems': state.newItems = 0; render(); toast('Loaded the newest rows'); break;
     case 'update': toast('Reloading to the new version (mock)'); state.update = false; render(); break;
     case 'pgsize': break;

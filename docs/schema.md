@@ -63,33 +63,34 @@ This first list covers the entities named in requirements §2 (Terminology). It 
 tables are designed. Tables for many-to-many relationships have no prefix (§1.2), so they
 are not listed.
 
-| Prefix | Table       | Description                                                                       |
-|--------|-------------|-----------------------------------------------------------------------------------|
-| Acct   | Account     | One place money is held, owned by one user, with an account type.                 |
-| Alert  | Alert       | Something that needs a user's attention, open until its cause clears.             |
-| AsItm  | AssetItem   | One item in a physical-asset account, with its cost basis and valuations.         |
-| Bdgt   | Budget      | A period's planned amounts per category.                                          |
-| Cat    | Category    | A budget category given to bank transactions.                                     |
-| Dnatn  | Donation    | One charitable gift to an organisation, or a donor-advised fund grant.            |
-| Filng  | Filing      | One return in a tax book (federal, state or local), with its progress and result. |
-| Gift   | Gift        | A gift to or from a person for an occasion, from idea to given.                   |
-| Group  | Group       | A named set of users that shares are granted to.                                  |
-| Hold   | Holding     | What an account holds of one instrument at a point in time.                       |
-| Instr  | Instrument  | A thing with a price: a stock, fund, coin, option contract or currency.           |
-| Link   | Link        | A link with another MoneyKata server.                                             |
-| Lot    | Lot         | One acquisition of an instrument, and what remains open.                          |
-| Occsn  | Occasion    | A dated occasion for a person: a birthday, an anniversary, a holiday.             |
-| Persn  | Person      | Someone in a user's life who need not be a user of the server.                    |
-| Portf  | Portfolio   | A named set of accounts, or parts of them, charted as one.                        |
-| Postn  | Position    | An instrument held in an account, followed from open to closed.                   |
-| Prjct  | Projection  | A saved scenario of contributions, returns and withdrawals.                       |
-| Rcpt   | Receipt     | An uploaded file with a date, an amount and links to what it supports.            |
-| Share  | Share       | A grant of an account or portfolio to a user, group or linked server.             |
-| TaxBk  | TaxBook     | One user's, or a married couple's, tax records for one tax year.                  |
-| Token  | AccessToken | A user's read-only token for the MCP endpoint, stored as a hash.                  |
-| TxDoc  | TaxDocument | A tax document received (W-2, 1099) or filed (a return, a notice), with its file. |
-| Txn    | Transaction | One dated movement in an account.                                                 |
-| User   | User        | A person who signs in here, or a user of a linked server (with `linkId`).         |
+| Prefix | Table         | Description                                                                       |
+|--------|---------------|-----------------------------------------------------------------------------------|
+| Acct   | Account       | One place money is held, owned by one user, with an account type.                 |
+| Alert  | Alert         | Something that needs a user's attention, open until its cause clears.             |
+| AsItm  | AssetItem     | One item in a physical-asset account, with its cost basis and valuations.         |
+| Asmpt  | AssumptionSet | A user's expected returns, volatility and inflation for projections.              |
+| Bdgt   | Budget        | A period's planned amounts per category.                                          |
+| Cat    | Category      | A budget category given to bank transactions.                                     |
+| Dnatn  | Donation      | One charitable gift to an organisation, or a donor-advised fund grant.            |
+| Filng  | Filing        | One return in a tax book (federal, state or local), with its progress and result. |
+| Gift   | Gift          | A gift to or from a person for an occasion, from idea to given.                   |
+| Group  | Group         | A named set of users that shares are granted to.                                  |
+| Hold   | Holding       | What an account holds of one instrument at a point in time.                       |
+| Instr  | Instrument    | A thing with a price: a stock, fund, coin, option contract or currency.           |
+| Link   | Link          | A link with another MoneyKata server.                                             |
+| Lot    | Lot           | One acquisition of an instrument, and what remains open.                          |
+| Occsn  | Occasion      | A dated occasion for a person: a birthday, an anniversary, a holiday.             |
+| Persn  | Person        | Someone in a user's life who need not be a user of the server.                    |
+| Portf  | Portfolio     | A named set of accounts, or parts of them, charted as one.                        |
+| Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
+| Prjct  | Projection    | How money will grow toward a goal; an active one is tracked against its baseline. |
+| Rcpt   | Receipt       | An uploaded file with a date, an amount and links to what it supports.            |
+| Share  | Share         | A grant of an account or portfolio to a user, group or linked server.             |
+| TaxBk  | TaxBook       | One user's, or a married couple's, tax records for one tax year.                  |
+| Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |
+| TxDoc  | TaxDocument   | A tax document received (W-2, 1099) or filed (a return, a notice), with its file. |
+| Txn    | Transaction   | One dated movement in an account.                                                 |
+| User   | User          | A person who signs in here, or a user of a linked server (with `linkId`).         |
 
 ## 4. Soft deletes
 
