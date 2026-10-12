@@ -48,8 +48,7 @@ recommendations waiting for a decision.
 9. **Money is never a float.** Amounts and quantities are decimals end to end: `Decimal` in
    Python, strings in JSON, and integers or decimal text in SQLite (§17.3).
 10. **Prices are delayed, never live.** MoneyKata is not a trading app. It reads end-of-day
-    prices and, where a provider allows, delayed quotes, through pluggable **price providers**
-    (§7).
+    closes from free sources, through pluggable **price sources** (§7).
 11. **Read-only by construction toward institutions.** MoneyKata never moves money, places an
     order or signs a transaction. It never stores a self-custody wallet's private key or seed
     phrase, only public addresses or extended public keys (§4.6).
@@ -101,7 +100,7 @@ recommendations waiting for a decision.
     household servers; a server for more than a household would need users to opt in to
     being listed (§22).
 23. **US dollars only.** Every account, price, total and report is in USD. There are no
-    foreign accounts and no currency conversion (§7.7, §22).
+    foreign accounts and no currency conversion (§7.8, §22).
 24. **Records are soft-deleted.** Deleting marks a record deleted, with when and by whom, and
     a view per table works out whether it is deleted through what it belongs to. The few
     exceptions are listed in [`schema.md`](schema.md) (§17.1.5).
@@ -136,7 +135,8 @@ recommendations waiting for a decision.
     **access key**: 12 generated words that the receiving household keeps. The copy is
     **locked** until someone it shares with enters the words, and locks again after an hour
     unused. It is shown in its own **linked household** window (§14.9, §15.10).
-11. **Price provider:** a source of prices for one or more instrument classes (§7).
+11. **Price source:** an integration (a `TickerSource`) that supplies daily prices for one
+    or more instrument classes (§7).
 12. **Projection:** how money will grow toward a goal (retirement, education or a savings
     target), from contributions, returns and withdrawals over time. An **active** projection
     is the plan being followed, tracked against its baseline (§9).
@@ -168,7 +168,7 @@ recommendations waiting for a decision.
 # 3. Design principles
 
 1. **One server, on the household's own LAN.** All data stays on hardware its users control.
-   The only outbound calls are to price providers, sync sources and linked servers that a user
+   The only outbound calls are to price sources, sync sources and linked servers that a user
    or admin set up, and each is visible in Settings (§19).
 2. **The ledger is the truth.** Holdings, balances, positions, gains and charts are derived
    from transactions and lots. A **balance snapshot** may stand in for history where none is
@@ -178,7 +178,7 @@ recommendations waiting for a decision.
 4. **Least privilege in sharing.** A share grants one account or portfolio, at one level, to
    whom it names. It is never re-shared. Revoking it ends access on the next request.
 5. **Safe defaults.** A new account is shared with no one. A new link carries nothing until
-   something is shared with it. Sync and price providers are off until configured.
+   something is shared with it. Sync and price sources are off until configured.
 6. **Never hold the keys to the money.** There are no private keys, seed phrases or trading
    permissions. Exchange API keys must be read-only, and MoneyKata refuses a key that the
    exchange reports as able to trade or withdraw, where the exchange says so (§4.5).
@@ -299,7 +299,7 @@ recommendations waiting for a decision.
     2. **Valuation**, one of:
        1. **spot**, for precious metals: the item's **fine weight** (weight per unit, in troy
           ounces, grams or kilograms, times purity, such as .9999, .925 or 22k, times
-          quantity) times the metal's spot price (§7.2), adjusted by the premium or discount
+          quantity) times the metal's spot price (§7.3), adjusted by the premium or discount
           the user expects when selling (0% by default);
        2. **valuations**: dated values with their source (appraisal, recent sale, price
           guide, estimate), the latest one counting. A valuation older than 12 months is
@@ -366,8 +366,8 @@ recommendations waiting for a decision.
    loss, and breakevens. Grouping is a label. The lots and gains stay per leg.
 6. **Expiry** is applied automatically the day after an option expires out of the money by
    the underlying's closing price. An in-the-money expiry asks the user what happened.
-7. **Valuation**: an open option's mark is the provider's delayed option price where there is
-   one (§7.4), otherwise the user's manual mark, otherwise intrinsic value, labelled as such.
+7. **Valuation**: an open option's mark is the price source's daily option close where there is
+   one (§7.5), otherwise the user's manual mark, otherwise intrinsic value, labelled as such.
 8. **Wash sales**: a loss sale with a purchase of the same or a *substantially identical*
    instrument within 30 days either side is flagged, its disallowed loss computed and added to
    the replacement lot's basis. This covers the user's own accounts, IRAs included, and the
@@ -379,41 +379,57 @@ recommendations waiting for a decision.
 
 # 7. Prices
 
-1. **Price providers are pluggable**, one module each, behind one interface:
-   `quotes(instruments) → {instrument: (price, as_of)}` and `history(instrument, start, end) →
-   daily closes`. Settings lists them, with their keys, enabled switches, the instrument
-   classes each serves, and their **order** of preference per class.
-2. **Candidates** (all free to start; terms change, so the module records the terms it was
-   written against):
+1. **What prices must be**: **free** for a household to use, and **daily**. An end-of-day
+   close is enough, and a delay of hours is fine: MoneyKata is not a trading app and fetches
+   no intraday quotes. A source that needs a paid plan can be added (§7.2), but none is
+   required.
+2. **Price sources are integrations behind one interface, `TickerSource`.** Each is one module
+   in `prices/` that registers itself, so adding a source is adding a module.
+   1. **What a source declares**: its name, the instrument classes it serves, whether it
+      needs an **API key** (and where to get a free one), its rate limits, and the terms it
+      was written against, with the date.
+   2. **What it does**: `quotes(instruments) → {instrument: (price, as_of)}`, `history(
+      instrument, start, end) → daily closes`, and, where it can, `lookup(symbol)` to check a
+      symbol before it is used.
+   3. **Settings › Prices** lists the enabled sources, each with its classes, its key
+      (*set*, with when and by whom; a key is a secret, §17.4), its order of preference per
+      class, its last run and its last error. **Add a source** picks from every source
+      MoneyKata ships. A source that needs a key can't be enabled without one.
+3. **Starting sources**, chosen for being free and daily. Their terms change, so each is
+   checked again when a release ships.
 
-   | Provider | Serves | Key | Notes |
+   | Need | Source | Key | Notes |
    | --- | --- | --- | --- |
-   | **Stooq** | US/intl equities, ETFs, indexes, FX: daily history and EOD | none | CSV downloads; no options |
-   | **Tiingo** | US equities, ETFs, mutual funds: EOD and history; IEX delayed intraday | free key | generous free tier; good mutual-fund NAVs |
-   | **Finnhub** | US equities: delayed quotes | free key | 60 calls/min free |
-   | **Alpha Vantage** | equities, FX, crypto | free key | 25 calls/day free: only as a fallback |
-   | **CoinGecko** | crypto prices and history | free demo key | the default for coins |
-   | **Stooq** (metals) | gold, silver, platinum and palladium spot (`XAUUSD`, `XAGUSD`, `XPTUSD`, `XPDUSD`): daily | none | metals as FX pairs, for §4.10's spot valuation; to be confirmed (§21.1.4) |
-   | **Tradier** | **options chains and quotes** (delayed) | free developer account | the likeliest free source of option marks; to be confirmed (§21.1.2) |
-   | **Yahoo Finance** (unofficial) | everything | none | no API terms and breaks without notice; **not shipped**, at most an opt-in dev plugin |
-   | **manual** | anything | — | a price typed in, such as a 401(k) fund's unit value from a statement |
+   | US stocks and ETFs, benchmarks (VT, SPY) | **Tiingo** | free | 500 symbols a month, 50 requests an hour, 1,000 a day; for personal use |
+   | Mutual funds | **Tiingo** | free | daily NAVs, posted around midnight Eastern |
+   | Fallback for both | **Alpha Vantage** | free | 25 requests a day, so only when Tiingo fails |
+   | Money-market funds | none | — | held at $1.00, shown as such |
+   | Crypto, major coins | **Coinbase** public prices | none | |
+   | Crypto, other coins | **CoinGecko** Demo plan | free | about 10,000 calls a month; attribution required, shown in Settings and on charts that use it |
+   | Gold spot | **PAXG** (a token backed by one troy ounce of gold), from Coinbase | none | tracks spot closely; a proxy |
+   | Silver, platinum and palladium spot | **SLV**, **PPLT** and **PALL** from Tiingo, divided by each fund's metal per share | free | the metal per share ships with the tax tables (§19.11) and is updated with them; within a fraction of a percent of spot |
+   | Options | **Massive** (formerly Polygon.io), Basic plan | free | end-of-day prices and two years of history; 5 calls a minute, each page of a result counting as one |
+   | Treasuries, I bonds and EE bonds | computed | — | from the Treasury's published yield curve and savings-bond rates, which are free official data |
+   | No free ticker: 529 portfolios, 401(k) collective trusts, individual corporate and municipal bonds | **manual** | — | a value from a statement, an import or a bank-sync balance, or a typed price, with its date. A statement value older than 90 days is marked stale and raises an alert (§15.11) |
 
-3. **Schedule**: a background task refreshes quotes for every **held or watched** instrument
-   every *N* minutes during market hours (15 by default) and after the close. It loads daily
-   closes once a day, and backfills history when an instrument is first held. Calls are
-   rate-limited per provider. A provider that fails falls back to the next one for that class,
-   and Settings shows the last error.
-4. **Option marks**: from the provider that serves options, else manual or intrinsic value
-   (§6.7). Greeks are out of scope (§22).
-5. **Stored prices** are kept: daily closes for ever, intraday quotes until the next close.
-   Charts read stored prices only, never a provider during a request.
-6. **Every price carries its source and `as_of`.** The UI shows *delayed* or *as of 4:00 PM*
+4. **Schedule**: once a day, after the US market close (6:00 PM Eastern by default), a
+   background task loads the day's close for every **held or watched** instrument, and
+   backfills history when an instrument is first held. **Refresh prices** does the same on
+   demand. Requests are spread to stay inside each source's limits (Tiingo's 50 an hour
+   means a few hours for a large household). A source that fails falls back to the next one
+   for that class; Settings shows the last error, and a failure lasting past the alert
+   threshold raises an alert (§15.11). Intraday quotes are not fetched.
+5. **Option marks**: the day's close from the source that serves options, else manual or
+   intrinsic value (§6.7). A close older than the last trading day is marked stale. Greeks are out of scope (§22).
+6. **Stored prices** are kept: daily closes for ever.
+   Charts read stored prices only, never a price source during a request.
+7. **Every price carries its source and `as_of`.** The UI shows *delayed* or *as of 4:00 PM*
    on every value derived from it. A price older than a threshold (2 trading days for a
    stock) is marked stale.
-7. **US dollars only**: every account, holding, price and total is in USD. Prices are fetched
+8. **US dollars only**: every account, holding, price and total is in USD. Prices are fetched
    in USD, including crypto and metals spot. An instrument that trades only in another
    currency is priced by hand.
-8. **Linked servers never call providers for each other.** A peer's shared data carries its
+9. **Linked servers never call price sources for each other.** A peer's shared data carries its
    own values and their `as_of` (§14.5).
 
 # 8. Portfolios and charts
@@ -480,6 +496,32 @@ recommendations waiting for a decision.
    real estate, metals), general inflation (2.5% by default) and education inflation (5% by
    default). Every projection uses them unless it overrides a figure, so the user's
    projections and the payoff planner (§9.10) agree with each other. Fees per projection.
+   1. **Bitcoin models.** For the bitcoin in what a projection is built on, the user can
+      choose a published model in place of the crypto assumption, in Profile › Assumptions
+      or per projection. Other coins keep the crypto assumption. Each model gives a median
+      path from today's price and a range around it:
+
+      | Model | What it is | Its range |
+      |---|---|---|
+      | **Your assumption** (the default) | log-normal at the crypto return and volatility above | the Monte Carlo fan |
+      | **Power law** (Santostasi) | price = A × (days since the genesis block)^n, n ≈ 5.8 | the fit's spread, about a factor of two either way |
+      | **Log regression** (the "rainbow chart") | a logarithmic curve fitted to the price history | its bands, from the fitted lows to the fitted tops |
+      | **Stock-to-flow** (PlanB) | value from the ratio of supply to new issuance, stepping up at each halving | its published band |
+      | **Saylor, Bitcoin24** (2024) | $3M, $13M and $49M by 2045 (bear, base, bull) | the bear and bull cases |
+      | **ARK Invest** (2030 targets) | $500K, $1.2M and $2.4M by 2030 (bear, base, bull) | the bear and bull cases |
+
+      1. **Compare models** shows every model's median path on one chart (log scale) with
+         the price history behind it, and a table of each model's figures for 2030, 2035 and
+         2045.
+      2. **Each model states its source and record.** Stock-to-flow has run below its own
+         band since 2022; the targets of Saylor and ARK are forecasts by people with a stake
+         in the outcome; the curve fits describe the past and say nothing about why it
+         should continue. MoneyKata shows these as models others publish, not as its own
+         view, and not as advice (§1.16).
+      3. **Their figures ship with the app**, dated and with their source, in Settings ›
+         Tax tables, and are updated with it (a new ARK target, a refit of the power law).
+      4. A projection that uses a model with bear, base and bull cases shows those three
+         paths in place of a fan, since they are not percentiles.
 4. **Models:**
    1. **deterministic**: future value at a constant rate, in nominal and today's dollars;
    2. **Monte Carlo**: *N* runs (1000 by default) drawing yearly returns from the asset
@@ -990,7 +1032,7 @@ preparer.
       of that server (§10.8.5), the accounts behind a shared item's figures unless they are
       shared too, and anything not shared with someone on that server. Of the source's
       users, only the active-user list (§14.3) crosses. Prices travel only as values already computed, with their
-      `as_of` (§7.8).
+      `as_of` (§7.9).
 6. **Ending a link**: either admin ends it on their own side. The other side learns at its
    next call and deletes its copies. Ending a link deletes nothing on the source.
 7. **Settings › Linked servers** lists each link: the peer's name and address, its
@@ -1196,7 +1238,7 @@ preparer.
    losses red, *and* signed with + or −, so colour is never the only cue. Large values are
    abbreviated in charts only ($1.2M), never in tables.
 5. **Every value derived from a price** shows its age on hover, and the header shows the last
-   price refresh with a dot that turns amber when prices are stale (§7.6).
+   price refresh with a dot that turns amber when prices are stale (§7.7).
 6. **Live updates**: the frame keeps one Server-Sent Events stream open (`GET
    /ui/api/events`). It carries fingerprints and counts, never data: prices refreshed, an
    import finished, a sync result, a share received or removed, a linked pull done, a new
@@ -1212,7 +1254,7 @@ preparer.
    2. **The guides** are Markdown files shipped with the app: `web/ui/guides/<screen>.md`, and
       `<screen>-<panel>.md` for a screen's tabs or sections. **Per-account-type** parts
       (`guides/account-<type>.md`) are placed into the account page's guides by marker lines
-      (`{{account-type settings}}`), and each price provider has its own part for Settings ›
+      (`{{account-type settings}}`), and each price source has its own part for Settings ›
       Prices.
    3. **It follows the page.** As focus moves to a field, the pane scrolls smoothly to that
       field's heading and highlights it for a moment. A field is matched to a `##` heading by
@@ -1280,7 +1322,7 @@ preparer.
     1. **What raises one**:
        1. **for admins**: a sync source that has failed for longer than the threshold in
           Settings › Alerts (48 hours by default): a bank-sync connection, an exchange, a
-          chain explorer, a price provider, or a linked server's pulls; a backup that failed;
+          chain explorer, a price source, or a linked server's pulls; a backup that failed;
           a link's first share waiting for its access key (§14.9.2); and the yearly check of
           the master key's recovery phrase (§18.6.5). An admin's alert about someone else's
           account names its owner and source, never the account's name or figures (§13.2);
@@ -1325,7 +1367,7 @@ preparer.
    listener with HTTP/2 (forwarded headers ignored). **`proxy`** is the expected setup.
    **`tls`** is for testing on a local network: given no certificate, the server makes a
    self-signed one on first start and keeps it in the data directory.
-4. **Background tasks** in the server process: price refresh (§7.3), sync and exchange or
+4. **Background tasks** in the server process: price refresh (§7.4), sync and exchange or
    chain pulls (§4.3), link pulls (§14.4), option expiry (§6.6), recurring detection (§10.5),
    backups (§17.6), receipt reading (§12.8, in its own worker process), and pruning. Each records its last run and error, which Settings shows.
    They run in a thread pool with per-provider rate limits and never block a request.
@@ -1371,7 +1413,7 @@ preparer.
    places, enough for wei), through a small SQLAlchemy column type. JSON carries both as
    strings. Python uses `decimal.Decimal` with a context of 34 digits and rounds `HALF_EVEN`
    except where a tax rule says otherwise. Floats are refused at the API's edge.
-4. **Secrets** (price-provider keys, exchange API keys and secrets, sync tokens, the SMTP
+4. **Secrets** (price-source keys, exchange API keys and secrets, sync tokens, the SMTP
    password, link private keys) are encrypted each on its own with AES-256-GCM under a data
    key of their own, wrapped under a key derived from the master key, with associated data
    naming the record
@@ -1406,7 +1448,7 @@ what key rotation does.
       from receipts and the thumbnails.
    2. **The receipt files**: each in its own encrypted file (§12.2).
    3. **Secrets, each on its own as well**: every *secret* the server holds so it can act for
-      its users: price-provider API keys, exchange API keys and secrets, bank-sync tokens,
+      its users: price-source API keys, exchange API keys and secrets, bank-sync tokens,
       chain-explorer keys, the SMTP password, and this server's private link key (§14.1).
    4. **Backups**, which are copies of the encrypted database and files (§17.6).
    5. **Encrypted under their own access keys, not the master key**: everything a link
@@ -1608,8 +1650,8 @@ opens. Each section has its own help guide. In this order:
    sign-ins.
 4. **Sign-up**: on or off (it needs SMTP), optionally limited to email domains.
 5. **Passwords**: the minimum length (12 by default, at least 8).
-6. **Prices** (§7): providers with enabled switch, key, classes, order, refresh interval, last
-   run and error.
+6. **Prices** (§7.2.3): the enabled sources with their classes, keys, order, last run and
+   error; **Add a source**; and the time of the daily refresh (6:00 PM Eastern by default).
 7. **Sync sources**: SimpleFIN and others, and how often they run.
 8. **Crypto**: chain-explorer addresses and keys.
 9. **Linked servers** (§14.7): the links, and each linked copy's state: changes waiting, its
@@ -1620,7 +1662,8 @@ opens. Each section has its own help guide. In this order:
     time, the reading queue, and **Re-read all receipts** (§12.8.7).
 11. **Tax tables**: per year, shipped and correctable: contribution limits and thresholds,
     the annual gift exclusion, the 529-to-Roth lifetime limit, the QCD limit, the
-    collectables rate, and the shipped college-cost averages (§9.2.2).
+    collectables rate, the shipped college-cost averages (§9.2.2), the bitcoin models'
+    published figures (§9.3.1), and the metal per share of SLV, PPLT and PALL (§7.3).
 12. **Backups**: the time of day and the copies kept; the backup directory is set on the host.
 13. **Key storage** (§18): read-only. The master key's fingerprint and age, who confirmed
     its recovery phrase and when, rotation progress and the date the previous key can go, the
@@ -1649,7 +1692,7 @@ opens. Each section has its own help guide. In this order:
      server/             src/moneykata/: main.py, app.py, config.py, listener.py, middleware.py,
                          static.py, settings.py, ui/ (routes per area), auth/, store/
                          (tables/, entities/, mapping.py, alembic/), ledger/ (lots, gains, wash sales, corporate
-                         actions), prices/ (one module per provider), sync/ (simplefin,
+                         actions), prices/ (one TickerSource per source), sync/ (simplefin,
                          exchanges/, chains/), importers/ (ofx, csv), budgets/, projections/, loans/
                          (schedules, payoff planner), assets/ (items, valuations),
                          gifts/ (people, occasions, holiday tables), giving/,
@@ -1665,7 +1708,7 @@ opens. Each section has its own help guide. In this order:
    §14.9), **rapidocr** with **onnxruntime** (receipt reading, §12.8). rapidocr brings
    numpy, opencv-python-headless, shapely, pyclipper and pyyaml with it, about 100 MB in all;
    the image carries them, and they load only in the receipt worker. Proposed:
-   **ofxtools** (OFX/QFX parsing, pure Python, §21.1.6). **pi-heif** reads iPhone photos
+   **ofxtools** (OFX/QFX parsing, pure Python, §21.1.4). **pi-heif** reads iPhone photos
    (HEIC): it decodes only, so it carries libheif and libde265 (LGPL) without the x265
    encoder (GPL) that pillow-heif bundles. **numpy** is a direct dependency for projections
    (§9) as well as RapidOCR's.
@@ -1741,7 +1784,7 @@ opens. Each section has its own help guide. In this order:
    self-signed certificate, `web/.dev/` for data, receipts and mail, seed users
    (`admin`, `alice`, `bob`, a *Household* group), a year of seeded transactions across every
    account type, open and closed option positions with an assignment and a wash sale, budgets,
-   two projections, receipts, and a **stub price provider** (deterministic random walks,
+   two projections, receipts, and a **stub price source** (deterministic random walks,
    `--stubs`). A second dev server on another port with `--peer` lets links be exercised on
    one machine. Emails are written to `web/.dev/mail/` and their links printed. A red **DEV**
    pill shows on every screen. Dev mode refuses to run as root or on an installed server's
@@ -1769,18 +1812,15 @@ opens. Each section has its own help guide. In this order:
 
 # 21. Open questions
 
-1. **Data sources**: which outside sources MoneyKata reads, and how.
+1. **Data sources**: which outside sources MoneyKata reads, and how. Price sources are
+   settled (§7.3).
    1. **Bank sync**: SimpleFIN Bridge (about $15/year per user, read-only, simple), something
       else, or file import only to start?
-   2. **Option prices**: confirm Tradier's free developer access for delayed chains, or
-      settle for manual and intrinsic marks.
-   3. **Crypto exchanges and chains first.** A proposal: Coinbase and Kraken; Bitcoin (xpub)
+   2. **Crypto exchanges and chains first.** A proposal: Coinbase and Kraken; Bitcoin (xpub)
       and Ethereum.
-   4. **Metals spot prices**: Stooq's metals pairs (daily, no key) are the proposal. Confirm
-      them, or choose another free source; manual spot is the fallback.
-   5. **College-cost averages** shipped for §9.2.2: which published source, and how often it
+   3. **College-cost averages** shipped for §9.2.2: which published source, and how often it
       is updated?
-   6. **OFX parsing**: ofxtools (pure Python), or a parser of our own?
+   4. **OFX parsing**: ofxtools (pure Python), or a parser of our own?
 
 # 22. Not in scope
 
@@ -1833,3 +1873,10 @@ reason.
     anything, whatever shares its user holds (§13.9).
 11. **An RPM** with its own Python, beside or in place of the Docker image. A home server is
     far more often a NAS, a Raspberry Pi or a container host than a RHEL machine (§20.8).
+12. **Barchart** for prices. Its website's terms forbid robots, data mining and applications
+    built on it without written consent, and its API (OnDemand) is a paid commercial
+    product (§7.1).
+13. **Stooq** as the no-key source for daily prices and metals spot. Since 2026 its downloads
+    need a key obtained through a captcha, with a daily quota, which a server can't keep up
+    (§7.3).
+14. **Yahoo Finance** (unofficial). It has no API terms and breaks without notice.
