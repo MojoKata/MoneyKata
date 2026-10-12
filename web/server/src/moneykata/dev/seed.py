@@ -1,5 +1,5 @@
-"""Dev mode's seed data (requirements §20.7): the users admin, alice and bob and a Household
-group so far; each part of the app adds its own."""
+"""Dev mode's seed data (requirements §20.7): the users admin, alice and bob, a Household
+group, and a year of their accounts; each part of the app adds its own."""
 
 import logging
 
@@ -9,6 +9,7 @@ from .. import ids, settings
 from ..auth import passwords
 from ..auth import users as accounts
 from ..store.entities.users import Group, User, UserGroup
+from .seed_accounts import seed_accounts
 
 log = logging.getLogger("moneykata.dev")
 PASSWORD = "moneykata-dev"  # noqa: S105 - dev mode's seed users only
@@ -19,7 +20,8 @@ def seed(server) -> None:
         if s.scalars(select(User).where(User.username == "alice")).first():
             log.info("dev: already seeded")
             return
-        seed_users(s)
+        people = seed_users(s)
+        seed_accounts(s, people)
     log.info("dev: seeded; sign in as admin, alice or bob with %r", PASSWORD)
 
 

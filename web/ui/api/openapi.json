@@ -1,6 +1,717 @@
 {
   "components": {
     "schemas": {
+      "AccountChange": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "countInNetWorth": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countinnetworth"
+          },
+          "institution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution"
+          },
+          "keptBy": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keptby"
+          },
+          "lotMethod": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lotmethod"
+          },
+          "mask": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mask"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "openingBalance": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openingbalance"
+          },
+          "openingDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openingdate"
+          }
+        },
+        "title": "AccountChange",
+        "type": "object"
+      },
+      "AccountDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "balance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change"
+          },
+          "countInNetWorth": {
+            "title": "Countinnetworth",
+            "type": "boolean"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "institution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution"
+          },
+          "investing": {
+            "title": "Investing",
+            "type": "boolean"
+          },
+          "keptBy": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keptby",
+            "type": "array"
+          },
+          "lastUpdated": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastupdated"
+          },
+          "level": {
+            "enum": [
+              "owner",
+              "write",
+              "read"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "lotMethod": {
+            "title": "Lotmethod",
+            "type": "string"
+          },
+          "mask": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mask"
+          },
+          "mismatch": {
+            "title": "Mismatch",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "needsAnchor": {
+            "title": "Needsanchor",
+            "type": "boolean"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "openingBalance": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openingbalance"
+          },
+          "openingDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openingdate"
+          },
+          "openingStandIn": {
+            "title": "Openingstandin",
+            "type": "boolean"
+          },
+          "openingWorkedOut": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Openingworkedout",
+            "type": "string"
+          },
+          "ownerId": {
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "reconcilable": {
+            "title": "Reconcilable",
+            "type": "boolean"
+          },
+          "sharedWith": {
+            "title": "Sharedwith",
+            "type": "integer"
+          },
+          "tax": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "typeLabel": {
+            "title": "Typelabel",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "typeLabel",
+          "group",
+          "institution",
+          "mask",
+          "active",
+          "ownerId",
+          "ownerName",
+          "level",
+          "sharedWith",
+          "balance",
+          "change",
+          "lastUpdated",
+          "needsAnchor",
+          "mismatch",
+          "countInNetWorth",
+          "investing",
+          "reconcilable",
+          "version",
+          "notes",
+          "keptBy",
+          "lotMethod",
+          "openingBalance",
+          "openingDate",
+          "openingWorkedOut",
+          "openingStandIn",
+          "tax"
+        ],
+        "title": "AccountDetail",
+        "type": "object"
+      },
+      "AccountRow": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "balance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change"
+          },
+          "countInNetWorth": {
+            "title": "Countinnetworth",
+            "type": "boolean"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "institution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution"
+          },
+          "investing": {
+            "title": "Investing",
+            "type": "boolean"
+          },
+          "lastUpdated": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastupdated"
+          },
+          "level": {
+            "enum": [
+              "owner",
+              "write",
+              "read"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "mask": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mask"
+          },
+          "mismatch": {
+            "title": "Mismatch",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "needsAnchor": {
+            "title": "Needsanchor",
+            "type": "boolean"
+          },
+          "ownerId": {
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "reconcilable": {
+            "title": "Reconcilable",
+            "type": "boolean"
+          },
+          "sharedWith": {
+            "title": "Sharedwith",
+            "type": "integer"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "typeLabel": {
+            "title": "Typelabel",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "typeLabel",
+          "group",
+          "institution",
+          "mask",
+          "active",
+          "ownerId",
+          "ownerName",
+          "level",
+          "sharedWith",
+          "balance",
+          "change",
+          "lastUpdated",
+          "needsAnchor",
+          "mismatch",
+          "countInNetWorth",
+          "investing",
+          "reconcilable",
+          "version"
+        ],
+        "title": "AccountRow",
+        "type": "object"
+      },
+      "Body_upload_ui_api_accounts__account_id__imports_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_ui_api_accounts__account_id__imports_post",
+        "type": "object"
+      },
+      "Categorise": {
+        "additionalProperties": false,
+        "properties": {
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids",
+          "categoryId"
+        ],
+        "title": "Categorise",
+        "type": "object"
+      },
+      "CategoryOut": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parentid"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "taxTag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxtag"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "parentId",
+          "taxTag",
+          "path"
+        ],
+        "title": "CategoryOut",
+        "type": "object"
+      },
+      "CheckRow": {
+        "additionalProperties": false,
+        "properties": {
+          "computed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Computed",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "difference": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Difference",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "reported": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Reported",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "suspects": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Suspects"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "windowFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Windowfrom"
+          }
+        },
+        "required": [
+          "date",
+          "reported",
+          "computed",
+          "difference",
+          "source",
+          "ok",
+          "windowFrom",
+          "suspects"
+        ],
+        "title": "CheckRow",
+        "type": "object"
+      },
+      "Done": {
+        "additionalProperties": false,
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "changed"
+        ],
+        "title": "Done",
+        "type": "object"
+      },
       "EmailChange": {
         "additionalProperties": false,
         "properties": {
@@ -126,6 +837,192 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HoldingRow": {
+        "additionalProperties": false,
+        "properties": {
+          "costBasis": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costbasis"
+          },
+          "gain": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gain"
+          },
+          "instrumentClass": {
+            "title": "Instrumentclass",
+            "type": "string"
+          },
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "lots": {
+            "items": {
+              "$ref": "#/components/schemas/LotRow"
+            },
+            "title": "Lots",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "priceAsOf": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priceasof"
+          },
+          "priceSource": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricesource"
+          },
+          "quantity": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "instrumentId",
+          "symbol",
+          "name",
+          "instrumentClass",
+          "quantity",
+          "costBasis",
+          "price",
+          "priceAsOf",
+          "priceSource",
+          "value",
+          "gain",
+          "lots"
+        ],
+        "title": "HoldingRow",
+        "type": "object"
+      },
+      "Holdings": {
+        "additionalProperties": false,
+        "properties": {
+          "cash": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Cash",
+            "type": "string"
+          },
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingRow"
+            },
+            "title": "Holdings",
+            "type": "array"
+          },
+          "problems": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "total": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cash",
+          "total",
+          "holdings",
+          "problems"
+        ],
+        "title": "Holdings",
+        "type": "object"
+      },
       "Household": {
         "additionalProperties": false,
         "properties": {
@@ -144,6 +1041,118 @@
           "avatar"
         ],
         "title": "Household",
+        "type": "object"
+      },
+      "ImportRow": {
+        "additionalProperties": false,
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "changed": {
+            "title": "Changed",
+            "type": "integer"
+          },
+          "coveredFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coveredfrom"
+          },
+          "coveredTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coveredto"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "matched": {
+            "title": "Matched",
+            "type": "integer"
+          },
+          "userName": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "format",
+          "fileName",
+          "coveredFrom",
+          "coveredTo",
+          "added",
+          "matched",
+          "changed",
+          "userName",
+          "createdAt"
+        ],
+        "title": "ImportRow",
+        "type": "object"
+      },
+      "InstrumentOut": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "instrumentClass": {
+            "title": "Instrumentclass",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "symbol",
+          "name",
+          "instrumentClass"
+        ],
+        "title": "InstrumentOut",
         "type": "object"
       },
       "InvitationInfo": {
@@ -170,6 +1179,61 @@
         "title": "InvitationInfo",
         "type": "object"
       },
+      "JobOut": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "progress": {
+            "title": "Progress",
+            "type": "number"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "state",
+          "progress",
+          "result",
+          "error"
+        ],
+        "title": "JobOut",
+        "type": "object"
+      },
       "Login": {
         "additionalProperties": false,
         "properties": {
@@ -182,6 +1246,93 @@
           "login"
         ],
         "title": "Login",
+        "type": "object"
+      },
+      "LotRow": {
+        "additionalProperties": false,
+        "properties": {
+          "acquiredOn": {
+            "format": "date",
+            "title": "Acquiredon",
+            "type": "string"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "basisMissing": {
+            "title": "Basismissing",
+            "type": "boolean"
+          },
+          "longTerm": {
+            "title": "Longterm",
+            "type": "boolean"
+          },
+          "lotId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lotid"
+          },
+          "quantity": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "standIn": {
+            "title": "Standin",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lotId",
+          "acquiredOn",
+          "quantity",
+          "basis",
+          "basisMissing",
+          "standIn",
+          "longTerm"
+        ],
+        "title": "LotRow",
+        "type": "object"
+      },
+      "MappingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "mapping": {
+            "additionalProperties": true,
+            "title": "Mapping",
+            "type": "object"
+          },
+          "save": {
+            "default": true,
+            "title": "Save",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "mapping"
+        ],
+        "title": "MappingIn",
         "type": "object"
       },
       "Me": {
@@ -257,6 +1408,231 @@
         "title": "Me",
         "type": "object"
       },
+      "NewAccount": {
+        "additionalProperties": false,
+        "properties": {
+          "countInNetWorth": {
+            "default": true,
+            "title": "Countinnetworth",
+            "type": "boolean"
+          },
+          "institution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution"
+          },
+          "keptBy": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keptby",
+            "type": "array"
+          },
+          "lotMethod": {
+            "default": "fifo",
+            "title": "Lotmethod",
+            "type": "string"
+          },
+          "mask": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mask"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "openingBalance": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openingbalance"
+          },
+          "openingDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openingdate"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "NewAccount",
+        "type": "object"
+      },
+      "NewAdjustment": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "amount",
+          "note"
+        ],
+        "title": "NewAdjustment",
+        "type": "object"
+      },
+      "NewAnchor": {
+        "additionalProperties": false,
+        "properties": {
+          "balance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "date",
+          "balance"
+        ],
+        "title": "NewAnchor",
+        "type": "object"
+      },
+      "NewCategory": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parentid"
+          },
+          "taxTag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxtag"
+          }
+        },
+        "required": [
+          "name",
+          "kind"
+        ],
+        "title": "NewCategory",
+        "type": "object"
+      },
       "NewGroup": {
         "additionalProperties": false,
         "properties": {
@@ -276,6 +1652,38 @@
           "name"
         ],
         "title": "NewGroup",
+        "type": "object"
+      },
+      "NewReconciliation": {
+        "additionalProperties": false,
+        "properties": {
+          "statementBalance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Statementbalance",
+            "type": "string"
+          },
+          "statementDate": {
+            "format": "date",
+            "title": "Statementdate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "statementDate",
+          "statementBalance"
+        ],
+        "title": "NewReconciliation",
         "type": "object"
       },
       "NewUser": {
@@ -307,6 +1715,34 @@
           "email"
         ],
         "title": "NewUser",
+        "type": "object"
+      },
+      "Page_TxnOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TxnOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          }
+        },
+        "required": [
+          "items",
+          "next"
+        ],
+        "title": "Page[TxnOut]",
         "type": "object"
       },
       "Password": {
@@ -342,6 +1778,35 @@
         "title": "PasswordChange",
         "type": "object"
       },
+      "PeriodRow": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "importIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Importids",
+            "type": "array"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "importIds"
+        ],
+        "title": "PeriodRow",
+        "type": "object"
+      },
       "Person": {
         "additionalProperties": false,
         "properties": {
@@ -359,6 +1824,61 @@
           "displayName"
         ],
         "title": "Person",
+        "type": "object"
+      },
+      "PickIn": {
+        "additionalProperties": false,
+        "properties": {
+          "lotId": {
+            "title": "Lotid",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lotId",
+          "quantity"
+        ],
+        "title": "PickIn",
+        "type": "object"
+      },
+      "Point": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "value"
+        ],
+        "title": "Point",
         "type": "object"
       },
       "Profile": {
@@ -562,6 +2082,175 @@
         "title": "ProfileChange",
         "type": "object"
       },
+      "ReconcileView": {
+        "additionalProperties": false,
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckRow"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "gaps": {
+            "items": {
+              "items": {
+                "format": "date",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Gaps",
+            "type": "array"
+          },
+          "needsAnchor": {
+            "title": "Needsanchor",
+            "type": "boolean"
+          },
+          "openingStandIn": {
+            "title": "Openingstandin",
+            "type": "boolean"
+          },
+          "overlaps": {
+            "items": {
+              "items": {
+                "format": "date",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Overlaps",
+            "type": "array"
+          },
+          "periods": {
+            "items": {
+              "$ref": "#/components/schemas/PeriodRow"
+            },
+            "title": "Periods",
+            "type": "array"
+          },
+          "reconciliations": {
+            "items": {
+              "$ref": "#/components/schemas/ReconciliationRow"
+            },
+            "title": "Reconciliations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "periods",
+          "gaps",
+          "overlaps",
+          "checks",
+          "needsAnchor",
+          "openingStandIn",
+          "reconciliations"
+        ],
+        "title": "ReconcileView",
+        "type": "object"
+      },
+      "ReconciliationChange": {
+        "additionalProperties": false,
+        "properties": {
+          "finish": {
+            "title": "Finish",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "finish"
+        ],
+        "title": "ReconciliationChange",
+        "type": "object"
+      },
+      "ReconciliationRow": {
+        "additionalProperties": false,
+        "properties": {
+          "cleared": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Cleared",
+            "type": "string"
+          },
+          "difference": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Difference",
+            "type": "string"
+          },
+          "finishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finishedat"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "statementBalance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Statementbalance",
+            "type": "string"
+          },
+          "statementDate": {
+            "format": "date",
+            "title": "Statementdate",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "statementDate",
+          "statementBalance",
+          "cleared",
+          "difference",
+          "finishedAt",
+          "version"
+        ],
+        "title": "ReconciliationRow",
+        "type": "object"
+      },
+      "Series": {
+        "additionalProperties": false,
+        "properties": {
+          "asOf": {
+            "format": "date",
+            "title": "Asof",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/Point"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "points",
+          "asOf"
+        ],
+        "title": "Series",
+        "type": "object"
+      },
       "SessionInfo": {
         "additionalProperties": false,
         "properties": {
@@ -682,6 +2371,151 @@
         "title": "SignIn",
         "type": "object"
       },
+      "SplitIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "memo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memo"
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "title": "SplitIn",
+        "type": "object"
+      },
+      "SplitOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "memo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memo"
+          }
+        },
+        "required": [
+          "amount",
+          "id"
+        ],
+        "title": "SplitOut",
+        "type": "object"
+      },
+      "Suspects": {
+        "additionalProperties": false,
+        "properties": {
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed",
+            "type": "array"
+          },
+          "duplicates": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Duplicates",
+            "type": "array"
+          },
+          "firstParting": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Firstparting"
+          },
+          "gaps": {
+            "items": {
+              "items": {
+                "format": "date",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Gaps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "duplicates",
+          "changed",
+          "gaps",
+          "firstParting"
+        ],
+        "title": "Suspects",
+        "type": "object"
+      },
       "Token": {
         "additionalProperties": false,
         "properties": {
@@ -713,6 +2547,824 @@
           "password"
         ],
         "title": "TokenPassword",
+        "type": "object"
+      },
+      "TransferLink": {
+        "additionalProperties": false,
+        "properties": {
+          "otherId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Otherid"
+          }
+        },
+        "required": [
+          "otherId"
+        ],
+        "title": "TransferLink",
+        "type": "object"
+      },
+      "TxnChange": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "cleared": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cleared"
+          },
+          "contributionSource": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributionsource"
+          },
+          "contributionYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributionyear"
+          },
+          "costBasis": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costbasis"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "dividendType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dividendtype"
+          },
+          "fees": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fees"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "memo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memo"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "splits": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SplitIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Splits"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "title": "TxnChange",
+        "type": "object"
+      },
+      "TxnIn": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "contributionSource": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributionsource"
+          },
+          "contributionYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributionyear"
+          },
+          "costBasis": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costbasis"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "dividendType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dividendtype"
+          },
+          "fees": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fees"
+          },
+          "instrumentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrumentid"
+          },
+          "kind": {
+            "default": "withdrawal",
+            "title": "Kind",
+            "type": "string"
+          },
+          "memo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memo"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "picks": {
+            "items": {
+              "$ref": "#/components/schemas/PickIn"
+            },
+            "title": "Picks",
+            "type": "array"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "splitRatio": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Splitratio"
+          },
+          "splits": {
+            "items": {
+              "$ref": "#/components/schemas/SplitIn"
+            },
+            "title": "Splits",
+            "type": "array"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "accountId",
+          "date",
+          "amount"
+        ],
+        "title": "TxnIn",
+        "type": "object"
+      },
+      "TxnOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "amountWas": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amountwas"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "cleared": {
+            "title": "Cleared",
+            "type": "boolean"
+          },
+          "contributionSource": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributionsource"
+          },
+          "contributionYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributionyear"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "dividendType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dividendtype"
+          },
+          "fees": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fees"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "imported": {
+            "title": "Imported",
+            "type": "boolean"
+          },
+          "instrumentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrumentid"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "memo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memo"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "payeeRaw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payeeraw"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "reconciled": {
+            "title": "Reconciled",
+            "type": "boolean"
+          },
+          "splits": {
+            "items": {
+              "$ref": "#/components/schemas/SplitOut"
+            },
+            "title": "Splits",
+            "type": "array"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "transferAccountName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transferaccountname"
+          },
+          "transferId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transferid"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "accountName",
+          "date",
+          "kind",
+          "amount",
+          "payee",
+          "payeeRaw",
+          "memo",
+          "categoryId",
+          "instrumentId",
+          "symbol",
+          "quantity",
+          "price",
+          "fees",
+          "dividendType",
+          "contributionYear",
+          "contributionSource",
+          "transferId",
+          "transferAccountName",
+          "imported",
+          "cleared",
+          "reconciled",
+          "amountWas",
+          "splits",
+          "tags",
+          "level",
+          "version"
+        ],
+        "title": "TxnOut",
         "type": "object"
       },
       "UserChange": {
@@ -948,6 +3600,648 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/ui/api/accounts": {
+      "get": {
+        "operationId": "list_accounts_ui_api_accounts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountRow"
+                  },
+                  "title": "Response List Accounts Ui Api Accounts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Accounts",
+        "tags": [
+          "accounts"
+        ]
+      },
+      "post": {
+        "operationId": "create_account_ui_api_accounts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewAccount"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Account",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}": {
+      "delete": {
+        "description": "Soft-deleted with everything that belongs to it (schema.md §4); only by its owner.",
+        "operationId": "delete_account_ui_api_accounts__account_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Account",
+        "tags": [
+          "accounts"
+        ]
+      },
+      "get": {
+        "operationId": "get_account_ui_api_accounts__account_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Account",
+        "tags": [
+          "accounts"
+        ]
+      },
+      "patch": {
+        "operationId": "change_account_ui_api_accounts__account_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Account",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/adjustments": {
+      "post": {
+        "description": "Accepting a difference as a balance adjustment, with a note (§4.11.4).",
+        "operationId": "add_adjustment_ui_api_accounts__account_id__adjustments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewAdjustment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Adjustment",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/anchors": {
+      "post": {
+        "description": "A balance typed from the institution's site (§4.11.2).",
+        "operationId": "add_anchor_ui_api_accounts__account_id__anchors_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewAnchor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Anchor",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/holdings": {
+      "get": {
+        "operationId": "account_holdings_ui_api_accounts__account_id__holdings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Holdings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Account Holdings",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/imports": {
+      "get": {
+        "operationId": "list_imports_ui_api_accounts__account_id__imports_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImportRow"
+                  },
+                  "title": "Response List Imports Ui Api Accounts  Account Id  Imports Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Imports",
+        "tags": [
+          "imports"
+        ]
+      },
+      "post": {
+        "operationId": "upload_ui_api_accounts__account_id__imports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_ui_api_accounts__account_id__imports_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload",
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/reconcile": {
+      "get": {
+        "operationId": "account_reconcile_ui_api_accounts__account_id__reconcile_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconcileView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Account Reconcile",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/reconciliations": {
+      "post": {
+        "description": "Ticking off (§4.11.6): a statement's closing date and balance.",
+        "operationId": "start_reconciliation_ui_api_accounts__account_id__reconciliations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewReconciliation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconciliationRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Reconciliation",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/series": {
+      "get": {
+        "operationId": "account_series_ui_api_accounts__account_id__series_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "default": "1Y",
+              "pattern": "^(1M|3M|YTD|1Y|5Y|All)$",
+              "title": "Range",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Series"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Account Series",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
+    "/ui/api/categories": {
+      "get": {
+        "operationId": "list_categories_ui_api_categories_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryOut"
+                  },
+                  "title": "Response List Categories Ui Api Categories Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Categories",
+        "tags": [
+          "transactions"
+        ]
+      },
+      "post": {
+        "operationId": "create_category_ui_api_categories_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewCategory"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Category",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
     "/ui/api/email-change/confirm": {
       "post": {
         "operationId": "email_change_confirm_ui_api_email_change_confirm_post",
@@ -1116,6 +4410,106 @@
         ]
       }
     },
+    "/ui/api/imports/{upload_id}/mapping": {
+      "post": {
+        "operationId": "apply_mapping_ui_api_imports__upload_id__mapping_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "title": "Upload Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Mapping",
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/ui/api/instruments": {
+      "get": {
+        "operationId": "search_instruments_ui_api_instruments_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstrumentOut"
+                  },
+                  "title": "Response Search Instruments Ui Api Instruments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Instruments",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
     "/ui/api/invitations/accept": {
       "post": {
         "operationId": "invitation_accept_ui_api_invitations_accept_post",
@@ -1195,6 +4589,48 @@
         "summary": "Invitation Lookup",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/ui/api/jobs/{job_id}": {
+      "get": {
+        "operationId": "get_job_ui_api_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Job",
+        "tags": [
+          "imports"
         ]
       }
     },
@@ -1445,6 +4881,58 @@
         ]
       }
     },
+    "/ui/api/reconciliations/{rec_id}": {
+      "patch": {
+        "operationId": "finish_reconciliation_ui_api_reconciliations__rec_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rec_id",
+            "required": true,
+            "schema": {
+              "title": "Rec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconciliationChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconciliationRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Finish Reconciliation",
+        "tags": [
+          "accounts"
+        ]
+      }
+    },
     "/ui/api/session": {
       "delete": {
         "description": "Signing out ends every session of the user at once (§16.7.1).",
@@ -1683,6 +5171,489 @@
         "summary": "Zones",
         "tags": [
           "profile"
+        ]
+      }
+    },
+    "/ui/api/transactions": {
+      "get": {
+        "operationId": "list_transactions_ui_api_transactions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "account",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Account",
+              "type": "array"
+            }
+          },
+          {
+            "description": "a category id, or 'none'",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "a category id, or 'none'",
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "payee",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Payee"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "-date",
+              "pattern": "^-?(date|amount|payee)$",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TxnOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Transactions",
+        "tags": [
+          "transactions"
+        ]
+      },
+      "post": {
+        "operationId": "create_transaction_ui_api_transactions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TxnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TxnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Transaction",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
+    "/ui/api/transactions/categorise": {
+      "post": {
+        "description": "Bulk categorise (§15.2.3): Activity says how many, never which amounts.",
+        "operationId": "categorise_ui_api_transactions_categorise_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Categorise"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Done"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Categorise",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
+    "/ui/api/transactions/{txn_id}": {
+      "delete": {
+        "operationId": "delete_transaction_ui_api_transactions__txn_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "txn_id",
+            "required": true,
+            "schema": {
+              "title": "Txn Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "confirm",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Confirm",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Transaction",
+        "tags": [
+          "transactions"
+        ]
+      },
+      "patch": {
+        "operationId": "change_transaction_ui_api_transactions__txn_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "txn_id",
+            "required": true,
+            "schema": {
+              "title": "Txn Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "confirm",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Confirm",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TxnChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TxnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Transaction",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
+    "/ui/api/transactions/{txn_id}/both-real": {
+      "post": {
+        "description": "Two identical rows on one day: the answer *both real* is kept (§4.11.5).",
+        "operationId": "both_real_ui_api_transactions__txn_id__both_real_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "txn_id",
+            "required": true,
+            "schema": {
+              "title": "Txn Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TxnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Both Real",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
+    "/ui/api/transactions/{txn_id}/transfer": {
+      "post": {
+        "description": "Match a transfer by hand, or undo a match (§4.7).",
+        "operationId": "link_transfer_ui_api_transactions__txn_id__transfer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "txn_id",
+            "required": true,
+            "schema": {
+              "title": "Txn Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferLink"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TxnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Link Transfer",
+        "tags": [
+          "transactions"
         ]
       }
     },

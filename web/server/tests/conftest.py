@@ -53,9 +53,12 @@ ORIGIN = "https://mk.test"
 
 @pytest.fixture
 def server(store, keyed_config):
+    from moneykata.store.repos.ledger import ensure_categories
+
     srv = Server(config=keyed_config, store=store, ready=True)
     with srv.db.tx() as s:
         accounts.ensure_default_admin(s)
+        ensure_categories(s)
     return srv
 
 

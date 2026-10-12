@@ -13,6 +13,7 @@ from .auth import users
 from .config import Config
 from .store import maintenance
 from .store.entities.core import TaskRun
+from .store.repos import ledger
 from .tasks import Daily, TaskContext
 from .tasks import TaskRun as Run
 
@@ -69,6 +70,7 @@ def build(config: Config) -> Server:
     with server.db.tx() as s:
         if users.ensure_default_admin(s):
             log.info("made the default admin: sign in as %s to set it up", users.DEFAULT_ADMIN)
+        ledger.ensure_categories(s)
     register_tasks(server)
     return server
 

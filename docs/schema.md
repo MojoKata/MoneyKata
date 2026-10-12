@@ -69,12 +69,23 @@ list is sorted by prefix, and a prefix is unique across both.
 
 The prefixes of the tables that exist.
 
-| Prefix | Table         | Description                                                                |
-|--------|---------------|----------------------------------------------------------------------------|
-| Actv   | Activity      | A change worth showing: who made it and what it is about, never an amount. |
-| Group  | Group         | A named set of users that shares are granted to.                           |
-| Secr   | Secret        | A secret sealed on its own: an API key, a password or a private key.       |
-| User   | User          | A person who signs in here, or a user of a linked server (with `linkId`).  |
+| Prefix | Table          | Description                                                                                  |
+|--------|----------------|----------------------------------------------------------------------------------------------|
+| Acct   | Account        | One place money is held, owned by one user, with an account type.                            |
+| Actv   | Activity       | A change worth showing: who made it and what it is about, never an amount.                   |
+| Anchr  | Anchor         | A balance the institution reported on a date, that the account's balance is checked against. |
+| Cat    | Category       | A budget category given to bank transactions.                                                |
+| Group  | Group          | A named set of users that shares are granted to.                                             |
+| Hold   | Holding        | What an account holds of one instrument at a point in time.                                  |
+| Imprt  | Import         | One file imported into an account, with the dates it covers.                                 |
+| Instr  | Instrument     | A thing with a price: a stock, fund, coin, option contract or currency.                      |
+| Lot    | Lot            | One acquisition of an instrument, and what remains open.                                     |
+| Map    | ImportMapping  | A saved column mapping for one institution's CSV files.                                      |
+| Recon  | Reconciliation | A statement's closing date and balance, ticked off against the transactions.                 |
+| Secr   | Secret         | A secret sealed on its own: an API key, a password or a private key.                         |
+| Split  | Split          | A part of a transaction's amount given its own category.                                     |
+| Txn    | Transaction    | One dated movement in an account.                                                            |
+| User   | User           | A person who signs in here, or a user of a linked server (with `linkId`).                    |
 
 ### 3.2 Reserved
 
@@ -83,19 +94,14 @@ designed yet. A row moves to §3.1 when its table is.
 
 | Prefix | Table         | Description                                                                       |
 |--------|---------------|-----------------------------------------------------------------------------------|
-| Acct   | Account       | One place money is held, owned by one user, with an account type.                 |
 | Alert  | Alert         | Something that needs a user's attention, open until its cause clears.             |
 | AsItm  | AssetItem     | One item in a physical-asset account, with its cost basis and valuations.         |
 | Asmpt  | AssumptionSet | A user's expected returns, volatility and inflation for projections.              |
 | Bdgt   | Budget        | A period's planned amounts per category.                                          |
-| Cat    | Category      | A budget category given to bank transactions.                                     |
 | Dnatn  | Donation      | One charitable gift to an organisation, or a donor-advised fund grant.            |
 | Filng  | Filing        | One return in a tax book (federal, state or local), with its progress and result. |
 | Gift   | Gift          | A gift to or from a person for an occasion, from idea to given.                   |
-| Hold   | Holding       | What an account holds of one instrument at a point in time.                       |
-| Instr  | Instrument    | A thing with a price: a stock, fund, coin, option contract or currency.           |
 | Link   | Link          | A link with another MoneyKata server.                                             |
-| Lot    | Lot           | One acquisition of an instrument, and what remains open.                          |
 | Occsn  | Occasion      | A dated occasion for a person: a birthday, an anniversary, a holiday.             |
 | Persn  | Person        | Someone in a user's life who need not be a user of the server.                    |
 | Portf  | Portfolio     | A named set of accounts, or parts of them, charted as one.                        |
@@ -106,7 +112,6 @@ designed yet. A row moves to §3.1 when its table is.
 | TaxBk  | TaxBook       | One user's, or a married couple's, tax records for one tax year.                  |
 | Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |
 | TxDoc  | TaxDocument   | A tax document received (W-2, 1099) or filed (a return, a notice), with its file. |
-| Txn    | Transaction   | One dated movement in an account.                                                 |
 
 ## 4. Soft deletes
 

@@ -17,6 +17,7 @@ dependencies = [
     "ofxtools",
     "pillow",
     "numpy",
+    "python-multipart",
 ]
 
 [project.scripts]
@@ -51,7 +52,7 @@ ignore = ["S101"]
 allowed-confusables = ["›", "…", "’", "−", "–"]
 
 [tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", "fastapi.File", "fastapi.Form"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S"]

@@ -76,6 +76,55 @@ def upgrade() -> None:
         )
 
     op.create_table(
+        "Account",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("ownerId", sa.Text(), nullable=False),
+        sa.Column("name", sa.Text(), nullable=False),
+        sa.Column("type", sa.Text(), nullable=False),
+        sa.Column("institution", sa.Text(), nullable=True),
+        sa.Column("mask", sa.Text(), nullable=True),
+        sa.Column("active", sa.Boolean(), server_default=sa.text("1"), nullable=False),
+        sa.Column("notes", sa.Text(), nullable=True),
+        sa.Column("keptBy", sa.Text(), server_default=sa.text("'[\"manual\"]'"), nullable=False),
+        sa.Column("lotMethod", sa.Text(), server_default=sa.text("'fifo'"), nullable=False),
+        sa.Column("countInNetWorth", sa.Boolean(), server_default=sa.text("1"), nullable=False),
+        sa.Column("openingBalance", moneykata.store.types.Cents(), nullable=True),
+        sa.Column("openingDate", moneykata.store.types.Day(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Acct_*' AND length(id) = 31", name=op.f("ck_Account_id")),
+        sa.CheckConstraint(
+            "mask IS NULL OR (length(mask) = 4 AND mask GLOB '[0-9]*')",
+            name=op.f("ck_Account_mask"),
+        ),
+        sa.CheckConstraint(
+            "\"lotMethod\" IN ('fifo', 'lifo', 'hifo', 'specific', 'average')",
+            name=op.f("ck_Account_lot_method"),
+        ),
+        sa.CheckConstraint(
+            "\"type\" IN ('checking', 'savings', 'money-market', 'cd', 'credit-card', 'brokerage', 'ira', 'roth-ira', '401k', '403b', '457b', 'hsa')",
+            name=op.f("ck_Account_type"),
+        ),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Account_deleted_at")
+        ),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Account_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Account_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(["ownerId"], ["User.id"], name=op.f("fk_Account_ownerId_User")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Account")),
+        info={"prefix": "Acct", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Account", schema=None) as batch_op:
+        batch_op.create_index("ix_Account_ownerId", ["ownerId"], unique=False)
+
+    op.create_table(
         "Activity",
         sa.Column("id", sa.Text(), nullable=False),
         sa.Column("at", moneykata.store.types.UtcTimestamp(), nullable=False),
@@ -101,6 +150,50 @@ def upgrade() -> None:
     with op.batch_alter_table("Activity", schema=None) as batch_op:
         batch_op.create_index("ix_Activity_at", ["at"], unique=False)
         batch_op.create_index("ix_Activity_subject", ["subjectId", "at"], unique=False)
+
+    op.create_table(
+        "Category",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("parentId", sa.Text(), nullable=True),
+        sa.Column("name", sa.Text(), nullable=False),
+        sa.Column("kind", sa.Text(), nullable=False),
+        sa.Column("taxTag", sa.Text(), nullable=True),
+        sa.Column("builtIn", sa.Text(), nullable=True),
+        sa.Column("createdById", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Cat_*' AND length(id) = 30", name=op.f("ck_Category_id")),
+        sa.CheckConstraint(
+            "\"kind\" IN ('expense', 'income', 'transfer')", name=op.f("ck_Category_kind")
+        ),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Category_deleted_at")
+        ),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Category_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["createdById"], ["User.id"], name=op.f("fk_Category_createdById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Category_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["parentId"], ["Category.id"], name=op.f("fk_Category_parentId_Category")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Category")),
+        info={"prefix": "Cat", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Category", schema=None) as batch_op:
+        batch_op.create_index(
+            "ux_Category_parentId_name",
+            ["parentId", "name"],
+            unique=True,
+            sqlite_where=sa.text("NOT deleted"),
+        )
 
     op.create_table(
         "Group",
@@ -130,6 +223,79 @@ def upgrade() -> None:
     with op.batch_alter_table("Group", schema=None) as batch_op:
         batch_op.create_index(
             "ux_Group_name", ["name"], unique=True, sqlite_where=sa.text("NOT deleted")
+        )
+
+    op.create_table(
+        "ImportMapping",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("ownerId", sa.Text(), nullable=False),
+        sa.Column("institution", sa.Text(), nullable=False),
+        sa.Column("columns", sa.Text(), nullable=False),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Map_*' AND length(id) = 30", name=op.f("ck_ImportMapping_id")),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_ImportMapping_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_ImportMapping_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_ImportMapping_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["ownerId"], ["User.id"], name=op.f("fk_ImportMapping_ownerId_User")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_ImportMapping")),
+        info={"prefix": "Map", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("ImportMapping", schema=None) as batch_op:
+        batch_op.create_index(
+            "ux_ImportMapping_ownerId_institution",
+            ["ownerId", "institution"],
+            unique=True,
+            sqlite_where=sa.text("NOT deleted"),
+        )
+
+    op.create_table(
+        "Instrument",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("symbol", sa.Text(), nullable=False),
+        sa.Column("name", sa.Text(), nullable=True),
+        sa.Column("instrumentClass", sa.Text(), nullable=False),
+        sa.Column("cusip", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Instr_*' AND length(id) = 32", name=op.f("ck_Instrument_id")),
+        sa.CheckConstraint(
+            "\"instrumentClass\" IN ('cash', 'equity', 'etf', 'mutual-fund', 'money-market', 'bond', 'option', 'crypto', 'metal', 'other')",
+            name=op.f("ck_Instrument_instrument_class"),
+        ),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Instrument_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_Instrument_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Instrument_deletedById_User")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Instrument")),
+        info={"prefix": "Instr", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Instrument", schema=None) as batch_op:
+        batch_op.create_index(
+            "ux_Instrument_symbol", ["symbol"], unique=True, sqlite_where=sa.text("NOT deleted")
         )
 
     op.create_table(
@@ -222,6 +388,87 @@ def upgrade() -> None:
         info={"softDelete": True},
     )
     op.create_table(
+        "Import",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("accountId", sa.Text(), nullable=False),
+        sa.Column("userId", sa.Text(), nullable=False),
+        sa.Column("format", sa.Text(), nullable=False),
+        sa.Column("fileName", sa.Text(), nullable=False),
+        sa.Column("fileHash", sa.Text(), nullable=False),
+        sa.Column("coveredFrom", moneykata.store.types.Day(), nullable=True),
+        sa.Column("coveredTo", moneykata.store.types.Day(), nullable=True),
+        sa.Column("added", sa.Integer(), server_default=sa.text("0"), nullable=False),
+        sa.Column("matched", sa.Integer(), server_default=sa.text("0"), nullable=False),
+        sa.Column("changed", sa.Integer(), server_default=sa.text("0"), nullable=False),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Imprt_*' AND length(id) = 32", name=op.f("ck_Import_id")),
+        sa.CheckConstraint("\"format\" IN ('ofx', 'csv')", name=op.f("ck_Import_format")),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Import_deleted_at")
+        ),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Import_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["accountId"],
+            ["Account.id"],
+            name=op.f("fk_Import_accountId_Account"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Import_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(["userId"], ["User.id"], name=op.f("fk_Import_userId_User")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Import")),
+        info={"prefix": "Imprt", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Import", schema=None) as batch_op:
+        batch_op.create_index("ix_Import_accountId", ["accountId"], unique=False)
+
+    op.create_table(
+        "Reconciliation",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("accountId", sa.Text(), nullable=False),
+        sa.Column("statementDate", moneykata.store.types.Day(), nullable=False),
+        sa.Column("statementBalance", moneykata.store.types.Cents(), nullable=False),
+        sa.Column("finishedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("finishedById", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint(
+            "id GLOB 'Recon_*' AND length(id) = 32", name=op.f("ck_Reconciliation_id")
+        ),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Reconciliation_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_Reconciliation_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["accountId"],
+            ["Account.id"],
+            name=op.f("fk_Reconciliation_accountId_Account"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Reconciliation_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["finishedById"], ["User.id"], name=op.f("fk_Reconciliation_finishedById_User")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Reconciliation")),
+        info={"prefix": "Recon", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    op.create_table(
         "UserGroups",
         sa.Column("userId", sa.Text(), nullable=False),
         sa.Column("groupId", sa.Text(), nullable=False),
@@ -245,6 +492,334 @@ def upgrade() -> None:
             ["userId"], ["User.id"], name=op.f("fk_UserGroups_userId_User"), ondelete="CASCADE"
         ),
         sa.PrimaryKeyConstraint("userId", "groupId", name=op.f("pk_UserGroups")),
+        info={"softDelete": True},
+    )
+    op.create_table(
+        "Anchor",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("accountId", sa.Text(), nullable=False),
+        sa.Column("date", moneykata.store.types.Day(), nullable=False),
+        sa.Column("balance", moneykata.store.types.Cents(), nullable=False),
+        sa.Column("source", sa.Text(), nullable=False),
+        sa.Column("importId", sa.Text(), nullable=True),
+        sa.Column("note", sa.Text(), nullable=True),
+        sa.Column("createdById", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Anchr_*' AND length(id) = 32", name=op.f("ck_Anchor_id")),
+        sa.CheckConstraint(
+            "\"source\" IN ('running-balance', 'ofx', 'statement', 'typed')",
+            name=op.f("ck_Anchor_source"),
+        ),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Anchor_deleted_at")
+        ),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Anchor_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["accountId"],
+            ["Account.id"],
+            name=op.f("fk_Anchor_accountId_Account"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["createdById"], ["User.id"], name=op.f("fk_Anchor_createdById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Anchor_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["importId"], ["Import.id"], name=op.f("fk_Anchor_importId_Import")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Anchor")),
+        info={"prefix": "Anchr", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Anchor", schema=None) as batch_op:
+        batch_op.create_index("ix_Anchor_account_date", ["accountId", "date"], unique=False)
+
+    op.create_table(
+        "Holding",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("accountId", sa.Text(), nullable=False),
+        sa.Column("instrumentId", sa.Text(), nullable=False),
+        sa.Column("asOf", moneykata.store.types.Day(), nullable=False),
+        sa.Column("quantity", moneykata.store.types.Dec(), nullable=False),
+        sa.Column("marketValue", moneykata.store.types.Cents(), nullable=True),
+        sa.Column("importId", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Hold_*' AND length(id) = 31", name=op.f("ck_Holding_id")),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Holding_deleted_at")
+        ),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Holding_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["accountId"],
+            ["Account.id"],
+            name=op.f("fk_Holding_accountId_Account"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Holding_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["importId"], ["Import.id"], name=op.f("fk_Holding_importId_Import")
+        ),
+        sa.ForeignKeyConstraint(
+            ["instrumentId"], ["Instrument.id"], name=op.f("fk_Holding_instrumentId_Instrument")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Holding")),
+        info={"prefix": "Hold", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Holding", schema=None) as batch_op:
+        batch_op.create_index("ix_Holding_account_asOf", ["accountId", "asOf"], unique=False)
+
+    op.create_table(
+        "Transaction",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("accountId", sa.Text(), nullable=False),
+        sa.Column("date", moneykata.store.types.Day(), nullable=False),
+        sa.Column("kind", sa.Text(), nullable=False),
+        sa.Column("amount", moneykata.store.types.Cents(), nullable=False),
+        sa.Column("payee", sa.Text(), nullable=True),
+        sa.Column("payeeRaw", sa.Text(), nullable=True),
+        sa.Column("memo", sa.Text(), nullable=True),
+        sa.Column("categoryId", sa.Text(), nullable=True),
+        sa.Column("instrumentId", sa.Text(), nullable=True),
+        sa.Column("quantity", moneykata.store.types.Dec(), nullable=True),
+        sa.Column("price", moneykata.store.types.Dec(), nullable=True),
+        sa.Column("fees", moneykata.store.types.Cents(), nullable=True),
+        sa.Column("dividendType", sa.Text(), nullable=True),
+        sa.Column("splitRatio", moneykata.store.types.Dec(), nullable=True),
+        sa.Column("lotMethod", sa.Text(), nullable=True),
+        sa.Column("contributionYear", sa.Integer(), nullable=True),
+        sa.Column("contributionSource", sa.Text(), nullable=True),
+        sa.Column("transferId", sa.Text(), nullable=True),
+        sa.Column("importId", sa.Text(), nullable=True),
+        sa.Column("fitId", sa.Text(), nullable=True),
+        sa.Column("runningBalance", moneykata.store.types.Cents(), nullable=True),
+        sa.Column("amountWas", moneykata.store.types.Cents(), nullable=True),
+        sa.Column("duplicateAnswer", sa.Text(), nullable=True),
+        sa.Column("cleared", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("reconciliationId", sa.Text(), nullable=True),
+        sa.Column("createdById", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Txn_*' AND length(id) = 30", name=op.f("ck_Transaction_id")),
+        sa.CheckConstraint(
+            "\"contributionSource\" IS NULL OR \"contributionSource\" IN ('employee', 'employer', 'rollover')",
+            name=op.f("ck_Transaction_contribution_source"),
+        ),
+        sa.CheckConstraint(
+            "\"dividendType\" IS NULL OR \"dividendType\" IN ('ordinary', 'qualified', 'capital-gain', 'return-of-capital')",
+            name=op.f("ck_Transaction_dividend_type"),
+        ),
+        sa.CheckConstraint(
+            '"duplicateAnswer" IS NULL OR "duplicateAnswer" = \'both-real\'',
+            name=op.f("ck_Transaction_duplicate_answer"),
+        ),
+        sa.CheckConstraint(
+            "\"kind\" IN ('deposit', 'withdrawal', 'interest', 'dividend', 'fee', 'transfer', 'adjustment', 'buy', 'sell', 'reinvest', 'capital-gain', 'return-of-capital', 'transfer-in', 'transfer-out', 'split')",
+            name=op.f("ck_Transaction_kind"),
+        ),
+        sa.CheckConstraint(
+            "\"lotMethod\" IS NULL OR \"lotMethod\" IN ('fifo', 'lifo', 'hifo', 'specific', 'average')",
+            name=op.f("ck_Transaction_lot_method"),
+        ),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Transaction_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_Transaction_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["accountId"],
+            ["Account.id"],
+            name=op.f("fk_Transaction_accountId_Account"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["categoryId"], ["Category.id"], name=op.f("fk_Transaction_categoryId_Category")
+        ),
+        sa.ForeignKeyConstraint(
+            ["createdById"], ["User.id"], name=op.f("fk_Transaction_createdById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Transaction_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["importId"], ["Import.id"], name=op.f("fk_Transaction_importId_Import")
+        ),
+        sa.ForeignKeyConstraint(
+            ["instrumentId"], ["Instrument.id"], name=op.f("fk_Transaction_instrumentId_Instrument")
+        ),
+        sa.ForeignKeyConstraint(
+            ["reconciliationId"],
+            ["Reconciliation.id"],
+            name=op.f("fk_Transaction_reconciliationId_Reconciliation"),
+        ),
+        sa.ForeignKeyConstraint(
+            ["transferId"], ["Transaction.id"], name=op.f("fk_Transaction_transferId_Transaction")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Transaction")),
+        info={"prefix": "Txn", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Transaction", schema=None) as batch_op:
+        batch_op.create_index("ix_Transaction_account_date", ["accountId", "date"], unique=False)
+        batch_op.create_index("ix_Transaction_instrument", ["instrumentId"], unique=False)
+        batch_op.create_index(
+            "ux_Transaction_accountId_fitId",
+            ["accountId", "fitId"],
+            unique=True,
+            sqlite_where=sa.text("NOT deleted"),
+        )
+
+    op.create_table(
+        "Lot",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("accountId", sa.Text(), nullable=False),
+        sa.Column("instrumentId", sa.Text(), nullable=False),
+        sa.Column("transactionId", sa.Text(), nullable=True),
+        sa.Column("acquiredOn", moneykata.store.types.Day(), nullable=False),
+        sa.Column("quantity", moneykata.store.types.Dec(), nullable=False),
+        sa.Column("costBasis", moneykata.store.types.Cents(), nullable=True),
+        sa.Column("basisMissing", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Lot_*' AND length(id) = 30", name=op.f("ck_Lot_id")),
+        sa.CheckConstraint('deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Lot_deleted_at")),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Lot_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["accountId"], ["Account.id"], name=op.f("fk_Lot_accountId_Account"), ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(["deletedById"], ["User.id"], name=op.f("fk_Lot_deletedById_User")),
+        sa.ForeignKeyConstraint(
+            ["instrumentId"], ["Instrument.id"], name=op.f("fk_Lot_instrumentId_Instrument")
+        ),
+        sa.ForeignKeyConstraint(
+            ["transactionId"],
+            ["Transaction.id"],
+            name=op.f("fk_Lot_transactionId_Transaction"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Lot")),
+        info={"prefix": "Lot", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Lot", schema=None) as batch_op:
+        batch_op.create_index(
+            "ix_Lot_account_instrument", ["accountId", "instrumentId"], unique=False
+        )
+
+    op.create_table(
+        "Split",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("transactionId", sa.Text(), nullable=False),
+        sa.Column("categoryId", sa.Text(), nullable=True),
+        sa.Column("amount", moneykata.store.types.Cents(), nullable=False),
+        sa.Column("memo", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Split_*' AND length(id) = 32", name=op.f("ck_Split_id")),
+        sa.CheckConstraint('deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Split_deleted_at")),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Split_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["categoryId"], ["Category.id"], name=op.f("fk_Split_categoryId_Category")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Split_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["transactionId"],
+            ["Transaction.id"],
+            name=op.f("fk_Split_transactionId_Transaction"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Split")),
+        info={"prefix": "Split", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Split", schema=None) as batch_op:
+        batch_op.create_index("ix_Split_transactionId", ["transactionId"], unique=False)
+
+    op.create_table(
+        "TransactionTags",
+        sa.Column("transactionId", sa.Text(), nullable=False),
+        sa.Column("userId", sa.Text(), nullable=False),
+        sa.Column("tag", sa.Text(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_TransactionTags_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_TransactionTags_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_TransactionTags_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["transactionId"],
+            ["Transaction.id"],
+            name=op.f("fk_TransactionTags_transactionId_Transaction"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["userId"], ["User.id"], name=op.f("fk_TransactionTags_userId_User"), ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("transactionId", "userId", "tag", name=op.f("pk_TransactionTags")),
+        info={"softDelete": True},
+    )
+    op.create_table(
+        "LotPicks",
+        sa.Column("saleId", sa.Text(), nullable=False),
+        sa.Column("lotId", sa.Text(), nullable=False),
+        sa.Column("quantity", moneykata.store.types.Dec(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_LotPicks_deleted_at")
+        ),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_LotPicks_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_LotPicks_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["lotId"], ["Lot.id"], name=op.f("fk_LotPicks_lotId_Lot"), ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["saleId"],
+            ["Transaction.id"],
+            name=op.f("fk_LotPicks_saleId_Transaction"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("saleId", "lotId", name=op.f("pk_LotPicks")),
         info={"softDelete": True},
     )
     # ### end Alembic commands ###

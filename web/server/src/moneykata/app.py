@@ -92,10 +92,10 @@ def create_app(server: Server) -> FastAPI:
             headers={"Cache-Control": "no-store"},
         )
 
-    from .ui import profile, session, users
+    from .ui import accounts, imports, profile, session, transactions, users
     from .ui import settings as settings_routes
 
-    for module in (session, users, profile, settings_routes):
+    for module in (session, users, profile, settings_routes, accounts, transactions, imports):
         app.include_router(module.router)
     # Last: its catch-alls answer for paths no route above has.
     app.include_router(static.router(static.Static(server.version, server.config.dev)))
