@@ -1,6 +1,7 @@
 """Starting and stopping the server: everything that happens before the first request and
 after the last."""
 
+import asyncio
 import logging
 
 from . import listener
@@ -14,9 +15,14 @@ async def start(config: Config, seed: bool = False) -> int:
     server = Server(config=config)
     app = create_app(server)
 
+    server.events.bind(asyncio.get_running_loop())
+
     async def on_stop() -> None:
         server.ready = False
+        await server.events.close_all()
+        server.tasks.stop()
 
+    server.tasks.start()
     server.ready = True
     scheme = "https" if config.mode == "tls" else "http"
     log.info(

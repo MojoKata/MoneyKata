@@ -103,11 +103,17 @@ async def run(app, config: Config, on_stop: Callable[[], Awaitable[None]]) -> No
     hc = hypercorn_config(config)
     stopping = asyncio.Event()
     loop = asyncio.get_running_loop()
+    first: list[float] = []
 
     def on_signal(signum: int) -> None:
         if stopping.is_set():
-            log.warning("second signal: stopping now")
-            os._exit(1)
+            # A launcher (uv run, a terminal's process group) can deliver one Ctrl-C twice;
+            # a repeat within a second is the same request.
+            if loop.time() - first[0] > 1.0:
+                log.warning("second signal: stopping now")
+                os._exit(1)
+            return
+        first.append(loop.time())
         log.info("stopping (%s)", signal.Signals(signum).name)
         stopping.set()
 

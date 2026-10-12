@@ -6,8 +6,12 @@ from dataclasses import dataclass, field
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from . import errors, middleware, paths, static
+from . import errors, middleware, net, paths, ratelimit, static
 from .config import Config
+from .events import Broker
+from .jobs import Jobs
+from .tasks import Tasks
+from .ui.conventions import Idempotency
 
 log = logging.getLogger("moneykata")
 
@@ -20,6 +24,25 @@ class Server:
     version: str = field(default_factory=paths.version)
     ready: bool = False
     upload_limit: int = 25 * 1024 * 1024
+    events: Broker = field(default_factory=Broker)
+    tasks: Tasks = field(default_factory=Tasks)
+    jobs: Jobs = field(default_factory=Jobs)
+    idempotency: Idempotency = field(default_factory=Idempotency)
+    guard: net.Guard = field(default_factory=net.Guard)
+    api_limit: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(600, 60))
+    upload_rate: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(60, 3600))
+    sign_in: ratelimit.SignInGuard = field(default_factory=ratelimit.SignInGuard)
+
+    def __post_init__(self) -> None:
+        self.jobs = Jobs(
+            announce=lambda job: self.events.publish(
+                "job", {"id": job.id, "state": job.state}, users=[job.userId]
+            )
+        )
+
+    def http(self) -> net.Client:
+        """A client for outbound calls, behind the egress guard (§16.5)."""
+        return net.Client(self.guard)
 
 
 def create_app(server: Server) -> FastAPI:
