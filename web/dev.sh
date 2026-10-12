@@ -19,6 +19,8 @@ web/dev.sh <command>
   run [args]   run the dev server (moneykata dev): https://localhost:37373
                --seed  seed users and a year of data    --stubs  stub price source
                --peer  a second server on another port, for links
+               --listen ADDR  --hostname NAME  --port N  --data DIR
+                       for testing from another machine: see web/dev.md
   test [args]  run pytest (arguments pass through)
   check        run every check: what CI runs (web/check)
   mail         list the emails dev mode has written
@@ -73,7 +75,16 @@ case "$cmd" in
     ;;
   run)
     python3 "$WEB/ui/vendor/vendor.py" extract
-    cd "$SERVER" && exec uv run --frozen moneykata dev "$@"
+    # The server runs from web/server, so a --data path is made absolute from here first.
+    args=()
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --data) args+=(--data "$(realpath -m -- "$2")"); shift 2 ;;
+        --data=*) args+=(--data "$(realpath -m -- "${1#--data=}")"); shift ;;
+        *) args+=("$1"); shift ;;
+      esac
+    done
+    cd "$SERVER" && exec uv run --frozen moneykata dev "${args[@]}"
     ;;
   test)
     cd "$SERVER" && exec uv run --frozen pytest "$@"

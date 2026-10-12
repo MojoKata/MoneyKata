@@ -3,7 +3,7 @@ shots/
 __pycache__/
 web/.tools/
 web/.dev/
-web/.dev-peer/
+web/.dev-*/
 .venv/
 web/ui/vendor/*/
 .pytest_cache/

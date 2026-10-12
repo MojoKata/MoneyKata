@@ -28,9 +28,10 @@ HEADER_LIMIT = 16 * 1024
 
 
 def self_signed(directory: Path, names: list[str]) -> tuple[Path, Path]:
-    """Make a self-signed certificate on first start and keep it in the data directory."""
+    """Make a self-signed certificate on first start and keep it in the data directory. One
+    that no longer covers every name is made again."""
     cert_path, key_path = directory / "self-signed.crt", directory / "self-signed.key"
-    if cert_path.exists() and key_path.exists():
+    if cert_path.exists() and key_path.exists() and set(names) <= _covers(cert_path):
         return cert_path, key_path
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     key = ec.generate_private_key(ec.SECP256R1())
@@ -67,6 +68,15 @@ def self_signed(directory: Path, names: list[str]) -> tuple[Path, Path]:
     return cert_path, key_path
 
 
+def _covers(cert_path: Path) -> set[str]:
+    try:
+        cert = x509.load_pem_x509_certificate(cert_path.read_bytes())
+        alt = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+    except (ValueError, x509.ExtensionNotFound):
+        return set()
+    return {str(n.value) for n in alt}
+
+
 def hypercorn_config(config: Config) -> HypercornConfig:
     hc = HypercornConfig()
     hc.bind = [
@@ -87,6 +97,7 @@ def hypercorn_config(config: Config) -> HypercornConfig:
             cert, key = config.tls_cert, config.tls_key
         else:
             names = ["localhost", "127.0.0.1"] if config.dev else [config.name, "localhost"]
+            names = list(dict.fromkeys([*config.cert_names, *names]))
             cert, key = self_signed(config.tls_dir, names)
         for p in (cert, key):
             if not p.is_file():

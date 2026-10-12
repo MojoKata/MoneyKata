@@ -44,6 +44,7 @@ class Config:
     stubs: bool = False
     path: Path | None = None
     mail_folder: Path | None = None
+    cert_names: tuple[str, ...] = ()  # dev mode: more names for the self-signed certificate
 
     @property
     def db_path(self) -> Path:

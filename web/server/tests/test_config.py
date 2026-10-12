@@ -67,3 +67,26 @@ def test_a_connection_is_not_closed_after_a_thousand_requests(tmp_path):
 
     hc = hypercorn_config(dev_config(37373, stubs=False, peer=False, base=tmp_path))
     assert hc.keep_alive_max_requests >= 1_000_000
+
+
+def test_dev_hostnames_join_the_self_signed_certificate_which_is_remade_to_cover_them(tmp_path):
+    """Testing from another machine (web/dev.md): the certificate names what the browser uses."""
+    from moneykata.listener import _covers, hypercorn_config
+    from moneykata.main import dev_config
+
+    hypercorn_config(dev_config(37373, stubs=False, peer=False, base=tmp_path))
+    cert = tmp_path / "data" / "tls" / "self-signed.crt"
+    assert _covers(cert) == {"localhost", "127.0.0.1"}
+    first = cert.read_bytes()
+
+    config = dev_config(
+        37373, False, False, tmp_path, listen="0.0.0.0", hostnames=("moneykata.loco", "10.0.0.5")
+    )
+    hc = hypercorn_config(config)
+    assert hc.bind == ["0.0.0.0:37373"]
+    assert _covers(cert) == {"moneykata.loco", "10.0.0.5", "localhost", "127.0.0.1"}
+    second = cert.read_bytes()
+    assert second != first
+
+    hypercorn_config(dev_config(37373, stubs=False, peer=False, base=tmp_path))
+    assert cert.read_bytes() == second  # a certificate that covers more is kept

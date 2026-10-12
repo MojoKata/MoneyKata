@@ -59,7 +59,8 @@ web/dev.sh run --seed --stubs    # https://localhost:37373, seed users and stub 
 web/check                        # every check, as CI runs it
 ```
 
-`web/dev.sh` alone lists its commands. The image builds from the repository's root:
+`web/dev.sh` alone lists its commands. [`web/dev.md`](web/dev.md) covers testing the dev
+server from a browser on another machine (an SSH forward, a name of its own, port 443). The image builds from the repository's root:
 
 ```
 docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) --load .

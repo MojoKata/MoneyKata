@@ -25,14 +25,22 @@ def setup_logging(verbose: bool = False) -> None:
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
-def dev_config(port: int, stubs: bool, peer: bool, base: Path | None = None) -> Config:
+def dev_config(
+    port: int,
+    stubs: bool,
+    peer: bool,
+    base: Path | None = None,
+    listen: str = "127.0.0.1",
+    hostnames: tuple[str, ...] = (),
+) -> Config:
     """Dev mode (requirements §20.7): the whole server from a checkout, as the current user."""
     base = base or paths.WEB / (".dev-peer" if peer else ".dev")
     return Config(
         name="dev-peer" if peer else "dev",
         mode="tls",
-        host="127.0.0.1",
+        host=listen,
         port=port,
+        cert_names=hostnames,
         data_dir=base / "data",
         backup_dir=base / "backups",
         key_file=base / "keys" / "master.key",
@@ -62,7 +70,14 @@ def cmd_serve(args) -> int:
 
 def cmd_dev(args) -> int:
     port = args.port or (37374 if args.peer else 37373)
-    config = dev_config(port, args.stubs, args.peer, Path(args.data) if args.data else None)
+    config = dev_config(
+        port,
+        args.stubs,
+        args.peer,
+        Path(args.data) if args.data else None,
+        listen=args.listen,
+        hostnames=tuple(args.hostname),
+    )
     refuse_dev(config)
     if args.frozen:
         from . import clock, ids
@@ -114,6 +129,19 @@ def parser() -> argparse.ArgumentParser:
     d.add_argument("--peer", action="store_true", help="a second server, for links")
     d.add_argument("--port", type=int)
     d.add_argument("--data", help="where dev mode keeps its data (default web/.dev)")
+    d.add_argument(
+        "--listen",
+        default="127.0.0.1",
+        metavar="ADDR",
+        help="the address to listen on (default 127.0.0.1; 0.0.0.0 for every interface)",
+    )
+    d.add_argument(
+        "--hostname",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="a name or address the certificate also covers, such as moneykata.loco (repeatable)",
+    )
     d.add_argument(
         "--frozen",
         metavar="WHEN",

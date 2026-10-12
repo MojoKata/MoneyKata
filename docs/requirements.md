@@ -1962,7 +1962,10 @@ opens. Each section has its own help guide. In this order:
    two projections, receipts, and a **stub price source** (deterministic random walks,
    `--stubs`). A second dev server on another port with `--peer` lets links be exercised on
    one machine. Emails are written to `web/.dev/mail/` and their links printed. A red **DEV**
-   pill shows on every screen. Dev mode refuses to run as root or on an installed server's
+   pill shows on every screen. For testing from another machine, `--listen` sets the address
+   it listens on and each `--hostname` adds a name (or address) to its certificate, which is
+   made again when it doesn't cover them all; `web/dev.md` describes the setups. Dev mode
+   refuses to run as root or on an installed server's
    data directory, and never calls a real provider unless one is configured.
 8. **Packaging: one Docker (OCI) image** holding its own Python and venv, the browser app,
    RapidOCR's models and the `moneykata` command, running as an unprivileged user (uid
