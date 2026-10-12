@@ -3,6 +3,7 @@ balance chart and its reconciliation."""
 
 import datetime as dt
 import json
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal
 
@@ -21,6 +22,7 @@ from ..store.repos import ledger as repo
 from ..store.tables.accounts import ACCOUNT_TYPES, LOT_METHODS
 from .conventions import Model, Money, Quantity, if_match, stale
 from .deps import Caller, caller, server
+from .sharing import counted_for
 
 router = APIRouter(prefix="/ui/api", tags=["accounts"])
 KEPT_BY = ("manual", "file", "statement")
@@ -40,6 +42,8 @@ class AccountRow(Model):
     ownerName: str
     level: Literal["owner", "write", "read"]
     sharedWith: int
+    ownerAvatar: str | None
+    counted: bool
     balance: Money
     change: Money | None
     lastUpdated: dt.datetime | None
@@ -240,15 +244,32 @@ def _raise(errors: list[FieldError]) -> None:
         raise Problem(422, errors[0].code, errors[0].message, errors)
 
 
+@dataclass
+class Context:
+    """What every row of one caller's list shares."""
+
+    userId: str
+    owners: dict[str, User]
+    updated: dict
+    today: dt.date
+    counted: set[str]
+
+
+def context(s, user_id: str, account_ids: list[str]) -> Context:
+    return Context(
+        user_id,
+        {u.id: u for u in s.scalars(select(User))},
+        repo.latest_activity(s, account_ids),
+        dt.date.today(),
+        counted_for(s, user_id),
+    )
+
+
 def row(
-    s,
-    a: Account,
-    level: str,
-    owners: dict[str, str],
-    updated: dict,
-    today: dt.date,
-    detail: bool = False,
+    s, a: Account, level: str, ctx: Context, detail: bool = False
 ) -> AccountRow | AccountDetail:
+    today = ctx.today
+    owner = ctx.owners.get(a.ownerId)
     ledger = repo.load(s, a)
     investing = atypes.investing(a.type)
     value = valuation.account_value(s, ledger, investing)
@@ -266,12 +287,16 @@ def row(
         mask=a.mask,
         active=a.active,
         ownerId=a.ownerId,
-        ownerName=owners.get(a.ownerId, ""),
+        ownerName=owner.displayName if owner else "",
+        ownerAvatar=owner.avatar if owner else None,
         level=level,
-        sharedWith=0,
+        sharedWith=len(access.holders(s, "account", a.id, a.ownerId)) - 1
+        if level == "owner"
+        else 0,
+        counted=a.countInNetWorth if level == "owner" else a.id in ctx.counted,
         balance=value,
         change=value - month_ago if ledger.transactions else None,
-        lastUpdated=updated.get(a.id),
+        lastUpdated=ctx.updated.get(a.id),
         countInNetWorth=a.countInNetWorth,
         needsAnchor=atypes.reconcilable(a.type)
         and a.active
@@ -296,10 +321,6 @@ def row(
     )
 
 
-def _owners(s) -> dict[str, str]:
-    return {u.id: u.displayName for u in s.scalars(select(User))}
-
-
 # ---------- routes ----------
 
 
@@ -307,10 +328,8 @@ def _owners(s) -> dict[str, str]:
 def list_accounts(request: Request, c: Caller = Depends(caller)):
     with server(request).db.read() as s:
         visible = access.visible_accounts(s, c.id)
-        owners = _owners(s)
-        updated = repo.latest_activity(s, [a.id for a, _ in visible])
-        today = dt.date.today()
-        return [row(s, a, level, owners, updated, today) for a, level in visible]
+        ctx = context(s, c.id, [a.id for a, _ in visible])
+        return [row(s, a, level, ctx) for a, level in visible]
 
 
 @router.post("/accounts", response_model=AccountDetail, status_code=201)
@@ -336,7 +355,7 @@ def create_account(body: NewAccount, request: Request, c: Caller = Depends(calle
         activity.record(
             s, "account.created", actor=c.id, subject_kind="account", subject_id=a.id, owner=c.id
         )
-        out = row(s, a, "owner", _owners(s), {}, dt.date.today(), detail=True)
+        out = row(s, a, "owner", context(s, c.id, [a.id]), detail=True)
     return JSONResponse(
         out.model_dump(mode="json"),
         status_code=201,
@@ -348,9 +367,7 @@ def create_account(body: NewAccount, request: Request, c: Caller = Depends(calle
 def get_account(account_id: str, request: Request, c: Caller = Depends(caller)):
     with server(request).db.read() as s:
         a, level = access.account(s, c.id, account_id)
-        return row(
-            s, a, level, _owners(s), repo.latest_activity(s, [a.id]), dt.date.today(), detail=True
-        )
+        return row(s, a, level, context(s, c.id, [a.id]), detail=True)
 
 
 @router.patch("/accounts/{account_id}", response_model=AccountDetail)
@@ -366,7 +383,7 @@ def change_account(
     with server(request).db.tx() as s:
         a, level = access.account(s, c.id, account_id, "write")
         if a.version != version:
-            raise stale(row(s, a, level, _owners(s), {}, dt.date.today(), detail=True))
+            raise stale(row(s, a, level, context(s, c.id, [a.id]), detail=True))
         settings_fields = {
             "lotMethod",
             "keptBy",
@@ -418,9 +435,7 @@ def change_account(
                 detail={"fields": changed},
             )
         s.flush()
-        return row(
-            s, a, level, _owners(s), repo.latest_activity(s, [a.id]), dt.date.today(), detail=True
-        )
+        return row(s, a, level, context(s, c.id, [a.id]), detail=True)
 
 
 @router.delete("/accounts/{account_id}", status_code=204)

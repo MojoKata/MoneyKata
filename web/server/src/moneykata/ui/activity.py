@@ -1,0 +1,230 @@
+"""Activity (requirements §13.8): the changes worth showing, newest first, each naming who
+made it and what it is about, to the people concerned: the owner, those an item is shared
+with, and admins for users, groups and Settings. Amounts are never named (§3.8)."""
+
+import datetime as dt
+import json
+
+from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy import and_, or_, select
+
+from .. import access
+from ..store.entities.accounts import Account
+from ..store.entities.core import Activity
+from ..store.entities.sharing import Portfolio
+from ..store.entities.users import Group, User
+from .conventions import Model, Page, Paging
+from .deps import Caller, caller, server
+
+router = APIRouter(prefix="/ui/api", tags=["activity"])
+
+TEXT = {
+    "signin": "{actor} signed in",
+    "signout": "{actor} signed out",
+    "signin.failed": "A sign-in as {subject} failed",
+    "signin.locked": "{subject} was locked after too many failed sign-ins",
+    "user.created-default-admin": "The default admin was made",
+    "user.setup": "{actor} set up the admin account",
+    "user.invited": "{actor} invited {subject}",
+    "user.invitation-resent": "{actor} sent {subject} a new invitation",
+    "user.joined": "{actor} joined",
+    "user.updated": "{actor} changed {fields} of {subject}",
+    "user.deactivated": "{actor} made {subject} inactive",
+    "user.reactivated": "{actor} made {subject} active again",
+    "user.reactivation-asked": "{actor} asked to be made active again",
+    "user.password-changed": "{actor} changed their password",
+    "user.password-reset": "{actor} reset their password",
+    "user.email-changed": "{actor} changed their email address",
+    "profile.updated": "{actor} changed {fields} in their profile",
+    "group.created": "{actor} made the group {subject}",
+    "group.updated": "{actor} changed {fields} of the group {subject}",
+    "group.members": "{actor} changed the members of {subject}",
+    "settings.changed": "{actor} changed {fields} in Settings",
+    "prices.source-added": "{actor} added the price source {source}",
+    "prices.source-changed": "{actor} changed {fields} of the price source {source}",
+    "prices.source-removed": "{actor} removed the price source {source}",
+    "key.verified": "The master key's recovery phrase was confirmed on the host ({fingerprint})",
+    "key.verify-failed": "A recovery phrase typed on the host did not match ({fingerprint})",
+    "key.rotated": "The master key was rotated on the host ({from} → {to})",
+    "account.created": "{actor} made the account {subject}",
+    "account.updated": "{actor} changed {fields} of {subject}",
+    "account.closed": "{actor} closed {subject}",
+    "account.reopened": "{actor} reopened {subject}",
+    "account.deleted": "{actor} deleted {subject}",
+    "account.imported": "{actor} imported {added_txns} into {subject}",
+    "account.balance-typed": "{actor} typed a balance for {subject}",
+    "account.balance-adjusted": "{actor} adjusted the balance of {subject}",
+    "account.reconciled": "{actor} reconciled {subject} with a statement",
+    "transaction.updated": "{actor} changed {fields} of a transaction in {subject}",
+    "transaction.deleted": "{actor} deleted a transaction in {subject}",
+    "transaction.categorised": "{actor} changed the category of {count_txns} in {subject}",
+    "portfolio.created": "{actor} made the portfolio {subject}",
+    "portfolio.updated": "{actor} changed {fields} of the portfolio {subject}",
+    "portfolio.deleted": "{actor} deleted the portfolio {subject}",
+    "share.given": "{actor} shared {subject} with {grantee} ({level})",
+    "share.changed": "{actor} changed {grantee}'s access to {subject} ({level})",
+    "share.removed": "{actor} stopped sharing {subject} with {grantee}",
+}
+FIELD_NAMES = {
+    "displayName": "the name",
+    "categoryId": "the category",
+    "category": "the category",
+    "amount": "the amount",
+    "date": "the date",
+    "payee": "the payee",
+    "memo": "the memo",
+    "timeZone": "the time zone",
+    "lotMethod": "the lot method",
+    "keptBy": "how it is kept current",
+    "apiKey": "the key",
+    "enabled": "on or off",
+    "preference": "the order",
+    "name": "the name",
+    "active": "the active switch",
+}
+
+
+class ActivityItem(Model):
+    id: str
+    at: dt.datetime
+    kind: str
+    actorId: str | None
+    actorName: str | None
+    actorAvatar: str | None
+    via: str | None
+    subjectKind: str | None
+    subjectId: str | None
+    text: str
+
+
+class Newer(Model):
+    count: int
+
+
+def _fields(detail: dict) -> str:
+    names = [FIELD_NAMES.get(f, f) for f in detail.get("fields", [])]
+    if not names:
+        return "details"
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def _txns(n: int, adjective: str = "") -> str:
+    return f"{n} {adjective}transaction" + ("" if n == 1 else "s")
+
+
+def render(a: Activity, names: dict[tuple[str, str], str]) -> str:
+    detail = json.loads(a.detail or "{}")
+    actor = names.get(("user", a.actorId or ""), "MoneyKata" if a.via != "host" else "The host")
+    subject = names.get((a.subjectKind or "", a.subjectId or ""), "something")
+    grantee = names.get((detail.get("granteeKind", ""), detail.get("granteeId", "")), "someone")
+    values = {
+        "actor": actor,
+        "subject": subject,
+        "grantee": grantee,
+        "fields": _fields(detail),
+        "count": detail.get("count", 1),
+        "added": detail.get("added", 0),
+        "level": detail.get("level", ""),
+        "count_txns": _txns(detail.get("count", 1)),
+        "added_txns": _txns(detail.get("added", 0), "new "),
+        "source": detail.get("source", ""),
+        "fingerprint": detail.get("fingerprint", ""),
+        "from": detail.get("from", ""),
+        "to": detail.get("to", ""),
+    }
+    template = TEXT.get(a.kind, "{actor}: " + a.kind)
+    return template.format(**values)
+
+
+def _visible(s, c: Caller):
+    """Entries the caller may see: their own, about them, about what they hold, and for
+    admins, about users, groups, Settings and keys."""
+    accounts = [a.id for a, _ in access.visible_accounts(s, c.id)]
+    portfolios = [p.id for p, _ in access.visible_portfolios(s, c.id)]
+    conds = [
+        Activity.actorId == c.id,
+        Activity.ownerId == c.id,
+        and_(Activity.subjectKind == "account", Activity.subjectId.in_(accounts)),
+        and_(Activity.subjectKind == "portfolio", Activity.subjectId.in_(portfolios)),
+    ]
+    if c.admin:
+        conds.append(
+            and_(
+                Activity.forAdmins,
+                or_(Activity.subjectKind.is_(None), Activity.subjectKind.in_(("user", "group"))),
+            )
+        )
+    return or_(*conds)
+
+
+@router.get("/activity", response_model=Page[ActivityItem])
+def list_activity(
+    request: Request,
+    c: Caller = Depends(caller),
+    paging: Paging = Depends(),
+    account: str | None = None,
+    person: str | None = None,
+):
+    with server(request).db.read() as s:
+        q = select(Activity).where(_visible(s, c))
+        if account:
+            q = q.where(Activity.subjectKind == "account", Activity.subjectId == account)
+        if person:
+            q = q.where(Activity.actorId == person)
+        if paging.after:
+            at, last_id = paging.after
+            at = dt.datetime.fromisoformat(at)
+            q = q.where(or_(Activity.at < at, and_(Activity.at == at, Activity.id < last_id)))
+        rows = s.scalars(
+            q.order_by(Activity.at.desc(), Activity.id.desc()).limit(paging.limit + 1)
+        ).all()
+        page, nxt = paging.page(list(rows), lambda a: [a.at.isoformat(), a.id])
+        names = _names(s, page)
+        users = {u.id: u for u in s.scalars(select(User))}
+        return Page[ActivityItem](
+            items=[
+                ActivityItem(
+                    id=a.id,
+                    at=a.at,
+                    kind=a.kind,
+                    actorId=a.actorId,
+                    actorName=users[a.actorId].displayName if a.actorId in users else None,
+                    actorAvatar=users[a.actorId].avatar if a.actorId in users else None,
+                    via=a.via,
+                    subjectKind=a.subjectKind,
+                    subjectId=a.subjectId,
+                    text=render(a, names),
+                )
+                for a in page
+            ],
+            next=nxt,
+        )
+
+
+@router.get("/activity/newer", response_model=Newer)
+def newer(request: Request, c: Caller = Depends(caller), since: str = Query(...)):
+    """How many entries arrived after one the page shows: the +N new pill (§15.1.3)."""
+    with server(request).db.read() as s:
+        first = s.get(Activity, since)
+        if first is None:
+            return Newer(count=0)
+        q = select(Activity.id).where(
+            _visible(s, c),
+            or_(Activity.at > first.at, and_(Activity.at == first.at, Activity.id > first.id)),
+        )
+        return Newer(count=len(s.scalars(q).all()))
+
+
+def _names(s, rows: list[Activity]) -> dict[tuple[str, str], str]:
+    names: dict[tuple[str, str], str] = {}
+    for u in s.scalars(select(User)):
+        names[("user", u.id)] = u.displayName
+    for g in s.scalars(select(Group)):
+        names[("group", g.id)] = g.name
+    acct_ids = {a.subjectId for a in rows if a.subjectKind == "account"}
+    for a in s.scalars(select(Account).where(Account.id.in_(acct_ids))):
+        names[("account", a.id)] = a.name
+    port_ids = {a.subjectId for a in rows if a.subjectKind == "portfolio"}
+    for p in s.scalars(select(Portfolio).where(Portfolio.id.in_(port_ids))):
+        names[("portfolio", p.id)] = p.name
+    return names

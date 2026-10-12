@@ -10,6 +10,7 @@ from ..auth import passwords
 from ..auth import users as accounts
 from ..store.entities.users import Group, User, UserGroup
 from .seed_accounts import seed_accounts
+from .seed_sharing import seed_sharing
 
 log = logging.getLogger("moneykata.dev")
 PASSWORD = "moneykata-dev"  # noqa: S105 - dev mode's seed users only
@@ -22,6 +23,7 @@ def seed(server) -> None:
             return
         people = seed_users(s)
         seed_accounts(s, people)
+        seed_sharing(s, people)
     log.info("dev: seeded; sign in as admin, alice or bob with %r", PASSWORD)
 
 

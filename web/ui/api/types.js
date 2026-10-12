@@ -29,6 +29,8 @@
  * @property {string} ownerName
  * @property {("owner" | "write" | "read")} level
  * @property {number} sharedWith
+ * @property {(string | null)} ownerAvatar
+ * @property {boolean} counted
  * @property {string} balance
  * @property {(string | null)} change
  * @property {(string | null)} lastUpdated
@@ -49,6 +51,13 @@
  */
 
 /**
+ * @typedef {Object} AccountName
+ * @property {string} id
+ * @property {string} name
+ * @property {boolean} yours
+ */
+
+/**
  * @typedef {Object} AccountRow
  * @property {string} id
  * @property {string} name
@@ -62,6 +71,8 @@
  * @property {string} ownerName
  * @property {("owner" | "write" | "read")} level
  * @property {number} sharedWith
+ * @property {(string | null)} ownerAvatar
+ * @property {boolean} counted
  * @property {string} balance
  * @property {(string | null)} change
  * @property {(string | null)} lastUpdated
@@ -71,6 +82,20 @@
  * @property {boolean} investing
  * @property {boolean} reconcilable
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} ActivityItem
+ * @property {string} id
+ * @property {string} at
+ * @property {string} kind
+ * @property {(string | null)} actorId
+ * @property {(string | null)} actorName
+ * @property {(string | null)} actorAvatar
+ * @property {(string | null)} via
+ * @property {(string | null)} subjectKind
+ * @property {(string | null)} subjectId
+ * @property {string} text
  */
 
 /**
@@ -114,6 +139,11 @@
  */
 
 /**
+ * @typedef {Object} Counted
+ * @property {boolean} counted
+ */
+
+/**
  * @typedef {Object} Done
  * @property {number} changed
  */
@@ -128,6 +158,14 @@
  * @property {(string | null)} [name]
  * @property {(boolean | null)} [active]
  * @property {(Array<string> | null)} [memberIds]
+ */
+
+/**
+ * @typedef {Object} GroupGrant
+ * @property {string} id
+ * @property {string} name
+ * @property {string} level
+ * @property {number} members
  */
 
 /**
@@ -294,6 +332,14 @@
  */
 
 /**
+ * @typedef {Object} NewPortfolio
+ * @property {string} name
+ * @property {Array<string>} [accountIds]
+ * @property {string} [benchmark]
+ * @property {(string | null)} [notes]
+ */
+
+/**
  * @typedef {Object} NewReconciliation
  * @property {string} statementDate
  * @property {(number | string)} statementBalance
@@ -310,6 +356,17 @@
  * @property {string} username
  * @property {string} email
  * @property {Array<string>} [groupIds]
+ */
+
+/**
+ * @typedef {Object} Newer
+ * @property {number} count
+ */
+
+/**
+ * @typedef {Object} Page_ActivityItem_
+ * @property {Array<ActivityItem>} items
+ * @property {(string | null)} next
  */
 
 /**
@@ -352,6 +409,31 @@
  * @typedef {Object} Point
  * @property {string} date
  * @property {string} value
+ */
+
+/**
+ * @typedef {Object} PortfolioChange
+ * @property {(string | null)} [name]
+ * @property {(Array<string> | null)} [accountIds]
+ * @property {(string | null)} [benchmark]
+ * @property {(string | null)} [notes]
+ */
+
+/**
+ * @typedef {Object} PortfolioRow
+ * @property {string} id
+ * @property {string} name
+ * @property {boolean} implicit
+ * @property {string} ownerId
+ * @property {string} ownerName
+ * @property {(string | null)} ownerAvatar
+ * @property {string} level
+ * @property {string} benchmark
+ * @property {Array<string>} accountIds
+ * @property {string} value
+ * @property {number} sharedWith
+ * @property {(string | null)} notes
+ * @property {number} version
  */
 
 /**
@@ -419,6 +501,12 @@
  */
 
 /**
+ * @typedef {Object} Saved
+ * @property {ShareView} view
+ * @property {number} alsoShared
+ */
+
+/**
  * @typedef {Object} SecretSet
  * @property {string} setAt
  * @property {(string | null)} setBy
@@ -452,6 +540,24 @@
  * @property {string} password
  * @property {string} email
  * @property {(string | null)} [displayName]
+ */
+
+/**
+ * @typedef {Object} ShareSave
+ * @property {Object<string, string>} [users]
+ * @property {Object<string, string>} [groups]
+ * @property {boolean} [shareAccountsToo]
+ */
+
+/**
+ * @typedef {Object} ShareView
+ * @property {string} kind
+ * @property {string} itemId
+ * @property {string} itemName
+ * @property {Array<UserGrant>} users
+ * @property {Array<GroupGrant>} groups
+ * @property {Object<string, Array<string>>} hidden
+ * @property {Array<AccountName>} accounts
  */
 
 /**
@@ -639,6 +745,15 @@
  */
 
 /**
+ * @typedef {Object} UserGrant
+ * @property {string} id
+ * @property {string} displayName
+ * @property {(string | null)} avatar
+ * @property {string} level
+ * @property {Array<Via>} via
+ */
+
+/**
  * @typedef {Object} UserRow
  * @property {string} id
  * @property {string} username
@@ -662,6 +777,13 @@
  * @property {string} type
  * @property {unknown} [input]
  * @property {Object<string, unknown>} [ctx]
+ */
+
+/**
+ * @typedef {Object} Via
+ * @property {string} groupId
+ * @property {string} groupName
+ * @property {string} level
  */
 
 /**

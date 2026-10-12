@@ -321,6 +321,37 @@ def upgrade() -> None:
         batch_op.create_index("ix_OneTimeToken_userId", ["userId"], unique=False)
 
     op.create_table(
+        "Portfolio",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("ownerId", sa.Text(), nullable=False),
+        sa.Column("name", sa.Text(), nullable=False),
+        sa.Column("benchmark", sa.Text(), server_default=sa.text("'VT'"), nullable=False),
+        sa.Column("notes", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Portf_*' AND length(id) = 32", name=op.f("ck_Portfolio_id")),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Portfolio_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_Portfolio_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Portfolio_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(["ownerId"], ["User.id"], name=op.f("fk_Portfolio_ownerId_User")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Portfolio")),
+        info={"prefix": "Portf", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Portfolio", schema=None) as batch_op:
+        batch_op.create_index("ix_Portfolio_ownerId", ["ownerId"], unique=False)
+
+    op.create_table(
         "PriceSource",
         sa.Column("id", sa.Text(), nullable=False),
         sa.Column("name", sa.Text(), nullable=False),
@@ -426,6 +457,36 @@ def upgrade() -> None:
         info={"softDelete": True},
     )
     op.create_table(
+        "CountedAccounts",
+        sa.Column("userId", sa.Text(), nullable=False),
+        sa.Column("accountId", sa.Text(), nullable=False),
+        sa.Column("counted", sa.Boolean(), server_default=sa.text("1"), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_CountedAccounts_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_CountedAccounts_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["accountId"],
+            ["Account.id"],
+            name=op.f("fk_CountedAccounts_accountId_Account"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_CountedAccounts_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["userId"], ["User.id"], name=op.f("fk_CountedAccounts_userId_User"), ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("userId", "accountId", name=op.f("pk_CountedAccounts")),
+        info={"softDelete": True, "pairs": True},
+    )
+    op.create_table(
         "Import",
         sa.Column("id", sa.Text(), nullable=False),
         sa.Column("accountId", sa.Text(), nullable=False),
@@ -467,6 +528,38 @@ def upgrade() -> None:
     with op.batch_alter_table("Import", schema=None) as batch_op:
         batch_op.create_index("ix_Import_accountId", ["accountId"], unique=False)
 
+    op.create_table(
+        "PortfolioAccounts",
+        sa.Column("portfolioId", sa.Text(), nullable=False),
+        sa.Column("accountId", sa.Text(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_PortfolioAccounts_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_PortfolioAccounts_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["accountId"],
+            ["Account.id"],
+            name=op.f("fk_PortfolioAccounts_accountId_Account"),
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_PortfolioAccounts_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["portfolioId"],
+            ["Portfolio.id"],
+            name=op.f("fk_PortfolioAccounts_portfolioId_Portfolio"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("portfolioId", "accountId", name=op.f("pk_PortfolioAccounts")),
+        info={"softDelete": True, "pairs": True},
+    )
     op.create_table(
         "Price",
         sa.Column("instrumentId", sa.Text(), nullable=False),
@@ -536,6 +629,50 @@ def upgrade() -> None:
         info={"prefix": "Recon", "softDelete": True},
         sqlite_with_rowid=False,
     )
+    op.create_table(
+        "Share",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("kind", sa.Text(), nullable=False),
+        sa.Column("itemId", sa.Text(), nullable=False),
+        sa.Column("userId", sa.Text(), nullable=True),
+        sa.Column("groupId", sa.Text(), nullable=True),
+        sa.Column("level", sa.Text(), nullable=False),
+        sa.Column("createdById", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Share_*' AND length(id) = 32", name=op.f("ck_Share_id")),
+        sa.CheckConstraint("kind IN ('account', 'portfolio')", name=op.f("ck_Share_kind")),
+        sa.CheckConstraint("level IN ('read', 'write')", name=op.f("ck_Share_level")),
+        sa.CheckConstraint(
+            '("userId" IS NULL) != ("groupId" IS NULL)', name=op.f("ck_Share_one_grantee")
+        ),
+        sa.CheckConstraint('deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Share_deleted_at")),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Share_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["createdById"], ["User.id"], name=op.f("fk_Share_createdById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Share_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["groupId"], ["Group.id"], name=op.f("fk_Share_groupId_Group"), ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["userId"], ["User.id"], name=op.f("fk_Share_userId_User"), ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Share")),
+        info={"prefix": "Share", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Share", schema=None) as batch_op:
+        batch_op.create_index("ix_Share_groupId", ["groupId"], unique=False)
+        batch_op.create_index("ix_Share_item", ["kind", "itemId"], unique=False)
+        batch_op.create_index("ix_Share_userId", ["userId"], unique=False)
+
     op.create_table(
         "UserGroups",
         sa.Column("userId", sa.Text(), nullable=False),

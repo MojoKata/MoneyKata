@@ -81,8 +81,10 @@ The prefixes of the tables that exist.
 | Instr  | Instrument     | A thing with a price: a stock, fund, coin, option contract or currency.                      |
 | Lot    | Lot            | One acquisition of an instrument, and what remains open.                                     |
 | Map    | ImportMapping  | A saved column mapping for one institution's CSV files.                                      |
+| Portf  | Portfolio      | A named set of accounts, or parts of them, charted as one.                                   |
 | Recon  | Reconciliation | A statement's closing date and balance, ticked off against the transactions.                 |
 | Secr   | Secret         | A secret sealed on its own: an API key, a password or a private key.                         |
+| Share  | Share          | A grant of an account or portfolio to a user, group or linked server.                        |
 | Split  | Split          | A part of a transaction's amount given its own category.                                     |
 | Src    | PriceSource    | A source of daily prices: its name, whether it is on, and its order per class.               |
 | Txn    | Transaction    | One dated movement in an account.                                                            |
@@ -105,11 +107,9 @@ designed yet. A row moves to §3.1 when its table is.
 | Link   | Link          | A link with another MoneyKata server.                                             |
 | Occsn  | Occasion      | A dated occasion for a person: a birthday, an anniversary, a holiday.             |
 | Persn  | Person        | Someone in a user's life who need not be a user of the server.                    |
-| Portf  | Portfolio     | A named set of accounts, or parts of them, charted as one.                        |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
 | Prjct  | Projection    | How money will grow toward a goal; an active one is tracked against its baseline. |
 | Rcpt   | Receipt       | An uploaded file with a date, an amount and links to what it supports.            |
-| Share  | Share         | A grant of an account or portfolio to a user, group or linked server.             |
 | TaxBk  | TaxBook       | One user's, or a married couple's, tax records for one tax year.                  |
 | Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |
 | TxDoc  | TaxDocument   | A tax document received (W-2, 1099) or filed (a return, a notice), with its file. |

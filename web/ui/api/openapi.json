@@ -168,6 +168,10 @@
             "title": "Countinnetworth",
             "type": "boolean"
           },
+          "counted": {
+            "title": "Counted",
+            "type": "boolean"
+          },
           "group": {
             "title": "Group",
             "type": "string"
@@ -296,6 +300,17 @@
             "title": "Openingworkedout",
             "type": "string"
           },
+          "ownerAvatar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owneravatar"
+          },
           "ownerId": {
             "title": "Ownerid",
             "type": "string"
@@ -349,6 +364,8 @@
           "ownerName",
           "level",
           "sharedWith",
+          "ownerAvatar",
+          "counted",
           "balance",
           "change",
           "lastUpdated",
@@ -368,6 +385,30 @@
           "tax"
         ],
         "title": "AccountDetail",
+        "type": "object"
+      },
+      "AccountName": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "yours": {
+            "title": "Yours",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "yours"
+        ],
+        "title": "AccountName",
         "type": "object"
       },
       "AccountRow": {
@@ -402,6 +443,10 @@
           },
           "countInNetWorth": {
             "title": "Countinnetworth",
+            "type": "boolean"
+          },
+          "counted": {
+            "title": "Counted",
             "type": "boolean"
           },
           "group": {
@@ -471,6 +516,17 @@
             "title": "Needsanchor",
             "type": "boolean"
           },
+          "ownerAvatar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owneravatar"
+          },
           "ownerId": {
             "title": "Ownerid",
             "type": "string"
@@ -513,6 +569,8 @@
           "ownerName",
           "level",
           "sharedWith",
+          "ownerAvatar",
+          "counted",
           "balance",
           "change",
           "lastUpdated",
@@ -524,6 +582,108 @@
           "version"
         ],
         "title": "AccountRow",
+        "type": "object"
+      },
+      "ActivityItem": {
+        "additionalProperties": false,
+        "properties": {
+          "actorAvatar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actoravatar"
+          },
+          "actorId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actorid"
+          },
+          "actorName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actorname"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "subjectId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subjectid"
+          },
+          "subjectKind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subjectkind"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "via": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Via"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "kind",
+          "actorId",
+          "actorName",
+          "actorAvatar",
+          "via",
+          "subjectKind",
+          "subjectId",
+          "text"
+        ],
+        "title": "ActivityItem",
         "type": "object"
       },
       "Body_upload_ui_api_accounts__account_id__imports_post": {
@@ -727,6 +887,20 @@
         "title": "Close",
         "type": "object"
       },
+      "Counted": {
+        "additionalProperties": false,
+        "properties": {
+          "counted": {
+            "title": "Counted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "counted"
+        ],
+        "title": "Counted",
+        "type": "object"
+      },
       "Done": {
         "additionalProperties": false,
         "properties": {
@@ -796,6 +970,35 @@
           }
         },
         "title": "GroupChange",
+        "type": "object"
+      },
+      "GroupGrant": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "members": {
+            "title": "Members",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "level",
+          "members"
+        ],
+        "title": "GroupGrant",
         "type": "object"
       },
       "GroupRow": {
@@ -1683,6 +1886,43 @@
         "title": "NewGroup",
         "type": "object"
       },
+      "NewPortfolio": {
+        "additionalProperties": false,
+        "properties": {
+          "accountIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accountids",
+            "type": "array"
+          },
+          "benchmark": {
+            "default": "VT",
+            "title": "Benchmark",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "NewPortfolio",
+        "type": "object"
+      },
       "NewReconciliation": {
         "additionalProperties": false,
         "properties": {
@@ -1758,6 +1998,48 @@
           "email"
         ],
         "title": "NewUser",
+        "type": "object"
+      },
+      "Newer": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "Newer",
+        "type": "object"
+      },
+      "Page_ActivityItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          }
+        },
+        "required": [
+          "items",
+          "next"
+        ],
+        "title": "Page[ActivityItem]",
         "type": "object"
       },
       "Page_TxnOut_": {
@@ -1922,6 +2204,155 @@
           "value"
         ],
         "title": "Point",
+        "type": "object"
+      },
+      "PortfolioChange": {
+        "additionalProperties": false,
+        "properties": {
+          "accountIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountids"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "title": "PortfolioChange",
+        "type": "object"
+      },
+      "PortfolioRow": {
+        "additionalProperties": false,
+        "properties": {
+          "accountIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accountids",
+            "type": "array"
+          },
+          "benchmark": {
+            "title": "Benchmark",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "implicit": {
+            "title": "Implicit",
+            "type": "boolean"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "ownerAvatar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owneravatar"
+          },
+          "ownerId": {
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "sharedWith": {
+            "title": "Sharedwith",
+            "type": "integer"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "implicit",
+          "ownerId",
+          "ownerName",
+          "ownerAvatar",
+          "level",
+          "benchmark",
+          "accountIds",
+          "value",
+          "sharedWith",
+          "notes",
+          "version"
+        ],
+        "title": "PortfolioRow",
         "type": "object"
       },
       "PriceStatus": {
@@ -2308,6 +2739,24 @@
         "title": "ReconciliationRow",
         "type": "object"
       },
+      "Saved": {
+        "additionalProperties": false,
+        "properties": {
+          "alsoShared": {
+            "title": "Alsoshared",
+            "type": "integer"
+          },
+          "view": {
+            "$ref": "#/components/schemas/ShareView"
+          }
+        },
+        "required": [
+          "view",
+          "alsoShared"
+        ],
+        "title": "Saved",
+        "type": "object"
+      },
       "SecretSet": {
         "additionalProperties": false,
         "properties": {
@@ -2457,6 +2906,91 @@
           "email"
         ],
         "title": "Setup",
+        "type": "object"
+      },
+      "ShareSave": {
+        "additionalProperties": false,
+        "properties": {
+          "groups": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Groups",
+            "type": "object"
+          },
+          "shareAccountsToo": {
+            "default": false,
+            "title": "Shareaccountstoo",
+            "type": "boolean"
+          },
+          "users": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Users",
+            "type": "object"
+          }
+        },
+        "title": "ShareSave",
+        "type": "object"
+      },
+      "ShareView": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/AccountName"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupGrant"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "hidden": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Hidden",
+            "type": "object"
+          },
+          "itemId": {
+            "title": "Itemid",
+            "type": "string"
+          },
+          "itemName": {
+            "title": "Itemname",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/UserGrant"
+            },
+            "title": "Users",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "itemId",
+          "itemName",
+          "users",
+          "groups",
+          "hidden",
+          "accounts"
+        ],
+        "title": "ShareView",
         "type": "object"
       },
       "SignIn": {
@@ -3869,6 +4403,50 @@
         "title": "UserChange",
         "type": "object"
       },
+      "UserGrant": {
+        "additionalProperties": false,
+        "properties": {
+          "avatar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "via": {
+            "items": {
+              "$ref": "#/components/schemas/Via"
+            },
+            "title": "Via",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "avatar",
+          "level",
+          "via"
+        ],
+        "title": "UserGrant",
+        "type": "object"
+      },
       "UserRow": {
         "additionalProperties": false,
         "properties": {
@@ -4015,6 +4593,30 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "Via": {
+        "additionalProperties": false,
+        "properties": {
+          "groupId": {
+            "title": "Groupid",
+            "type": "string"
+          },
+          "groupName": {
+            "title": "Groupname",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupId",
+          "groupName",
+          "level"
+        ],
+        "title": "Via",
         "type": "object"
       },
       "Zones": {
@@ -4340,6 +4942,52 @@
         ]
       }
     },
+    "/ui/api/accounts/{account_id}/counted": {
+      "put": {
+        "description": "A receiver's Count in my totals (§13.7); off by default.",
+        "operationId": "set_counted_ui_api_accounts__account_id__counted_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Counted"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Counted",
+        "tags": [
+          "sharing"
+        ]
+      }
+    },
     "/ui/api/accounts/{account_id}/holdings": {
       "get": {
         "operationId": "account_holdings_ui_api_accounts__account_id__holdings_get",
@@ -4623,6 +5271,143 @@
         "summary": "Account Series",
         "tags": [
           "accounts"
+        ]
+      }
+    },
+    "/ui/api/activity": {
+      "get": {
+        "operationId": "list_activity_ui_api_activity_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "account",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account"
+            }
+          },
+          {
+            "in": "query",
+            "name": "person",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Person"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ActivityItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Activity",
+        "tags": [
+          "activity"
+        ]
+      }
+    },
+    "/ui/api/activity/newer": {
+      "get": {
+        "description": "How many entries arrived after one the page shows: the +N new pill (§15.1.3).",
+        "operationId": "newer_ui_api_activity_newer_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "since",
+            "required": true,
+            "schema": {
+              "title": "Since",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Newer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Newer",
+        "tags": [
+          "activity"
         ]
       }
     },
@@ -5285,6 +6070,195 @@
         ]
       }
     },
+    "/ui/api/portfolios": {
+      "get": {
+        "operationId": "list_portfolios_ui_api_portfolios_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PortfolioRow"
+                  },
+                  "title": "Response List Portfolios Ui Api Portfolios Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Portfolios",
+        "tags": [
+          "portfolios"
+        ]
+      },
+      "post": {
+        "operationId": "create_portfolio_ui_api_portfolios_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPortfolio"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Portfolio",
+        "tags": [
+          "portfolios"
+        ]
+      }
+    },
+    "/ui/api/portfolios/{portfolio_id}": {
+      "delete": {
+        "operationId": "delete_portfolio_ui_api_portfolios__portfolio_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Portfolio",
+        "tags": [
+          "portfolios"
+        ]
+      },
+      "get": {
+        "operationId": "get_portfolio_ui_api_portfolios__portfolio_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Portfolio",
+        "tags": [
+          "portfolios"
+        ]
+      },
+      "patch": {
+        "operationId": "change_portfolio_ui_api_portfolios__portfolio_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Portfolio",
+        "tags": [
+          "portfolios"
+        ]
+      }
+    },
     "/ui/api/price-sources": {
       "get": {
         "operationId": "list_sources_ui_api_price_sources_get",
@@ -5913,6 +6887,125 @@
         "summary": "Change Settings",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/ui/api/shares/{kind}/{item_id}": {
+      "get": {
+        "operationId": "get_shares_ui_api_shares__kind___item_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "account",
+                "portfolio"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Shares",
+        "tags": [
+          "sharing"
+        ]
+      },
+      "put": {
+        "description": "Save: the dialog's grants replace the item's (§13.4).",
+        "operationId": "save_shares_ui_api_shares__kind___item_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "account",
+                "portfolio"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Shares",
+        "tags": [
+          "sharing"
         ]
       }
     },
