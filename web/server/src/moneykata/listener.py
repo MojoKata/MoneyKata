@@ -3,6 +3,7 @@ HTTP/2; and stopping cleanly on SIGTERM."""
 
 import asyncio
 import datetime as dt
+import errno
 import ipaddress
 import logging
 import os
@@ -124,4 +125,11 @@ async def run(app, config: Config, on_stop: Callable[[], Awaitable[None]]) -> No
         await stopping.wait()
         await on_stop()
 
-    await serve(app, hc, shutdown_trigger=trigger)
+    try:
+        await serve(app, hc, shutdown_trigger=trigger)
+    except OSError as e:
+        if e.errno == errno.EADDRINUSE:
+            raise RefuseStart(f"port {config.port} is already in use") from None
+        if e.errno == errno.EACCES:
+            raise RefuseStart(f"this account may not listen on port {config.port}") from None
+        raise

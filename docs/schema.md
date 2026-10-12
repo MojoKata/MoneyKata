@@ -84,6 +84,7 @@ The prefixes of the tables that exist.
 | Recon  | Reconciliation | A statement's closing date and balance, ticked off against the transactions.                 |
 | Secr   | Secret         | A secret sealed on its own: an API key, a password or a private key.                         |
 | Split  | Split          | A part of a transaction's amount given its own category.                                     |
+| Src    | PriceSource    | A source of daily prices: its name, whether it is on, and its order per class.               |
 | Txn    | Transaction    | One dated movement in an account.                                                            |
 | User   | User           | A person who signs in here, or a user of a linked server (with `linkId`).                    |
 

@@ -91,8 +91,9 @@ class Broker:
             running = None
         if running is loop:
             self._deliver(event, audience, session_hash)
-        else:
-            loop.call_soon_threadsafe(self._deliver, event, audience, session_hash)
+        elif not loop.is_closed():
+            with contextlib.suppress(RuntimeError):  # the loop closed as the server stopped
+                loop.call_soon_threadsafe(self._deliver, event, audience, session_hash)
 
     def end_session(self, session_hash: str, reason: str) -> None:
         """A session ended (signed out, disabled): its streams say so and close."""

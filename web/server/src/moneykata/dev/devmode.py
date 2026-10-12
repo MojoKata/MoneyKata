@@ -25,3 +25,31 @@ def after_start(server, seed: bool) -> None:
         from .seed import seed as run_seed
 
         run_seed(server)
+
+
+def enable_stub_prices(server) -> None:
+    """--stubs: the stub price source, first for every class it serves (§20.7)."""
+    import json
+
+    from sqlalchemy import false, select
+
+    from .. import ids
+    from ..prices import SOURCES
+    from ..store.entities.prices import PriceSource
+
+    cls = SOURCES["stub"]
+    with server.db.tx() as s:
+        row = s.scalars(
+            select(PriceSource).where(PriceSource.name == "stub", PriceSource.deleted == false())
+        ).first()
+        if row is None:
+            s.add(
+                PriceSource(
+                    id=ids.new_id("Src"),
+                    name="stub",
+                    enabled=True,
+                    preference=json.dumps({c: 0 for c in sorted(cls.classes)}),
+                )
+            )
+        else:
+            row.enabled = True

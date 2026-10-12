@@ -1,0 +1,35 @@
+"""Price sources and stored daily closes (requirements §7)."""
+
+from sqlalchemy import Boolean, Column, ForeignKey, Index, PrimaryKeyConstraint, Text, text
+
+from ..types import Day, Dec, UtcTimestamp
+from ._base import keyed, record, unique_live
+
+PriceSource = record(
+    "PriceSource",
+    "Src",
+    # The module that serves it (prices/<name>.py).
+    Column("name", Text, nullable=False),
+    Column("enabled", Boolean, nullable=False, server_default=text("0")),
+    # Its place in the order of preference for each class it serves: {"equity": 1, ...}.
+    Column("preference", Text, nullable=False, server_default=text("'{}'")),
+    Column("lastRunAt", UtcTimestamp),
+    Column("lastOkAt", UtcTimestamp),
+    Column("lastError", Text),
+    Column("createdById", Text, ForeignKey("User.id")),
+)
+unique_live(PriceSource, "name")
+
+# One close per instrument and market day, kept for ever (§7.6). A typed price is stored the
+# same way, with the source "manual".
+Price = keyed(
+    "Price",
+    Column("instrumentId", Text, ForeignKey("Instrument.id"), nullable=False),
+    Column("date", Day, nullable=False),
+    Column("close", Dec, nullable=False),
+    Column("source", Text, nullable=False),
+    Column("fetchedAt", UtcTimestamp, nullable=False),
+    Column("enteredById", Text, ForeignKey("User.id")),
+    PrimaryKeyConstraint("instrumentId", "date"),
+    Index("ix_Price_date", "date"),
+)

@@ -698,6 +698,35 @@
         "title": "CheckRow",
         "type": "object"
       },
+      "Close": {
+        "additionalProperties": false,
+        "properties": {
+          "close": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Close",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "close",
+          "source"
+        ],
+        "title": "Close",
+        "type": "object"
+      },
       "Done": {
         "additionalProperties": false,
         "properties": {
@@ -1686,6 +1715,20 @@
         "title": "NewReconciliation",
         "type": "object"
       },
+      "NewSource": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "NewSource",
+        "type": "object"
+      },
       "NewUser": {
         "additionalProperties": false,
         "properties": {
@@ -1879,6 +1922,43 @@
           "value"
         ],
         "title": "Point",
+        "type": "object"
+      },
+      "PriceStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "lastRefresh": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrefresh"
+          },
+          "running": {
+            "title": "Running",
+            "type": "boolean"
+          },
+          "sources": {
+            "title": "Sources",
+            "type": "integer"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lastRefresh",
+          "stale",
+          "sources",
+          "running"
+        ],
+        "title": "PriceStatus",
         "type": "object"
       },
       "Profile": {
@@ -2228,6 +2308,33 @@
         "title": "ReconciliationRow",
         "type": "object"
       },
+      "SecretSet": {
+        "additionalProperties": false,
+        "properties": {
+          "setAt": {
+            "format": "date-time",
+            "title": "Setat",
+            "type": "string"
+          },
+          "setBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setby"
+          }
+        },
+        "required": [
+          "setAt",
+          "setBy"
+        ],
+        "title": "SecretSet",
+        "type": "object"
+      },
       "Series": {
         "additionalProperties": false,
         "properties": {
@@ -2369,6 +2476,315 @@
           "password"
         ],
         "title": "SignIn",
+        "type": "object"
+      },
+      "SourceChange": {
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the source's key; null removes it",
+            "title": "Apikey"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "preference": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preference"
+          }
+        },
+        "title": "SourceChange",
+        "type": "object"
+      },
+      "SourceKind": {
+        "additionalProperties": false,
+        "properties": {
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution"
+          },
+          "classes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "fetches": {
+            "title": "Fetches",
+            "type": "boolean"
+          },
+          "keyUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyurl"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "needsKey": {
+            "title": "Needskey",
+            "type": "boolean"
+          },
+          "terms": {
+            "title": "Terms",
+            "type": "string"
+          },
+          "termsChecked": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termschecked"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "classes",
+          "needsKey",
+          "keyUrl",
+          "terms",
+          "termsChecked",
+          "attribution",
+          "fetches"
+        ],
+        "title": "SourceKind",
+        "type": "object"
+      },
+      "SourceRow": {
+        "additionalProperties": false,
+        "properties": {
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution"
+          },
+          "classes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "fetches": {
+            "title": "Fetches",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SecretSet"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "keyUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyurl"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lasterror"
+          },
+          "lastOkAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastokat"
+          },
+          "lastRunAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrunat"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "needsKey": {
+            "title": "Needskey",
+            "type": "boolean"
+          },
+          "preference": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Preference",
+            "type": "object"
+          },
+          "terms": {
+            "title": "Terms",
+            "type": "string"
+          },
+          "termsChecked": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termschecked"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "classes",
+          "needsKey",
+          "keyUrl",
+          "terms",
+          "termsChecked",
+          "attribution",
+          "fetches",
+          "id",
+          "enabled",
+          "preference",
+          "key",
+          "lastRunAt",
+          "lastOkAt",
+          "lastError",
+          "version"
+        ],
+        "title": "SourceRow",
+        "type": "object"
+      },
+      "SourcesView": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "items": {
+              "$ref": "#/components/schemas/SourceKind"
+            },
+            "title": "Available",
+            "type": "array"
+          },
+          "refreshTime": {
+            "title": "Refreshtime",
+            "type": "string"
+          },
+          "refreshZone": {
+            "title": "Refreshzone",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceRow"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "available",
+          "sources",
+          "refreshTime",
+          "refreshZone"
+        ],
+        "title": "SourcesView",
         "type": "object"
       },
       "SplitIn": {
@@ -3365,6 +3781,38 @@
           "version"
         ],
         "title": "TxnOut",
+        "type": "object"
+      },
+      "TypedPrice": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Price",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "price"
+        ],
+        "title": "TypedPrice",
         "type": "object"
       },
       "UserChange": {
@@ -4510,6 +4958,135 @@
         ]
       }
     },
+    "/ui/api/instruments/{instrument_id}/prices": {
+      "get": {
+        "operationId": "closes_ui_api_instruments__instrument_id__prices_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Close"
+                  },
+                  "title": "Response Closes Ui Api Instruments  Instrument Id  Prices Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Closes",
+        "tags": [
+          "prices"
+        ]
+      },
+      "post": {
+        "description": "A price from a statement, or typed, with its date (§7.3).",
+        "operationId": "type_price_ui_api_instruments__instrument_id__prices_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TypedPrice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Type Price",
+        "tags": [
+          "prices"
+        ]
+      }
+    },
     "/ui/api/invitations/accept": {
       "post": {
         "operationId": "invitation_accept_ui_api_invitations_accept_post",
@@ -4705,6 +5282,192 @@
         "summary": "Password Reset Confirm",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/ui/api/price-sources": {
+      "get": {
+        "operationId": "list_sources_ui_api_price_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Sources",
+        "tags": [
+          "prices"
+        ]
+      },
+      "post": {
+        "operationId": "add_source_ui_api_price_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Source",
+        "tags": [
+          "prices"
+        ]
+      }
+    },
+    "/ui/api/price-sources/{source_id}": {
+      "delete": {
+        "operationId": "remove_source_ui_api_price_sources__source_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Source",
+        "tags": [
+          "prices"
+        ]
+      },
+      "patch": {
+        "operationId": "change_source_ui_api_price_sources__source_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Source",
+        "tags": [
+          "prices"
+        ]
+      }
+    },
+    "/ui/api/prices/refresh": {
+      "post": {
+        "description": "Refresh prices: the daily task, now (§7.4).",
+        "operationId": "refresh_prices_ui_api_prices_refresh_post",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Refresh Prices",
+        "tags": [
+          "prices"
+        ]
+      }
+    },
+    "/ui/api/prices/status": {
+      "get": {
+        "operationId": "price_status_ui_api_prices_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Price Status",
+        "tags": [
+          "prices"
         ]
       }
     },

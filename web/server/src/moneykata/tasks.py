@@ -8,7 +8,7 @@ import logging
 import threading
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from zoneinfo import ZoneInfo
@@ -99,7 +99,7 @@ class ProviderLimits:
         self._lock = threading.Lock()
         self._clock = clock
 
-    def set(self, provider: str, limits: list[tuple[int, float]]) -> None:
+    def set(self, provider: str, limits: Sequence[tuple[int, float]]) -> None:
         with self._lock:
             self._windows[provider] = [Window(n, s) for n, s in limits]
 

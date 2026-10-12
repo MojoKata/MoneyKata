@@ -5,16 +5,18 @@ import asyncio
 import datetime as dt
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from . import listener, settings, timezones
 from .app import Server, create_app
-from .auth import users
+from .auth import sessions, users
 from .config import Config
+from .prices import refresh as pricing
 from .store import maintenance
 from .store.entities.core import TaskRun
+from .store.entities.users import OneTimeToken
 from .store.repos import ledger
-from .tasks import Daily, TaskContext
+from .tasks import Daily, Every, TaskContext
 from .tasks import TaskRun as Run
 
 log = logging.getLogger("moneykata")
@@ -63,15 +65,39 @@ def register_tasks(server: Server) -> None:
 
     server.tasks.register("backups", backup, Daily(setting_time("backupTime")), last.get("backups"))
 
+    def prune(ctx: TaskContext) -> None:
+        """Expired sessions and one-time tokens are removed outright (schema.md §4.4.1)."""
+        with server.db.tx() as s:
+            sessions.prune(s)
+            s.execute(delete(OneTimeToken).where(OneTimeToken.expiresAt <= sessions.now()))
+
+    server.tasks.register("pruning", prune, Every(3600), last.get("pruning"))
+
+    def price_time() -> tuple[dt.time, str]:
+        with server.db.read() as s:
+            return settings.time_of(s, "priceRefreshTime"), settings.get(s, "priceRefreshZone")
+
+    server.tasks.register(
+        "prices", lambda ctx: pricing.refresh(server, ctx), Daily(price_time), last.get("prices")
+    )
+
 
 def build(config: Config) -> Server:
     store = maintenance.open_store(config)
+    pricing.install()
     server = Server(config=config, store=store)
     with server.db.tx() as s:
         if users.ensure_default_admin(s):
             log.info("made the default admin: sign in as %s to set it up", users.DEFAULT_ADMIN)
         ledger.ensure_categories(s)
+    if config.dev and config.stubs:
+        from .dev import devmode
+
+        devmode.enable_stub_prices(server)
     register_tasks(server)
+    from .ui.prices import apply_egress
+
+    apply_egress(server)
     return server
 
 

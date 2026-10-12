@@ -8,6 +8,7 @@ from decimal import Decimal as D
 from sqlalchemy import select
 
 from .. import ids
+from ..prices.stub import walk
 from ..store.entities.accounts import (
     Account,
     Anchor,
@@ -122,16 +123,10 @@ def seed_accounts(s, people: dict, today: dt.date | None = None) -> None:
             ("VMFXX", "Vanguard Federal Money Market Fund", "money-market"),
         )
     }
-    prices = {"VTI": 238.0, "VXUS": 58.0, "BND": 72.0, "AAPL": 190.0, "FXAIX": 170.0}
 
     def price(sym: str, day: dt.date) -> D:
-        """A gentle deterministic walk, so trades have believable prices."""
-        n = (day - start).days
-        drift = {"VTI": 0.0004, "VXUS": 0.0002, "BND": 0.00005, "AAPL": 0.0005, "FXAIX": 0.0004}[
-            sym
-        ]
-        wiggle = ((n * 7919 + len(sym) * 104729) % 200 - 100) / 4000
-        return D(str(round(prices[sym] * (1 + drift * n + wiggle), 2)))
+        """The stub price source's walk, so the trades agree with --stubs' closes."""
+        return walk(sym, day)
 
     # ---- Alice's banking, kept from files ----
     checking = b.account(

@@ -321,6 +321,44 @@ def upgrade() -> None:
         batch_op.create_index("ix_OneTimeToken_userId", ["userId"], unique=False)
 
     op.create_table(
+        "PriceSource",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("name", sa.Text(), nullable=False),
+        sa.Column("enabled", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("preference", sa.Text(), server_default=sa.text("'{}'"), nullable=False),
+        sa.Column("lastRunAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("lastOkAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("lastError", sa.Text(), nullable=True),
+        sa.Column("createdById", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Src_*' AND length(id) = 30", name=op.f("ck_PriceSource_id")),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_PriceSource_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_PriceSource_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["createdById"], ["User.id"], name=op.f("fk_PriceSource_createdById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_PriceSource_deletedById_User")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_PriceSource")),
+        info={"prefix": "Src", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("PriceSource", schema=None) as batch_op:
+        batch_op.create_index(
+            "ux_PriceSource_name", ["name"], unique=True, sqlite_where=sa.text("NOT deleted")
+        )
+
+    op.create_table(
         "Secret",
         sa.Column("id", sa.Text(), nullable=False),
         sa.Column("recordType", sa.Text(), nullable=False),
@@ -430,6 +468,36 @@ def upgrade() -> None:
         batch_op.create_index("ix_Import_accountId", ["accountId"], unique=False)
 
     op.create_table(
+        "Price",
+        sa.Column("instrumentId", sa.Text(), nullable=False),
+        sa.Column("date", moneykata.store.types.Day(), nullable=False),
+        sa.Column("close", moneykata.store.types.Dec(), nullable=False),
+        sa.Column("source", sa.Text(), nullable=False),
+        sa.Column("fetchedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("enteredById", sa.Text(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint('deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Price_deleted_at")),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Price_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Price_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["enteredById"], ["User.id"], name=op.f("fk_Price_enteredById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["instrumentId"], ["Instrument.id"], name=op.f("fk_Price_instrumentId_Instrument")
+        ),
+        sa.PrimaryKeyConstraint("instrumentId", "date", name=op.f("pk_Price")),
+        info={"softDelete": True},
+    )
+    with op.batch_alter_table("Price", schema=None) as batch_op:
+        batch_op.create_index("ix_Price_date", ["date"], unique=False)
+
+    op.create_table(
         "Reconciliation",
         sa.Column("id", sa.Text(), nullable=False),
         sa.Column("accountId", sa.Text(), nullable=False),
@@ -492,7 +560,7 @@ def upgrade() -> None:
             ["userId"], ["User.id"], name=op.f("fk_UserGroups_userId_User"), ondelete="CASCADE"
         ),
         sa.PrimaryKeyConstraint("userId", "groupId", name=op.f("pk_UserGroups")),
-        info={"softDelete": True},
+        info={"softDelete": True, "pairs": True},
     )
     op.create_table(
         "Anchor",
@@ -792,7 +860,7 @@ def upgrade() -> None:
             ["userId"], ["User.id"], name=op.f("fk_TransactionTags_userId_User"), ondelete="CASCADE"
         ),
         sa.PrimaryKeyConstraint("transactionId", "userId", "tag", name=op.f("pk_TransactionTags")),
-        info={"softDelete": True},
+        info={"softDelete": True, "pairs": True},
     )
     op.create_table(
         "LotPicks",
@@ -820,7 +888,7 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("saleId", "lotId", name=op.f("pk_LotPicks")),
-        info={"softDelete": True},
+        info={"softDelete": True, "pairs": True},
     )
     # ### end Alembic commands ###
 

@@ -463,7 +463,7 @@ def account_series(
             first = today - dt.timedelta(days=RANGES[range])
         investing = atypes.investing(a.type)
         days = (today - first).days
-        step = 1 if days <= 400 and not investing else max(1, days // 120)
+        step = 1 if days <= 400 else max(1, days // 365)
         pts = valuation.series(s, ledger, investing, first, today, step)
         return Series(points=[Point(date=d, value=v) for d, v in pts], asOf=today)
 

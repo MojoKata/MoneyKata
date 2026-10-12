@@ -68,7 +68,7 @@ def pairs(name: str, *columns, **kw) -> Table:
         *columns,
         *soft_delete(name),
         Column("createdAt", UtcTimestamp, nullable=False),
-        info={"softDelete": True},
+        info={"softDelete": True, "pairs": True},
         **kw,
     )
 

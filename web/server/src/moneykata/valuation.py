@@ -29,14 +29,18 @@ class Price:
     stale: bool = False
 
 
-# A lookup of stored closes: (instrument ids, day) → {id: Price}. Prices (part 6) installs it.
+# Stored closes, installed by prices/refresh.py: the latest on a day, and a range of them.
 CloseLookup = Callable[[Session, list[str], dt.date], dict[str, Price]]
+CloseHistory = Callable[
+    [Session, list[str], dt.date, dt.date], dict[str, list[tuple[dt.date, Decimal]]]
+]
 _closes: list[CloseLookup] = []
+_history: list[CloseHistory] = []
 
 
-def use_closes(lookup: CloseLookup) -> None:
-    _closes.clear()
-    _closes.append(lookup)
+def use_closes(lookup: CloseLookup, history: CloseHistory | None = None) -> None:
+    _closes[:] = [lookup]
+    _history[:] = [history] if history else []
 
 
 def prices(s: Session, instrument_ids: list[str], day: dt.date | None = None) -> dict[str, Price]:
@@ -128,23 +132,108 @@ def account_value(s: Session, ledger, investing: bool, day: dt.date | None = Non
     return cash + sum((p.value or ZERO for p in positions(s, ledger, day)), ZERO)
 
 
+def price_points(
+    s: Session, instrument_ids: list[str], first: dt.date, last: dt.date
+) -> dict[str, list[tuple[dt.date, Decimal]]]:
+    """Every known price of each instrument up to last, oldest first, from the same sources
+    as `prices` and in the same precedence: an instrument with stored closes is valued from
+    them alone; one without, from statement values and trades."""
+    out: dict[str, list[tuple[dt.date, Decimal]]] = {i: [] for i in instrument_ids}
+    if not instrument_ids:
+        return out
+    closed: set[str] = set()
+    for iid, p in prices(s, instrument_ids, first).items():
+        out[iid].append((p.asOf, p.price))
+        if p.source in ("close", "manual", "fixed"):
+            closed.add(iid)
+    if _history:
+        for iid, rows in _history[0](s, instrument_ids, first, last).items():
+            out[iid] += rows
+            closed.add(iid)
+    others = [i for i in instrument_ids if i not in closed]
+    if others:
+        for h in s.scalars(
+            select(Holding).where(
+                Holding.instrumentId.in_(others),
+                Holding.deleted == false(),
+                Holding.asOf > first,
+                Holding.asOf <= last,
+                Holding.marketValue.is_not(None),
+            )
+        ):
+            if h.quantity:
+                out[h.instrumentId].append((h.asOf, h.marketValue / h.quantity))
+        statement = {iid for iid in others if out[iid]}
+        for t in s.scalars(
+            select(Transaction).where(
+                Transaction.instrumentId.in_(others),
+                Transaction.deleted == false(),
+                Transaction.price.is_not(None),
+                Transaction.date > first,
+                Transaction.date <= last,
+            )
+        ):
+            if t.instrumentId not in statement:
+                out[t.instrumentId].append((t.date, t.price))
+    for iid in out:
+        out[iid] = sorted(dict(out[iid]).items())
+    return out
+
+
 def series(
     s: Session, ledger, investing: bool, first: dt.date, last: dt.date, step_days: int = 1
 ) -> list[tuple[dt.date, Decimal]]:
-    """The account's value at the end of each day (or every step_days), for its chart."""
+    """The account's value at the end of each day (or every step_days), for its chart.
+    Positions change only on the days of trades and snapshots, so the ledger is replayed on
+    those days alone; prices are carried forward from the last known one."""
     cash = dict(balances.daily(ledger.opening(), ledger.transactions, first, last))
+    days = sorted(cash)
+    if step_days > 1:
+        days = sorted({*days[::step_days], last})
     if not investing:
-        days = sorted(cash)[::step_days] if step_days > 1 else sorted(cash)
-        if days and days[-1] != last:
-            days.append(last)
         return [(d, cash[d]) for d in days]
+    changes = sorted(
+        {t.date for t in ledger.transactions if t.instrumentId and first < t.date <= last}
+        | {h.asOf for h in ledger.snapshots if first < h.asOf <= last}
+    )
+    held: list[tuple[dt.date, dict[str, Decimal]]] = [(first, _positions_on(ledger, first))]
+    for day in changes:
+        held.append((day, _positions_on(ledger, day)))
+    ids_ = sorted({i for _, pos in held for i in pos})
+    points = price_points(s, ids_, first, last)
     out = []
-    day = first
-    while day <= last:
-        out.append(
-            (day, cash[day] + sum((p.value or ZERO for p in positions(s, ledger, day)), ZERO))
-        )
-        day += dt.timedelta(days=step_days)
-    if out and out[-1][0] != last:
-        out.append((last, account_value(s, ledger, True, last)))
+    h_i = 0
+    cursor = {i: 0 for i in ids_}
+    current: dict[str, Decimal | None] = {i: None for i in ids_}
+    for day in days:
+        while h_i + 1 < len(held) and held[h_i + 1][0] <= day:
+            h_i += 1
+        for iid in ids_:
+            pts = points[iid]
+            while cursor[iid] < len(pts) and pts[cursor[iid]][0] <= day:
+                current[iid] = pts[cursor[iid]][1]
+                cursor[iid] += 1
+        value = cash[day]
+        for iid, qty in held[h_i][1].items():
+            if current.get(iid) is not None:
+                value += (qty * current[iid]).quantize(CENT)
+        out.append((day, value))
     return out
+
+
+def _positions_on(ledger, day: dt.date) -> dict[str, Decimal]:
+    from .ledger import lots as lot_replay
+
+    txns = [t for t in ledger.transactions if t.date <= day]
+    used = {t.id for t in txns}
+    return lot_replay.replay(
+        ledger.account.lotMethod,
+        txns,
+        [
+            x
+            for x in ledger.lots
+            if x.transactionId in used or (x.transactionId is None and x.acquiredOn <= day)
+        ],
+        ledger.picks,
+        [h for h in ledger.snapshots if h.asOf <= day],
+    ).positions()

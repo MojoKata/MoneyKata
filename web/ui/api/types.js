@@ -107,6 +107,13 @@
  */
 
 /**
+ * @typedef {Object} Close
+ * @property {string} date
+ * @property {string} close
+ * @property {string} source
+ */
+
+/**
  * @typedef {Object} Done
  * @property {number} changed
  */
@@ -293,6 +300,11 @@
  */
 
 /**
+ * @typedef {Object} NewSource
+ * @property {string} name
+ */
+
+/**
  * @typedef {Object} NewUser
  * @property {string} displayName
  * @property {string} username
@@ -340,6 +352,14 @@
  * @typedef {Object} Point
  * @property {string} date
  * @property {string} value
+ */
+
+/**
+ * @typedef {Object} PriceStatus
+ * @property {(string | null)} lastRefresh
+ * @property {boolean} stale
+ * @property {number} sources
+ * @property {boolean} running
  */
 
 /**
@@ -399,6 +419,12 @@
  */
 
 /**
+ * @typedef {Object} SecretSet
+ * @property {string} setAt
+ * @property {(string | null)} setBy
+ */
+
+/**
  * @typedef {Object} Series
  * @property {Array<Point>} points
  * @property {string} asOf
@@ -432,6 +458,55 @@
  * @typedef {Object} SignIn
  * @property {string} login
  * @property {string} password
+ */
+
+/**
+ * @typedef {Object} SourceChange
+ * @property {(boolean | null)} [enabled]
+ * @property {(Object<string, number> | null)} [preference]
+ * @property {(string | null)} [apiKey]
+ */
+
+/**
+ * @typedef {Object} SourceKind
+ * @property {string} name
+ * @property {string} label
+ * @property {Array<string>} classes
+ * @property {boolean} needsKey
+ * @property {(string | null)} keyUrl
+ * @property {string} terms
+ * @property {(string | null)} termsChecked
+ * @property {(string | null)} attribution
+ * @property {boolean} fetches
+ */
+
+/**
+ * @typedef {Object} SourceRow
+ * @property {string} name
+ * @property {string} label
+ * @property {Array<string>} classes
+ * @property {boolean} needsKey
+ * @property {(string | null)} keyUrl
+ * @property {string} terms
+ * @property {(string | null)} termsChecked
+ * @property {(string | null)} attribution
+ * @property {boolean} fetches
+ * @property {string} id
+ * @property {boolean} enabled
+ * @property {Object<string, number>} preference
+ * @property {(SecretSet | null)} key
+ * @property {(string | null)} lastRunAt
+ * @property {(string | null)} lastOkAt
+ * @property {(string | null)} lastError
+ * @property {number} version
+ */
+
+/**
+ * @typedef {Object} SourcesView
+ * @property {Array<SourceKind>} available
+ * @property {Array<SourceRow>} sources
+ * @property {string} refreshTime
+ * @property {string} refreshZone
  */
 
 /**
@@ -547,6 +622,12 @@
  * @property {Array<string>} tags
  * @property {string} level
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} TypedPrice
+ * @property {string} date
+ * @property {(number | string)} price
  */
 
 /**

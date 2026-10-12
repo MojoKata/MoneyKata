@@ -77,7 +77,7 @@ def check_metadata(metadata: MetaData, text: str | None = None) -> list[str]:
 
 def _check_names(t: Table) -> list[str]:
     out = []
-    pairs = "id" not in t.c and len(t.primary_key.columns) > 1
+    pairs = bool(t.info.get("pairs"))
     if not re.match(r"^[A-Z][A-Za-z]*$", t.name) and t.name not in INFRA:
         out.append(f"table {t.name}: names are capitalized words")
     if re.search(r"[A-Z]{3}", t.name):
