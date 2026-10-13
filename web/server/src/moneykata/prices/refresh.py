@@ -126,9 +126,9 @@ def for_class(sources: list[PriceSource], cls: str) -> list[PriceSource]:
 # ---------- what needs a price ----------
 
 
-def priced(s: Session) -> list[tuple[Instrument, dt.date]]:
+def priced(s: Session, benchmarks: bool = True) -> list[tuple[Instrument, dt.date]]:
     """Every instrument held in a live account, or used as a benchmark, with the first day
-    its history is wanted."""
+    its history is wanted. Without benchmarks: only what is held."""
     firsts: dict[str, dt.date] = {}
     for iid, day in s.execute(
         select(Transaction.instrumentId, func.min(Transaction.date))
@@ -150,7 +150,9 @@ def priced(s: Session) -> list[tuple[Instrument, dt.date]]:
         firsts[iid] = min(day, firsts.get(iid, day))
     today = clock.today()
     for inst in s.scalars(
-        select(Instrument).where(Instrument.symbol.in_(BENCHMARKS), Instrument.deleted == false())
+        select(Instrument).where(
+            Instrument.symbol.in_(BENCHMARKS if benchmarks else ()), Instrument.deleted == false()
+        )
     ):
         firsts.setdefault(inst.id, today - dt.timedelta(days=BACKFILL_DAYS))
     insts = {i.id: i for i in s.scalars(select(Instrument).where(Instrument.id.in_(firsts)))}
@@ -288,7 +290,9 @@ def status(s: Session, dev: bool) -> dict:
     """The header's last refresh and whether held prices are stale (§15.5)."""
     rows = enabled(s, dev)
     last = max((r.lastOkAt for r in rows if r.lastOkAt), default=None)
-    ids = [i.id for i, _ in priced(s)]
+    # Held prices only: the benchmarks every server watches leave a new server, which holds
+    # nothing, with nothing to be stale.
+    ids = [i.id for i, _ in priced(s, benchmarks=False)]
     closes = stored_closes(s, ids, clock.today())
     stale = any(p.stale for p in closes.values()) or (bool(ids) and len(closes) < len(ids))
     return {"lastRefresh": last, "stale": stale and bool(ids), "sources": len(rows)}

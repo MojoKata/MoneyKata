@@ -6,7 +6,7 @@ import pytest
 from conftest import make_user, sign_in
 from sqlalchemy import func, select
 
-from moneykata import clock, ids, valuation
+from moneykata import clock, figures, ids, valuation
 from moneykata.ledger.types import investing
 from moneykata.prices import SOURCES, SourceError, TickerSource, register
 from moneykata.prices import refresh as pricing
@@ -259,3 +259,13 @@ def test_typed_prices_win_and_only_for_holders(server):
 
 def test_sources_registered():
     assert {"tiingo", "coinbase", "manual", "stub"} <= set(SOURCES)
+
+
+def test_a_server_that_holds_nothing_has_no_stale_prices(admin_client, server):
+    with server.db.tx() as s:
+        figures.ensure_benchmarks(s)  # as a real start does
+    with server.db.read() as s:
+        assert pricing.priced(s), "the benchmarks are watched from the start"
+    assert admin_client.get("/ui/api/prices/status").json()["stale"] is False
+    attention = admin_client.get("/ui/api/dashboard").json()["attention"]
+    assert all(a["kind"] != "stale-prices" for a in attention)
