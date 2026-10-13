@@ -109,9 +109,16 @@ export default function Users() {
                         (e) => toast(e.message),
                       )}>Resend invitation</button>
                 `
-                : html`<span class="small dim">${
-                  x.lastSignInAt ? 'signed in ' + ago(x.lastSignInAt) : 'never signed in'
-                }</span>`}
+                : html`
+                  ${x.twoStep
+                    ? html`
+                      <span class="pill ok">two-step</span>
+                    `
+                    : null}<span
+                    class="small dim">${x.lastSignInAt
+                      ? 'signed in ' + ago(x.lastSignInAt)
+                      : 'never signed in'}</span>
+                `}
                       <button type="button" class="btn sm" onClick=${() =>
                         openDialog(EditUser, { user: x, groups: g }).then((r) =>
                           r && reload()
@@ -216,15 +223,67 @@ function EditUser({ close, user, groups }) {
   const [displayName, setName] = useState(user.displayName);
   const [email, setEmail] = useState(user.email || '');
   const [ids, setIds] = useState(/** @type {string[]} */ (user.groupIds));
+  const [password, setPassword] = useState('');
+  const [needPassword, setNeed] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const save = useSubmit(async () => {
+    if (resetting) {
+      // The last resort when the app and the recovery codes are lost (S10.1.6).
+      if (needPassword) await api.post('/session/reauth', { password });
+      try {
+        close(await api.del(`/users/${user.id}/two-step`));
+      } catch (e) {
+        if (/** @type {any} */ (e).code === 'reauth-required') {
+          setNeed(true);
+          return;
+        }
+        throw e;
+      }
+      toast(`Two-step sign-in is off for ${user.displayName}`);
+      return;
+    }
     const body = /** @type {Record<string, any>} */ ({ displayName, groupIds: ids });
     if (user.invited) body.email = email;
     close(await api.patch(`/users/${user.id}`, body, user.version));
     toast('Saved');
   });
+  if (resetting) {
+    return html`
+      <${Dialog} title="Reset two-step sign-in" close=${close}
+        onSubmit=${() => save.run().catch(() => {})}
+        footer=${html`
+          <button type="button" class="btn" onClick=${() =>
+            setResetting(false)}>Back</button> <button class="btn danger"
+            disabled=${save
+              .busy}>Turn it off</button>
+        `}>
+        <p>This turns off two-step sign-in for ${user.displayName}, so their password alone signs
+          them in, and signs them out everywhere. Do it only when they have lost both their app and
+          their recovery codes, and you know it is them asking.</p>
+        <p class="small dim">They get an email saying so, and can turn it on again in Profile.</p>
+        ${needPassword
+          ? html`
+            <${Field} label="Your password" id="reauth-password"
+              hint="Asked again: it was over 10 minutes ago.">
+              <${Input} type="password" value=${password} onInput=${setPassword}
+                autocomplete="current-password" required />
+              </${Field}>
+          `
+          : null}
+        <${FormError} error=${save.error} />
+      </${Dialog}>
+    `;
+  }
   return html`
     <${Dialog} title=${user.displayName} close=${close} onSubmit=${() => save.run().catch(() => {})}
-      footer=${html`<button class="btn primary" disabled=${save.busy}>Save</button>`}>
+      footer=${html`${
+        user.twoStep
+          ? html`
+            <button type="button" class="btn" style=${{ marginRight: 'auto' }}
+              onClick=${() => setResetting(true)}>Reset two-step</button>
+          `
+          : null
+      }<button class="btn primary" disabled=${save.busy}>Save</button>`}>
       <${Field} label="Name" id="display-name" error=${errAt(save.error, 'displayName')}>
         <${Input} value=${displayName} onInput=${setName} required />
         </${Field}>

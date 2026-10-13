@@ -5,12 +5,12 @@ import asyncio
 import time
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from .. import activity, settings, timezones
-from ..auth import passwords, sessions
+from ..auth import passwords, sessions, twostep
 from ..auth import users as accounts
-from ..errors import Problem
+from ..errors import Problem, refuse
 from ..ratelimit import Window, too_many
 from ..store.entities.users import User
 from .conventions import Model
@@ -50,6 +50,17 @@ class SessionInfo(Model):
 class SignIn(Model):
     login: str
     password: str
+
+
+class TwoStepNeeded(Model):
+    """The password was right and two-step sign-in is on: the code comes next (S10.1.6)."""
+
+    twoStepToken: str
+
+
+class TwoStepCode(Model):
+    token: str
+    code: str
 
 
 class Setup(Model):
@@ -123,7 +134,11 @@ def get_session(request: Request, c: Caller = Depends(caller_in_setup)):
     return info(request, c.user, c.admin)
 
 
-@router.post("/session", response_model=SessionInfo, responses={401: {}, 403: {}, 429: {}})
+@router.post(
+    "/session",
+    response_model=SessionInfo,
+    responses={202: {"model": TwoStepNeeded}, 401: {}, 403: {}, 429: {}},
+)
 def sign_in(body: SignIn, request: Request):
     srv = server(request)
     guard = srv.sign_in
@@ -135,41 +150,95 @@ def sign_in(body: SignIn, request: Request):
     delay = guard.address_delay(address)
     if delay:
         time.sleep(delay)
+    two_step = None
     with srv.db.tx() as s:
         user = accounts.by_login(s, login)
         ok = passwords.verify(user.passwordHash if user else None, body.password)
         if not ok:
-            failures = settings.get(s, "lockoutFailures")
-            minutes = settings.get(s, "lockoutMinutes")
-            now_locked = guard.failed(login, address, failures, minutes)
-            activity.record(
-                s,
-                "signin.locked" if now_locked else "signin.failed",
-                actor=None,
-                subject_kind="user" if user else None,
-                subject_id=user.id if user else None,
-                owner=user.id if user else None,
-                for_admins=True,
-            )
+            _failed(s, guard, login, address, user)
             failed = True
         else:
             failed = False
             if not user.active:
                 raise Problem(403, "account-disabled", "This account is disabled.")
-            guard.succeeded(login)
             if passwords.needs_rehash(user.passwordHash):
                 user.passwordHash = passwords.hash_password(body.password)
-            admin = accounts.is_admin(s, user.id)
-            token = sessions.create(s, user.id, admin, user.needsSetup)
-            user.lastSignInAt = sessions.now()
-            activity.record(
-                s, "signin", actor=user.id, subject_kind="user", subject_id=user.id, owner=user.id
-            )
+            if twostep.is_on(user):
+                # No session until the code: failed codes count toward the same lockout.
+                two_step = twostep.start_sign_in(s, user)
+            else:
+                guard.succeeded(login)
+                admin, token = _signed_in(s, user)
     if failed:
         # Committed above: failures and lockouts stay in Activity.
         raise Problem(401, "bad-credentials", "The username or password is not right.")
+    if two_step:
+        return JSONResponse(TwoStepNeeded(twoStepToken=two_step).model_dump(), status_code=202)
     set_cookie(request, token)
     return info(request, user, admin)
+
+
+@router.post("/session/two-step", response_model=SessionInfo, responses={401: {}, 429: {}})
+def sign_in_code(body: TwoStepCode, request: Request):
+    """The second step: a code from the app, or one of the recovery codes (S10.1.6)."""
+    srv = server(request)
+    guard = srv.sign_in
+    address = _address(request)
+    with srv.db.tx() as s:
+        user = twostep.pending_user(s, body.token)
+        login = user.username
+        locked = guard.locked(login)
+        if locked:
+            raise too_many(locked, "failed sign-ins for this user")
+        if not user.active or user.deleted:
+            raise Problem(403, "account-disabled", "This account is disabled.")
+        how = twostep.check_code(s, srv.keys.secrets, user, body.code)
+        if how is None:
+            _failed(s, guard, login, address, user)
+        else:
+            guard.succeeded(login)
+            twostep.finish_sign_in(s, body.token)
+            admin, token = _signed_in(
+                s, user, "signin" if how == "code" else "signin.recovery-code"
+            )
+    if how is None:
+        delay = guard.address_delay(address)
+        if delay:
+            time.sleep(delay)
+        raise refuse("code", "code-wrong", "That code isn't right.", 401)
+    set_cookie(request, token)
+    return info(request, user, admin)
+
+
+def _failed(s, guard, login: str, address: str, user: User | None) -> None:
+    failures = settings.get(s, "lockoutFailures")
+    minutes = settings.get(s, "lockoutMinutes")
+    now_locked = guard.failed(login, address, failures, minutes)
+    activity.record(
+        s,
+        "signin.locked" if now_locked else "signin.failed",
+        actor=None,
+        subject_kind="user" if user else None,
+        subject_id=user.id if user else None,
+        owner=user.id if user else None,
+        for_admins=True,
+    )
+
+
+def _signed_in(s, user: User, kind: str = "signin") -> tuple[bool, str]:
+    admin = accounts.is_admin(s, user.id)
+    token = sessions.create(s, user.id, admin, user.needsSetup)
+    user.lastSignInAt = sessions.now()
+    activity.record(
+        s,
+        kind,
+        actor=user.id,
+        subject_kind="user",
+        subject_id=user.id,
+        owner=user.id,
+        for_admins=kind != "signin",
+    )
+    return admin, token
 
 
 @router.delete("/session", status_code=204)

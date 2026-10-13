@@ -22,7 +22,7 @@ A new invitation link, for someone who hasn't joined yet.
 
 ## Edit
 
-A user's name and groups, and their email before they join.
+A user's name and groups, and their email before they join. **two-step** beside a user means they sign in with a code from an app; **Reset two-step** in Edit turns it off when they've lost the app and their recovery codes.
 
 ## Active {#active}
 

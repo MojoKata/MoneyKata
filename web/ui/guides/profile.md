@@ -1,6 +1,6 @@
 # Profile
 
-Your name, email, password and how MoneyKata shows things to you.
+Your name, email, password, two-step sign-in and how MoneyKata shows things to you.
 
 ![Profile](shots/profile.webp)
 
@@ -47,3 +47,11 @@ Your password now.
 ## New password
 
 At least the minimum length, and not a common password. Changing it signs out your other sessions.
+
+## Two-step sign-in {#two-step}
+
+After your password, a code from an authenticator app on your phone, so a stolen password alone can't sign in. **Turn on** shows a QR code to scan; **New recovery codes** replaces the ten codes that sign in when the phone is lost. Turning it on or off emails you.
+
+## Your password {#two-step-password}
+
+Asked again when you last gave it more than 10 minutes ago.

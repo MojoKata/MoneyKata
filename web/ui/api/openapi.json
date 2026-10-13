@@ -3313,6 +3313,9 @@
             "title": "Timezone",
             "type": "string"
           },
+          "twoStep": {
+            "$ref": "#/components/schemas/TwoStep"
+          },
           "username": {
             "title": "Username",
             "type": "string"
@@ -3339,6 +3342,7 @@
           "birthYear",
           "spouseId",
           "alertEmails",
+          "twoStep",
           "people",
           "version"
         ],
@@ -3573,6 +3577,24 @@
           "version"
         ],
         "title": "ReconciliationRow",
+        "type": "object"
+      },
+      "RecoveryCodes": {
+        "additionalProperties": false,
+        "description": "Shown once: only their hashes are kept.",
+        "properties": {
+          "codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Codes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "codes"
+        ],
+        "title": "RecoveryCodes",
         "type": "object"
       },
       "ReturnRow": {
@@ -4437,6 +4459,111 @@
           "otherId"
         ],
         "title": "TransferLink",
+        "type": "object"
+      },
+      "TwoStep": {
+        "additionalProperties": false,
+        "properties": {
+          "on": {
+            "title": "On",
+            "type": "boolean"
+          },
+          "recoveryCodesLeft": {
+            "title": "Recoverycodesleft",
+            "type": "integer"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          }
+        },
+        "required": [
+          "on",
+          "since",
+          "recoveryCodesLeft"
+        ],
+        "title": "TwoStep",
+        "type": "object"
+      },
+      "TwoStepCode": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "code"
+        ],
+        "title": "TwoStepCode",
+        "type": "object"
+      },
+      "TwoStepConfirm": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "TwoStepConfirm",
+        "type": "object"
+      },
+      "TwoStepNeeded": {
+        "additionalProperties": false,
+        "description": "The password was right and two-step sign-in is on: the code comes next (S10.1.6).",
+        "properties": {
+          "twoStepToken": {
+            "title": "Twosteptoken",
+            "type": "string"
+          }
+        },
+        "required": [
+          "twoStepToken"
+        ],
+        "title": "TwoStepNeeded",
+        "type": "object"
+      },
+      "TwoStepSetup": {
+        "additionalProperties": false,
+        "description": "What an authenticator app needs: the QR code, or the key typed by hand.",
+        "properties": {
+          "qrImage": {
+            "title": "Qrimage",
+            "type": "string"
+          },
+          "secret": {
+            "title": "Secret",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret",
+          "uri",
+          "qrImage"
+        ],
+        "title": "TwoStepSetup",
         "type": "object"
       },
       "TxnChange": {
@@ -5447,6 +5574,10 @@
             ],
             "title": "Reactivationaskedat"
           },
+          "twoStep": {
+            "title": "Twostep",
+            "type": "boolean"
+          },
           "username": {
             "title": "Username",
             "type": "string"
@@ -5465,6 +5596,7 @@
           "active",
           "admin",
           "invited",
+          "twoStep",
           "groupIds",
           "lastSignInAt",
           "reactivationAskedAt",
@@ -7719,6 +7851,103 @@
         ]
       }
     },
+    "/ui/api/profile/two-step": {
+      "delete": {
+        "operationId": "two_step_off_ui_api_profile_two_step_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Two Step Off",
+        "tags": [
+          "profile"
+        ]
+      },
+      "post": {
+        "description": "Turning two-step on starts here; it is on once a code from the app is confirmed.",
+        "operationId": "two_step_begin_ui_api_profile_two_step_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoStepSetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Two Step Begin",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/ui/api/profile/two-step/confirm": {
+      "post": {
+        "operationId": "two_step_confirm_ui_api_profile_two_step_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoStepConfirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Two Step Confirm",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/ui/api/profile/two-step/recovery-codes": {
+      "post": {
+        "description": "New codes replace every old one.",
+        "operationId": "two_step_codes_ui_api_profile_two_step_recovery_codes_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Two Step Codes",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
     "/ui/api/reactivation-requests": {
       "post": {
         "operationId": "reactivation_request_ui_api_reactivation_requests_post",
@@ -7866,6 +8095,16 @@
             },
             "description": "Successful Response"
           },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoStepNeeded"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
           "401": {
             "description": "Unauthorized"
           },
@@ -7962,6 +8201,54 @@
           }
         },
         "summary": "Setup",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/ui/api/session/two-step": {
+      "post": {
+        "description": "The second step: a code from the app, or one of the recovery codes (S10.1.6).",
+        "operationId": "sign_in_code_ui_api_session_two_step_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoStepCode"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Sign In Code",
         "tags": [
           "session"
         ]
@@ -8947,6 +9234,49 @@
           }
         },
         "summary": "Resend",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/ui/api/users/{user_id}/two-step": {
+      "delete": {
+        "description": "An admin's reset, the last resort when the app and the recovery codes are lost\n(S10.1.6): two-step is off, and the user's sessions end.",
+        "operationId": "reset_two_step_ui_api_users__user_id__two_step_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Two Step",
         "tags": [
           "users"
         ]

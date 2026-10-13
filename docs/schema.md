@@ -145,7 +145,8 @@ Records are never removed from the database: they are marked deleted. The except
    a deleted name or username can be used again.
 4. **Exceptions**, removed outright:
    1. **sessions and one-time tokens** (invitation, sign-up confirmation, reset, email
-      change), when used or expired;
+      change, a sign-in waiting for its two-step code), when used or expired, and two-step
+      recovery codes when used or replaced;
    2. **a secret's old ciphertext** when the secret is replaced or removed, so an old API key
       or token can't be recovered from the database or a later backup;
    3. **linked copies**: another household's data, removed with the share or link it came

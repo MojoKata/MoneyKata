@@ -313,3 +313,76 @@ def test_categorise_and_share_through_the_app(page):
     page.get_by_role("button", name="Save").click()
     page.wait_for_selector("text=Sharing saved")
     assert page.problems == []
+
+
+def signed_in_page(page, username: str):
+    """Another browser context, signed in as one of the seed users, watched like `page`."""
+    ctx = page.context.browser.new_context(
+        ignore_https_errors=True, viewport={"width": 1440, "height": 900}
+    )
+    pg = ctx.new_page()
+    pg.problems, pg.api_times, pg.base = [], deque(), page.base
+    pg.on("pageerror", lambda e: pg.problems.append(f"page error on {pg.url}: {e}"))
+    pg.on(
+        "console",
+        lambda m: (
+            m.type == "error"
+            and not LOAD_FAILED.search(m.text)
+            and pg.problems.append(f"console on {pg.url}: {m.text}")
+        ),
+    )
+    pg.goto(page.base + "/ui/")
+    pg.fill("#f-username-or-email", username)
+    pg.fill("#f-password", "moneykata-dev")
+    pg.click("button.btn.primary")
+    return pg
+
+
+def test_two_step_sign_in_through_the_app(page):
+    """Turn it on in Profile, sign in with a recovery code, and an admin resets it (S10.1.6)."""
+    from moneykata.auth import twostep
+
+    bob = signed_in_page(page, "bob")
+    bob.wait_for_selector(".side")
+    visit(bob, "/ui/profile")
+    bob.locator("#two-step").get_by_role("button", name="Turn on").click()
+    bob.wait_for_selector(".dialog .qr img")
+    wait_guide(bob, "dialog-two-step")
+    check_guide(bob, ".dialog", "Turn on two-step sign-in")
+    seed = bob.inner_text(".dialog code.key").replace(" ", "")
+    bob.fill("#f-two-step-code", "000000")
+    bob.locator(".dialog").get_by_role("button", name="Turn on").click()
+    bob.wait_for_selector(".dialog .err")
+    bob.fill("#f-two-step-code", twostep.code_at(seed, int(time.time()) // 30))
+    bob.locator(".dialog").get_by_role("button", name="Turn on").click()
+    bob.wait_for_selector(".dialog ul.codes")
+    wait_guide(bob, "dialog-recovery-codes")
+    codes = bob.locator(".dialog ul.codes code").all_inner_texts()
+    assert len(codes) == 10
+    bob.get_by_role("button", name="I've saved them").click()
+    bob.wait_for_selector("#two-step .pill.ok")
+    assert "10 recovery codes left" in bob.inner_text("#two-step")
+    assert bob.problems == []
+    bob.context.close()
+
+    again = signed_in_page(page, "bob")
+    again.wait_for_selector("text=Two-step sign-in")
+    again.get_by_role("button", name="Use a recovery code").click()
+    again.fill("#f-recovery-code", codes[3])
+    again.get_by_role("button", name="Sign in", exact=True).click()
+    again.wait_for_selector(".side")
+    assert again.problems == []
+    again.context.close()
+
+    admin = signed_in_page(page, "admin")
+    admin.wait_for_selector(".side")
+    visit(admin, "/ui/users")
+    row = admin.locator("tr", has_text="bob@")
+    assert row.locator(".pill.ok", has_text="two-step").count() == 1
+    row.get_by_role("button", name="Edit").click()
+    admin.get_by_role("button", name="Reset two-step").click()
+    admin.get_by_role("button", name="Turn it off").click()
+    admin.wait_for_selector("text=Two-step sign-in is off for")
+    row.locator(".pill.ok", has_text="two-step").wait_for(state="detached")
+    assert admin.problems == []
+    admin.context.close()

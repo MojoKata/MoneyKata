@@ -22,6 +22,8 @@ class User(Record):
     alertEmails: str = "daily"
     lastSignInAt: dt.datetime | None = None
     reactivationAskedAt: dt.datetime | None = None
+    twoStepAt: dt.datetime | None = None
+    totpLastStep: int | None = None
 
 
 @dataclass(kw_only=True, eq=False)
@@ -62,3 +64,10 @@ class OneTimeToken:
     createdAt: dt.datetime
     expiresAt: dt.datetime
     data: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class RecoveryCode:
+    codeHash: str
+    userId: str
+    createdAt: dt.datetime

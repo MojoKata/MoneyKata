@@ -345,3 +345,47 @@ def test_a_backup_after_reads_still_writes_its_copy(store, keyed_config):
         with store.db.read() as s:
             s.scalars(select(User)).all()
     maintenance.backup(keyed_config, store)
+
+
+def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
+    """Revision 0002 rebuilds OneTimeToken to allow 'two-step': what's in flight is kept, and
+    the rebuilt table is the one the declarations make."""
+    from alembic import command
+
+    engine = make_engine(tmp_path / "old.db", None)
+    with engine.connect() as conn:
+        command.upgrade(migrate.alembic_config(conn), "0001")
+        conn.commit()
+        uid = ids.new_id("User")
+        conn.exec_driver_sql(
+            'INSERT INTO "User" (id, username, "displayName", version, "createdAt", '
+            f"\"updatedAt\", deleted) VALUES ('{uid}', 'alice', 'Alice', 1, "
+            "'2026-10-01 00:00:00', '2026-10-01 00:00:00', 0)"
+        )
+        conn.exec_driver_sql(
+            f"INSERT INTO \"OneTimeToken\" VALUES ('h1', 'invitation', '{uid}', NULL, "
+            "'2026-10-01 00:00:00', '2030-01-01 00:00:00')"
+        )
+        conn.commit()
+        command.upgrade(migrate.alembic_config(conn), "head")
+        conn.commit()
+        assert conn.exec_driver_sql('SELECT purpose FROM "OneTimeToken"').scalars().all() == [
+            "invitation"
+        ]
+        conn.exec_driver_sql(
+            f"INSERT INTO \"OneTimeToken\" VALUES ('h2', 'two-step', '{uid}', NULL, "
+            "'2026-10-01 00:00:00', '2030-01-01 00:00:00')"
+        )
+        migrated = conn.exec_driver_sql(
+            "SELECT sql FROM sqlite_master WHERE name = 'OneTimeToken'"
+        ).scalar_one()
+    engine.dispose()
+    fresh = make_engine(tmp_path / "fresh.db", None)
+    metadata.create_all(fresh, tables=[metadata.tables["User"], metadata.tables["OneTimeToken"]])
+    with fresh.connect() as conn:
+        made = conn.exec_driver_sql(
+            "SELECT sql FROM sqlite_master WHERE name = 'OneTimeToken'"
+        ).scalar_one()
+    fresh.dispose()
+    squash = lambda sql: " ".join(sql.replace('"', "").split())  # noqa: E731
+    assert squash(migrated) == squash(made)

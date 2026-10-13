@@ -609,6 +609,7 @@
  * @property {(number | null)} birthYear
  * @property {(string | null)} spouseId
  * @property {string} alertEmails
+ * @property {TwoStep} twoStep
  * @property {Array<Person>} people
  * @property {number} version
  */
@@ -649,6 +650,12 @@
  * @property {string} difference
  * @property {(string | null)} finishedAt
  * @property {number} version
+ */
+
+/**
+ * Shown once: only their hashes are kept.
+ * @typedef {Object} RecoveryCodes
+ * @property {Array<string>} codes
  */
 
 /**
@@ -821,6 +828,38 @@
  */
 
 /**
+ * @typedef {Object} TwoStep
+ * @property {boolean} on
+ * @property {(string | null)} since
+ * @property {number} recoveryCodesLeft
+ */
+
+/**
+ * @typedef {Object} TwoStepCode
+ * @property {string} token
+ * @property {string} code
+ */
+
+/**
+ * @typedef {Object} TwoStepConfirm
+ * @property {string} code
+ */
+
+/**
+ * The password was right and two-step sign-in is on: the code comes next (S10.1.6).
+ * @typedef {Object} TwoStepNeeded
+ * @property {string} twoStepToken
+ */
+
+/**
+ * What an authenticator app needs: the QR code, or the key typed by hand.
+ * @typedef {Object} TwoStepSetup
+ * @property {string} secret
+ * @property {string} uri
+ * @property {string} qrImage
+ */
+
+/**
  * @typedef {Object} TxnChange
  * @property {(string | null)} [date]
  * @property {(string | null)} [kind]
@@ -929,6 +968,7 @@
  * @property {boolean} active
  * @property {boolean} admin
  * @property {boolean} invited
+ * @property {boolean} twoStep
  * @property {Array<string>} groupIds
  * @property {(string | null)} lastSignInAt
  * @property {(string | null)} reactivationAskedAt

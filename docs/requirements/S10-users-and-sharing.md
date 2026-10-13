@@ -17,6 +17,22 @@
    6. **Two-step sign-in**, optional for everyone: a TOTP code from an authenticator app after
       the password, set up with a QR code; ten recovery codes shown once; and an admin's
       reset as the last resort.
+      1. **The code**: TOTP as authenticator apps read it (RFC 6238: SHA-1, six digits,
+         30-second steps), with one step either side allowed for a phone's clock, and no step
+         accepted twice. Its seed is a secret (S14.4).
+      2. **Turning it on**, in Profile: a QR code and the same key as text, then a code from
+         the app to confirm it, and only then is it on. The ten **recovery codes** follow,
+         shown once, to copy or download; only their hashes are kept. Profile shows how many
+         are left, warns at three, and **New recovery codes** replaces them all.
+      3. **Signing in**: a right password leads to the code, through a token that lasts
+         five minutes; no session exists until the code is right. A recovery code is taken
+         in place of the code, once. Wrong codes count toward the same lockout as wrong
+         passwords (S13.7.5).
+      4. **Turning it off** in Profile, or an **admin's reset** in Users (for someone who
+         has lost both the app and the codes), removes the seed and the codes; the reset also
+         ends that user's sessions. Each, and turning it on, is emailed to the user and
+         recorded in Activity, as is a sign-in with a recovery code. Each needs the password
+         again under S13.7.2.
    7. **Active.** Each user has an **active** flag, which admins switch off and on. An
       inactive user cannot sign in, and cannot be added to a share, here or from a linked
       server; shares they already hold give them nothing while they are inactive. Switching

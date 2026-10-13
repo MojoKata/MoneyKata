@@ -1,14 +1,15 @@
-// Profile (requirements S12.2.16): name, email, avatar, password, time zone, theme, birth year,
-// spouse for wash sales and alert emails.
+// Profile (requirements S12.2.16): name, email, avatar, password, two-step sign-in (S10.1.6),
+// time zone, theme, birth year, spouse for wash sales and alert emails.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { useTitle } from '../components/frame.js';
-import { useGuide } from '../components/help.js';
 import { Avatar, Failed, Loading } from '../components/bits.js';
 import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
 import { toast } from '../components/toast.js';
+import { Dialog, openDialog } from '../components/dialog.js';
+import { useDialogGuide, useGuide } from '../components/help.js';
 import { applyTheme, theme } from '../store/prefs.js';
 import { loadSession } from '../store/session.js';
 
@@ -141,6 +142,7 @@ export default function Profile() {
         <div class="grid" style=${{ alignContent: 'start' }}>
           <${Email} p=${p} reload=${res.reload} />
           <${Password} />
+          <${TwoStep} p=${p} reload=${res.reload} />
         </div></div>
   `;
 }
@@ -217,5 +219,143 @@ function Password() {
           <${Input} type="password" value=${next} onInput=${setNext} autocomplete="new-password" required /></${Field}>
         <${FormError} error=${save.error} shown=${['currentPassword', 'newPassword']} />
         <button class="btn" disabled=${save.busy}>Change password</button></form>
+  `;
+}
+
+/**
+ * Two-step sign-in: off, or on with the recovery codes left. Each change asks for the
+ * password again when it was given over 10 minutes ago (S13.7.2).
+ * @param {{ p: any, reload: () => void }} props
+ */
+function TwoStep({ p, reload }) {
+  const [password, setPassword] = useState('');
+  const [needPassword, setNeed] = useState(false);
+  const act = useSubmit(async (/** @type {() => Promise<void>} */ fn) => {
+    if (needPassword) await api.post('/session/reauth', { password });
+    try {
+      await fn();
+    } catch (e) {
+      if (/** @type {any} */ (e).code === 'reauth-required') {
+        setNeed(true);
+        return;
+      }
+      throw e;
+    }
+    setNeed(false);
+    setPassword('');
+  });
+  const turnOn = async () => {
+    const setup = await api.post('/profile/two-step');
+    const done = await openDialog(TwoStepSetup, { setup });
+    if (done) toast('Two-step sign-in is on');
+    reload();
+  };
+  const newCodes = async () => {
+    const r = await api.post('/profile/two-step/recovery-codes');
+    await openDialog(RecoveryCodes, { codes: r.codes, fresh: true });
+    reload();
+  };
+  const turnOff = async () => {
+    await api.del('/profile/two-step');
+    toast('Two-step sign-in is off');
+    reload();
+  };
+  const run = (/** @type {() => Promise<void>} */ fn) => act.run(fn).catch(() => {});
+  const ts = p.twoStep;
+  return html`
+    <div class="card" id="two-step">
+      <h3>Two-step sign-in ${ts.on
+        ? html`<span class="pill ok">on</span>`
+        : html`<span class="pill">off</span>`}</h3>
+      <p class="small dim" style=${{ marginTop: 0 }}>${ts.on
+        ? html`A code from your authenticator app after your password. ${ts.recoveryCodesLeft} recovery
+          code${ts.recoveryCodesLeft === 1 ? '' : 's'} left.`
+        : 'Ask for a code from an authenticator app on your phone after your password.'}</p>
+      ${ts.on && ts.recoveryCodesLeft <= 3
+        ? html`<div class="notice warn small">Make new recovery codes before they run out.</div>`
+        : null}
+      ${needPassword
+        ? html`
+          <${Field} label="Your password" id="two-step-password"
+            hint="Asked again: it was over 10 minutes ago.">
+            <${Input} type="password" value=${password} onInput=${setPassword}
+              autocomplete="current-password" required />
+            </${Field}>
+        `
+        : null}
+      <${FormError} error=${act.error} />
+      ${ts.on
+        ? html`
+          <button type="button" class="btn" disabled=${act.busy}
+            onClick=${() =>
+              run(newCodes)}>New recovery codes</button> <button type="button" class="btn danger"
+            disabled=${act.busy} onClick=${() => run(turnOff)}>Turn off</button>
+        `
+        : html`<button type="button" class="btn" disabled=${act.busy} onClick=${() =>
+          run(turnOn)}>Turn on</button>`}
+    </div>
+  `;
+}
+
+/**
+ * Setting up: the QR code (or the key, typed by hand), then a code from the app to confirm,
+ * then the recovery codes, shown once.
+ * @param {{ close: (v?: any) => void, setup: { secret: string, uri: string, qrImage: string } }} props
+ */
+function TwoStepSetup({ close, setup }) {
+  useDialogGuide('dialog-two-step');
+  const [code, setCode] = useState('');
+  const [codes, setCodes] = useState(/** @type {string[] | null} */ (null));
+  const save = useSubmit(async () => {
+    const r = await api.post('/profile/two-step/confirm', { code });
+    setCodes(r.codes);
+  });
+  if (codes) {
+    return html`<${RecoveryCodes} close=${() => close(true)} codes=${codes} fresh=${false} />`;
+  }
+  const key = setup.secret.replace(/(.{4})/g, '$1 ').trim();
+  return html`
+    <${Dialog} title="Turn on two-step sign-in" close=${close}
+      onSubmit=${() => save.run().catch(() => {})}
+      footer=${html`<button class="btn primary" disabled=${save.busy}>Turn on</button>`}>
+      <ol class="steps small">
+        <li>Open your authenticator app (any app that reads TOTP codes) and add an account.</li>
+        <li>Scan this code, or type the key below it.</li>
+        <li>Type the six-digit code the app shows.</li>
+      </ol>
+      <div class="qr"><img src=${setup.qrImage} width="180" height="180"
+        alt="QR code for your authenticator app" /></div>
+      <p class="small center"><span class="dim">Key:</span> <code class="key">${key}</code></p>
+      <${Field} label="Code from the app" id="two-step-code" error=${errAt(save.error, 'code')}>
+        <${Input} value=${code} onInput=${setCode} inputmode="numeric"
+          autocomplete="one-time-code" maxlength="7" required />
+        </${Field}>
+        <${FormError} error=${save.error} shown=${['code']} />
+        </${Dialog}>
+  `;
+}
+
+/**
+ * The ten recovery codes, shown once: each signs in once in place of a code from the app.
+ * @param {{ close: (v?: any) => void, codes: string[], fresh: boolean }} props
+ */
+function RecoveryCodes({ close, codes, fresh }) {
+  useDialogGuide('dialog-recovery-codes');
+  const text = codes.join('\n') + '\n';
+  return html`
+    <${Dialog} title=${fresh ? 'New recovery codes' : 'Two-step sign-in is on'} close=${close}
+      onSubmit=${() => close(true)}
+      note="They won't be shown again."
+      footer=${html`
+        <button type="button" class="btn" onClick=${() =>
+          navigator.clipboard?.writeText(text).then(() => toast('Copied'))}>Copy</button>
+        <a class="btn" download="moneykata-recovery-codes.txt"
+          href=${'data:text/plain;charset=utf-8,' + encodeURIComponent(text)}>Download</a>
+        <button class="btn primary">I've saved them</button>
+      `}>
+      <p class="small">Keep these somewhere safe, away from your phone. Each one signs you in once
+        in place of a code from the app${fresh ? ', and the old ones no longer work' : ''}.</p>
+      <ul class="codes">${codes.map((c) => html`<li><code>${c}</code></li>`)}</ul>
+      </${Dialog}>
   `;
 }

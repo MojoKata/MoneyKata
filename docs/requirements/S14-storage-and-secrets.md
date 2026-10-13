@@ -31,13 +31,13 @@
    strings. Python uses `decimal.Decimal` with a context of 34 digits and rounds `HALF_EVEN`
    except where a tax rule says otherwise. Floats are refused at the API's edge.
 4. **Secrets** (price-source keys, the bitcoin node's credentials, the SMTP password, link
-   private keys) are encrypted each on its own with AES-256-GCM under a data
+   private keys, two-step sign-in seeds) are encrypted each on its own with AES-256-GCM under a data
    key of their own, wrapped under a key derived from the master key, with associated data
    naming the record
    and field, so a ciphertext copied onto another record fails to decrypt (S15.3). Secrets are
    decrypted only when used, never logged, and never sent back to the browser: the UI shows
-   a stored secret as *set*, with when and by whom. Passwords and session, reset and
-   invitation tokens are stored as hashes.
+   a stored secret as *set*, with when and by whom. Passwords, two-step recovery codes, and session,
+   reset and invitation tokens are stored as hashes.
 5. **The master key**: 128 random bits in a file on the host, outside the data directory and
    its backups, never in the database, backed up as a 12-word recovery phrase. S15 covers how it is made, protected, backed up,
    restored and rotated.

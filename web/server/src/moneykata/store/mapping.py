@@ -8,7 +8,7 @@ from .entities import accounts as acc
 from .entities import prices as pr
 from .entities import sharing as sh
 from .entities.core import Activity, Secret, Setting, TaskRun
-from .entities.users import Group, OneTimeToken, Session, User, UserGroup
+from .entities.users import Group, OneTimeToken, RecoveryCode, Session, User, UserGroup
 from .tables import accounts, activity, core, prices, sharing, users
 
 mapper_registry = registry()
@@ -29,6 +29,7 @@ def map_all() -> None:
     mapper_registry.map_imperatively(UserGroup, users.UserGroups)
     mapper_registry.map_imperatively(Session, users.Session)
     mapper_registry.map_imperatively(OneTimeToken, users.OneTimeToken)
+    mapper_registry.map_imperatively(RecoveryCode, users.RecoveryCode)
     for entity, table in (
         (acc.Category, accounts.Category),
         (acc.Account, accounts.Account),

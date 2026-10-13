@@ -1,15 +1,16 @@
-"""Profile (requirements S12.2.16): name, email, avatar, password, time zone, theme, birth
-year, spouse for wash sales and alert emails. Two-step, assumptions and access tokens come with
-their features."""
+"""Profile (requirements S12.2.16): name, email, avatar, password, two-step sign-in, time
+zone, theme, birth year, spouse for wash sales and alert emails. Assumptions and access tokens
+come with their features."""
 
+import datetime as dt
 import re
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from sqlalchemy import false, select
 
-from .. import activity, timezones
-from ..auth import sessions
+from .. import activity, settings, timezones
+from ..auth import sessions, twostep
 from ..auth import users as accounts
 from ..errors import refuse
 from ..store.entities.users import OneTimeToken, User
@@ -26,6 +27,30 @@ class Person(Model):
     displayName: str
 
 
+class TwoStep(Model):
+    on: bool
+    since: dt.datetime | None
+    recoveryCodesLeft: int
+
+
+class TwoStepSetup(Model):
+    """What an authenticator app needs: the QR code, or the key typed by hand."""
+
+    secret: str
+    uri: str
+    qrImage: str
+
+
+class TwoStepConfirm(Model):
+    code: str
+
+
+class RecoveryCodes(Model):
+    """Shown once: only their hashes are kept."""
+
+    codes: list[str]
+
+
 class Profile(Model):
     id: str
     username: str
@@ -39,6 +64,7 @@ class Profile(Model):
     birthYear: int | None
     spouseId: str | None
     alertEmails: str
+    twoStep: TwoStep
     people: list[Person]
     version: int
 
@@ -93,6 +119,11 @@ def profile(s, u: User) -> Profile:
         birthYear=u.birthYear,
         spouseId=u.spouseId,
         alertEmails=u.alertEmails,
+        twoStep=TwoStep(
+            on=twostep.is_on(u),
+            since=u.twoStepAt,
+            recoveryCodesLeft=twostep.codes_left(s, u.id),
+        ),
         people=[Person(id=o.id, displayName=o.displayName) for o in others],
         version=u.version,
     )
@@ -196,6 +227,45 @@ def change_email(body: EmailChange, request: Request, c: Caller = Depends(caller
     with srv.db.tx() as s:
         accounts.request_email_change(s, srv.services, s.get(User, c.id), body.email)
     return Response(status_code=202)
+
+
+@router.post("/profile/two-step", response_model=TwoStepSetup)
+def two_step_begin(request: Request, c: Caller = Depends(caller)):
+    """Turning two-step on starts here; it is on once a code from the app is confirmed."""
+    recent_auth(c)
+    srv = server(request)
+    with srv.db.tx() as s:
+        u = s.get(User, c.id)
+        seed = twostep.begin(s, srv.keys.secrets, u)
+        link = twostep.uri(seed, u.username, settings.get(s, "serverName") or "MoneyKata")
+    return TwoStepSetup(secret=seed, uri=link, qrImage=twostep.qr_image(link))
+
+
+@router.post("/profile/two-step/confirm", response_model=RecoveryCodes)
+def two_step_confirm(body: TwoStepConfirm, request: Request, c: Caller = Depends(caller)):
+    srv = server(request)
+    with srv.db.tx() as s:
+        codes = twostep.confirm(s, srv.services, srv.keys.secrets, s.get(User, c.id), body.code)
+    return RecoveryCodes(codes=codes)
+
+
+@router.post("/profile/two-step/recovery-codes", response_model=RecoveryCodes)
+def two_step_codes(request: Request, c: Caller = Depends(caller)):
+    """New codes replace every old one."""
+    recent_auth(c)
+    srv = server(request)
+    with srv.db.tx() as s:
+        return RecoveryCodes(codes=twostep.new_recovery_codes(s, s.get(User, c.id)))
+
+
+@router.delete("/profile/two-step", status_code=204)
+def two_step_off(request: Request, c: Caller = Depends(caller)):
+    recent_auth(c)
+    srv = server(request)
+    with srv.db.tx() as s:
+        u = s.get(User, c.id)
+        twostep.turn_off(s, srv.services, u, u)
+    return Response(status_code=204)
 
 
 @router.get("/timezones", response_model=Zones)

@@ -2,8 +2,8 @@
 server copies the database (verified), then migrates it one revision per transaction, then
 regenerates the Effective views. A database from a newer release refuses the start.
 
-Until the first release there is one revision, 0001, regenerated as tables are added; from
-the first release on, revisions are only ever added.
+Revisions are only ever added, never changed once committed: databases made by earlier
+milestones migrate forward like any other.
 
 Migrations run with foreign keys off, as SQLite's table rebuilds need, and a foreign-key check
 must come back clean before they are switched on again.

@@ -7,11 +7,12 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
+from ..auth import twostep
 from ..auth import users as accounts
 from ..errors import Problem
 from ..store.entities.users import Group, User
 from .conventions import Model, if_match, stale
-from .deps import Caller, admin, server
+from .deps import Caller, admin, recent_auth, server
 
 router = APIRouter(prefix="/ui/api", tags=["users"])
 
@@ -25,6 +26,7 @@ class UserRow(Model):
     active: bool
     admin: bool
     invited: bool
+    twoStep: bool
     groupIds: list[str]
     lastSignInAt: dt.datetime | None
     reactivationAskedAt: dt.datetime | None
@@ -77,6 +79,7 @@ def user_row(s, u: User) -> UserRow:
         active=u.active,
         admin=accounts.is_admin(s, u.id),
         invited=u.passwordHash is None and not u.needsSetup,
+        twoStep=twostep.is_on(u),
         groupIds=accounts.group_ids(s, u.id),
         lastSignInAt=u.lastSignInAt,
         reactivationAskedAt=u.reactivationAskedAt,
@@ -165,6 +168,21 @@ def resend(user_id: str, request: Request, c: Caller = Depends(admin)):
     with srv.db.tx() as s:
         accounts.resend_invitation(s, srv.services, c.user, _user(s, user_id))
     return Response(status_code=204)
+
+
+@router.delete("/users/{user_id}/two-step", response_model=UserRow)
+def reset_two_step(user_id: str, request: Request, c: Caller = Depends(admin)):
+    """An admin's reset, the last resort when the app and the recovery codes are lost
+    (S10.1.6): two-step is off, and the user's sessions end."""
+    recent_auth(c)
+    srv = server(request)
+    with srv.db.tx() as s:
+        u = _user(s, user_id)
+        twostep.turn_off(s, srv.services, u, c.user)
+        row = user_row(s, u)
+    if u.id != c.id:
+        srv.events.end_user(u.id, "signed-out")
+    return row
 
 
 @router.get("/groups", response_model=list[GroupRow])

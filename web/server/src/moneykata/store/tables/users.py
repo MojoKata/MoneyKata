@@ -35,6 +35,10 @@ User = record(
     Column("alertEmails", Text, nullable=False, server_default=text("'daily'")),
     Column("lastSignInAt", UtcTimestamp),
     Column("reactivationAskedAt", UtcTimestamp),
+    # Two-step sign-in (S10.1.6): on since this time. Its TOTP seed is a secret (S14.4); the
+    # last step a code was accepted for, so a code is never accepted twice.
+    Column("twoStepAt", UtcTimestamp),
+    Column("totpLastStep", Integer),
     CheckConstraint("theme IN ('dark', 'light', 'system')", name="theme"),
     CheckConstraint("\"alertEmails\" IN ('each', 'daily', 'none')", name="alert_emails"),
 )
@@ -83,6 +87,18 @@ OneTimeToken = exception(
     Column("data", Text),
     Column("createdAt", UtcTimestamp, nullable=False),
     Column("expiresAt", UtcTimestamp, nullable=False),
-    CheckConstraint("purpose IN ('invitation', 'reset', 'email-change')", name="purpose"),
+    CheckConstraint(
+        "purpose IN ('invitation', 'reset', 'email-change', 'two-step')", name="purpose"
+    ),
     Index("ix_OneTimeToken_userId", "userId"),
+)
+
+# Ten per user, each usable once in place of a two-step code (S10.1.6).
+RecoveryCode = exception(
+    "RecoveryCode",
+    "two-step recovery codes are removed when used or replaced (§4.4.1)",
+    Column("codeHash", Text, primary_key=True),
+    Column("userId", Text, ForeignKey("User.id"), nullable=False),
+    Column("createdAt", UtcTimestamp, nullable=False),
+    Index("ix_RecoveryCode_userId", "userId"),
 )

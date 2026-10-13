@@ -293,3 +293,14 @@ input.in.bad { border-color: var(--deny); }
 .avatar.sm { display: inline-grid; vertical-align: middle; }
 .toolbar .in { width: auto; }
 }
+
+/* Two-step sign-in: the numbered steps, the QR code on white, the key and the recovery codes. */
+.steps { margin: 0 0 12px; padding-left: 20px; color: var(--fg-dim); }
+.steps li { margin: 2px 0; }
+.qr { display: flex; justify-content: center; margin: 4px 0 8px; }
+.qr img { border-radius: 8px; background: #fff; }
+code.key { font-family: var(--mono); font-size: 13px; letter-spacing: .04em; user-select: all; }
+.small.center { text-align: center; }
+.codes { list-style: none; margin: 10px 0 0; padding: 12px 16px; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 6px 24px; border-radius: 8px; background: var(--inset); }
+.codes code { font-family: var(--mono); font-size: 14px; letter-spacing: .06em; }

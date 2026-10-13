@@ -1,5 +1,6 @@
-// Sign in (requirements S10.1.1), Forgot password? (S10.1.5) and the account-is-disabled screen
-// with its request to be made active again (S10.1.7).
+// Sign in (requirements S10.1.1), its code when two-step sign-in is on (S10.1.6), Forgot
+// password? (S10.1.5) and the account-is-disabled screen with its request to be made active
+// again (S10.1.7).
 import { useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
@@ -15,14 +16,37 @@ export default function SignIn() {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [sent, setSent] = useState(false);
+  const [twoStep, setTwoStep] = useState('');
+  const [code, setCode] = useState('');
+  const [recovery, setRecovery] = useState(false);
+  const signedIn = (/** @type {any} */ info) => {
+    ended.value = '';
+    setSession(info);
+    if (path === '/ui/signin') route('/ui/', true);
+  };
   const signIn = useSubmit(async () => {
     try {
       const info = await api.post('/session', { login, password });
-      ended.value = '';
-      setSession(info);
-      if (path === '/ui/signin') route('/ui/', true);
+      if (info?.twoStepToken) {
+        setTwoStep(info.twoStepToken);
+        setCode('');
+        setMode('code');
+        return;
+      }
+      signedIn(info);
     } catch (e) {
       if (/** @type {any} */ (e).code === 'account-disabled') setMode('disabled');
+      throw e;
+    }
+  });
+  const second = useSubmit(async () => {
+    try {
+      signedIn(await api.post('/session/two-step', { token: twoStep, code }));
+    } catch (e) {
+      if (/** @type {any} */ (e).code === 'two-step-expired') {
+        setPassword('');
+        setMode('signin');
+      }
       throw e;
     }
   });
@@ -63,6 +87,44 @@ export default function SignIn() {
                     </form>
               `}
           </${AuthCard}>
+    `;
+  }
+
+  if (mode === 'code') {
+    return html`
+      <${AuthCard} title="Two-step sign-in" guide="signin"
+        sub=${recovery
+          ? 'Type one of your recovery codes. Each works once.'
+          : 'Type the six-digit code your authenticator app shows for MoneyKata.'}>
+        <form onSubmit=${(/** @type {Event} */ e) => {
+          e.preventDefault();
+          second.run().catch(() => {});
+        }}>
+          <${Field} label=${recovery ? 'Recovery code' : 'Code'} error=${errAt(
+            second.error,
+            'code',
+          )}>
+            <${Input} value=${code} onInput=${setCode} required
+              inputmode=${recovery ? 'text' : 'numeric'}
+              autocomplete=${recovery ? 'off' : 'one-time-code'} />
+            </${Field}>
+            <${FormError} error=${second.error} shown=${['code']} />
+            <button class="btn primary" style=${{ width: '100%', justifyContent: 'center' }}
+              disabled=${second.busy}>Sign in</button>
+            </form>
+            <div
+              class="toolbar mt"><button type="button" class="linklike" onClick=${() => {
+                setRecovery(!recovery);
+                setCode('');
+                second.setError(null);
+              }}>${recovery ? 'Use a code from the app' : 'Use a recovery code'}</button>
+          <span class="grow"></span>
+          <button type="button" class="linklike" onClick=${() => {
+            setPassword('');
+            setRecovery(false);
+            setMode('signin');
+          }}>Back to sign in</button></div>
+            </${AuthCard}>
     `;
   }
 
