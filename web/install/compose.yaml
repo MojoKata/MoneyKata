@@ -23,8 +23,11 @@ services:
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s
 
-  # One-off key commands (§18.4.6): only init and rotate mount the key directory writable.
+  # One-off key commands (§18.4.6): only init and rotate mount the key directory writable,
+  # and only rotate mounts moneykata.toml writable (it records the previous key there). The
+  # server itself keeps both read only.
   #   docker compose run --rm keys-init
+  #   docker compose run --rm keys-rotate      then restart: docker compose restart moneykata
   #   docker compose run --rm moneykata keys verify
   keys-init:
     image: moneykata:0.1.0
@@ -35,3 +38,13 @@ services:
       - ./data:/var/lib/moneykata
       - ./keys:/etc/moneykata
       - ./moneykata.toml:/etc/moneykata.toml:ro
+
+  keys-rotate:
+    image: moneykata:0.1.0
+    profiles: ["keys"]
+    user: "0:0"
+    command: ["keys", "rotate"]
+    volumes:
+      - ./data:/var/lib/moneykata
+      - ./keys:/etc/moneykata
+      - ./moneykata.toml:/etc/moneykata.toml

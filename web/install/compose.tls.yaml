@@ -18,3 +18,24 @@ services:
       - /tmp
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
+
+  # The key commands, as in compose.yaml.
+  keys-init:
+    image: moneykata:0.1.0
+    profiles: ["keys"]
+    user: "0:0"
+    command: ["keys", "init"]
+    volumes:
+      - ./data:/var/lib/moneykata
+      - ./keys:/etc/moneykata
+      - ./moneykata-tls.toml:/etc/moneykata.toml:ro
+
+  keys-rotate:
+    image: moneykata:0.1.0
+    profiles: ["keys"]
+    user: "0:0"
+    command: ["keys", "rotate"]
+    volumes:
+      - ./data:/var/lib/moneykata
+      - ./keys:/etc/moneykata
+      - ./moneykata-tls.toml:/etc/moneykata.toml

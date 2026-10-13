@@ -1701,7 +1701,8 @@ what key rotation does.
       directory.
    6. **Commands**, run on the host as one-off containers of the same image (`docker compose
       run --rm moneykata keys verify`); only `init` and `rotate` mount the key directory
-      writable. Nothing an admin does day to day: `moneykata keys init`,
+      writable, and only `rotate` mounts `moneykata.toml` writable, to record the previous
+      key in it. `rotate` checks it can write all three before it changes anything. Nothing an admin does day to day: `moneykata keys init`,
       `check`, `fingerprint`, `phrase` (shows the recovery phrase again), `verify` and
       `rotate` (§18.6, §18.7), and `moneykata db shell` (§17.7).
 5. **What losing it costs.** Everything this server holds is encrypted under the master

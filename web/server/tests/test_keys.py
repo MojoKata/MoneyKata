@@ -162,3 +162,28 @@ master = "{tmp_path / "keys" / "master.key"}"
     new = master.open_keys(config2)
     assert new.keys.database == old.keys.database  # the data key itself is unchanged
     assert master.fingerprint(new.master_id) == new_fp != old_fp
+
+
+def test_rotate_refuses_before_changing_anything_when_the_config_is_read_only(tmp_path):
+    toml = tmp_path / "moneykata.toml"
+    toml.write_text(f"""[server]
+name = "t"
+[paths]
+data = "{tmp_path / "data"}"
+backups = "{tmp_path / "backups"}"
+[keys]
+master = "{tmp_path / "keys" / "master.key"}"
+""")
+    config = load(toml)
+    cli.init(config, say=lambda _: None, confirm=False)
+    before = {p.name: p.read_bytes() for p in (config.key_file, config.keyring_path)}
+    toml.chmod(0o444)
+    try:
+        if os.access(toml, os.W_OK):
+            pytest.skip("running as root: a read-only mode does not stop writes")
+        with pytest.raises(RefuseStart, match="not writable"):
+            cli.rotate(config, ask=lambda _: "", say=lambda _: None)
+    finally:
+        toml.chmod(0o644)
+    assert sorted(p.name for p in config.key_file.parent.iterdir()) == ["master.key"]
+    assert {p.name: p.read_bytes() for p in (config.key_file, config.keyring_path)} == before

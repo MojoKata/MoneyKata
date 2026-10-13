@@ -169,6 +169,14 @@ def rotate(config: Config, ask: Ask = input, say: Say = _say) -> tuple[str, str]
         raise RefuseStart(
             "rotation records the previous key in moneykata.toml: run it with --config"
         )
+    # Everything rotation writes is checked first, so a read-only mount stops it before any
+    # key is moved rather than halfway through.
+    for target in (config.path, config.key_file.parent, config.keyring_path.parent):
+        if not os.access(target, os.W_OK):
+            raise RefuseStart(
+                f"{target} is not writable: rotation writes the key directory, the keyring and "
+                "moneykata.toml (in Docker: `docker compose run --rm keys-rotate`)"
+            )
     old_key = _read(config)
     ring = master.read_keyring(config.keyring_path)
     data_key = master.unwrap(old_key, ring)
