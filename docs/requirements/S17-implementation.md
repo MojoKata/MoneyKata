@@ -190,8 +190,25 @@
          Settings › Tax tables with the contribution limits and the bitcoin models' figures.
          Retirement and savings-target goals; the education goal comes with 529s.
       9. **The mockup** generated from the app for these screens, and the Docker image.
-   3. **Milestone 3**: taxes and tax books (S8), loans and the payoff planner, 529s with the
-      education goal (S6.2.2), physical assets, gifts and giving.
+   3. **Milestone 3**, in nine parts:
+      1. **Loans** (S1.9): terms, the amortization schedule, payments split from their
+         transfers, reconciling with the servicer, and the loan's screen.
+      2. **The payoff planner** (S6.10): plans against the schedule, recast, and the extra
+         invested instead.
+      3. **Physical assets** (S1.10): items, their valuations (spot for metals, dated
+         values, depreciation), real estate with its loans' equity, and selling.
+      4. **529 plans** (S1.8) and the **education goal** (S6.2.2), with the college-cost
+         averages in the tax tables.
+      5. **Gifts** (S7.7–S7.8): people, occasions and holidays, gifts and ideas, history,
+         privacy, the gift-tax flag and the occasion alerts.
+      6. **Charitable giving** (S7.9): giving plans, donations and organisations, pledges,
+         donor-advised funds and the Giving screen.
+      7. **Tax books** (S8.14–S8.17): filers, accounts counted, sharing, filings, tax
+         documents and what is carried forward.
+      8. **The tax panels and exports** (S8.1–S8.13): Form 8949 and Schedule D with wash
+         sales, income, retirement, deductions, the documents checklist, giving, education,
+         gifts, loans and physical assets; 8949 CSV, TXF and the PDF summary.
+      9. **The mockup** generated from the app for these screens, and the Docker image.
    4. **Milestone 4**: positions and options (S3), bitcoin wallets and own node (S1.6, G9),
       the MCP endpoint (S10.9).
    5. **Milestone 5**: linked servers and linked households (S11, S12.10, G1).
