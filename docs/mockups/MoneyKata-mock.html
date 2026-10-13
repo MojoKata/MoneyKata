@@ -1697,7 +1697,10 @@ DIALOGS.assetItem = (d) => {
     ${metal ? `<div class="row">${field('Weight per unit', inp(m ? m.wt : '1 ozt'))}${field('Purity', inp(m ? m.pur : '.9999'))}${field('Quantity', inp(m ? String(m.qty) : '1'))}</div>` : ''}
     <div class="row">${field('Date acquired', inp(m ? m.acq : c ? c.acq : '', '', 'date'))}${field('How acquired', sel(['Bought', 'A gift (carry-over basis)', 'Inherited (value at death)'], 'Bought'))}</div>
     <div class="row">${field('Cost basis', inp(m ? nf.format(m.basis) : c ? nf.format(c.basis) : ''), 'Price plus premium, fees and shipping.')}${field('Insured value', inp(c ? nf.format(c.val) : ''))}</div>
+    ${metal ? field('Selling premium', inp('0'), 'What you’d expect over spot when selling, in percent; below spot is negative.') : ''}
     <div class="row">${field('Where it’s kept', inp(metal ? 'Bank box, Chase Elm St' : 'Home safe'))}${field('Serial or certificate', inp(c && c.cat.startsWith('Coin') ? 'PCGS 05764321' : ''))}</div>
+    <div class="row">${field('Condition or grade', inp(c && c.cat === 'Watch' ? 'Excellent, box and papers' : ''))}${field('Insurance policy', inp(''))}</div>
+    ${metal ? '' : `<div class="list-item"><span class="grow">Used personally<div class="small dim">A loss when it’s sold isn’t deductible.</div></span>${sw(!!(c && c.cat === 'Watch'))}</div>`}
     ${field('Notes', `<textarea class="in" rows="3">${c && c.cat === 'Watch' ? 'Box and papers. Serviced 2025-02 at the AD.' : ''}</textarea>`, 'Markdown.')}</div>
     <div style="flex:0 1 240px">${metal ? `<div class="notice">${icon('info')}<div>Valued at spot: ${m ? m.fine.toFixed(2) : '1.00'} fine oz × ${money(SPOT[m ? m.metal : 'Gold'])} = <b>${money((m ? m.fine : 1) * SPOT[m ? m.metal : 'Gold'], { cents: false })}</b></div></div>` : `<h4 style="margin:0 0 8px">Valuations</h4>${c ? `<div class="list-item"><div class="grow">${money(c.val, { cents: false })}<div class="small dim">${c.src} · ${c.vdate}</div></div></div><div class="list-item"><div class="grow">${money(c.basis, { cents: false })}<div class="small dim">Purchase price · ${c.acq}</div></div></div>` : '<p class="small dim">None yet.</p>'}<button class="btn sm mt" data-act="dlg" data-v="assetItem" data-kind="valuation">${icon('plus')} Add valuation</button>`}
       <h4 style="margin:14px 0 8px">Photos and documents</h4><div class="toolbar" style="flex-wrap:wrap">${['receipt.pdf', 'photo-front.jpg', c ? 'appraisal-2026.pdf' : 'certificate.jpg'].map((f) => `<span class="pill">${icon('clip')} ${f}</span>`).join('')}</div><button class="btn sm" data-act="dlg" data-v="upload">${icon('upload')} Add</button>
@@ -1821,6 +1824,9 @@ const GUIDES = {
     <h2 ${hid('Invest the extra in')}>Invest the extra in</h2><p>The asset class the comparison invests the same money in, at your expected return for it (Profile › Assumptions).</p>
     <h2 ${hid('Plan name')}>Plan name</h2><p>Saved plans are kept for the loan. Following one shows on the Overview whether you’re ahead of it or behind, from the day you chose it; the Payoff tab opens on it.</p>
     <h2>529 plans</h2><p>College savings for one beneficiary. Contributions are gifts to them, shown against the annual gift exclusion. Withdrawals are matched with qualified expenses and their receipts.</p>
+    <h2 ${hid('Selling premium')}>Selling premium</h2><p>For metals at spot: what you’d expect over spot (or under it, negative) when selling. 0% by default.</p>
+    <h2 ${hid('Condition or grade')}>Condition or grade</h2><p>Its condition, or its grade (MS-65, PCGS 64).</p>
+    <h2 ${hid('Insurance policy')}>Insurance policy</h2><p>The policy that covers it, beside its insured value.</p>
     <h2 ${hid('Beneficiary')}>Beneficiary</h2><p>A person from Gifts › People, or a user. The 529 counts in the owner’s net worth.</p>
     <h2 ${hid('Years of school')}>Years of school</h2><p>How many years the goal pays for.</p>
     <h2 ${hid('Cost per year (today’s dollars)')}>Cost per year</h2><p>In today’s dollars; education inflation raises it each year. The shipped averages are a starting point.</p>

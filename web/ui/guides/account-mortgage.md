@@ -18,9 +18,14 @@ bank account, its half of the transfer is recorded too.
 The principal the servicer says is owed, typed from its statement. A difference from the schedule's
 balance shows until it is explained: a fee, a missed payment, a wrong rate.
 
+## Equity
+
+When the loan is secured by a property or vehicle: what it's worth less every loan it secures, the loan-to-value, and for a mortgage with PMI, when it can be dropped.
+
 ## Following
 
-The payoff plan you're following (the Payoff tab), and whether what you've overpaid since you chose it is ahead of the plan or behind.
+The payoff plan you're following (the Payoff tab), and whether what you've overpaid since you chose
+it is ahead of the plan or behind.
 
 ## Looks like a payment
 
@@ -71,6 +76,14 @@ Homeowner's insurance collected with each payment.
 
 Mortgage insurance, until the loan is 80% of the home's original value (on request) or 78%
 (automatically).
+
+## Secured by {#secured-by}
+
+The property or vehicle the loan is secured by, from a physical-asset account. The Overview then shows your equity in it and the loan-to-value.
+
+## Home's original value {#original-value}
+
+The appraisal or price when the loan was made. PMI can be dropped on request once the balance is 80% of it, and ends by itself at 78%.
 
 ## Rate resets
 

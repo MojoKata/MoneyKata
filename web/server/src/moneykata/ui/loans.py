@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import Field
 from sqlalchemy import false, or_, select
 
-from .. import access, activity, clock, ids, loans
+from .. import access, activity, assets, clock, ids, loans
 from ..errors import FieldError, Problem, refuse
 from ..loans import payoff
 from ..projections import assumptions
@@ -23,6 +23,7 @@ from ..store.entities.accounts import (
     Split,
     Transaction,
 )
+from ..store.entities.assets import Item
 from .conventions import Model, Money, if_match, stale
 from .deps import Caller, caller, server
 
@@ -53,6 +54,7 @@ class TermsIn(Model):
     resets: list[Reset] = Field(default_factory=list)
     recasts: list[Recast] = Field(default_factory=list)
     originalValue: Money | None = None
+    securedById: str | None = None  # the property or vehicle it is secured by
 
 
 class ResetView(Model):
@@ -80,6 +82,7 @@ class TermsOut(Model):
     resets: list[ResetView]
     recasts: list[RecastView]
     originalValue: Money | None
+    securedById: str | None
     computedPayment: Money
     version: int
 
@@ -101,6 +104,20 @@ class ServicerCheck(Model):
     servicer: Money
     computed: Money
     difference: Money
+
+
+class Equity(Model):
+    """What the loan is secured by, and the borrower's stake in it (S1.9.5)."""
+
+    itemId: str
+    itemName: str
+    accountId: str
+    value: Money
+    owed: Money  # every live loan secured by it
+    equity: Money
+    ltv: Money  # this loan's balance, in percent of the value
+    pmiRequest: dt.date | None  # PMI can be dropped on request: 80% of the original value
+    pmiEnds: dt.date | None  # and goes by itself: 78%
 
 
 class Following(Model):
@@ -127,6 +144,7 @@ class LoanView(Model):
     overpaid: Money
     rows: list[RowOut]
     servicer: ServicerCheck | None
+    equity: Equity | None = None
     following: Following | None = None
     canWrite: bool
 
@@ -186,6 +204,7 @@ def _terms_out(row: Loan) -> TermsOut:
         resets=[ResetView(date=d, rate=r) for d, r in t.resets],
         recasts=[RecastView(date=d, fee=f) for d, f in t.recasts],
         originalValue=row.originalValue,
+        securedById=row.securedById,
         computedPayment=loans.scheduled_payment(t),
         version=row.version,
     )
@@ -244,8 +263,46 @@ def view(s, a: Account, level: str) -> LoanView:
         overpaid=sm.overpaid,
         rows=[RowOut(**r.__dict__) for r in rows],
         servicer=servicer,
+        equity=_equity(s, row, terms, sm.balance, rows, today),
         following=_following(s, a, terms, rows, sm.payment, today),
         canWrite=level in ("owner", "write"),
+    )
+
+
+def _equity(s, row: Loan, terms, owed, rows, today) -> Equity | None:
+    if not row.securedById:
+        return None
+    it = s.get(Item, row.securedById)
+    if it is None or it.deleted:
+        return None
+    d = assets.details(s, [it])[it.id]
+    sp = assets.spots(s, [it], today).get(it.metal or "")
+    worth = assets.value_on(it, d, today, sp.price if sp else None)
+    others = s.scalars(
+        select(Loan).where(Loan.securedById == it.id, Loan.deleted == false(), Loan.id != row.id)
+    ).all()
+    owed_all = owed + sum(
+        (-loans.value(s, s.get(Account, o.accountId), today) for o in others), Decimal(0)
+    )
+    original = row.originalValue or assets.basis(it, d)
+    request = ends = None
+    if terms.pmi and original:
+        for r in rows:
+            if request is None and r.balance <= original * Decimal("0.80"):
+                request = r.date
+            if r.balance <= original * Decimal("0.78"):
+                ends = r.date
+                break
+    return Equity(
+        itemId=it.id,
+        itemName=it.name,
+        accountId=it.accountId,
+        value=worth,
+        owed=owed_all,
+        equity=worth - owed_all,
+        ltv=(owed / worth * 100).quantize(Decimal("0.1")) if worth else Decimal(0),
+        pmiRequest=request,
+        pmiEnds=ends,
     )
 
 
@@ -283,6 +340,11 @@ def put_terms(account_id: str, body: TermsIn, request: Request, c: Caller = Depe
         raise Problem(422, errors[0].code, errors[0].message, errors)
     with server(request).db.tx() as s:
         a, lvl = _account(s, c, account_id, "write")
+        if body.securedById:
+            it = s.get(Item, body.securedById)
+            if it is None or it.deleted:
+                raise refuse("securedById", "not-found", "No such property or vehicle.")
+            access.account(s, c.id, it.accountId, "read")
         row = loans.loan_of(s, a)
         values = {
             "principal": body.principal,
@@ -302,6 +364,7 @@ def put_terms(account_id: str, body: TermsIn, request: Request, c: Caller = Depe
                 [{"date": r.date.isoformat(), "fee": str(r.fee)} for r in body.recasts]
             ),
             "originalValue": body.originalValue,
+            "securedById": body.securedById,
         }
         if row is None:
             s.add(Loan(id=ids.new_id("Loan"), accountId=a.id, **values))

@@ -64,6 +64,14 @@ Homeowner's insurance collected with each payment.
 
 Mortgage insurance, until it can be dropped.
 
+## Secured by {#secured-by}
+
+The property or vehicle the loan is secured by, from a physical-asset account. The Overview then shows your equity in it and the loan-to-value.
+
+## Home's original value {#original-value}
+
+The appraisal or price when the loan was made. PMI can be dropped on request once the balance is 80% of it, and ends by itself at 78%.
+
 ## Draw period (months) {#draw-months}
 
 A HELOC's months of interest-only drawing before repayment.

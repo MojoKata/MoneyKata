@@ -1658,6 +1658,20 @@
         "title": "Dashboard",
         "type": "object"
       },
+      "DocumentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "receiptId": {
+            "title": "Receiptid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receiptId"
+        ],
+        "title": "DocumentIn",
+        "type": "object"
+      },
       "Done": {
         "additionalProperties": false,
         "properties": {
@@ -1760,6 +1774,93 @@
           "lastError"
         ],
         "title": "EmailView",
+        "type": "object"
+      },
+      "Equity": {
+        "additionalProperties": false,
+        "description": "What the loan is secured by, and the borrower's stake in it (S1.9.5).",
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "equity": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Equity",
+            "type": "string"
+          },
+          "itemId": {
+            "title": "Itemid",
+            "type": "string"
+          },
+          "itemName": {
+            "title": "Itemname",
+            "type": "string"
+          },
+          "ltv": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Ltv",
+            "type": "string"
+          },
+          "owed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Owed",
+            "type": "string"
+          },
+          "pmiEnds": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pmiends"
+          },
+          "pmiRequest": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pmirequest"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId",
+          "itemName",
+          "accountId",
+          "value",
+          "owed",
+          "equity",
+          "ltv",
+          "pmiRequest",
+          "pmiEnds"
+        ],
+        "title": "Equity",
         "type": "object"
       },
       "Flow": {
@@ -2496,6 +2597,77 @@
         "title": "ImportRow",
         "type": "object"
       },
+      "ImprovementIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "description",
+          "amount"
+        ],
+        "title": "ImprovementIn",
+        "type": "object"
+      },
+      "ImprovementOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "description",
+          "amount"
+        ],
+        "title": "ImprovementOut",
+        "type": "object"
+      },
       "InstrumentOut": {
         "additionalProperties": false,
         "properties": {
@@ -2600,6 +2772,1006 @@
           "household"
         ],
         "title": "InvitationInfo",
+        "type": "object"
+      },
+      "ItemDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "acquiredHow": {
+            "title": "Acquiredhow",
+            "type": "string"
+          },
+          "acquiredOn": {
+            "format": "date",
+            "title": "Acquiredon",
+            "type": "string"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "basis": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Basis",
+            "type": "string"
+          },
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "closingCosts": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closingcosts"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "costBasis": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Costbasis",
+            "type": "string"
+          },
+          "depreciationRate": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depreciationrate"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptRow"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "equity": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity"
+          },
+          "fineOunces": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fineounces"
+          },
+          "gain": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Gain",
+            "type": "string"
+          },
+          "history": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "examples": [
+                    "1234.50"
+                  ],
+                  "format": "money",
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "improvements": {
+            "items": {
+              "$ref": "#/components/schemas/ImprovementOut"
+            },
+            "title": "Improvements",
+            "type": "array"
+          },
+          "insuredValue": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insuredvalue"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValuationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "loans": {
+            "items": {
+              "$ref": "#/components/schemas/SecuredLoan"
+            },
+            "title": "Loans",
+            "type": "array"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "metal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metal"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "personalUse": {
+            "title": "Personaluse",
+            "type": "boolean"
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy"
+          },
+          "primaryResidence": {
+            "title": "Primaryresidence",
+            "type": "boolean"
+          },
+          "purity": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purity"
+          },
+          "quantity": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "sale": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Sale"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sellPremium": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Sellpremium",
+            "type": "string"
+          },
+          "serial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial"
+          },
+          "spot": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spot"
+          },
+          "spotAsOf": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spotasof"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "unitWeight": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unitweight"
+          },
+          "valuation": {
+            "title": "Valuation",
+            "type": "string"
+          },
+          "valuations": {
+            "items": {
+              "$ref": "#/components/schemas/ValuationOut"
+            },
+            "title": "Valuations",
+            "type": "array"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "weightUnit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weightunit"
+          },
+          "years": {
+            "title": "Years",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "name",
+          "category",
+          "acquiredOn",
+          "acquiredHow",
+          "quantity",
+          "valuation",
+          "metal",
+          "fineOunces",
+          "basis",
+          "value",
+          "gain",
+          "years",
+          "latest",
+          "stale",
+          "sale",
+          "loans",
+          "equity",
+          "version",
+          "description",
+          "costBasis",
+          "location",
+          "serial",
+          "condition",
+          "insuredValue",
+          "policy",
+          "notes",
+          "unitWeight",
+          "weightUnit",
+          "purity",
+          "sellPremium",
+          "depreciationRate",
+          "address",
+          "closingCosts",
+          "primaryResidence",
+          "personalUse",
+          "spot",
+          "spotAsOf",
+          "valuations",
+          "improvements",
+          "documents",
+          "history",
+          "canWrite"
+        ],
+        "title": "ItemDetail",
+        "type": "object"
+      },
+      "ItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "acquiredHow": {
+            "default": "bought",
+            "title": "Acquiredhow",
+            "type": "string"
+          },
+          "acquiredOn": {
+            "format": "date",
+            "title": "Acquiredon",
+            "type": "string"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "closingCosts": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closingcosts"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "costBasis": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Costbasis",
+            "type": "string"
+          },
+          "depreciationRate": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depreciationrate"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "insuredValue": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insuredvalue"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "metal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metal"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "personalUse": {
+            "default": false,
+            "title": "Personaluse",
+            "type": "boolean"
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy"
+          },
+          "primaryResidence": {
+            "default": false,
+            "title": "Primaryresidence",
+            "type": "boolean"
+          },
+          "purity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purity"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "1",
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "sellPremium": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Sellpremium",
+            "type": "string"
+          },
+          "serial": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial"
+          },
+          "unitWeight": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unitweight"
+          },
+          "valuation": {
+            "default": "valuations",
+            "title": "Valuation",
+            "type": "string"
+          },
+          "weightUnit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weightunit"
+          }
+        },
+        "required": [
+          "name",
+          "acquiredOn",
+          "costBasis"
+        ],
+        "title": "ItemIn",
+        "type": "object"
+      },
+      "ItemRow": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "acquiredHow": {
+            "title": "Acquiredhow",
+            "type": "string"
+          },
+          "acquiredOn": {
+            "format": "date",
+            "title": "Acquiredon",
+            "type": "string"
+          },
+          "basis": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Basis",
+            "type": "string"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "equity": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equity"
+          },
+          "fineOunces": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fineounces"
+          },
+          "gain": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Gain",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValuationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "loans": {
+            "items": {
+              "$ref": "#/components/schemas/SecuredLoan"
+            },
+            "title": "Loans",
+            "type": "array"
+          },
+          "metal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metal"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "sale": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Sale"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "valuation": {
+            "title": "Valuation",
+            "type": "string"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "years": {
+            "title": "Years",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "name",
+          "category",
+          "acquiredOn",
+          "acquiredHow",
+          "quantity",
+          "valuation",
+          "metal",
+          "fineOunces",
+          "basis",
+          "value",
+          "gain",
+          "years",
+          "latest",
+          "stale",
+          "sale",
+          "loans",
+          "equity",
+          "version"
+        ],
+        "title": "ItemRow",
+        "type": "object"
+      },
+      "ItemsView": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Basis",
+            "type": "string"
+          },
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "gain": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Gain",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "metals": {
+            "items": {
+              "$ref": "#/components/schemas/MetalOut"
+            },
+            "title": "Metals",
+            "type": "array"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "metals",
+          "value",
+          "basis",
+          "gain",
+          "canWrite"
+        ],
+        "title": "ItemsView",
         "type": "object"
       },
       "JobOut": {
@@ -2848,6 +4020,16 @@
           "canWrite": {
             "title": "Canwrite",
             "type": "boolean"
+          },
+          "equity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Equity"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "following": {
             "anyOf": [
@@ -3227,6 +4409,101 @@
           "theme"
         ],
         "title": "Me",
+        "type": "object"
+      },
+      "MetalOut": {
+        "additionalProperties": false,
+        "properties": {
+          "averageCost": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagecost"
+          },
+          "cost": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Cost",
+            "type": "string"
+          },
+          "gain": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Gain",
+            "type": "string"
+          },
+          "metal": {
+            "title": "Metal",
+            "type": "string"
+          },
+          "ounces": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Ounces",
+            "type": "string"
+          },
+          "spot": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spot"
+          },
+          "spotAsOf": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spotasof"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metal",
+          "ounces",
+          "cost",
+          "averageCost",
+          "spot",
+          "spotAsOf",
+          "value",
+          "gain"
+        ],
+        "title": "MetalOut",
         "type": "object"
       },
       "ModelRow": {
@@ -6560,6 +7837,107 @@
         "title": "RowOut",
         "type": "object"
       },
+      "Sale": {
+        "additionalProperties": false,
+        "properties": {
+          "collectable": {
+            "title": "Collectable",
+            "type": "boolean"
+          },
+          "deductible": {
+            "title": "Deductible",
+            "type": "boolean"
+          },
+          "fees": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Fees",
+            "type": "string"
+          },
+          "gain": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Gain",
+            "type": "string"
+          },
+          "proceeds": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Proceeds",
+            "type": "string"
+          },
+          "soldOn": {
+            "format": "date",
+            "title": "Soldon",
+            "type": "string"
+          }
+        },
+        "required": [
+          "soldOn",
+          "proceeds",
+          "fees",
+          "gain",
+          "collectable",
+          "deductible"
+        ],
+        "title": "Sale",
+        "type": "object"
+      },
+      "SaleIn": {
+        "additionalProperties": false,
+        "properties": {
+          "fees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Fees",
+            "type": "string"
+          },
+          "proceeds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Proceeds",
+            "type": "string"
+          },
+          "soldOn": {
+            "format": "date",
+            "title": "Soldon",
+            "type": "string"
+          }
+        },
+        "required": [
+          "soldOn",
+          "proceeds"
+        ],
+        "title": "SaleIn",
+        "type": "object"
+      },
       "Saved": {
         "additionalProperties": false,
         "properties": {
@@ -6651,6 +8029,63 @@
           "inputs"
         ],
         "title": "SavedPlanIn",
+        "type": "object"
+      },
+      "Securable": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "accountId",
+          "accountName"
+        ],
+        "title": "Securable",
+        "type": "object"
+      },
+      "SecuredLoan": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Owed",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "name",
+          "owed"
+        ],
+        "title": "SecuredLoan",
         "type": "object"
       },
       "Series": {
@@ -7961,6 +9396,17 @@
             "title": "Resets",
             "type": "array"
           },
+          "securedById": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Securedbyid"
+          },
           "startDate": {
             "format": "date",
             "title": "Startdate",
@@ -8111,6 +9557,17 @@
             "title": "Resets",
             "type": "array"
           },
+          "securedById": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Securedbyid"
+          },
           "startDate": {
             "format": "date",
             "title": "Startdate",
@@ -8139,6 +9596,7 @@
           "resets",
           "recasts",
           "originalValue",
+          "securedById",
           "computedPayment",
           "version"
         ],
@@ -9464,6 +10922,100 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "ValuationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "source": {
+            "default": "estimate",
+            "title": "Source",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "value"
+        ],
+        "title": "ValuationIn",
+        "type": "object"
+      },
+      "ValuationOut": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "value",
+          "source",
+          "note"
+        ],
+        "title": "ValuationOut",
+        "type": "object"
+      },
       "Via": {
         "additionalProperties": false,
         "properties": {
@@ -10212,6 +11764,98 @@
         "summary": "Upload",
         "tags": [
           "imports"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/items": {
+      "get": {
+        "operationId": "list_items_ui_api_accounts__account_id__items_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Items",
+        "tags": [
+          "items"
+        ]
+      },
+      "post": {
+        "operationId": "add_item_ui_api_accounts__account_id__items_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Item",
+        "tags": [
+          "items"
         ]
       }
     },
@@ -12381,6 +14025,560 @@
         "summary": "Invitation Lookup",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/ui/api/items": {
+      "get": {
+        "description": "Items a loan can be secured by: unsold property, vehicles and other assets the caller\ncan see (S1.9.5).",
+        "operationId": "securable_ui_api_items_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Securable"
+                  },
+                  "title": "Response Securable Ui Api Items Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Securable",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/ui/api/items/{item_id}": {
+      "delete": {
+        "operationId": "delete_item_ui_api_items__item_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Item",
+        "tags": [
+          "items"
+        ]
+      },
+      "get": {
+        "operationId": "get_item_ui_api_items__item_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Item",
+        "tags": [
+          "items"
+        ]
+      },
+      "put": {
+        "operationId": "change_item_ui_api_items__item_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Item",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/ui/api/items/{item_id}/documents": {
+      "post": {
+        "description": "A photo or document (an uploaded receipt) kept with the item: a purchase receipt, an\nappraisal, a certificate, a title.",
+        "operationId": "attach_document_ui_api_items__item_id__documents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Attach Document",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/ui/api/items/{item_id}/documents/{receipt_id}": {
+      "delete": {
+        "operationId": "detach_document_ui_api_items__item_id__documents__receipt_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Detach Document",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/ui/api/items/{item_id}/improvements": {
+      "post": {
+        "operationId": "add_improvement_ui_api_items__item_id__improvements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImprovementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Improvement",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/ui/api/items/{item_id}/improvements/{improvement_id}": {
+      "delete": {
+        "operationId": "delete_improvement_ui_api_items__item_id__improvements__improvement_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "improvement_id",
+            "required": true,
+            "schema": {
+              "title": "Improvement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Improvement",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/ui/api/items/{item_id}/sale": {
+      "delete": {
+        "operationId": "unsell_ui_api_items__item_id__sale_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unsell",
+        "tags": [
+          "items"
+        ]
+      },
+      "put": {
+        "description": "Records the sale: the gain or loss is realized, and the item leaves the account's value\nfrom that day (S1.10.5).",
+        "operationId": "sell_ui_api_items__item_id__sale_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sell",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/ui/api/items/{item_id}/valuations": {
+      "post": {
+        "operationId": "add_valuation_ui_api_items__item_id__valuations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValuationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Valuation",
+        "tags": [
+          "items"
+        ]
+      }
+    },
+    "/ui/api/items/{item_id}/valuations/{valuation_id}": {
+      "delete": {
+        "operationId": "delete_valuation_ui_api_items__item_id__valuations__valuation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "valuation_id",
+            "required": true,
+            "schema": {
+              "title": "Valuation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Valuation",
+        "tags": [
+          "items"
         ]
       }
     },

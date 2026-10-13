@@ -384,7 +384,16 @@ def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
             f"INSERT INTO \"OneTimeToken\" VALUES ('h2', 'two-step', '{uid}', NULL, "
             "'2026-10-01 00:00:00', '2030-01-01 00:00:00')"
         )
-        rebuilt = ("OneTimeToken", "Share", "Receipt", "Import", "ReceiptLinks", "Account")
+        rebuilt = (
+            "OneTimeToken",
+            "Share",
+            "Receipt",
+            "Import",
+            "ReceiptLinks",
+            "Account",
+            "Item",
+            "Loan",
+        )
         migrated = {
             name: conn.exec_driver_sql(
                 f"SELECT sql FROM sqlite_master WHERE name = '{name}'"

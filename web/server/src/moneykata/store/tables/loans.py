@@ -28,6 +28,8 @@ Loan = record(
     Column("recasts", Text, nullable=False, server_default=text("'[]'")),
     # For a mortgage, the original value of the home (for when PMI can go).
     Column("originalValue", Dec),
+    # The property or vehicle it is secured by, for equity and loan-to-value (S1.9.5).
+    Column("securedById", Text, ForeignKey("Item.id", ondelete="SET NULL")),
     CheckConstraint("method IN ('amortized', 'daily')", name="method"),
     CheckConstraint('"termMonths" > 0', name="term"),
 )

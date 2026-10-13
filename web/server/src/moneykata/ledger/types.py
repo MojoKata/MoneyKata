@@ -19,6 +19,11 @@ GROUPS = {
     "student-loan": "liabilities",
     "personal-loan": "liabilities",
     "loan": "liabilities",
+    "precious-metals": "physical-assets",
+    "collectables": "physical-assets",
+    "real-estate": "physical-assets",
+    "vehicle": "physical-assets",
+    "other-asset": "physical-assets",
 }
 GROUP_ORDER = [
     "banking",
@@ -49,6 +54,11 @@ LABELS = {
     "student-loan": "Student loan",
     "personal-loan": "Personal loan",
     "loan": "Loan",
+    "precious-metals": "Precious metals",
+    "collectables": "Collectables",
+    "real-estate": "Real estate",
+    "vehicle": "Vehicle",
+    "other-asset": "Other asset",
 }
 TAX = {
     "checking": "taxable",
@@ -69,6 +79,12 @@ TAX = {
     "student-loan": None,
     "personal-loan": None,
     "loan": None,
+    # A sale's gain is taxable; metals and collectables at the collectables rate (S1.10.5).
+    "precious-metals": "taxable",
+    "collectables": "taxable",
+    "real-estate": "taxable",
+    "vehicle": "taxable",
+    "other-asset": "taxable",
 }
 
 
@@ -82,7 +98,7 @@ def reconcilable(account_type: str) -> bool:
     against its servicer's balance on its own screen (S1.9.4)."""
     from ..loans import is_loan
 
-    if is_loan(account_type):
+    if is_loan(account_type) or GROUPS[account_type] == "physical-assets":
         return False
     return GROUPS[account_type] in ("banking", "liabilities") or account_type == "brokerage"
 

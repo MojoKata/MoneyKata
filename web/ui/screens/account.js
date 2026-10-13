@@ -6,6 +6,7 @@ import { html } from '../app/html.js';
 import { PlansFor } from '../components/plans.js';
 import { LoanSummary, Schedule, TermsCard } from '../components/loan.js';
 import { Payoff } from '../components/payoff.js';
+import { Items, ItemsSummary } from '../components/items.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { ago, date, price, quantity } from '../app/format.js';
@@ -38,6 +39,7 @@ export default function Account({ id, tab }) {
   const tabs = !a ? [] : /** @type {[string, string][]} */ ([
     ['overview', 'Overview'],
     ...(type?.loan ? [['schedule', 'Schedule'], ['payoff', 'Payoff']] : []),
+    ...(type?.physical ? [['items', 'Items']] : []),
     ...(type?.investing ? [['holdings', 'Holdings']] : []),
     ['transactions', 'Transactions'],
     ...(type?.reconcilable ? [['reconcile', 'Reconcile']] : []),
@@ -67,6 +69,7 @@ export default function Account({ id, tab }) {
     ${current === 'overview' ? html`<${Overview} a=${a} reload=${res.reload} />` : null}
     ${current === 'schedule' ? html`<${Schedule} a=${a} />` : null}
     ${current === 'payoff' ? html`<${Payoff} a=${a} />` : null}
+    ${current === 'items' ? html`<${Items} a=${a} />` : null}
     ${current === 'holdings' ? html`<${Holdings} a=${a} />` : null}
     ${current === 'transactions' ? html`<${Transactions} a=${a} all=${all} />` : null}
     ${current === 'reconcile'
@@ -103,6 +106,8 @@ function Overview({ a, reload }) {
             <${LoanSummary} a=${a} reload=${reload} />
           </div>
         `
+        : BY_TYPE[a.type]?.physical
+        ? html`<${ItemsSummary} a=${a} />`
         : html`<${Details} a=${a} />`}
     </div>
   `;
@@ -769,6 +774,7 @@ function Settings({ a, reload }) {
   const { route } = useLocation();
   const owner = a.level === 'owner';
   const loan = BY_TYPE[a.type]?.loan;
+  const physical = BY_TYPE[a.type]?.physical;
   const [f, setF] = useState({
     name: a.name,
     institution: a.institution || '',
@@ -845,7 +851,7 @@ function Settings({ a, reload }) {
               </${Field}>
           `
           : null}
-        ${loan ? null : html`
+        ${loan || physical ? null : html`
           <div class="row">
             <${Field} label="Opening balance" error=${errAt(
               e,
@@ -882,18 +888,26 @@ function Settings({ a, reload }) {
           : 'Delete account…'}</button><span class="spacer"></span><button class="btn primary" disabled=${save
           .busy}>Save</button></div>
       </form>
-      ${loan ? html`<${TermsCard} a=${a} />` : html`
-        <div class="card">
-          <h3>Keeping it current</h3>
-          <${Field} label="Method" id="kept-by">
-            <${Select} value=${f.keptBy} onChange=${set(
-              'keptBy',
-            )} options=${KEPT_BY} />
-            </${Field}>
-            <p
-              class="small dim">Import OFX, QFX or CSV files from the Transactions tab. A CSV's columns are asked
-                  once per institution and remembered.</p>
-            </div>
-      `}</div>
+      ${loan ? html`<${TermsCard} a=${a} />` : physical
+        ? html`
+          <div class="card">
+            <h3>Keeping it current</h3>
+            <p class="small dim">Its value is
+                    its items': add them, and their valuations, on the Items tab.</p>
+          </div>
+        `
+        : html`
+          <div class="card">
+            <h3>Keeping it current</h3>
+            <${Field} label="Method" id="kept-by">
+              <${Select} value=${f.keptBy} onChange=${set(
+                'keptBy',
+              )} options=${KEPT_BY} />
+              </${Field}>
+              <p
+                class="small dim">Import OFX, QFX or CSV files from the Transactions tab. A CSV's columns are asked
+                    once per institution and remembered.</p>
+              </div>
+        `}</div>
   `;
 }

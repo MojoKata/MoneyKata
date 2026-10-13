@@ -15,7 +15,9 @@ from sqlalchemy import and_, false, func, insert, select
 from sqlalchemy.orm import Session
 
 from .. import clock, valuation
+from ..projections import taxtables
 from ..store.entities.accounts import Account, Holding, Instrument, Transaction
+from ..store.entities.assets import Item
 from ..store.entities.prices import Price, PriceSource
 from ..store.repos import secrets as secret_repo
 from ..store.tables import prices as prices_table
@@ -95,6 +97,16 @@ def close_history(
     return out
 
 
+# Metal spot (instruments XAU, XAG, XPT, XPD), when no source serves metals itself: a proxy's
+# symbol, its class, and the tax-table figure of metal per share (none: one ounce a token).
+METAL_PROXIES = {
+    "XAU": ("PAXG", "crypto", None),
+    "XAG": ("SLV", "etf", "slvOzPerShare"),
+    "XPT": ("PPLT", "etf", "ppltOzPerShare"),
+    "XPD": ("PALL", "etf", "pallOzPerShare"),
+}
+
+
 def install() -> None:
     valuation.use_closes(stored_closes, close_history)
 
@@ -148,6 +160,22 @@ def priced(s: Session, benchmarks: bool = True) -> list[tuple[Instrument, dt.dat
         .group_by(Holding.instrumentId)
     ):
         firsts[iid] = min(day, firsts.get(iid, day))
+    # Metals valued at spot (S1.10.2): their metal's spot, from the first one acquired.
+    from ..assets import METAL_SYMBOLS
+
+    for metal, day in s.execute(
+        select(Item.metal, func.min(Item.acquiredOn))
+        .join(Account, Account.id == Item.accountId)
+        .where(Item.valuation == "spot", Item.deleted == false(), Account.deleted == false())
+        .group_by(Item.metal)
+    ):
+        inst = s.scalars(
+            select(Instrument).where(
+                Instrument.symbol == METAL_SYMBOLS[metal], Instrument.deleted == false()
+            )
+        ).first()
+        if inst is not None:
+            firsts[inst.id] = min(day, firsts.get(inst.id, day))
     today = clock.today()
     for inst in s.scalars(
         select(Instrument).where(
@@ -251,10 +279,20 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
         if start > today:
             continue
         candidates = for_class(sources, inst.instrumentClass)
+        ref = Ref(inst.id, inst.symbol, inst.instrumentClass)
+        per_share = None
+        if not candidates and inst.symbol in METAL_PROXIES:
+            # Metal spot from a proxy's closes, divided by the metal each share holds (S4.3).
+            symbol, cls, figure = METAL_PROXIES[inst.symbol]
+            candidates = for_class(sources, cls)
+            ref = Ref(inst.id, symbol, cls)
+            per_share = Decimal(1)
+            if figure:
+                with server.db.read() as s:
+                    per_share = Decimal(str(taxtables.figures(s)[figure]))
         if not candidates:
             missing += 1
             continue
-        ref = Ref(inst.id, inst.symbol, inst.instrumentClass)
         for src in candidates:
             run = runs[src.id]
             run["used"] = True
@@ -266,6 +304,8 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
                 run["error"] = str(e)
                 continue
             run["ok"] = True
+            if per_share:
+                closes = [(d, (c / per_share).quantize(Decimal("0.01"))) for d, c in closes]
             with server.db.tx() as s:
                 stored += store(s, inst.id, closes, src.name)
             break

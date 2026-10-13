@@ -14,6 +14,7 @@ from ..errors import Problem, refuse
 from ..keys.files import FileError
 from ..receipts import reading
 from ..store.entities.accounts import Account, Transaction
+from ..store.entities.assets import Item
 from ..store.entities.receipts import Receipt
 from ..store.entities.users import User
 from .conventions import Model, Money, if_match, stale
@@ -94,6 +95,21 @@ class Attach(Model):
 def _links(s, r: Receipt) -> list[LinkOut]:
     out = []
     for ln in receipts.links(s, r.id):
+        if ln.kind == "item":
+            it = s.get(Item, ln.itemId)
+            a = s.get(Account, it.accountId) if it is not None and not it.deleted else None
+            if a is not None and not a.deleted:
+                out.append(
+                    LinkOut(
+                        transactionId=None,
+                        accountId=a.id,
+                        accountName=a.name,
+                        date=None,
+                        amount=None,
+                        payee=it.name,
+                    )
+                )
+            continue
         if ln.kind == "account":
             a = s.get(Account, ln.itemId)
             if a is not None and not a.deleted:

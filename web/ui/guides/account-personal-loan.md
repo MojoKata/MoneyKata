@@ -20,7 +20,8 @@ balance shows until it is explained: a fee, a missed payment, a wrong rate.
 
 ## Following
 
-The payoff plan you're following (the Payoff tab), and whether what you've overpaid since you chose it is ahead of the plan or behind.
+The payoff plan you're following (the Payoff tab), and whether what you've overpaid since you chose
+it is ahead of the plan or behind.
 
 ## Looks like a payment
 

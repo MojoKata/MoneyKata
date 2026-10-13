@@ -39,6 +39,11 @@ FIGURES = [
     Figure("rothFrom529", "529 to Roth IRA, lifetime", "money", "Gifts and giving", "IRS"),
     Figure("qcdLimit", "QCD limit", "money", "Gifts and giving", "IRS"),
     Figure("collectablesRate", "Collectables rate (max)", "percent", "Taxes", "IRS"),
+    # Metal spot from the trusts' share prices (S4.3): troy ounces each share holds, which
+    # falls a little each year by the trust's fee.
+    Figure("slvOzPerShare", "Silver per SLV share (troy oz)", "number", "Metal spot", "iShares"),
+    Figure("ppltOzPerShare", "Platinum per PPLT share (troy oz)", "number", "Metal spot", "abrdn"),
+    Figure("pallOzPerShare", "Palladium per PALL share (troy oz)", "number", "Metal spot", "abrdn"),
     Figure(
         "btcPowerLaw",
         "Bitcoin power law (A, n)",
@@ -99,6 +104,9 @@ SHIPPED: dict[int, dict] = {
         "rothFrom529": 35000,
         "qcdLimit": 108000,
         "collectablesRate": 28,
+        "slvOzPerShare": 0.8634,
+        "ppltOzPerShare": 0.0915,
+        "pallOzPerShare": 0.0915,
         **_BTC,
     },
     2026: {
@@ -114,6 +122,9 @@ SHIPPED: dict[int, dict] = {
         "rothFrom529": 35000,
         "qcdLimit": 111000,
         "collectablesRate": 28,
+        "slvOzPerShare": 0.8591,
+        "ppltOzPerShare": 0.0909,
+        "pallOzPerShare": 0.0909,
         **_BTC,
     },
 }

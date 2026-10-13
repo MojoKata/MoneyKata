@@ -19,6 +19,11 @@ import t14 from './auto-loan.js';
 import t15 from './student-loan.js';
 import t16 from './personal-loan.js';
 import t17 from './loan.js';
+import t18 from './precious-metals.js';
+import t19 from './collectables.js';
+import t20 from './real-estate.js';
+import t21 from './vehicle.js';
+import t22 from './other-asset.js';
 
 /**
  * @typedef {Object} AccountType
@@ -31,6 +36,7 @@ import t17 from './loan.js';
  * @property {boolean} reconcilable  has a Reconcile tab
  * @property {boolean} contributions  records contribution years and sources
  * @property {boolean} [loan]  has terms, a schedule and a payoff planner (S1.9)
+ * @property {string} [physical]  holds items (S1.10), valued this way unless one says otherwise
  */
 
 /** @type {AccountType[]} */
@@ -53,6 +59,11 @@ export const TYPES = [
   t15,
   t16,
   t17,
+  t18,
+  t19,
+  t20,
+  t21,
+  t22,
 ];
 
 /** @type {Record<string, AccountType>} */

@@ -209,6 +209,9 @@ def test_every_screen_and_tab_has_its_guide(page):
     for t in ("mortgage", "auto-loan"):
         for tab in ("overview", "schedule", "payoff", "transactions", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
+    for t in ("precious-metals", "collectables", "real-estate", "vehicle"):
+        for tab in ("overview", "items", "transactions", "sharing", "settings"):
+            paths.append(f"/ui/accounts/{ids[t]}/{tab}")
     for p in ports:
         paths += [f"/ui/portfolios/{p}/{t}" for t in ("performance", "holdings", "projections")]
     budgets = page.evaluate("""async () => (await (await fetch('/ui/api/budgets')).json())
@@ -309,6 +312,23 @@ def test_every_dialog_has_its_guide(page):
     page.get_by_role("switch", name="Recast after the lump sums").click()
     page.wait_for_selector("#f-recast-fee")
     check_guide(page, ".content", "a payoff plan with a lump sum and a recast")
+    # Each kind of item opens in its dialog, with valuations, improvements and the sale.
+    for t, name in (
+        ("precious-metals", "Silver bar"),
+        ("collectables", "Rolex"),
+        ("real-estate", "1428 Elm St"),
+        ("vehicle", "Outback"),
+    ):
+        visit(page, f"/ui/accounts/{ids[t]}/items")
+        page.get_by_role("row", name=re.compile(name)).click()
+        page.wait_for_selector(".dialog")
+        wait_guide(page, "dialog-item")
+        if page.get_by_role("button", name="Record the sale…").count():
+            page.get_by_role("button", name="Record the sale…").click()
+        check_guide(page, ".dialog", f"a {t} item")
+        close_dialog(page)
+    open_dialog(page, f"/ui/accounts/{ids['collectables']}/items", "Add an item", "dialog-item")
+    close_dialog(page)
     # Splits add rows that name their heading.
     open_dialog(page, "/ui/transactions", "Add", "dialog-transaction")
     page.select_option(".dialog #f-account", label="Everyday checking")

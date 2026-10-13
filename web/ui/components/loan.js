@@ -44,6 +44,8 @@ export function termsForm(t, type) {
     drawMonths: t?.drawMonths != null ? String(t.drawMonths) : type === 'heloc' ? '120' : '',
     resets: t?.resets || [],
     recasts: t?.recasts || [],
+    originalValue: t?.originalValue ?? '',
+    securedById: t?.securedById ?? '',
   };
 }
 
@@ -60,6 +62,8 @@ export function termsBody(f) {
     escrowInsurance: orNull(f.escrowInsurance),
     pmi: orNull(f.pmi),
     drawMonths: f.drawMonths === '' ? null : Number(f.drawMonths),
+    originalValue: orNull(f.originalValue),
+    securedById: f.securedById || null,
     resets: f.resets,
     recasts: f.recasts,
   };
@@ -76,6 +80,8 @@ export const TERM_FIELDS = [
   'escrowInsurance',
   'pmi',
   'drawMonths',
+  'originalValue',
+  'securedById',
 ];
 
 /**
@@ -134,6 +140,9 @@ export function TermsFields({ f, set, e, type }) {
                 </${Field}>
       `
       : null}
+    ${['mortgage', 'heloc', 'auto-loan', 'loan'].includes(type)
+      ? html`<${SecuredBy} f=${f} set=${set} e=${e} type=${type} />`
+      : null}
     ${type === 'heloc'
       ? html`
         <${Field} label="Draw period (months)" id="draw-months" error=${errAt(e, 'drawMonths')}
@@ -142,6 +151,37 @@ export function TermsFields({ f, set, e, type }) {
           </${Field}>
       `
       : null}
+  `;
+}
+
+/**
+ * The property or vehicle the loan is secured by, and a mortgage's original home value.
+ * @param {{ f: any, set: (k: string) => (v: any) => void, e: any, type: string }} p
+ */
+function SecuredBy({ f, set, e, type }) {
+  const res = useApi('/items');
+  const items = /** @type {any[]} */ (res.data) || [];
+  return html`
+    <div class="row">
+      <${Field} label="Secured by" id="secured-by" error=${errAt(e, 'securedById')}
+        hint="A property or vehicle, for the equity and loan-to-value.">
+        <${Select} value=${f.securedById} onChange=${set('securedById')} options=${[
+          ['', items.length ? 'Nothing' : 'Nothing yet: add the property or vehicle first'],
+          ...items.map((i) => [i.id, `${i.name} · ${i.accountName}`]),
+        ]} /></${Field}>
+      ${type === 'mortgage'
+        ? html`
+          <${Field} label="Home's original value" id="original-value"
+            error=${errAt(
+              e,
+              'originalValue',
+            )} hint="The appraisal or price when the loan was made.">
+            <${Input} value=${f.originalValue} onInput=${set('originalValue')}
+              inputmode="decimal" />
+            </${Field}>
+        `
+        : null}
+    </div>
   `;
 }
 
@@ -209,6 +249,27 @@ export function LoanSummary({ a, reload }) {
               : 'ahead'} by <${Amt} v=${String(
                 Math.abs(Number(v.following.ahead)),
               )} /></span></span></div>
+        `
+        : null}
+      ${v.equity
+        ? html`
+          <div
+            class="list-item"><span class="grow dim">Equity in ${v.equity
+              .itemName}</span><span><${Amt} v=${v.equity.equity} cents=${false} /><span
+                    class="small dim"> · LTV ${Number(v.equity.ltv)}%</span></span></div>
+                    ${v.equity.pmiRequest || v.equity.pmiEnds
+                      ? html`
+                        <div
+                          class="list-item"><span class="grow dim">PMI</span><span class="small">${v
+                              .equity.pmiRequest
+                            ? `can be dropped on request from ${date(v.equity.pmiRequest)}`
+                            : ''}${v.equity.pmiRequest && v.equity.pmiEnds
+                            ? '; '
+                            : ''}${v.equity.pmiEnds
+                            ? `ends by itself ${date(v.equity.pmiEnds)}`
+                            : ''}</span></div>
+                      `
+                      : null}
         `
         : null}
       <div class="list-item"><span class="grow dim">Servicer's balance</span>${s

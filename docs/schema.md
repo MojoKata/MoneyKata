@@ -82,7 +82,9 @@ The prefixes of the tables that exist.
 | Group  | Group          | A named set of users that shares are granted to.                                             |
 | Hold   | Holding        | What an account holds of one instrument at a point in time.                                  |
 | Imprt  | Import         | One file imported into an account, with the dates it covers.                                 |
+| Imprv  | Improvement    | An improvement to a property, added to its cost basis.                                       |
 | Instr  | Instrument     | A thing with a price: a stock, fund, coin, option contract or currency.                      |
+| Item   | Item           | A physical asset: metals, a collectable, a property or a vehicle, with how it is valued.     |
 | Loan   | Loan           | A loan account's terms: principal, rate, term, escrow, PMI, resets and recasts.              |
 | Lot    | Lot            | One acquisition of an instrument, and what remains open.                                     |
 | Lyout  | StatementLayout | What statement import learned of an institution's layout: section signs, lines to skip.   |
@@ -100,6 +102,7 @@ The prefixes of the tables that exist.
 | TaxFg  | TaxFigure      | An admin's correction of a shipped tax-table figure for one year.                            |
 | Txn    | Transaction    | One dated movement in an account.                                                            |
 | User   | User           | A person who signs in here, or a user of a linked server (with `linkId`).                    |
+| Valtn  | ItemValuation  | A dated value of an item, with its source.                                                   |
 
 ### 3.2 Reserved
 

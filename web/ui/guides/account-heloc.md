@@ -18,9 +18,14 @@ bank account, its half of the transfer is recorded too.
 The principal the servicer says is owed, typed from its statement. A difference from the schedule's
 balance shows until it is explained: a fee, a missed payment, a wrong rate.
 
+## Equity
+
+When the loan is secured by a property or vehicle: what it's worth less every loan it secures, the loan-to-value, and for a mortgage with PMI, when it can be dropped.
+
 ## Following
 
-The payoff plan you're following (the Payoff tab), and whether what you've overpaid since you chose it is ahead of the plan or behind.
+The payoff plan you're following (the Payoff tab), and whether what you've overpaid since you chose
+it is ahead of the plan or behind.
 
 ## Looks like a payment
 
@@ -58,6 +63,10 @@ interest.
 
 Principal and interest per payment. Blank: computed from the terms; type the servicer's figure if it
 differs by a few cents.
+
+## Secured by {#secured-by}
+
+The property or vehicle the loan is secured by, from a physical-asset account. The Overview then shows your equity in it and the loan-to-value.
 
 ## Draw period (months) {#draw-months}
 

@@ -127,11 +127,14 @@ def positions(s: Session, ledger, day: dt.date | None = None) -> list[Position]:
 
 def account_value(s: Session, ledger, investing: bool, day: dt.date | None = None) -> Decimal:
     """Cash plus what the holdings are worth (a holding with no price counts nothing). A
-    loan counts what is owed on it, from its terms and payments (S1.9)."""
-    from . import loans
+    loan counts what is owed on it, from its terms and payments (S1.9); a physical-asset
+    account, what its items are worth (S1.10)."""
+    from . import assets, loans
 
     if loans.is_loan(ledger.account.type):
         return loans.value(s, ledger.account, day)
+    if assets.is_physical(ledger.account.type):
+        return assets.value(s, ledger.account, day)
     cash = ledger.balance(day)
     if not investing:
         return cash
@@ -192,8 +195,10 @@ def series(
     """The account's value at the end of each day (or every step_days), for its chart.
     Positions change only on the days of trades and snapshots, so the ledger is replayed on
     those days alone; prices are carried forward from the last known one."""
-    from . import loans
+    from . import assets, loans
 
+    if assets.is_physical(ledger.account.type):
+        return assets.series(s, ledger.account, first, last, step_days)
     if loans.is_loan(ledger.account.type):
         row = loans.loan_of(s, ledger.account)
         if row is None:

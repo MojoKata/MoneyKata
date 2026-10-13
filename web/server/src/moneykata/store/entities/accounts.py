@@ -197,6 +197,7 @@ class Loan(Record):
     resets: str = "[]"
     recasts: str = "[]"
     originalValue: Decimal | None = None
+    securedById: str | None = None
 
 
 @dataclass(kw_only=True, eq=False)

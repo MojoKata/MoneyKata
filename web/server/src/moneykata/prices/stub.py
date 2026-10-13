@@ -16,10 +16,14 @@ def _seed(symbol: str) -> int:
     return int.from_bytes(hashlib.sha256(symbol.encode()).digest()[:4])
 
 
+# Metal spot near real levels, so dev mode's metals look right (dollars a troy ounce).
+LEVELS = {"XAU": 2600, "XAG": 30, "XPT": 950, "XPD": 1000}
+
+
 def walk(symbol: str, day: dt.date) -> Decimal:
     """The same price for the same symbol and day, every time."""
     seed = _seed(symbol)
-    base = 20 + seed % 480
+    base = LEVELS.get(symbol, 20 + seed % 480)
     n = (day - START).days
     drift = 0.00025 + (seed % 7) * 0.00003
     wave = math.sin(n / (17 + seed % 23)) * 0.04 + math.sin(n / (61 + seed % 31)) * 0.07

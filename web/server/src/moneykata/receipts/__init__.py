@@ -33,6 +33,7 @@ from .. import access, clock, ids, settings
 from ..errors import Problem, refuse
 from ..keys import files
 from ..store.entities.accounts import Account, Transaction
+from ..store.entities.assets import Item
 from ..store.entities.receipts import Receipt, ReceiptLink
 
 log = logging.getLogger("moneykata.receipts")
@@ -216,6 +217,9 @@ def level(s: Session, user_id: str, r: Receipt) -> str | None:
     for ln in links(s, r.id):
         if ln.kind == "account":
             a = s.get(Account, ln.itemId)
+        elif ln.kind == "item":
+            it = s.get(Item, ln.itemId)
+            a = s.get(Account, it.accountId) if it and not it.deleted else None
         else:
             t = s.get(Transaction, ln.itemId)
             a = s.get(Account, t.accountId) if t and not t.deleted else None
@@ -266,9 +270,22 @@ def visible(s: Session, user_id: str) -> list[tuple[Receipt, str]]:
             Receipt.ownerId != user_id,
         )
     ).all()
+    documents = s.scalars(
+        select(Receipt)
+        .join(ReceiptLink, ReceiptLink.receiptId == Receipt.id)
+        .join(Item, Item.id == ReceiptLink.itemId)
+        .where(
+            ReceiptLink.kind == "item",
+            ReceiptLink.deleted == false(),
+            Item.deleted == false(),
+            Item.accountId.in_(accounts),
+            Receipt.deleted == false(),
+            Receipt.ownerId != user_id,
+        )
+    ).all()
     out = [(r, "owner") for r in own]
     seen = {r.id for r in own}
-    for r in [*linked, *statements]:
+    for r in [*linked, *statements, *documents]:
         if r.id not in seen:
             seen.add(r.id)
             out.append((r, level(s, user_id, r) or "read"))
@@ -309,6 +326,49 @@ def attach_account(s: Session, user_id: str, r: Receipt, account_id: str) -> Non
             )
         )
         s.flush()
+
+
+def attach_item(s: Session, user_id: str, r: Receipt, item: Item) -> None:
+    """A photo or document of a physical-asset item (S1.10.1)."""
+    access.account(s, user_id, item.accountId, "write")
+    row = s.get(ReceiptLink, (r.id, "item", item.id))
+    if row is None:
+        s.add(
+            ReceiptLink(
+                receiptId=r.id,
+                kind="item",
+                itemId=item.id,
+                createdAt=clock.now(),
+                linkedById=user_id,
+            )
+        )
+    elif row.deleted:
+        row.deleted, row.deletedAt, row.deletedById = False, None, None
+    s.flush()
+
+
+def detach_item(s: Session, user_id: str, r: Receipt, item: Item) -> None:
+    access.account(s, user_id, item.accountId, "write")
+    row = s.get(ReceiptLink, (r.id, "item", item.id))
+    if row is None or row.deleted:
+        raise Problem(404, "not-found", "The document is not attached to that item.")
+    row.deleted, row.deletedAt, row.deletedById = True, clock.now(), user_id
+
+
+def of_item(s: Session, item_id: str) -> list[Receipt]:
+    return list(
+        s.scalars(
+            select(Receipt)
+            .join(ReceiptLink, ReceiptLink.receiptId == Receipt.id)
+            .where(
+                ReceiptLink.kind == "item",
+                ReceiptLink.itemId == item_id,
+                ReceiptLink.deleted == false(),
+                Receipt.deleted == false(),
+            )
+            .order_by(Receipt.createdAt)
+        )
+    )
 
 
 def detach(s: Session, user_id: str, r: Receipt, transaction_id: str) -> None:

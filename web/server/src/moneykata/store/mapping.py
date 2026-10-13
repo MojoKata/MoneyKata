@@ -5,6 +5,7 @@ from sqlalchemy.orm import registry
 
 from .entities import Record, _now
 from .entities import accounts as acc
+from .entities import assets as asx
 from .entities import budgets as bd
 from .entities import prices as pr
 from .entities import projections as pj
@@ -25,6 +26,7 @@ from .tables import (
     accounts,
     activity,
     alerts,
+    assets,
     budgets,
     core,
     loans,
@@ -65,6 +67,9 @@ def map_all() -> None:
         (acc.StatementLayout, accounts.StatementLayout),
         (acc.Loan, loans.Loan),
         (acc.PayoffPlan, loans.PayoffPlan),
+        (asx.Item, assets.Item),
+        (asx.ItemValuation, assets.ItemValuation),
+        (asx.Improvement, assets.Improvement),
         (acc.Import, accounts.Import),
         (acc.Transaction, accounts.Transaction),
         (acc.Split, accounts.Split),

@@ -293,6 +293,11 @@
  */
 
 /**
+ * @typedef {Object} DocumentIn
+ * @property {string} receiptId
+ */
+
+/**
  * @typedef {Object} Done
  * @property {number} changed
  */
@@ -314,6 +319,20 @@
  * @property {number} setAside
  * @property {(string | null)} lastRun
  * @property {(string | null)} lastError
+ */
+
+/**
+ * What the loan is secured by, and the borrower's stake in it (S1.9.5).
+ * @typedef {Object} Equity
+ * @property {string} itemId
+ * @property {string} itemName
+ * @property {string} accountId
+ * @property {string} value
+ * @property {string} owed
+ * @property {string} equity
+ * @property {string} ltv
+ * @property {(string | null)} pmiRequest
+ * @property {(string | null)} pmiEnds
  */
 
 /**
@@ -446,6 +465,21 @@
  */
 
 /**
+ * @typedef {Object} ImprovementIn
+ * @property {string} date
+ * @property {string} description
+ * @property {(number | string)} amount
+ */
+
+/**
+ * @typedef {Object} ImprovementOut
+ * @property {string} id
+ * @property {string} date
+ * @property {string} description
+ * @property {string} amount
+ */
+
+/**
  * @typedef {Object} InstrumentOut
  * @property {string} id
  * @property {string} symbol
@@ -467,6 +501,116 @@
  * @property {string} username
  * @property {string} displayName
  * @property {string} household
+ */
+
+/**
+ * @typedef {Object} ItemDetail
+ * @property {string} id
+ * @property {string} accountId
+ * @property {string} name
+ * @property {(string | null)} category
+ * @property {string} acquiredOn
+ * @property {string} acquiredHow
+ * @property {string} quantity
+ * @property {string} valuation
+ * @property {(string | null)} metal
+ * @property {(string | null)} fineOunces
+ * @property {string} basis
+ * @property {string} value
+ * @property {string} gain
+ * @property {number} years
+ * @property {(ValuationOut | null)} latest
+ * @property {boolean} stale
+ * @property {(Sale | null)} sale
+ * @property {Array<SecuredLoan>} loans
+ * @property {(string | null)} equity
+ * @property {number} version
+ * @property {(string | null)} description
+ * @property {string} costBasis
+ * @property {(string | null)} location
+ * @property {(string | null)} serial
+ * @property {(string | null)} condition
+ * @property {(string | null)} insuredValue
+ * @property {(string | null)} policy
+ * @property {(string | null)} notes
+ * @property {(string | null)} unitWeight
+ * @property {(string | null)} weightUnit
+ * @property {(string | null)} purity
+ * @property {string} sellPremium
+ * @property {(string | null)} depreciationRate
+ * @property {(string | null)} address
+ * @property {(string | null)} closingCosts
+ * @property {boolean} primaryResidence
+ * @property {boolean} personalUse
+ * @property {(string | null)} spot
+ * @property {(string | null)} spotAsOf
+ * @property {Array<ValuationOut>} valuations
+ * @property {Array<ImprovementOut>} improvements
+ * @property {Array<ReceiptRow>} documents
+ * @property {Array<Array<unknown>>} history
+ * @property {boolean} canWrite
+ */
+
+/**
+ * @typedef {Object} ItemIn
+ * @property {string} name
+ * @property {(string | null)} [category]
+ * @property {(string | null)} [description]
+ * @property {string} acquiredOn
+ * @property {string} [acquiredHow]
+ * @property {(number | string)} costBasis
+ * @property {(number | string)} [quantity]
+ * @property {(string | null)} [location]
+ * @property {(string | null)} [serial]
+ * @property {(string | null)} [condition]
+ * @property {((number | string) | null)} [insuredValue]
+ * @property {(string | null)} [policy]
+ * @property {(string | null)} [notes]
+ * @property {string} [valuation]
+ * @property {(string | null)} [metal]
+ * @property {((number | string) | null)} [unitWeight]
+ * @property {(string | null)} [weightUnit]
+ * @property {(string | null)} [purity]
+ * @property {(number | string)} [sellPremium]
+ * @property {((number | string) | null)} [depreciationRate]
+ * @property {(string | null)} [address]
+ * @property {((number | string) | null)} [closingCosts]
+ * @property {boolean} [primaryResidence]
+ * @property {boolean} [personalUse]
+ */
+
+/**
+ * @typedef {Object} ItemRow
+ * @property {string} id
+ * @property {string} accountId
+ * @property {string} name
+ * @property {(string | null)} category
+ * @property {string} acquiredOn
+ * @property {string} acquiredHow
+ * @property {string} quantity
+ * @property {string} valuation
+ * @property {(string | null)} metal
+ * @property {(string | null)} fineOunces
+ * @property {string} basis
+ * @property {string} value
+ * @property {string} gain
+ * @property {number} years
+ * @property {(ValuationOut | null)} latest
+ * @property {boolean} stale
+ * @property {(Sale | null)} sale
+ * @property {Array<SecuredLoan>} loans
+ * @property {(string | null)} equity
+ * @property {number} version
+ */
+
+/**
+ * @typedef {Object} ItemsView
+ * @property {Array<ItemRow>} items
+ * @property {Array<MetalOut>} metals
+ * @property {string} value
+ * @property {string} basis
+ * @property {string} gain
+ * @property {boolean} canWrite
  */
 
 /**
@@ -529,6 +673,7 @@
  * @property {string} overpaid
  * @property {Array<RowOut>} rows
  * @property {(ServicerCheck | null)} servicer
+ * @property {(Equity | null)} [equity]
  * @property {(Following | null)} [following]
  * @property {boolean} canWrite
  */
@@ -579,6 +724,18 @@
  * @property {string} timeZone
  * @property {string} zone
  * @property {string} theme
+ */
+
+/**
+ * @typedef {Object} MetalOut
+ * @property {string} metal
+ * @property {string} ounces
+ * @property {string} cost
+ * @property {(string | null)} averageCost
+ * @property {(string | null)} spot
+ * @property {(string | null)} spotAsOf
+ * @property {string} value
+ * @property {string} gain
  */
 
 /**
@@ -1156,6 +1313,23 @@
  */
 
 /**
+ * @typedef {Object} Sale
+ * @property {string} soldOn
+ * @property {string} proceeds
+ * @property {string} fees
+ * @property {string} gain
+ * @property {boolean} collectable
+ * @property {boolean} deductible
+ */
+
+/**
+ * @typedef {Object} SaleIn
+ * @property {string} soldOn
+ * @property {(number | string)} proceeds
+ * @property {(number | string)} [fees]
+ */
+
+/**
  * @typedef {Object} Saved
  * @property {ShareView} view
  * @property {number} alsoShared
@@ -1177,6 +1351,21 @@
  * @typedef {Object} SavedPlanIn
  * @property {string} name
  * @property {PlanIn} inputs
+ */
+
+/**
+ * @typedef {Object} Securable
+ * @property {string} id
+ * @property {string} name
+ * @property {string} accountId
+ * @property {string} accountName
+ */
+
+/**
+ * @typedef {Object} SecuredLoan
+ * @property {string} accountId
+ * @property {string} name
+ * @property {string} owed
  */
 
 /**
@@ -1422,6 +1611,7 @@
  * @property {Array<Reset>} [resets]
  * @property {Array<Recast>} [recasts]
  * @property {((number | string) | null)} [originalValue]
+ * @property {(string | null)} [securedById]
  */
 
 /**
@@ -1439,6 +1629,7 @@
  * @property {Array<ResetView>} resets
  * @property {Array<RecastView>} recasts
  * @property {(string | null)} originalValue
+ * @property {(string | null)} securedById
  * @property {string} computedPayment
  * @property {number} version
  */
@@ -1635,6 +1826,23 @@
  * @property {string} type
  * @property {unknown} [input]
  * @property {Object<string, unknown>} [ctx]
+ */
+
+/**
+ * @typedef {Object} ValuationIn
+ * @property {string} date
+ * @property {(number | string)} value
+ * @property {string} [source]
+ * @property {(string | null)} [note]
+ */
+
+/**
+ * @typedef {Object} ValuationOut
+ * @property {string} id
+ * @property {string} date
+ * @property {string} value
+ * @property {string} source
+ * @property {(string | null)} note
  */
 
 /**

@@ -77,6 +77,7 @@ def routes(page) -> dict[str, str]:
         "account-holdings": f"/ui/accounts/{brokerage}/holdings",
         "account-schedule": f"/ui/accounts/{by_type['mortgage']}/schedule",
         "account-payoff": f"/ui/accounts/{by_type['mortgage']}/payoff",
+        "account-items": f"/ui/accounts/{by_type['precious-metals']}/items",
         "portfolio-performance": f"/ui/portfolios/{port}/performance",
         "portfolio-holdings": f"/ui/portfolios/{port}/holdings",
     }

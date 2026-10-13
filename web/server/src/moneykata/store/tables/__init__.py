@@ -4,6 +4,7 @@ from . import (  # noqa: F401 - each adds its tables
     accounts,
     activity,
     alerts,
+    assets,
     budgets,
     core,
     loans,
