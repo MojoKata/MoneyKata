@@ -3,6 +3,7 @@ own keys; secrets and the sources come with their sections' routes."""
 
 import datetime as dt
 import json
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
@@ -112,6 +113,11 @@ class KeyTest(Model):
     checks: list[CheckOut]
 
 
+def _database_bytes(db: Path) -> int:
+    """The database with its write-ahead log, where recent changes sit until a checkpoint."""
+    return sum(f.stat().st_size for f in (db, db.with_name(db.name + "-wal")) if f.exists())
+
+
 @router.get("/settings/keys", response_model=KeyStorage)
 def key_storage(request: Request, c: Caller = Depends(admin)):
     """Read only: the master key is changed only on the host (§18.4.6)."""
@@ -159,7 +165,7 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
             for p in srv.config.previous_keys
         ],
         confirmations=confirmations,
-        databaseBytes=srv.config.db_path.stat().st_size if srv.config.db_path.exists() else 0,
+        databaseBytes=_database_bytes(srv.config.db_path),
         secrets=secrets,
         receipts=sum(1 for _ in receipts_dir.rglob("*") if _.is_file())
         if receipts_dir.is_dir()
