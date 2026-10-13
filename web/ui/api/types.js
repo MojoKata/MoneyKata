@@ -85,6 +85,11 @@
  */
 
 /**
+ * @typedef {Object} Activated
+ * @property {(string | null)} replaced
+ */
+
+/**
  * @typedef {Object} ActivityItem
  * @property {string} id
  * @property {string} at
@@ -124,6 +129,13 @@
 /**
  * @typedef {Object} Approval
  * @property {Array<string>} [groupIds]
+ */
+
+/**
+ * @typedef {Object} AssumptionsView
+ * @property {Object<string, unknown>} figures
+ * @property {Array<Array<unknown>>} classes
+ * @property {Array<Array<unknown>>} bitcoinModels
  */
 
 /**
@@ -505,6 +517,21 @@
  */
 
 /**
+ * @typedef {Object} ModelRow
+ * @property {string} model
+ * @property {Array<Array<unknown>>} path
+ * @property {Object<string, number>} at
+ * @property {string} record
+ */
+
+/**
+ * @typedef {Object} ModelsView
+ * @property {(number | null)} price
+ * @property {Array<ModelRow>} rows
+ * @property {number} figuresYear
+ */
+
+/**
  * @typedef {Object} MonthRow
  * @property {string} categoryId
  * @property {string} label
@@ -595,6 +622,14 @@
  */
 
 /**
+ * @typedef {Object} NewProjection
+ * @property {string} name
+ * @property {string} goal
+ * @property {Object<string, unknown>} builtOn
+ * @property {Object<string, unknown>} [inputs]
+ */
+
+/**
  * @typedef {Object} NewReconciliation
  * @property {string} statementDate
  * @property {(number | string)} statementBalance
@@ -662,9 +697,22 @@
 
 /**
  * The plan from a month on: the categories listed, and none other.
- * @typedef {Object} Plan
+ * @typedef {Object} Plan_Input
  * @property {string} month
  * @property {Array<PlanLine>} lines
+ */
+
+/**
+ * @typedef {Object} Plan_Output
+ * @property {string} id
+ * @property {string} name
+ * @property {string} goal
+ * @property {(string | null)} status
+ * @property {string} headline
+ * @property {Array<Array<unknown>>} actual
+ * @property {Array<Array<unknown>>} baseline
+ * @property {(string | null)} sharedBy
+ * @property {Object<string, unknown>} builtOn
  */
 
 /**
@@ -768,6 +816,52 @@
  * @property {(number | null)} [birthYear]
  * @property {(string | null)} [spouseId]
  * @property {(string | null)} [alertEmails]
+ */
+
+/**
+ * @typedef {Object} ProjectionChange
+ * @property {(string | null)} [name]
+ * @property {(Object<string, unknown> | null)} [builtOn]
+ * @property {(Object<string, unknown> | null)} [inputs]
+ * @property {boolean} [rebaseline]
+ */
+
+/**
+ * @typedef {Object} ProjectionDetail
+ * @property {string} id
+ * @property {string} name
+ * @property {string} goal
+ * @property {boolean} active
+ * @property {string} level
+ * @property {string} ownerName
+ * @property {Object<string, unknown>} builtOn
+ * @property {string} builtOnLabel
+ * @property {string} headline
+ * @property {(string | null)} status
+ * @property {boolean} shown
+ * @property {number} sharedWith
+ * @property {number} version
+ * @property {Object<string, unknown>} inputs
+ * @property {Object<string, unknown>} result
+ * @property {(Object<string, unknown> | null)} tracking
+ * @property {(string | null)} baselineAt
+ */
+
+/**
+ * @typedef {Object} ProjectionRow
+ * @property {string} id
+ * @property {string} name
+ * @property {string} goal
+ * @property {boolean} active
+ * @property {string} level
+ * @property {string} ownerName
+ * @property {Object<string, unknown>} builtOn
+ * @property {string} builtOnLabel
+ * @property {string} headline
+ * @property {(string | null)} status
+ * @property {boolean} shown
+ * @property {number} sharedWith
+ * @property {number} version
  */
 
 /**
@@ -958,6 +1052,11 @@
  */
 
 /**
+ * @typedef {Object} Shown
+ * @property {boolean} shown
+ */
+
+/**
  * @typedef {Object} SignIn
  * @property {string} login
  * @property {string} password
@@ -1097,6 +1196,31 @@
  * @property {Array<string>} changed
  * @property {Array<Array<string>>} gaps
  * @property {(string | null)} firstParting
+ */
+
+/**
+ * @typedef {Object} TaxChange
+ * @property {number} year
+ * @property {Object<string, unknown>} values
+ */
+
+/**
+ * @typedef {Object} TaxRow
+ * @property {string} key
+ * @property {string} label
+ * @property {string} kind
+ * @property {string} group
+ * @property {string} source
+ * @property {unknown} value
+ * @property {unknown} shipped
+ * @property {boolean} corrected
+ */
+
+/**
+ * @typedef {Object} TaxTables
+ * @property {number} year
+ * @property {Array<number>} years
+ * @property {Array<TaxRow>} rows
  */
 
 /**

@@ -2,6 +2,7 @@
 // from growth, against its benchmark; time- and money-weighted returns) and Holdings.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
+import { PlansFor } from '../components/plans.js';
 import { useApi } from '../app/hooks.js';
 import { date, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
@@ -14,12 +15,15 @@ import { ShareDialog } from '../components/share.js';
 import { RANGES, TimeChart } from '../charts/chart.js';
 import { BENCHMARKS, PortfolioDialog } from './portfolio-dialog.js';
 
-const TABS =
-  /** @type {[string, string][]} */ ([['performance', 'Performance'], ['holdings', 'Holdings']]);
+const TABS = /** @type {[string, string][]} */ ([
+  ['performance', 'Performance'],
+  ['holdings', 'Holdings'],
+  ['projections', 'Projections'],
+]);
 
 /** @param {{ id: string, tab?: string }} p */
 export default function Portfolio({ id, tab }) {
-  const current = tab === 'holdings' ? 'holdings' : 'performance';
+  const current = tab === 'holdings' || tab === 'projections' ? tab : 'performance';
   const res = useApi(`/portfolios/${id}`, {}, ['share']);
   const p = /** @type {any} */ (res.data);
   useTitle(p ? p.name : 'Portfolio', [['Portfolios', '/ui/portfolios']]);
@@ -54,6 +58,8 @@ export default function Portfolio({ id, tab }) {
         <${Tabs} tabs=${TABS} current=${current} base=${`/ui/portfolios/${p.id}`} />
         ${current === 'performance'
           ? html`<${Performance} p=${p} />`
+          : current === 'projections'
+          ? html`<${PlansFor} kind="portfolio" id=${p.id} all=${true} />`
           : html`<${Holdings} p=${p} />`}
   `;
 }

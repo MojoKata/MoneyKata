@@ -34,6 +34,10 @@ opens. Each section has its own help guide. In this order:
     the annual gift exclusion, the 529-to-Roth lifetime limit, the QCD limit, the
     collectables rate, the shipped college-cost averages (S6.2.2), the bitcoin models'
     published figures (S6.3.1), and the metal per share of SLV, PPLT and PALL (S4.3).
+    A corrected figure is marked, with the shipped value beside it; setting it back to the
+    shipped value removes the correction. A year after the latest shipped uses the latest.
+    The college-cost averages and the metal per share arrive with the features that use
+    them (529s, physical assets).
 12. **Backups**: the time of day and the copies kept; the backup directory is set on the host.
 13. **Key storage** (S15): read-only. The master key's fingerprint and age, who confirmed
     its recovery phrase and when, rotation progress and the date the previous key can go, the

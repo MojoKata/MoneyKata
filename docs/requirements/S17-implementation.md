@@ -184,10 +184,12 @@
       7. **Statement import** (S1.3.3): bank and card statements, read and checked, with
          their layout learned per institution; the rest of G8 waits.
       8. **Projections and assumptions** (S6.1–S6.9): Profile › Assumptions, the models,
-         scenarios, active projections with tracking, and the Dashboard's Plans card.
+         scenarios, active projections with tracking, the Dashboard's Plans card, and
+         Settings › Tax tables with the contribution limits and the bitcoin models' figures.
+         Retirement and savings-target goals; the education goal comes with 529s.
       9. **The mockup** generated from the app for these screens, and the Docker image.
-   3. **Milestone 3**: taxes and tax books (S8), loans and the payoff planner, 529s,
-      physical assets, gifts and giving.
+   3. **Milestone 3**: taxes and tax books (S8), loans and the payoff planner, 529s with the
+      education goal (S6.2.2), physical assets, gifts and giving.
    4. **Milestone 4**: positions and options (S3), bitcoin wallets and own node (S1.6, G9),
       the MCP endpoint (S10.9).
    5. **Milestone 5**: linked servers and linked households (S11, S12.10, G1).

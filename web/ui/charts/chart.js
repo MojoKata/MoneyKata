@@ -325,3 +325,153 @@ export function FlowChart({ label, sources, uses }) {
       })} />
   `;
 }
+
+/**
+ * A projection's fan (S6.4.2): the 10th–90th and 25th–75th percentile bands with the median,
+ * by year; or, for a model with bear, base and bull cases, those three paths instead.
+ * @param {{ label: string, years: number[], p: Record<string, number[]>,
+ *   paths?: Record<string, number[]> | null, marks?: [number, string][] }} p
+ */
+export function FanChart({ label, years, p, paths, marks = [] }) {
+  const lines = paths && Object.keys(paths).length ? paths : null;
+  const fmt = (/** @type {number} */ v) => money(String(Math.round(v)), { cents: false });
+  return html`
+    <${Chart} label=${label}
+      legend=${lines
+        ? [['Bear', '--c4'], ['Base', '--accent'], ['Bull', '--c2']]
+        : [['Median', '--accent'], ['25th–75th percentile', '--accent'], [
+          '10th–90th percentile',
+          '--fg-muted',
+        ]]}
+      head=${lines ? ['Year', 'Bear', 'Base', 'Bull'] : ['Year', '10th', 'Median', '90th']}
+      rows=${years.map((y, i) =>
+        lines
+          ? [String(y), fmt(lines.bear[i]), fmt(lines.base[i]), fmt(lines.bull[i])]
+          : [String(y), fmt(p['10'][i]), fmt(p['50'][i]), fmt(p['90'][i])]
+      )}
+      deps=${[JSON.stringify([years, p['50'], lines])]}
+      option=${(/** @type {(n: string) => string} */ t) => {
+        const accent = t('--accent');
+        const band = (
+          /** @type {number[]} */ lo,
+          /** @type {number[]} */ hi,
+          /** @type {string} */ stack,
+          /** @type {number} */ opacity,
+        ) => [
+          {
+            type: 'line',
+            data: lo,
+            stack,
+            symbol: 'none',
+            lineStyle: { opacity: 0 },
+            tooltip: { show: false },
+          },
+          {
+            type: 'line',
+            data: hi.map((v, i) => v - lo[i]),
+            stack,
+            symbol: 'none',
+            lineStyle: { opacity: 0 },
+            areaStyle: { color: accent, opacity },
+            tooltip: { show: false },
+          },
+        ];
+        return {
+          grid: { left: 72, right: 16, top: 16, bottom: 28 },
+          tooltip: {
+            trigger: 'axis',
+            backgroundColor: t('--bg-4'),
+            borderColor: t('--border-strong'),
+            textStyle: { color: t('--fg') },
+            valueFormatter: (/** @type {number} */ v) => fmt(v),
+          },
+          xAxis: {
+            type: 'category',
+            data: years.map(String),
+            axisLine: { lineStyle: { color: t('--border') } },
+            axisLabel: { color: t('--fg-muted') },
+          },
+          yAxis: {
+            type: 'value',
+            splitLine: { lineStyle: { color: t('--border') } },
+            axisLabel: { color: t('--fg-muted'), formatter: (/** @type {number} */ v) => short(v) },
+          },
+          series: lines
+            ? [
+              ['Bear', lines.bear, '--c4'],
+              ['Base', lines.base, '--accent'],
+              ['Bull', lines.bull, '--c2'],
+            ].map(([name, data, color]) => ({
+              name,
+              type: 'line',
+              data,
+              symbol: 'none',
+              lineStyle: { color: t(/** @type {string} */ (color)), width: 2 },
+              itemStyle: { color: t(/** @type {string} */ (color)) },
+            }))
+            : [
+              ...band(p['10'], p['90'], 'outer', 0.12),
+              ...band(p['25'], p['75'], 'inner', 0.2),
+              {
+                name: 'Median',
+                type: 'line',
+                data: p['50'],
+                symbol: 'none',
+                lineStyle: { color: accent, width: 2.5 },
+                itemStyle: { color: accent },
+                markLine: marks.length
+                  ? {
+                    symbol: 'none',
+                    label: { color: t('--fg-muted'), formatter: '{b}' },
+                    lineStyle: { color: t('--border-strong'), type: 'dashed' },
+                    data: marks.map(([year, name]) => ({ xAxis: String(year), name })),
+                  }
+                  : undefined,
+              },
+            ],
+        };
+      }} />
+  `;
+}
+
+/**
+ * The bitcoin models side by side on a log scale (S6.3.1.1).
+ * @param {{ rows: { model: string, path: [number, number][] }[], names: Record<string, string> }} p
+ */
+export function ModelsChart({ rows, names }) {
+  const colors = ['--c1', '--c5', '--c4', '--c3', '--c2'];
+  const years = rows[0]?.path.map(([y]) => String(y)) || [];
+  const fmt = (/** @type {number} */ v) =>
+    v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : `$${Math.round(v / 1e3)}K`;
+  return html`
+    <${Chart} label="Bitcoin models' median paths, log scale"
+      legend=${rows.map((r, i) => [names[r.model] || r.model, colors[i % colors.length]])}
+      head=${['Year', ...rows.map((r) => names[r.model] || r.model)]}
+      rows=${years.map((y, i) => [y, ...rows.map((r) => fmt(r.path[i][1]))])}
+      deps=${[JSON.stringify(rows.map((r) => r.path.length))]}
+      option=${(/** @type {(n: string) => string} */ t) => ({
+        grid: { left: 64, right: 16, top: 16, bottom: 28 },
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: t('--bg-4'),
+          borderColor: t('--border-strong'),
+          textStyle: { color: t('--fg') },
+          valueFormatter: (/** @type {number} */ v) => fmt(v),
+        },
+        xAxis: { type: 'category', data: years, axisLabel: { color: t('--fg-muted') } },
+        yAxis: {
+          type: 'log',
+          splitLine: { lineStyle: { color: t('--border') } },
+          axisLabel: { color: t('--fg-muted'), formatter: fmt },
+        },
+        series: rows.map((r, i) => ({
+          name: names[r.model] || r.model,
+          type: 'line',
+          symbol: 'none',
+          data: r.path.map(([, v]) => v),
+          lineStyle: { color: t(colors[i % colors.length]), width: 2 },
+          itemStyle: { color: t(colors[i % colors.length]) },
+        })),
+      })} />
+  `;
+}

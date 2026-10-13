@@ -64,6 +64,20 @@
    2. **Monte Carlo**: *N* runs (1000 by default) drawing yearly returns from the asset
       classes' mean and volatility (normal or log-normal; historical bootstrap later), showing
       the 10th/50th/90th percentile **fan** and the type's answer (S6.2).
+      1. **Each year**, the balance grows by its mix of asset classes' returns, each drawn
+         log-normal on its own (correlation between classes is not modelled), less fees;
+         contributions are added, rising by their growth, until retirement or the target
+         date; after retirement the withdrawal is taken, less what other income covers. A
+         couple's household retires when the last of them does. A target date part-way
+         through a year counts that part of it.
+      2. **The mix** comes from the holdings of what it is built on: cash and money-market
+         funds are cash, bonds and bond funds bonds, crypto crypto, metals metals; other
+         funds and shares are US stocks unless their name says international, emerging or
+         real estate. A typed amount gives its own mix (60/40 stocks and bonds unless set).
+      3. **A bitcoin model** sets the median growth of the bitcoin each year, and the
+         crypto volatility spreads it.
+      4. **The savings answer** names the monthly saving that reaches the target with a 90%
+         chance.
    3. **Glide path** *(later)*: the allocation shifting toward bonds as the goal nears, as
       age-based 529 portfolios and target-date funds do.
 5. **Tax-aware buckets** (later): taxable, deferred and free balances projected apart, with
@@ -78,7 +92,10 @@
       percentile band as of that day.
    3. **Tracking**: the actual balance of what it is built on, plotted against the baseline
       to date, and a status: **on track** inside the band, **ahead** above it, **behind**
-      below it. Beside it, the type's answer run again from today's balance.
+      below it. The band grows from the actual balance on the baseline's day (prices that
+      arrive later that day don't count against it), and is never narrower than 2% of its
+      median either way, so day-to-day noise isn't called a plan going wrong. A projection built on a
+      typed amount has nothing to track. Beside it, the type's answer run again from today's balance.
    4. **Changing an active projection's inputs** asks whether to **re-baseline**. Without
       it, tracking keeps comparing against the plan as it was made active.
    5. **Falling behind** raises an alert (S12.11), checked monthly, and resolves when the

@@ -97,7 +97,9 @@ export default function Dashboard() {
           )
           : html`<p class="small dim">No accounts yet. Make one, then import its files.</p>`}
       </div>
-      <div class="card" data-help="needs-attention"><h3>Needs attention</h3>
+      <div class="grid" style=${{ alignContent: 'start' }}>
+        <${Plans} />
+        <div class="card" data-help="needs-attention"><h3>Needs attention</h3>
         ${d.attention.length
           ? d.attention.map((/** @type {any} */ a) =>
             html`
@@ -110,6 +112,67 @@ export default function Dashboard() {
           )
           : html`<p class="small dim">Nothing needs you right now.</p>`}
       </div>
+      </div>
     </div>
+  `;
+}
+
+const TONE =
+  /** @type {Record<string, string>} */ ({ 'on track': 'ok', ahead: 'ok', behind: 'warn' });
+
+/**
+ * The active plans (S6.8.1): each with its status, headline and a small chart of the actual
+ * balance against the baseline's median.
+ */
+function Plans() {
+  const res = useApi('/dashboard/plans', {}, ['import', 'prices', 'share']);
+  const rows = /** @type {any[]} */ (res.data);
+  if (!rows || !rows.length) return null;
+  return html`
+    <div class="card" data-help="plans"><h3>Plans<span class="spacer"></span><a class="small"
+      href="/ui/projections">Projections</a></h3>
+      ${rows.map((p) =>
+        html`<a class="list-item" href=${`/ui/projections/${p.id}`} style=${{ color: 'inherit' }}>
+          <div class="grow"><b>${p.name}</b> ${
+          p.status && p.status !== 'untracked'
+            ? html`<span class=${'pill ' + (TONE[p.status] || '')}>${p.status}</span>`
+            : null
+        }<div class="small dim">${p.headline}${
+          p.sharedBy ? ` · shared by ${p.sharedBy}` : ''
+        }</div></div>
+          <${Spark} actual=${p.actual} baseline=${p.baseline} behind=${
+          p.status === 'behind'
+        } /></a>`
+      )}
+    </div>
+  `;
+}
+
+/**
+ * A small line of the actual balance against the baseline's median.
+ * @param {{ actual: [string, number][], baseline: [string, number][], behind: boolean }} p
+ */
+function Spark({ actual, baseline, behind }) {
+  const pts = [...actual, ...baseline];
+  if (pts.length < 2) return null;
+  const t = (/** @type {string} */ d) => new Date(d).getTime();
+  const xs = pts.map(([d]) => t(d));
+  const ys = pts.map(([, v]) => v);
+  const [x0, x1] = [Math.min(...xs), Math.max(...xs)];
+  const [y0, y1] = [Math.min(...ys), Math.max(...ys)];
+  const line = (/** @type {[string, number][]} */ list) =>
+    list.map(([d, v]) =>
+      `${((t(d) - x0) / (x1 - x0 || 1) * 100).toFixed(1)},${
+        (28 - (v - y0) / (y1 - y0 || 1) * 26).toFixed(1)
+      }`
+    ).join(' ');
+  return html`
+    <svg width="100" height="30" viewBox="0 0 100 30" aria-hidden="true">
+      <polyline points=${line(baseline)} fill="none" stroke="var(--fg-muted)" stroke-dasharray="3 2"
+        stroke-width="1" />
+      <polyline points=${line(actual)} fill="none" stroke=${behind
+        ? 'var(--ask)'
+        : 'var(--accent)'} stroke-width="2" />
+    </svg>
   `;
 }

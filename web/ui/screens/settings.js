@@ -23,6 +23,7 @@ const SECTIONS = /** @type {[string, string][]} */ ([
   ['prices', 'Prices'],
   ['imports', 'Imports'],
   ['receipts', 'Receipts'],
+  ['tax-tables', 'Tax tables'],
   ['backups', 'Backups'],
   ['keys', 'Key storage'],
   ['alerts', 'Alerts'],
@@ -51,6 +52,8 @@ export default function Settings({ section }) {
         ? html`<${Keys} />`
         : current === 'email'
         ? html`<${EmailSection} />`
+        : current === 'tax-tables'
+        ? html`<${TaxTables} />`
         : html`<${Plain} section=${current} />`}</div>
     </div>
   `;
@@ -485,6 +488,94 @@ function SetKey({ close, src }) {
         <${FormError} error=${save.error} shown=${['apiKey']} />
       </${Dialog}>
   `;
+}
+
+/**
+ * Tax tables (S16.11): per year, the figures that ship with MoneyKata, each correctable if the
+ * IRS changes it before an update; the shipped value again removes the correction.
+ */
+function TaxTables() {
+  const [year, setYear] = useState(/** @type {number | null} */ (null));
+  const res = useApi('/settings/tax-tables', year ? { year } : {});
+  const v = /** @type {any} */ (res.data);
+  const [f, setF] = useState(/** @type {Record<string, string>} */ ({}));
+  useEffect(() => {
+    if (v) {
+      setF(Object.fromEntries(v.rows.map((/** @type {any} */ r) => [r.key, show(r.value)])));
+    }
+  }, [v]);
+  const save = useSubmit(async () => {
+    const values = Object.fromEntries(
+      v.rows.map((/** @type {any} */ r) => [r.key, parse(r, f[r.key])]),
+    );
+    await api.put('/settings/tax-tables', { year: v.year, values });
+    toast('Saved');
+    res.reload();
+  });
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!v) return html`<${Loading} />`;
+  const groups = [...new Set(v.rows.map((/** @type {any} */ r) => r.group))];
+  return html`
+    <form class="card content-narrow" onSubmit=${(/** @type {Event} */ ev) => {
+      ev.preventDefault();
+      save.run().catch(() => {});
+    }}>
+      <h3>Tax tables<span class="spacer"></span><select class="in" style=${{ maxWidth: '100px' }}
+        aria-label="Year" id="f-year" value=${v.year}
+        onChange=${(/** @type {any} */ ev) => setYear(Number(ev.currentTarget.value))}>${v.years
+          .map((/** @type {number} */ y) => html`<option value=${y}>${y}</option>`)}</select></h3>
+      <p class="small dim" style=${{
+        marginTop: '-6px',
+      }}>Shipped with MoneyKata and updated with it.
+        Correct a figure here if the IRS changes it before an update.</p>
+      ${groups.map((g) =>
+        html`
+          <h4 class="small dim mt">${g}</h4>
+          <table class="t">
+            <tbody>${v.rows.filter((/** @type {any} */ r) => r.group === g).map((
+              /** @type {any} */ r,
+            ) =>
+              html`
+                <tr>
+                  <td>${r.label}${r.corrected
+                    ? html`
+                      <span class="pill warn" title=${`Shipped: ${
+                        show(r.shipped)
+                      }`}>corrected</span>
+                    `
+                    : null}<div class="small dim">${r.source}</div></td>
+                  <td class="num"><input class="in num" style=${{
+                    maxWidth: '200px',
+                  }} data-help="figure"
+                                aria-label=${r.label} value=${f[r.key] ?? ''} onInput=${(
+                                  /** @type {any} */ ev,
+                                ) => setF({ ...f, [r.key]: ev.currentTarget.value })} />${errAt(
+                                    save.error,
+                                    r.key,
+                                  )
+                                  ? html`<div class="err">${errAt(save.error, r.key)}</div>`
+                                  : null}</td>
+                </tr>
+              `
+            )}</tbody>
+          </table>
+        `
+      )}
+      <${FormError} error=${save.error} shown=${v.rows.map((/** @type {any} */ r) => r.key)} />
+      <button class="btn primary mt" disabled=${save.busy}>Save</button>
+    </form>
+  `;
+}
+
+/** @param {any} value */
+function show(value) {
+  return Array.isArray(value) ? value.join(', ') : String(value ?? '');
+}
+
+/** @param {any} row @param {string} text */
+function parse(row, text) {
+  if (row.kind === 'numbers') return text.split(',').map((x) => Number(x.trim()));
+  return Number(String(text).replace(/[$,%\s]/g, ''));
 }
 
 /** The reading queue (S9.8.7): its state, and Re-read all receipts. */

@@ -1,6 +1,17 @@
 """Every table, on one MetaData, one module per area (requirements S14.1.1)."""
 
-from . import accounts, activity, alerts, budgets, core, prices, receipts, sharing, users  # noqa: F401 - each adds its tables
+from . import (  # noqa: F401 - each adds its tables
+    accounts,
+    activity,
+    alerts,
+    budgets,
+    core,
+    prices,
+    projections,
+    receipts,
+    sharing,
+    users,
+)
 from ._base import metadata
 
 __all__ = ["metadata"]

@@ -7,6 +7,7 @@ from .entities import Record, _now
 from .entities import accounts as acc
 from .entities import budgets as bd
 from .entities import prices as pr
+from .entities import projections as pj
 from .entities import receipts as rc
 from .entities import sharing as sh
 from .entities.alerts import Alert, AlertState
@@ -27,6 +28,7 @@ from .tables import (
     budgets,
     core,
     prices,
+    projections,
     receipts,
     sharing,
     users,
@@ -81,6 +83,10 @@ def map_all() -> None:
     mapper_registry.map_imperatively(bd.BudgetAccount, budgets.BudgetAccounts)
     _versioned(rc.Receipt, receipts.Receipt)
     mapper_registry.map_imperatively(rc.ReceiptLink, receipts.ReceiptLinks)
+    _versioned(pj.AssumptionSet, projections.AssumptionSet)
+    _versioned(pj.Projection, projections.Projection)
+    _versioned(pj.TaxFigure, projections.TaxFigure)
+    mapper_registry.map_imperatively(pj.ShownProjection, projections.ShownProjections)
     mapper_registry.map_imperatively(sh.CountedAccount, sharing.CountedAccounts)
     _versioned(Setting, core.Setting)
     mapper_registry.map_imperatively(Secret, core.Secret)

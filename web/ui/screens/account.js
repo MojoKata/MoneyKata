@@ -3,6 +3,7 @@
 import { useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
+import { PlansFor } from '../components/plans.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { ago, date, price, quantity } from '../app/format.js';
@@ -78,6 +79,7 @@ function Overview({ a }) {
   const s = /** @type {any} */ (series.data);
   const kept = KEPT_BY.find(([k]) => a.keptBy.includes(k))?.[1] || a.keptBy.join(', ');
   return html`
+    <${PlansFor} kind="account" id=${a.id} />
     <div class="grid g-main">
       <div class="card"><h3>${a.investing
         ? 'Value'

@@ -203,6 +203,31 @@ def accounts(s: Session, server) -> Iterable[Cause]:
             )
 
 
+@check
+def projections_behind(s: Session, server) -> Iterable[Cause]:
+    """An active projection whose actual balance fell below its baseline's band, as of the end
+    of the last month: checked monthly (S6.7.5)."""
+    from . import projections
+    from .store.entities.projections import Projection
+
+    month_end = clock.today().replace(day=1) - dt.timedelta(days=1)
+    for p in s.scalars(select(Projection).where(Projection.active, Projection.deleted == false())):
+        if p.baselineAt is None or p.baselineAt.date() >= month_end:
+            continue
+        track = projections.tracking(s, p, p.ownerId, upto=month_end)
+        if track and track["status"] == "behind":
+            yield Cause(
+                key=f"behind:{p.id}",
+                kind="projection-behind",
+                title=f"{p.name} is behind its plan",
+                about=f"below the band of the baseline set {p.baselineAt:%b %-d, %Y}",
+                user_id=p.ownerId,
+                link="/ui/projections",
+                fix="See the plan",
+                icon="trend",
+            )
+
+
 # ---------- running the checks ----------
 
 
@@ -275,6 +300,7 @@ _KINDS = {
     "backups": {"backup-failed"},
     "recovery_phrase": {"phrase-check"},
     "accounts": {"import-stale", "reconcile-mismatch"},
+    "projections_behind": {"projection-behind"},
 }
 
 

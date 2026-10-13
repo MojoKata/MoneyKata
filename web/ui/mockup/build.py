@@ -48,6 +48,7 @@ SETTINGS = (
     "prices",
     "imports",
     "receipts",
+    "tax-tables",
     "backups",
     "keys",
     "alerts",
@@ -61,6 +62,8 @@ DIALOGS = (
     ("/ui/budgets", "New budget", "dialog-budget"),
     ("/ui/budgets", "Edit plan", "dialog-plan"),
     ("/ui/receipts", "Receipt Blue Bottle Coffee", "dialog-receipt"),
+    ("/ui/projections", "New projection", "dialog-new-projection"),
+    ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
     ("/ui/users", "New user", "dialog-new-user"),
     ("/ui/users", "New group", "dialog-group"),
     ("/ui/settings/prices", "Add a source", "dialog-add-source"),
@@ -245,7 +248,10 @@ class Recorder:
             "/ui/activity",
             "/ui/alerts",
             "/ui/receipts",
+            "/ui/projections",
         ]
+        for x in self.api("/projections"):
+            paths.append(f"/ui/projections/{x['id']}")
         for b in self.api("/budgets"):
             paths += [
                 f"/ui/budgets/{b['id']}/{t}" for t in ("month", "cash-flow", "trends", "recurring")
@@ -267,7 +273,7 @@ class Recorder:
                 self.dialog(f"/ui/accounts/{a['id']}/reconcile", "Tick off against a statement")
             self.dialog("/ui/accounts", f"Share {a['name']}")
         for p in self.api("/portfolios"):
-            for tab in ("performance", "holdings"):
+            for tab in ("performance", "holdings", "projections"):
                 self.visit(f"/ui/portfolios/{p['id']}/{tab}")
         for path, button, _ in DIALOGS:
             if admin or not path.startswith(("/ui/users", "/ui/settings")):

@@ -54,7 +54,7 @@ target-version = "py312"
 select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
 ignore = ["S101"]
 
-allowed-confusables = ["›", "…", "’", "−", "–"]
+allowed-confusables = ["›", "…", "’", "−", "–", "×"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", "fastapi.File", "fastapi.Form"]

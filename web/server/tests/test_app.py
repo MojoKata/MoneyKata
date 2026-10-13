@@ -31,6 +31,7 @@ SETTINGS_SECTIONS = (
     "prices",
     "imports",
     "receipts",
+    "tax-tables",
     "backups",
     "keys",
     "alerts",
@@ -198,6 +199,7 @@ def test_every_screen_and_tab_has_its_guide(page):
         "/ui/activity",
         "/ui/alerts",
         "/ui/receipts",
+        "/ui/projections",
         "/ui/users",
         "/ui/profile",
     ]
@@ -205,9 +207,12 @@ def test_every_screen_and_tab_has_its_guide(page):
         for tab in ("overview", "holdings", "transactions", "reconcile", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
     for p in ports:
-        paths += [f"/ui/portfolios/{p}/performance", f"/ui/portfolios/{p}/holdings"]
+        paths += [f"/ui/portfolios/{p}/{t}" for t in ("performance", "holdings", "projections")]
     budgets = page.evaluate("""async () => (await (await fetch('/ui/api/budgets')).json())
         .map((b) => b.id)""")
+    for x in page.evaluate("""async () => (await (await fetch('/ui/api/projections')).json())
+        .map((p) => p.id)"""):
+        paths.append(f"/ui/projections/{x}")
     for b in budgets:
         paths += [f"/ui/budgets/{b}/{t}" for t in ("month", "cash-flow", "trends", "recurring")]
     for s in SETTINGS_SECTIONS:
@@ -263,6 +268,8 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/budgets", "New budget", "dialog-budget"),
         ("/ui/budgets", "Edit plan", "dialog-plan"),
         ("/ui/receipts", "Receipt Blue Bottle Coffee", "dialog-receipt"),
+        ("/ui/projections", "New projection", "dialog-new-projection"),
+        ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
         ("/ui/users", "New user", "dialog-new-user"),
         ("/ui/users", "New group", "dialog-group"),
         ("/ui/settings/prices", "Add a source", "dialog-add-source"),

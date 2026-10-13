@@ -77,6 +77,12 @@ TEXT = {
     "receipt.uploaded": "{actor} uploaded a receipt",
     "receipt.attached": "{actor} attached a receipt to a transaction in {subject}",
     "receipt.deleted": "{actor} deleted a receipt",
+    "projection.created": "{actor} made the projection {subject}",
+    "projection.updated": "{actor} changed {fields} of the projection {subject}",
+    "projection.activated": "{actor} made {subject} the active plan",
+    "projection.deleted": "{actor} deleted the projection {subject}",
+    "profile.assumptions": "{actor} changed their assumptions for projections",
+    "settings.tax-tables": "{actor} corrected {fields} in the tax tables",
     "budget.created": "{actor} made the budget {subject}",
     "budget.updated": "{actor} changed {fields} of the budget {subject}",
     "budget.planned": "{actor} changed the plan of the budget {subject}",
@@ -253,7 +259,11 @@ def _names(s, rows: list[Activity]) -> dict[tuple[str, str], str]:
     for p in s.scalars(select(Portfolio).where(Portfolio.id.in_(port_ids))):
         names[("portfolio", p.id)] = p.name
     from ..store.entities.budgets import Budget
+    from ..store.entities.projections import Projection
 
+    proj_ids = {a.subjectId for a in rows if a.subjectKind == "projection"}
+    for p in s.scalars(select(Projection).where(Projection.id.in_(proj_ids))):
+        names[("projection", p.id)] = p.name
     budget_ids = {a.subjectId for a in rows if a.subjectKind == "budget"}
     for b in s.scalars(select(Budget).where(Budget.id.in_(budget_ids))):
         names[("budget", b.id)] = b.name

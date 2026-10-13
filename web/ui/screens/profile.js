@@ -9,6 +9,7 @@ import { Avatar, Failed, Loading } from '../components/bits.js';
 import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
 import { toast } from '../components/toast.js';
 import { Dialog, openDialog } from '../components/dialog.js';
+import { ModelsChart } from '../charts/chart.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { applyTheme, theme } from '../store/prefs.js';
 import { loadSession } from '../store/session.js';
@@ -144,6 +145,7 @@ export default function Profile() {
           <${Password} />
           <${TwoStep} p=${p} reload=${res.reload} />
         </div></div>
+      <${Assumptions} />
   `;
 }
 
@@ -357,5 +359,161 @@ function RecoveryCodes({ close, codes, fresh }) {
         in place of a code from the app${fresh ? ', and the old ones no longer work' : ''}.</p>
       <ul class="codes">${codes.map((c) => html`<li><code>${c}</code></li>`)}</ul>
       </${Dialog}>
+  `;
+}
+
+/**
+ * Assumptions (S6.3): the expected return and volatility of each asset class, inflation, and
+ * the bitcoin model, shared by every projection of yours unless one overrides a figure.
+ */
+function Assumptions() {
+  const res = useApi('/assumptions');
+  const v = /** @type {any} */ (res.data);
+  const [f, setF] = useState(/** @type {any} */ (null));
+  useEffect(() => {
+    if (v) setF(structuredClone(v.figures));
+  }, [v]);
+  const save = useSubmit(async () => {
+    await api.put('/assumptions', f);
+    toast('Saved · projections recompute when opened');
+    res.reload();
+  });
+  if (!v || !f) return null;
+  const e = save.error;
+  const setClass = (/** @type {string} */ k, /** @type {string} */ field) =>
+  (
+    /** @type {string} */ x,
+  ) => {
+    const next = structuredClone(f);
+    next.classes[k][field] = x === '' ? null : Number(x);
+    setF(next);
+  };
+  return html`
+    <form class="card mt" id="assumptions" onSubmit=${(/** @type {Event} */ ev) => {
+      ev.preventDefault();
+      save.run().catch(() => {});
+    }}>
+      <h3>Assumptions<span class="spacer"></span><span class="small dim" style=${{
+        fontWeight: 400,
+      }}>used by all your projections</span></h3>
+      <table class="t">
+        <thead>
+          <tr>
+            <th>Asset class</th>
+            <th class="num">Expected return %</th>
+            <th
+              class="num">Volatility %</th>
+          </tr>
+        </thead>
+        <tbody>${v.classes.map(([k, label]) =>
+          html`
+            <tr>
+              <td>${label}</td>
+              <td class="num"><input class="in num" style=${{
+                maxWidth: '90px',
+              }} data-help="expected-return"
+                          aria-label=${label + ' expected return'} value=${f.classes[k].return ??
+                            ''}
+                          onInput=${(/** @type {any} */ ev) =>
+                            setClass(k, 'return')(ev.currentTarget.value)} />${errAt(
+                              e,
+                              `classes.${k}.return`,
+                            )
+                            ? html`<div class="err">${errAt(e, `classes.${k}.return`)}</div>`
+                            : null}</td>
+              <td class="num"><input class="in num" style=${{
+                maxWidth: '90px',
+              }} data-help="volatility"
+                          aria-label=${label + ' volatility'} value=${f.classes[k].volatility ?? ''}
+                          onInput=${(/** @type {any} */ ev) =>
+                            setClass(k, 'volatility')(ev.currentTarget.value)} /></td>
+            </tr>
+          `
+        )}</tbody>
+      </table>
+      <div class="row mt">
+        <${Field} label="General inflation (%)" id="general-inflation" error=${errAt(
+          e,
+          'inflation',
+        )}>
+          <${Input} value=${f.inflation} inputmode="decimal" onInput=${(/** @type {string} */ x) =>
+            setF({ ...f, inflation: Number(x) })} />
+          </${Field}>
+          <${Field} label="Education inflation (%)" id="education-inflation"
+            error=${errAt(e, 'educationInflation')}>
+            <${Input} value=${f.educationInflation} inputmode="decimal" onInput=${(
+              /** @type {string} */ x,
+            ) => setF({ ...f, educationInflation: Number(x) })} />
+            </${Field}>
+            </div>
+            <${Field} label="Bitcoin model" id="bitcoin-model"
+              hint="For the bitcoin in your projections; other coins use the crypto row.">
+              <${Select} value=${f.bitcoinModel} onChange=${(/** @type {string} */ x) =>
+                setF({ ...f, bitcoinModel: x })} options=${v.bitcoinModels} />
+              </${Field}>
+              <${FormError} error=${e} />
+              <div class="toolbar"><button class="btn primary" disabled=${save.busy}>Save</button>
+        <button type="button" class="linklike" onClick=${() =>
+          openDialog(BitcoinModels, {})}>Compare models</button></div>
+              </form>
+  `;
+}
+
+const MODEL_NAMES = /** @type {Record<string, string>} */ ({
+  powerLaw: 'Power law',
+  logRegression: 'Log regression',
+  stockToFlow: 'Stock-to-flow',
+  saylor: 'Saylor base',
+  ark: 'ARK base',
+});
+
+/** Compare models (S6.3.1.1): their median paths and figures, with their sources and records. */
+function BitcoinModels({ close }) {
+  useDialogGuide('dialog-bitcoin-models');
+  const res = useApi('/bitcoin-models');
+  const v = /** @type {any} */ (res.data);
+  const fmt = (/** @type {number} */ n) =>
+    n >= 1e9
+      ? `$${(n / 1e9).toFixed(1)}B`
+      : n >= 1e6
+      ? `$${(n / 1e6).toFixed(1)}M`
+      : `$${Math.round(n / 1e3)}K`;
+  return html`
+    <${Dialog} title="Bitcoin models" wide close=${close} footer=${html`
+      <button type="button"
+        class="btn" onClick=${() => close()}>Close</button>
+    `}>
+      ${v
+        ? html`
+          <p class="small dim"
+            style=${{ marginTop: 0 }}>Each model's median path from today's price${v.price
+              ? ` (${fmt(v.price)})`
+              : ''}, on a log scale. These are models other people publish, shown so you can compare them,
+            not MoneyKata's view or advice.</p>
+          <${ModelsChart} rows=${v.rows} names=${MODEL_NAMES} />
+          <div class="table-wrap mt">
+            <table class="t">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th class="num">2030</th>
+                  <th class="num">2035</th>
+                  <th class="num">2045</th>
+                  <th>Source and record</th>
+                </tr>
+              </thead>
+              <tbody>${v.rows.map((/** @type {any} */ r) =>
+                html`<tr><td>${MODEL_NAMES[r.model]}</td>${
+                  [2030, 2035, 2045].map((y) => html`<td class="num">${fmt(r.at[y])}</td>`)
+                }<td class="small dim">${r.record}</td></tr>`
+              )}</tbody>
+            </table>
+          </div>
+          <p
+            class="small dim">Their figures ship with MoneyKata, dated, in Settings › Tax tables (${v
+              .figuresYear}).</p>
+        `
+        : html`<p class="dim">Loading…</p>`}
+    </${Dialog}>
   `;
 }

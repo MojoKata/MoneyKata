@@ -28,6 +28,10 @@ Your accounts by group, with each group's total. A click opens Accounts.
 
 Pick the type first: it decides the fields and the tax treatment.
 
+## Plans {#plans}
+
+Your active projections, and those shared with you that you chose to show: each with its status (on track, ahead or behind its baseline), its answer, and a small chart of the actual balance against the baseline.
+
 ## Needs attention
 
 Transactions to categorise, lots without a cost basis, accounts whose reported balance doesn't match or that have had none for 45 days, and stale prices. Each line links to where it's fixed.

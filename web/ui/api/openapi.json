@@ -584,6 +584,27 @@
         "title": "AccountRow",
         "type": "object"
       },
+      "Activated": {
+        "additionalProperties": false,
+        "properties": {
+          "replaced": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replaced"
+          }
+        },
+        "required": [
+          "replaced"
+        ],
+        "title": "Activated",
+        "type": "object"
+      },
       "ActivityItem": {
         "additionalProperties": false,
         "properties": {
@@ -827,6 +848,57 @@
           }
         },
         "title": "Approval",
+        "type": "object"
+      },
+      "AssumptionsView": {
+        "additionalProperties": false,
+        "properties": {
+          "bitcoinModels": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Bitcoinmodels",
+            "type": "array"
+          },
+          "classes": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "figures": {
+            "additionalProperties": true,
+            "title": "Figures",
+            "type": "object"
+          }
+        },
+        "required": [
+          "figures",
+          "classes",
+          "bitcoinModels"
+        ],
+        "title": "AssumptionsView",
         "type": "object"
       },
       "Attach": {
@@ -2778,6 +2850,85 @@
         "title": "Me",
         "type": "object"
       },
+      "ModelRow": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "At",
+            "type": "object"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "path": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Path",
+            "type": "array"
+          },
+          "record": {
+            "title": "Record",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model",
+          "path",
+          "at",
+          "record"
+        ],
+        "title": "ModelRow",
+        "type": "object"
+      },
+      "ModelsView": {
+        "additionalProperties": false,
+        "properties": {
+          "figuresYear": {
+            "title": "Figuresyear",
+            "type": "integer"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ModelRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "price",
+          "rows",
+          "figuresYear"
+        ],
+        "title": "ModelsView",
+        "type": "object"
+      },
       "MonthRow": {
         "additionalProperties": false,
         "properties": {
@@ -3264,6 +3415,36 @@
         "title": "NewPortfolio",
         "type": "object"
       },
+      "NewProjection": {
+        "additionalProperties": false,
+        "properties": {
+          "builtOn": {
+            "additionalProperties": true,
+            "title": "Builton",
+            "type": "object"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "goal",
+          "builtOn"
+        ],
+        "title": "NewProjection",
+        "type": "object"
+      },
       "NewReconciliation": {
         "additionalProperties": false,
         "properties": {
@@ -3523,7 +3704,7 @@
         "title": "PickIn",
         "type": "object"
       },
-      "Plan": {
+      "Plan-Input": {
         "additionalProperties": false,
         "description": "The plan from a month on: the categories listed, and none other.",
         "properties": {
@@ -3543,6 +3724,101 @@
         "required": [
           "month",
           "lines"
+        ],
+        "title": "Plan",
+        "type": "object"
+      },
+      "Plan-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Actual",
+            "type": "array"
+          },
+          "baseline": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Baseline",
+            "type": "array"
+          },
+          "builtOn": {
+            "additionalProperties": true,
+            "title": "Builton",
+            "type": "object"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sharedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharedby"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "goal",
+          "status",
+          "headline",
+          "actual",
+          "baseline",
+          "sharedBy",
+          "builtOn"
         ],
         "title": "Plan",
         "type": "object"
@@ -4150,6 +4426,255 @@
           }
         },
         "title": "ProfileChange",
+        "type": "object"
+      },
+      "ProjectionChange": {
+        "additionalProperties": false,
+        "properties": {
+          "builtOn": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Builton"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "rebaseline": {
+            "default": false,
+            "title": "Rebaseline",
+            "type": "boolean"
+          }
+        },
+        "title": "ProjectionChange",
+        "type": "object"
+      },
+      "ProjectionDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "baselineAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baselineat"
+          },
+          "builtOn": {
+            "additionalProperties": true,
+            "title": "Builton",
+            "type": "object"
+          },
+          "builtOnLabel": {
+            "title": "Builtonlabel",
+            "type": "string"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          },
+          "sharedWith": {
+            "title": "Sharedwith",
+            "type": "integer"
+          },
+          "shown": {
+            "title": "Shown",
+            "type": "boolean"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "tracking": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tracking"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "goal",
+          "active",
+          "level",
+          "ownerName",
+          "builtOn",
+          "builtOnLabel",
+          "headline",
+          "status",
+          "shown",
+          "sharedWith",
+          "version",
+          "inputs",
+          "result",
+          "tracking",
+          "baselineAt"
+        ],
+        "title": "ProjectionDetail",
+        "type": "object"
+      },
+      "ProjectionRow": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "builtOn": {
+            "additionalProperties": true,
+            "title": "Builton",
+            "type": "object"
+          },
+          "builtOnLabel": {
+            "title": "Builtonlabel",
+            "type": "string"
+          },
+          "goal": {
+            "title": "Goal",
+            "type": "string"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "sharedWith": {
+            "title": "Sharedwith",
+            "type": "integer"
+          },
+          "shown": {
+            "title": "Shown",
+            "type": "boolean"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "goal",
+          "active",
+          "level",
+          "ownerName",
+          "builtOn",
+          "builtOnLabel",
+          "headline",
+          "status",
+          "shown",
+          "sharedWith",
+          "version"
+        ],
+        "title": "ProjectionRow",
         "type": "object"
       },
       "ReadingQueue": {
@@ -5193,6 +5718,20 @@
         "title": "ShareView",
         "type": "object"
       },
+      "Shown": {
+        "additionalProperties": false,
+        "properties": {
+          "shown": {
+            "title": "Shown",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "shown"
+        ],
+        "title": "Shown",
+        "type": "object"
+      },
       "SignIn": {
         "additionalProperties": false,
         "properties": {
@@ -5953,6 +6492,103 @@
           "firstParting"
         ],
         "title": "Suspects",
+        "type": "object"
+      },
+      "TaxChange": {
+        "additionalProperties": false,
+        "properties": {
+          "values": {
+            "additionalProperties": true,
+            "title": "Values",
+            "type": "object"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "values"
+        ],
+        "title": "TaxChange",
+        "type": "object"
+      },
+      "TaxRow": {
+        "additionalProperties": false,
+        "properties": {
+          "corrected": {
+            "title": "Corrected",
+            "type": "boolean"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "shipped": {
+            "title": "Shipped"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "kind",
+          "group",
+          "source",
+          "value",
+          "shipped",
+          "corrected"
+        ],
+        "title": "TaxRow",
+        "type": "object"
+      },
+      "TaxTables": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TaxRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          },
+          "years": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "year",
+          "years",
+          "rows"
+        ],
+        "title": "TaxTables",
         "type": "object"
       },
       "TestEmail": {
@@ -8218,6 +8854,68 @@
         ]
       }
     },
+    "/ui/api/assumptions": {
+      "get": {
+        "operationId": "get_assumptions_ui_api_assumptions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssumptionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Assumptions",
+        "tags": [
+          "projections"
+        ]
+      },
+      "put": {
+        "operationId": "put_assumptions_ui_api_assumptions_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Body",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssumptionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Assumptions",
+        "tags": [
+          "projections"
+        ]
+      }
+    },
     "/ui/api/badges": {
       "get": {
         "operationId": "badges_ui_api_badges_get",
@@ -8240,6 +8938,28 @@
         "summary": "Badges",
         "tags": [
           "alerts"
+        ]
+      }
+    },
+    "/ui/api/bitcoin-models": {
+      "get": {
+        "description": "Compare models: each one's median path and its figures for 2030, 2035 and 2045.",
+        "operationId": "bitcoin_models_ui_api_bitcoin_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Bitcoin Models",
+        "tags": [
+          "projections"
         ]
       }
     },
@@ -8527,7 +9247,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Plan"
+                "$ref": "#/components/schemas/Plan-Input"
               }
             }
           },
@@ -8780,6 +9500,31 @@
         "summary": "Dashboard",
         "tags": [
           "dashboard"
+        ]
+      }
+    },
+    "/ui/api/dashboard/plans": {
+      "get": {
+        "operationId": "plans_ui_api_dashboard_plans_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Plan-Output"
+                  },
+                  "title": "Response Plans Ui Api Dashboard Plans Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Plans",
+        "tags": [
+          "projections"
         ]
       }
     },
@@ -10237,6 +10982,327 @@
         ]
       }
     },
+    "/ui/api/projections": {
+      "get": {
+        "operationId": "list_projections_ui_api_projections_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectionRow"
+                  },
+                  "title": "Response List Projections Ui Api Projections Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Projections",
+        "tags": [
+          "projections"
+        ]
+      },
+      "post": {
+        "description": "It starts as a scenario; making it active is a step of its own (S6.7).",
+        "operationId": "create_projection_ui_api_projections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProjection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectionDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Projection",
+        "tags": [
+          "projections"
+        ]
+      }
+    },
+    "/ui/api/projections/{projection_id}": {
+      "delete": {
+        "operationId": "delete_projection_ui_api_projections__projection_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projection_id",
+            "required": true,
+            "schema": {
+              "title": "Projection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Projection",
+        "tags": [
+          "projections"
+        ]
+      },
+      "get": {
+        "operationId": "get_projection_ui_api_projections__projection_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projection_id",
+            "required": true,
+            "schema": {
+              "title": "Projection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectionDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Projection",
+        "tags": [
+          "projections"
+        ]
+      },
+      "patch": {
+        "operationId": "change_projection_ui_api_projections__projection_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projection_id",
+            "required": true,
+            "schema": {
+              "title": "Projection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectionChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectionDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Projection",
+        "tags": [
+          "projections"
+        ]
+      }
+    },
+    "/ui/api/projections/{projection_id}/activate": {
+      "post": {
+        "description": "At most one active per subject: the one it replaces goes back to being a scenario.\nIts median path and 10th–90th band as of today become its baseline (S6.7.2).",
+        "operationId": "activate_ui_api_projections__projection_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projection_id",
+            "required": true,
+            "schema": {
+              "title": "Projection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Activated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Activate",
+        "tags": [
+          "projections"
+        ]
+      }
+    },
+    "/ui/api/projections/{projection_id}/deactivate": {
+      "post": {
+        "operationId": "deactivate_ui_api_projections__projection_id__deactivate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projection_id",
+            "required": true,
+            "schema": {
+              "title": "Projection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Deactivate",
+        "tags": [
+          "projections"
+        ]
+      }
+    },
+    "/ui/api/projections/{projection_id}/shown": {
+      "put": {
+        "description": "A shared active projection shows on a receiver's Dashboard only when they ask (S6.8.3).",
+        "operationId": "show_on_dashboard_ui_api_projections__projection_id__shown_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projection_id",
+            "required": true,
+            "schema": {
+              "title": "Projection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Shown"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Shown"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Show On Dashboard",
+        "tags": [
+          "projections"
+        ]
+      }
+    },
     "/ui/api/reactivation-requests": {
       "post": {
         "operationId": "reactivation_request_ui_api_reactivation_requests_post",
@@ -11288,6 +12354,95 @@
         ]
       }
     },
+    "/ui/api/settings/tax-tables": {
+      "get": {
+        "operationId": "get_tax_tables_ui_api_settings_tax_tables_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxTables"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Tax Tables",
+        "tags": [
+          "projections"
+        ]
+      },
+      "put": {
+        "description": "A correction to a shipped figure; the shipped value again removes it.",
+        "operationId": "put_tax_tables_ui_api_settings_tax_tables_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxTables"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Tax Tables",
+        "tags": [
+          "projections"
+        ]
+      }
+    },
     "/ui/api/shares/{kind}/{item_id}": {
       "get": {
         "operationId": "get_shares_ui_api_shares__kind___item_id__get",
@@ -11300,7 +12455,8 @@
               "enum": [
                 "account",
                 "portfolio",
-                "budget"
+                "budget",
+                "projection"
               ],
               "title": "Kind",
               "type": "string"
@@ -11355,7 +12511,8 @@
               "enum": [
                 "account",
                 "portfolio",
-                "budget"
+                "budget",
+                "projection"
               ],
               "title": "Kind",
               "type": "string"

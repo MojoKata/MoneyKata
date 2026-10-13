@@ -55,3 +55,27 @@ After your password, a code from an authenticator app on your phone, so a stolen
 ## Your password {#two-step-password}
 
 Asked again when you last gave it more than 10 minutes ago.
+
+## Assumptions
+
+Used by all your projections, so they agree: each asset class's expected yearly return and volatility, and inflation. A projection can override a figure. Long-run figures, not forecasts.
+
+## Expected return {#expected-return}
+
+The average yearly return you expect of the class, in percent.
+
+## Volatility
+
+How much a year's return swings around it (its standard deviation), in percent. Monte Carlo draws each year's return from these.
+
+## General inflation (%) {#general-inflation}
+
+For today's dollars and withdrawals that rise with prices. 2.5% by default.
+
+## Education inflation (%) {#education-inflation}
+
+College costs rise faster: 5% by default.
+
+## Bitcoin model
+
+For the bitcoin in your projections: your crypto assumption, or a published model. **Compare models** shows them side by side with their sources and records. Other coins use the crypto row.
