@@ -408,3 +408,46 @@ def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
     for name in rebuilt:
         # The same columns and constraints, in whatever order the rebuild wrote them.
         assert sorted(squash(migrated[name])) == sorted(squash(made[name])), name
+
+
+def test_a_rebuilt_table_keeps_the_rows_that_refer_to_it(keyed_config):
+    """Migrations run with foreign keys off, which SQLite only honours outside a transaction:
+    rebuilding Import (revision 0008) with transactions pointing at it must not fail."""
+    from alembic import command
+
+    from moneykata.keys import master
+
+    unlocked = master.open_keys(keyed_config)
+    key = unlocked.keys.sqlcipher_key
+    keyed_config.data_dir.mkdir(parents=True, exist_ok=True)
+    engine = make_engine(keyed_config.db_path, key)
+    with engine.connect() as conn:
+        command.upgrade(migrate.alembic_config(conn), "0007")
+        conn.commit()
+        uid, aid, iid = ids.new_id("User"), ids.new_id("Acct"), ids.new_id("Imprt")
+        stamp = "'2026-10-01 00:00:00'"
+        conn.exec_driver_sql(
+            f'INSERT INTO "User" (id, username, "displayName", version, "createdAt", '
+            f"\"updatedAt\", deleted) VALUES ('{uid}', 'alice', 'Alice', 1, {stamp}, {stamp}, 0)"
+        )
+        conn.exec_driver_sql(
+            f'INSERT INTO "Account" (id, "ownerId", name, type, version, "createdAt", '
+            f"\"updatedAt\", deleted) VALUES ('{aid}', '{uid}', 'Checking', 'checking', 1, "
+            f"{stamp}, {stamp}, 0)"
+        )
+        conn.exec_driver_sql(
+            f'INSERT INTO "Import" (id, "accountId", "userId", format, "fileName", '
+            f'"fileHash", version, "createdAt", "updatedAt", deleted) VALUES (\'{iid}\', '
+            f"'{aid}', '{uid}', 'ofx', 'a.ofx', 'h', 1, {stamp}, {stamp}, 0)"
+        )
+        conn.exec_driver_sql(
+            f'INSERT INTO "Transaction" (id, "accountId", date, kind, amount, "importId", '
+            f'version, "createdAt", "updatedAt", deleted) VALUES (\'{ids.new_id("Txn")}\', '
+            f"'{aid}', '2026-10-01', 'deposit', '10.00', '{iid}', 1, {stamp}, {stamp}, 0)"
+        )
+        conn.commit()
+    assert migrate.upgrade(engine, keyed_config.db_path, key, None)
+    with engine.connect() as conn:
+        assert conn.exec_driver_sql('SELECT count(*) FROM "Transaction"').scalar() == 1
+        assert conn.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1
+    engine.dispose()

@@ -84,18 +84,22 @@ def upgrade(engine: Engine, db_path: Path, key: str | None, copies_dir: Path | N
         for sql in views.drop_all_sql(conn):
             conn.exec_driver_sql(sql)
         conn.commit()
-        conn.exec_driver_sql("PRAGMA foreign_keys = OFF")
+        # Straight to the driver, outside any transaction: SQLite ignores this pragma inside
+        # one, and every statement through SQLAlchemy starts with the engine's BEGIN.
+        raw = conn.connection.dbapi_connection
+        raw.execute("PRAGMA foreign_keys = OFF")
         try:
             command.upgrade(alembic_config(conn), "head")
             conn.commit()
-            broken = conn.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+            broken = raw.execute("PRAGMA foreign_key_check").fetchall()
             if broken:
                 raise RefuseStart(
                     f"the migration left {len(broken)} broken references; "
                     "restore the copy made before it"
                 )
         finally:
-            conn.exec_driver_sql("PRAGMA foreign_keys = ON")
+            conn.rollback()
+            raw.execute("PRAGMA foreign_keys = ON")
     with engine.begin() as conn:
         _sync_views(conn)
     log.info("migrated the database from %s to %s", rev or "nothing", target)
