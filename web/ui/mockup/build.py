@@ -60,7 +60,7 @@ DIALOGS = (
     ("/ui/portfolios", "New portfolio", "dialog-portfolio"),
     ("/ui/budgets", "New budget", "dialog-budget"),
     ("/ui/budgets", "Edit plan", "dialog-plan"),
-    ("/ui/receipts", "Receipt Kroger", "dialog-receipt"),
+    ("/ui/receipts", "Receipt Blue Bottle Coffee", "dialog-receipt"),
     ("/ui/users", "New user", "dialog-new-user"),
     ("/ui/users", "New group", "dialog-group"),
     ("/ui/settings/prices", "Add a source", "dialog-add-source"),

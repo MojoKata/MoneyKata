@@ -197,22 +197,39 @@ function Plain({ section }) {
     );
   }
   if (section === 'receipts') {
-    return form(
-      ['receiptMaxMb'],
-      html`
-        <h3>Receipts</h3>
-        <p class="small dim" style=${{ marginTop: '-6px' }}>Receipts are kept encrypted in the data
-          directory, each file once, and go into every backup.</p>
-        <div class="list-item"><span class="grow dim">File types</span>PDF, JPEG, PNG, WebP, HEIC
-          <span class="small dim">· checked from the content</span></div>
-        <${Field} label="Largest file (MB)" id="receipt-max-mb" error=${errAt(e, 'receiptMaxMb')}>
-          <${Input} value=${f.receiptMaxMb} onInput=${set(
-            'receiptMaxMb',
-            true,
-          )} inputmode="numeric" />
-          </${Field}>
-      `,
-    );
+    return html`
+      ${form(
+        ['receiptMaxMb', 'readReceipts', 'receiptReadJobs'],
+        html`
+          <h3>Receipts</h3>
+          <p class="small dim" style=${{
+            marginTop: '-6px',
+          }}>Receipts are kept encrypted in the data
+            directory, each file once, and go into every backup.</p>
+          <div class="list-item"><span class="grow dim">File types</span>PDF, JPEG, PNG, WebP, HEIC
+            <span class="small dim">· checked from the content</span></div>
+          <${Field} label="Largest file (MB)" id="receipt-max-mb" error=${errAt(e, 'receiptMaxMb')}>
+            <${Input} value=${f.receiptMaxMb} onInput=${set(
+              'receiptMaxMb',
+              true,
+            )} inputmode="numeric" />
+            </${Field}>
+            <${SwitchRow} label="Read receipts" on=${f.readReceipts}
+              onChange=${(/** @type {boolean} */ x) => setF({ ...f, readReceipts: x })}
+              hint="The date, total and merchant, read on this server; nothing leaves it. Off for a host too small to run it." />
+            <${Field} label="Jobs at a time" id="receipt-read-jobs" error=${errAt(
+              e,
+              'receiptReadJobs',
+            )}
+              hint="Each runs in its own process with 2 threads. 1 suits most hosts; more read a batch faster.">
+              <${Select} value=${String(f.receiptReadJobs)}
+                onChange=${(/** @type {string} */ x) => setF({ ...f, receiptReadJobs: Number(x) })}
+                options=${[['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']]} />
+              </${Field}>
+        `,
+      )}
+      <${ReadingQueue} />
+    `;
   }
   if (section === 'alerts') {
     return form(
@@ -464,6 +481,34 @@ function SetKey({ close, src }) {
           : null}
         <${FormError} error=${save.error} shown=${['apiKey']} />
       </${Dialog}>
+  `;
+}
+
+/** The reading queue (S9.8.7): its state, and Re-read all receipts. */
+function ReadingQueue() {
+  const res = useApi('/settings/receipts', {}, ['receipt']);
+  const q = /** @type {any} */ (res.data);
+  const reread = useSubmit(async () => {
+    await api.post('/settings/receipts/reread');
+    toast('Every receipt is queued to be read again');
+    res.reload();
+  });
+  if (!q) return null;
+  return html`
+    <div class="card content-narrow mt">
+      <h3>Reading</h3>
+      <div class="list-item"><span class="grow">Waiting</span>${q.waiting + q.reading}</div>
+      <div class="list-item"><span class="grow">Read</span>${q.read}</div>
+      <div class="list-item"><span class="grow">Couldn't read</span>${q.failed}</div>
+      <div class="list-item"><span class="grow">Last read</span>${q.lastRun
+        ? ago(q.lastRun)
+        : 'never'}</div>
+      <${FormError} error=${reread.error} />
+      <p class="small dim">After an update with new models, read them all again: only empty fields, and
+        those still holding what was read, are replaced.</p>
+      <button type="button" class="btn" disabled=${reread.busy}
+        onClick=${() => reread.run().catch(() => {})}>Re-read all receipts</button>
+    </div>
   `;
 }
 

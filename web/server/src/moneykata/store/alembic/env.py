@@ -4,6 +4,7 @@ the database opens only with its key."""
 from alembic import context
 
 from moneykata.store.tables import metadata
+from moneykata.store.tables.receipts import is_search_table
 
 VERSION_TABLE = "SchemaRevision"
 
@@ -16,7 +17,7 @@ context.configure(
     transaction_per_migration=True,
     compare_type=True,
     include_object=lambda obj, name, type_, reflected, compare_to: (
-        not (type_ == "table" and name == VERSION_TABLE)
+        not (type_ == "table" and (name == VERSION_TABLE or is_search_table(name)))
     ),
 )
 with context.begin_transaction():

@@ -156,12 +156,18 @@ async def start(config: Config, seed: bool = False) -> int:
     app = create_app(server)
     server.events.bind(asyncio.get_running_loop())
 
+    from .receipts.reading import Reader
+
+    server.reader = Reader(server)
+
     async def on_stop() -> None:
         server.ready = False
         await server.events.close_all()
         server.tasks.stop()
+        server.reader.stop()
 
     server.tasks.start()
+    server.reader.start()
     server.ready = True
     scheme = "https" if config.mode == "tls" else "http"
     log.info(

@@ -14,7 +14,11 @@ PDF, JPEG, PNG, WebP and HEIC (iPhone photos), many at once, each up to the size
 
 ## Search
 
-Matches the payee, amount, file name, notes and tags.
+Matches the text read from each receipt (`blue bottle`, `142.18`), and its payee, amount, file name, notes and tags.
+
+## Being read
+
+Each upload is read on this server in the background: **Reading…** until it's done, then its fields are filled in. **Couldn't read it** says why; the receipt still works with its fields typed by hand.
 
 ## Sharing
 

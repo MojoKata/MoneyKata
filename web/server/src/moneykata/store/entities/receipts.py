@@ -20,6 +20,14 @@ class Receipt(Record):
     payee: str | None = None
     notes: str | None = None
     tags: str = "[]"
+    readStatus: str = "waiting"
+    readError: str | None = None
+    readMethod: str | None = None
+    readEngine: str | None = None
+    readAt: dt.datetime | None = None
+    text: str | None = None
+    suggested: str = "{}"
+    filled: str = "[]"
 
 
 @dataclass(kw_only=True, eq=False)

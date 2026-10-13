@@ -207,6 +207,68 @@ def email_test(request: Request, c: Caller = Depends(admin)):
     return TestEmail(to=c.user.email)
 
 
+# ---------- Receipts (S16.10, S9.8.7) ----------
+
+
+class ReadingQueue(Model):
+    waiting: int
+    reading: int
+    failed: int
+    read: int
+    lastRun: dt.datetime | None
+
+
+def _queue(s, srv) -> ReadingQueue:
+    counts = dict(
+        s.execute(
+            text(
+                'SELECT "readStatus", count(*) FROM "Receipt" WHERE NOT deleted '
+                'GROUP BY "readStatus"'
+            )
+        ).all()
+    )
+    last = s.execute(text('SELECT max("readAt") FROM "Receipt"')).scalar()
+    return ReadingQueue(
+        waiting=counts.get("waiting", 0),
+        reading=counts.get("reading", 0),
+        failed=counts.get("failed", 0),
+        read=counts.get("read", 0),
+        lastRun=dt.datetime.fromisoformat(last).replace(tzinfo=dt.UTC)
+        if isinstance(last, str)
+        else last,
+    )
+
+
+@router.get("/settings/receipts", response_model=ReadingQueue)
+def receipts_queue(request: Request, c: Caller = Depends(admin)):
+    srv = server(request)
+    with srv.db.read() as s:
+        return _queue(s, srv)
+
+
+@router.post("/settings/receipts/reread", response_model=ReadingQueue)
+def reread_all(request: Request, c: Caller = Depends(admin)):
+    """After a model update: every receipt read again; only empty or suggested fields are
+    replaced (S9.8.6)."""
+    from ..store.entities.receipts import Receipt
+
+    srv = server(request)
+    with srv.db.tx() as s:
+        if not settings.get(s, "readReceipts"):
+            raise Problem(409, "reading-off", "Turn on Read receipts first.")
+        ids = []
+        for r in s.query(Receipt).filter(Receipt.deleted.is_(False)):
+            r.readStatus, r.readError = "waiting", None
+            ids.append(r.id)
+        activity.record(s, "receipts.reread", actor=c.id, for_admins=True)
+        s.flush()
+        out = _queue(s, srv)
+    if srv.reader is not None:
+        for rid in ids:
+            srv.reader.queue(rid)
+    return out
+
+
 # ---------- Key storage (S16.13, S15) ----------
 
 

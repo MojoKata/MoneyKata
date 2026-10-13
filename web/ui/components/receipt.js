@@ -77,7 +77,13 @@ export function ReceiptCard({ r, onOpen }) {
             ${'\u00a0· '}<span class="amt">${money(r.amount)}</span>
           `
           : ''}</div>
-        <div style=${{ marginTop: '4px' }}>${r.links.length
+        <div style=${{
+          marginTop: '4px',
+        }}>${r.readStatus === 'waiting' || r.readStatus === 'reading'
+          ? html`<span class="pill info">Reading…</span>`
+          : r.readStatus === 'failed'
+          ? html`<span class="pill bad">couldn't read it</span>`
+          : r.links.length
           ? html`<span class="pill ok">${r.links[0].accountName}${
             r.links.length > 1 ? ` +${r.links.length - 1}` : ''
           }</span>`
@@ -93,7 +99,7 @@ export function ReceiptCard({ r, onOpen }) {
  */
 export function ReceiptDialog({ close, id }) {
   useDialogGuide('dialog-receipt');
-  const res = useApi(`/receipts/${id}`);
+  const res = useApi(`/receipts/${id}`, {}, ['receipt']);
   const r = /** @type {any} */ (res.data);
   const [f, setF] = useState(/** @type {any} */ (null));
   useEffect(() => {
@@ -128,6 +134,11 @@ export function ReceiptDialog({ close, id }) {
     toast('Detached');
     res.reload();
   });
+  const again = useSubmit(async () => {
+    await api.post(`/receipts/${id}/read`);
+    toast('Queued to read again');
+    res.reload();
+  });
   const remove = useSubmit(async () => {
     await api.del(`/receipts/${id}`);
     toast('Receipt deleted');
@@ -136,6 +147,12 @@ export function ReceiptDialog({ close, id }) {
   // The dialog opens once the receipt has come, so its first field takes the focus.
   if (!r || !f) return null;
   const canEdit = r.level === 'owner' || r.level === 'write';
+  const reading = r.readStatus === 'waiting' || r.readStatus === 'reading';
+  /** "Read from the receipt" under a field still holding what was read from it. */
+  const hint = (/** @type {string} */ field, /** @type {string} */ key) =>
+    r.filled.includes(field) && r.suggested[key]
+      ? `Read from the receipt · ${r.suggested[key].confidence}% sure`
+      : undefined;
   const set = (/** @type {string} */ k) => (/** @type {string} */ v) => setF({ ...f, [k]: v });
   const file = `/ui/api/receipts/${id}/file`;
   return html`
@@ -166,6 +183,31 @@ export function ReceiptDialog({ close, id }) {
               <span class="btn sm"><${Icon} name="download" /> Open the PDF</span></a>`
             : html`<a href=${file} target="_blank" rel="noopener" title="Open full size"><${ApiImg}
               src=${file} alt=${'Receipt ' + r.fileName} /></a>`}
+          ${r.text
+            ? html`
+              <details class="mt">
+                <summary class="small">Text read from the receipt (searchable)</summary>
+                <div class="ocr-text mt">${r.text}</div>
+              </details>
+            `
+            : null}
+          <div class="toolbar mt" style=${{
+            margin: '8px 0 0',
+          }}><span class="small dim">${r.readMethod ===
+              'text'
+            ? "Read from the PDF's text layer"
+            : r.readMethod === 'ocr'
+            ? 'Read with OCR'
+            : ''}${r.suggested.card ? ` · card ending ${r.suggested.card.value}` : ''}</span>
+            <span class="spacer"></span>${canEdit && !reading
+              ? html`
+                <button type="button" class="btn sm" disabled=${again.busy}
+                  onClick=${() =>
+                    again.run().catch((e) =>
+                      toast(e.message)
+                    )}><${Icon} name="refresh" /> Read again</button>
+              `
+              : null}</div>
           <p class="small dim">${KIND[r.mediaType]} · ${(r.size / 1024).toFixed(
             0,
           )} KB · uploaded ${date(r.uploadedAt)}${r.level !== 'owner'
@@ -173,16 +215,36 @@ export function ReceiptDialog({ close, id }) {
             : ''}</p>
         </div>
         <div style=${{ flex: '0 1 280px' }}>
+          ${reading
+            ? html`
+              <div class="notice" role="status">
+                <${Icon} name="refresh" />
+                <div>Reading this receipt on
+                            the server. The fields fill in when it's done; you can type them now.</div>
+              </div>
+            `
+            : r.readStatus === 'failed'
+            ? html`
+              <div class="notice bad" role="status">
+                <${Icon} name="alert" />
+                <div>Couldn't read it: ${r
+                  .readError}. Type the fields by hand.</div>
+              </div>
+            `
+            : null}
           <div class="row">
-            <${Field} label="Date" id="receipt-date" error=${errAt(save.error, 'date')}>
+            <${Field} label="Date" id="receipt-date" error=${errAt(save.error, 'date')}
+              hint=${hint('date', 'date')}>
               <${Input} type="date" value=${f.date} onInput=${set('date')} disabled=${!canEdit} />
               </${Field}>
-              <${Field} label="Amount" id="receipt-amount" error=${errAt(save.error, 'amount')}>
+              <${Field} label="Amount" id="receipt-amount" error=${errAt(save.error, 'amount')}
+              hint=${hint('amount', 'total')}>
                 <${Input} value=${f.amount} onInput=${set('amount')} inputmode="decimal"
                   disabled=${!canEdit} />
                 </${Field}>
                 </div>
-                <${Field} label="Payee" id="receipt-payee" error=${errAt(save.error, 'payee')}>
+                <${Field} label="Payee" id="receipt-payee" error=${errAt(save.error, 'payee')}
+            hint=${hint('payee', 'merchant')}>
                   <${Input} value=${f.payee} onInput=${set('payee')} disabled=${!canEdit} />
                   </${Field}>
                   <${Field} label="Notes" id="receipt-notes" error=${errAt(save.error, 'notes')}>
@@ -229,8 +291,11 @@ export function ReceiptDialog({ close, id }) {
               </div>
             `
             : !r.links.length
-            ? html`<p class="small dim">Give it a date and amount to find the transaction it belongs to,
-              or attach it from the transaction itself.</p>`
+            ? html`<p class="small dim">${
+              r.amount
+                ? 'No transaction of this amount within five days of its date yet. Attach it from the transaction when it arrives.'
+                : 'Give it a date and amount to find the transaction it belongs to, or attach it from the transaction itself.'
+            }</p>`
             : null}
           <${FormError} error=${save.error || attach.error || detach.error} shown=${[
             'date',

@@ -4130,6 +4130,48 @@
         "title": "ProfileChange",
         "type": "object"
       },
+      "ReadingQueue": {
+        "additionalProperties": false,
+        "properties": {
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "lastRun": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrun"
+          },
+          "read": {
+            "title": "Read",
+            "type": "integer"
+          },
+          "reading": {
+            "title": "Reading",
+            "type": "integer"
+          },
+          "waiting": {
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "waiting",
+          "reading",
+          "failed",
+          "read",
+          "lastRun"
+        ],
+        "title": "ReadingQueue",
+        "type": "object"
+      },
       "ReceiptChange": {
         "additionalProperties": false,
         "properties": {
@@ -4242,6 +4284,13 @@
             "title": "Filename",
             "type": "string"
           },
+          "filled": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Filled",
+            "type": "array"
+          },
           "hasThumbnail": {
             "title": "Hasthumbnail",
             "type": "boolean"
@@ -4302,9 +4351,65 @@
             ],
             "title": "Payee"
           },
+          "readAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readat"
+          },
+          "readEngine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readengine"
+          },
+          "readError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readerror"
+          },
+          "readMethod": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readmethod"
+          },
+          "readStatus": {
+            "title": "Readstatus",
+            "type": "string"
+          },
           "size": {
             "title": "Size",
             "type": "integer"
+          },
+          "suggested": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Suggested"
+            },
+            "title": "Suggested",
+            "type": "object"
           },
           "tags": {
             "items": {
@@ -4312,6 +4417,17 @@
             },
             "title": "Tags",
             "type": "array"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
           },
           "uploadedAt": {
             "format": "date-time",
@@ -4339,8 +4455,16 @@
           "tags",
           "links",
           "hasThumbnail",
+          "readStatus",
+          "readError",
+          "filled",
           "version",
-          "matches"
+          "matches",
+          "text",
+          "suggested",
+          "readMethod",
+          "readEngine",
+          "readAt"
         ],
         "title": "ReceiptDetail",
         "type": "object"
@@ -4378,6 +4502,13 @@
           "fileName": {
             "title": "Filename",
             "type": "string"
+          },
+          "filled": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Filled",
+            "type": "array"
           },
           "hasThumbnail": {
             "title": "Hasthumbnail",
@@ -4432,6 +4563,21 @@
             ],
             "title": "Payee"
           },
+          "readError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readerror"
+          },
+          "readStatus": {
+            "title": "Readstatus",
+            "type": "string"
+          },
           "size": {
             "title": "Size",
             "type": "integer"
@@ -4469,6 +4615,9 @@
           "tags",
           "links",
           "hasThumbnail",
+          "readStatus",
+          "readError",
+          "filled",
           "version"
         ],
         "title": "ReceiptRow",
@@ -5554,6 +5703,26 @@
           "id"
         ],
         "title": "SplitOut",
+        "type": "object"
+      },
+      "Suggested": {
+        "additionalProperties": false,
+        "description": "A field read from the receipt, with how sure the reader was (0–100).",
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "confidence"
+        ],
+        "title": "Suggested",
         "type": "object"
       },
       "Suggestion": {
@@ -9924,7 +10093,7 @@
     },
     "/ui/api/receipts": {
       "get": {
-        "description": "Newest first. *inbox*: the caller's receipts attached to nothing yet.",
+        "description": "Newest first. *inbox*: the caller's receipts attached to nothing yet. The search looks\nin what was read from each receipt (S9.8.5) as well as its fields.",
         "operationId": "list_receipts_ui_api_receipts_get",
         "parameters": [
           {
@@ -10289,6 +10458,49 @@
           }
         },
         "summary": "Detach",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
+    "/ui/api/receipts/{receipt_id}/read": {
+      "post": {
+        "description": "Read it again (S9.8.6): only empty or suggested fields are replaced.",
+        "operationId": "read_again_ui_api_receipts__receipt_id__read_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Again",
         "tags": [
           "receipts"
         ]
@@ -10843,6 +11055,49 @@
           }
         },
         "summary": "Key Test",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/receipts": {
+      "get": {
+        "operationId": "receipts_queue_ui_api_settings_receipts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingQueue"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Receipts Queue",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/receipts/reread": {
+      "post": {
+        "description": "After a model update: every receipt read again; only empty or suggested fields are\nreplaced (S9.8.6).",
+        "operationId": "reread_all_ui_api_settings_receipts_reread_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingQueue"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reread All",
         "tags": [
           "settings"
         ]

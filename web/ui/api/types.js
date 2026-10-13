@@ -770,6 +770,15 @@
  */
 
 /**
+ * @typedef {Object} ReadingQueue
+ * @property {number} waiting
+ * @property {number} reading
+ * @property {number} failed
+ * @property {number} read
+ * @property {(string | null)} lastRun
+ */
+
+/**
  * @typedef {Object} ReceiptChange
  * @property {(string | null)} [date]
  * @property {((number | string) | null)} [amount]
@@ -795,8 +804,16 @@
  * @property {Array<string>} tags
  * @property {Array<LinkOut>} links
  * @property {boolean} hasThumbnail
+ * @property {string} readStatus
+ * @property {(string | null)} readError
+ * @property {Array<string>} filled
  * @property {number} version
  * @property {Array<Suggestion>} matches
+ * @property {(string | null)} text
+ * @property {Object<string, Suggested>} suggested
+ * @property {(string | null)} readMethod
+ * @property {(string | null)} readEngine
+ * @property {(string | null)} readAt
  */
 
 /**
@@ -816,6 +833,9 @@
  * @property {Array<string>} tags
  * @property {Array<LinkOut>} links
  * @property {boolean} hasThumbnail
+ * @property {string} readStatus
+ * @property {(string | null)} readError
+ * @property {Array<string>} filled
  * @property {number} version
  */
 
@@ -1034,6 +1054,13 @@
  * @property {string} amount
  * @property {(string | null)} [memo]
  * @property {string} id
+ */
+
+/**
+ * A field read from the receipt, with how sure the reader was (0–100).
+ * @typedef {Object} Suggested
+ * @property {string} value
+ * @property {number} confidence
  */
 
 /**

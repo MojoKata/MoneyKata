@@ -13,7 +13,7 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import Day, Dec
+from ..types import Day, Dec, UtcTimestamp
 from ._base import pairs, record
 
 Receipt = record(
@@ -33,6 +33,20 @@ Receipt = record(
     Column("payee", Text),
     Column("notes", Text),
     Column("tags", Text, nullable=False, server_default=text("'[]'")),
+    # Reading it (S9.8): where it stands, how and with what it was read, the full text (also
+    # in ReceiptSearch for search), the suggested fields with their confidences, and which of
+    # its fields still hold a suggestion rather than what a person typed.
+    Column("readStatus", Text, nullable=False, server_default=text("'waiting'")),
+    Column("readError", Text),
+    Column("readMethod", Text),
+    Column("readEngine", Text),
+    Column("readAt", UtcTimestamp),
+    Column("text", Text),
+    Column("suggested", Text, nullable=False, server_default=text("'{}'")),
+    Column("filled", Text, nullable=False, server_default=text("'[]'")),
+    CheckConstraint(
+        "\"readStatus\" IN ('off', 'waiting', 'reading', 'read', 'failed')", name="read_status"
+    ),
     CheckConstraint(
         "\"mediaType\" IN ('application/pdf', 'image/jpeg', 'image/png', 'image/webp', "
         "'image/heic')",
@@ -53,3 +67,12 @@ ReceiptLinks = pairs(
     CheckConstraint("kind IN ('transaction')", name="kind"),
     Index("ix_ReceiptLinks_item", "kind", "itemId"),
 )
+
+# The full-text index of what was read (SQLite FTS5), kept by the reader, searched by the
+# Receipts screen. A virtual table, made by revision 0007 rather than declared here.
+SEARCH = "ReceiptSearch"
+
+
+def is_search_table(name: str) -> bool:
+    """FTS5's table and the shadow tables it keeps beside it."""
+    return name == SEARCH or name.startswith(SEARCH + "_")

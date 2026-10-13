@@ -54,9 +54,14 @@ export default function Receipts() {
     <div class="toolbar mt">
       <${Chips} label="Show" value=${show} onChange=${setShow}
         options=${[['all', 'All'], ['inbox', 'Inbox']]} />
+      ${rows?.some((r) => r.readStatus === 'waiting' || r.readStatus === 'reading')
+        ? html`<span class="pill info">${
+          rows.filter((r) => r.readStatus === 'waiting' || r.readStatus === 'reading').length
+        } being read</span>`
+        : null}
       <span class="spacer"></span>
       <input class="in" style=${{ maxWidth: '280px' }} id="f-search" value=${q}
-        placeholder="Search payee, amount, name, tags…" aria-label="Search receipts"
+        placeholder="Search the receipts' text, payee, amount…" aria-label="Search receipts"
         onInput=${(/** @type {any} */ e) => setQ(e.currentTarget.value)} />
     </div>
     ${res.error

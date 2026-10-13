@@ -73,6 +73,7 @@ TEXT = {
     "portfolio.created": "{actor} made the portfolio {subject}",
     "portfolio.updated": "{actor} changed {fields} of the portfolio {subject}",
     "portfolio.deleted": "{actor} deleted the portfolio {subject}",
+    "receipts.reread": "{actor} asked for every receipt to be read again",
     "receipt.uploaded": "{actor} uploaded a receipt",
     "receipt.attached": "{actor} attached a receipt to a transaction in {subject}",
     "receipt.deleted": "{actor} deleted a receipt",

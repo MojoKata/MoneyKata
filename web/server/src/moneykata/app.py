@@ -28,6 +28,8 @@ class Server:
     version: str = field(default_factory=paths.version)
     ready: bool = False
     upload_limit: int = 25 * 1024 * 1024
+    # The receipt reader (S9.8.4), started with the server; tests run without one.
+    reader: object | None = None
     stream_seconds: float = STREAM_SECONDS
     events: Broker = field(default_factory=Broker)
     tasks: Tasks = field(default_factory=Tasks)

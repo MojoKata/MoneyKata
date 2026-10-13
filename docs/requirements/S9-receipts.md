@@ -69,18 +69,22 @@
          transaction up to 25% larger also matches, to allow for a tip added after the
          receipt was printed. The best match is offered as *Attach to …*, with the next two
          as alternatives.
-   3. **Models ship with the app.** The PP-OCR ONNX model files (detection, orientation,
-      English/Latin recognition, about 15 MB) are committed and pinned by SHA-256, like the
-      browser libraries. They are loaded from the install directory, and RapidOCR is
-      configured with their local paths so it never tries to download a model at run time;
-      the egress guard (S13.5) would refuse it anyway. Other scripts' recognition models
-      (Chinese, Japanese, Korean, Cyrillic, …) can be added later the same way.
+   3. **Models ship with the app.** The PP-OCR ONNX models (PP-OCRv6 small detection and
+      recognition, which read Latin script as well as Chinese, and the mobile orientation
+      classifier, about 31 MB) are the ones inside the rapidocr wheel, which `uv.lock` pins
+      by its hash; the reader also checks each model file against its SHA-256 before loading
+      it. RapidOCR is configured with their local paths so it never tries to download a
+      model at run time; the egress guard (S13.5) would refuse it anyway. Smaller,
+      script-specific recognition models (English, Cyrillic, …) can replace them later the
+      same way, pinned in the code.
    4. **It runs as a background job**, never in a request:
       1. an upload queues the receipt and answers at once; the receipt shows *Reading…* until
          the job finishes, and the live-updates stream (S12.6) refreshes it;
       2. jobs run **one at a time** (a Setting, 1 by default) in a **separate worker
          process** with ONNX Runtime limited to 2 threads, a lower CPU priority, a memory cap
-         (1.5 GB) and a 60-second limit per receipt. The worker is restarted after a crash or
+         (1.5 GB resident, watched from the server: an address-space limit can't be used,
+         since ONNX Runtime and OpenCV map far more than they touch) and a 60-second limit
+         per receipt. The worker is restarted after a crash or
          a timeout, so a hostile or broken file cannot take down the server;
       3. Pillow's decompression-bomb limit and a cap of 40 million pixels refuse oversized
          images before decoding;

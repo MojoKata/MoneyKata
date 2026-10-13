@@ -29,7 +29,7 @@ from pathlib import Path
 from sqlalchemy import false, select
 from sqlalchemy.orm import Session
 
-from .. import access, clock, ids
+from .. import access, clock, ids, settings
 from ..errors import Problem, refuse
 from ..keys import files
 from ..store.entities.accounts import Account, Transaction
@@ -170,6 +170,7 @@ def store(s: Session, server, owner_id: str, name: str, data: bytes) -> Stored:
         sha256=digest,
         fileId=file_id,
         thumbnail=thumbnail(data, media),
+        readStatus="waiting" if settings.get(s, "readReceipts") else "off",
     )
     s.add(r)
     s.flush()

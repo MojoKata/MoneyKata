@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from .. import activity, receipts, settings
 from ..errors import Problem, refuse
 from ..keys.files import FileError
+from ..receipts import reading
 from ..store.entities.accounts import Account, Transaction
 from ..store.entities.receipts import Receipt
 from ..store.entities.users import User
@@ -46,7 +47,17 @@ class ReceiptRow(Model):
     tags: list[str]
     links: list[LinkOut]
     hasThumbnail: bool
+    readStatus: str
+    readError: str | None
+    filled: list[str]
     version: int
+
+
+class Suggested(Model):
+    """A field read from the receipt, with how sure the reader was (0–100)."""
+
+    value: str
+    confidence: int
 
 
 class Suggestion(Model):
@@ -59,6 +70,11 @@ class Suggestion(Model):
 
 class ReceiptDetail(ReceiptRow):
     matches: list[Suggestion]
+    text: str | None
+    suggested: dict[str, Suggested]
+    readMethod: str | None
+    readEngine: str | None
+    readAt: dt.datetime | None
 
 
 class ReceiptChange(Model):
@@ -111,6 +127,9 @@ def row(s, r: Receipt, level: str) -> ReceiptRow:
         tags=receipts.tags_of(r),
         links=_links(s, r),
         hasThumbnail=r.thumbnail is not None,
+        readStatus=r.readStatus,
+        readError=r.readError,
+        filled=json.loads(r.filled or "[]"),
         version=r.version,
     )
 
@@ -129,6 +148,14 @@ def detail(s, user_id: str, r: Receipt, level: str) -> ReceiptDetail:
             )
             for m in receipts.matches(s, user_id, r)
         ],
+        text=r.text,
+        suggested={
+            k: Suggested(value=v["value"], confidence=v["confidence"])
+            for k, v in json.loads(r.suggested or "{}").items()
+        },
+        readMethod=r.readMethod,
+        readEngine=r.readEngine,
+        readAt=r.readAt,
     )
 
 
@@ -136,9 +163,11 @@ def detail(s, user_id: str, r: Receipt, level: str) -> ReceiptDetail:
 def list_receipts(
     request: Request, c: Caller = Depends(caller), show: str = "all", q: str | None = None
 ):
-    """Newest first. *inbox*: the caller's receipts attached to nothing yet."""
+    """Newest first. *inbox*: the caller's receipts attached to nothing yet. The search looks
+    in what was read from each receipt (S9.8.5) as well as its fields."""
     with server(request).db.read() as s:
         rows = [row(s, r, lvl) for r, lvl in receipts.visible(s, c.id)]
+        in_text = reading.search(s, q) if q else set()
     if show == "inbox":
         rows = [r for r in rows if not r.links and r.level == "owner"]
     if q:
@@ -146,7 +175,8 @@ def list_receipts(
         rows = [
             r
             for r in rows
-            if all(
+            if r.id in in_text
+            or all(
                 w
                 in " ".join(
                     filter(
@@ -178,6 +208,8 @@ async def upload(request: Request, file: UploadFile = File(...), c: Caller = Dep
         if not stored.existing:
             activity.record(s, "receipt.uploaded", actor=c.id, owner=c.id)
         out = row(s, stored.receipt, "owner")
+    if out.readStatus == "waiting" and srv.reader is not None:
+        srv.reader.queue(out.id)
     return JSONResponse(
         out.model_dump(mode="json"),
         status_code=200 if stored.existing else 201,
@@ -211,20 +243,40 @@ def change_receipt(
             raise refuse("payee", "payee-too-long", "At most 200 characters.")
         if "notes" in sent and body.notes is not None and len(body.notes) > 2000:
             raise refuse("notes", "notes-too-long", "At most 2,000 characters.")
+        filled = set(json.loads(r.filled or "[]"))
         for f in ("date", "amount", "payee", "notes"):
             if f in sent:
+                # A value a person gives is theirs: reading again won't replace it.
+                filled.discard(f)
                 value = getattr(body, f)
                 if isinstance(value, str):
                     value = value.strip() or None
                 if f == "amount" and value is not None:
                     value = abs(Decimal(value))
                 setattr(r, f, value)
+        r.filled = json.dumps(sorted(filled))
         if "tags" in sent and body.tags is not None:
             tags = sorted({t.strip().lower() for t in body.tags if t.strip()})
             r.tags = json.dumps(tags)
         r.updatedAt = dt.datetime.now(dt.UTC)
         s.flush()
         return detail(s, c.id, r, lvl)
+
+
+@router.post("/receipts/{receipt_id}/read", response_model=ReceiptDetail)
+def read_again(receipt_id: str, request: Request, c: Caller = Depends(caller)):
+    """Read it again (S9.8.6): only empty or suggested fields are replaced."""
+    srv = server(request)
+    with srv.db.tx() as s:
+        r, lvl = receipts.get(s, c.id, receipt_id, "write")
+        if not settings.get(s, "readReceipts"):
+            raise Problem(409, "reading-off", "Reading receipts is off in Settings › Receipts.")
+        reading.read_again(s, r)
+        s.flush()
+        out = detail(s, c.id, r, lvl)
+    if srv.reader is not None:
+        srv.reader.queue(receipt_id)
+    return out
 
 
 @router.delete("/receipts/{receipt_id}", status_code=204)

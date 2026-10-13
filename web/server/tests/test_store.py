@@ -19,6 +19,7 @@ from moneykata.store.entities.users import User
 from moneykata.store.repos import secrets as secret_repo
 from moneykata.store.tables import metadata
 from moneykata.store.tables._base import record
+from moneykata.store.tables.receipts import is_search_table
 
 
 def new_user(s, name="alice"):
@@ -70,7 +71,14 @@ def test_partial_unique_index_ignores_deleted(db):
 def test_tables_and_revisions_agree(db):
     with db.engine.connect() as conn:
         mc = MigrationContext.configure(
-            conn, opts={"version_table": "SchemaRevision", "compare_type": True}
+            conn,
+            opts={
+                "version_table": "SchemaRevision",
+                "compare_type": True,
+                "include_name": lambda name, type_, parent: (
+                    type_ != "table" or not is_search_table(name)
+                ),
+            },
         )
         diff = compare_metadata(mc, metadata)
     assert diff == []
@@ -376,7 +384,7 @@ def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
             f"INSERT INTO \"OneTimeToken\" VALUES ('h2', 'two-step', '{uid}', NULL, "
             "'2026-10-01 00:00:00', '2030-01-01 00:00:00')"
         )
-        rebuilt = ("OneTimeToken", "Share")
+        rebuilt = ("OneTimeToken", "Share", "Receipt")
         migrated = {
             name: conn.exec_driver_sql(
                 f"SELECT sql FROM sqlite_master WHERE name = '{name}'"

@@ -91,3 +91,19 @@ def seed_receipts(server, s, people: dict) -> None:
     )
     store(s, server, alice.id, "city-power-sept.pdf", _bytes(invoice, "PDF"))
     s.flush()
+    read_now(s, server)
+
+
+def read_now(s, server) -> None:
+    """Read the seed's receipts before the server starts, here rather than in the worker, so
+    every dev server (and the generated mockup) begins from the same readings."""
+    from ..receipts import ocr, reading, whole
+    from ..store.entities.receipts import Receipt
+
+    for r in s.scalars(select(Receipt).where(Receipt.readStatus == "waiting")):
+        try:
+            got = ocr.read(whole(server, r), r.mediaType)
+        except ocr.ReadError as e:
+            r.readStatus, r.readError = "failed", str(e)
+            continue
+        reading.save_reading(s, r, got.lines, got.method, got.engine)
