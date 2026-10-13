@@ -4,6 +4,7 @@ import datetime as dt
 from decimal import Decimal
 from urllib.parse import quote
 
+from .. import clock
 from .base import Ref, TickerSource, register
 
 EXCHANGE = "https://api.exchange.coinbase.com"
@@ -23,6 +24,9 @@ class Coinbase(TickerSource):
     def history(self, ref: Ref, start: dt.date, end: dt.date) -> list[tuple[dt.date, Decimal]]:
         product = quote(f"{ref.symbol.upper()}-USD")
         out: dict[dt.date, Decimal] = {}
+        # Today's candle (in UTC) is still open: its close is the latest trade, an intraday
+        # quote (§7.4). Stored, it would never be replaced, as refreshes start after it.
+        end = min(end, clock.today() - dt.timedelta(days=1))
         cursor = start
         while cursor <= end:
             stop = min(end, cursor + dt.timedelta(days=CANDLES_PER_CALL - 1))
@@ -33,6 +37,7 @@ class Coinbase(TickerSource):
             rows = self.get_json(url) or []
             for row in rows:  # [time, low, high, open, close, volume]
                 day = dt.datetime.fromtimestamp(row[0], dt.UTC).date()
-                out[day] = Decimal(str(row[4]))
+                if day <= end:
+                    out[day] = Decimal(str(row[4]))
             cursor = stop + dt.timedelta(days=1)
         return sorted(out.items())

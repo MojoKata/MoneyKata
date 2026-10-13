@@ -6,7 +6,7 @@ import pytest
 from conftest import make_user, sign_in
 from sqlalchemy import func, select
 
-from moneykata import ids, valuation
+from moneykata import clock, ids, valuation
 from moneykata.ledger.types import investing
 from moneykata.prices import SOURCES, SourceError, TickerSource, register
 from moneykata.prices import refresh as pricing
@@ -82,6 +82,23 @@ def test_coinbase_pages_daily_candles():
     )
     assert rows == [(dt.date(2026, 1, 2), D("98000.5"))]
     assert len(client.calls) == 2  # 300 days a call
+
+
+def test_coinbase_leaves_out_todays_open_candle():
+    def stamp(day):
+        return int(dt.datetime.combine(day, dt.time(), dt.UTC).timestamp())
+
+    yesterday = TODAY - dt.timedelta(days=1)
+    client = FakeClient(
+        lambda url: (200, [[stamp(TODAY), 1, 2, 1, 101.0, 1], [stamp(yesterday), 1, 2, 1, 99.5, 1]])
+    )
+    clock.fix(dt.datetime.combine(TODAY, dt.time(21), dt.UTC))
+    try:
+        rows = Coinbase(client, None).history(Ref("i", "BTC", "crypto"), yesterday, TODAY)
+    finally:
+        clock.fix(None)
+    assert rows == [(yesterday, D("99.5"))]
+    assert f"end={yesterday.isoformat()}T23:59:59Z" in client.calls[0][0]
 
 
 @register
