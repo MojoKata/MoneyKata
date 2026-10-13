@@ -8,8 +8,8 @@ receipts and tax books, and prepares the numbers a tax return needs. Several peo
 server, and households on other MoneyKata servers can share with named people here, read
 only, in a window of their own.
 
-**Status:** the first milestone (requirements S17.9.1) is built, and the second (S17.9.2) is
-being built in `web/`.
+**Status:** the first two milestones (requirements S17.9.1–S17.9.2) are built in `web/`;
+the third (S17.9.3) is next.
 
 ## Where to start
 
