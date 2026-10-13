@@ -271,6 +271,7 @@ class Recorder:
             if a["level"] != "read":
                 self.dialog(f"/ui/accounts/{a['id']}/reconcile", "Type today's balance")
                 self.dialog(f"/ui/accounts/{a['id']}/reconcile", "Tick off against a statement")
+                self.dialog(f"/ui/accounts/{a['id']}", "Record a payment")
             self.dialog("/ui/accounts", f"Share {a['name']}")
         for p in self.api("/portfolios"):
             for tab in ("performance", "holdings", "projections"):

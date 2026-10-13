@@ -18,11 +18,14 @@ The last four digits of the account number, to tell accounts apart.
 
 ## Lot method
 
-Which lots a sale takes: **FIFO** the oldest first (the default), **LIFO** the newest, **HIFO** the most expensive, **specific identification** the ones you pick, or **average cost**. The method in force at a sale is recorded with it.
+Which lots a sale takes: **FIFO** the oldest first (the default), **LIFO** the newest, **HIFO** the
+most expensive, **specific identification** the ones you pick, or **average cost**. The method in
+force at a sale is recorded with it.
 
 ## Opening balance
 
-A balance before the first transaction, with its date. Leave it empty to work it out from the earliest balance the institution reported.
+A balance before the first transaction, with its date. Leave it empty to work it out from the
+earliest balance the institution reported.
 
 ## Opening balance date {#opening-date}
 
@@ -42,7 +45,8 @@ Deletes it with its transactions, only by its owner. The click asks again first.
 
 ## Count in my totals
 
-On an account shared with you: whether your net worth includes it. Off by default, so a spouse's accounts count once.
+On an account shared with you: whether your net worth includes it. Off by default, so a spouse's
+accounts count once.
 
 ## Method {#kept-by}
 

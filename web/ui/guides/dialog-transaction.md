@@ -10,7 +10,8 @@ As the institution wrote it.
 
 ## Kind
 
-What it is: money in or out, a transfer, interest, a fee; or for an investing account a buy, a sale, a dividend, shares moved in or out.
+What it is: money in or out, a transfer, interest, a fee; or for an investing account a buy, a sale,
+a dividend, shares moved in or out.
 
 ## Symbol
 
@@ -50,7 +51,8 @@ One transaction across several categories; the parts must add up to its amount.
 
 ## Contribution year
 
-For a retirement account: the tax year a contribution counts for. One made before the April deadline may be for the year before.
+For a retirement account: the tax year a contribution counts for. One made before the April deadline
+may be for the year before.
 
 ## Contributed by {#contribution-source}
 
@@ -66,7 +68,8 @@ Your own, separated by commas; others who share the account don't see them.
 
 ## Receipts
 
-The receipts attached to it; each opens its file. **Add a receipt** uploads one or more and attaches them here. Whoever can read this account can see its receipts.
+The receipts attached to it; each opens its file. **Add a receipt** uploads one or more and attaches
+them here. Whoever can read this account can see its receipts.
 
 ## Add a receipt {#add-receipt}
 

@@ -1166,6 +1166,52 @@
         "title": "BudgetRow",
         "type": "object"
       },
+      "Candidate": {
+        "additionalProperties": false,
+        "properties": {
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "accountName",
+          "date",
+          "amount",
+          "payee"
+        ],
+        "title": "Candidate",
+        "type": "object"
+      },
       "CashFlow": {
         "additionalProperties": false,
         "properties": {
@@ -2676,6 +2722,161 @@
         "title": "LinkOut",
         "type": "object"
       },
+      "LoanView": {
+        "additionalProperties": false,
+        "properties": {
+          "balance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "interestAhead": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interestahead",
+            "type": "string"
+          },
+          "interestPaid": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interestpaid",
+            "type": "string"
+          },
+          "nextDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextdate"
+          },
+          "originalPayoff": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Originalpayoff"
+          },
+          "overpaid": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Overpaid",
+            "type": "string"
+          },
+          "payment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Payment",
+            "type": "string"
+          },
+          "payoffDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payoffdate"
+          },
+          "principalThisYear": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Principalthisyear",
+            "type": "string"
+          },
+          "rate": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Rate",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/RowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "servicer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServicerCheck"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "terms": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TermsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "terms",
+          "balance",
+          "rate",
+          "payment",
+          "total",
+          "nextDate",
+          "payoffDate",
+          "originalPayoff",
+          "interestPaid",
+          "interestAhead",
+          "principalThisYear",
+          "overpaid",
+          "rows",
+          "servicer",
+          "canWrite"
+        ],
+        "title": "LoanView",
+        "type": "object"
+      },
       "Login": {
         "additionalProperties": false,
         "properties": {
@@ -3623,6 +3824,198 @@
           "newPassword"
         ],
         "title": "PasswordChange",
+        "type": "object"
+      },
+      "PaymentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "escrowInsurance": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escrowinsurance"
+          },
+          "escrowTax": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escrowtax"
+          },
+          "fees": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fees"
+          },
+          "fromAccountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fromaccountid"
+          },
+          "interest": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interest"
+          },
+          "pmi": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pmi"
+          },
+          "principal": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principal"
+          },
+          "transactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
+          }
+        },
+        "required": [
+          "date",
+          "amount"
+        ],
+        "title": "PaymentIn",
         "type": "object"
       },
       "PeriodRow": {
@@ -4719,6 +5112,62 @@
         "title": "ReadingQueue",
         "type": "object"
       },
+      "Recast": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "fee": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Fee",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date"
+        ],
+        "title": "Recast",
+        "type": "object"
+      },
+      "RecastView": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "fee": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Fee",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "fee"
+        ],
+        "title": "RecastView",
+        "type": "object"
+      },
       "ReceiptChange": {
         "additionalProperties": false,
         "properties": {
@@ -5408,6 +5857,62 @@
         "title": "RecurringRow",
         "type": "object"
       },
+      "Reset": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Rate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "rate"
+        ],
+        "title": "Reset",
+        "type": "object"
+      },
+      "ResetView": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "rate": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Rate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "rate"
+        ],
+        "title": "ResetView",
+        "type": "object"
+      },
       "ReturnRow": {
         "additionalProperties": false,
         "properties": {
@@ -5440,6 +5945,89 @@
           "periods"
         ],
         "title": "ReturnRow",
+        "type": "object"
+      },
+      "RowOut": {
+        "additionalProperties": false,
+        "properties": {
+          "balance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "escrow": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Escrow",
+            "type": "string"
+          },
+          "interest": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interest",
+            "type": "string"
+          },
+          "overpayment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Overpayment",
+            "type": "string"
+          },
+          "past": {
+            "title": "Past",
+            "type": "boolean"
+          },
+          "payment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Payment",
+            "type": "string"
+          },
+          "pmi": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Pmi",
+            "type": "string"
+          },
+          "principal": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Principal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "payment",
+          "principal",
+          "interest",
+          "escrow",
+          "pmi",
+          "balance",
+          "past",
+          "overpayment"
+        ],
+        "title": "RowOut",
         "type": "object"
       },
       "Saved": {
@@ -5530,6 +6118,48 @@
           "benchmark"
         ],
         "title": "SeriesPoint",
+        "type": "object"
+      },
+      "ServicerCheck": {
+        "additionalProperties": false,
+        "properties": {
+          "computed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Computed",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "difference": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Difference",
+            "type": "string"
+          },
+          "servicer": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Servicer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "servicer",
+          "computed",
+          "difference"
+        ],
+        "title": "ServicerCheck",
         "type": "object"
       },
       "SessionInfo": {
@@ -6221,51 +6851,6 @@
         "title": "SplitIn",
         "type": "object"
       },
-      "SplitOut": {
-        "additionalProperties": false,
-        "properties": {
-          "amount": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Amount",
-            "type": "string"
-          },
-          "categoryId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Categoryid"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "memo": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Memo"
-          }
-        },
-        "required": [
-          "amount",
-          "id"
-        ],
-        "title": "SplitOut",
-        "type": "object"
-      },
       "StatementIn": {
         "additionalProperties": false,
         "properties": {
@@ -6589,6 +7174,370 @@
           "rows"
         ],
         "title": "TaxTables",
+        "type": "object"
+      },
+      "TermsIn": {
+        "additionalProperties": false,
+        "properties": {
+          "drawMonths": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawmonths"
+          },
+          "escrowInsurance": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escrowinsurance"
+          },
+          "escrowTax": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escrowtax"
+          },
+          "method": {
+            "default": "amortized",
+            "title": "Method",
+            "type": "string"
+          },
+          "originalValue": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Originalvalue"
+          },
+          "payment": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment"
+          },
+          "pmi": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pmi"
+          },
+          "principal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Principal",
+            "type": "string"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Rate",
+            "type": "string"
+          },
+          "recasts": {
+            "items": {
+              "$ref": "#/components/schemas/Recast"
+            },
+            "title": "Recasts",
+            "type": "array"
+          },
+          "resets": {
+            "items": {
+              "$ref": "#/components/schemas/Reset"
+            },
+            "title": "Resets",
+            "type": "array"
+          },
+          "startDate": {
+            "format": "date",
+            "title": "Startdate",
+            "type": "string"
+          },
+          "termMonths": {
+            "title": "Termmonths",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "principal",
+          "startDate",
+          "termMonths",
+          "rate"
+        ],
+        "title": "TermsIn",
+        "type": "object"
+      },
+      "TermsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "computedPayment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Computedpayment",
+            "type": "string"
+          },
+          "drawMonths": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawmonths"
+          },
+          "escrowInsurance": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escrowinsurance"
+          },
+          "escrowTax": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escrowtax"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "originalValue": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Originalvalue"
+          },
+          "payment": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment"
+          },
+          "pmi": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pmi"
+          },
+          "principal": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Principal",
+            "type": "string"
+          },
+          "rate": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Rate",
+            "type": "string"
+          },
+          "recasts": {
+            "items": {
+              "$ref": "#/components/schemas/RecastView"
+            },
+            "title": "Recasts",
+            "type": "array"
+          },
+          "resets": {
+            "items": {
+              "$ref": "#/components/schemas/ResetView"
+            },
+            "title": "Resets",
+            "type": "array"
+          },
+          "startDate": {
+            "format": "date",
+            "title": "Startdate",
+            "type": "string"
+          },
+          "termMonths": {
+            "title": "Termmonths",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "principal",
+          "startDate",
+          "termMonths",
+          "rate",
+          "method",
+          "payment",
+          "escrowTax",
+          "escrowInsurance",
+          "pmi",
+          "drawMonths",
+          "resets",
+          "recasts",
+          "originalValue",
+          "computedPayment",
+          "version"
+        ],
+        "title": "TermsOut",
         "type": "object"
       },
       "TestEmail": {
@@ -7515,7 +8464,7 @@
           },
           "splits": {
             "items": {
-              "$ref": "#/components/schemas/SplitOut"
+              "$ref": "#/components/schemas/moneykata__ui__transactions__SplitOut"
             },
             "title": "Splits",
             "type": "array"
@@ -7956,6 +8905,78 @@
         "title": "Zones",
         "type": "object"
       },
+      "moneykata__ui__loans__SplitOut": {
+        "additionalProperties": false,
+        "properties": {
+          "escrowInsurance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Escrowinsurance",
+            "type": "string"
+          },
+          "escrowTax": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Escrowtax",
+            "type": "string"
+          },
+          "fees": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Fees",
+            "type": "string"
+          },
+          "interest": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interest",
+            "type": "string"
+          },
+          "overpayment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Overpayment",
+            "type": "string"
+          },
+          "pmi": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Pmi",
+            "type": "string"
+          },
+          "principal": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Principal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "principal",
+          "interest",
+          "escrowTax",
+          "escrowInsurance",
+          "pmi",
+          "fees",
+          "overpayment"
+        ],
+        "title": "SplitOut",
+        "type": "object"
+      },
       "moneykata__ui__prices__SecretSet": {
         "additionalProperties": false,
         "properties": {
@@ -8009,6 +9030,51 @@
           "setBy"
         ],
         "title": "SecretSet",
+        "type": "object"
+      },
+      "moneykata__ui__transactions__SplitOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "memo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memo"
+          }
+        },
+        "required": [
+          "amount",
+          "id"
+        ],
+        "title": "SplitOut",
         "type": "object"
       }
     }
@@ -8493,6 +9559,252 @@
         "summary": "Upload",
         "tags": [
           "imports"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/loan": {
+      "get": {
+        "operationId": "get_loan_ui_api_accounts__account_id__loan_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Loan",
+        "tags": [
+          "loans"
+        ]
+      },
+      "put": {
+        "description": "The terms, set when the loan is made and corrected later (an ARM's resets, a recast).",
+        "operationId": "put_terms_ui_api_accounts__account_id__loan_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TermsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Terms",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/loan/candidates": {
+      "get": {
+        "description": "Bank transactions of the last 90 days that look like this loan's payment (within 2% of\nit, not yet a transfer, and not filed under some other category, as rent is), to link\nwith one click.",
+        "operationId": "candidates_ui_api_accounts__account_id__loan_candidates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Candidate"
+                  },
+                  "title": "Response Candidates Ui Api Accounts  Account Id  Loan Candidates Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Candidates",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/loan/payments": {
+      "post": {
+        "description": "A payment on the loan, split into its parts. With a bank account, its half of the\ntransfer is made as well; with a bank transaction, that one is linked (S1.9.3).",
+        "operationId": "add_payment_ui_api_accounts__account_id__loan_payments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Payment",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/loan/split": {
+      "post": {
+        "description": "How the schedule would split a payment of this amount on this day.",
+        "operationId": "suggest_split_ui_api_accounts__account_id__loan_split_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__loans__SplitOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest Split",
+        "tags": [
+          "loans"
         ]
       }
     },

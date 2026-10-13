@@ -1,24 +1,31 @@
 # Projections
 
-How your money might grow toward a goal, and whether it will pay for it: **retirement**, or a **savings target** by a date. A model, not a forecast. (Education goals come with 529 accounts.)
+How your money might grow toward a goal, and whether it will pay for it: **retirement**, or a
+**savings target** by a date. A model, not a forecast. (Education goals come with 529 accounts.)
 
 ![Projections](shots/projections.webp)
 
 ## Active
 
-The plans you follow. At most one per subject: one retirement plan for the same people, one per savings target. Making one active stores its median path and its 10th–90th percentile band as of that day: its **baseline**.
+The plans you follow. At most one per subject: one retirement plan for the same people, one per
+savings target. Making one active stores its median path and its 10th–90th percentile band as of
+that day: its **baseline**.
 
 ## Scenarios
 
-Projections that aren't active: what-ifs to compare, such as retiring at 60 against 65, or saving $500 more a month. **New projection** starts one.
+Projections that aren't active: what-ifs to compare, such as retiring at 60 against 65, or saving
+$500 more a month. **New projection** starts one.
 
 ## Tracking
 
-For an active projection, the actual balance of what it is built on against its baseline: **on track** inside the band, **ahead** above it, **behind** below it. Falling behind raises an alert, checked at each month's end.
+For an active projection, the actual balance of what it is built on against its baseline: **on
+track** inside the band, **ahead** above it, **behind** below it. Falling behind raises an alert,
+checked at each month's end.
 
 ## Show on my Dashboard {#show-on-dashboard}
 
-For an active projection someone shares with you: show it on your Dashboard's Plans card. Off by default.
+For an active projection someone shares with you: show it on your Dashboard's Plans card. Off by
+default.
 
 ## Dollars
 
@@ -26,7 +33,8 @@ For an active projection someone shares with you: show it on your Dashboard's Pl
 
 ## Built on
 
-A portfolio, an account, or a typed amount for a what-if. Built on accounts, it starts from their value today and their mix of asset classes; each class follows your assumptions in Profile.
+A portfolio, an account, or a typed amount for a what-if. Built on accounts, it starts from their
+value today and their mix of asset classes; each class follows your assumptions in Profile.
 
 ## Amount {#typed-amount}
 
@@ -34,7 +42,8 @@ The typed amount it starts from.
 
 ## Retirement age
 
-When you retire: contributions stop, and withdrawals start, when the last of the people in it retires.
+When you retire: contributions stop, and withdrawals start, when the last of the people in it
+retires.
 
 ## Partner retirement age
 
@@ -50,7 +59,9 @@ How much the contribution rises each year, with your pay.
 
 ## Withdrawal
 
-How much is taken each year in retirement: the **4% rule** (4% of the balance at retirement, then rising with inflation), a **fixed amount** rising with inflation, or a **percentage** of each year's balance.
+How much is taken each year in retirement: the **4% rule** (4% of the balance at retirement, then
+rising with inflation), a **fixed amount** rising with inflation, or a **percentage** of each year's
+balance.
 
 ## Withdrawal a year, in today's dollars {#withdrawal-amount}
 
@@ -82,8 +93,10 @@ Fund and advisory fees, taken from the balance each year.
 
 ## Bitcoin model
 
-For the bitcoin in what it is built on: your crypto assumption, or a model others publish. A model with bear, base and bull cases shows those three paths instead of a fan.
+For the bitcoin in what it is built on: your crypto assumption, or a model others publish. A model
+with bear, base and bull cases shows those three paths instead of a fan.
 
 ## Run
 
-Saves the inputs and works it out again. For an active projection it asks whether to move the baseline to the new inputs.
+Saves the inputs and works it out again. For an active projection it asks whether to move the
+baseline to the new inputs.

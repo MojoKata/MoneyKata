@@ -201,6 +201,15 @@
  */
 
 /**
+ * @typedef {Object} Candidate
+ * @property {string} transactionId
+ * @property {string} accountName
+ * @property {string} date
+ * @property {string} amount
+ * @property {(string | null)} payee
+ */
+
+/**
  * @typedef {Object} CashFlow
  * @property {string} month
  * @property {Array<Flow>} sources
@@ -481,6 +490,25 @@
  */
 
 /**
+ * @typedef {Object} LoanView
+ * @property {(TermsOut | null)} terms
+ * @property {string} balance
+ * @property {string} rate
+ * @property {string} payment
+ * @property {string} total
+ * @property {(string | null)} nextDate
+ * @property {(string | null)} payoffDate
+ * @property {(string | null)} originalPayoff
+ * @property {string} interestPaid
+ * @property {string} interestAhead
+ * @property {string} principalThisYear
+ * @property {string} overpaid
+ * @property {Array<RowOut>} rows
+ * @property {(ServicerCheck | null)} servicer
+ * @property {boolean} canWrite
+ */
+
+/**
  * @typedef {Object} Login
  * @property {string} login
  */
@@ -674,6 +702,20 @@
  * @typedef {Object} PasswordChange
  * @property {string} currentPassword
  * @property {string} newPassword
+ */
+
+/**
+ * @typedef {Object} PaymentIn
+ * @property {string} date
+ * @property {(number | string)} amount
+ * @property {(string | null)} [fromAccountId]
+ * @property {(string | null)} [transactionId]
+ * @property {((number | string) | null)} [principal]
+ * @property {((number | string) | null)} [interest]
+ * @property {((number | string) | null)} [escrowTax]
+ * @property {((number | string) | null)} [escrowInsurance]
+ * @property {((number | string) | null)} [pmi]
+ * @property {((number | string) | null)} [fees]
  */
 
 /**
@@ -874,6 +916,18 @@
  */
 
 /**
+ * @typedef {Object} Recast
+ * @property {string} date
+ * @property {(number | string)} [fee]
+ */
+
+/**
+ * @typedef {Object} RecastView
+ * @property {string} date
+ * @property {string} fee
+ */
+
+/**
  * @typedef {Object} ReceiptChange
  * @property {(string | null)} [date]
  * @property {((number | string) | null)} [amount]
@@ -983,10 +1037,35 @@
  */
 
 /**
+ * @typedef {Object} Reset
+ * @property {string} date
+ * @property {(number | string)} rate
+ */
+
+/**
+ * @typedef {Object} ResetView
+ * @property {string} date
+ * @property {string} rate
+ */
+
+/**
  * @typedef {Object} ReturnRow
  * @property {string} id
  * @property {string} name
  * @property {Object<string, (string | null)>} periods
+ */
+
+/**
+ * @typedef {Object} RowOut
+ * @property {string} date
+ * @property {string} payment
+ * @property {string} principal
+ * @property {string} interest
+ * @property {string} escrow
+ * @property {string} pmi
+ * @property {string} balance
+ * @property {boolean} past
+ * @property {string} overpayment
  */
 
 /**
@@ -1007,6 +1086,14 @@
  * @property {string} value
  * @property {string} contributions
  * @property {(string | null)} benchmark
+ */
+
+/**
+ * @typedef {Object} ServicerCheck
+ * @property {string} date
+ * @property {string} servicer
+ * @property {string} computed
+ * @property {string} difference
  */
 
 /**
@@ -1149,14 +1236,6 @@
  */
 
 /**
- * @typedef {Object} SplitOut
- * @property {(string | null)} [categoryId]
- * @property {string} amount
- * @property {(string | null)} [memo]
- * @property {string} id
- */
-
-/**
  * @typedef {Object} StatementIn
  * @property {string} periodStart
  * @property {string} periodEnd
@@ -1221,6 +1300,42 @@
  * @property {number} year
  * @property {Array<number>} years
  * @property {Array<TaxRow>} rows
+ */
+
+/**
+ * @typedef {Object} TermsIn
+ * @property {(number | string)} principal
+ * @property {string} startDate
+ * @property {number} termMonths
+ * @property {(number | string)} rate
+ * @property {string} [method]
+ * @property {((number | string) | null)} [payment]
+ * @property {((number | string) | null)} [escrowTax]
+ * @property {((number | string) | null)} [escrowInsurance]
+ * @property {((number | string) | null)} [pmi]
+ * @property {(number | null)} [drawMonths]
+ * @property {Array<Reset>} [resets]
+ * @property {Array<Recast>} [recasts]
+ * @property {((number | string) | null)} [originalValue]
+ */
+
+/**
+ * @typedef {Object} TermsOut
+ * @property {string} principal
+ * @property {string} startDate
+ * @property {number} termMonths
+ * @property {string} rate
+ * @property {string} method
+ * @property {(string | null)} payment
+ * @property {(string | null)} escrowTax
+ * @property {(string | null)} escrowInsurance
+ * @property {(string | null)} pmi
+ * @property {(number | null)} drawMonths
+ * @property {Array<ResetView>} resets
+ * @property {Array<RecastView>} recasts
+ * @property {(string | null)} originalValue
+ * @property {string} computedPayment
+ * @property {number} version
  */
 
 /**
@@ -1353,7 +1468,7 @@
  * @property {boolean} cleared
  * @property {boolean} reconciled
  * @property {(string | null)} amountWas
- * @property {Array<SplitOut>} splits
+ * @property {Array<moneykata__ui__transactions__SplitOut>} splits
  * @property {Array<string>} tags
  * @property {number} receipts
  * @property {string} level
@@ -1431,6 +1546,17 @@
  */
 
 /**
+ * @typedef {Object} moneykata__ui__loans__SplitOut
+ * @property {string} principal
+ * @property {string} interest
+ * @property {string} escrowTax
+ * @property {string} escrowInsurance
+ * @property {string} pmi
+ * @property {string} fees
+ * @property {string} overpayment
+ */
+
+/**
  * @typedef {Object} moneykata__ui__prices__SecretSet
  * @property {string} setAt
  * @property {(string | null)} setBy
@@ -1441,6 +1567,14 @@
  * @typedef {Object} moneykata__ui__settings__SecretSet
  * @property {string} setAt
  * @property {(string | null)} setBy
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__transactions__SplitOut
+ * @property {(string | null)} [categoryId]
+ * @property {string} amount
+ * @property {(string | null)} [memo]
+ * @property {string} id
  */
 
 export {};

@@ -10,6 +10,7 @@ import { errAt, Field, FormError, Input, Select } from '../components/fields.js'
 import { Tile } from '../components/bits.js';
 import { toast } from '../components/toast.js';
 import { BY_TYPE, TYPES } from '../account-types/index.js';
+import { TERM_FIELDS, termsBody, TermsFields, termsForm } from '../components/loan.js';
 
 export const LOT_METHODS = /** @type {[string, string][]} */ ([
   ['fifo', 'FIFO (first in, first out)'],
@@ -59,8 +60,10 @@ function AccountForm({ type, close, back }) {
     lotMethod: 'fifo',
     openingBalance: '',
     openingDate: '',
+    ...termsForm(null, type),
   });
   const set = (/** @type {string} */ k) => (/** @type {string} */ v) => setF({ ...f, [k]: v });
+  const [made, setMade] = useState(/** @type {any} */ (null));
   const save = useSubmit(async () => {
     const body = {
       name: f.name,
@@ -72,7 +75,15 @@ function AccountForm({ type, close, back }) {
       openingBalance: f.openingBalance ? f.openingBalance.replace(/[$,\s]/g, '') : null,
       openingDate: f.openingDate || null,
     };
-    const a = await api.post('/accounts', body, { idempotent: true });
+    if (t.loan) {
+      Object.assign(body, { keptBy: ['manual'], openingBalance: null, openingDate: null });
+    }
+    // A loan is made, then given its terms; a refusal of the terms keeps the account made.
+    const a = made || await api.post('/accounts', body, { idempotent: true });
+    if (t.loan) {
+      setMade(a);
+      await api.put(`/accounts/${a.id}/loan`, termsBody(f));
+    }
     toast(`${a.name} made`);
     close(a);
     route(`/ui/accounts/${a.id}`);
@@ -86,7 +97,11 @@ function AccountForm({ type, close, back }) {
     `}>
       <${Field} label="Name" error=${errAt(e, 'name')}>
         <${Input} value=${f.name} onInput=${set('name')}
-          placeholder=${t.investing ? 'Individual brokerage' : 'Everyday checking'} required />
+          placeholder=${t.investing
+            ? 'Individual brokerage'
+            : t.loan
+            ? t.label
+            : 'Everyday checking'} required />
         </${Field}>
         <div class="row">
           <${Field} label="Institution" error=${errAt(e, 'institution')}>
@@ -98,32 +113,34 @@ function AccountForm({ type, close, back }) {
                 onInput=${set('mask')} inputmode="numeric" placeholder="4821" />
               </${Field}>
               </div>
-              <${Field} label="Keep it current by" id="kept-by" error=${errAt(
-                e,
-                'keptBy',
-              )}><${Select}
-          value=${f.keptBy} onChange=${set('keptBy')} options=${KEPT_BY} /></${Field}>
-        ${t.investing
-          ? html`
-            <${Field} label="Lot method" error=${errAt(e, 'lotMethod')}
-              hint="How sales pick lots. The method in force at a sale is recorded with it.">
-              <${Select}
-                value=${f.lotMethod} onChange=${set('lotMethod')} options=${LOT_METHODS} />
-              </${Field}>
-          `
-          : null}
-        <div class="row">
-          <${Field} label="Opening balance" error=${errAt(e, 'openingBalance')}
-            hint="Optional. Without it, the first imported balance stands in."><${Input}
-            value=${f.openingBalance} onInput=${set(
-              'openingBalance',
-            )} inputmode="decimal" placeholder="0.00" /></${Field}>
-          <${Field} label="Opening balance date" id="opening-date" error=${errAt(
-            e,
-            'openingDate',
-          )}><${Input}
-            type="date" value=${f.openingDate} onInput=${set('openingDate')} /></${Field}>
-        </div>
+              ${t.loan ? html`<${TermsFields} f=${f} set=${set} e=${e} type=${type} />` : html`
+                <${Field} label="Keep it current by" id="kept-by" error=${errAt(
+                  e,
+                  'keptBy',
+                )}><${Select}
+                  value=${f.keptBy} onChange=${set('keptBy')} options=${KEPT_BY} /></${Field}>
+                ${t.investing
+                  ? html`
+                    <${Field} label="Lot method" error=${errAt(e, 'lotMethod')}
+                      hint="How sales pick lots. The method in force at a sale is recorded with it.">
+                      <${Select}
+                        value=${f.lotMethod} onChange=${set('lotMethod')} options=${LOT_METHODS} />
+                      </${Field}>
+                  `
+                  : null}
+                <div class="row">
+                  <${Field} label="Opening balance" error=${errAt(e, 'openingBalance')}
+                    hint="Optional. Without it, the first imported balance stands in."><${Input}
+                    value=${f.openingBalance} onInput=${set(
+                      'openingBalance',
+                    )} inputmode="decimal" placeholder="0.00" /></${Field}>
+                  <${Field} label="Opening balance date" id="opening-date" error=${errAt(
+                    e,
+                    'openingDate',
+                  )}><${Input}
+                    type="date" value=${f.openingDate} onInput=${set('openingDate')} /></${Field}>
+                </div>
+              `}
         <${FormError} error=${e} shown=${[
           'name',
           'institution',
@@ -132,6 +149,7 @@ function AccountForm({ type, close, back }) {
           'lotMethod',
           'openingBalance',
           'openingDate',
+          ...TERM_FIELDS,
         ]} />
       </${Dialog}>
   `;

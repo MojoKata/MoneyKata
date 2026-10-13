@@ -1,6 +1,8 @@
 # Import transactions
 
-An OFX, QFX or CSV file from your bank or broker, or a **statement**: its PDF, or a photo or scan of it. Rows already imported are matched by the file's own transaction id, or by date, amount and payee, so a file can be imported again safely.
+An OFX, QFX or CSV file from your bank or broker, or a **statement**: its PDF, or a photo or scan of
+it. Rows already imported are matched by the file's own transaction id, or by date, amount and
+payee, so a file can be imported again safely.
 
 A statement is read on this server, and shown for you to check before anything is saved.
 
@@ -48,11 +50,11 @@ Optional: the institution's own id for each row, which makes re-imports exact.
 
 How the file writes dates:
 
-| Written as | Format |
-|---|---|
-| 10/12/2026 | `%m/%d/%Y` |
-| 2026-10-12 | `%Y-%m-%d` |
-| 10/12/26 | `%m/%d/%y` |
+| Written as  | Format     |
+| ----------- | ---------- |
+| 10/12/2026  | `%m/%d/%Y` |
+| 2026-10-12  | `%Y-%m-%d` |
+| 10/12/26    | `%m/%d/%y` |
 | 12-Oct-2026 | `%d-%b-%Y` |
 
 ## Spending is positive {#map-negate}

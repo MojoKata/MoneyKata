@@ -206,6 +206,9 @@ def test_every_screen_and_tab_has_its_guide(page):
     for t in ("checking", "brokerage", "401k", "credit-card"):
         for tab in ("overview", "holdings", "transactions", "reconcile", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
+    for t in ("mortgage", "auto-loan"):
+        for tab in ("overview", "schedule", "transactions", "sharing", "settings"):
+            paths.append(f"/ui/accounts/{ids[t]}/{tab}")
     for p in ports:
         paths += [f"/ui/portfolios/{p}/{t}" for t in ("performance", "holdings", "projections")]
     budgets = page.evaluate("""async () => (await (await fetch('/ui/api/budgets')).json())
@@ -264,6 +267,8 @@ def test_every_dialog_has_its_guide(page):
             "Tick off against a statement",
             "dialog-tick-off",
         ),
+        (f"/ui/accounts/{ids['mortgage']}", "Record a payment", "dialog-loan-payment"),
+        (f"/ui/accounts/{ids['mortgage']}", "Type it", "dialog-servicer-balance"),
         ("/ui/portfolios", "New portfolio", "dialog-portfolio"),
         ("/ui/budgets", "New budget", "dialog-budget"),
         ("/ui/budgets", "Edit plan", "dialog-plan"),
@@ -282,6 +287,22 @@ def test_every_dialog_has_its_guide(page):
     wait_guide(page, "dialog-account-form")
     check_guide(page, ".dialog", "the account form")
     close_dialog(page)
+    for loan in ("Mortgage", "HELOC"):
+        open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")
+        page.get_by_role("button", name=re.compile(f"^{loan}")).click()
+        wait_guide(page, "dialog-account-form")
+        check_guide(page, ".dialog", f"the {loan} form")
+        close_dialog(page)
+    # A payment's split names its heading; an ARM's resets add rows that do too.
+    open_dialog(page, f"/ui/accounts/{ids['mortgage']}", "Record a payment", "dialog-loan-payment")
+    page.get_by_role("button", name="Show the split").click()
+    page.wait_for_selector(".dialog #x-part-principal")
+    check_guide(page, ".dialog", "a payment's split")
+    close_dialog(page)
+    visit(page, f"/ui/accounts/{ids['auto-loan']}/settings")
+    page.get_by_role("button", name="Add a reset").click()
+    page.get_by_role("button", name="Add a recast").click()
+    check_guide(page, ".content", "a loan's resets and recasts")
     # Splits add rows that name their heading.
     open_dialog(page, "/ui/transactions", "Add", "dialog-transaction")
     page.select_option(".dialog #f-account", label="Everyday checking")

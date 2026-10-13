@@ -13,6 +13,7 @@ from ..store.entities.alerts import Alert
 from ..store.entities.users import Group, User, UserGroup
 from .seed_accounts import seed_accounts
 from .seed_budgets import seed_budgets
+from .seed_loans import seed_loans
 from .seed_projections import seed_projections
 from .seed_receipts import seed_receipts
 from .seed_sharing import seed_sharing
@@ -28,6 +29,7 @@ def seed(server) -> None:
             return
         people = seed_users(s)
         seed_accounts(s, people)
+        seed_loans(s, people)
         seed_sharing(s, people)
         seed_budgets(s, people)
         seed_receipts(server, s, people)

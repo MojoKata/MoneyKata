@@ -29,6 +29,21 @@ ACCOUNT_TYPES = (
     "403b",
     "457b",
     "hsa",
+    "mortgage",
+    "heloc",
+    "auto-loan",
+    "student-loan",
+    "personal-loan",
+    "loan",
+    "529",
+    "daf",
+    "crypto-exchange",
+    "crypto-wallet",
+    "precious-metals",
+    "collectables",
+    "real-estate",
+    "vehicle",
+    "other-asset",
 )
 LOT_METHODS = ("fifo", "lifo", "hifo", "specific", "average")
 TXN_KINDS = (

@@ -4,11 +4,12 @@ It starts as a scenario, with figures to change; make it active to follow it.
 
 ## Goal type {#goal}
 
-**Retirement**, for you or a couple: the chance the money lasts. **Savings target**: the chance of an amount by a date.
+**Retirement**, for you or a couple: the chance the money lasts. **Savings target**: the chance of
+an amount by a date.
 
 ## Name
 
-Such as *Retire at 63* or *House deposit*.
+Such as _Retire at 63_ or _House deposit_.
 
 ## Built on
 
@@ -20,4 +21,5 @@ The typed amount.
 
 ## Who
 
-You, or you and your spouse (set in Profile for wash sales): each with a birth year and retirement age.
+You, or you and your spouse (set in Profile for wash sales): each with a birth year and retirement
+age.

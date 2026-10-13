@@ -6,7 +6,8 @@ Every account you own or that someone has shared with you, grouped by kind.
 
 ## Show
 
-**Mine**, **Shared with me** and **Shared by me**. A shared account shows its owner's avatar with an eye (you can read it) or a pencil (you can change what it holds).
+**Mine**, **Shared with me** and **Shared by me**. A shared account shows its owner's avatar with an
+eye (you can read it) or a pencil (you can change what it holds).
 
 ## Import
 
@@ -22,7 +23,8 @@ When the account last changed: its newest import or transaction.
 
 ## Mismatch
 
-A balance the institution reported doesn't match MoneyKata's for that day. Open the account's **Reconcile** tab to see what's suspect. **Balance needed** means none was reported for 45 days.
+A balance the institution reported doesn't match MoneyKata's for that day. Open the account's
+**Reconcile** tab to see what's suspect. **Balance needed** means none was reported for 45 days.
 
 ## Share
 

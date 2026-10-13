@@ -40,10 +40,18 @@ def month_end(month: dt.date) -> dt.date:
 
 
 def account_ids(s: Session, budget: Budget) -> list[str]:
+    """The budget's accounts, less any loan: a loan's payments are counted at the bank."""
+    from ..loans import TYPES
+    from ..store.entities.accounts import Account
+
     return list(
         s.scalars(
-            select(BudgetAccount.accountId).where(
-                BudgetAccount.budgetId == budget.id, BudgetAccount.deleted == false()
+            select(BudgetAccount.accountId)
+            .join(Account, Account.id == BudgetAccount.accountId)
+            .where(
+                BudgetAccount.budgetId == budget.id,
+                BudgetAccount.deleted == false(),
+                Account.type.not_in(TYPES),
             )
         )
     )

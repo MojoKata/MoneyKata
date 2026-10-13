@@ -4,8 +4,11 @@ How alerts behave for everyone. Each user chooses in Profile whether alerts reac
 
 ## Alert when a source has failed for {#alert-source-hours}
 
-How long a price source, or email, may keep failing before admins are alerted. A source that fails now and then and recovers raises nothing; one that keeps failing raises one alert, which resolves by itself when it works again. 48 hours by default.
+How long a price source, or email, may keep failing before admins are alerted. A source that fails
+now and then and recovers raises nothing; one that keeps failing raises one alert, which resolves by
+itself when it works again. 48 hours by default.
 
 ## Daily summary at {#alert-summary-time}
 
-When the daily summary email goes to those who chose it, in each person's own time zone. It lists the alerts opened since the last one, and none is sent on a day without any.
+When the daily summary email goes to those who chose it, in each person's own time zone. It lists
+the alerts opened since the last one, and none is sent on a day without any.

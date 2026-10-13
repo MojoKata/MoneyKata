@@ -75,8 +75,9 @@ export function Dialog({ title, wide, close, footer, note, children, onSubmit })
         }
       }
     };
-    el.addEventListener('keydown', onKey);
-    return () => el.removeEventListener('keydown', onKey);
+    // On the document: a button that disables while it works drops the focus to the body.
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, []);
   return html`
     <div class="scrim" onClick=${(/** @type {any} */ e) => e.target === e.currentTarget && close()}>

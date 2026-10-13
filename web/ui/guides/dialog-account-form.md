@@ -27,3 +27,43 @@ Optional. Without it, the first balance an imported file reports stands in.
 ## Opening balance date {#opening-date}
 
 The day the opening balance applies to.
+
+## Original principal
+
+A loan's amount borrowed, from the closing disclosure or the loan agreement.
+
+## Start date
+
+The day the loan was made; the first payment is due a month later.
+
+## Term (months) {#term-months}
+
+In months: 360 for a 30-year mortgage, 60 for a five-year car loan.
+
+## Interest rate
+
+The note rate, not the APR. An adjustable rate's resets are typed in Settings when known.
+
+## Interest method
+
+Most mortgages amortize monthly. Most car loans charge simple interest daily.
+
+## Scheduled payment
+
+Principal and interest per payment. Blank: computed from the terms.
+
+## Escrow for property tax {#escrow-tax}
+
+A mortgage's property tax collected with each payment.
+
+## Escrow for insurance {#escrow-insurance}
+
+Homeowner's insurance collected with each payment.
+
+## PMI per month {#pmi}
+
+Mortgage insurance, until it can be dropped.
+
+## Draw period (months) {#draw-months}
+
+A HELOC's months of interest-only drawing before repayment.

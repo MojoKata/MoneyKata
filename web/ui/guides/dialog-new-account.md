@@ -16,4 +16,5 @@ Stocks, ETFs and funds, taxable.
 
 ## Retirement
 
-Traditional and Roth IRAs, 401(k), 403(b) and 457(b) plans, and HSAs: contributions record their tax year.
+Traditional and Roth IRAs, 401(k), 403(b) and 457(b) plans, and HSAs: contributions record their tax
+year.

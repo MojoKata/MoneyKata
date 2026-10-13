@@ -26,7 +26,8 @@ For retirement contribution catch-up limits and required minimum distributions.
 
 ## Spouse for wash sales {#spouse}
 
-A **wash sale** is a loss sale with a purchase of the same thing within 30 days before or after; the loss is put off, not lost. Your spouse's accounts count too.
+A **wash sale** is a loss sale with a purchase of the same thing within 30 days before or after; the
+loss is put off, not lost. Your spouse's accounts count too.
 
 ## Alert emails
 
@@ -50,7 +51,9 @@ At least the minimum length, and not a common password. Changing it signs out yo
 
 ## Two-step sign-in {#two-step}
 
-After your password, a code from an authenticator app on your phone, so a stolen password alone can't sign in. **Turn on** shows a QR code to scan; **New recovery codes** replaces the ten codes that sign in when the phone is lost. Turning it on or off emails you.
+After your password, a code from an authenticator app on your phone, so a stolen password alone
+can't sign in. **Turn on** shows a QR code to scan; **New recovery codes** replaces the ten codes
+that sign in when the phone is lost. Turning it on or off emails you.
 
 ## Your password {#two-step-password}
 
@@ -58,7 +61,8 @@ Asked again when you last gave it more than 10 minutes ago.
 
 ## Assumptions
 
-Used by all your projections, so they agree: each asset class's expected yearly return and volatility, and inflation. A projection can override a figure. Long-run figures, not forecasts.
+Used by all your projections, so they agree: each asset class's expected yearly return and
+volatility, and inflation. A projection can override a figure. Long-run figures, not forecasts.
 
 ## Expected return {#expected-return}
 
@@ -66,7 +70,8 @@ The average yearly return you expect of the class, in percent.
 
 ## Volatility
 
-How much a year's return swings around it (its standard deviation), in percent. Monte Carlo draws each year's return from these.
+How much a year's return swings around it (its standard deviation), in percent. Monte Carlo draws
+each year's return from these.
 
 ## General inflation (%) {#general-inflation}
 
@@ -78,4 +83,5 @@ College costs rise faster: 5% by default.
 
 ## Bitcoin model
 
-For the bitcoin in your projections: your crypto assumption, or a published model. **Compare models** shows them side by side with their sources and records. Other coins use the crypto row.
+For the bitcoin in your projections: your crypto assumption, or a published model. **Compare
+models** shows them side by side with their sources and records. Other coins use the crypto row.

@@ -6,7 +6,8 @@ Where daily closes come from. Prices are free and daily, never live.
 
 ## Price sources
 
-The sources added, each with the classes it serves. For each class the first enabled source is used, and the next one when it fails.
+The sources added, each with the classes it serves. For each class the first enabled source is used,
+and the next one when it fails.
 
 ## Add a source
 
@@ -32,6 +33,4 @@ When the daily refresh runs, after the US market close. 6:00 PM Eastern by defau
 
 Runs the daily refresh now.
 
-{{part prices-tiingo}}
-{{part prices-coinbase}}
-{{part prices-manual}}
+{{part prices-tiingo}} {{part prices-coinbase}} {{part prices-manual}}

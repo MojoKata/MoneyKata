@@ -124,6 +124,7 @@ def create_app(server: Server) -> FastAPI:
         budgets,
         dashboard,
         imports,
+        loans,
         portfolios,
         prices,
         profile,
@@ -152,6 +153,7 @@ def create_app(server: Server) -> FastAPI:
         budgets,
         receipts,
         projections,
+        loans,
         dashboard,
     ):
         app.include_router(module.router)

@@ -83,6 +83,7 @@ The prefixes of the tables that exist.
 | Hold   | Holding        | What an account holds of one instrument at a point in time.                                  |
 | Imprt  | Import         | One file imported into an account, with the dates it covers.                                 |
 | Instr  | Instrument     | A thing with a price: a stock, fund, coin, option contract or currency.                      |
+| Loan   | Loan           | A loan account's terms: principal, rate, term, escrow, PMI, resets and recasts.              |
 | Lot    | Lot            | One acquisition of an instrument, and what remains open.                                     |
 | Lyout  | StatementLayout | What statement import learned of an institution's layout: section signs, lines to skip.   |
 | Map    | ImportMapping  | A saved column mapping for one institution's CSV files.                                      |

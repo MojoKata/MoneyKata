@@ -82,10 +82,25 @@ DEFAULTS = [
     ("taxes", "Taxes", "expense", None, []),
     ("fees", "Fees and charges", "expense", None, []),
     (
+        "loans",
+        "Loans",
+        "expense",
+        None,
+        [
+            ("loans.interest", "Loan interest", "loan-interest"),
+            ("loans.pmi", "Mortgage insurance (PMI)", None),
+            ("loans.fees", "Loan fees", None),
+        ],
+    ),
+    (
         "transfer",
         "Transfers",
         "transfer",
         None,
-        [("transfer.card", "Credit card payment", None), ("transfer.savings", "To savings", None)],
+        [
+            ("transfer.card", "Credit card payment", None),
+            ("transfer.savings", "To savings", None),
+            ("transfer.loan", "Loan principal", None),
+        ],
     ),
 ]

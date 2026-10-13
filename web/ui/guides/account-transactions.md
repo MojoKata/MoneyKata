@@ -22,7 +22,8 @@ Change one transaction's category in place. A split shows its parts in the trans
 
 ## Transfers
 
-Money moving between two of your accounts is matched (the same amount the other way, within a few days), and counts as neither spending nor income.
+Money moving between two of your accounts is matched (the same amount the other way, within a few
+days), and counts as neither spending nor income.
 
 ## Page size
 

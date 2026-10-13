@@ -18,4 +18,5 @@ Makes a backup now.
 
 ## Restoring
 
-Backups are encrypted as the data is, and open with the master key's recovery phrase. The directory is set on the host, outside the data directory.
+Backups are encrypted as the data is, and open with the master key's recovery phrase. The directory
+is set on the host, outside the data directory.

@@ -13,6 +13,12 @@ import t8 from './401k.js';
 import t9 from './403b.js';
 import t10 from './457b.js';
 import t11 from './hsa.js';
+import t12 from './mortgage.js';
+import t13 from './heloc.js';
+import t14 from './auto-loan.js';
+import t15 from './student-loan.js';
+import t16 from './personal-loan.js';
+import t17 from './loan.js';
 
 /**
  * @typedef {Object} AccountType
@@ -24,10 +30,30 @@ import t11 from './hsa.js';
  * @property {boolean} investing  has Holdings, a lot method and trades
  * @property {boolean} reconcilable  has a Reconcile tab
  * @property {boolean} contributions  records contribution years and sources
+ * @property {boolean} [loan]  has terms, a schedule and a payoff planner (S1.9)
  */
 
 /** @type {AccountType[]} */
-export const TYPES = [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11];
+export const TYPES = [
+  t0,
+  t1,
+  t2,
+  t3,
+  t4,
+  t5,
+  t6,
+  t7,
+  t8,
+  t9,
+  t10,
+  t11,
+  t12,
+  t13,
+  t14,
+  t15,
+  t16,
+  t17,
+];
 
 /** @type {Record<string, AccountType>} */
 export const BY_TYPE = Object.fromEntries(TYPES.map((t) => [t.type, t]));

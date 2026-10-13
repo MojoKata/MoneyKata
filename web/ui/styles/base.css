@@ -1,15 +1,68 @@
 /* Element defaults (requirements S17.3.6). */
 @layer base {
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
-body { background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans); }
-button, input, select, textarea { font: inherit; color: inherit; }
-a { color: var(--info); text-decoration: none; }
-a:hover { text-decoration: underline; }
-svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.num, td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.up { color: var(--ok); } .down { color: var(--deny); } .dim { color: var(--fg-muted); } .small { font-size: 12px; }
-body.privacy .amt { filter: blur(7px); }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    margin: 0;
+    height: 100%;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font: 14px/1.45 var(--sans);
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+  a {
+    color: var(--info);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  svg.i {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex: none;
+  }
+  .num,
+  td.num,
+  th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .up {
+    color: var(--ok);
+  }
+  .down {
+    color: var(--deny);
+  }
+  .dim {
+    color: var(--fg-muted);
+  }
+  .small {
+    font-size: 12px;
+  }
+  body.privacy .amt {
+    filter: blur(7px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
 }

@@ -4,6 +4,7 @@ import { useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { PlansFor } from '../components/plans.js';
+import { LoanSummary, Schedule, TermsCard } from '../components/loan.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { ago, date, price, quantity } from '../app/format.js';
@@ -35,6 +36,7 @@ export default function Account({ id, tab }) {
   const type = a ? BY_TYPE[a.type] : null;
   const tabs = !a ? [] : /** @type {[string, string][]} */ ([
     ['overview', 'Overview'],
+    ...(type?.loan ? [['schedule', 'Schedule']] : []),
     ...(type?.investing ? [['holdings', 'Holdings']] : []),
     ['transactions', 'Transactions'],
     ...(type?.reconcilable ? [['reconcile', 'Reconcile']] : []),
@@ -61,7 +63,8 @@ export default function Account({ id, tab }) {
           ? html`<div class="small"><${Amt} v=${a.change} signed /> 30d</div>`
           : null}</div></div>
     <${Tabs} tabs=${tabs} current=${current} base=${`/ui/accounts/${a.id}`} />
-    ${current === 'overview' ? html`<${Overview} a=${a} />` : null}
+    ${current === 'overview' ? html`<${Overview} a=${a} reload=${res.reload} />` : null}
+    ${current === 'schedule' ? html`<${Schedule} a=${a} />` : null}
     ${current === 'holdings' ? html`<${Holdings} a=${a} />` : null}
     ${current === 'transactions' ? html`<${Transactions} a=${a} all=${all} />` : null}
     ${current === 'reconcile'
@@ -72,12 +75,11 @@ export default function Account({ id, tab }) {
   `;
 }
 
-/** @param {{ a: any }} p */
-function Overview({ a }) {
+/** @param {{ a: any, reload: () => void }} p */
+function Overview({ a, reload }) {
   const [range, setRange] = useState('1Y');
   const series = useApi(`/accounts/${a.id}/series`, { range }, ['import', 'prices']);
   const s = /** @type {any} */ (series.data);
-  const kept = KEPT_BY.find(([k]) => a.keptBy.includes(k))?.[1] || a.keptBy.join(', ');
   return html`
     <${PlansFor} kind="account" id=${a.id} />
     <div class="grid g-main">
@@ -93,30 +95,44 @@ function Overview({ a }) {
               points: s.points.map((/** @type {any} */ p) => [p.date, p.value]),
             }]} />`
             : html`<${Loading} lines=${4} />`}</div>
-      <div class="card facts"><h3>Details</h3>
-          <div class="list-item"><span class="grow dim">Type</span>${a.typeLabel}</div>
-          <div class="list-item"><span class="grow dim">Institution</span>${a.institution ||
-            '—'}</div>
-          <div class="list-item"><span class="grow dim">Kept current by</span>${kept}</div>
-          ${a.investing
-            ? html`<div class="list-item"><span class="grow dim">Lot method</span>${
-              LOT_METHODS.find(([k]) => k === a.lotMethod)?.[1]
-            }</div>`
-            : null}
-          <div class="list-item"><span class="grow dim">Tax treatment</span>${a.tax || '—'}</div>
-          <div class="list-item"><span class="grow dim">Opening balance</span><span><${Amt} v=${a
-            .openingWorkedOut} />${a.openingStandIn
-            ? html`
-              <div class="small dim"
-                data-tip="Worked out from the earliest balance the institution reported, standing in for history before the first import">stand-in</div>
-            `
-            : null}</span></div>
-          <div class="list-item"><span class="grow dim">Owner</span>${a.ownerName}</div>
-          <div class="list-item"><span class="grow dim">Last updated</span>${ago(
-            a.lastUpdated,
-          )}</div>
-        </div>
+      ${BY_TYPE[a.type]?.loan
+        ? html`
+          <div>
+            <${LoanSummary} a=${a} reload=${reload} />
+          </div>
+        `
+        : html`<${Details} a=${a} />`}
     </div>
+  `;
+}
+
+/** @param {{ a: any }} p */
+function Details({ a }) {
+  const kept = KEPT_BY.find(([k]) => a.keptBy.includes(k))?.[1] || a.keptBy.join(', ');
+  return html`
+    <div class="card facts"><h3>Details</h3>
+        <div class="list-item"><span class="grow dim">Type</span>${a.typeLabel}</div>
+        <div class="list-item"><span class="grow dim">Institution</span>${a.institution ||
+          '—'}</div>
+        <div class="list-item"><span class="grow dim">Kept current by</span>${kept}</div>
+        ${a.investing
+          ? html`<div class="list-item"><span class="grow dim">Lot method</span>${
+            LOT_METHODS.find(([k]) => k === a.lotMethod)?.[1]
+          }</div>`
+          : null}
+        <div class="list-item"><span class="grow dim">Tax treatment</span>${a.tax || '—'}</div>
+        <div class="list-item"><span class="grow dim">Opening balance</span><span><${Amt} v=${a
+          .openingWorkedOut} />${a.openingStandIn
+          ? html`
+            <div class="small dim"
+              data-tip="Worked out from the earliest balance the institution reported, standing in for history before the first import">stand-in</div>
+          `
+          : null}</span></div>
+        <div class="list-item"><span class="grow dim">Owner</span>${a.ownerName}</div>
+        <div class="list-item"><span class="grow dim">Last updated</span>${ago(
+          a.lastUpdated,
+        )}</div>
+      </div>
   `;
 }
 
@@ -750,6 +766,7 @@ function Sharing({ a, reload }) {
 function Settings({ a, reload }) {
   const { route } = useLocation();
   const owner = a.level === 'owner';
+  const loan = BY_TYPE[a.type]?.loan;
   const [f, setF] = useState({
     name: a.name,
     institution: a.institution || '',
@@ -826,16 +843,24 @@ function Settings({ a, reload }) {
               </${Field}>
           `
           : null}
-        <div class="row"><${Field} label="Opening balance" error=${errAt(
-          e,
-          'openingBalance',
-        )}><${Input} value=${f.openingBalance}
-          onInput=${set('openingBalance')} inputmode="decimal" /></${Field}>
-          <${Field} label="Opening balance date" id="opening-date" error=${errAt(
-            e,
-            'openingDate',
-          )}><${Input} type="date" value=${f.openingDate}
-            onInput=${set('openingDate')} /></${Field}></div>
+        ${loan ? null : html`
+          <div class="row">
+            <${Field} label="Opening balance" error=${errAt(
+              e,
+              'openingBalance',
+            )}>
+              <${Input} value=${f.openingBalance}
+                onInput=${set('openingBalance')} inputmode="decimal" />
+              </${Field}>
+              <${Field} label="Opening balance date" id="opening-date" error=${errAt(
+                e,
+                'openingDate',
+              )}>
+                <${Input} type="date" value=${f.openingDate}
+                  onInput=${set('openingDate')} />
+                </${Field}>
+                </div>
+        `}
         <${SwitchRow} label="Active" hint="A closed account stays for history and taxes." on=${f
           .active} onChange=${set('active')} />
         <${SwitchRow} label="Count in net worth" hint="Your totals include it." on=${f
@@ -855,12 +880,18 @@ function Settings({ a, reload }) {
           : 'Delete account…'}</button><span class="spacer"></span><button class="btn primary" disabled=${save
           .busy}>Save</button></div>
       </form>
-      <div class="card"><h3>Keeping it current</h3>
-        <${Field} label="Method" id="kept-by"><${Select} value=${f.keptBy} onChange=${set(
-          'keptBy',
-        )} options=${KEPT_BY} /></${Field}>
-        <p class="small dim">Import OFX, QFX or CSV files from the Transactions tab. A CSV's columns are asked
-          once per institution and remembered.</p>
-      </div></div>
+      ${loan ? html`<${TermsCard} a=${a} />` : html`
+        <div class="card">
+          <h3>Keeping it current</h3>
+          <${Field} label="Method" id="kept-by">
+            <${Select} value=${f.keptBy} onChange=${set(
+              'keptBy',
+            )} options=${KEPT_BY} />
+            </${Field}>
+            <p
+              class="small dim">Import OFX, QFX or CSV files from the Transactions tab. A CSV's columns are asked
+                  once per institution and remembered.</p>
+            </div>
+      `}</div>
   `;
 }

@@ -126,7 +126,12 @@ def positions(s: Session, ledger, day: dt.date | None = None) -> list[Position]:
 
 
 def account_value(s: Session, ledger, investing: bool, day: dt.date | None = None) -> Decimal:
-    """Cash plus what the holdings are worth (a holding with no price counts nothing)."""
+    """Cash plus what the holdings are worth (a holding with no price counts nothing). A
+    loan counts what is owed on it, from its terms and payments (S1.9)."""
+    from . import loans
+
+    if loans.is_loan(ledger.account.type):
+        return loans.value(s, ledger.account, day)
     cash = ledger.balance(day)
     if not investing:
         return cash
@@ -187,6 +192,21 @@ def series(
     """The account's value at the end of each day (or every step_days), for its chart.
     Positions change only on the days of trades and snapshots, so the ledger is replayed on
     those days alone; prices are carried forward from the last known one."""
+    from . import loans
+
+    if loans.is_loan(ledger.account.type):
+        row = loans.loan_of(s, ledger.account)
+        if row is None:
+            return []
+        terms = loans.terms_of(row)
+        payments, draws = loans.history(s, ledger.account)
+        out, day = [], first
+        while day <= last:
+            out.append((day, -loans.balance_on(terms, payments, draws, day)))
+            day += dt.timedelta(days=step_days)
+        if out and out[-1][0] != last:
+            out.append((last, -loans.balance_on(terms, payments, draws, last)))
+        return out
     cash = dict(balances.daily(ledger.opening(), ledger.transactions, first, last))
     days = sorted(cash)
     if step_days > 1:

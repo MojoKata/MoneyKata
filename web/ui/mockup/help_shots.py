@@ -75,6 +75,7 @@ def routes(page) -> dict[str, str]:
         "account-sharing": f"/ui/accounts/{checking}/sharing",
         "account-settings": f"/ui/accounts/{checking}/settings",
         "account-holdings": f"/ui/accounts/{brokerage}/holdings",
+        "account-schedule": f"/ui/accounts/{by_type['mortgage']}/schedule",
         "portfolio-performance": f"/ui/portfolios/{port}/performance",
         "portfolio-holdings": f"/ui/portfolios/{port}/holdings",
     }

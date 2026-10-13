@@ -6,6 +6,7 @@ from . import (  # noqa: F401 - each adds its tables
     alerts,
     budgets,
     core,
+    loans,
     prices,
     projections,
     receipts,

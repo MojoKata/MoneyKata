@@ -178,3 +178,22 @@ class Reconciliation(Record):
     statementBalance: Decimal
     finishedAt: dt.datetime | None = None
     finishedById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class Loan(Record):
+    id: str
+    accountId: str
+    principal: Decimal
+    startDate: dt.date
+    termMonths: int
+    rate: Decimal
+    method: str = "amortized"
+    payment: Decimal | None = None
+    escrowTax: Decimal | None = None
+    escrowInsurance: Decimal | None = None
+    pmi: Decimal | None = None
+    drawMonths: int | None = None
+    resets: str = "[]"
+    recasts: str = "[]"
+    originalValue: Decimal | None = None

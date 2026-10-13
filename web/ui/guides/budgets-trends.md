@@ -1,6 +1,7 @@
 # Trends
 
-Planned against actual spending over the last 12 months: everything, or one category with its children.
+Planned against actual spending over the last 12 months: everything, or one category with its
+children.
 
 ## Month
 

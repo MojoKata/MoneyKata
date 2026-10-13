@@ -13,6 +13,12 @@ GROUPS = {
     "403b": "retirement",
     "457b": "retirement",
     "hsa": "retirement",
+    "mortgage": "liabilities",
+    "heloc": "liabilities",
+    "auto-loan": "liabilities",
+    "student-loan": "liabilities",
+    "personal-loan": "liabilities",
+    "loan": "liabilities",
 }
 GROUP_ORDER = [
     "banking",
@@ -37,6 +43,12 @@ LABELS = {
     "403b": "403(b)",
     "457b": "457(b)",
     "hsa": "HSA",
+    "mortgage": "Mortgage",
+    "heloc": "HELOC",
+    "auto-loan": "Auto loan",
+    "student-loan": "Student loan",
+    "personal-loan": "Personal loan",
+    "loan": "Loan",
 }
 TAX = {
     "checking": "taxable",
@@ -51,6 +63,12 @@ TAX = {
     "403b": "deferred",
     "457b": "deferred",
     "hsa": "free",
+    "mortgage": None,
+    "heloc": None,
+    "auto-loan": None,
+    "student-loan": None,
+    "personal-loan": None,
+    "loan": None,
 }
 
 
@@ -60,7 +78,12 @@ def investing(account_type: str) -> bool:
 
 
 def reconcilable(account_type: str) -> bool:
-    """Banking, card, brokerage and loan accounts have a Reconcile tab (S1.11)."""
+    """Banking, card and brokerage accounts have a Reconcile tab (S1.11); a loan is checked
+    against its servicer's balance on its own screen (S1.9.4)."""
+    from ..loans import is_loan
+
+    if is_loan(account_type):
+        return False
     return GROUPS[account_type] in ("banking", "liabilities") or account_type == "brokerage"
 
 
