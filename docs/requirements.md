@@ -2023,8 +2023,23 @@ opens. Each section has its own help guide. In this order:
          Prices, Imports, Backups, Key storage) and Users and Groups.
       9. **The mockup** generated from the app for these screens (§15.9); the hand-written
          mockup stays the reference for everything not built yet.
-   2. **Milestone 2**: two-step sign-in, SMTP and emails, Alerts, budgets, receipts with
-      reading (§12), statement import (§4.3.3, G8), projections and assumptions (§9).
+   2. **Milestone 2**, in nine parts:
+      1. **Two-step sign-in** (§13.1.6): TOTP set up from a QR code in Profile, the code
+         after the password, ten recovery codes, and an admin's reset.
+      2. **SMTP and emails**: Settings › Email with **Send a test email**, every email of
+         §13.1.9 sent through it, and sign-up with its approval (§13.1.4).
+      3. **Alerts** (§15.11): the screen, its badge, the emails and their daily summary,
+         Settings › Alerts, and the causes milestone 1 and 2 have built.
+      4. **Budgets** (§10.1–10.5): planned, actual and rollover per category, the budget
+         screens and recurring transactions.
+      5. **Receipts** (§12.1–12.7): upload, encrypted storage, thumbnails, the viewer, links
+         and the inbox, sharing and retention.
+      6. **Reading receipts** (§12.8): the worker process, RapidOCR with its shipped models,
+         the field parser, matching, search and Settings › Receipts.
+      7. **Statement import** (§4.3.3, G8).
+      8. **Projections and assumptions** (§9.1–9.9): Profile › Assumptions, the models,
+         scenarios, active projections with tracking, and the Dashboard's Plans card.
+      9. **The mockup** generated from the app for these screens, and the Docker image.
    3. **Milestone 3**: taxes and tax books (§11), loans and the payoff planner, 529s,
       physical assets, gifts and giving.
    4. **Milestone 4**: positions and options (§6), bitcoin wallets and own node (§4.6, G9),
