@@ -38,6 +38,13 @@ export function TimeChart({ label, series, tall }) {
       if (!live || !box.current) return;
       chart = ec.init(box.current, null, { renderer: 'svg' });
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const values = series.flatMap((s) => s.points.map(([, v]) => Number(v)));
+      const flat = values.every((v) => v === values[0]);
+      // The step between the ticks ECharts chose, read once it has laid the axis out.
+      const step = () => {
+        const ticks = chart?.getModel().getComponent('yAxis').axis.scale.getTicks() || [];
+        return ticks.length > 1 ? Math.abs(ticks[1].value - ticks[0].value) : 0;
+      };
       chart.setOption({
         animation: !reduce,
         grid: { left: 64, right: 16, top: 16, bottom: 28 },
@@ -57,10 +64,12 @@ export function TimeChart({ label, series, tall }) {
         yAxis: {
           type: 'value',
           scale: true,
+          // A flat line (an account at $0) gets whole-dollar ticks, not $0.2 steps.
+          minInterval: flat ? 1 : 0,
           splitLine: { lineStyle: { color: token('--border') } },
           axisLabel: {
             color: token('--fg-muted'),
-            formatter: (/** @type {number} */ v) => short(v),
+            formatter: (/** @type {number} */ v) => short(v, step()),
           },
         },
         series: series.map((s) => ({

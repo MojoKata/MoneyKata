@@ -72,15 +72,17 @@ export function pct(s) {
 
 /**
  * Abbreviated, for chart axes only: "$1.2M" (§15.4). Charts may use floats: they only draw.
+ * With the axis's tick step, enough decimals that no two ticks read the same.
  * @param {number} n
+ * @param {number} [step]
  */
-export function short(n) {
+export function short(n, step) {
   const a = Math.abs(n);
-  const s = a >= 1e6
-    ? (a / 1e6).toFixed(2) + 'M'
-    : a >= 1e3
-    ? (a / 1e3).toFixed(a >= 1e5 ? 0 : 1) + 'K'
-    : a.toFixed(0);
+  const unit = a >= 1e6 ? 1e6 : a >= 1e3 ? 1e3 : 1;
+  const usual = unit === 1e6 ? 2 : unit === 1e3 ? (a >= 1e5 ? 0 : 1) : 0;
+  const needed = step ? Math.ceil(-Math.log10(step / unit) - 1e-9) : 0;
+  const s = (a / unit).toFixed(Math.min(2, Math.max(usual, needed))) +
+    (unit === 1e6 ? 'M' : unit === 1e3 ? 'K' : '');
   return (n < 0 ? '−$' : '$') + s;
 }
 
