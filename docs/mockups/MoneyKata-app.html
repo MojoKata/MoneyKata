@@ -252,8 +252,8 @@ input.in.bad { border-color: var(--deny); }
 .list-item:last-child { border-bottom: 0; }
 .list-item .grow { flex: 1; min-width: 0; }
 /* A label and its value: the label keeps its width, a long value wraps to the right. */
-.kv .list-item { justify-content: space-between; text-align: right; }
-.kv .list-item > .grow { flex: 0 0 auto; max-width: 60%; text-align: left; }
+.facts .list-item { flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; text-align: right; }
+.facts .list-item > .grow { flex: 1 0 auto; text-align: left; }
 .mark { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--fg-muted); }
 .mark svg.i { width: 13px; height: 13px; }
 .drop { border: 2px dashed var(--border-strong); border-radius: var(--r); padding: 26px; text-align: center; color: var(--fg-muted); background: var(--bg-2); }
@@ -4226,7 +4226,7 @@ function Overview({ a }) {
               points: s.points.map((/** @type {any} */ p) => [p.date, p.value]),
             }]} />`
             : html`<${Loading} lines=${4} />`}</div>
-      <div class="card kv"><h3>Details</h3>
+      <div class="card facts"><h3>Details</h3>
           <div class="list-item"><span class="grow dim">Type</span>${a.typeLabel}</div>
           <div class="list-item"><span class="grow dim">Institution</span>${a.institution ||
             '—'}</div>

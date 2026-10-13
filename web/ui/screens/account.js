@@ -91,7 +91,7 @@ function Overview({ a }) {
               points: s.points.map((/** @type {any} */ p) => [p.date, p.value]),
             }]} />`
             : html`<${Loading} lines=${4} />`}</div>
-      <div class="card kv"><h3>Details</h3>
+      <div class="card facts"><h3>Details</h3>
           <div class="list-item"><span class="grow dim">Type</span>${a.typeLabel}</div>
           <div class="list-item"><span class="grow dim">Institution</span>${a.institution ||
             '—'}</div>
