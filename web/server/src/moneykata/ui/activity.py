@@ -1,6 +1,6 @@
-"""Activity (requirements §13.8): the changes worth showing, newest first, each naming who
+"""Activity (requirements S10.8): the changes worth showing, newest first, each naming who
 made it and what it is about, to the people concerned: the owner, those an item is shared
-with, and admins for users, groups and Settings. Amounts are never named (§3.8)."""
+with, and admins for users, groups and Settings. Amounts are never named (R3.8)."""
 
 import datetime as dt
 import json
@@ -207,7 +207,7 @@ def list_activity(
 
 @router.get("/activity/newer", response_model=Newer)
 def newer(request: Request, c: Caller = Depends(caller), since: str = Query(...)):
-    """How many entries arrived after one the page shows: the +N new pill (§15.1.3)."""
+    """How many entries arrived after one the page shows: the +N new pill (S12.1.3)."""
     with server(request).db.read() as s:
         first = s.get(Activity, since)
         if first is None:

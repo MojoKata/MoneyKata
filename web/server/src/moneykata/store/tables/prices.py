@@ -1,4 +1,4 @@
-"""Price sources and stored daily closes (requirements §7)."""
+"""Price sources and stored daily closes (requirements S4)."""
 
 from sqlalchemy import Boolean, Column, ForeignKey, Index, PrimaryKeyConstraint, Text, text
 
@@ -20,7 +20,7 @@ PriceSource = record(
 )
 unique_live(PriceSource, "name")
 
-# One close per instrument and market day, kept for ever (§7.6). A typed price is stored the
+# One close per instrument and market day, kept for ever (S4.6). A typed price is stored the
 # same way, with the source "manual".
 Price = keyed(
     "Price",

@@ -1,5 +1,5 @@
 // The transaction table that the Transactions screen and an account's Transactions tab share
-// (requirements §15.2.3): select rows to categorise them together, change a category in place,
+// (requirements S12.2.3): select rows to categorise them together, change a category in place,
 // open a row to edit it.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';

@@ -1,5 +1,5 @@
-// Amounts (requirements §15.4): tabular, the dollar sign, gains green and losses red and signed,
-// so colour is never the only cue; blurred in privacy mode (§15.3).
+// Amounts (requirements S12.4): tabular, the dollar sign, gains green and losses red and signed,
+// so colour is never the only cue; blurred in privacy mode (S12.3).
 import { html } from '../app/html.js';
 import { isNegative, money, pct } from '../app/format.js';
 

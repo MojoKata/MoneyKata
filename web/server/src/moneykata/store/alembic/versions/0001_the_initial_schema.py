@@ -25,7 +25,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("name", name=op.f("pk_TaskRun")),
         info={
             "softDelete": False,
-            "exception": "work state: a background task's last run (§4.4.4)",
+            "exception": "work state: a background task's last run (S1.4.4)",
         },
     )
     op.create_table(
@@ -142,7 +142,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name=op.f("pk_Activity")),
         info={
             "softDelete": False,
-            "exception": "never deleted at all: kept as it was written (§4.4)",
+            "exception": "never deleted at all: kept as it was written (S1.4)",
             "prefix": "Actv",
         },
         sqlite_with_rowid=False,
@@ -314,7 +314,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("tokenHash", name=op.f("pk_OneTimeToken")),
         info={
             "softDelete": False,
-            "exception": "one-time tokens are removed when used or expired (§4.4.1)",
+            "exception": "one-time tokens are removed when used or expired (S1.4.1)",
         },
     )
     with op.batch_alter_table("OneTimeToken", schema=None) as batch_op:
@@ -408,7 +408,7 @@ def upgrade() -> None:
         ),
         info={
             "softDelete": False,
-            "exception": "a secret's old ciphertext is removed when it is replaced or removed (§4.4.2)",
+            "exception": "a secret's old ciphertext is removed when it is replaced or removed (S1.4.2)",
             "prefix": "Secr",
         },
         sqlite_with_rowid=False,
@@ -427,7 +427,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("tokenHash", name=op.f("pk_Session")),
         info={
             "softDelete": False,
-            "exception": "sessions are removed when they end or expire (§4.4.1)",
+            "exception": "sessions are removed when they end or expire (S1.4.1)",
         },
     )
     with op.batch_alter_table("Session", schema=None) as batch_op:

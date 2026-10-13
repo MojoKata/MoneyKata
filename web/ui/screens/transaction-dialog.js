@@ -1,4 +1,4 @@
-// Adding or editing a transaction (requirements §5.6): payee, category, memo, tags and splits;
+// Adding or editing a transaction (requirements S2.6): payee, category, memo, tags and splits;
 // for an investing account, trades with their instrument, quantity, price and fees; for a
 // retirement account, the contribution year and who contributed.
 import { useState } from 'preact/hooks';

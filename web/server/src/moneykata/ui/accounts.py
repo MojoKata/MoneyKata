@@ -1,4 +1,4 @@
-"""Accounts (requirements §4, §15.2.2): the list, an account's page, its holdings, its
+"""Accounts (requirements S1, S12.2.2): the list, an account's page, its holdings, its
 balance chart and its reconciliation."""
 
 import datetime as dt
@@ -617,7 +617,7 @@ def account_reconcile(account_id: str, request: Request, c: Caller = Depends(cal
 
 @router.post("/accounts/{account_id}/anchors", status_code=201)
 def add_anchor(account_id: str, body: NewAnchor, request: Request, c: Caller = Depends(caller)):
-    """A balance typed from the institution's site (§4.11.2)."""
+    """A balance typed from the institution's site (S1.11.2)."""
     if body.date > clock.today():
         raise refuse("date", "date-in-future", "A reported balance can't be in the future.")
     with server(request).db.tx() as s:
@@ -648,7 +648,7 @@ def add_anchor(account_id: str, body: NewAnchor, request: Request, c: Caller = D
 def add_adjustment(
     account_id: str, body: NewAdjustment, request: Request, c: Caller = Depends(caller)
 ):
-    """Accepting a difference as a balance adjustment, with a note (§4.11.4)."""
+    """Accepting a difference as a balance adjustment, with a note (S1.11.4)."""
     if not body.note.strip():
         raise refuse("note", "note-required", "Say why the balance is adjusted.")
     with server(request).db.tx() as s:
@@ -682,7 +682,7 @@ def add_adjustment(
 def start_reconciliation(
     account_id: str, body: NewReconciliation, request: Request, c: Caller = Depends(caller)
 ):
-    """Ticking off (§4.11.6): a statement's closing date and balance."""
+    """Ticking off (S1.11.6): a statement's closing date and balance."""
     with server(request).db.tx() as s:
         a, _ = access.account(s, c.id, account_id, "write")
         r = Reconciliation(

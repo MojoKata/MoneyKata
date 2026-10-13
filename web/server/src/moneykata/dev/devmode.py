@@ -1,4 +1,4 @@
-"""Dev mode (requirements §20.7): the whole server from a checkout, as the current user. It
+"""Dev mode (requirements S17.7): the whole server from a checkout, as the current user. It
 relaxes the surroundings, never the rules: sessions, CSP, encryption and sharing behave as in
 production."""
 
@@ -37,7 +37,7 @@ def after_start(server, seed: bool) -> None:
 
 
 def enable_stub_prices(server) -> None:
-    """--stubs: the stub price source, first for every class it serves (§20.7)."""
+    """--stubs: the stub price source, first for every class it serves (S17.7)."""
     import json
 
     from sqlalchemy import false, select

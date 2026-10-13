@@ -1,4 +1,4 @@
-// The help pane (requirements §15.7): F1 toggles it; it shows the guide of the screen, tab or
+// The help pane (requirements S12.7): F1 toggles it; it shows the guide of the screen, tab or
 // dialog in view, and follows the focus to the field's heading. Its width drags (up to half the
 // window) and moves with the arrow keys; the browser remembers both.
 import { signal } from '@preact/signals';
@@ -72,7 +72,7 @@ export function HelpPane() {
   }, [key, JSON.stringify(vars)]);
 
   // The active topic: the focused field's heading stays marked until another field's heading
-  // takes over (§15.7.3). Headings are reused across guides, so a new guide marks afresh.
+  // takes over (S12.7.3). Headings are reused across guides, so a new guide marks afresh.
   const heading = (/** @type {Element | null} */ el) => {
     const id = el?.id?.startsWith('f-') ? el.id.slice(2) : el?.closest?.('[data-help]')
       ?.getAttribute('data-help');

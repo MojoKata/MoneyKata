@@ -1,4 +1,4 @@
-// Confirming a new email address (requirements §13.1.5): it takes effect only now.
+// Confirming a new email address (requirements S10.1.5): it takes effect only now.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';

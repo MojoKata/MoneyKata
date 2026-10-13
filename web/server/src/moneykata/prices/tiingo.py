@@ -1,4 +1,4 @@
-"""Tiingo (requirements §7.3): US stocks, ETFs and mutual funds' daily closes and NAVs. A free
+"""Tiingo (requirements S4.3): US stocks, ETFs and mutual funds' daily closes and NAVs. A free
 key; for personal use."""
 
 import datetime as dt

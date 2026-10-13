@@ -1,4 +1,4 @@
-"""Plain dataclasses, one per table, that import nothing from SQLAlchemy (requirements §17.1.2).
+"""Plain dataclasses, one per table, that import nothing from SQLAlchemy (requirements S14.1.2).
 store/mapping.py maps each onto its table."""
 
 import datetime as dt
@@ -13,7 +13,7 @@ def _now() -> dt.datetime:
 
 @dataclass(kw_only=True, eq=False)
 class Record:
-    """What every record carries: its version (§16.8.6), its times, and the soft-delete
+    """What every record carries: its version (S13.8.6), its times, and the soft-delete
     fields (schema.md §4.1)."""
 
     version: int = 1

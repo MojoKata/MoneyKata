@@ -1,4 +1,4 @@
-// The one popup menu (requirements §15.1.3): it closes on choosing, Escape, or a click or focus
+// The one popup menu (requirements S12.1.3): it closes on choosing, Escape, or a click or focus
 // outside it.
 import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';

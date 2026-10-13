@@ -1,4 +1,4 @@
-// Settings, for admins (requirements §19): one screen with its sections listed on the left,
+// Settings, for admins (requirements S16): one screen with its sections listed on the left,
 // General first. Each section saves its own keys; a refusal shows at its field.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';

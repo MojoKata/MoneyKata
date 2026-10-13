@@ -1,4 +1,4 @@
-// Portfolios (requirements §8.1, §15.2.4): the user's portfolios and those shared with them, with
+// Portfolios (requirements S5.1, S12.2.4): the user's portfolios and those shared with them, with
 // All my accounts first.
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';

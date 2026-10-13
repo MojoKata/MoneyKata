@@ -1,4 +1,4 @@
-// Importing a file into an account (requirements §4.3.2): OFX, QFX or CSV. A CSV from an
+// Importing a file into an account (requirements S1.3.2): OFX, QFX or CSV. A CSV from an
 // institution seen for the first time asks for its columns, then remembers them.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';

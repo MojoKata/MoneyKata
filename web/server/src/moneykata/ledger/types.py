@@ -1,4 +1,4 @@
-"""What account types are and how they group (requirements §4.1)."""
+"""What account types are and how they group (requirements S1.1)."""
 
 GROUPS = {
     "checking": "banking",
@@ -60,7 +60,7 @@ def investing(account_type: str) -> bool:
 
 
 def reconcilable(account_type: str) -> bool:
-    """Banking, card, brokerage and loan accounts have a Reconcile tab (§4.11)."""
+    """Banking, card, brokerage and loan accounts have a Reconcile tab (S1.11)."""
     return GROUPS[account_type] in ("banking", "liabilities") or account_type == "brokerage"
 
 

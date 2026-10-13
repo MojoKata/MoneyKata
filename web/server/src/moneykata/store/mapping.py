@@ -1,4 +1,4 @@
-"""Maps each entity onto its table (requirements §17.1.2). Imported once, at start."""
+"""Maps each entity onto its table (requirements S14.1.2). Imported once, at start."""
 
 from sqlalchemy import event
 from sqlalchemy.orm import registry

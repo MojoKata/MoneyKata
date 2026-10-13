@@ -1,4 +1,4 @@
-"""The database connection (requirements §17.1.4): SQLCipher through SQLAlchemy, WAL, foreign
+"""The database connection (requirements S14.1.4): SQLCipher through SQLAlchemy, WAL, foreign
 keys on, a 10-second busy timeout. A unit of work is `Database.tx()` (BEGIN IMMEDIATE) or
 `Database.read()` (PRAGMA query_only, which refuses any write)."""
 

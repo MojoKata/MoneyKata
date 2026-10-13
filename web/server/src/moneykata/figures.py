@@ -1,6 +1,6 @@
 """Figures that combine accounts: a portfolio's value, contributions, returns and benchmark
-(requirements §8.2), and the Dashboard's net worth (§8.3, §15.2.1). The server does the money
-arithmetic; the browser only draws (§8.4)."""
+(requirements S5.2), and the Dashboard's net worth (S5.3, S12.2.1). The server does the money
+arithmetic; the browser only draws (S5.4)."""
 
 import datetime as dt
 from dataclasses import dataclass
@@ -99,7 +99,7 @@ def benchmark_index(
 
 
 def ensure_benchmarks(s: Session) -> None:
-    """The instruments Performance compares with (§8.2.1), so their closes are loaded."""
+    """The instruments Performance compares with (S5.2.1), so their closes are loaded."""
     for symbol, name in (
         ("VT", "Vanguard Total World Stock ETF"),
         ("SPY", "SPDR S&P 500 ETF Trust"),
@@ -137,7 +137,7 @@ def fmt_rate(r: Decimal | None) -> str | None:
 
 def net_worth_accounts(s: Session, user_id: str, counted: set[str]) -> list[Account]:
     """What counts in a user's totals: their own accounts that count in net worth, and shared
-    accounts they ticked Count in my totals on (§13.7)."""
+    accounts they ticked Count in my totals on (S10.7)."""
     from . import access
 
     out = []

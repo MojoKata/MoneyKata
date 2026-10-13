@@ -1,8 +1,8 @@
-"""What holdings are worth (requirements §7.6, §7.7): every value derived from a price carries
+"""What holdings are worth (requirements S4.6, S4.7): every value derived from a price carries
 the price's source and `as_of`. Charts and screens read stored prices only, never a price
 source during a request.
 
-Prices come, in order, from: the stored daily closes (§7), a value a broker's file reported
+Prices come, in order, from: the stored daily closes (S4), a value a broker's file reported
 for the holding, and the account's last trade in it.
 """
 

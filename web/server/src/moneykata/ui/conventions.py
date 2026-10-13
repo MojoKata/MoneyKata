@@ -1,4 +1,4 @@
-"""The API conventions of requirements §16.8, as pieces the routes share: money and quantities
+"""The API conventions of requirements S13.8, as pieces the routes share: money and quantities
 as strings, cursor paging, versions with If-Match, and Idempotency-Key."""
 
 import base64
@@ -96,7 +96,7 @@ def decode_cursor(text: str) -> list:
 
 
 def if_match(request: Request) -> int:
-    """The version a PATCH or DELETE was made against (§16.8.6)."""
+    """The version a PATCH or DELETE was made against (S13.8.6)."""
     value = request.headers.get("if-match", "").strip().strip('"').removeprefix("W/").strip('"')
     if not value.isdigit():
         raise Problem(
@@ -115,7 +115,7 @@ def stale(current: Any) -> Problem:
 
 class Idempotency:
     """A POST that creates may carry Idempotency-Key: a repeat within 24 hours gets the first
-    answer (§16.8.8). Keys are per user."""
+    answer (S13.8.8). Keys are per user."""
 
     TTL = 24 * 3600
 

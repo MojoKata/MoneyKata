@@ -1,4 +1,4 @@
-"""CSV files (requirements §4.3.2), read with a column mapping saved per institution. A first
+"""CSV files (requirements S1.3.2), read with a column mapping saved per institution. A first
 file gets a proposed mapping from its header row; the user checks it, and it is kept.
 
 A mapping names the columns: the date (and its format), the amount (or debit and credit

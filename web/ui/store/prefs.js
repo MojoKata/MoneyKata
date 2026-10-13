@@ -1,4 +1,4 @@
-// What the browser remembers about how the page looks (requirements §20.3.7): theme, sidebar,
+// What the browser remembers about how the page looks (requirements S17.3.7): theme, sidebar,
 // help pane, page size and privacy mode. Nothing else is kept in the browser.
 import { effect, signal } from '@preact/signals';
 

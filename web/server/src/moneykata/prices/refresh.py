@@ -1,4 +1,4 @@
-"""The daily refresh and stored closes (requirements §7.4–§7.7).
+"""The daily refresh and stored closes (requirements S4.4–S4.7).
 
 Once a day after the US close (Settings › Prices), and on demand, every held or watched
 instrument's close is loaded; history is backfilled when an instrument is first held. A source
@@ -31,7 +31,7 @@ STATEMENT_STALE_DAYS = 90
 
 def trading_days_between(a: dt.date, b: dt.date) -> int:
     """Weekdays after a up to b: close enough to the US market's trading days to mark a
-    price stale (§7.7)."""
+    price stale (S4.7)."""
     n, day = 0, a
     while day < b:
         day += dt.timedelta(days=1)
@@ -287,7 +287,7 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
 
 
 def status(s: Session, dev: bool) -> dict:
-    """The header's last refresh and whether held prices are stale (§15.5)."""
+    """The header's last refresh and whether held prices are stale (S12.5)."""
     rows = enabled(s, dev)
     last = max((r.lastOkAt for r in rows if r.lastOkAt), default=None)
     # Held prices only: the benchmarks every server watches leave a new server, which holds

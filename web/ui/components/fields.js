@@ -1,5 +1,5 @@
-// Form fields: a label, the control, a hint and the server's refusal at that field (§3.7).
-// Each control's id is "f-" and its label's slug, which the help pane follows (§15.7.3).
+// Form fields: a label, the control, a hint and the server's refusal at that field (R3.7).
+// Each control's id is "f-" and its label's slug, which the help pane follows (S12.7.3).
 import { cloneElement, isValidElement } from 'preact';
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
@@ -12,7 +12,7 @@ import { Icon } from './icon.js';
  */
 export function Field({ label, id, hint, error, help, children }) {
   // A control that repeats (a split's parts) keeps a unique id and names its heading with
-  // data-help instead (§15.7.3).
+  // data-help instead (S12.7.3).
   const fid = (help ? 'x-' : 'f-') + (id || slug(label));
   const kids = Array.isArray(children) ? children : [children];
   const control = kids.map((c) =>
@@ -35,7 +35,7 @@ export function Field({ label, id, hint, error, help, children }) {
 
 /**
  * A text input bound to a value. A password input carries an eye button that shows what was
- * typed and hides it again (§15.1.3).
+ * typed and hides it again (S12.1.3).
  * @param {{ value: any, onInput: (v: string) => void, type?: string, placeholder?: string,
  *   bad?: boolean, autocomplete?: string, id?: string, inputmode?: string, required?: boolean }} p
  */

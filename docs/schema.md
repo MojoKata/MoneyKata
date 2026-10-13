@@ -1,8 +1,8 @@
 # MoneyKata: database schema conventions
 
-These conventions apply to the main database and to every linked copy (requirements §14.9,
-§17.1). The tables are declared with SQLAlchemy Core in
-`web/server/src/moneykata/store/tables/` (requirements §20.1).
+These conventions apply to the main database and to every linked copy (requirements S11.9,
+S14.1). The tables are declared with SQLAlchemy Core in
+`web/server/src/moneykata/store/tables/` (requirements S17.1).
 
 ## 1. Naming
 
@@ -48,10 +48,10 @@ there's no layer that translates names.
   ```
   The length is the prefix's length + 1 + 26.
 - **Record fields.** Each table with an `id` also has `version` (an integer that changes with
-  every save, which the API's `If-Match` compares, requirements §16.8.6), `createdAt` and
+  every save, which the API's `If-Match` compares, requirements S13.8.6), `createdAt` and
   `updatedAt`.
 - **IDs reveal when a row was created.** File names and anything else visible on disk,
-  such as receipt files and a linked copy's files (requirements §14.9), use separate random
+  such as receipt files and a linked copy's files (requirements S11.9), use separate random
   names and never an ID.
 
 ```
@@ -92,7 +92,7 @@ The prefixes of the tables that exist.
 
 ### 3.2 Reserved
 
-The prefixes of the entities named in requirements §2 (Terminology) whose tables are not
+The prefixes of the entities named in requirements R2 (Terminology) whose tables are not
 designed yet. A row moves to §3.1 when its table is.
 
 | Prefix | Table         | Description                                                                       |
@@ -149,13 +149,13 @@ Records are never removed from the database: they are marked deleted. The except
    2. **a secret's old ciphertext** when the secret is replaced or removed, so an old API key
       or token can't be recovered from the database or a later backup;
    3. **linked copies**: another household's data, removed with the share or link it came
-      by, at **Reset copy**, and an inbox change once it is applied (requirements §14.9);
+      by, at **Reset copy**, and an inbox change once it is applied (requirements S11.9);
    4. **work queues and counters**: receipt-reading jobs, sign-in and access-key attempt
       counters, the background tasks' last runs, and the live stream's state;
    5. **caches**, rebuilt from the records: thumbnails, and computed series kept for speed.
 
    Activity entries and alerts are never deleted at all: Activity is kept as it was
-   written, and alerts are resolved, then age out of the list (requirements §15.11).
+   written, and alerts are resolved, then age out of the list (requirements S12.11).
 
 ## 5. Checks
 

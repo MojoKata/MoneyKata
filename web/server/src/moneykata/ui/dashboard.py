@@ -1,4 +1,4 @@
-"""The Dashboard (requirements §15.2.1): net worth and its change, the net-worth chart, the
+"""The Dashboard (requirements S12.2.1): net worth and its change, the net-worth chart, the
 accounts by group, and what needs attention."""
 
 import datetime as dt
@@ -207,7 +207,7 @@ def net_worth_series(
     c: Caller = Depends(caller),
     range: str = Query("1Y", pattern="^(1M|3M|YTD|1Y|5Y|All)$"),
 ):
-    """Net worth over time, with its composition by account group (§8.3)."""
+    """Net worth over time, with its composition by account group (S5.3)."""
     today = figures.today()
     with server(request).db.read() as s:
         mine = figures.net_worth_accounts(s, c.id, counted_for(s, c.id))

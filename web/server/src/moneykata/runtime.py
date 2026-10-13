@@ -46,7 +46,7 @@ def last_runs(server: Server) -> dict[str, Run]:
 
 
 def register_tasks(server: Server) -> None:
-    """The background tasks of §16.4 that this release has."""
+    """The background tasks of S13.4 that this release has."""
     from .tasks import Tasks
 
     server.tasks = Tasks(record=record_run(server))
@@ -84,7 +84,7 @@ def register_tasks(server: Server) -> None:
     )
 
     def reencrypt(ctx: TaskContext) -> None:
-        """Settings › Key storage › Re-encrypt: only when asked (§18.7.2)."""
+        """Settings › Key storage › Re-encrypt: only when asked (S15.7.2)."""
         server.store = maintenance.reencrypt(server.config, server.store)
         with server.db.tx() as s:
             from . import activity

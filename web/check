@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Every check, as CI runs it (requirements §20.5). No Node.js: pytest, ruff, Deno and
+# Every check, as CI runs it (requirements S17.5). No Node.js: pytest, ruff, Deno and
 # Playwright for Python. Run `web/dev.sh setup` once first.
 set -uo pipefail
 

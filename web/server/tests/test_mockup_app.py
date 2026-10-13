@@ -1,4 +1,4 @@
-"""The generated mockup (requirements §15.9) in headless Chromium, opened from disk: every
+"""The generated mockup (requirements S12.9) in headless Chromium, opened from disk: every
 screen, tab and Settings section for each sample user, and the MOCK pill's dialogs, open with
 no page or console error, and nothing is requested from anywhere but the page and the files
 beside it."""

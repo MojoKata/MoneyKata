@@ -1,4 +1,4 @@
-"""Long work (requirements §16.8.7): an import, a statement read or a projection run answers
+"""Long work (requirements S13.8.7): an import, a statement read or a projection run answers
 202 with a job, `/ui/api/jobs/{id}`, and the live stream announces its end. Jobs are work state
 (schema.md §4.4), kept in memory for a day."""
 

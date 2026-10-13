@@ -1,4 +1,4 @@
-"""Users, groups, sessions and one-time tokens (requirements §13.1, §16.7.1)."""
+"""Users, groups, sessions and one-time tokens (requirements S10.1, S13.7.1)."""
 
 from sqlalchemy import (
     Boolean,
@@ -25,7 +25,7 @@ User = record(
     # A password is set from an invitation or the default admin's setup; until then, none.
     Column("passwordHash", Text),
     Column("passwordChangedAt", UtcTimestamp),
-    # The default admin's first sign-in leads only to the setup step (§13.1.2).
+    # The default admin's first sign-in leads only to the setup step (S10.1.2).
     Column("needsSetup", Boolean, nullable=False, server_default=text("0")),
     Column("avatar", Text),
     Column("timeZone", Text, nullable=False, server_default=text("'auto'")),
@@ -46,7 +46,7 @@ Group = record(
     "Group",
     Column("name", Text, nullable=False),
     Column("active", Boolean, nullable=False, server_default=text("1")),
-    # The built-in Admins group: membership is what makes an admin (§13.1.8).
+    # The built-in Admins group: membership is what makes an admin (S10.1.8).
     Column("builtIn", Text),
     CheckConstraint('"builtIn" IS NULL OR "builtIn" = \'admins\'', name="built_in"),
 )
@@ -61,13 +61,13 @@ UserGroups = pairs(
 
 Session = exception(
     "Session",
-    "sessions are removed when they end or expire (§4.4.1)",
+    "sessions are removed when they end or expire (S1.4.1)",
     Column("tokenHash", Text, primary_key=True),
     Column("userId", Text, ForeignKey("User.id"), nullable=False),
     Column("createdAt", UtcTimestamp, nullable=False),
     Column("lastSeenAt", UtcTimestamp, nullable=False),
     Column("expiresAt", UtcTimestamp, nullable=False),
-    # When the password was last given in this session, for re-authentication (§16.7.2).
+    # When the password was last given in this session, for re-authentication (S13.7.2).
     Column("authAt", UtcTimestamp, nullable=False),
     Column("admin", Boolean, nullable=False, server_default=text("0")),
     Column("needsSetup", Boolean, nullable=False, server_default=text("0")),
@@ -76,7 +76,7 @@ Session = exception(
 
 OneTimeToken = exception(
     "OneTimeToken",
-    "one-time tokens are removed when used or expired (§4.4.1)",
+    "one-time tokens are removed when used or expired (S1.4.1)",
     Column("tokenHash", Text, primary_key=True),
     Column("purpose", Text, nullable=False),
     Column("userId", Text, ForeignKey("User.id"), nullable=False),

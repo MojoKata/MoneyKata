@@ -1,6 +1,6 @@
-// The Share dialog (requirements §13.4): every active user, then every active group, each with
+// The Share dialog (requirements S10.4): every active user, then every active group, each with
 // None · Read · Write; who has access through a group is shown "via" it. Nothing changes until
-// Save. For a portfolio, it names the accounts each person can't see (§8.1.2).
+// Save. For a portfolio, it names the accounts each person can't see (S5.1.2).
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';

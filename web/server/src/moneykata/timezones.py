@@ -1,4 +1,4 @@
-"""Time zones (requirements §17.9): timestamps are stored in UTC and shown in the viewer's
+"""Time zones (requirements S14.9): timestamps are stored in UTC and shown in the viewer's
 zone; the server's own zone is read from the host."""
 
 import os
@@ -39,5 +39,5 @@ def names() -> list[str]:
 
 
 def zone_for(choice: str | None) -> str:
-    """A user's zone: "auto" (or none) is the server's (§17.9.2)."""
+    """A user's zone: "auto" (or none) is the server's (S14.9.2)."""
     return host_zone() if not choice or choice == "auto" else choice

@@ -1,4 +1,4 @@
-// The guides' Markdown (requirements §15.7.4): headings, paragraphs, lists, tables, code, quotes
+// The guides' Markdown (requirements S12.7.4): headings, paragraphs, lists, tables, code, quotes
 // (shown as notes), images, links, bold and italic. Everything is built as elements from text,
 // so raw HTML in a guide is shown as text, never parsed.
 import { h } from 'preact';
@@ -43,7 +43,7 @@ function inline(text, resolve) {
 }
 
 /**
- * A heading's anchor: an id it lists ("## Lot method {#lots}") or its text's slug (§15.7.3).
+ * A heading's anchor: an id it lists ("## Lot method {#lots}") or its text's slug (S12.7.3).
  * @param {string} text
  */
 export function anchorOf(text) {

@@ -1,4 +1,4 @@
-"""Sharing an account or a portfolio with users and groups (requirements §13.3–§13.6, §8.1).
+"""Sharing an account or a portfolio with users and groups (requirements S10.3–S10.6, S5.1).
 
 The Share dialog lists every active user and group with None, Read or Write; nothing changes
 until Save, which replaces the item's grants as a whole. Removing a share ends the receiver's
@@ -55,7 +55,7 @@ def portfolio_accounts(s: Session, portfolio_id: str) -> list[Account]:
 
 
 def hidden_accounts(s: Session, p: Portfolio, user_ids: list[str]) -> dict[str, list[str]]:
-    """For each person, the portfolio's accounts they can't see (§8.1.2)."""
+    """For each person, the portfolio's accounts they can't see (S5.1.2)."""
     accounts = portfolio_accounts(s, p.id)
     out = {}
     for uid in user_ids:
@@ -183,7 +183,7 @@ def save(
 
 
 def _share_accounts_too(s: Session, by: User, p: Portfolio) -> int:
-    """Share these accounts too (§8.1.2): at read, only accounts the owner may share."""
+    """Share these accounts too (S5.1.2): at read, only accounts the owner may share."""
     n = 0
     people = [u for u in access.holders(s, "portfolio", p.id, p.ownerId) if u != p.ownerId]
     for uid, missing in hidden_accounts(s, p, people).items():
@@ -216,7 +216,7 @@ def _share_accounts_too(s: Session, by: User, p: Portfolio) -> int:
 
 
 def _drop_annotations(s: Session, user_id: str, account_id: str) -> None:
-    """A removed receiver's own tags on the account's transactions are deleted (§13.4)."""
+    """A removed receiver's own tags on the account's transactions are deleted (S10.4)."""
     now = clock.now()
     for tag in s.scalars(
         select(TransactionTag)

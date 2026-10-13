@@ -1,4 +1,4 @@
-"""One smoke test drives a running server in headless Chromium (requirements §20.5)."""
+"""One smoke test drives a running server in headless Chromium (requirements S17.5)."""
 
 import socket
 import subprocess
@@ -56,7 +56,7 @@ master = "{tmp / "keys" / "master.key"}"
             pytest.fail(f"server exited: {(tmp / 'server.log').read_text()}")
         time.sleep(0.1)
     yield base
-    proc.terminate()  # SIGTERM: a clean stop within the 5-second grace (§16.6)
+    proc.terminate()  # SIGTERM: a clean stop within the 5-second grace (S13.6)
     assert proc.wait(timeout=8) == 0
 
 

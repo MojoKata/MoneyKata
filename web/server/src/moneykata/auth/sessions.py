@@ -1,4 +1,4 @@
-"""Sessions (requirements §16.2, §16.7.1): a 256-bit token in the mk_session cookie, stored
+"""Sessions (requirements S13.2, S13.7.1): a 256-bit token in the mk_session cookie, stored
 as its SHA-256, with idle and absolute lifetimes from Settings. A new token at sign-in and at
 every change of privilege; signing out, a password change and deactivation end every session
 of that user."""

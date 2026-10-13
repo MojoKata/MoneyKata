@@ -1,4 +1,4 @@
-"""moneykata.toml: what the operator sets on the host (requirements §16.3, §18.4, §20.8).
+"""moneykata.toml: what the operator sets on the host (requirements S13.3, S15.4, S17.8).
 
 Everything a user or admin can change at run time is a Setting in the database (settings.py).
 This file holds only what the server needs before the database is open, and it never holds a
@@ -34,7 +34,7 @@ class Config:
     data_dir: Path
     backup_dir: Path
     key_file: Path
-    host: str = "0.0.0.0"  # noqa: S104 - all of the container's interfaces (§16.3)
+    host: str = "0.0.0.0"  # noqa: S104 - all of the container's interfaces (S13.3)
     port: int = DEFAULT_PORT
     trusted_proxies: tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...] = ()
     tls_cert: Path | None = None

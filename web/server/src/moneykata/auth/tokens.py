@@ -1,5 +1,5 @@
 """Session, invitation, reset and confirmation tokens: 256 random bits, stored only as their
-SHA-256 (requirements §17.4, §18.1.6)."""
+SHA-256 (requirements S14.4, S15.1.6)."""
 
 import hashlib
 import secrets

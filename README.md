@@ -8,14 +8,16 @@ receipts and tax books, and prepares the numbers a tax return needs. Several peo
 server, and households on other MoneyKata servers can share with named people here, read
 only, in a window of their own.
 
-**Status:** the first milestone (requirements §20.9.1) is being built in `web/`.
+**Status:** the first milestone (requirements S17.9.1) is built, and the second (S17.9.2) is
+being built in `web/`.
 
 ## Where to start
 
-1. [`docs/requirements.md`](docs/requirements.md): what MoneyKata is and does, in the present
-   tense. §1 lists the decisions; §20 the stack, the layout and the milestones (§20.9: what
-   to build first); §21 the open questions; §22 the gaps not yet specified, each with a
-   lasting id (G1, G2, …).
+1. [`docs/requirements/`](docs/requirements/README.md): what MoneyKata is and does, in the
+   present tense. Its README holds the decisions (R1), the terminology (R2) and the design
+   principles (R3), and lists the sections S1–S17, the gaps not yet specified (G1, G2, …)
+   and the open questions (Q1, Q2, …). S17 has the stack, the layout and the milestones
+   (S17.9: the order to build in).
 2. [`docs/schema.md`](docs/schema.md): the database conventions: naming, prefixed UUIDv7
    ids, soft deletes and the table prefixes.
 3. [`docs/mockups/MoneyKata-mock.html`](docs/mockups/MoneyKata-mock.html): the clickable
@@ -46,7 +48,7 @@ A Python server (FastAPI under Hypercorn, SQLite encrypted with SQLCipher, SQLAl
 tables mapped onto plain dataclasses, Alembic migrations) and a browser app with no build step
 (Preact, HTM, signals and preact-iso as vendored ES modules under a strict CSP, charts with
 Apache ECharts). Deno type-checks the JavaScript, and Playwright for Python runs the browser
-tests. No Node.js. One Docker image for amd64 and arm64, on port 37373. See requirements §20.
+tests. No Node.js. One Docker image for amd64 and arm64, on port 37373. See requirements S17.
 
 ## Development
 

@@ -1,6 +1,6 @@
-"""The browser app against a seeded dev server in headless Chromium (requirements §20.5): every
+"""The browser app against a seeded dev server in headless Chromium (requirements S17.5): every
 screen, tab and dialog opens without a page or console error, has its guide, and each field's
-label finds a heading in it, in the page's order (§15.7.6)."""
+label finds a heading in it, in the page's order (S12.7.6)."""
 
 import re
 import socket
@@ -19,7 +19,7 @@ pytestmark = pytest.mark.browser
 # address instead, where the session check before signing in may answer 401.
 LOAD_FAILED = re.compile(r"Failed to load resource")
 EXPECTED_FAILURES = re.compile(r"/ui/api/session$")
-# The API allows a session 600 requests a minute (§16.7.5); a test opens screens far faster
+# The API allows a session 600 requests a minute (S13.7.5); a test opens screens far faster
 # than a person, so it keeps under that instead.
 API_PER_MINUTE = 500
 

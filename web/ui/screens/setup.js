@@ -1,5 +1,5 @@
 // The default admin's first sign-in leads only here: choose a password and give an email
-// address (requirements §13.1.2).
+// address (requirements S10.1.2).
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';

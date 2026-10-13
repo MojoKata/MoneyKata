@@ -5563,7 +5563,7 @@
     }
   },
   "info": {
-    "description": "The browser app's API, /ui/api (requirements §16.8). It is served with the app and carries no version of its own.",
+    "description": "The browser app's API, /ui/api (requirements S13.8). It is served with the app and carries no version of its own.",
     "title": "MoneyKata",
     "version": "see web/VERSION"
   },
@@ -5761,7 +5761,7 @@
     },
     "/ui/api/accounts/{account_id}/adjustments": {
       "post": {
-        "description": "Accepting a difference as a balance adjustment, with a note (§4.11.4).",
+        "description": "Accepting a difference as a balance adjustment, with a note (S1.11.4).",
         "operationId": "add_adjustment_ui_api_accounts__account_id__adjustments_post",
         "parameters": [
           {
@@ -5812,7 +5812,7 @@
     },
     "/ui/api/accounts/{account_id}/anchors": {
       "post": {
-        "description": "A balance typed from the institution's site (§4.11.2).",
+        "description": "A balance typed from the institution's site (S1.11.2).",
         "operationId": "add_anchor_ui_api_accounts__account_id__anchors_post",
         "parameters": [
           {
@@ -5863,7 +5863,7 @@
     },
     "/ui/api/accounts/{account_id}/counted": {
       "put": {
-        "description": "A receiver's Count in my totals (§13.7); off by default.",
+        "description": "A receiver's Count in my totals (S10.7); off by default.",
         "operationId": "set_counted_ui_api_accounts__account_id__counted_put",
         "parameters": [
           {
@@ -6089,7 +6089,7 @@
     },
     "/ui/api/accounts/{account_id}/reconciliations": {
       "post": {
-        "description": "Ticking off (§4.11.6): a statement's closing date and balance.",
+        "description": "Ticking off (S1.11.6): a statement's closing date and balance.",
         "operationId": "start_reconciliation_ui_api_accounts__account_id__reconciliations_post",
         "parameters": [
           {
@@ -6289,7 +6289,7 @@
     },
     "/ui/api/activity/newer": {
       "get": {
-        "description": "How many entries arrived after one the page shows: the +N new pill (§15.1.3).",
+        "description": "How many entries arrived after one the page shows: the +N new pill (S12.1.3).",
         "operationId": "newer_ui_api_activity_newer_get",
         "parameters": [
           {
@@ -6417,7 +6417,7 @@
     },
     "/ui/api/dashboard/series": {
       "get": {
-        "description": "Net worth over time, with its composition by account group (§8.3).",
+        "description": "Net worth over time, with its composition by account group (S5.3).",
         "operationId": "net_worth_series_ui_api_dashboard_series_get",
         "parameters": [
           {
@@ -6496,7 +6496,7 @@
     },
     "/ui/api/events": {
       "get": {
-        "description": "The live stream (§15.6): what changed, never data. It ends after a few minutes and\nthe browser reconnects; it never extends the session.",
+        "description": "The live stream (S12.6): what changed, never data. It ends after a few minutes and\nthe browser reconnects; it never extends the session.",
         "operationId": "events_ui_api_events_get",
         "responses": {
           "200": {
@@ -6808,7 +6808,7 @@
         ]
       },
       "post": {
-        "description": "A price from a statement, or typed, with its date (§7.3).",
+        "description": "A price from a statement, or typed, with its date (S4.3).",
         "operationId": "type_price_ui_api_instruments__instrument_id__prices_post",
         "parameters": [
           {
@@ -6983,7 +6983,7 @@
     },
     "/ui/api/password-reset": {
       "post": {
-        "description": "The answer is the same whether or not the user exists (§13.1.5).",
+        "description": "The answer is the same whether or not the user exists (S10.1.5).",
         "operationId": "password_reset_ui_api_password_reset_post",
         "requestBody": {
           "content": {
@@ -7289,7 +7289,7 @@
     },
     "/ui/api/portfolios/{portfolio_id}/returns": {
       "get": {
-        "description": "Time-weighted returns per period, per account and for the portfolio (§8.2.3).",
+        "description": "Time-weighted returns per period, per account and for the portfolio (S5.2.3).",
         "operationId": "portfolio_returns_ui_api_portfolios__portfolio_id__returns_get",
         "parameters": [
           {
@@ -7336,7 +7336,7 @@
     },
     "/ui/api/portfolios/{portfolio_id}/series": {
       "get": {
-        "description": "Value over time with contributions apart from growth, against the benchmark, and the\nperiod's time- and money-weighted returns (§8.2.1, §8.2.3).",
+        "description": "Value over time with contributions apart from growth, against the benchmark, and the\nperiod's time- and money-weighted returns (S5.2.1, S5.2.3).",
         "operationId": "portfolio_series_ui_api_portfolios__portfolio_id__series_get",
         "parameters": [
           {
@@ -7546,7 +7546,7 @@
     },
     "/ui/api/prices/refresh": {
       "post": {
-        "description": "Refresh prices: the daily task, now (§7.4).",
+        "description": "Refresh prices: the daily task, now (S4.4).",
         "operationId": "refresh_prices_ui_api_prices_refresh_post",
         "responses": {
           "202": {
@@ -7686,7 +7686,7 @@
     },
     "/ui/api/profile/password": {
       "post": {
-        "description": "Ends every session; this browser gets a fresh one (§16.7.1).",
+        "description": "Ends every session; this browser gets a fresh one (S13.7.1).",
         "operationId": "change_password_ui_api_profile_password_post",
         "requestBody": {
           "content": {
@@ -7812,7 +7812,7 @@
     },
     "/ui/api/session": {
       "delete": {
-        "description": "Signing out ends every session of the user at once (§16.7.1).",
+        "description": "Signing out ends every session of the user at once (S13.7.1).",
         "operationId": "sign_out_ui_api_session_delete",
         "responses": {
           "204": {
@@ -7988,7 +7988,7 @@
         ]
       },
       "patch": {
-        "description": "Every key is checked before any is saved; a refusal names each field (§3.7).",
+        "description": "Every key is checked before any is saved; a refusal names each field (R3.7).",
         "operationId": "change_settings_ui_api_settings_patch",
         "requestBody": {
           "content": {
@@ -8072,7 +8072,7 @@
     },
     "/ui/api/settings/keys": {
       "get": {
-        "description": "Read only: the master key is changed only on the host (§18.4.6).",
+        "description": "Read only: the master key is changed only on the host (S15.4.6).",
         "operationId": "key_storage_ui_api_settings_keys_get",
         "responses": {
           "200": {
@@ -8094,7 +8094,7 @@
     },
     "/ui/api/settings/keys/reencrypt": {
       "post": {
-        "description": "Re-encrypt (§18.7.2): a new data key for the database and every secret.",
+        "description": "Re-encrypt (S15.7.2): a new data key for the database and every secret.",
         "operationId": "key_reencrypt_ui_api_settings_keys_reencrypt_post",
         "responses": {
           "202": {
@@ -8189,7 +8189,7 @@
         ]
       },
       "put": {
-        "description": "Save: the dialog's grants replace the item's (§13.4).",
+        "description": "Save: the dialog's grants replace the item's (S10.4).",
         "operationId": "save_shares_ui_api_shares__kind___item_id__put",
         "parameters": [
           {
@@ -8516,7 +8516,7 @@
     },
     "/ui/api/transactions/categorise": {
       "post": {
-        "description": "Bulk categorise (§15.2.3): Activity says how many, never which amounts.",
+        "description": "Bulk categorise (S12.2.3): Activity says how many, never which amounts.",
         "operationId": "categorise_ui_api_transactions_categorise_post",
         "requestBody": {
           "content": {
@@ -8558,7 +8558,7 @@
     },
     "/ui/api/transactions/newer": {
       "get": {
-        "description": "How many transactions arrived after the page loaded: the +N new pill (§15.1.3).",
+        "description": "How many transactions arrived after the page loaded: the +N new pill (S12.1.3).",
         "operationId": "newer_transactions_ui_api_transactions_newer_get",
         "parameters": [
           {
@@ -8707,7 +8707,7 @@
     },
     "/ui/api/transactions/{txn_id}/both-real": {
       "post": {
-        "description": "Two identical rows on one day: the answer *both real* is kept (§4.11.5).",
+        "description": "Two identical rows on one day: the answer *both real* is kept (S1.11.5).",
         "operationId": "both_real_ui_api_transactions__txn_id__both_real_post",
         "parameters": [
           {
@@ -8750,7 +8750,7 @@
     },
     "/ui/api/transactions/{txn_id}/transfer": {
       "post": {
-        "description": "Match a transfer by hand, or undo a match (§4.7).",
+        "description": "Match a transfer by hand, or undo a match (S1.7).",
         "operationId": "link_transfer_ui_api_transactions__txn_id__transfer_post",
         "parameters": [
           {

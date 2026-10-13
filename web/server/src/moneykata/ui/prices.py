@@ -1,4 +1,4 @@
-"""Prices (requirements §7, §19.6): the header's refresh status, Refresh prices, Settings ›
+"""Prices (requirements S4, S16.6): the header's refresh status, Refresh prices, Settings ›
 Prices for admins, typed prices and an instrument's stored closes."""
 
 import datetime as dt
@@ -139,7 +139,7 @@ def _view(s, dev: bool) -> SourcesView:
 
 
 def apply_egress(srv) -> None:
-    """Only the hosts of enabled sources may be reached (§16.5)."""
+    """Only the hosts of enabled sources may be reached (S13.5)."""
     with srv.db.read() as s:
         srv.guard.allow(pricing.hosts(s, srv.config.dev))
 
@@ -155,7 +155,7 @@ def price_status(request: Request, c: Caller = Depends(caller)):
 
 @router.post("/prices/refresh", status_code=202)
 def refresh_prices(request: Request, c: Caller = Depends(caller)):
-    """Refresh prices: the daily task, now (§7.4)."""
+    """Refresh prices: the daily task, now (S4.4)."""
     if not server(request).tasks.run_now("prices"):
         raise Problem(503, "not-available", "Prices can't be refreshed right now.")
     return Response(status_code=202)
@@ -305,7 +305,7 @@ def _held_writable(s, user_id: str, instrument_id: str) -> bool:
 
 @router.post("/instruments/{instrument_id}/prices", status_code=201)
 def type_price(instrument_id: str, body: TypedPrice, request: Request, c: Caller = Depends(caller)):
-    """A price from a statement, or typed, with its date (§7.3)."""
+    """A price from a statement, or typed, with its date (S4.3)."""
     if body.date > clock.today():
         raise refuse("date", "date-in-future", "A price can't be dated in the future.")
     if body.price < 0:

@@ -1,4 +1,4 @@
-"""Cash balances (requirements §3.2): an opening balance plus the transactions. The opening
+"""Cash balances (requirements R3.2): an opening balance plus the transactions. The opening
 balance is typed, or, where none was typed, worked out from the earliest balance the
 institution reported, and then marked as standing in for history."""
 
@@ -18,7 +18,7 @@ class Opening:
 
 def points(anchors: list, transactions: list) -> list[tuple[dt.date, Decimal, str, str | None]]:
     """Every reported balance, oldest first: anchors, and each day's last running balance from
-    a CSV (every row is an anchor, §4.11.2). (date, balance, source, anchor or txn id)."""
+    a CSV (every row is an anchor, S1.11.2). (date, balance, source, anchor or txn id)."""
     out = [(a.date, a.balance, a.source, a.id) for a in anchors]
     by_day: dict[dt.date, tuple] = {}
     for t in sorted(transactions, key=lambda t: (t.date, t.createdAt, t.id)):

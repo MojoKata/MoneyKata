@@ -1,4 +1,4 @@
-"""The listener (requirements §16.3, §16.6): plain HTTP behind a proxy, or its own HTTPS with
+"""The listener (requirements S13.3, S13.6): plain HTTP behind a proxy, or its own HTTPS with
 HTTP/2; and stopping cleanly on SIGTERM."""
 
 import asyncio

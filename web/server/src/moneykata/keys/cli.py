@@ -1,4 +1,4 @@
-"""`moneykata keys …` (requirements §18.4.6, §18.6, §18.7): run on the host, as one-off
+"""`moneykata keys …` (requirements S15.4.6, S15.6, S15.7): run on the host, as one-off
 containers of the same image. Only `init` and `rotate` need the key directory writable."""
 
 import datetime as dt
@@ -145,7 +145,7 @@ def verify(
     say: Say = _say,
     record: Callable[[str, bool], None] | None = None,
 ) -> bool:
-    """Whether a typed phrase matches the running key, changing nothing (§18.6.5)."""
+    """Whether a typed phrase matches the running key, changing nothing (S15.6.5)."""
     key = _read(config)
     try:
         typed = phrase.from_words(ask("recovery phrase (12 words): "))
@@ -164,7 +164,7 @@ def verify(
 
 
 def rotate(config: Config, ask: Ask = input, say: Say = _say) -> tuple[str, str]:
-    """A new master key re-wraps the data key in one step (§18.7.1). Nothing else changes."""
+    """A new master key re-wraps the data key in one step (S15.7.1). Nothing else changes."""
     if config.path is None:
         raise RefuseStart(
             "rotation records the previous key in moneykata.toml: run it with --config"
@@ -231,7 +231,7 @@ def write_previous(path: Path, previous: tuple[PreviousKey, ...]) -> None:
 
 
 def register(sub) -> None:
-    k = sub.add_parser("keys", help="the master key and its recovery phrase (§18)")
+    k = sub.add_parser("keys", help="the master key and its recovery phrase (S15)")
     ks = k.add_subparsers(dest="keys_command", required=True)
     i = ks.add_parser("init", help="make the master key and the data key")
     i.add_argument(

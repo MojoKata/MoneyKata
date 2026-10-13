@@ -1,4 +1,4 @@
-"""Secrets (requirements §17.4, §18.3.3): price-source keys, the bitcoin node's credentials,
+"""Secrets (requirements S14.4, S15.3.3): price-source keys, the bitcoin node's credentials,
 the SMTP password, the link key. Each is encrypted on its own with AES-256-GCM under a random
 data key of its own, with associated data naming the record and field, so a ciphertext copied
 onto another record fails to decrypt. The secret's data key is wrapped under the secrets key.
@@ -52,7 +52,7 @@ def open_sealed(
 def rewrap(
     old_key: bytes, new_key: bytes, sealed: Sealed, record_type: str, record_id: str, field: str
 ) -> Sealed:
-    """Re-encrypting (§18.7.2): a fresh data key and nonce under the new secrets key."""
+    """Re-encrypting (S15.7.2): a fresh data key and nonce under the new secrets key."""
     return seal(
         new_key,
         open_sealed(old_key, sealed, record_type, record_id, field),

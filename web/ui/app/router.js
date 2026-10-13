@@ -1,5 +1,5 @@
 // The app's screens and their addresses. Each screen is a module loaded by import() on its
-// first visit, so the first screen stays small (requirements §20.3.4).
+// first visit, so the first screen stays small (requirements S17.3.4).
 import { lazy, Route, Router } from 'preact-iso';
 import { html } from './html.js';
 

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# MoneyKata's image (requirements §20.8). Build from the repository's root:
+# MoneyKata's image (requirements S17.8). Build from the repository's root:
 #   docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) .
 # One image for amd64 and arm64: add --platform linux/amd64,linux/arm64 (arm64 under QEMU).
 

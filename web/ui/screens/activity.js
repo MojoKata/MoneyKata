@@ -1,4 +1,4 @@
-// Activity (requirements §13.8): the changes worth showing, newest first, filtered by account
+// Activity (requirements S10.8): the changes worth showing, newest first, filtered by account
 // and person; amounts are never named.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';

@@ -1,4 +1,4 @@
-// The generated mockup's backend (requirements §15.9), run before the app: the answers recorded
+// The generated mockup's backend (requirements S12.9), run before the app: the answers recorded
 // from a seeded server for each sample user, the guides, a clock that starts on the day they
 // were recorded, and a stream that never sends. Nothing leaves the page. It then loads the app
 // from the modules the page carries.

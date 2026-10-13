@@ -1,4 +1,4 @@
-"""Transactions (requirements §5.6, §15.2.3): every visible account's transactions together,
+"""Transactions (requirements S2.6, S12.2.3): every visible account's transactions together,
 filtered and paged; manual entry and edits; bulk categorise; splits, tags and transfers."""
 
 import datetime as dt
@@ -170,7 +170,7 @@ class Done(Model):
 
 
 def _tags(s: Session, user_id: str, txn_ids: list[str]) -> dict[str, list[str]]:
-    """A user's own tags on transactions (§13.4: annotations are the user's own)."""
+    """A user's own tags on transactions (S10.4: annotations are the user's own)."""
     out: dict[str, list[str]] = {}
     if not txn_ids:
         return out
@@ -383,7 +383,7 @@ class Newer(Model):
 def newer_transactions(
     request: Request, c: Caller = Depends(caller), since: dt.datetime = Query(...)
 ):
-    """How many transactions arrived after the page loaded: the +N new pill (§15.1.3)."""
+    """How many transactions arrived after the page loaded: the +N new pill (S12.1.3)."""
     with server(request).db.read() as s:
         visible = [a.id for a, _ in access.visible_accounts(s, c.id)]
         n = s.scalar(
@@ -711,7 +711,7 @@ def delete_transaction(
 
 @router.post("/transactions/categorise", response_model=Done)
 def categorise(body: Categorise, request: Request, c: Caller = Depends(caller)):
-    """Bulk categorise (§15.2.3): Activity says how many, never which amounts."""
+    """Bulk categorise (S12.2.3): Activity says how many, never which amounts."""
     if len(body.ids) > 1000:
         raise refuse("ids", "too-many", "At most 1,000 at a time.")
     with server(request).db.tx() as s:
@@ -743,7 +743,7 @@ def categorise(body: Categorise, request: Request, c: Caller = Depends(caller)):
 
 @router.post("/transactions/{txn_id}/transfer", response_model=TxnOut)
 def link_transfer(txn_id: str, body: TransferLink, request: Request, c: Caller = Depends(caller)):
-    """Match a transfer by hand, or undo a match (§4.7)."""
+    """Match a transfer by hand, or undo a match (S1.7)."""
     with server(request).db.tx() as s:
         t = s.get(Transaction, txn_id)
         if t is None or t.deleted:
@@ -769,7 +769,7 @@ def link_transfer(txn_id: str, body: TransferLink, request: Request, c: Caller =
 
 @router.post("/transactions/{txn_id}/both-real", response_model=TxnOut)
 def both_real(txn_id: str, request: Request, c: Caller = Depends(caller)):
-    """Two identical rows on one day: the answer *both real* is kept (§4.11.5)."""
+    """Two identical rows on one day: the answer *both real* is kept (S1.11.5)."""
     with server(request).db.tx() as s:
         t = s.get(Transaction, txn_id)
         if t is None or t.deleted:

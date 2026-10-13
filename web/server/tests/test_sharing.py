@@ -26,7 +26,7 @@ def test_read_and_write_shares(server):
     share(c["alice"], "account", a["id"], users={u["bob"].id: "read"})
     seen = c["bob"].get("/ui/api/accounts").json()
     assert len(seen) == 1 and seen[0]["level"] == "read" and seen[0]["ownerName"] == "Alice"
-    assert seen[0]["counted"] is False  # Count in my totals is off by default (§13.7)
+    assert seen[0]["counted"] is False  # Count in my totals is off by default (S10.7)
     assert c["alice"].get("/ui/api/accounts").json()[0]["sharedWith"] == 1
     assert len(c["bob"].get("/ui/api/transactions").json()["items"]) == 1
     r = c["bob"].post(

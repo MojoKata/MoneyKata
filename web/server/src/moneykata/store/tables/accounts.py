@@ -1,5 +1,5 @@
 """Accounts, transactions, categories, instruments, lots, imports and reconciliation
-(requirements §4, §5, §10.2)."""
+(requirements S1, S2, S7.2)."""
 
 from sqlalchemy import (
     Boolean,
@@ -95,7 +95,7 @@ Account = record(
     Column("lotMethod", Text, nullable=False, server_default=text("'fifo'")),
     Column("countInNetWorth", Boolean, nullable=False, server_default=text("1")),
     # A typed balance before the first transaction. Without one, the opening balance is worked
-    # out from the earliest balance the institution reported, and marked as a stand-in (§3.2).
+    # out from the earliest balance the institution reported, and marked as a stand-in (R3.2).
     Column("openingBalance", Cents),
     Column("openingDate", Day),
     _in("type", ACCOUNT_TYPES, "type"),
@@ -162,7 +162,7 @@ Transaction = record(
     Column("lotMethod", Text),
     Column("contributionYear", Integer),
     Column("contributionSource", Text),
-    # The other half of a matched transfer (§4.7).
+    # The other half of a matched transfer (S1.7).
     Column("transferId", Text, ForeignKey("Transaction.id")),
     Column("importId", Text, ForeignKey("Import.id")),
     Column("fitId", Text),

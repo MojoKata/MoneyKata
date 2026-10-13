@@ -1,4 +1,4 @@
-// Styled tooltips that also show on keyboard focus and reach screen readers (§15.1.3): any
+// Styled tooltips that also show on keyboard focus and reach screen readers (S12.1.3): any
 // element with data-tip shows it; the text is also its aria-label when it has no text of its own.
 import { signal } from '@preact/signals';
 import { html } from '../app/html.js';

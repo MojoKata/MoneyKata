@@ -1,4 +1,4 @@
-"""Transfers between two of a user's accounts (requirements §4.7): the same amount, the other
+"""Transfers between two of a user's accounts (requirements S1.7): the same amount, the other
 way, a few days apart. Matched transfers count neither as spending nor as income."""
 
 import datetime as dt

@@ -1,4 +1,4 @@
-"""Makes the help guides' screenshots (requirements §15.7.5) from the generated mockup:
+"""Makes the help guides' screenshots (requirements S12.7.5) from the generated mockup:
 docs/mockups/MoneyKata-app.html opened from disk in headless Chromium, dark theme, 1280 px
 wide, saved as WebP in web/ui/guides/shots/. Run web/dev.sh mockup first when the app changed.
 

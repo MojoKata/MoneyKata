@@ -1,5 +1,5 @@
-// Sign in (requirements §13.1.1), Forgot password? (§13.1.5) and the account-is-disabled screen
-// with its request to be made active again (§13.1.7).
+// Sign in (requirements S10.1.1), Forgot password? (S10.1.5) and the account-is-disabled screen
+// with its request to be made active again (S10.1.7).
 import { useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';

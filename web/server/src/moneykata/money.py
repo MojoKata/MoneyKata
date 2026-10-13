@@ -1,4 +1,4 @@
-"""Exact amounts (requirements §17.3): Decimal in Python, strings in JSON, integer cents or
+"""Exact amounts (requirements S14.3): Decimal in Python, strings in JSON, integer cents or
 decimal text in SQLite. Floats are refused at the edge."""
 
 import decimal

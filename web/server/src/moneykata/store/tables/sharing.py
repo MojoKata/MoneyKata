@@ -1,4 +1,4 @@
-"""Portfolios and shares (requirements §8.1, §13.3–§13.7)."""
+"""Portfolios and shares (requirements S5.1, S10.3–S10.7)."""
 
 from sqlalchemy import (
     Boolean,
@@ -31,7 +31,7 @@ PortfolioAccounts = pairs(
     PrimaryKeyConstraint("portfolioId", "accountId"),
 )
 
-# A grant of one item, at one level, to a user or a group (§13.3). Items of the other shareable
+# A grant of one item, at one level, to a user or a group (S10.3). Items of the other shareable
 # kinds join "account" and "portfolio" as they are built.
 Share = record(
     "Share",
@@ -50,7 +50,7 @@ Share = record(
     Index("ix_Share_groupId", "groupId"),
 )
 
-# A receiver's "Count in my totals" on an account shared with them (§13.7).
+# A receiver's "Count in my totals" on an account shared with them (S10.7).
 CountedAccounts = pairs(
     "CountedAccounts",
     Column("userId", Text, ForeignKey("User.id", ondelete="CASCADE"), nullable=False),

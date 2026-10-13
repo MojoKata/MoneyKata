@@ -1,4 +1,4 @@
-// The router for the generated mockup (requirements §15.9). A page opened from a file has no
+// The router for the generated mockup (requirements S12.9). A page opened from a file has no
 // origin to push addresses to, so the address lives after the '#': '#/ui/accounts'. Everything
 // else is the router the app uses.
 import { h } from 'preact';

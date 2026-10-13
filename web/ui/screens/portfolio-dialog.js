@@ -1,4 +1,4 @@
-// Making or changing a portfolio (requirements §8.1): its name, accounts and benchmark.
+// Making or changing a portfolio (requirements S5.1): its name, accounts and benchmark.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';

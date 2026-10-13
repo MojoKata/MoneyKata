@@ -1,4 +1,4 @@
-// A password-reset link (requirements §13.1.5): choose a new password; every session ends.
+// A password-reset link (requirements S10.1.5): choose a new password; every session ends.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';

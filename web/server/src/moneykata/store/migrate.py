@@ -1,4 +1,4 @@
-"""Bringing the database to this release's revision (requirements §17.1.3): at start the
+"""Bringing the database to this release's revision (requirements S14.1.3): at start the
 server copies the database (verified), then migrates it one revision per transaction, then
 regenerates the Effective views. A database from a newer release refuses the start.
 

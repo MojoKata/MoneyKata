@@ -1,7 +1,7 @@
-"""Emails (requirements §13.1.9): plain text. Until SMTP is set up (and always in dev mode)
+"""Emails (requirements S10.1.9): plain text. Until SMTP is set up (and always in dev mode)
 each one is written to the mail folder as an .eml file; dev mode also prints its links.
 
-Links are built from Settings › General's public URL, never from the request (§19.1). A
+Links are built from Settings › General's public URL, never from the request (S16.1). A
 token rides in the link's fragment (#…), which browsers send to no server and no Referer.
 """
 

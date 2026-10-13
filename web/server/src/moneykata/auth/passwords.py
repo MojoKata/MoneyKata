@@ -1,4 +1,4 @@
-"""Passwords (requirements §16.7.3): argon2id at 64 MiB, 3 passes, parallelism 1; the minimum
+"""Passwords (requirements S13.7.3): argon2id at 64 MiB, 3 passes, parallelism 1; the minimum
 length Settings set, and no other rule than refusing the 100,000 most common passwords (the
 UK NCSC's list, shipped with the app)."""
 

@@ -1,4 +1,4 @@
-"""`moneykata db …` (requirements §17.7)."""
+"""`moneykata db …` (requirements S14.7)."""
 
 from pathlib import Path
 

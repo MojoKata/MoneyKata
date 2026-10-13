@@ -42,7 +42,7 @@ def set_public_url(server):
         settings.put(s, "publicUrl", "https://money.home.lan", None)
 
 
-# ---------- the default admin (§13.1.2) ----------
+# ---------- the default admin (S10.1.2) ----------
 
 
 def test_default_admin_only_reaches_setup(client, server):
@@ -81,7 +81,7 @@ def test_default_admin_only_reaches_setup(client, server):
         assert r.status_code == 401
 
 
-# ---------- signing in and sessions (§16.7.1) ----------
+# ---------- signing in and sessions (S13.7.1) ----------
 
 
 def test_sign_in_by_username_or_email_with_a_strict_cookie(client, server):
@@ -161,7 +161,7 @@ def test_a_change_of_privilege_gives_a_new_token(server, admin_client):
         assert old.get("/ui/api/session").status_code == 401
 
 
-# ---------- invitations (§13.1.3) ----------
+# ---------- invitations (S10.1.3) ----------
 
 
 def test_invitation_needs_the_public_url_outside_dev_mode(admin_client):
@@ -230,7 +230,7 @@ def test_only_admins_manage_users(server):
     assert c.get("/ui/api/settings").status_code == 403
 
 
-# ---------- password reset and change (§13.1.5) ----------
+# ---------- password reset and change (S10.1.5) ----------
 
 
 def test_password_reset(client, server):
@@ -295,7 +295,7 @@ def test_email_change_needs_recent_password_and_a_confirmed_link(server):
     assert c.get("/ui/api/profile").json()["email"] == "hal@new.lan"
 
 
-# ---------- the active flag (§13.1.7) ----------
+# ---------- the active flag (S10.1.7) ----------
 
 
 def test_deactivation_ends_sessions_and_reactivation_can_be_asked(admin_client, server):
@@ -413,7 +413,7 @@ def test_settings_are_checked_together_and_recorded(admin_client, server):
     assert "settings.changed" in kinds(server)
 
 
-# ---------- the live stream (§15.6) ----------
+# ---------- the live stream (S12.6) ----------
 
 
 def test_the_stream_says_hello_and_ends(server):

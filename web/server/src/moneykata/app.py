@@ -47,7 +47,7 @@ class Server:
         self.services = Services(self.config, Mailer(self.config))
 
     def badges(self, caller) -> dict[str, int]:
-        """The navigation's counts (§15.1.1), sent on the live stream; they grow with the
+        """The navigation's counts (S12.1.1), sent on the live stream; they grow with the
         screens that have them."""
         return {}
 
@@ -68,7 +68,7 @@ class Server:
         return self.store.keys.keys
 
     def http(self) -> net.Client:
-        """A client for outbound calls, behind the egress guard (§16.5)."""
+        """A client for outbound calls, behind the egress guard (S13.5)."""
         return net.Client(self.guard)
 
 

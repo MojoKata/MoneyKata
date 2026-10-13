@@ -1,4 +1,4 @@
-// The pager for long lists (requirements §15.1.3): a page size of 100, 500 or 1000 kept per
+// The pager for long lists (requirements S12.1.3): a page size of 100, 500 or 1000 kept per
 // browser, pages by cursor, and rows that arrived while reading counted on an orange +N new
 // pill instead of shifting the page.
 import { html } from '../app/html.js';

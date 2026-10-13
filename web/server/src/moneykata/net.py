@@ -1,4 +1,4 @@
-"""Outbound calls (requirements §16.5): one httpx client behind an egress guard. Only the hosts
+"""Outbound calls (requirements S13.5): one httpx client behind an egress guard. Only the hosts
 of enabled price sources, the bitcoin explorer or node, and links are reached; never loopback,
 link-local or cloud metadata addresses unless an admin allows that host by name; with
 timeouts and a ceiling on the size of a response."""

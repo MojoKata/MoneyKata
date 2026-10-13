@@ -1,4 +1,4 @@
-"""Users and Groups, for admins (requirements §13.1)."""
+"""Users and Groups, for admins (requirements S10.1)."""
 
 import datetime as dt
 

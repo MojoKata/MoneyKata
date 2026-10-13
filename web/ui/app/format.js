@@ -1,4 +1,4 @@
-// Numbers and dates for display (requirements §15.4, §17.3, §17.9). Money arrives as decimal
+// Numbers and dates for display (requirements S12.4, S14.3, S14.9). Money arrives as decimal
 // strings and is formatted from its digits, never through a float. Calendar dates are shown as
 // written; moments (UTC timestamps) in the viewer's time zone.
 
@@ -71,7 +71,7 @@ export function pct(s) {
 }
 
 /**
- * Abbreviated, for chart axes only: "$1.2M" (§15.4). Charts may use floats: they only draw.
+ * Abbreviated, for chart axes only: "$1.2M" (S12.4). Charts may use floats: they only draw.
  * With the axis's tick step, enough decimals that no two ticks read the same.
  * @param {number} n
  * @param {number} [step]
@@ -134,7 +134,7 @@ export function ago(iso) {
 }
 
 /**
- * The slug a field's label makes, which its help heading carries (§15.7.3).
+ * The slug a field's label makes, which its help heading carries (S12.7.3).
  * @param {string} label
  */
 export function slug(label) {

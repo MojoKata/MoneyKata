@@ -1,4 +1,4 @@
-// Dialogs (requirements §15.1.3): one at a time, trapping focus and returning it when closed.
+// Dialogs (requirements S12.1.3): one at a time, trapping focus and returning it when closed.
 // openDialog() resolves with what the dialog closes with.
 import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';

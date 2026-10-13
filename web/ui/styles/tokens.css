@@ -1,4 +1,4 @@
-/* Colours and sizes (requirements §20.3.6): dark first, then light. The system theme picks
+/* Colours and sizes (requirements S17.3.6): dark first, then light. The system theme picks
    one of the two from prefers-color-scheme (app/main.js sets data-theme). */
 @layer tokens, base, components;
 

@@ -1,4 +1,4 @@
-// Transactions (requirements §15.2.3): every account's transactions together, filtered by
+// Transactions (requirements S12.2.3): every account's transactions together, filtered by
 // account, category, date, amount, payee and tag, with bulk categorise and Import.
 import { useEffect, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
@@ -52,7 +52,7 @@ export default function Transactions() {
     return () => clearTimeout(t);
   }, [typing]);
   useEffect(() => {
-    // Rows that arrive while reading are counted, not slipped into the page (§15.1.3).
+    // Rows that arrive while reading are counted, not slipped into the page (S12.1.3).
     api.get('/transactions/newer', { since }).then((r) => setNewer(r.count), () => {});
   }, [changes.value.import || 0]);
 

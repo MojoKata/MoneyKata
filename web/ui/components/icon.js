@@ -1,4 +1,4 @@
-// Icons: one SVG sprite (requirements §20.3.6).
+// Icons: one SVG sprite (requirements S17.3.6).
 import { html } from '../app/html.js';
 import { base } from '../app/config.js';
 

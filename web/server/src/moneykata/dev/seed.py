@@ -1,4 +1,4 @@
-"""Dev mode's seed data (requirements §20.7): the users admin, alice and bob, a Household
+"""Dev mode's seed data (requirements S17.7): the users admin, alice and bob, a Household
 group, and a year of their accounts; each part of the app adds its own."""
 
 import logging

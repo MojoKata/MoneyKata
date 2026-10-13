@@ -1,5 +1,5 @@
-// An account's page (requirements §15.2.2): Overview (its balance chart), Holdings (investing),
-// Transactions, Reconcile (banking, card and brokerage, §4.11), Sharing and Settings.
+// An account's page (requirements S12.2.2): Overview (its balance chart), Holdings (investing),
+// Transactions, Reconcile (banking, card and brokerage, S1.11), Sharing and Settings.
 import { useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';

@@ -1,4 +1,4 @@
-"""The TickerSource interface (requirements §7.2.1, §7.2.2)."""
+"""The TickerSource interface (requirements S4.2.1, S4.2.2)."""
 
 import datetime as dt
 from abc import ABC, abstractmethod

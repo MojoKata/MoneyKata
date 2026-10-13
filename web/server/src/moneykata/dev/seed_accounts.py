@@ -1,5 +1,5 @@
 """Dev mode's accounts: a year of transactions across every account type built so far, made
-from a fixed seed so every run looks the same (requirements §20.7)."""
+from a fixed seed so every run looks the same (requirements S17.7)."""
 
 import datetime as dt
 import random

@@ -1,4 +1,4 @@
-// The live stream (requirements §15.6): one EventSource per page. It carries what changed, never
+// The live stream (requirements S12.6): one EventSource per page. It carries what changed, never
 // data; a screen whose data changed reloads it through its usual routes.
 import { signal } from '@preact/signals';
 import { version } from './config.js';
@@ -7,7 +7,7 @@ import { version } from './config.js';
 export const changes = signal(/** @type {Record<string, number>} */ ({}));
 /** The navigation's counts, from the server. */
 export const badges = signal(/** @type {Record<string, number>} */ ({}));
-/** True once the server says it runs another version than this page (§15.1.4). */
+/** True once the server says it runs another version than this page (S12.1.4). */
 export const updated = signal(false);
 
 /** @type {EventSource | null} */

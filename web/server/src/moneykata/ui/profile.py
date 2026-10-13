@@ -1,4 +1,4 @@
-"""Profile (requirements §15.2.16): name, email, avatar, password, time zone, theme, birth
+"""Profile (requirements S12.2.16): name, email, avatar, password, time zone, theme, birth
 year, spouse for wash sales and alert emails. Two-step, assumptions and access tokens come with
 their features."""
 
@@ -178,7 +178,7 @@ def change_profile(
 
 @router.post("/profile/password", status_code=204)
 def change_password(body: PasswordChange, request: Request, c: Caller = Depends(caller)):
-    """Ends every session; this browser gets a fresh one (§16.7.1)."""
+    """Ends every session; this browser gets a fresh one (S13.7.1)."""
     srv = server(request)
     with srv.db.tx() as s:
         u = s.get(User, c.id)

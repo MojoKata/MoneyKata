@@ -1,4 +1,4 @@
-// Toasts: short confirmations at the bottom of the page (requirements §15.1.2).
+// Toasts: short confirmations at the bottom of the page (requirements S12.1.2).
 import { signal } from '@preact/signals';
 import { html } from '../app/html.js';
 

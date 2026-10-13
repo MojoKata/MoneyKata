@@ -1,4 +1,4 @@
-"""Column types (requirements §17.3, §17.9): money as integer cents, quantities and prices as
+"""Column types (requirements S14.3, S14.9): money as integer cents, quantities and prices as
 decimal text at a fixed scale, timestamps in UTC."""
 
 import datetime as dt
@@ -67,7 +67,7 @@ class UtcTimestamp(TypeDecorator):
 
 
 class Day(TypeDecorator):
-    """A calendar date with no time zone: YYYY-MM-DD (§17.9.3)."""
+    """A calendar date with no time zone: YYYY-MM-DD (S14.9.3)."""
 
     impl = Text
     cache_ok = True

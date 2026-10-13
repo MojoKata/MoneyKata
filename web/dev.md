@@ -1,6 +1,6 @@
 # Testing the dev server
 
-`web/dev.sh run --seed --stubs` runs the whole server from a checkout (requirements §20.7) at
+`web/dev.sh run --seed --stubs` runs the whole server from a checkout (requirements S17.7) at
 `https://localhost:37373`, with a self-signed certificate. Sign in as `admin`, `alice` or `bob`
 with `moneykata-dev`. This page covers reaching it from a browser in the setups we use: on the
 same machine, or from a Mac or Linux machine while the server (and often the coding agent)

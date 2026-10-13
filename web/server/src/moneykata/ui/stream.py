@@ -1,4 +1,4 @@
-"""The body of GET /ui/api/events (requirements §15.6)."""
+"""The body of GET /ui/api/events (requirements S12.6)."""
 
 import asyncio
 import time

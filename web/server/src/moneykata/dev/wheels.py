@@ -1,5 +1,5 @@
 """Every locked dependency must install from a published wheel on amd64 and arm64 (requirements
-§20.8.1), since compiling under emulation is too slow.
+S17.8.1), since compiling under emulation is too slow.
 
     python -m moneykata.dev.wheels [uv.lock]
 """

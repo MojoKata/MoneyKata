@@ -1,5 +1,5 @@
-"""Activity (requirements §13.8): the changes worth showing, each naming who made it and what
-it is about. Entries name fields and counts, never amounts (§3.8)."""
+"""Activity (requirements S10.8): the changes worth showing, each naming who made it and what
+it is about. Entries name fields and counts, never amounts (R3.8)."""
 
 import json
 

@@ -1,4 +1,4 @@
-"""Background tasks (requirements §16.4): price refresh, backups, pruning and the others. They
+"""Background tasks (requirements S13.4): price refresh, backups, pruning and the others. They
 run in a thread pool, never block a request, keep within each provider's rate limits, and
 record their last run and error, which Settings shows."""
 
@@ -201,7 +201,7 @@ class Tasks:
             except Stopping:
                 run.error = "stopped when the server stopped"
             except Exception as e:
-                # The error's type only: its text may name an account or an amount (§16.7.9).
+                # The error's type only: its text may name an account or an amount (S13.7.9).
                 run.error = (
                     f"{type(e).__name__}: {e}" if isinstance(e, TaskError) else type(e).__name__
                 )

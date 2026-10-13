@@ -1,4 +1,4 @@
-"""Recovery phrases (requirements §18.6.1, §14.9.2): 128 bits written as 12 words from the
+"""Recovery phrases (requirements S15.6.1, S11.9.2): 128 bits written as 12 words from the
 BIP39 English list, the last word carrying a 4-bit checksum. The words are only a way to
 write a key down; BIP39's wallet derivation is never applied to them."""
 

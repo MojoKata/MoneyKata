@@ -231,7 +231,7 @@ def test_needs_an_anchor_after_45_days():
 
 
 def test_calculations_never_import_sqlalchemy():
-    """Business logic stays apart from the tables (requirements §17.1.2)."""
+    """Business logic stays apart from the tables (requirements S14.1.2)."""
     for folder in ("ledger",):
         for path in (paths.PACKAGE / folder).glob("*.py"):
             tree = ast.parse(Path(path).read_text())

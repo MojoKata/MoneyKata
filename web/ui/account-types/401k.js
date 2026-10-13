@@ -1,4 +1,4 @@
-// The 401(k) account type (requirements §4.1): its fields, icon and help part.
+// The 401(k) account type (requirements S1.1): its fields, icon and help part.
 /** @type {import('./index.js').AccountType} */
 export default {
   type: '401k',

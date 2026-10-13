@@ -1,6 +1,6 @@
-// The chart wrapper (requirements §20.4): Apache ECharts, loaded by a native import() only when
+// The chart wrapper (requirements S17.4): Apache ECharts, loaded by a native import() only when
 // a chart first draws, themed from tokens.css in both themes, with a table view a screen reader
-// can read (§15.8) and no animation when the system asks for reduced motion.
+// can read (S12.8) and no animation when the system asks for reduced motion.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { date, money, short } from '../app/format.js';
@@ -146,7 +146,7 @@ export function TimeChart({ label, series, tall }) {
   </div>`;
 }
 
-/** The range chips charts share (§8.2.1). */
+/** The range chips charts share (S5.2.1). */
 export const RANGES = /** @type {[string, string][]} */ ([
   ['1M', '1M'],
   ['3M', '3M'],

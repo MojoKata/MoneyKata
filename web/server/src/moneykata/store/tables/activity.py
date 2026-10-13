@@ -1,5 +1,5 @@
-"""Activity (requirements §13.8): what happened, who did it and what it is about. Entries are
-kept as written, never deleted, and never name an amount (§3.8)."""
+"""Activity (requirements S10.8): what happened, who did it and what it is about. Entries are
+kept as written, never deleted, and never name an amount (R3.8)."""
 
 from sqlalchemy import Boolean, Column, ForeignKey, Index, Text, text
 
@@ -8,7 +8,7 @@ from ._base import exception
 
 Activity = exception(
     "Activity",
-    "never deleted at all: kept as it was written (§4.4)",
+    "never deleted at all: kept as it was written (S1.4)",
     Column("at", UtcTimestamp, nullable=False),
     Column("actorId", Text, ForeignKey("User.id")),
     Column("via", Text),

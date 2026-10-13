@@ -1,4 +1,4 @@
-"""Price sources (requirements §7.2): integrations behind one interface, TickerSource. Each is
+"""Price sources (requirements S4.2): integrations behind one interface, TickerSource. Each is
 one module here that registers itself, so adding a source is adding a module."""
 
 from . import coinbase, manual, stub, tiingo  # noqa: F401 - each module registers its source

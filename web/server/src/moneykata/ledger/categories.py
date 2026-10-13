@@ -1,4 +1,4 @@
-"""The categories that ship (requirements §10.2): a two-level tree, each an expense, income
+"""The categories that ship (requirements S7.2): a two-level tree, each an expense, income
 or transfer category, some with the tax tag that feeds Taxes."""
 
 # (key, name, kind, tax tag, children: [(key, name, tax tag)])

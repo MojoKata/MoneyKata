@@ -1,4 +1,4 @@
-"""Coinbase's public prices (requirements §7.3): major coins in US dollars, with no key."""
+"""Coinbase's public prices (requirements S4.3): major coins in US dollars, with no key."""
 
 import datetime as dt
 from decimal import Decimal
@@ -25,7 +25,7 @@ class Coinbase(TickerSource):
         product = quote(f"{ref.symbol.upper()}-USD")
         out: dict[dt.date, Decimal] = {}
         # Today's candle (in UTC) is still open: its close is the latest trade, an intraday
-        # quote (§7.4). Stored, it would never be replaced, as refreshes start after it.
+        # quote (S4.4). Stored, it would never be replaced, as refreshes start after it.
         end = min(end, clock.today() - dt.timedelta(days=1))
         cursor = start
         while cursor <= end:

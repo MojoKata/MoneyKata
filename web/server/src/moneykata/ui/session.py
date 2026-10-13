@@ -1,5 +1,5 @@
 """Signing in and out, the default admin's setup, invitations, password reset and the live
-stream (requirements §13.1, §15.6, §16.7)."""
+stream (requirements S10.1, S12.6, S13.7)."""
 
 import asyncio
 import time
@@ -174,7 +174,7 @@ def sign_in(body: SignIn, request: Request):
 
 @router.delete("/session", status_code=204)
 def sign_out(request: Request, c: Caller = Depends(caller_in_setup)):
-    """Signing out ends every session of the user at once (§16.7.1)."""
+    """Signing out ends every session of the user at once (S13.7.1)."""
     srv = server(request)
     with srv.db.tx() as s:
         sessions.end_all(s, c.id)
@@ -214,7 +214,7 @@ def reauth(body: Password, request: Request, c: Caller = Depends(caller_in_setup
 
 @router.post("/password-reset", status_code=202)
 def password_reset(body: Login, request: Request):
-    """The answer is the same whether or not the user exists (§13.1.5)."""
+    """The answer is the same whether or not the user exists (S10.1.5)."""
     srv = server(request)
     _throttle(request)
     with srv.db.tx() as s:
@@ -282,7 +282,7 @@ def reactivation_request(body: SignIn, request: Request):
     responses={200: {"content": {"text/event-stream": {}}}},
 )
 def events(request: Request, c: Caller = Depends(caller_quiet)):
-    """The live stream (§15.6): what changed, never data. It ends after a few minutes and
+    """The live stream (S12.6): what changed, never data. It ends after a few minutes and
     the browser reconnects; it never extends the session."""
     srv = server(request)
     token_hash = c.session.tokenHash

@@ -1,4 +1,4 @@
-"""Portfolios (requirements §8.1): named sets of accounts, owned by a user and shared like an
+"""Portfolios (requirements S5.1): named sets of accounts, owned by a user and shared like an
 account. A viewer sees only the accounts in it that are shared with them, and every figure
 counts only those. *All my accounts* is everyone's implicit first portfolio."""
 
@@ -68,7 +68,7 @@ def member_ids(s, portfolio_id: str) -> list[str]:
 
 
 def all_mine(s, user_id: str) -> list[Account]:
-    """My own accounts, and those shared with me that I count in my totals (§13.7)."""
+    """My own accounts, and those shared with me that I count in my totals (S10.7)."""
     counted = counted_for(s, user_id)
     return [
         a for a, lvl in access.visible_accounts(s, user_id) if lvl == "owner" or a.id in counted
@@ -76,7 +76,7 @@ def all_mine(s, user_id: str) -> list[Account]:
 
 
 def seen_accounts(s, user_id: str, p: Portfolio | None) -> list[Account]:
-    """The portfolio's accounts this user can see (§8.1.1)."""
+    """The portfolio's accounts this user can see (S5.1.1)."""
     if p is None:
         return all_mine(s, user_id)
     r = access.reach(s, user_id)
@@ -283,7 +283,7 @@ def delete_portfolio(
     return Response(status_code=204)
 
 
-# ---------- performance and holdings (§8.2) ----------
+# ---------- performance and holdings (S5.2) ----------
 
 
 class SeriesPoint(Model):
@@ -349,7 +349,7 @@ def portfolio_series(
     range: str = Query("1Y", pattern="^(1M|3M|YTD|1Y|5Y|All)$"),
 ):
     """Value over time with contributions apart from growth, against the benchmark, and the
-    period's time- and money-weighted returns (§8.2.1, §8.2.3)."""
+    period's time- and money-weighted returns (S5.2.1, S5.2.3)."""
     today = figures.today()
     with server(request).db.read() as s:
         _, accounts, bench = _target(s, c, portfolio_id)
@@ -380,7 +380,7 @@ def portfolio_series(
 
 @router.get("/portfolios/{portfolio_id}/returns", response_model=list[ReturnRow])
 def portfolio_returns(portfolio_id: str, request: Request, c: Caller = Depends(caller)):
-    """Time-weighted returns per period, per account and for the portfolio (§8.2.3)."""
+    """Time-weighted returns per period, per account and for the portfolio (S5.2.3)."""
     today = figures.today()
     with server(request).db.read() as s:
         p, accounts, _ = _target(s, c, portfolio_id)

@@ -1,6 +1,6 @@
-"""Importing files into an account (requirements §4.3.1–§4.3.2): OFX/QFX, and CSV with a
+"""Importing files into an account (requirements S1.3.1–S1.3.2): OFX/QFX, and CSV with a
 column mapping saved per institution. An import is long work: it answers 202 with a job, and
-the live stream announces its end (§16.8.7)."""
+the live stream announces its end (S13.8.7)."""
 
 import datetime as dt
 import hashlib
@@ -216,7 +216,7 @@ async def upload(
         raise Problem(413, "too-large", f"Files are up to {limit // (1024 * 1024)} MB.")
     if not data:
         raise refuse("file", "file-empty", "The file is empty.")
-    # The type is checked from the content, never the name (§16.7.6).
+    # The type is checked from the content, never the name (S13.7.6).
     if not (ofx.looks_like_ofx(data) or csvfile.looks_like_csv(data)):
         raise Problem(415, "unsupported-type", "Import OFX, QFX or CSV files.")
     job = srv.jobs.create("import", c.id)

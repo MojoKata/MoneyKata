@@ -1,5 +1,5 @@
 """Verified copies of the encrypted database: before a migration and for backups
-(requirements §17.1.3, §17.6). SQLCipher's own export writes a copy under the same key."""
+(requirements S14.1.3, S14.6). SQLCipher's own export writes a copy under the same key."""
 
 import os
 from pathlib import Path

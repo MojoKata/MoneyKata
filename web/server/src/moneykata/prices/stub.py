@@ -1,4 +1,4 @@
-"""The dev stub (requirements §20.7): deterministic random walks for every class, so dev mode
+"""The dev stub (requirements S17.7): deterministic random walks for every class, so dev mode
 never calls a real provider. Available only in dev mode."""
 
 import datetime as dt

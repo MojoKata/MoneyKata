@@ -1,4 +1,4 @@
-"""Dev mode's shares and portfolios (requirements §20.7), so every sharing mark shows."""
+"""Dev mode's shares and portfolios (requirements S17.7), so every sharing mark shows."""
 
 from sqlalchemy import func, select
 

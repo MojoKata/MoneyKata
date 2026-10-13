@@ -1,4 +1,4 @@
-"""Reconciliation (requirements §4.11): quiet, automatic checks for an account kept from files.
+"""Reconciliation (requirements S1.11): quiet, automatic checks for an account kept from files.
 
 Coverage shows the periods the imports cover and flags gaps and overlaps; each balance the
 institution reported is compared with MoneyKata's balance that day; a mismatch shows what is
@@ -80,7 +80,7 @@ class Check:
 
 
 def duplicates(transactions: list) -> list[list[str]]:
-    """Identical rows on one day, not yet answered *both real* (§4.11.5)."""
+    """Identical rows on one day, not yet answered *both real* (S1.11.5)."""
     groups: dict[tuple, list] = {}
     for t in transactions:
         if t.duplicateAnswer == "both-real":
@@ -91,7 +91,7 @@ def duplicates(transactions: list) -> list[list[str]]:
 
 
 def first_parting(start: balances.Opening, transactions: list) -> str | None:
-    """With a running-balance column, the first row where the balances part (§4.11.3)."""
+    """With a running-balance column, the first row where the balances part (S1.11.3)."""
     running = start.balance
     for t in sorted(transactions, key=lambda t: (t.date, t.createdAt, t.id)):
         running += t.amount
@@ -128,7 +128,7 @@ def checks(
 
 
 def needs_anchor(anchors: list, transactions: list, today: dt.date) -> bool:
-    """No reported balance for 45 days: the Reconcile tab asks for one (§4.11.2)."""
+    """No reported balance for 45 days: the Reconcile tab asks for one (S1.11.2)."""
     reported = balances.points(anchors, transactions)
     if not reported:
         return bool(transactions)

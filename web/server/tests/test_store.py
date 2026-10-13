@@ -111,7 +111,7 @@ def test_effective_views_follow_what_records_belong_to(tmp_path):
             "User",
             md,
             Column("id", Text, primary_key=True),
-            info={"softDelete": False, "exception": "§4.4"},
+            info={"softDelete": False, "exception": "S1.4"},
         )
         parent = record("Thing", "Thng")
         child = record(
@@ -234,7 +234,7 @@ def test_backup_is_verified_restorable_and_pruned(store, keyed_config, tmp_path)
     assert maintenance.prune(keyed_config, 2) == made[:1]
     assert maintenance.backups(keyed_config) == made[1:]
 
-    # The restore of §18.6.8: the key from its phrase, the data directory from a backup.
+    # The restore of S15.6.8: the key from its phrase, the data directory from a backup.
     from moneykata.config import Config
 
     restored = Config(**{**keyed_config.__dict__, "data_dir": tmp_path / "restored"})

@@ -1,4 +1,4 @@
-/* Element defaults (requirements §20.3.6). */
+/* Element defaults (requirements S17.3.6). */
 @layer base {
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }

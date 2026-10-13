@@ -1,4 +1,4 @@
-// Users and Groups, for admins (requirements §13.1): invitations, the active switch, groups and
+// Users and Groups, for admins (requirements S10.1): invitations, the active switch, groups and
 // the built-in Admins group.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';

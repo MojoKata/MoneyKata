@@ -1,6 +1,6 @@
-"""Lots and gains (requirements §5.2, §5.3): replaying an account's transactions consumes its
+"""Lots and gains (requirements S2.2, S2.3): replaying an account's transactions consumes its
 lots by the lot method in force at each sale. A holding snapshot from a broker's file stands
-in for history that is missing, marked as such (§3.2)."""
+in for history that is missing, marked as such (R3.2)."""
 
 import datetime as dt
 from dataclasses import dataclass, field
@@ -46,7 +46,7 @@ class Disposal:
 
     @property
     def longTerm(self) -> bool:
-        """Held more than a year (§6.1)."""
+        """Held more than a year (S3.1)."""
         try:
             anniversary = self.acquiredOn.replace(year=self.acquiredOn.year + 1)
         except ValueError:  # 29 February
@@ -56,7 +56,7 @@ class Disposal:
 
 @dataclass
 class Problem:
-    """Missing or doubtful data (§11.4): a sale without a lot, a snapshot that explains a gap."""
+    """Missing or doubtful data (S8.4): a sale without a lot, a snapshot that explains a gap."""
 
     kind: str
     instrumentId: str
@@ -189,7 +189,7 @@ def _consume(
     out: Replay, t, qty: Decimal, method: str, proceeds: Decimal, picks: list, realize: bool
 ) -> None:
     """Take a sale's quantity from the open lots: the picked lots for specific
-    identification, else in the method's order; average cost pools the basis (§5.3)."""
+    identification, else in the method's order; average cost pools the basis (S2.3)."""
     held = [lot for lot in out.open if lot.instrumentId == t.instrumentId and lot.quantity > 0]
     total, left = qty, qty
     plan: list[tuple[OpenLot, Decimal]] = []
@@ -247,7 +247,7 @@ def _consume(
 
 
 def _unmatched(out: Replay, t, qty: Decimal, proceeds: Decimal, realize: bool, method: str) -> None:
-    """More sold than held: a sale without a matching lot (§11.4)."""
+    """More sold than held: a sale without a matching lot (S8.4)."""
     out.problems.append(Problem("sale-without-lot", t.instrumentId, t.date, t.id, qty))
     if realize:
         out.disposals.append(

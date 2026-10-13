@@ -1,6 +1,6 @@
-// Accounts (requirements §15.2.2): every account the user owns or holds a share of, grouped,
+// Accounts (requirements S12.2.2): every account the user owns or holds a share of, grouped,
 // each with its type, institution, balance, change, when it was last updated and its sharing
-// marks (§13.6). New account and Import start here.
+// marks (S10.6). New account and Import start here.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { useApi } from '../app/hooks.js';
@@ -33,7 +33,7 @@ const ORDER = [
   'physical-assets',
 ];
 
-/** The sharing marks on an account's row (§13.6). @param {{ a: any }} p */
+/** The sharing marks on an account's row (S10.6). @param {{ a: any }} p */
 export function ShareMarks({ a }) {
   if (a.level === 'owner') {
     return a.sharedWith

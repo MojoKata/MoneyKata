@@ -1,5 +1,5 @@
-"""Errors as application/problem+json (requirements §16.8.3), each with an id that is also in
-the log (§16.7.8). An error never carries a stack trace, SQL, a host path or a secret."""
+"""Errors as application/problem+json (requirements S13.8.3), each with an id that is also in
+the log (S13.7.8). An error never carries a stack trace, SQL, a host path or a secret."""
 
 import logging
 import secrets
@@ -51,7 +51,7 @@ class Problem(Exception):
 
 
 def refuse(field_name: str | None, code: str, message: str, status: int = 422) -> Problem:
-    """One refusal at one field: the UI shows it at that field (requirements §3.7)."""
+    """One refusal at one field: the UI shows it at that field (requirements R3.7)."""
     return Problem(status, code, message, [FieldError(field_name, code, message)])
 
 

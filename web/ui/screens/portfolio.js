@@ -1,4 +1,4 @@
-// A portfolio's page (requirements §8.2): Performance (value over time with contributions apart
+// A portfolio's page (requirements S5.2): Performance (value over time with contributions apart
 // from growth, against its benchmark; time- and money-weighted returns) and Holdings.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';

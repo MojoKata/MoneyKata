@@ -1,5 +1,5 @@
-"""Opening the database at start, backups (requirements §17.6) and the maintenance shell
-(§17.7)."""
+"""Opening the database at start, backups (requirements S14.6) and the maintenance shell
+(S14.7)."""
 
 import datetime as dt
 import hashlib
@@ -57,7 +57,7 @@ def open_store(config: Config, migrate_copies: bool = True) -> Store:
 
 
 def reencrypt(config: Config, store: Store) -> Store:
-    """A new data key (§18.7.2): the database is re-keyed and every secret gets a fresh data
+    """A new data key (S15.7.2): the database is re-keyed and every secret gets a fresh data
     key and nonce. The master key is unchanged. The new keyring is written aside first, so an
     interrupted run is finished at the next start."""
     master_key = master.check_key_file(config.key_file, config.data_dir, config.backup_dir)
@@ -125,7 +125,7 @@ def _finish_reencrypt(config: Config, current: master.Unlocked) -> master.Unlock
 
 
 def record_key_event(config: Config, kind: str, detail: dict) -> None:
-    """A key command run on the host, recorded in Activity for admins (§18.7.4)."""
+    """A key command run on the host, recorded in Activity for admins (S15.7.4)."""
     from ..activity import record
 
     try:
@@ -220,7 +220,7 @@ def check_backup(path: Path, master_key: bytes) -> None:
 
 def shell(config: Config) -> int:
     """`moneykata db shell`: SQL against the open database, as root on the host, with the key
-    from the key file. Secrets stay encrypted even here (§18.3.4)."""
+    from the key file. Secrets stay encrypted even here (S15.3.4)."""
     unlocked = master.open_keys(config)
     try:
         conn = connect(config.db_path, unlocked.keys.sqlcipher_key)

@@ -1,6 +1,6 @@
-"""Settings (requirements §19): what admins change at run time, stored in the database. Each
+"""Settings (requirements S16): what admins change at run time, stored in the database. Each
 setting is declared once here with its section, default and check; values are JSON. There is
-no cache: a change applies to the very next read (§3.7)."""
+no cache: a change applies to the very next read (R3.7)."""
 
 import datetime as dt
 import json
@@ -119,7 +119,7 @@ def _d(key: str, section: str, default: Any, check: Callable[[Any], Any]) -> Non
     DEFINITIONS[key] = Definition(key, section, default, check)
 
 
-# General (§19.1)
+# General (S16.1)
 _d("serverName", "general", "moneykata", _text(60))
 _d("householdName", "general", "Our household", _text(60))
 _d(
@@ -129,25 +129,25 @@ _d(
     _avatar,
 )
 _d("publicUrl", "general", None, _url)
-# Sign-in and sessions (§19.3, §16.7.1)
+# Sign-in and sessions (S16.3, S13.7.1)
 _d("sessionIdleHours", "sessions", 8, _int(1, 24 * 7))
 _d("sessionAbsoluteDays", "sessions", 30, _int(1, 365))
 _d("lockoutFailures", "sessions", 10, _int(3, 100))
 _d("lockoutMinutes", "sessions", 15, _int(1, 24 * 60))
-# Sign-up (§19.4)
+# Sign-up (S16.4)
 _d("signupEnabled", "signup", False, _bool)
 _d("signupDomains", "signup", [], _domains)
-# Passwords (§19.5)
+# Passwords (S16.5)
 _d("passwordMinLength", "passwords", 12, _int(8, 128))
-# Prices (§19.6): the sources themselves are records of their own
+# Prices (S16.6): the sources themselves are records of their own
 _d("priceRefreshTime", "prices", "18:00", _time)
 _d("priceRefreshZone", "prices", "America/New_York", _zone)
-# Imports (§19.8)
+# Imports (S16.8)
 _d("importMaxMb", "imports", 25, _int(1, 200))
-# Backups (§19.12, §17.6)
+# Backups (S16.12, S14.6)
 _d("backupTime", "backups", "02:30", _time)
 _d("backupCopies", "backups", 14, _int(1, 365))
-# Key storage (§18.8.2): remind admins of the key's age; 0 is off
+# Key storage (S15.8.2): remind admins of the key's age; 0 is off
 _d("keyReminderMonths", "keys", 12, _int(0, 120))
 
 

@@ -1,4 +1,4 @@
-"""Stored secrets (requirements §17.4): sealed on their own, decrypted only when used, and
+"""Stored secrets (requirements S14.4): sealed on their own, decrypted only when used, and
 never sent to the browser. A replaced or removed secret's old ciphertext is deleted outright
 (schema.md §4.4.2)."""
 

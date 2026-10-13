@@ -1,4 +1,4 @@
-"""Who may see and change what (requirements §13.3–§13.7, §16.8.10).
+"""Who may see and change what (requirements S10.3–S10.7, S13.8.10).
 
 An item's owner holds it; anyone else holds the higher of a direct share and the shares of
 the active groups they belong to. An inactive user holds nothing, whatever is shared with

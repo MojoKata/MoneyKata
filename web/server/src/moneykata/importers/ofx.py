@@ -1,4 +1,4 @@
-"""OFX and QFX files (requirements §4.3.2), read with ofxtools: bank, card and investment
+"""OFX and QFX files (requirements S1.3.2), read with ofxtools: bank, card and investment
 statements, with brokers' trades, positions and securities."""
 
 import datetime as dt
@@ -50,7 +50,7 @@ def looks_like_ofx(head: bytes) -> bool:
 
 def _raw_dates(root) -> dict[str, dt.date]:
     """Calendar dates as the institution wrote them, by FITID: ofxtools converts to UTC,
-    which could move a late-evening posting to the next day (§17.9.3)."""
+    which could move a late-evening posting to the next day (S14.9.3)."""
     out: dict[str, dt.date] = {}
     for el in root.iter():
         if el.tag not in ("STMTTRN", "INVTRAN"):
@@ -171,7 +171,7 @@ def _inv_rows(t, dates: dict) -> list[Row]:
         return []
     if row.kind != "reinvest":
         return [row]
-    # A reinvestment is a dividend plus a buy (§5.5).
+    # A reinvestment is a dividend plus a buy (S2.5).
     income = Row(
         date=row.date,
         kind="dividend",

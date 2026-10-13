@@ -1,5 +1,5 @@
 """The server's idea of now. Code asks here instead of the datetime module, so the generated
-mockup (requirements §15.9) can be built on a fixed day and come out the same every time."""
+mockup (requirements S12.9) can be built on a fixed day and come out the same every time."""
 
 import datetime as dt
 
@@ -11,7 +11,7 @@ def now() -> dt.datetime:
 
 
 def today() -> dt.date:
-    """Today in UTC; a user's today follows their zone (§17.9.5) where it matters."""
+    """Today in UTC; a user's today follows their zone (S14.9.5) where it matters."""
     return now().date()
 
 

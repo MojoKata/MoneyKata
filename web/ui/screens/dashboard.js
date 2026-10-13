@@ -1,4 +1,4 @@
-// The Dashboard (requirements §15.2.1): net worth and its change, the net-worth chart with its
+// The Dashboard (requirements S12.2.1): net worth and its change, the net-worth chart with its
 // composition by account group, the accounts by group, and what needs attention.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';

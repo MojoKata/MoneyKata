@@ -1,0 +1,102 @@
+# S8. Taxes
+
+The Taxes screen gathers, for one **tax book** (one user or married couple, one tax year,
+S8.14), what a preparer or tax software needs. It
+produces worksheets and exports. It never files, and says so (R1.16).
+
+1. **Realized gains and losses**: every sale and closed option in taxable accounts, as **Form
+   8949** rows (description, acquired, sold, proceeds, cost basis, adjustment code and
+   amount, gain or loss), split into short- and long-term and by the box (A/B/C, D/E/F) that
+   the broker's basis reporting determines, with **Schedule D** totals.
+2. **Exports**: Form 8949 CSV, **TXF** (which TurboTax and others import), and a PDF summary
+   for a preparer. Each export says what it covers and what it does not.
+3. **Wash sales** found (S3.8), with the disallowed amounts and the replacement lots, and
+   the flags left for review.
+4. **Missing or doubtful data**: lots without a basis, sales without a matching lot, options
+   with an unresolved expiry, transfers between users' accounts (a gift's carry-over basis),
+   and crypto without a known acquisition.
+5. **Income**: interest (1099-INT), dividends ordinary, qualified and capital-gain
+   distributions (1099-DIV), foreign tax paid, and crypto income (staking, rewards) at fair
+   value when received.
+6. **Retirement**: contributions per account against the year's limits (with catch-up by
+   age), Roth eligibility by MAGI as the user enters it, backdoor-Roth steps (non-deductible
+   contribution, conversion, Form 8606 figures), distributions, and RMDs due.
+7. **Deductions and credits**: totals of tax-tagged categories (S7.2) with their
+   transactions and **receipts**. Charitable gifts above the substantiation threshold show
+   whether a receipt is attached. Medical, childcare, education, HSA, and estimated tax
+   payments by quarter.
+8. **Documents checklist**: the 1099s, W-2s and statements expected for the year from the
+   accounts held, each marked received (attach the PDF, S9) or missing (S8.16). A received 1099-B can
+   be **reconciled** against MoneyKata's own totals, with the differences listed.
+9. **Charitable giving** (S7.9): deductible donations by organisation and type (cash,
+   goods, appreciated securities, DAF contributions; QCDs apart, since they are not
+   deducted), each with its acknowledgement: a written acknowledgement is flagged as
+   missing for any single gift of $250 or more, goods over $500 in a year note Form 8283,
+   and an item over $5,000 notes that it needs an appraisal. Grants from a DAF and gifts to
+   non-deductible organisations are listed apart, as not deductible.
+10. **Education (529)** (S1.8): contributions per beneficiary and per contributor (with what
+    the owner noted about the state deduction), distributions from Form 1099-Q against the
+    qualified expenses and their receipts, and the part not covered, whose earnings may be
+    taxable with a 10% additional tax. MoneyKata shows the figures. The preparer applies the
+    rules, and the coordination with education credits.
+11. **Gifts** (S7.8.6): each person who received more than the annual exclusion in the
+    year, from cash gifts and 529 contributions, with the five-year 529 elections still
+    running, as a prompt to file **Form 709**.
+12. **Loans** (S1.9.6): mortgage interest, points, PMI and property tax paid through escrow
+    (Form 1098) per property, and student-loan interest (Form 1098-E).
+13. **Physical assets** (S1.10.5): sales of items, with collectables (metals included) marked
+    on Form 8949 for the collectables rate, and losses on personal-use property shown as not
+    deductible. A sold primary residence shows its gain and the years owned and lived in;
+    the exclusion is the preparer's to apply.
+14. **Tax books.** A tax book is the tax record of one **tax year** for one user, or for a
+    married couple filing jointly. Each household member who files has their own, and a
+    couple filing separately has two.
+    1. **Filers**: one user, or two who are married. Creating a tax book names the year and
+       the filers. A user named as a filer by someone else accepts before the tax book counts
+       their accounts.
+    2. **Accounts counted**: the filers' own accounts, each counted once even when the filers
+       share it with each other. The owner can add an account they can see (a custodial
+       account in a child's name) or leave one out, and the panels say what was left out.
+    3. **Helping**: the filers hold the tax book as its owners. Anyone else sees it only
+       through a share to users and groups, never to a linked server (S10.3). A user who helps
+       prepare the return, such as a grown child or a preparer with an account here, gets
+       **write**: they can edit filings, attach documents and resolve issues, but not delete
+       the tax book or change its sharing.
+    4. **New tax book** copies the filers and accounts from the year before, and turns last
+       year's received documents into this year's expected ones (S8.16).
+15. **Filings**: one per return: federal (Form 1040), a state's or a locality's. An
+    **amended return** is a filing of its own that names the one it amends. Each filing has:
+    1. the jurisdiction, the form, and the **filing status** as typed (MoneyKata never
+       chooses it);
+    2. who prepared it, and how it was sent (e-file or paper);
+    3. its **progress** (not started, in progress, filed, accepted or rejected), the due date
+       (federal from Settings › Tax tables, others typed), an **extension** (date filed, new
+       due date), the date filed, and the confirmation or submission number;
+    4. the **result**: the refund or the amount owed, matched to the transaction that paid or
+       received it, and any overpayment applied to the next year;
+    5. the **estimated payments** for its jurisdiction, by quarter, matched to transactions
+       (S8.7);
+    6. its **documents** (S8.16.2): the forms as filed, and what the tax authority sent.
+
+    A filing past its due date that is not filed and has no extension shows in the
+    Dashboard's *Needs attention*.
+16. **Tax documents**: each has its form, who issued it, the account it is for, notes, and
+    its file, which is kept as a receipt (S9) with the same storage and protection.
+    1. **Received**, kept in the tax book: W-2s, 1099s, 1098s, 1095s, K-1s, 5498s and
+       property-tax bills. They make up the checklist of S8.8, expected from the accounts
+       held and last year's documents, each received or missing.
+    2. **Filed**, kept in a filing: the return as filed with its schedules, the e-file
+       acknowledgement, an extension, the preparer's copy and worksheets, and what the tax
+       authority sends, such as notices, letters, the reply and transcripts. MoneyKata
+       doesn't produce these. It keeps them because next year's preparation often needs
+       them.
+17. **Carried forward**: on each filing, the figures next year needs, typed from the filed
+    return: adjusted gross income (needed to sign next year's e-filed return), total tax, the
+    refund or amount owed, the overpayment applied, capital-loss carryovers (short and long
+    term), the Form 8606 basis, and charitable-contribution carryovers. The next tax book
+    shows them under **From last year**. It also puts the capital-loss carryover in its
+    Summary and the 8606 basis in the backdoor-Roth figures (S8.6), and shows last year's
+    total tax beside the estimated payments.
+18. **What MoneyKata does not do**: compute the tax owed, choose a filing status, apply state
+    rules, or decide questions of judgement (substantially identical, cost-basis elections).
+    It shows the numbers and their sources.

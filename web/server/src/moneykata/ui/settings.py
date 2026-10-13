@@ -1,4 +1,4 @@
-"""Settings, for admins (requirements §19). Each section of the screen reads and writes its
+"""Settings, for admins (requirements S16). Each section of the screen reads and writes its
 own keys; secrets and the sources come with their sections' routes."""
 
 import datetime as dt
@@ -44,7 +44,7 @@ def get_settings(request: Request, c: Caller = Depends(admin)):
 
 @router.patch("/settings", response_model=SettingsView)
 def change_settings(body: dict[str, Any], request: Request, c: Caller = Depends(admin)):
-    """Every key is checked before any is saved; a refusal names each field (§3.7)."""
+    """Every key is checked before any is saved; a refusal names each field (R3.7)."""
     errors: list[FieldError] = []
     clean = {}
     for key, value in body.items():
@@ -70,7 +70,7 @@ def change_settings(body: dict[str, Any], request: Request, c: Caller = Depends(
         return view(s)
 
 
-# ---------- Key storage (§19.13, §18) ----------
+# ---------- Key storage (S16.13, S15) ----------
 
 
 class PreviousKeyOut(Model):
@@ -122,7 +122,7 @@ def _database_bytes(s) -> int:
 
 @router.get("/settings/keys", response_model=KeyStorage)
 def key_storage(request: Request, c: Caller = Depends(admin)):
-    """Read only: the master key is changed only on the host (§18.4.6)."""
+    """Read only: the master key is changed only on the host (S15.4.6)."""
     from sqlalchemy import func
 
     from ..keys import master
@@ -221,7 +221,7 @@ def key_test(request: Request, c: Caller = Depends(admin)):
 
 @router.post("/settings/keys/reencrypt", status_code=202)
 def key_reencrypt(request: Request, c: Caller = Depends(admin)):
-    """Re-encrypt (§18.7.2): a new data key for the database and every secret."""
+    """Re-encrypt (S15.7.2): a new data key for the database and every secret."""
     srv = server(request)
     with srv.db.tx() as s:
         activity.record(s, "keys.reencrypt-started", actor=c.id, for_admins=True)
@@ -229,7 +229,7 @@ def key_reencrypt(request: Request, c: Caller = Depends(admin)):
     return Response(status_code=202)
 
 
-# ---------- Backups (§19.12, §17.6) ----------
+# ---------- Backups (S16.12, S14.6) ----------
 
 
 class BackupOut(Model):

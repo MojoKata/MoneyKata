@@ -1,4 +1,4 @@
-"""Performance (requirements §8.2.1, §8.2.3): contributions apart from growth, time-weighted
+"""Performance (requirements S5.2.1, S5.2.3): contributions apart from growth, time-weighted
 and money-weighted (IRR) returns, and a benchmark that is given the same money at the same
 times. Everything is Decimal; a return is a fraction (0.0512 is 5.12%).
 """

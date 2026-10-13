@@ -1,4 +1,4 @@
-"""The Share dialog and a receiver's Count in my totals (requirements §13.4–§13.7)."""
+"""The Share dialog and a receiver's Count in my totals (requirements S10.4–S10.7)."""
 
 from typing import Literal
 
@@ -151,7 +151,7 @@ def get_shares(kind: Kind, item_id: str, request: Request, c: Caller = Depends(c
 def save_shares(
     kind: Kind, item_id: str, body: ShareSave, request: Request, c: Caller = Depends(caller)
 ):
-    """Save: the dialog's grants replace the item's (§13.4)."""
+    """Save: the dialog's grants replace the item's (S10.4)."""
     srv = server(request)
     with srv.db.tx() as s:
         _owner_only(s, c, kind, item_id)
@@ -167,7 +167,7 @@ def save_shares(
 
 @router.put("/accounts/{account_id}/counted", status_code=204)
 def set_counted(account_id: str, body: Counted, request: Request, c: Caller = Depends(caller)):
-    """A receiver's Count in my totals (§13.7); off by default."""
+    """A receiver's Count in my totals (S10.7); off by default."""
     with server(request).db.tx() as s:
         a, level = access.account(s, c.id, account_id)
         if level == "owner":

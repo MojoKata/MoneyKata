@@ -1,4 +1,4 @@
-// The browser's side of /ui/api (requirements §16.8): JSON in and out, problem+json errors with
+// The browser's side of /ui/api (requirements S13.8): JSON in and out, problem+json errors with
 // each refusal at its field, If-Match versions, and Idempotency-Key on creates.
 
 /** A refusal from the server, with the field each part of it belongs to. */

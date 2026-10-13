@@ -1,4 +1,4 @@
-// Profile (requirements §15.2.16): name, email, avatar, password, time zone, theme, birth year,
+// Profile (requirements S12.2.16): name, email, avatar, password, time zone, theme, birth year,
 // spouse for wash sales and alert emails.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';

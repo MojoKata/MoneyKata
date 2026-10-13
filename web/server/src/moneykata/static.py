@@ -1,4 +1,4 @@
-"""The browser app's files (requirements §20.3) and the public demo.
+"""The browser app's files (requirements S17.3) and the public demo.
 
 The app is served under /ui/v/<version>/ with a one-year cache; its page, index.html, is
 templated with the version and a fresh nonce for the import map, and never cached. Any other

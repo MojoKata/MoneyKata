@@ -33,7 +33,7 @@ def dev_config(
     listen: str = "127.0.0.1",
     hostnames: tuple[str, ...] = (),
 ) -> Config:
-    """Dev mode (requirements §20.7): the whole server from a checkout, as the current user."""
+    """Dev mode (requirements S17.7): the whole server from a checkout, as the current user."""
     base = base or paths.WEB / (".dev-peer" if peer else ".dev")
     return Config(
         name="dev-peer" if peer else "dev",

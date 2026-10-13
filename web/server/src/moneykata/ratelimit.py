@@ -1,4 +1,4 @@
-"""Rate limits (requirements §16.7.5), answered with 429 and Retry-After. Counters live in
+"""Rate limits (requirements S13.7.5), answered with 429 and Retry-After. Counters live in
 memory: they are work state, not records (schema.md §4.4), and a restart clears them."""
 
 import math
@@ -64,7 +64,7 @@ def too_many(wait: float, what: str) -> Problem:
 
 class SignInGuard:
     """Ten failures in 15 minutes lock that username for 15 minutes and slow that address
-    (§16.7.5.1, §13.1). Lockout length and threshold come from Settings."""
+    (S13.7.5.1, S10.1). Lockout length and threshold come from Settings."""
 
     def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
         self._clock = clock

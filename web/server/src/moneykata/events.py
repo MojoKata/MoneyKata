@@ -1,4 +1,4 @@
-"""The live stream (requirements §15.6): one Server-Sent Events stream per open page. It
+"""The live stream (requirements S12.6): one Server-Sent Events stream per open page. It
 carries what changed (a kind and a fingerprint or count), never data: the screen reloads
 through its usual routes, which apply the caller's shares.
 
@@ -103,7 +103,7 @@ class Broker:
         self.publish("session", {"state": reason}, users=[user_id])
 
     async def close_all(self) -> None:
-        """On stopping: every stream ends, so requests in flight can finish (§16.6)."""
+        """On stopping: every stream ends, so requests in flight can finish (S13.6)."""
         self.stopping = True
         with self._lock:
             subs = list(self._subs)

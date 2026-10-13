@@ -1,4 +1,4 @@
-"""Users and groups (requirements §13.1): the default admin, invitations, password reset and
+"""Users and groups (requirements S10.1): the default admin, invitations, password reset and
 change, email changes, the active flag, and groups with the built-in Admins group.
 
 Every function works inside the caller's unit of work and records what Activity shows.
@@ -21,7 +21,7 @@ from . import passwords, sessions
 from .tokens import digest, new_token
 
 DEFAULT_ADMIN = "admin"
-# Published: it reaches only the setup step (§13.1.2).
+# Published: it reaches only the setup step (S10.1.2).
 DEFAULT_PASSWORD = "moneykata-setup"  # noqa: S105
 INVITATION_DAYS = 7
 RESET_HOURS = 1
@@ -121,7 +121,7 @@ def invited(s: Db, user_id: str) -> bool:
     )
 
 
-# ---------- the default admin (§13.1.2) ----------
+# ---------- the default admin (S10.1.2) ----------
 
 
 def ensure_default_admin(s: Db) -> bool:
@@ -225,7 +225,7 @@ def _raise(errors: list[FieldError]) -> None:
         raise Problem(422, errors[0].code, errors[0].message, errors)
 
 
-# ---------- invitations (§13.1.3) ----------
+# ---------- invitations (S10.1.3) ----------
 
 
 @dataclass
@@ -368,7 +368,7 @@ def accept_invitation(s: Db, token: str, password: str) -> User:
     return user
 
 
-# ---------- passwords (§13.1.5) ----------
+# ---------- passwords (S10.1.5) ----------
 
 
 def request_reset(s: Db, svc: Services, login: str) -> None:
@@ -449,7 +449,7 @@ def _set_password(s: Db, svc: Services, user: User, password: str, kind: str) ->
         )
 
 
-# ---------- email changes (§13.1.5) ----------
+# ---------- email changes (S10.1.5) ----------
 
 
 def request_email_change(s: Db, svc: Services, user: User, email: str) -> None:
@@ -493,7 +493,7 @@ def confirm_email_change(s: Db, token: str) -> User:
     return user
 
 
-# ---------- the active flag (§13.1.7) ----------
+# ---------- the active flag (S10.1.7) ----------
 
 
 def _last_admin_guard(s: Db, user_id: str) -> None:
@@ -552,7 +552,7 @@ def set_active(s: Db, svc: Services, by: User, user: User, active: bool) -> list
 
 
 def ask_reactivation(s: Db, login: str, password: str) -> None:
-    """From the *account is disabled* screen, once a week (§13.1.7)."""
+    """From the *account is disabled* screen, once a week (S10.1.7)."""
     user = by_login(s, login)
     if user is None or not passwords.verify(user.passwordHash, password):
         raise Problem(401, "bad-credentials", "The username or password is not right.")
@@ -614,7 +614,7 @@ def update_user(
     return fields
 
 
-# ---------- groups (§13.1.8) ----------
+# ---------- groups (S10.1.8) ----------
 
 
 def members(s: Db, group_id: str) -> list[str]:

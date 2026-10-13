@@ -1,4 +1,4 @@
-"""The generated contract (requirements §3.9, §20.5): the OpenAPI document comes from the
+"""The generated contract (requirements R3.9, S17.5): the OpenAPI document comes from the
 routes, and the browser app's JSDoc types come from it. `web/check` fails when either file is
 out of date.
 
@@ -35,7 +35,7 @@ def openapi_document() -> dict:
         title="MoneyKata",
         version=app.version,
         routes=app.routes,
-        description="The browser app's API, /ui/api (requirements §16.8). It is "
+        description="The browser app's API, /ui/api (requirements S13.8). It is "
         "served with the app and carries no version of its own.",
     )
     # The release is stated by the document but would make every version bump a contract

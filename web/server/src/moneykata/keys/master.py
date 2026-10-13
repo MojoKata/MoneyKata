@@ -1,4 +1,4 @@
-"""The three levels of keys (requirements §18.3).
+"""The three levels of keys (requirements S15.3).
 
 The **master key** (128 bits) sits in one file on the host and wraps one thing: the **data
 key** (256 bits), kept wrapped in the data directory's `keyring`, so it travels with every
@@ -36,7 +36,7 @@ def hkdf(key: bytes, label: str, length: int = 32) -> bytes:
 
 
 def key_id(master: bytes) -> str:
-    """The first 16 hex digits of SHA-256("moneykata key id" ‖ key) (§18.3.5)."""
+    """The first 16 hex digits of SHA-256("moneykata key id" ‖ key) (S15.3.5)."""
     return hashlib.sha256(b"moneykata key id" + master).hexdigest()[:16]
 
 
@@ -62,7 +62,7 @@ def now() -> dt.datetime:
 
 
 def check_key_file(path: Path, data_dir: Path, backup_dir: Path) -> bytes:
-    """Read the master key, refusing every condition of §18.4.4."""
+    """Read the master key, refusing every condition of S15.4.4."""
     try:
         st = os.lstat(path)
     except FileNotFoundError:
@@ -209,7 +209,7 @@ def read_keyring(path: Path) -> Keyring:
 
 @dataclass(frozen=True)
 class DataKeys:
-    """The keys derived from the data key (§18.3.2), held for the server's lifetime."""
+    """The keys derived from the data key (S15.3.2), held for the server's lifetime."""
 
     database: bytes
     receipts: X25519PrivateKey

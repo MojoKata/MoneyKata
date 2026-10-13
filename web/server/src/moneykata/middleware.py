@@ -1,4 +1,4 @@
-"""What every request passes through (requirements §16.7): the client's real address, the
+"""What every request passes through (requirements S13.7): the client's real address, the
 response headers, the Origin check on changes, and the size of request bodies.
 
 Plain ASGI middleware, so streaming responses (the live stream, receipt files) pass straight
@@ -66,7 +66,7 @@ def _send_problem(status: int, code: str, detail: str, headers=()):
 
 class ClientAddress:
     """In proxy mode, believe X-Forwarded-For and -Proto only from the configured proxies; in
-    tls mode, ignore them (§16.3)."""
+    tls mode, ignore them (S13.3)."""
 
     def __init__(self, app, mode: str, trusted: tuple):
         self.app = app
@@ -106,7 +106,7 @@ class ClientAddress:
 
 
 class SecurityHeaders:
-    """The headers of §16.7.7 on every response. A route that needs another CSP (the app's
+    """The headers of S13.7.7 on every response. A route that needs another CSP (the app's
     page with its nonce, the demo, a receipt file) sets its own, which is kept."""
 
     def __init__(self, app, tls: bool):
@@ -134,7 +134,7 @@ class SecurityHeaders:
 
 
 class OriginCheck:
-    """A request that changes something must come from the app's own origin (§16.7.4)."""
+    """A request that changes something must come from the app's own origin (S13.7.4)."""
 
     def __init__(self, app, prefixes=("/ui/",)):
         self.app = app
@@ -159,7 +159,7 @@ class OriginCheck:
 
 
 class BodyLimit:
-    """JSON bodies up to 1 MB; uploads (multipart) up to the size Settings allow (§16.7.6)."""
+    """JSON bodies up to 1 MB; uploads (multipart) up to the size Settings allow (S13.7.6)."""
 
     def __init__(self, app, upload_limit: Callable[[], int]):
         self.app = app
@@ -210,7 +210,7 @@ class _TooLarge(Exception):
 
 class AccessLog:
     """One line per request: method, path, status, time. Never a query string, body or
-    cookie, which could carry names or amounts (§16.7.9)."""
+    cookie, which could carry names or amounts (S13.7.9)."""
 
     def __init__(self, app):
         self.app = app
@@ -244,7 +244,7 @@ class AccessLog:
 
 class SessionCookie:
     """Writes the session cookie a route or dependency asked for (request.state.set_cookie):
-    HttpOnly, Secure, SameSite=Strict, Path=/ui (§16.7.1). An empty value clears it."""
+    HttpOnly, Secure, SameSite=Strict, Path=/ui (S13.7.1). An empty value clears it."""
 
     def __init__(self, app, max_age: Callable[[], int]):
         self.app = app

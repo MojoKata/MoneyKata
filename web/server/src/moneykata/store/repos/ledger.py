@@ -1,5 +1,5 @@
 """Loading an account's ledger, the shipped categories, instruments, and applying an import
-(requirements §4.3, §4.7, §5)."""
+(requirements S1.3, S1.7, S2)."""
 
 import datetime as dt
 from dataclasses import dataclass, field
@@ -152,7 +152,7 @@ def instrument(
     return inst
 
 
-# ---------- transfers (§4.7) ----------
+# ---------- transfers (S1.7) ----------
 
 
 def match_transfer(s: Session, txn: Transaction, owner_id: str) -> Transaction | None:
@@ -189,7 +189,7 @@ def unlink_transfer(s: Session, txn: Transaction) -> None:
         txn.transferId = None
 
 
-# ---------- imports (§4.3.2) ----------
+# ---------- imports (S1.3.2) ----------
 
 
 @dataclass
@@ -209,7 +209,7 @@ def apply_import(
 ) -> Applied:
     """Add what is new: rows are matched by the file's transaction id (an OFX FITID), or by
     date, amount and payee. A re-imported file adds nothing; an amount that changed between
-    imports is updated and kept for the reconciliation's suspects (§4.11.3)."""
+    imports is updated and kept for the reconciliation's suspects (S1.11.3)."""
     imp = Import(
         id=ids.new_id("Imprt"),
         accountId=account.id,

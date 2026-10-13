@@ -1,4 +1,4 @@
-// The frame (requirements §15.1, §15.2): drawn once around every signed-in screen from one list
+// The frame (requirements S12.1, S12.2): drawn once around every signed-in screen from one list
 // of navigation entries; no screen draws or changes it.
 import { signal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
@@ -33,7 +33,7 @@ export function useTitle(text, crumbs) {
   }, [text, JSON.stringify(crumbs || [])]);
 }
 
-/** The navigation, in its order (§15.2); only the screens this release has. */
+/** The navigation, in its order (S12.2); only the screens this release has. */
 export const NAV = [
   { href: '/ui/', label: 'Dashboard', icon: 'dashboard', match: /^\/ui\/?$/ },
   { href: '/ui/accounts', label: 'Accounts', icon: 'bank', match: /^\/ui\/accounts/ },

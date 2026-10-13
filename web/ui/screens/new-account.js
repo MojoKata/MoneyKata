@@ -1,4 +1,4 @@
-// New account (requirements §15.2.2): a type picker, then the account form.
+// New account (requirements S12.2.2): a type picker, then the account form.
 import { useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';

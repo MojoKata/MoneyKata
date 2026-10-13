@@ -1,4 +1,4 @@
-// Every account type this release has, in the New account dialog's order (requirements §4.1).
+// Every account type this release has, in the New account dialog's order (requirements S1.1).
 // One module per type holds its label, group, icon and which tabs and fields it has; its help
 // part is guides/account-<type>.md.
 import t0 from './checking.js';

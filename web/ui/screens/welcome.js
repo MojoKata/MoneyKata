@@ -1,4 +1,4 @@
-// An invitation's link (requirements §13.1.3): the invited person chooses their password.
+// An invitation's link (requirements S10.1.3): the invited person chooses their password.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';

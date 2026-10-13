@@ -1,4 +1,4 @@
-"""Who is calling (requirements §16.2, §16.7.1): the session behind the mk_session cookie."""
+"""Who is calling (requirements S13.2, S13.7.1): the session behind the mk_session cookie."""
 
 import datetime as dt
 from dataclasses import dataclass
@@ -88,7 +88,7 @@ def caller_in_setup(request: Request) -> Caller:
 
 
 def caller_quiet(request: Request) -> Caller:
-    """For the live stream: it never extends the session (§15.6)."""
+    """For the live stream: it never extends the session (S12.6)."""
     return _resolve(request, allow_setup=True, touch=False)
 
 
@@ -99,6 +99,6 @@ def admin(c: Caller = Depends(caller)) -> Caller:
 
 
 def recent_auth(c: Caller) -> None:
-    """Re-authentication (§16.7.2): the password again if last given over 10 minutes ago."""
+    """Re-authentication (S13.7.2): the password again if last given over 10 minutes ago."""
     if sessions.now() - c.session.authAt > dt.timedelta(minutes=REAUTH_MINUTES):
         raise Problem(403, "reauth-required", "Enter your password again to do this.")

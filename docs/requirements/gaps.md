@@ -1,0 +1,47 @@
+# Gaps
+
+Areas the requirements name but don't yet specify. Each has a lasting id: a gap that is
+closed is removed, its text goes into the section it belongs to, and its id is never used
+again. A new gap takes the next number. The [README](README.md#gaps) lists them.
+
+## G1: Link protocol and version skew
+
+**What is missing:** `docs/link-protocol.md`: the messages, their signing, and what two linked servers on different MoneyKata versions do.
+
+**Touches:** S11.
+
+## G2: Web security in one place
+
+**What is missing:** the policies of S13.7 are proposed and await review.
+
+**Touches:** S13, S14.
+
+## G5: Data sunset
+
+**What is missing:** how data older than the seven-year audit period is retired: what goes, what is summarised, who decides, and how it is confirmed (S14.10).
+
+**Touches:** S14, `schema.md` §4.
+
+## G6: Operations
+
+**What is missing:** `docs/operations.md`: upgrades and migrations in the Docker image, health checks, logs, monitoring, restore drills.
+
+**Touches:** S13, S15, S17.8.
+
+## G7: API conventions and reference
+
+**What is missing:** the conventions of S13.8 are proposed and await review; `docs/api.md` grows with the code, beside the generated OpenAPI, and documents the MCP tools.
+
+**Touches:** S10.9, S13, S17.5.
+
+## G8: Statement import
+
+**What is missing:** how statement layouts are found in PDFs and photos, what is kept per institution, multi-page and multi-account statements, and card and brokerage statements.
+
+**Touches:** S1.3.
+
+## G9: Bitcoin node integration
+
+**What is missing:** the details of each node kind (Esplora, Electrum server, Bitcoin Core watch-only descriptors), xpub gap limits, and testing a node.
+
+**Touches:** S1.6.
