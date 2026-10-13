@@ -23,7 +23,7 @@ class PrefixRow:
 
 
 def prefix_rows(text: str | None = None) -> list[PrefixRow]:
-    """The rows of R3's two tables: prefixes in use, then reserved ones."""
+    """The rows of schema.md §3's two tables: prefixes in use, then reserved ones."""
     text = text if text is not None else SCHEMA_MD.read_text()
     section = text.split("## 3. Prefixes", 1)[1].split("\n## ", 1)[0]
     rows, reserved = [], False
@@ -104,7 +104,7 @@ def _has_id_check(t: Table, prefix: str | None) -> bool:
 def _check_soft_delete(t: Table) -> list[str]:
     if t.info.get("softDelete") is False:
         reason = t.info.get("exception", "")
-        return [] if "S1.4" in reason else [f"{t.name}: an exception must cite schema.md §4.4"]
+        return [] if "§4.4" in reason else [f"{t.name}: an exception must cite schema.md §4.4"]
     if t.info.get("softDelete") is not True:
         return [f"{t.name}: say whether it soft-deletes"]
     out = []

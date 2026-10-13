@@ -111,7 +111,7 @@ def test_effective_views_follow_what_records_belong_to(tmp_path):
             "User",
             md,
             Column("id", Text, primary_key=True),
-            info={"softDelete": False, "exception": "S1.4"},
+            info={"softDelete": False, "exception": "§4.4"},
         )
         parent = record("Thing", "Thng")
         child = record(

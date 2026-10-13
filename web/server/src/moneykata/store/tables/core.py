@@ -14,7 +14,7 @@ Setting = keyed(
 
 Secret = exception(
     "Secret",
-    "a secret's old ciphertext is removed when it is replaced or removed (S1.4.2)",
+    "a secret's old ciphertext is removed when it is replaced or removed (§4.4.2)",
     Column("recordType", Text, nullable=False),
     Column("recordId", Text, nullable=False),
     Column("field", Text, nullable=False),
@@ -29,7 +29,7 @@ Secret = exception(
 
 TaskRun = exception(
     "TaskRun",
-    "work state: a background task's last run (S1.4.4)",
+    "work state: a background task's last run (§4.4.4)",
     Column("name", Text, primary_key=True),
     Column("startedAt", UtcTimestamp, nullable=False),
     Column("finishedAt", UtcTimestamp),

@@ -1,4 +1,4 @@
-"""The columns and constraints every table carries (docs/schema.md §2, S1).
+"""The columns and constraints every table carries (docs/schema.md §2, §4).
 
 A record table has a prefixed id with its CHECK, is WITHOUT ROWID, and carries the
 soft-delete fields with their CHECK, plus `version`, `createdAt` and `updatedAt` for the API's
@@ -42,7 +42,7 @@ def soft_delete(table: str) -> list:
 
 
 def record(name: str, prefix: str, *columns, **kw) -> Table:
-    """A table of records with a prefixed id (schema.md §2) and soft deletes (S1)."""
+    """A table of records with a prefixed id (schema.md §2) and soft deletes (§4)."""
     length = len(prefix) + 1 + 26
     return Table(
         name,

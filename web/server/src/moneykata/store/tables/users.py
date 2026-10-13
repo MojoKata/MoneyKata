@@ -61,7 +61,7 @@ UserGroups = pairs(
 
 Session = exception(
     "Session",
-    "sessions are removed when they end or expire (S1.4.1)",
+    "sessions are removed when they end or expire (§4.4.1)",
     Column("tokenHash", Text, primary_key=True),
     Column("userId", Text, ForeignKey("User.id"), nullable=False),
     Column("createdAt", UtcTimestamp, nullable=False),
@@ -76,7 +76,7 @@ Session = exception(
 
 OneTimeToken = exception(
     "OneTimeToken",
-    "one-time tokens are removed when used or expired (S1.4.1)",
+    "one-time tokens are removed when used or expired (§4.4.1)",
     Column("tokenHash", Text, primary_key=True),
     Column("purpose", Text, nullable=False),
     Column("userId", Text, ForeignKey("User.id"), nullable=False),

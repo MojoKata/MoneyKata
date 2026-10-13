@@ -8,7 +8,7 @@ from ._base import exception
 
 Activity = exception(
     "Activity",
-    "never deleted at all: kept as it was written (S1.4)",
+    "never deleted at all: kept as it was written (§4.4)",
     Column("at", UtcTimestamp, nullable=False),
     Column("actorId", Text, ForeignKey("User.id")),
     Column("via", Text),
