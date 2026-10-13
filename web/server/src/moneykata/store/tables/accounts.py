@@ -124,6 +124,17 @@ ImportMapping = record(
 )
 unique_live(ImportMapping, "ownerId", "institution")
 
+# What statement import has learned of one institution's layout (S1.3.3): which section
+# heading means money in or out, and descriptions that are never transactions.
+StatementLayout = record(
+    "StatementLayout",
+    "Lyout",
+    Column("ownerId", Text, ForeignKey("User.id"), nullable=False),
+    Column("institution", Text, nullable=False),
+    Column("layout", Text, nullable=False, server_default=text("'{}'")),
+)
+unique_live(StatementLayout, "ownerId", "institution")
+
 Import = record(
     "Import",
     "Imprt",
@@ -137,7 +148,7 @@ Import = record(
     Column("added", Integer, nullable=False, server_default=text("0")),
     Column("matched", Integer, nullable=False, server_default=text("0")),
     Column("changed", Integer, nullable=False, server_default=text("0")),
-    _in("format", ("ofx", "csv"), "format"),
+    _in("format", ("ofx", "csv", "statement"), "format"),
     Index("ix_Import_accountId", "accountId"),
 )
 

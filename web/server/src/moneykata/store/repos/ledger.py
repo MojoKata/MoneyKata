@@ -298,6 +298,8 @@ def apply_import(
     result.added = len(added)
     s.flush()
 
+    # A balance the file reports: an OFX file's, or a statement's opening and closing.
+    source = "statement" if parsed.format == "statement" else "ofx"
     for day, balance in parsed.balances:
         if (
             day
@@ -305,7 +307,7 @@ def apply_import(
                 select(Anchor).where(
                     Anchor.accountId == account.id,
                     Anchor.date == day,
-                    Anchor.source == "ofx",
+                    Anchor.source == source,
                     Anchor.deleted == false(),
                 )
             ).first()
@@ -316,7 +318,7 @@ def apply_import(
                     accountId=account.id,
                     date=day,
                     balance=balance,
-                    source="ofx",
+                    source=source,
                     importId=imp.id,
                 )
             )

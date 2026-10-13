@@ -34,9 +34,9 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S10.9, S13, S17.5.
 
-## G8: Statement import
+## G8: Statement import beyond bank and card statements
 
-**What is missing:** how statement layouts are found in PDFs and photos, what is kept per institution, multi-page and multi-account statements, and card and brokerage statements.
+**What is missing:** brokerage statements (a Schwab brokerage statement's positions, trades and income, which OFX and CSV cover today), statements of several accounts in one file, and learning column positions rather than section headings for layouts without sections or a running balance.
 
 **Touches:** S1.3.
 

@@ -277,20 +277,23 @@ function Plain({ section }) {
     );
   }
   return form(
-    ['importMaxMb'],
+    ['importMaxMb', 'readStatements'],
     html`
       <h3>Imports</h3>
       <p class="small dim"
         style=${{
           marginTop: '-6px',
         }}>Accounts are kept current from the files people bring: OFX, QFX and CSV
-            downloads. No bank or exchange is connected.</p>
+            downloads, and statements. No bank or exchange is connected.</p>
       <div
-        class="list-item"><span class="grow dim">File types</span>OFX, QFX, CSV <span class="small dim">· checked from the content</span></div>
+        class="list-item"><span class="grow dim">File types</span>OFX, QFX, CSV; statements as PDF, JPEG, PNG, WebP, HEIC <span class="small dim">· checked from the content</span></div>
       <${Field} label="Largest file (MB)" error=${errAt(e, 'importMaxMb')}>
         <${Input} value=${f.importMaxMb}
           onInput=${set('importMaxMb', true)} inputmode="numeric" />
         </${Field}>
+        <${SwitchRow} label="Read statements" on=${f.readStatements}
+          onChange=${(/** @type {boolean} */ x) => setF({ ...f, readStatements: x })}
+          hint="A statement's PDF, or a photo of one, read on this server by the receipt reader and checked before it is saved." />
     `,
   );
 }

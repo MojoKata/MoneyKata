@@ -28,7 +28,8 @@ def add(c, account_id, amount, day="2026-09-01", **kw):
 
 
 def wait_job(c, job):
-    for _ in range(100):
+    # A statement starts its reader's process first: allow it time on a slow host.
+    for _ in range(600):
         j = c.get(f"/ui/api/jobs/{job['id']}").json()
         if j["state"] in ("done", "failed"):
             return j
@@ -357,6 +358,6 @@ def test_uploads_are_checked_from_their_content(server):
     a = new_account(c)
     r = c.post(
         f"/ui/api/accounts/{a['id']}/imports",
-        files={"file": ("statement.ofx", b"\x89PNG\r\n\x1a\n\x00\x00binary")},
+        files={"file": ("statement.ofx", b"MZ\x90\x00\x03 a program, not a statement")},
     )
     assert r.status_code == 415

@@ -214,9 +214,12 @@ def level(s: Session, user_id: str, r: Receipt) -> str | None:
     best = None
     reach = access.reach(s, user_id)
     for ln in links(s, r.id):
-        t = s.get(Transaction, ln.itemId)
-        a = s.get(Account, t.accountId) if t else None
-        if a is None or t.deleted:
+        if ln.kind == "account":
+            a = s.get(Account, ln.itemId)
+        else:
+            t = s.get(Transaction, ln.itemId)
+            a = s.get(Account, t.accountId) if t and not t.deleted else None
+        if a is None:
             continue
         lvl = access.account_level(s, user_id, a, reach)
         best = access.higher(best, "write" if lvl in ("owner", "write") else lvl)
@@ -252,9 +255,20 @@ def visible(s: Session, user_id: str) -> list[tuple[Receipt, str]]:
             Receipt.ownerId != user_id,
         )
     ).all()
+    statements = s.scalars(
+        select(Receipt)
+        .join(ReceiptLink, ReceiptLink.receiptId == Receipt.id)
+        .where(
+            ReceiptLink.kind == "account",
+            ReceiptLink.deleted == false(),
+            ReceiptLink.itemId.in_(accounts),
+            Receipt.deleted == false(),
+            Receipt.ownerId != user_id,
+        )
+    ).all()
     out = [(r, "owner") for r in own]
     seen = {r.id for r in own}
-    for r in linked:
+    for r in [*linked, *statements]:
         if r.id not in seen:
             seen.add(r.id)
             out.append((r, level(s, user_id, r) or "read"))
@@ -279,6 +293,22 @@ def attach(s: Session, user_id: str, r: Receipt, transaction_id: str) -> Receipt
         row.linkedById = user_id
     s.flush()
     return row
+
+
+def attach_account(s: Session, user_id: str, r: Receipt, account_id: str) -> None:
+    """A statement kept as a receipt on its account (S1.3.3)."""
+    access.account(s, user_id, account_id, "write")
+    if s.get(ReceiptLink, (r.id, "account", account_id)) is None:
+        s.add(
+            ReceiptLink(
+                receiptId=r.id,
+                kind="account",
+                itemId=account_id,
+                createdAt=clock.now(),
+                linkedById=user_id,
+            )
+        )
+        s.flush()
 
 
 def detach(s: Session, user_id: str, r: Receipt, transaction_id: str) -> None:

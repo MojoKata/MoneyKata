@@ -463,3 +463,36 @@ def test_sign_up_through_the_app(page):
     guest.get_by_role("button", name="Sign in", exact=True).click()
     guest.wait_for_selector(".side")
     ctx.close()
+
+
+def test_import_a_statement_through_the_app(page):
+    """A statement's PDF, checked and saved (S1.3.3)."""
+    from test_reading import text_pdf
+
+    pdf = text_pdf(
+        [
+            "First Example Bank",
+            "Statement Period: 09/01/26 - 09/30/26",
+            "Beginning Balance $100.00",
+            "Ending Balance $57.82",
+            "Withdrawals and Other Debits",
+            "09/03 CORNER BAKERY 42.18",
+        ]
+    )
+    visit(page, "/ui/accounts")
+    page.get_by_role("button", name="Import").first.click()
+    page.wait_for_selector(".dialog")
+    page.select_option(".dialog #f-into-account", label="Emergency savings")
+    page.set_input_files(
+        ".dialog input[type=file]",
+        files=[{"name": "september.pdf", "mimeType": "application/pdf", "buffer": pdf}],
+    )
+    page.locator(".dialog").get_by_role("button", name="Import").click()
+    page.wait_for_selector("text=Check the statement", timeout=60000)
+    wait_guide(page, "dialog-statement")
+    check_guide(page, ".dialog", "the statement check")
+    assert page.inner_text(".dialog .kv").count("yes") == 1
+    page.get_by_role("button", name="Import 1 new").click()
+    page.wait_for_selector(".dialog >> text=Imported")
+    page.get_by_role("button", name="Done").click()
+    assert page.problems == []

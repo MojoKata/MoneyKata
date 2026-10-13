@@ -475,10 +475,10 @@ label.drop { display: block; cursor: pointer; }
 "GET /ui/api/receipts?show=all":{"body": [], "status": 200},
 "GET /ui/api/receipts?show=inbox":{"body": [], "status": 200},
 "GET /ui/api/session":{"body": {"dev": true, "household": {"avatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "name": "Alice & Bob"}, "serverName": "moneykata", "user": {"admin": true, "avatar": null, "displayName": "Admin", "email": "admin@griffin.home", "id": "User_01m4rdf800e00tf99mm9efehdp", "needsSetup": false, "theme": "dark", "timeZone": "auto", "username": "admin", "zone": "UTC"}, "version": "0.1.0"}, "status": 200},
-"GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb"], "keys": ["keyReminderMonths"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keyReminderMonths": 12, "lockoutFailures": 10, "lockoutMinutes": 15, "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": null, "readReceipts": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "versions": {"householdAvatar": 1, "householdName": 1}}, "status": 200},
-"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 1595499, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
+"GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keyReminderMonths": 12, "lockoutFailures": 10, "lockoutMinutes": 15, "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": null, "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "versions": {"householdAvatar": 1, "householdName": 1}}, "status": 200},
+"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 1607787, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
 "GET /ui/api/settings/email":{"body": {"lastError": null, "lastRun": null, "password": null, "setAside": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 1609728, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 0}, "status": 200},
+"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 1617920, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 0}, "status": 200},
 "GET /ui/api/settings/receipts":{"body": {"failed": 0, "lastRun": "2026-10-12T16:00:00Z", "read": 3, "reading": 0, "waiting": 0}, "status": 200},
 "GET /ui/api/signup":{"body": {"domains": [], "open": false}, "status": 200},
 "GET /ui/api/signup-requests":{"body": [], "status": 200},
@@ -612,10 +612,10 @@ label.drop { display: block; cursor: pointer; }
 "GET /ui/api/receipts?show=all":{"body": [{"amount": "134.62", "date": "2026-09-25", "fileName": "IMG_2291.png", "filled": [], "hasThumbnail": true, "id": "Rcpt_01m4rdf800e00tr302g3eawdyd", "level": "owner", "links": [{"accountId": "Acct_01m4rdf800e01td4fwwhn3bshe", "accountName": "Travel Visa", "amount": "-134.62", "date": "2026-09-25", "payee": "Kroger", "transactionId": "Txn_01m4rdf800e43bzpm51mjy5f74"}], "mediaType": "image/png", "notes": null, "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "payee": "Kroger", "readError": null, "readStatus": "read", "size": 20525, "tags": [], "uploadedAt": "2026-10-12T16:00:00Z", "version": 3}, {"amount": "5.75", "date": "2026-10-09", "fileName": "IMG_2310.jpg", "filled": ["amount", "date", "payee"], "hasThumbnail": true, "id": "Rcpt_01m4rdf800e01b8wtz5xkns5zj", "level": "owner", "links": [], "mediaType": "image/jpeg", "notes": null, "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "payee": "Blue Bottle Coffee", "readError": null, "readStatus": "read", "size": 8604, "tags": [], "uploadedAt": "2026-10-12T16:00:00Z", "version": 2}, {"amount": "153.58", "date": "2026-09-30", "fileName": "city-power-sept.pdf", "filled": ["amount", "date", "payee"], "hasThumbnail": true, "id": "Rcpt_01m4rdf800e01r8nmmkzcszdzv", "level": "owner", "links": [], "mediaType": "application/pdf", "notes": null, "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "payee": "City Power & Water", "readError": null, "readStatus": "read", "size": 13413, "tags": [], "uploadedAt": "2026-10-12T16:00:00Z", "version": 2}], "status": 200},
 "GET /ui/api/receipts?show=inbox":{"body": [{"amount": "5.75", "date": "2026-10-09", "fileName": "IMG_2310.jpg", "filled": ["amount", "date", "payee"], "hasThumbnail": true, "id": "Rcpt_01m4rdf800e01b8wtz5xkns5zj", "level": "owner", "links": [], "mediaType": "image/jpeg", "notes": null, "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "payee": "Blue Bottle Coffee", "readError": null, "readStatus": "read", "size": 8604, "tags": [], "uploadedAt": "2026-10-12T16:00:00Z", "version": 2}, {"amount": "153.58", "date": "2026-09-30", "fileName": "city-power-sept.pdf", "filled": ["amount", "date", "payee"], "hasThumbnail": true, "id": "Rcpt_01m4rdf800e01r8nmmkzcszdzv", "level": "owner", "links": [], "mediaType": "application/pdf", "notes": null, "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "payee": "City Power & Water", "readError": null, "readStatus": "read", "size": 13413, "tags": [], "uploadedAt": "2026-10-12T16:00:00Z", "version": 2}], "status": 200},
 "GET /ui/api/session":{"body": {"dev": true, "household": {"avatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "name": "Alice & Bob"}, "serverName": "moneykata", "user": {"admin": true, "avatar": null, "displayName": "Alice Griffin", "email": "alice@griffin.home", "id": "User_01m4rdf800e018w8wax25eypm1", "needsSetup": false, "theme": "dark", "timeZone": "auto", "username": "alice", "zone": "UTC"}, "version": "0.1.0"}, "status": 200},
-"GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb"], "keys": ["keyReminderMonths"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keyReminderMonths": 12, "lockoutFailures": 10, "lockoutMinutes": 15, "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": null, "readReceipts": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "versions": {"householdAvatar": 1, "householdName": 1}}, "status": 200},
-"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 1595499, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
+"GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keyReminderMonths": 12, "lockoutFailures": 10, "lockoutMinutes": 15, "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": null, "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "versions": {"householdAvatar": 1, "householdName": 1}}, "status": 200},
+"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 1607787, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
 "GET /ui/api/settings/email":{"body": {"lastError": null, "lastRun": null, "password": null, "setAside": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 1609728, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 0}, "status": 200},
+"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 1617920, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 0}, "status": 200},
 "GET /ui/api/settings/receipts":{"body": {"failed": 0, "lastRun": "2026-10-12T16:00:00Z", "read": 3, "reading": 0, "waiting": 0}, "status": 200},
 "GET /ui/api/shares/account/Acct_01m4rdf800e00rpbkavrdymf5d":{"body": {"accounts": [], "groups": [{"id": "Group_01m4rdf800e00tya428n81rvcb", "level": "none", "members": 2, "name": "Admins"}, {"id": "Group_01m4rdf800e0192x3k8skth481", "level": "read", "members": 2, "name": "Household"}], "hidden": {}, "itemId": "Acct_01m4rdf800e00rpbkavrdymf5d", "itemName": "Everyday checking", "kind": "account", "users": [{"avatar": null, "displayName": "Admin", "id": "User_01m4rdf800e00tf99mm9efehdp", "level": "none", "via": []}, {"avatar": null, "displayName": "Bob Griffin", "id": "User_01m4rdf800e01skjft3xb5ewck", "level": "none", "via": [{"groupId": "Group_01m4rdf800e0192x3k8skth481", "groupName": "Household", "level": "read"}]}]}, "status": 200},
 "GET /ui/api/shares/account/Acct_01m4rdf800e01b9479fephfqf8":{"body": {"accounts": [], "groups": [{"id": "Group_01m4rdf800e00tya428n81rvcb", "level": "none", "members": 2, "name": "Admins"}, {"id": "Group_01m4rdf800e0192x3k8skth481", "level": "none", "members": 2, "name": "Household"}], "hidden": {}, "itemId": "Acct_01m4rdf800e01b9479fephfqf8", "itemName": "Emergency savings", "kind": "account", "users": [{"avatar": null, "displayName": "Admin", "id": "User_01m4rdf800e00tf99mm9efehdp", "level": "none", "via": []}, {"avatar": null, "displayName": "Bob Griffin", "id": "User_01m4rdf800e01skjft3xb5ewck", "level": "write", "via": []}]}, "status": 200},
@@ -766,7 +766,7 @@ label.drop { display: block; cursor: pointer; }
 "dialog-budget":"# New budget\n\nA budget plans spending per category over the accounts you choose. Plan its categories next, with **Edit plan**.\n\n## Name\n\nSuch as *Household* or *My spending*.\n\n## Accounts\n\nThe accounts whose transactions count: usually your checking accounts and cards. Investment accounts aren't offered. To share a household budget, use **Share** on it afterwards and give a group **Write**.\n",
 "dialog-edit-user":"# Edit a user\n\n## Name {#display-name}\n\nAs others see it.\n\n## Email address {#email}\n\nFixed here only before they join; afterwards they change it themselves.\n\n## Groups\n\nTheir groups.\n\n## Reset two-step\n\nThe last resort when someone has lost both their authenticator app and their recovery codes: it turns two-step sign-in off, so their password alone signs them in, and signs them out everywhere. Be sure it is them asking. They are emailed, and turn it on again in Profile.\n\n## Your password {#reauth-password}\n\nAsked again when you last gave it more than 10 minutes ago.\n",
 "dialog-group":"# Group\n\n## Name\n\nWhat shares name it by.\n\n## Active {#active}\n\nAn inactive group's shares give its members nothing.\n\n## Members\n\nIts users. A member holds the group's shares while in it.\n",
-"dialog-import":"# Import transactions\n\nAn OFX, QFX or CSV file from your bank or broker. Rows already imported are matched by the file's own transaction id, or by date, amount and payee, so a file can be imported again safely.\n\n## Into account\n\nThe account the file belongs to.\n\n## File\n\nThe file you downloaded.\n\n## Date column {#map-date}\n\nThe column with each row's date.\n\n## Description column {#map-payee}\n\nThe payee, merchant or description.\n\n## Amount column {#map-amount}\n\nOne column with money in as + and money out as −.\n\n## Debit column {#map-debit}\n\nWhen money out has its own column instead.\n\n## Credit column {#map-credit}\n\nWhen money in has its own column.\n\n## Running balance column {#map-balance}\n\nOptional. Every row's balance is then checked against MoneyKata's.\n\n## Memo column {#map-memo}\n\nOptional.\n\n## Transaction id column {#map-id}\n\nOptional: the institution's own id for each row, which makes re-imports exact.\n\n## Date format {#map-date-format}\n\nHow the file writes dates:\n\n| Written as | Format |\n|---|---|\n| 10/12/2026 | `%m/%d/%Y` |\n| 2026-10-12 | `%Y-%m-%d` |\n| 10/12/26 | `%m/%d/%y` |\n| 12-Oct-2026 | `%d-%b-%Y` |\n\n## Spending is positive {#map-negate}\n\nCard exports often show purchases as positive amounts: this flips them.\n",
+"dialog-import":"# Import transactions\n\nAn OFX, QFX or CSV file from your bank or broker, or a **statement**: its PDF, or a photo or scan of it. Rows already imported are matched by the file's own transaction id, or by date, amount and payee, so a file can be imported again safely.\n\nA statement is read on this server, and shown for you to check before anything is saved.\n\n## Into account\n\nThe account the file belongs to.\n\n## File\n\nThe file you downloaded, or a statement's PDF or photo.\n\n## Date column {#map-date}\n\nThe column with each row's date.\n\n## Description column {#map-payee}\n\nThe payee, merchant or description.\n\n## Amount column {#map-amount}\n\nOne column with money in as + and money out as −.\n\n## Debit column {#map-debit}\n\nWhen money out has its own column instead.\n\n## Credit column {#map-credit}\n\nWhen money in has its own column.\n\n## Running balance column {#map-balance}\n\nOptional. Every row's balance is then checked against MoneyKata's.\n\n## Memo column {#map-memo}\n\nOptional.\n\n## Transaction id column {#map-id}\n\nOptional: the institution's own id for each row, which makes re-imports exact.\n\n## Date format {#map-date-format}\n\nHow the file writes dates:\n\n| Written as | Format |\n|---|---|\n| 10/12/2026 | `%m/%d/%Y` |\n| 2026-10-12 | `%Y-%m-%d` |\n| 10/12/26 | `%m/%d/%y` |\n| 12-Oct-2026 | `%d-%b-%Y` |\n\n## Spending is positive {#map-negate}\n\nCard exports often show purchases as positive amounts: this flips them.\n",
 "dialog-new-account":"# New account\n\nChoose the account's type. It decides the fields, the tax treatment and the tabs.\n\n## Banking\n\nChecking, savings, money market and CDs: cash, taxable interest.\n\n## Credit card\n\nA liability: a balance you owe shows as negative.\n\n## Brokerage\n\nStocks, ETFs and funds, taxable.\n\n## Retirement\n\nTraditional and Roth IRAs, 401(k), 403(b) and 457(b) plans, and HSAs: contributions record their tax year.\n",
 "dialog-new-user":"# New user\n\nThey get an invitation by email and choose their own password.\n\n## Name {#display-name}\n\nAs others see it.\n\n## Username\n\nWhat they sign in with: lowercase letters, digits, dots, dashes or underscores.\n\n## Email address {#email}\n\nWhere the invitation goes.\n\n## Groups\n\nTheir groups. **Admins** makes them an admin.\n",
 "dialog-plan":"# Edit plan\n\nThe plan from the month shown on. Earlier months keep the plan they had.\n\n## Category\n\nA category plans its children too: plan *Food* for groceries and dining together, or each on its own.\n\n## Amount\n\nWhat you mean to spend in a month, or a year for a yearly line. Income categories plan what you expect to receive.\n\n## Every\n\n**Month** compares with each month; **Year** with the year so far, for costs that come once or twice a year.\n\n## Rollover\n\nCarry what is left at the end of a month into the next, or what was overspent out of it.\n",
@@ -775,6 +775,7 @@ label.drop { display: block; cursor: pointer; }
 "dialog-recovery-codes":"# Recovery codes\n\nTen codes, each of which signs you in once in place of a code from the app. They are shown only now: MoneyKata keeps only a fingerprint of each.\n\nPrint them or keep them in a password manager, not on the phone that has the app. Profile shows how many are left; make new ones before they run out.\n",
 "dialog-share":"# Share\n\nWho else has this item, and at which level. Nothing changes until **Save**.\n\n## People\n\nEvery active user. **Read** sees everything and changes nothing; **Write** also changes what it holds. Nobody but you deletes it, shares it or sees its keys.\n\n## Via a group\n\nSomeone with access through a group is shown with the group's name.\n\n## Groups\n\nThe same, for every member while they're in the group.\n\n## Share these accounts too\n\nA portfolio's viewers see only the accounts in it that are shared with them. This shares the missing ones you own, at Read.\n",
 "dialog-source-key":"# A price source's key\n\n## API key\n\nFrom the source's site. Stored encrypted and never shown again.\n",
+"dialog-statement":"# Check the statement\n\nWhat was read from the statement, before anything is saved. Nothing is saved until you import it.\n\n## Period from {#period-start}\n\nThe statement's first day. The opening balance is the balance the day before.\n\n## Period to {#period-end}\n\nIts last day, the day of the closing balance.\n\n## Opening balance {#opening}\n\nAs the statement shows it. A card's balance owed shows as a negative amount here, as the card's account does.\n\n## Closing balance {#closing}\n\nAs the statement shows it. The transactions must add up from the opening balance to this one.\n\n## Include\n\nUntick a line that isn't a transaction (a subtotal, a daily balance), or one already here. Lines already in the account are unticked to begin with.\n\n## Description\n\nThe payee as the statement words it; payee rules tidy it after.\n\n## Amount\n\nMoney in is positive, money out negative. A line whose sign was guessed says so: check it. Once the transactions add up, **Adds up** says yes.\n\n## Accept difference {#accept-difference}\n\nImport even though they don't add up. The Reconcile tab then shows the difference, until it is found or accepted there.\n\n## Learning the layout\n\nWhat you correct is remembered for the institution: which section means money in or out, and lines that are never transactions. The next statement from it needs fewer corrections. The statement itself is kept as a receipt on the account.\n",
 "dialog-tick-off":"# Tick off against a statement\n\n## Statement closing date {#statement-date}\n\nThe last day the statement covers.\n\n## Statement closing balance {#statement-balance}\n\nThe balance it ends with.\n\n## Cleared\n\nTick each transaction the statement shows, until the difference is zero.\n",
 "dialog-transaction":"# Transaction\n\n## Account\n\nThe account it belongs to.\n\n## Date\n\nAs the institution wrote it.\n\n## Kind\n\nWhat it is: money in or out, a transfer, interest, a fee; or for an investing account a buy, a sale, a dividend, shares moved in or out.\n\n## Symbol\n\nThe instrument traded, such as `VTI`.\n\n## Quantity\n\nHow many shares or units.\n\n## Price\n\nPer share or unit.\n\n## Amount\n\nThe cash effect on the account: − for money out (a buy), + for money in (a sale), after fees.\n\n## Fees\n\nCommission and fees.\n\n## Cost basis\n\nFor shares transferred in: what they cost. Without it the lot is marked **basis missing**.\n\n## Payee\n\nWho was paid, or who paid you.\n\n## Category\n\nWhere the money went, for budgets and taxes.\n\n## Split {#split}\n\nOne transaction across several categories; the parts must add up to its amount.\n\n## Contribution year\n\nFor a retirement account: the tax year a contribution counts for. One made before the April deadline may be for the year before.\n\n## Contributed by {#contribution-source}\n\nYou, your employer (a match), or a rollover.\n\n## Memo\n\nA note.\n\n## Tags\n\nYour own, separated by commas; others who share the account don't see them.\n\n## Receipts\n\nThe receipts attached to it; each opens its file. **Add a receipt** uploads one or more and attaches them here. Whoever can read this account can see its receipts.\n\n## Add a receipt {#add-receipt}\n\nUpload PDFs or photos and attach them to this transaction at once.\n",
 "dialog-two-step":"# Turn on two-step sign-in\n\nAny authenticator app that reads TOTP codes works: the ones built into password managers too.\n\n## Code from the app {#two-step-code}\n\nThe six digits the app shows after you scan the QR code, or type the key. They prove the app has it right; two-step is on once they are accepted. If they are refused, check the phone's clock is set automatically.\n",
@@ -792,7 +793,7 @@ label.drop { display: block; cursor: pointer; }
 "settings-backups":"# Settings: Backups\n\nDaily copies of the database and receipts, made, checked and pruned by the server.\n\n![Settings: Backups](shots/settings-backups.webp)\n\n## Time of day\n\nWhen the daily backup runs.\n\n## Copies kept\n\nHow many backups stay; older ones are deleted. 14 by default.\n\n## Back up now\n\nMakes a backup now.\n\n## Restoring\n\nBackups are encrypted as the data is, and open with the master key's recovery phrase. The directory is set on the host, outside the data directory.\n",
 "settings-email":"# Email (SMTP)\n\nHow MoneyKata sends its emails: invitations, password resets, sign-up links and decisions, alerts. Until a host is set, each email is written to the `mail` folder in the data directory instead, where an admin can open it.\n\nEmails go out in the background, so nothing waits on the mail server. One that can't be sent stays queued and is tried again every five minutes; this section shows the queue and the last error.\n\n## Host {#smtp-host}\n\nThe mail server's name, such as your email provider's SMTP server or a relay on your network. MoneyKata reaches only this host for email.\n\n## Port {#smtp-port}\n\n587 for STARTTLS, 465 for TLS, 25 for a plain relay.\n\n## Security {#smtp-security}\n\n**STARTTLS** and **TLS** encrypt the connection and check the server's certificate. **None** sends in the clear: only for a relay on your own network.\n\n## Username {#smtp-username}\n\nThe account to sign in to the mail server with, often an email address. Leave it empty for a relay that needs none.\n\n## Password {#smtp-password}\n\nKept encrypted as a secret, used only when sending, and never shown again. Many providers want an app password rather than your own.\n\n## From address {#smtp-from}\n\nThe sender emails show, such as `MoneyKata \u003cmoney@example.com>`. Your provider may insist it matches the username.\n\n## Send a test email\n\nSends one to your own address now, through the saved settings, and says what failed if it couldn't.\n",
 "settings-general":"# Settings: General\n\nThe server's name and the household it belongs to.\n\n![Settings: General](shots/settings-general.webp)\n\n## Server name\n\nShown to linked servers.\n\n## Server time zone\n\nRead from the host. A user whose time zone is **Auto** sees times in it.\n\n## Household name\n\nAt the top of the sidebar.\n\n## Household initials\n\nThe household's avatar.\n\n## Household colour\n\nThe avatar's colour.\n\n## Public URL\n\nThe address people reach MoneyKata at, such as `https://money.example.lan`. Links in emails (invitations, resets) are built from it, never from the request.\n",
-"settings-imports":"# Settings: Imports\n\n![Settings: Imports](shots/settings-imports.webp)\n\n## File types\n\nOFX, QFX and CSV, checked from what's inside the file, never its name.\n\n## Largest file {#largest-file}\n\nThe biggest file that can be imported, in MB.\n",
+"settings-imports":"# Settings: Imports\n\n![Settings: Imports](shots/settings-imports.webp)\n\n## File types\n\nOFX, QFX and CSV, and statements as PDF, JPEG, PNG, WebP or HEIC, checked from what's inside the file, never its name.\n\n## Largest file {#largest-file}\n\nThe biggest file that can be imported, in MB.\n\n## Read statements\n\nWhether a statement's PDF or photo can be imported. It is read on this server by the receipt reader, in its own process, and checked by the person before anything is saved. Off, only OFX, QFX and CSV files import.\n",
 "settings-keys":"# Settings: Key storage\n\nRead only. Everything the server stores is encrypted under one master key, a file on the host.\n\n![Settings: Key storage](shots/settings-keys.webp)\n\n## Fingerprint\n\nA short name for the key that reveals nothing about it, such as `mk-3f9a…c21e`.\n\n## Recovery phrase\n\nThe master key written as 12 words, the only way back if the key file is lost. Check a copy once a year on the host with `moneykata keys verify`.\n\n## Test\n\nChecks the key file, unwraps the data key and opens the database and a secret.\n\n## Re-encrypt\n\nMakes a new data key and re-encrypts the database and every secret under it. Rarely needed: only when the data key may have been exposed. It doesn't change the master key, which is rotated on the host with `moneykata keys rotate`.\n",
 "settings-passwords":"# Settings: Passwords\n\n![Settings: Passwords](shots/settings-passwords.webp)\n\n## Minimum length\n\nAt least 8; 12 by default. It is the only rule: no character classes and no expiry. The 100,000 most common passwords are refused whatever their length.\n",
 "settings-prices":"# Settings: Prices\n\nWhere daily closes come from. Prices are free and daily, never live.\n\n![Settings: Prices](shots/settings-prices.webp)\n\n## Price sources\n\nThe sources added, each with the classes it serves. For each class the first enabled source is used, and the next one when it fails.\n\n## Add a source\n\nEvery source MoneyKata ships. One that needs a key can't be enabled until its key is set.\n\n## Enabled {#enabled}\n\nWhether the source is used.\n\n## Key\n\nA source's key is stored encrypted and never shown again: only that it is set, when and by whom.\n\n## Last run\n\nWhen the source was last used, and its last error.\n\n## Daily refresh at\n\nWhen the daily refresh runs, after the US market close. 6:00 PM Eastern by default.\n\n## Refresh prices\n\nRuns the daily refresh now.\n\n{{part prices-tiingo}}\n{{part prices-coinbase}}\n{{part prices-manual}}\n",
@@ -1574,12 +1575,13 @@ export const api = {
  */
 
 /**
+ * A transaction it supports, or (a statement) the account it is kept on.
  * @typedef {Object} LinkOut
- * @property {string} transactionId
+ * @property {(string | null)} transactionId
  * @property {string} accountId
  * @property {string} accountName
- * @property {string} date
- * @property {string} amount
+ * @property {(string | null)} date
+ * @property {(string | null)} amount
  * @property {(string | null)} payee
  */
 
@@ -2170,6 +2172,24 @@ export const api = {
  * @property {string} amount
  * @property {(string | null)} [memo]
  * @property {string} id
+ */
+
+/**
+ * @typedef {Object} StatementIn
+ * @property {string} periodStart
+ * @property {string} periodEnd
+ * @property {(number | string)} opening
+ * @property {(number | string)} closing
+ * @property {Array<StatementRowIn>} rows
+ * @property {boolean} [acceptDifference]
+ */
+
+/**
+ * @typedef {Object} StatementRowIn
+ * @property {string} date
+ * @property {string} description
+ * @property {(number | string)} amount
+ * @property {boolean} [include]
  */
 
 /**
@@ -4574,17 +4594,23 @@ export function ReceiptDialog({ close, id }) {
           <h4 class="small dim" data-help="attached-to" id="x-attached-to">Attached to</h4>
           ${r.links.length
             ? r.links.map((/** @type {any} */ l) =>
-              html`<div class="list-item"><div class="grow small">${
-                l.payee || 'Transaction'
-              } · <span
-                class="amt">${money(l.amount)}</span><div class="dim">${l.accountName} · ${
-                date(l.date)
-              }</div></div>${
-                canEdit
-                  ? html`<button type="button" class="btn sm" onClick=${() =>
-                    detach.run(l.transactionId).catch((e) => toast(e.message))}>Detach</button>`
-                  : null
-              }</div>`
+              l.transactionId
+                ? html`<div class="list-item"><div class="grow small">${
+                  l.payee || 'Transaction'
+                } · <span
+                    class="amt">${money(l.amount)}</span><div class="dim">${l.accountName} · ${
+                  date(l.date)
+                }</div></div>${
+                  canEdit
+                    ? html`<button type="button" class="btn sm" onClick=${() =>
+                      detach.run(l.transactionId).catch((e) => toast(e.message))}>Detach</button>`
+                    : null
+                }</div>`
+                : html`
+                  <div class="list-item">
+                    <div class="grow small">The statement of ${l.accountName}</div>
+                  </div>
+                `
             )
             : html`<p class="small dim">Nothing yet: it waits in the inbox.</p>`}
           ${r.matches.length
@@ -6888,13 +6914,14 @@ export default function Dashboard() {
 }
 </script>
 <script type="text/plain" data-module="@mk/screens/import.js">
-// Importing a file into an account (requirements S1.3.2): OFX, QFX or CSV. A CSV from an
-// institution seen for the first time asks for its columns, then remembers them.
+// Importing a file into an account (requirements S1.3.2–S1.3.3): OFX, QFX or CSV, or a
+// statement (a PDF or a photo of one) read on the server and checked before it is saved. A CSV
+// from an institution seen for the first time asks for its columns, then remembers them.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { changes } from '@mk/app/stream.js';
-import { date } from '@mk/app/format.js';
+import { cents, date, fromCents, money } from '@mk/app/format.js';
 import { Dialog } from '@mk/components/dialog.js';
 import { useDialogGuide } from '@mk/components/help.js';
 import { errAt, Field, FormError, Input, Select } from '@mk/components/fields.js';
@@ -6935,6 +6962,7 @@ export function ImportDialog({ close, accounts, accountId }) {
   const [error, setError] = useState(/** @type {any} */ (null));
   const [result, setResult] = useState(/** @type {any} */ (null));
   const [mapping, setMapping] = useState(/** @type {any} */ (null));
+  const [review, setReview] = useState(/** @type {any} */ (null));
 
   const start = async () => {
     if (!file) return;
@@ -6944,7 +6972,13 @@ export function ImportDialog({ close, accounts, accountId }) {
       const job = await finished((await api.upload(`/accounts/${target}/imports`, file)).id);
       if (job.state === 'failed') setError({ message: job.error.message });
       else if (job.result.needsMapping) setMapping(job.result);
-      else setResult(job.result);
+      else if (job.result.needsReview) {
+        setReview({
+          ...job.result,
+          rows: job.result.rows.map((/** @type {any} */ r) => ({ ...r, include: !r.present })),
+          accept: false,
+        });
+      } else setResult(job.result);
     } catch (e) {
       setError(e);
     } finally {
@@ -6998,6 +7032,16 @@ export function ImportDialog({ close, accounts, accountId }) {
     </${Dialog}>`;
   }
 
+  if (review) {
+    return html`
+      <${StatementReview} review=${review} setReview=${setReview} close=${close}
+        done=${(/** @type {any} */ r) => {
+          setReview(null);
+          setResult(r);
+        }} />
+    `;
+  }
+
   if (mapping) {
     const headers = [['', '(none)'], ...mapping.headers.map((/** @type {string} */ h) => [h, h])];
     const m = mapping.mapping;
@@ -7046,7 +7090,7 @@ export function ImportDialog({ close, accounts, accountId }) {
 
   return html`
     <${Dialog} title="Import transactions" close=${close} onSubmit=${start}
-      note="OFX, QFX or CSV. Re-importing a file adds only what's new."
+      note="OFX, QFX or CSV, or a statement (PDF or photo). Re-importing adds only what's new."
       footer=${html`<button class="btn primary" disabled=${busy || !file || !target}>${
         busy ? 'Importing…' : 'Import'
       }</button>`}>
@@ -7055,9 +7099,10 @@ export function ImportDialog({ close, accounts, accountId }) {
           options=${writable.map((a) => [a.id, a.name])} />
         </${Field}>
         <${Field} label="File"
-          hint="Downloaded from your bank or broker."><input class="in" type="file"
-          accept=".ofx,.qfx,.csv,.txt" onChange=${(/** @type {any} */ e) =>
-            setFile(e.currentTarget.files?.[0] || null)} /></${Field}>
+          hint="Downloaded from your bank or broker, or a statement: its PDF, or a photo."><input class="in" type="file"
+          accept=".ofx,.qfx,.csv,.txt,.pdf,.jpg,.jpeg,.png,.webp,.heic" onChange=${(
+            /** @type {any} */ e,
+          ) => setFile(e.currentTarget.files?.[0] || null)} /></${Field}>
         ${file
           ? html`<p class="small dim"><${Icon} name="upload" /> ${file.name} · ${
             Math.ceil(
@@ -7067,6 +7112,141 @@ export function ImportDialog({ close, accounts, accountId }) {
           : null}
         <${FormError} error=${error} />
       </${Dialog}>
+  `;
+}
+
+/**
+ * A statement read on the server, to check before anything is saved: its period and balances,
+ * and each transaction, which can be corrected or left out. It is saved only when the
+ * transactions add up from the opening to the closing balance, or the difference is accepted.
+ * @param {{ review: any, setReview: (v: any) => void, close: (v?: any) => void,
+ *   done: (r: any) => void }} p
+ */
+function StatementReview({ review, setReview, close, done }) {
+  useDialogGuide('dialog-statement');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(/** @type {any} */ (null));
+  const kept = review.rows.filter((/** @type {any} */ r) => r.include);
+  const sum = kept.reduce(
+    (/** @type {bigint} */ a, /** @type {any} */ r) => a + (cents(r.amount) ?? 0n),
+    0n,
+  );
+  const diff = (cents(review.closing) ?? 0n) - (cents(review.opening) ?? 0n) - sum;
+  const set = (/** @type {string} */ k) => (/** @type {string} */ v) =>
+    setReview({ ...review, [k]: v });
+  const setRow = (/** @type {number} */ i, /** @type {string} */ k, /** @type {any} */ v) =>
+    setReview({
+      ...review,
+      rows: review.rows.map((/** @type {any} */ r, /** @type {number} */ j) =>
+        i === j ? { ...r, [k]: v } : r
+      ),
+    });
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const job = await api.post(`/imports/${review.uploadId}/statement`, {
+        periodStart: review.periodStart,
+        periodEnd: review.periodEnd,
+        opening: review.opening,
+        closing: review.closing,
+        acceptDifference: review.accept,
+        rows: review.rows.map((/** @type {any} */ r) => ({
+          date: r.date,
+          description: r.description,
+          amount: r.amount,
+          include: r.include,
+        })),
+      });
+      done(job.result);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const fresh = kept.filter((/** @type {any} */ r) => !r.present).length;
+  return html`
+    <${Dialog} title="Check the statement" wide close=${close} onSubmit=${save}
+      note=${review.learned
+        ? `Read with what was learned of ${review.institution || 'this institution'}'s statements.`
+        : 'What you correct here is remembered for the next statement from this institution.'}
+      footer=${html`<button class="btn primary" disabled=${
+        busy || (diff !== 0n && !review.accept)
+      }>${busy ? 'Saving…' : `Import ${fresh} new`}</button>`}>
+      <p class="small dim" style=${{ marginTop: 0 }}>${review.fileName} · ${review.method === 'text'
+        ? 'read from its text layer'
+        : 'read with OCR'}${review.institution ? ` · ${review.institution}` : ''}</p>
+      <div class="row">
+        <${Field} label="Period from" id="period-start" error=${errAt(error, 'periodStart')}>
+          <${Input} type="date" value=${review.periodStart || ''} onInput=${set(
+            'periodStart',
+          )} required />
+          </${Field}>
+          <${Field} label="Period to" id="period-end" error=${errAt(error, 'periodEnd')}>
+            <${Input} type="date" value=${review.periodEnd || ''} onInput=${set(
+              'periodEnd',
+            )} required />
+            </${Field}>
+            <${Field} label="Opening balance" id="opening">
+              <${Input} value=${review.opening || ''} onInput=${set(
+                'opening',
+              )} inputmode="decimal" required />
+              </${Field}>
+              <${Field} label="Closing balance" id="closing">
+          <${Input} value=${review.closing || ''} onInput=${set(
+            'closing',
+          )} inputmode="decimal" required />
+        </${Field}>
+      </div>
+      <div class="kv">
+        <div><div class="k">${kept.length} transactions</div><div class="v amt">${money(
+          fromCents(sum),
+        )}</div></div>
+        <div><div class="k">Adds up</div><div class="v" style=${{
+          color: diff === 0n ? 'var(--ok)' : 'var(--deny)',
+        }}>${diff === 0n
+          ? html`<${Icon} name="check" /> yes`
+          : `${money(fromCents(diff))} short`}</div></div>
+      </div>
+      <div class="table-wrap mt"><table class="t">
+        <thead><tr><th></th><th>Date</th><th>Description</th><th class="num">Amount</th><th></th></tr></thead>
+        <tbody>${review.rows.map((/** @type {any} */ r, /** @type {number} */ i) =>
+          html`
+            <tr class=${r.include ? '' : 'dim'}>
+              <td><input type="checkbox" checked=${r.include} aria-label=${'Import ' +
+                r.description}
+                          data-help="include" onChange=${() =>
+                            setRow(i, 'include', !r.include)} /></td>
+              <td class="dim">${date(r.date)}</td>
+              <td><input class="in" value=${r
+                .description} aria-label="Description" data-help="description"
+                          onInput=${(/** @type {any} */ e) =>
+                            setRow(i, 'description', e.currentTarget.value)} />${r.confidence < 80
+                            ? html`<div class="small ocr"><${Icon} name="info" /> its sign was guessed · check it</div>`
+                            : null}</td>
+              <td class="num"><input class="in num" value=${r.amount} aria-label="Amount"
+                          data-help="amount" style=${{ maxWidth: '120px' }}
+                          onInput=${(/** @type {any} */ e) =>
+                            setRow(i, 'amount', e.currentTarget.value)} /></td>
+              <td>${r.present
+                ? html`<span class="pill">already here</span>`
+                : html`<span class="pill info">new</span>`}</td>
+            </tr>
+          `
+        )}</tbody>
+      </table></div>
+      ${diff !== 0n
+        ? html`<label class="list-item" style=${{ cursor: 'pointer' }}><input type="checkbox"
+            id="f-accept-difference" checked=${review.accept}
+            onChange=${() =>
+          setReview({ ...review, accept: !review.accept })} /><span class="grow">Import
+            anyway: the Reconcile tab will show the ${
+          money(fromCents(diff))
+        } it is short</span></label>`
+        : null}
+      <${FormError} error=${error} shown=${['periodStart', 'periodEnd']} />
+    </${Dialog}>
   `;
 }
 </script>
@@ -8362,20 +8542,23 @@ function Plain({ section }) {
     );
   }
   return form(
-    ['importMaxMb'],
+    ['importMaxMb', 'readStatements'],
     html`
       <h3>Imports</h3>
       <p class="small dim"
         style=${{
           marginTop: '-6px',
         }}>Accounts are kept current from the files people bring: OFX, QFX and CSV
-            downloads. No bank or exchange is connected.</p>
+            downloads, and statements. No bank or exchange is connected.</p>
       <div
-        class="list-item"><span class="grow dim">File types</span>OFX, QFX, CSV <span class="small dim">· checked from the content</span></div>
+        class="list-item"><span class="grow dim">File types</span>OFX, QFX, CSV; statements as PDF, JPEG, PNG, WebP, HEIC <span class="small dim">· checked from the content</span></div>
       <${Field} label="Largest file (MB)" error=${errAt(e, 'importMaxMb')}>
         <${Input} value=${f.importMaxMb}
           onInput=${set('importMaxMb', true)} inputmode="numeric" />
         </${Field}>
+        <${SwitchRow} label="Read statements" on=${f.readStatements}
+          onChange=${(/** @type {boolean} */ x) => setF({ ...f, readStatements: x })}
+          hint="A statement's PDF, or a photo of one, read on this server by the receipt reader and checked before it is saved." />
     `,
   );
 }

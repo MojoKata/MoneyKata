@@ -83,6 +83,7 @@ The prefixes of the tables that exist.
 | Imprt  | Import         | One file imported into an account, with the dates it covers.                                 |
 | Instr  | Instrument     | A thing with a price: a stock, fund, coin, option contract or currency.                      |
 | Lot    | Lot            | One acquisition of an instrument, and what remains open.                                     |
+| Lyout  | StatementLayout | What statement import learned of an institution's layout: section signs, lines to skip.   |
 | Map    | ImportMapping  | A saved column mapping for one institution's CSV files.                                      |
 | Portf  | Portfolio      | A named set of accounts, or parts of them, charted as one.                                   |
 | Rcpt   | Receipt        | An uploaded file, encrypted on disk, with a date, an amount and what it is attached to.      |

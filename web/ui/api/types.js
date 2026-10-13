@@ -458,12 +458,13 @@
  */
 
 /**
+ * A transaction it supports, or (a statement) the account it is kept on.
  * @typedef {Object} LinkOut
- * @property {string} transactionId
+ * @property {(string | null)} transactionId
  * @property {string} accountId
  * @property {string} accountName
- * @property {string} date
- * @property {string} amount
+ * @property {(string | null)} date
+ * @property {(string | null)} amount
  * @property {(string | null)} payee
  */
 
@@ -1054,6 +1055,24 @@
  * @property {string} amount
  * @property {(string | null)} [memo]
  * @property {string} id
+ */
+
+/**
+ * @typedef {Object} StatementIn
+ * @property {string} periodStart
+ * @property {string} periodEnd
+ * @property {(number | string)} opening
+ * @property {(number | string)} closing
+ * @property {Array<StatementRowIn>} rows
+ * @property {boolean} [acceptDifference]
+ */
+
+/**
+ * @typedef {Object} StatementRowIn
+ * @property {string} date
+ * @property {string} description
+ * @property {(number | string)} amount
+ * @property {boolean} [include]
  */
 
 /**

@@ -65,7 +65,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | **G5** | [Data sunset](gaps.md#g5-data-sunset) | how data older than the seven-year audit period is retired: what goes, what is summarised, who decides, and how it is confirmed (S14.10) |
 | **G6** | [Operations](gaps.md#g6-operations) | `docs/operations.md`: upgrades and migrations in the Docker image, health checks, logs, monitoring, restore drills |
 | **G7** | [API conventions and reference](gaps.md#g7-api-conventions-and-reference) | the conventions of S13.8 are proposed and await review; `docs/api.md` grows with the code, beside the generated OpenAPI, and documents the MCP tools |
-| **G8** | [Statement import](gaps.md#g8-statement-import) | how statement layouts are found in PDFs and photos, what is kept per institution, multi-page and multi-account statements, and card and brokerage statements |
+| **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | brokerage statements, statements of several accounts, and learning column positions for layouts without sections or a running balance |
 | **G9** | [Bitcoin node integration](gaps.md#g9-bitcoin-node-integration) | the details of each node kind (Esplora, Electrum server, Bitcoin Core watch-only descriptors), xpub gap limits, and testing a node |
 | **G10** | [Statement intervals per account](gaps.md#g10-statement-intervals-per-account) | the interval each account's statements are expected at, how it is set or learned, and the alert threshold that follows |
 

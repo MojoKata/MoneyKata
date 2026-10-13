@@ -51,6 +51,14 @@ class ImportMapping(Record):
 
 
 @dataclass(kw_only=True, eq=False)
+class StatementLayout(Record):
+    id: str
+    ownerId: str
+    institution: str
+    layout: str = "{}"
+
+
+@dataclass(kw_only=True, eq=False)
 class Import(Record):
     id: str
     accountId: str

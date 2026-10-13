@@ -23,7 +23,7 @@ opens. Each section has its own help guide. In this order:
    (mempool.space by default) or the household's own node, with its address, credentials and
    a **Test** button.
 8. **Imports** (S1.3): the file types and size accepted for statement import, and whether
-   statements are read on the server (sharing the receipt reader's jobs, S9.8).
+   statements are read on the server (in the receipt reader's worker, S9.8).
 9. **Linked servers** (S11.7): the links, and each linked copy's state: changes waiting, its
    access key (*Create the access key*, made when and by whom), locked or unlocked (by whom,
    and when it will lock), *Lock now* and *Reset copy*, and **Release linked keys after**

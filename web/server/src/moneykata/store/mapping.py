@@ -59,6 +59,7 @@ def map_all() -> None:
         (acc.Account, accounts.Account),
         (acc.Instrument, accounts.Instrument),
         (acc.ImportMapping, accounts.ImportMapping),
+        (acc.StatementLayout, accounts.StatementLayout),
         (acc.Import, accounts.Import),
         (acc.Transaction, accounts.Transaction),
         (acc.Split, accounts.Split),

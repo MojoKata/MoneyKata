@@ -56,7 +56,8 @@ Receipt = record(
     Index("ix_Receipt_sha256", "sha256"),
 )
 
-# What a receipt is attached to (S9.3): transactions now, other kinds as they are built.
+# What a receipt is attached to (S9.3): transactions, an account (a statement kept as a
+# receipt, S1.3.3), and other kinds as they are built.
 ReceiptLinks = pairs(
     "ReceiptLinks",
     Column("receiptId", Text, ForeignKey("Receipt.id", ondelete="CASCADE"), nullable=False),
@@ -64,7 +65,7 @@ ReceiptLinks = pairs(
     Column("itemId", Text, nullable=False),
     Column("linkedById", Text, ForeignKey("User.id")),
     PrimaryKeyConstraint("receiptId", "kind", "itemId"),
-    CheckConstraint("kind IN ('transaction')", name="kind"),
+    CheckConstraint("kind IN ('transaction', 'account')", name="kind"),
     Index("ix_ReceiptLinks_item", "kind", "itemId"),
 )
 

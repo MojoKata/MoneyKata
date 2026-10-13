@@ -41,6 +41,26 @@
       learns about an institution's layout is kept per institution, so the next statement
       needs fewer corrections. Imports are idempotent here too. The statement file is kept as
       a receipt attached to the account (S9);
+      1. **What it reads**: bank and card statements of one account, any number of pages, as
+         UMB, Schwab Bank and card issuers lay them out. The period comes from a *Statement
+         Period* or *Opening/Closing Date* line (else the first and last transaction); the
+         balances from *Beginning/Opening/Previous* and *Ending/Closing/New Balance*; a
+         transaction is a line that starts with a date and ends in amounts. Its sign comes
+         from the running balance where there is one, else from an explicit sign (`-`,
+         `( )`, `CR`), else from the section it is in (*Deposits and Other Credits*,
+         *Withdrawals*, *Checks Paid*, *Purchases*, *Payments and Credits*), else from its
+         words, and is then marked as guessed. Summary and daily-balance sections are left
+         out. A card statement's figures are what is owed, and are turned to the account's
+         side.
+      2. **Reading** uses the receipt reader's worker (S9.8.4): a text layer when the PDF has
+         one, else OCR. Settings › Imports can turn statement reading off.
+      3. **Checking**: the period, both balances and each line can be corrected, and a line
+         left out; lines already in the account start left out. The opening balance becomes
+         the account's reported balance the day before the period, the closing balance its
+         balance on the last day (S1.11).
+      4. **What is learned per institution** (per owner): the sign of each section heading the
+         person kept, and the first words of lines they left out, which are skipped next
+         time. Brokerage statements and statements of several accounts are G8.
    4. **bitcoin watch** (self-custody wallets): balances and transactions read by address or
       xpub (S1.6).
 

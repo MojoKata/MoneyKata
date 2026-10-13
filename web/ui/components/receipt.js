@@ -256,17 +256,23 @@ export function ReceiptDialog({ close, id }) {
           <h4 class="small dim" data-help="attached-to" id="x-attached-to">Attached to</h4>
           ${r.links.length
             ? r.links.map((/** @type {any} */ l) =>
-              html`<div class="list-item"><div class="grow small">${
-                l.payee || 'Transaction'
-              } · <span
-                class="amt">${money(l.amount)}</span><div class="dim">${l.accountName} · ${
-                date(l.date)
-              }</div></div>${
-                canEdit
-                  ? html`<button type="button" class="btn sm" onClick=${() =>
-                    detach.run(l.transactionId).catch((e) => toast(e.message))}>Detach</button>`
-                  : null
-              }</div>`
+              l.transactionId
+                ? html`<div class="list-item"><div class="grow small">${
+                  l.payee || 'Transaction'
+                } · <span
+                    class="amt">${money(l.amount)}</span><div class="dim">${l.accountName} · ${
+                  date(l.date)
+                }</div></div>${
+                  canEdit
+                    ? html`<button type="button" class="btn sm" onClick=${() =>
+                      detach.run(l.transactionId).catch((e) => toast(e.message))}>Detach</button>`
+                    : null
+                }</div>`
+                : html`
+                  <div class="list-item">
+                    <div class="grow small">The statement of ${l.accountName}</div>
+                  </div>
+                `
             )
             : html`<p class="small dim">Nothing yet: it waits in the inbox.</p>`}
           ${r.matches.length

@@ -2533,6 +2533,7 @@
       },
       "LinkOut": {
         "additionalProperties": false,
+        "description": "A transaction it supports, or (a statement) the account it is kept on.",
         "properties": {
           "accountId": {
             "title": "Accountid",
@@ -2543,17 +2544,31 @@
             "type": "string"
           },
           "amount": {
-            "examples": [
-              "1234.50"
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "format": "money",
-            "title": "Amount",
-            "type": "string"
+            "title": "Amount"
           },
           "date": {
-            "format": "date",
-            "title": "Date",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
           },
           "payee": {
             "anyOf": [
@@ -2567,8 +2582,15 @@
             "title": "Payee"
           },
           "transactionId": {
-            "title": "Transactionid",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
           }
         },
         "required": [
@@ -5703,6 +5725,116 @@
           "id"
         ],
         "title": "SplitOut",
+        "type": "object"
+      },
+      "StatementIn": {
+        "additionalProperties": false,
+        "properties": {
+          "acceptDifference": {
+            "default": false,
+            "title": "Acceptdifference",
+            "type": "boolean"
+          },
+          "closing": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Closing",
+            "type": "string"
+          },
+          "opening": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Opening",
+            "type": "string"
+          },
+          "periodEnd": {
+            "format": "date",
+            "title": "Periodend",
+            "type": "string"
+          },
+          "periodStart": {
+            "format": "date",
+            "title": "Periodstart",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/StatementRowIn"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "periodStart",
+          "periodEnd",
+          "opening",
+          "closing",
+          "rows"
+        ],
+        "title": "StatementIn",
+        "type": "object"
+      },
+      "StatementRowIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "include": {
+            "default": true,
+            "title": "Include",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "date",
+          "description",
+          "amount"
+        ],
+        "title": "StatementRowIn",
         "type": "object"
       },
       "Suggested": {
@@ -8911,6 +9043,59 @@
           }
         },
         "summary": "Apply Mapping",
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/ui/api/imports/{upload_id}/statement": {
+      "post": {
+        "description": "Nothing is saved until the person has checked it: the rows they keep become\ntransactions (what is already there is matched, not added twice), the balances become the\naccount's anchors, the file is kept as a receipt on the account, and the layout is learned\nfor the next statement from this institution.",
+        "operationId": "save_statement_ui_api_imports__upload_id__statement_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "title": "Upload Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Statement",
         "tags": [
           "imports"
         ]

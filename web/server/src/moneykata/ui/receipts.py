@@ -23,11 +23,13 @@ router = APIRouter(prefix="/ui/api", tags=["receipts"])
 
 
 class LinkOut(Model):
-    transactionId: str
+    """A transaction it supports, or (a statement) the account it is kept on."""
+
+    transactionId: str | None
     accountId: str
     accountName: str
-    date: dt.date
-    amount: Money
+    date: dt.date | None
+    amount: Money | None
     payee: str | None
 
 
@@ -92,6 +94,20 @@ class Attach(Model):
 def _links(s, r: Receipt) -> list[LinkOut]:
     out = []
     for ln in receipts.links(s, r.id):
+        if ln.kind == "account":
+            a = s.get(Account, ln.itemId)
+            if a is not None and not a.deleted:
+                out.append(
+                    LinkOut(
+                        transactionId=None,
+                        accountId=a.id,
+                        accountName=a.name,
+                        date=None,
+                        amount=None,
+                        payee="Statement",
+                    )
+                )
+            continue
         t = s.get(Transaction, ln.itemId)
         if t is None or t.deleted:
             continue

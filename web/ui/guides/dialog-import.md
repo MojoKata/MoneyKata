@@ -1,6 +1,8 @@
 # Import transactions
 
-An OFX, QFX or CSV file from your bank or broker. Rows already imported are matched by the file's own transaction id, or by date, amount and payee, so a file can be imported again safely.
+An OFX, QFX or CSV file from your bank or broker, or a **statement**: its PDF, or a photo or scan of it. Rows already imported are matched by the file's own transaction id, or by date, amount and payee, so a file can be imported again safely.
+
+A statement is read on this server, and shown for you to check before anything is saved.
 
 ## Into account
 
@@ -8,7 +10,7 @@ The account the file belongs to.
 
 ## File
 
-The file you downloaded.
+The file you downloaded, or a statement's PDF or photo.
 
 ## Date column {#map-date}
 

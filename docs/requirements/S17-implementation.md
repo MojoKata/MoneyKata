@@ -181,7 +181,8 @@
          and the inbox, sharing and retention.
       6. **Reading receipts** (S9.8): the worker process, RapidOCR with its shipped models,
          the field parser, matching, search and Settings › Receipts.
-      7. **Statement import** (S1.3.3, G8).
+      7. **Statement import** (S1.3.3): bank and card statements, read and checked, with
+         their layout learned per institution; the rest of G8 waits.
       8. **Projections and assumptions** (S6.1–S6.9): Profile › Assumptions, the models,
          scenarios, active projections with tracking, and the Dashboard's Plans card.
       9. **The mockup** generated from the app for these screens, and the Docker image.
