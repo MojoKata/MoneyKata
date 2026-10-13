@@ -3,12 +3,11 @@ own keys; secrets and the sources come with their sections' routes."""
 
 import datetime as dt
 import json
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from .. import activity, clock, settings, timezones
 from ..errors import FieldError, Problem
@@ -113,9 +112,11 @@ class KeyTest(Model):
     checks: list[CheckOut]
 
 
-def _database_bytes(db: Path) -> int:
-    """The database with its write-ahead log, where recent changes sit until a checkpoint."""
-    return sum(f.stat().st_size for f in (db, db.with_name(db.name + "-wal")) if f.exists())
+def _database_bytes(s) -> int:
+    """The database's size as SQLite counts it, reading through the write-ahead log, where a
+    new server's data sits until a checkpoint: the file alone can say 0.0 MB."""
+    pages = int(s.execute(text("PRAGMA page_count")).scalar_one())
+    return pages * int(s.execute(text("PRAGMA page_size")).scalar_one())
 
 
 @router.get("/settings/keys", response_model=KeyStorage)
@@ -135,6 +136,7 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
         ).first()
         keep_days = settings.get(s, "backupCopies")
         months = settings.get(s, "keyReminderMonths")
+        database_bytes = _database_bytes(s)
         confirmations = [
             Confirmation(
                 at=a.at,
@@ -165,7 +167,7 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
             for p in srv.config.previous_keys
         ],
         confirmations=confirmations,
-        databaseBytes=_database_bytes(srv.config.db_path),
+        databaseBytes=database_bytes,
         secrets=secrets,
         receipts=sum(1 for _ in receipts_dir.rglob("*") if _.is_file())
         if receipts_dir.is_dir()

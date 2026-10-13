@@ -2,6 +2,7 @@ import datetime as dt
 from decimal import Decimal as D
 
 from conftest import make_user, sign_in
+from sqlalchemy import text
 from test_accounts import add, new_account
 
 from moneykata.ledger import performance as perf
@@ -107,9 +108,9 @@ def test_key_storage_and_backups_for_admins(admin_client, server):
     ks = admin_client.get("/ui/api/settings/keys").json()
     assert ks["fingerprint"].startswith("mk-") and ks["reminderMonths"] == 12
     assert ks["previous"] == [] and ks["reencrypting"] is False
-    db = server.config.db_path
-    wal = db.with_name(db.name + "-wal")
-    assert ks["databaseBytes"] == db.stat().st_size + (wal.stat().st_size if wal.exists() else 0)
+    with server.db.read() as s:  # the data, wherever it sits: the file or its log
+        pages = s.execute(text("PRAGMA page_count")).scalar_one()
+    assert ks["databaseBytes"] == pages * 4096 > server.config.db_path.stat().st_size
     t = admin_client.post("/ui/api/settings/keys/test").json()
     assert t["ok"] and [x["name"] for x in t["checks"]][:3] == ["Key file", "Data key", "Database"]
     b = admin_client.get("/ui/api/settings/backups").json()
