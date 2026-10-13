@@ -30,7 +30,7 @@ export function connect(ended) {
     if (data.version && data.version !== version) updated.value = true;
     badges.value = data.badges || {};
   });
-  for (const kind of ['prices', 'import', 'share', 'job', 'activity', 'task']) {
+  for (const kind of ['prices', 'import', 'share', 'job', 'activity', 'task', 'signup']) {
     source.addEventListener(kind, () => bump(kind));
   }
   source.addEventListener('session', (e) => {

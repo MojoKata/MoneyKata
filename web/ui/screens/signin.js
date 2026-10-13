@@ -1,7 +1,7 @@
 // Sign in (requirements S10.1.1), its code when two-step sign-in is on (S10.1.6), Forgot
-// password? (S10.1.5) and the account-is-disabled screen with its request to be made active
-// again (S10.1.7).
-import { useState } from 'preact/hooks';
+// password? (S10.1.5), Sign up when an admin opened it (S10.1.4), and the account-is-disabled
+// screen with its request to be made active again (S10.1.7).
+import { useEffect, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
@@ -19,6 +19,11 @@ export default function SignIn() {
   const [twoStep, setTwoStep] = useState('');
   const [code, setCode] = useState('');
   const [recovery, setRecovery] = useState(false);
+  const [signupOpen, setSignupOpen] = useState(/** @type {any} */ (null));
+  const [form, setForm] = useState({ displayName: '', username: '', email: '', password: '' });
+  useEffect(() => {
+    api.get('/signup').then(setSignupOpen, () => {});
+  }, []);
   const signedIn = (/** @type {any} */ info) => {
     ended.value = '';
     setSession(info);
@@ -49,6 +54,10 @@ export default function SignIn() {
       }
       throw e;
     }
+  });
+  const signUp = useSubmit(async () => {
+    await api.post('/signup', form);
+    setSent(true);
   });
   const forgot = useSubmit(async () => {
     await api.post('/password-reset', { login });
@@ -87,6 +96,72 @@ export default function SignIn() {
                     </form>
               `}
           </${AuthCard}>
+    `;
+  }
+
+  if (mode === 'signup') {
+    const set = (/** @type {string} */ k) => (/** @type {string} */ v) =>
+      setForm({ ...form, [k]: v });
+    const domains = signupOpen?.domains || [];
+    return html`
+      <${AuthCard} title="Ask for an account" guide="signup"
+        sub="An admin approves each request. First, confirm your email from the link we send.">
+        ${sent
+          ? html`
+            <div class="notice"
+              role="status">If ${form
+                .email} can ask for an account, a link to confirm it is on its way.
+              It works for a day.</div>
+          `
+          : html`
+            <form onSubmit=${(/** @type {Event} */ e) => {
+              e.preventDefault();
+              signUp.run().catch(() => {});
+            }}>
+              <${Field} label="Your name" id="display-name" error=${errAt(
+                signUp.error,
+                'displayName',
+              )}>
+                <${Input} value=${form.displayName} onInput=${set(
+                  'displayName',
+                )} autocomplete="name" required />
+                </${Field}>
+                <${Field} label="Email address" id="email" error=${errAt(signUp.error, 'email')}
+                  hint=${domains.length ? 'Addresses at ' + domains.join(', ') + '.' : undefined}>
+                  <${Input} type="email" value=${form.email} onInput=${set(
+                    'email',
+                  )} autocomplete="email"
+                    required />
+                  </${Field}>
+                  <${Field} label="Username" error=${errAt(signUp.error, 'username')}
+                    hint="What you'll sign in with: lowercase letters, digits, dots, dashes or underscores.">
+                    <${Input} value=${form.username} onInput=${set(
+                      'username',
+                    )} autocomplete="username" required />
+                    </${Field}>
+                    <${Field} label="Password" error=${errAt(signUp.error, 'password')}
+                      hint="At least 12 characters; not a common password.">
+                      <${Input} type="password" value=${form.password} onInput=${set('password')}
+                        autocomplete="new-password" required />
+                      </${Field}>
+                      <${FormError} error=${signUp.error} shown=${[
+                        'displayName',
+                        'email',
+                        'username',
+                        'password',
+                      ]} />
+                      <button class="btn primary" style=${{
+                        width: '100%',
+                        justifyContent: 'center',
+                      }}
+                        disabled=${signUp.busy}>Ask for an account</button>
+                      </form>
+          `}
+        <div class="toolbar mt"><button type="button" class="linklike" onClick=${() => {
+          setSent(false);
+          setMode('signin');
+        }}>Back to sign in</button></div>
+      </${AuthCard}>
     `;
   }
 
@@ -187,7 +262,15 @@ export default function SignIn() {
               class="toolbar mt"><button type="button" class="linklike" onClick=${() => {
                 setSent(false);
                 setMode('forgot');
-              }}>Forgot password?</button></div>
+              }}>Forgot password?</button>${signupOpen?.open
+                ? html`
+                  <span class="grow"></span><button type="button" class="linklike"
+                    onClick=${() => {
+                      setSent(false);
+                      setMode('signup');
+                    }}>Sign up</button>
+                `
+                : null}</div>
             </${AuthCard}>
   `;
 }

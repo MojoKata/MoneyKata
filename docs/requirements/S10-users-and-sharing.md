@@ -9,9 +9,18 @@
       give an email address.
    3. **Invitations.** Admins never set passwords. Creating a user (name, username, email,
       groups) emails an invitation link, and the user chooses their password from it.
-   4. **Sign-up**, when an admin turns it on (it needs SMTP, and can be limited to email
-      domains): a person gives their name and email, confirms the email, and waits on a
-      *waiting for approval* screen until an admin approves or rejects the request.
+   4. **Sign-up**, when an admin turns it on (it needs SMTP and the public URL, and can be
+      limited to email domains): a person gives their name and email, confirms the email,
+      and waits on a *waiting for approval* screen until an admin approves or rejects the
+      request.
+      1. **Asking**: from **Sign up** on the sign-in screen, with a username and a password
+         chosen then, so approval leaves nothing more to do. The answer is the same whether
+         or not the address already has an account; only a new address gets a link, which
+         works once, for 24 hours.
+      2. **Deciding**: confirmed requests show under **Requests** in Users and Groups, with a
+         count on its badge. **Approve** makes the user, in a group if one is chosen;
+         **Reject** turns it down. An email tells the person either way, and Activity records
+         the request and the decision. The request stays as the record of it.
    5. **Password reset** by an emailed link from *Forgot password?*. A changed email address
       takes effect only when a link sent to the new address is opened.
    6. **Two-step sign-in**, optional for everyone: a TOTP code from an authenticator app after

@@ -84,6 +84,7 @@ The prefixes of the tables that exist.
 | Portf  | Portfolio      | A named set of accounts, or parts of them, charted as one.                                   |
 | Recon  | Reconciliation | A statement's closing date and balance, ticked off against the transactions.                 |
 | Secr   | Secret         | A secret sealed on its own: an API key, a password or a private key.                         |
+| Sgnup  | SignupRequest  | A person's request for an account, from confirming the email to an admin's decision.       |
 | Share  | Share          | A grant of an account or portfolio to a user, group or linked server.                        |
 | Split  | Split          | A part of a transaction's amount given its own category.                                     |
 | Src    | PriceSource    | A source of daily prices: its name, whether it is on, and its order per class.               |

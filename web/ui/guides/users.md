@@ -4,6 +4,14 @@ For admins: who uses this server and the groups shares are given to.
 
 ![Users and Groups](shots/users.webp)
 
+## Requests
+
+People who asked for an account from the sign-in screen and confirmed their email. **Approve** makes the user, in the group chosen beside it if any; **Reject** turns the request down. They get an email either way.
+
+## Group {#request-group}
+
+The group an approved request joins. More can be added later with **Edit**.
+
 ## Asked to be made active again
 
 People whose account is inactive and who asked, from the sign-in screen, to be made active.

@@ -36,6 +36,9 @@ TEXT = {
     "user.password-changed": "{actor} changed their password",
     "user.password-reset": "{actor} reset their password",
     "user.email-changed": "{actor} changed their email address",
+    "signup.requested": "{name} asked for an account",
+    "signup.approved": "{actor} approved {subject}'s request for an account",
+    "signup.rejected": "{actor} turned down {name}'s request for an account",
     "user.two-step-on": "{actor} turned on two-step sign-in",
     "user.two-step-off": "{actor} turned off two-step sign-in",
     "user.two-step-reset": "{actor} turned off two-step sign-in for {subject}",
@@ -140,6 +143,7 @@ def render(a: Activity, names: dict[tuple[str, str], str]) -> str:
         "fingerprint": detail.get("fingerprint", ""),
         "from": detail.get("from", ""),
         "to": detail.get("to", ""),
+        "name": detail.get("name", ""),
     }
     template = TEXT.get(a.kind, "{actor}: " + a.kind)
     return template.format(**values)

@@ -39,7 +39,17 @@ USERS = ("alice", "bob", "admin")
 API_PER_MINUTE = 500
 # The app's source, as the browser loads it; mockup/ adds the router and the MOCK pill's menu.
 SOURCE_DIRS = ("app", "api", "store", "components", "screens", "charts", "account-types")
-SETTINGS = ("general", "sessions", "passwords", "prices", "imports", "backups", "keys")
+SETTINGS = (
+    "general",
+    "email",
+    "sessions",
+    "signup",
+    "passwords",
+    "prices",
+    "imports",
+    "backups",
+    "keys",
+)
 # (path, button, guide): the dialogs that load something when they open.
 DIALOGS = (
     ("/ui/accounts", "New account", "dialog-new-account"),

@@ -42,6 +42,7 @@ const SignIn = screen('signin');
 const Welcome = screen('welcome');
 const Reset = screen('reset');
 const ConfirmEmail = screen('confirm-email');
+const SignupConfirm = screen('signup-confirm');
 
 /** What can be opened without a session: sign-in, and the links emails carry. */
 export function PublicScreens() {
@@ -50,6 +51,7 @@ export function PublicScreens() {
       <${Route} path="/ui/welcome" component=${Welcome} />
       <${Route} path="/ui/reset" component=${Reset} />
       <${Route} path="/ui/confirm-email" component=${ConfirmEmail} />
+      <${Route} path="/ui/signup/confirm" component=${SignupConfirm} />
       <${Route} default component=${SignIn} />
       </${Router}>
   `;
@@ -67,4 +69,4 @@ export function SetupScreen() {
   `;
 }
 
-export const PUBLIC_PATHS = ['/ui/welcome', '/ui/reset', '/ui/confirm-email'];
+export const PUBLIC_PATHS = ['/ui/welcome', '/ui/reset', '/ui/confirm-email', '/ui/signup/confirm'];

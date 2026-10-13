@@ -7,8 +7,12 @@ opens. Each section has its own help guide. In this order:
    image, or initials; shown at the top of the sidebar here, and sent to linked servers,
    which always show them as set here, S12.10), public URL (links in emails are built from
    it, never from the request), and the server's time zone, read from the host (S14.9).
-2. **Email (SMTP)**: host, port, security, username, password (a secret), from address, and
-   **Send a test email**.
+2. **Email (SMTP)**: host, port, security (STARTTLS, TLS or none), username, password (a
+   secret), from address, and **Send a test email**, which sends to the admin at once and
+   says what failed. Until a host is set, emails are written to the mail folder in the data
+   directory. With one, they go out in the background: an email that can't be sent stays
+   queued and is tried again every five minutes, one the server refuses outright is set
+   aside, and the section shows the queue and the last error.
 3. **Sign-in and sessions**: idle and absolute session lifetimes, lockout after failed
    sign-ins.
 4. **Sign-up**: on or off (it needs SMTP), optionally limited to email domains.

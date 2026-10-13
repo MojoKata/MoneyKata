@@ -18,6 +18,7 @@ export default function Users() {
   useGuide('users');
   const users = useApi('/users');
   const groups = useApi('/groups');
+  const requests = useApi('/signup-requests', {}, ['signup']);
   const [show, setShow] = useState('active');
   const [busy, setBusy] = useState('');
   const u = /** @type {any[]} */ (users.data);
@@ -28,6 +29,7 @@ export default function Users() {
   const reload = () => {
     users.reload();
     groups.reload();
+    requests.reload();
   };
   const setActive = async (/** @type {any} */ x, /** @type {boolean} */ on) => {
     setBusy(x.id);
@@ -43,7 +45,12 @@ export default function Users() {
   };
   const asked = u.filter((x) => !x.active && x.reactivationAskedAt);
   const list = u.filter((x) => show === 'all' || x.active);
+  const waiting = /** @type {any[]} */ (requests.data || []);
   return html`
+    ${waiting.length
+      ? html`<div class="card"><h3>Requests<span class="pill warn">${waiting.length}</span></h3>
+        ${waiting.map((r) => html`<${SignupRequest} r=${r} groups=${g} done=${reload} />`)}</div>`
+      : null}
     ${asked.length
       ? html`<div class="card"><h3>Asked to be made active again<span class="pill warn">${asked.length}</span></h3>
       ${
@@ -214,6 +221,45 @@ function NewUser({ close, groups }) {
               )} />
               <${FormError} error=${e} shown=${['displayName', 'username', 'email', 'groupIds']} />
               </${Dialog}>
+  `;
+}
+
+/**
+ * A sign-up request whose email is confirmed (S10.1.4): approve it, into a group if wanted,
+ * or reject it. Either way the person gets an email.
+ * @param {{ r: any, groups: any[], done: () => void }} p
+ */
+function SignupRequest({ r, groups, done }) {
+  const [group, setGroup] = useState('');
+  const decide = useSubmit(async (/** @type {boolean} */ yes) => {
+    if (yes) {
+      await api.post(`/signup-requests/${r.id}/approve`, { groupIds: group ? [group] : [] });
+      toast(`${r.displayName} can sign in now`);
+    } else {
+      await api.post(`/signup-requests/${r.id}/reject`);
+      toast(`${r.displayName}'s request was turned down`);
+    }
+    done();
+  });
+  return html`
+    <div class="list-item">
+      <${Avatar} name=${r.displayName} id=${r.id} />
+      <div
+        class="grow">${r.displayName} · ${r.email}<div class="small dim">${r
+          .username} · sign-up · ${ago(r.confirmedAt)}</div>${decide.error
+          ? html`<div class="err">${decide.error.message}</div>`
+          : null}</div>
+      <select class="in" style=${{ maxWidth: '150px' }} aria-label=${'Group for ' + r.displayName}
+        data-help="request-group" value=${group}
+        onChange=${(/** @type {any} */ e) => setGroup(e.currentTarget.value)}>
+        <option value="">No groups</option>
+        ${groups.filter((x) => x.active).map((x) => html`<option value=${x.id}>${x.name}</option>`)}
+      </select>
+      <button type="button" class="btn sm" disabled=${decide.busy} onClick=${() =>
+        decide.run(false).catch(() => {})}>Reject</button>
+      <button type="button" class="btn sm primary" disabled=${decide.busy}
+        onClick=${() => decide.run(true).catch(() => {})}>Approve</button>
+    </div>
   `;
 }
 

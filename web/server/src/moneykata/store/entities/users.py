@@ -71,3 +71,19 @@ class RecoveryCode:
     codeHash: str
     userId: str
     createdAt: dt.datetime
+
+
+@dataclass(kw_only=True, eq=False)
+class SignupRequest(Record):
+    id: str
+    displayName: str
+    username: str
+    email: str
+    passwordHash: str
+    confirmBy: dt.datetime
+    status: str = "confirming"
+    confirmTokenHash: str | None = None
+    confirmedAt: dt.datetime | None = None
+    decidedAt: dt.datetime | None = None
+    decidedById: str | None = None
+    userId: str | None = None

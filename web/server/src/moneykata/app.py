@@ -48,8 +48,16 @@ class Server:
 
     def badges(self, caller) -> dict[str, int]:
         """The navigation's counts (S12.1.1), sent on the live stream; they grow with the
-        screens that have them."""
-        return {}
+        screens that have them. Keys are the entries' labels, lowercased."""
+        counts: dict[str, int] = {}
+        if caller.admin and self.store is not None:
+            from .auth import signup
+
+            with self.db.read() as s:
+                waiting = len(signup.waiting(s))
+            if waiting:
+                counts["users and groups"] = waiting
+        return counts
 
     def session_max_age(self) -> int:
         if self.store is None:

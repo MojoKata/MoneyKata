@@ -67,6 +67,11 @@ class Config:
         """Where emails are written while SMTP is not set up (and always in dev mode)."""
         return self.mail_folder or self.data_dir / "mail"
 
+    @property
+    def outbox_dir(self) -> Path:
+        """Emails waiting to go out through SMTP; each is removed once the server took it."""
+        return self.data_dir / "outbox"
+
 
 def _path(table: dict, key: str, where: str) -> Path:
     value = table.get(key)

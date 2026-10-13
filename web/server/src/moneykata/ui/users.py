@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from ..auth import twostep
+from ..auth import signup, twostep
 from ..auth import users as accounts
 from ..errors import Problem
 from ..store.entities.users import Group, User
@@ -183,6 +183,55 @@ def reset_two_step(user_id: str, request: Request, c: Caller = Depends(admin)):
     if u.id != c.id:
         srv.events.end_user(u.id, "signed-out")
     return row
+
+
+class SignupRow(Model):
+    id: str
+    displayName: str
+    username: str
+    email: str
+    confirmedAt: dt.datetime | None
+
+
+class Approval(Model):
+    groupIds: list[str] = Field(default_factory=list)
+
+
+@router.get("/signup-requests", response_model=list[SignupRow])
+def signup_requests(request: Request, c: Caller = Depends(admin)):
+    """Requests whose email is confirmed, waiting for an admin (S10.1.4)."""
+    with server(request).db.read() as s:
+        return [
+            SignupRow(
+                id=r.id,
+                displayName=r.displayName,
+                username=r.username,
+                email=r.email,
+                confirmedAt=r.confirmedAt,
+            )
+            for r in signup.waiting(s)
+        ]
+
+
+@router.post("/signup-requests/{request_id}/approve", response_model=UserRow)
+def approve_signup(request_id: str, body: Approval, request: Request, c: Caller = Depends(admin)):
+    srv = server(request)
+    with srv.db.tx() as s:
+        u = signup.approve(s, srv.services, c.user, request_id, body.groupIds)
+        row = user_row(s, u)
+        admins = accounts.admin_ids(s)
+    srv.events.publish("signup", {}, users=admins)
+    return row
+
+
+@router.post("/signup-requests/{request_id}/reject", status_code=204)
+def reject_signup(request_id: str, request: Request, c: Caller = Depends(admin)):
+    srv = server(request)
+    with srv.db.tx() as s:
+        signup.reject(s, srv.services, c.user, request_id)
+        admins = accounts.admin_ids(s)
+    srv.events.publish("signup", {}, users=admins)
+    return Response(status_code=204)
 
 
 @router.get("/groups", response_model=list[GroupRow])

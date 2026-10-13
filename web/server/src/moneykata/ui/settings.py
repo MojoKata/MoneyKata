@@ -54,7 +54,22 @@ def change_settings(body: dict[str, Any], request: Request, c: Caller = Depends(
             errors += p.errors
     if errors:
         raise Problem(422, errors[0].code, errors[0].message, errors)
-    with server(request).db.tx() as s:
+    srv = server(request)
+    with srv.db.tx() as s:
+        # Sign-up sends links by email: it needs SMTP and the public URL (S10.1.4).
+        after = {
+            k: clean.get(k, settings.get(s, k)) for k in ("signupEnabled", "smtpHost", "publicUrl")
+        }
+        missing = [k for k in ("smtpHost", "publicUrl") if not after[k]]
+        if after["signupEnabled"] and missing and not srv.config.dev:
+            field = "signupEnabled" if "signupEnabled" in clean else missing[0]
+            message = "Sign-up sends links by email: set up SMTP and the public URL first."
+            raise Problem(
+                422,
+                "signup-needs-email",
+                message,
+                [FieldError(field, "signup-needs-email", message)],
+            )
         changed = [k for k, v in clean.items() if settings.get(s, k) != v]
         for k in changed:
             settings.put(s, k, clean[k], c.id)
@@ -67,7 +82,129 @@ def change_settings(body: dict[str, Any], request: Request, c: Caller = Depends(
                 detail={"fields": sorted(changed)},
             )
         s.flush()
-        return view(s)
+        out = view(s)
+    if "smtpHost" in changed:
+        from .prices import apply_egress
+
+        apply_egress(srv)
+    return out
+
+
+# ---------- Email (S16.2) ----------
+
+
+class SecretSet(Model):
+    """A stored secret as the UI shows it: set, when and by whom."""
+
+    setAt: dt.datetime
+    setBy: str | None
+
+
+class EmailView(Model):
+    password: SecretSet | None
+    waiting: int
+    setAside: int
+    lastRun: dt.datetime | None
+    lastError: str | None
+
+
+class EmailPassword(Model):
+    password: str | None
+
+
+class TestEmail(Model):
+    to: str
+
+
+def _email_view(srv, s) -> EmailView:
+    from ..mail import SMTP_SECRET
+    from ..store.entities.core import TaskRun
+    from ..store.entities.users import User
+    from ..store.repos import secrets as secret_repo
+
+    info = secret_repo.info(s, *SMTP_SECRET)
+    by = s.get(User, info.setById) if info and info.setById else None
+    run = s.get(TaskRun, "mail")
+    outbox = srv.config.outbox_dir
+    return EmailView(
+        password=SecretSet(setAt=info.setAt, setBy=by.displayName if by else None)
+        if info
+        else None,
+        waiting=len(srv.services.mailer.waiting()),
+        setAside=len(list(outbox.glob("*.refused"))) if outbox.is_dir() else 0,
+        lastRun=run.finishedAt if run else None,
+        lastError=run.error if run else None,
+    )
+
+
+@router.get("/settings/email", response_model=EmailView)
+def email_status(request: Request, c: Caller = Depends(admin)):
+    srv = server(request)
+    with srv.db.read() as s:
+        return _email_view(srv, s)
+
+
+@router.put("/settings/email/password", response_model=EmailView)
+def email_password(body: EmailPassword, request: Request, c: Caller = Depends(admin)):
+    """The SMTP password is a secret (S14.4): set or removed, never read back."""
+    from ..mail import SMTP_SECRET
+    from ..store.repos import secrets as secret_repo
+
+    srv = server(request)
+    with srv.db.tx() as s:
+        if body.password:
+            secret_repo.put(s, srv.keys.secrets, *SMTP_SECRET, body.password, c.id)
+        else:
+            secret_repo.remove(s, *SMTP_SECRET)
+        activity.record(
+            s,
+            "settings.changed",
+            actor=c.id,
+            for_admins=True,
+            detail={"fields": ["smtpPassword"]},
+        )
+        s.flush()
+        return _email_view(srv, s)
+
+
+@router.post("/settings/email/test", response_model=TestEmail)
+def email_test(request: Request, c: Caller = Depends(admin)):
+    """Send a test email to the admin now, through the saved settings, and say what failed."""
+    from ..mail import Email, deliver, describe, smtp_settings
+
+    srv = server(request)
+    if not c.user.email:
+        raise Problem(409, "no-email", "Your profile has no email address to send to.")
+    with srv.db.read() as s:
+        smtp = smtp_settings(s, srv.keys.secrets)
+        name = settings.get(s, "serverName")
+    if smtp is None:
+        raise Problem(
+            422,
+            "smtp-not-set",
+            "Save the SMTP host first.",
+            [FieldError("smtpHost", "smtp-not-set", "Save the SMTP host first.")],
+        )
+    from email.message import EmailMessage
+    from email.utils import format_datetime, make_msgid
+
+    note = Email(
+        c.user.email,
+        "MoneyKata test email",
+        f"This is a test email from {name}. Email from MoneyKata reaches you.\n",
+    )
+    msg = EmailMessage()
+    msg["From"] = smtp.sender
+    msg["To"] = note.to
+    msg["Subject"] = note.subject
+    msg["Date"] = format_datetime(clock.now())
+    msg["Message-ID"] = make_msgid(domain="moneykata.local")
+    msg.set_content(note.body)
+    try:
+        deliver(smtp, msg, srv.guard)
+    except Exception as e:
+        raise Problem(502, "smtp-failed", f"The test email was not sent: {describe(e)}.") from None
+    return TestEmail(to=c.user.email)
 
 
 # ---------- Key storage (S16.13, S15) ----------

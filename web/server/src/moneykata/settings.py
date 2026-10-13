@@ -86,6 +86,43 @@ def _domains(v: Any) -> list[str]:
     return out
 
 
+def _host(v: Any) -> str | None:
+    if v in (None, ""):
+        return None
+    if not isinstance(v, str) or not re.fullmatch(r"[A-Za-z0-9.:\[\]-]{1,253}", v.strip()):
+        raise Invalid("a host name or address, such as smtp.example.com")
+    return v.strip().lower()
+
+
+def _choice(*options: str) -> Callable[[Any], str]:
+    def check(v: Any) -> str:
+        if v not in options:
+            raise Invalid("one of " + ", ".join(options))
+        return v
+
+    return check
+
+
+def _optional_text(max_len: int) -> Callable[[Any], str | None]:
+    def check(v: Any) -> str | None:
+        if v in (None, ""):
+            return None
+        return _text(max_len)(v)
+
+    return check
+
+
+def _address(v: Any) -> str | None:
+    """An email address, with a name if wanted: `MoneyKata <money@example.com>`."""
+    if v in (None, ""):
+        return None
+    if not isinstance(v, str) or not re.fullmatch(
+        r"([^<>@\n]+<[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+>|[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+)", v.strip()
+    ):
+        raise Invalid("an email address, such as MoneyKata <money@example.com>")
+    return v.strip()
+
+
 def _avatar(v: Any) -> dict:
     """The household's avatar: initials with a colour, or an uploaded image's id."""
     if not isinstance(v, dict) or v.get("kind") not in ("initials", "image"):
@@ -129,6 +166,12 @@ _d(
     _avatar,
 )
 _d("publicUrl", "general", None, _url)
+# Email (S16.2): until a host is set, emails are written to the mail folder
+_d("smtpHost", "email", None, _host)
+_d("smtpPort", "email", 587, _int(1, 65535))
+_d("smtpSecurity", "email", "starttls", _choice("starttls", "tls", "none"))
+_d("smtpUsername", "email", None, _optional_text(200))
+_d("smtpFrom", "email", None, _address)
 # Sign-in and sessions (S16.3, S13.7.1)
 _d("sessionIdleHours", "sessions", 8, _int(1, 24 * 7))
 _d("sessionAbsoluteDays", "sessions", 30, _int(1, 365))

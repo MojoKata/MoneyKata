@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from .. import activity, settings, timezones
-from ..auth import passwords, sessions, twostep
+from ..auth import passwords, sessions, signup, twostep
 from ..auth import users as accounts
 from ..errors import Problem, refuse
 from ..ratelimit import Window, too_many
@@ -84,6 +84,25 @@ class TokenPassword(Model):
 
 class Token(Model):
     token: str
+
+
+class SignupOpen(Model):
+    """Whether the sign-in screen offers Sign up, and to which email domains."""
+
+    open: bool
+    domains: list[str]
+
+
+class SignupForm(Model):
+    displayName: str
+    username: str
+    email: str
+    password: str
+
+
+class SignupConfirmed(Model):
+    displayName: str
+    household: str
 
 
 class InvitationInfo(Model):
@@ -299,6 +318,38 @@ def password_reset_confirm(body: TokenPassword, request: Request):
         user = accounts.reset_password(s, srv.services, body.token, body.password)
     srv.events.end_user(user.id, "signed-out")
     return Response(status_code=204)
+
+
+@router.get("/signup", response_model=SignupOpen)
+def signup_open(request: Request):
+    srv = server(request)
+    with srv.db.read() as s:
+        on, domains = signup.open_to(s, srv.config.dev)
+    return SignupOpen(open=on, domains=domains)
+
+
+@router.post("/signup", status_code=202, responses={403: {}, 422: {}, 429: {}})
+def signup_request(body: SignupForm, request: Request):
+    """The answer is the same whether or not the email already has an account (S10.1.4)."""
+    srv = server(request)
+    _throttle(request)
+    with srv.db.tx() as s:
+        signup.request(s, srv.services, body.displayName, body.username, body.email, body.password)
+    return Response(status_code=202)
+
+
+@router.post("/signup/confirm", response_model=SignupConfirmed)
+def signup_confirm(body: Token, request: Request):
+    srv = server(request)
+    _throttle(request)
+    with srv.db.tx() as s:
+        req = signup.confirm(s, body.token)
+        out = SignupConfirmed(
+            displayName=req.displayName, household=settings.get(s, "householdName")
+        )
+        admins = accounts.admin_ids(s)
+    srv.events.publish("signup", {}, users=admins)
+    return out
 
 
 @router.post("/invitations/lookup", response_model=InvitationInfo)

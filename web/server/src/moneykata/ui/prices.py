@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, ids
+from .. import access, activity, clock, ids, settings
 from ..errors import FieldError, Problem, refuse
 from ..prices import SOURCES
 from ..prices import refresh as pricing
@@ -139,9 +139,11 @@ def _view(s, dev: bool) -> SourcesView:
 
 
 def apply_egress(srv) -> None:
-    """Only the hosts of enabled sources may be reached (S13.5)."""
+    """Only the hosts of enabled sources and the SMTP server may be reached (S13.5). The SMTP
+    host is one an admin named, so it may be on this machine or the LAN."""
     with srv.db.read() as s:
-        srv.guard.allow(pricing.hosts(s, srv.config.dev))
+        smtp = [h] if (h := settings.get(s, "smtpHost")) else []
+        srv.guard.allow(pricing.hosts(s, srv.config.dev) + smtp, allowed_by_name=smtp)
 
 
 @router.get("/prices/status", response_model=PriceStatus)

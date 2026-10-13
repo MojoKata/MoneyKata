@@ -22,6 +22,21 @@ EXPECTED_FAILURES = re.compile(r"/ui/api/session$")
 # The API allows a session 600 requests a minute (S13.7.5); a test opens screens far faster
 # than a person, so it keeps under that instead.
 API_PER_MINUTE = 500
+SETTINGS_SECTIONS = (
+    "general",
+    "email",
+    "sessions",
+    "signup",
+    "passwords",
+    "prices",
+    "imports",
+    "backups",
+    "keys",
+)
+
+
+# The dev server's data directory, where its emails are written.
+DEV: dict[str, Path] = {}
 
 
 def free_port() -> int:
@@ -53,6 +68,7 @@ def dev_server(tmp_path_factory):
         stderr=subprocess.STDOUT,
     )
     base = f"https://127.0.0.1:{port}"
+    DEV["data"] = data
     deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         try:
@@ -186,7 +202,7 @@ def test_every_screen_and_tab_has_its_guide(page):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
     for p in ports:
         paths += [f"/ui/portfolios/{p}/performance", f"/ui/portfolios/{p}/holdings"]
-    for s in ("general", "sessions", "passwords", "prices", "imports", "backups", "keys"):
+    for s in SETTINGS_SECTIONS:
         paths.append(f"/ui/settings/{s}")
     for path in paths:
         visit(page, path)
@@ -386,3 +402,53 @@ def test_two_step_sign_in_through_the_app(page):
     row.locator(".pill.ok", has_text="two-step").wait_for(state="detached")
     assert admin.problems == []
     admin.context.close()
+
+
+def last_mail_link() -> str:
+    import email
+    import email.policy
+
+    newest = max((DEV["data"] / "mail").glob("*.eml"), key=lambda p: p.stat().st_mtime)
+    msg = email.message_from_bytes(newest.read_bytes(), policy=email.policy.default)
+    return re.search(r"https://\S+", msg.get_body().get_content()).group(0)
+
+
+def test_sign_up_through_the_app(page):
+    """Sign-up opened by an admin, asked for, confirmed and approved (S10.1.4)."""
+    admin = signed_in_page(page, "admin")
+    admin.wait_for_selector(".side")
+    visit(admin, "/ui/settings/signup")
+    admin.locator("#f-sign-up").click()
+    admin.get_by_role("button", name="Save").click()
+    admin.wait_for_selector("text=Saved")
+
+    ctx = page.context.browser.new_context(
+        ignore_https_errors=True, viewport={"width": 1440, "height": 900}
+    )
+    guest = ctx.new_page()
+    guest.goto(page.base + "/ui/")
+    guest.get_by_role("button", name="Sign up").click()
+    guest.fill("#f-display-name", "Erin Shaw")
+    guest.fill("#f-email", "erin@shaw.family")
+    guest.fill("#f-username", "erin")
+    guest.fill("#f-password", "a long passphrase for erin")
+    guest.get_by_role("button", name="Ask for an account").click()
+    guest.wait_for_selector("text=a link to confirm it is on its way")
+    url = last_mail_link()
+    assert "/ui/signup/confirm#" in url
+    guest.goto(page.base + url[url.index("/ui/") :])
+    guest.wait_for_selector("text=Waiting for approval")
+
+    visit(admin, "/ui/users")
+    req = admin.locator(".list-item", has_text="erin@shaw.family")
+    req.get_by_role("button", name="Approve").click()
+    admin.wait_for_selector("text=Erin Shaw can sign in now")
+    assert admin.problems == []
+    admin.context.close()
+
+    guest.goto(page.base + "/ui/signin")
+    guest.fill("#f-username-or-email", "erin")
+    guest.fill("#f-password", "a long passphrase for erin")
+    guest.get_by_role("button", name="Sign in", exact=True).click()
+    guest.wait_for_selector(".side")
+    ctx.close()

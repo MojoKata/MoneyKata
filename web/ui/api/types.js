@@ -99,6 +99,11 @@
  */
 
 /**
+ * @typedef {Object} Approval
+ * @property {Array<string>} [groupIds]
+ */
+
+/**
  * @typedef {Object} Attention
  * @property {string} kind
  * @property {number} count
@@ -214,6 +219,20 @@
 /**
  * @typedef {Object} EmailChange
  * @property {string} email
+ */
+
+/**
+ * @typedef {Object} EmailPassword
+ * @property {(string | null)} password
+ */
+
+/**
+ * @typedef {Object} EmailView
+ * @property {(moneykata__ui__settings__SecretSet | null)} password
+ * @property {number} waiting
+ * @property {number} setAside
+ * @property {(string | null)} lastRun
+ * @property {(string | null)} lastError
  */
 
 /**
@@ -672,12 +691,6 @@
  */
 
 /**
- * @typedef {Object} SecretSet
- * @property {string} setAt
- * @property {(string | null)} setBy
- */
-
-/**
  * @typedef {Object} Series
  * @property {Array<Point>} points
  * @property {string} asOf
@@ -740,6 +753,36 @@
  */
 
 /**
+ * @typedef {Object} SignupConfirmed
+ * @property {string} displayName
+ * @property {string} household
+ */
+
+/**
+ * @typedef {Object} SignupForm
+ * @property {string} displayName
+ * @property {string} username
+ * @property {string} email
+ * @property {string} password
+ */
+
+/**
+ * Whether the sign-in screen offers Sign up, and to which email domains.
+ * @typedef {Object} SignupOpen
+ * @property {boolean} open
+ * @property {Array<string>} domains
+ */
+
+/**
+ * @typedef {Object} SignupRow
+ * @property {string} id
+ * @property {string} displayName
+ * @property {string} username
+ * @property {string} email
+ * @property {(string | null)} confirmedAt
+ */
+
+/**
  * @typedef {Object} SourceChange
  * @property {(boolean | null)} [enabled]
  * @property {(Object<string, number> | null)} [preference]
@@ -773,7 +816,7 @@
  * @property {string} id
  * @property {boolean} enabled
  * @property {Object<string, number>} preference
- * @property {(SecretSet | null)} key
+ * @property {(moneykata__ui__prices__SecretSet | null)} key
  * @property {(string | null)} lastRunAt
  * @property {(string | null)} lastOkAt
  * @property {(string | null)} lastError
@@ -809,6 +852,11 @@
  * @property {Array<string>} changed
  * @property {Array<Array<string>>} gaps
  * @property {(string | null)} firstParting
+ */
+
+/**
+ * @typedef {Object} TestEmail
+ * @property {string} to
  */
 
 /**
@@ -996,6 +1044,19 @@
  * @typedef {Object} Zones
  * @property {string} server
  * @property {Array<string>} zones
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__prices__SecretSet
+ * @property {string} setAt
+ * @property {(string | null)} setBy
+ */
+
+/**
+ * A stored secret as the UI shows it: set, when and by whom.
+ * @typedef {Object} moneykata__ui__settings__SecretSet
+ * @property {string} setAt
+ * @property {(string | null)} setBy
  */
 
 export {};

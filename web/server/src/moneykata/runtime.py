@@ -93,6 +93,20 @@ def register_tasks(server: Server) -> None:
 
     server.tasks.register("reencrypt", reencrypt, None, last.get("reencrypt"))
 
+    def mail(ctx: TaskContext) -> None:
+        """Send what the outbox holds (S16.2): at once when an email is queued, and every five
+        minutes for what could not go."""
+        from .mail import smtp_settings
+
+        if not server.services.mailer.waiting():
+            return
+        with server.db.read() as s:
+            smtp = smtp_settings(s, server.keys.secrets)
+        server.services.mailer.send_waiting(smtp, server.guard, ctx.stop)
+
+    server.tasks.register("mail", mail, Every(300), last.get("mail"))
+    server.services.mailer.notify = lambda: server.tasks.run_now("mail")
+
 
 def build(config: Config) -> Server:
     store = maintenance.open_store(config)

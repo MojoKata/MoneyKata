@@ -10,13 +10,15 @@ import { useDialogGuide, useGuide } from '../components/help.js';
 import { Failed, Loading } from '../components/bits.js';
 import { Icon } from '../components/icon.js';
 import { Dialog, openDialog } from '../components/dialog.js';
-import { errAt, Field, FormError, Input, Select, Switch } from '../components/fields.js';
+import { errAt, Field, FormError, Input, Select, Switch, SwitchRow } from '../components/fields.js';
 import { toast } from '../components/toast.js';
 import { loadSession } from '../store/session.js';
 
 const SECTIONS = /** @type {[string, string][]} */ ([
   ['general', 'General'],
+  ['email', 'Email (SMTP)'],
   ['sessions', 'Sign-in and sessions'],
+  ['signup', 'Sign-up'],
   ['passwords', 'Passwords'],
   ['prices', 'Prices'],
   ['imports', 'Imports'],
@@ -45,6 +47,8 @@ export default function Settings({ section }) {
         ? html`<${Backups} />`
         : current === 'keys'
         ? html`<${Keys} />`
+        : current === 'email'
+        ? html`<${EmailSection} />`
         : html`<${Plain} section=${current} />`}</div>
     </div>
   `;
@@ -161,6 +165,32 @@ function Plain({ section }) {
                       onInput=${set('lockoutMinutes', true)} inputmode="numeric" />
                     </${Field}>
                     </div>
+      `,
+    );
+  }
+  if (section === 'signup') {
+    return form(
+      ['signupEnabled', 'signupDomains'],
+      html`
+        <h3>Sign-up</h3>
+        <${SwitchRow} label="Sign-up" on=${f.signupEnabled}
+          onChange=${(/** @type {boolean} */ x) => setF({ ...f, signupEnabled: x })}
+          hint="People can ask for an account from the sign-in screen; an admin approves or rejects each request. It needs email (SMTP) and the public URL." />
+        ${errAt(e, 'signupEnabled')
+          ? html`<div class="err">${errAt(e, 'signupEnabled')}</div>`
+          : null}
+        <${Field} label="Allowed email domains" id="signup-domains" error=${errAt(
+          e,
+          'signupDomains',
+        )}
+          hint="Optional, separated by commas. Requests from other domains are refused.">
+          <${Input} value=${(f.signupDomains || []).join(', ')} placeholder="any domain"
+            onInput=${(/** @type {string} */ x) =>
+              setF({
+                ...f,
+                signupDomains: x.split(',').map((d) => d.trim()).filter(Boolean),
+              })} />
+          </${Field}>
       `,
     );
   }
@@ -385,6 +415,101 @@ function SetKey({ close, src }) {
           : null}
         <${FormError} error=${save.error} shown=${['apiKey']} />
       </${Dialog}>
+  `;
+}
+
+/** Email (S16.2): the SMTP server, its password as a secret, a test, and the outbox. */
+function EmailSection() {
+  const res = useApi('/settings/email', {}, ['task']);
+  const s = useApi('/settings');
+  const v = /** @type {any} */ (res.data);
+  const values = /** @type {any} */ (s.data)?.values;
+  const [f, setF] = useState(/** @type {any} */ (null));
+  const [password, setPassword] = useState('');
+  useEffect(() => {
+    if (values) {
+      setF({
+        smtpHost: values.smtpHost || '',
+        smtpPort: values.smtpPort,
+        smtpSecurity: values.smtpSecurity,
+        smtpUsername: values.smtpUsername || '',
+        smtpFrom: values.smtpFrom || '',
+      });
+    }
+  }, [values]);
+  const save = useSubmit(async () => {
+    await api.patch('/settings', f);
+    if (password) await api.put('/settings/email/password', { password });
+    setPassword('');
+    toast('Saved');
+    res.reload();
+    s.reload();
+  });
+  const test = useSubmit(async () => {
+    const r = await api.post('/settings/email/test');
+    toast(`Test email sent to ${r.to}`);
+  });
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!v || !f) return html`<${Loading} />`;
+  const set = (/** @type {string} */ k, num = false) => (/** @type {string} */ x) =>
+    setF({ ...f, [k]: num ? (x === '' ? '' : Number(x)) : x });
+  const e = save.error;
+  const keys = ['smtpHost', 'smtpPort', 'smtpSecurity', 'smtpUsername', 'smtpFrom', 'password'];
+  return html`
+    <form class="card content-narrow" onSubmit=${(/** @type {Event} */ ev) => {
+      ev.preventDefault();
+      save.run().catch(() => {});
+    }}>
+      <h3>Email (SMTP)</h3>
+      <p class="small dim" style=${{ marginTop: '-6px' }}>${values.smtpHost
+        ? 'Emails go out through this server.'
+        : 'Until a host is set, emails are written to the mail folder in the data directory.'}</p>
+      <div class="row">
+        <${Field} label="Host" id="smtp-host" error=${errAt(e, 'smtpHost')}>
+          <${Input} value=${f.smtpHost} onInput=${set('smtpHost')} placeholder="smtp.example.com" />
+          </${Field}>
+          <${Field} label="Port" id="smtp-port" error=${errAt(e, 'smtpPort')}>
+            <${Input} value=${f.smtpPort} onInput=${set('smtpPort', true)} inputmode="numeric" />
+            </${Field}>
+            </div>
+            <${Field} label="Security" id="smtp-security" error=${errAt(e, 'smtpSecurity')}
+              hint="STARTTLS on port 587, TLS on 465. None only for a relay on your own network.">
+              <${Select} value=${f.smtpSecurity} onChange=${set('smtpSecurity')}
+                options=${[['starttls', 'STARTTLS'], ['tls', 'TLS'], ['none', 'None']]} />
+              </${Field}>
+              <div class="row">
+                <${Field} label="Username" id="smtp-username" error=${errAt(e, 'smtpUsername')}>
+                  <${Input} value=${f.smtpUsername} onInput=${set(
+                    'smtpUsername',
+                  )} autocomplete="off" />
+                  </${Field}>
+                  <${Field} label="Password" id="smtp-password" error=${errAt(e, 'password')}
+                    hint=${v.password
+                      ? `Set ${date(v.password.setAt)}${
+                        v.password.setBy ? ' by ' + v.password.setBy : ''
+                      }. Type a new one to replace it.`
+                      : 'Not set.'}>
+                    <${Input} type="password" value=${password} onInput=${setPassword}
+                      autocomplete="new-password" placeholder=${v.password ? '••••••••' : ''} />
+                    </${Field}>
+                    </div>
+                    <${Field} label="From address" id="smtp-from" error=${errAt(e, 'smtpFrom')}
+                      hint="As emails show it, such as MoneyKata <money@example.com>.">
+        <${Input} value=${f.smtpFrom} onInput=${set('smtpFrom')} />
+      </${Field}>
+      ${v.waiting || v.setAside || v.lastError
+        ? html`<div class=${'notice small' + (v.lastError ? ' bad' : '')} role="status">
+          ${v.waiting} waiting to be sent${
+          v.setAside ? `, ${v.setAside} set aside (refused by the SMTP server)` : ''
+        }${v.lastError ? html`. Last try ${ago(v.lastRun)}: ${v.lastError}` : ''}</div>`
+        : null}
+      <${FormError} error=${e} shown=${keys} />
+      <${FormError} error=${test.error} />
+      <div class="toolbar mt"><button type="button" class="btn" disabled=${test.busy ||
+        !values.smtpHost} onClick=${() => test.run().catch(() => {})}>Send a test email</button>
+        <span class="spacer"></span>
+        <button class="btn primary" disabled=${save.busy}>Save</button></div>
+    </form>
   `;
 }
 

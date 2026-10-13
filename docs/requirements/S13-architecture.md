@@ -24,8 +24,11 @@
    pruning. Each records its last run and error, which Settings shows.
    They run in a thread pool with per-provider rate limits and never block a request.
 5. **Outbound calls** go through one httpx client with an **egress guard**: only the hosts of
-   enabled price sources, the bitcoin explorer or node, and links; never loopback, link-local or cloud metadata
-   addresses unless an admin allows one by name; with timeouts and response-size ceilings.
+   enabled price sources, the bitcoin explorer or node, the SMTP server, and links; never
+   loopback, link-local or cloud metadata addresses unless an admin allows one by name; with
+   timeouts and response-size ceilings. Email goes through the standard library's SMTP
+   client, past the same guard; its host is one an admin named in Settings › Email, so it
+   counts as allowed by name.
 6. **Stopping**: on SIGTERM the server ends every event stream, lets requests in flight finish
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
    cannot start for a reason only an operator can fix (a config file it can't use, a file

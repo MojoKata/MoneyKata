@@ -686,6 +686,20 @@
         "title": "ActivityItem",
         "type": "object"
       },
+      "Approval": {
+        "additionalProperties": false,
+        "properties": {
+          "groupIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Groupids",
+            "type": "array"
+          }
+        },
+        "title": "Approval",
+        "type": "object"
+      },
       "Attention": {
         "additionalProperties": false,
         "properties": {
@@ -1262,6 +1276,82 @@
           "email"
         ],
         "title": "EmailChange",
+        "type": "object"
+      },
+      "EmailPassword": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "EmailPassword",
+        "type": "object"
+      },
+      "EmailView": {
+        "additionalProperties": false,
+        "properties": {
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lasterror"
+          },
+          "lastRun": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrun"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/moneykata__ui__settings__SecretSet"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "setAside": {
+            "title": "Setaside",
+            "type": "integer"
+          },
+          "waiting": {
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "password",
+          "waiting",
+          "setAside",
+          "lastRun",
+          "lastError"
+        ],
+        "title": "EmailView",
         "type": "object"
       },
       "GroupChange": {
@@ -3649,33 +3739,6 @@
         "title": "Saved",
         "type": "object"
       },
-      "SecretSet": {
-        "additionalProperties": false,
-        "properties": {
-          "setAt": {
-            "format": "date-time",
-            "title": "Setat",
-            "type": "string"
-          },
-          "setBy": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Setby"
-          }
-        },
-        "required": [
-          "setAt",
-          "setBy"
-        ],
-        "title": "SecretSet",
-        "type": "object"
-      },
       "Series": {
         "additionalProperties": false,
         "properties": {
@@ -3953,6 +4016,119 @@
         "title": "SignIn",
         "type": "object"
       },
+      "SignupConfirmed": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "household": {
+            "title": "Household",
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName",
+          "household"
+        ],
+        "title": "SignupConfirmed",
+        "type": "object"
+      },
+      "SignupForm": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName",
+          "username",
+          "email",
+          "password"
+        ],
+        "title": "SignupForm",
+        "type": "object"
+      },
+      "SignupOpen": {
+        "additionalProperties": false,
+        "description": "Whether the sign-in screen offers Sign up, and to which email domains.",
+        "properties": {
+          "domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Domains",
+            "type": "array"
+          },
+          "open": {
+            "title": "Open",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "open",
+          "domains"
+        ],
+        "title": "SignupOpen",
+        "type": "object"
+      },
+      "SignupRow": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmedat"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "username",
+          "email",
+          "confirmedAt"
+        ],
+        "title": "SignupRow",
+        "type": "object"
+      },
       "SourceChange": {
         "additionalProperties": false,
         "properties": {
@@ -4112,7 +4288,7 @@
           "key": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/SecretSet"
+                "$ref": "#/components/schemas/moneykata__ui__prices__SecretSet"
               },
               {
                 "type": "null"
@@ -4405,6 +4581,20 @@
           "firstParting"
         ],
         "title": "Suspects",
+        "type": "object"
+      },
+      "TestEmail": {
+        "additionalProperties": false,
+        "properties": {
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to"
+        ],
+        "title": "TestEmail",
         "type": "object"
       },
       "Token": {
@@ -5690,6 +5880,61 @@
           "zones"
         ],
         "title": "Zones",
+        "type": "object"
+      },
+      "moneykata__ui__prices__SecretSet": {
+        "additionalProperties": false,
+        "properties": {
+          "setAt": {
+            "format": "date-time",
+            "title": "Setat",
+            "type": "string"
+          },
+          "setBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setby"
+          }
+        },
+        "required": [
+          "setAt",
+          "setBy"
+        ],
+        "title": "SecretSet",
+        "type": "object"
+      },
+      "moneykata__ui__settings__SecretSet": {
+        "additionalProperties": false,
+        "description": "A stored secret as the UI shows it: set, when and by whom.",
+        "properties": {
+          "setAt": {
+            "format": "date-time",
+            "title": "Setat",
+            "type": "string"
+          },
+          "setBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setby"
+          }
+        },
+        "required": [
+          "setAt",
+          "setBy"
+        ],
+        "title": "SecretSet",
         "type": "object"
       }
     }
@@ -8357,6 +8602,91 @@
         ]
       }
     },
+    "/ui/api/settings/email": {
+      "get": {
+        "operationId": "email_status_ui_api_settings_email_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Email Status",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/email/password": {
+      "put": {
+        "description": "The SMTP password is a secret (S14.4): set or removed, never read back.",
+        "operationId": "email_password_ui_api_settings_email_password_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Email Password",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/email/test": {
+      "post": {
+        "description": "Send a test email to the admin now, through the saved settings, and say what failed.",
+        "operationId": "email_test_ui_api_settings_email_test_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestEmail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Email Test",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
     "/ui/api/settings/keys": {
       "get": {
         "description": "Read only: the master key is changed only on the host (S15.4.6).",
@@ -8537,6 +8867,218 @@
         "summary": "Save Shares",
         "tags": [
           "sharing"
+        ]
+      }
+    },
+    "/ui/api/signup": {
+      "get": {
+        "operationId": "signup_open_ui_api_signup_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupOpen"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Signup Open",
+        "tags": [
+          "session"
+        ]
+      },
+      "post": {
+        "description": "The answer is the same whether or not the email already has an account (S10.1.4).",
+        "operationId": "signup_request_ui_api_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Signup Request",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/ui/api/signup-requests": {
+      "get": {
+        "description": "Requests whose email is confirmed, waiting for an admin (S10.1.4).",
+        "operationId": "signup_requests_ui_api_signup_requests_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SignupRow"
+                  },
+                  "title": "Response Signup Requests Ui Api Signup Requests Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Signup Requests",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/ui/api/signup-requests/{request_id}/approve": {
+      "post": {
+        "operationId": "approve_signup_ui_api_signup_requests__request_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Approval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Signup",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/ui/api/signup-requests/{request_id}/reject": {
+      "post": {
+        "operationId": "reject_signup_ui_api_signup_requests__request_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject Signup",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/ui/api/signup/confirm": {
+      "post": {
+        "operationId": "signup_confirm_ui_api_signup_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Token"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupConfirmed"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Signup Confirm",
+        "tags": [
+          "session"
         ]
       }
     },
