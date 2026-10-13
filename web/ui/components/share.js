@@ -15,7 +15,7 @@ import { toast } from './toast.js';
 const LEVELS =
   /** @type {[string, string][]} */ ([['none', 'None'], ['read', 'Read'], ['write', 'Write']]);
 
-/** @param {{ close: (v?: any) => void, kind: 'account' | 'portfolio', id: string, name: string }} p */
+/** @param {{ close: (v?: any) => void, kind: 'account' | 'portfolio' | 'budget', id: string, name: string }} p */
 export function ShareDialog({ close, kind, id, name }) {
   useDialogGuide('dialog-share');
   const [view, setView] = useState(/** @type {any} */ (null));

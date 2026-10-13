@@ -348,8 +348,8 @@ def test_a_backup_after_reads_still_writes_its_copy(store, keyed_config):
 
 
 def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
-    """Revision 0002 rebuilds OneTimeToken to allow 'two-step': what's in flight is kept, and
-    the rebuilt table is the one the declarations make."""
+    """Revisions rebuild tables to change a CHECK (0002 OneTimeToken, 0005 Share): what they
+    hold is kept, and each rebuilt table is the one the declarations make."""
     from alembic import command
 
     engine = make_engine(tmp_path / "old.db", None)
@@ -376,16 +376,25 @@ def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
             f"INSERT INTO \"OneTimeToken\" VALUES ('h2', 'two-step', '{uid}', NULL, "
             "'2026-10-01 00:00:00', '2030-01-01 00:00:00')"
         )
-        migrated = conn.exec_driver_sql(
-            "SELECT sql FROM sqlite_master WHERE name = 'OneTimeToken'"
-        ).scalar_one()
+        rebuilt = ("OneTimeToken", "Share")
+        migrated = {
+            name: conn.exec_driver_sql(
+                f"SELECT sql FROM sqlite_master WHERE name = '{name}'"
+            ).scalar_one()
+            for name in rebuilt
+        }
     engine.dispose()
     fresh = make_engine(tmp_path / "fresh.db", None)
-    metadata.create_all(fresh, tables=[metadata.tables["User"], metadata.tables["OneTimeToken"]])
+    metadata.create_all(fresh, tables=[metadata.tables[n] for n in ("User", "Group", *rebuilt)])
     with fresh.connect() as conn:
-        made = conn.exec_driver_sql(
-            "SELECT sql FROM sqlite_master WHERE name = 'OneTimeToken'"
-        ).scalar_one()
+        made = {
+            name: conn.exec_driver_sql(
+                f"SELECT sql FROM sqlite_master WHERE name = '{name}'"
+            ).scalar_one()
+            for name in rebuilt
+        }
     fresh.dispose()
     squash = lambda sql: " ".join(sql.replace('"', "").split())  # noqa: E731
-    assert squash(migrated) == squash(made)
+    for name in rebuilt:
+        # The same columns and constraints, in whatever order the rebuild wrote them.
+        assert sorted(squash(migrated[name])) == sorted(squash(made[name])), name

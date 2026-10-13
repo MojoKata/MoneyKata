@@ -982,6 +982,139 @@
         "title": "Body_upload_ui_api_accounts__account_id__imports_post",
         "type": "object"
       },
+      "BudgetChange": {
+        "additionalProperties": false,
+        "properties": {
+          "accountIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountids"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "BudgetChange",
+        "type": "object"
+      },
+      "BudgetRow": {
+        "additionalProperties": false,
+        "properties": {
+          "accountIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accountids",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ownerId": {
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "sharedWith": {
+            "title": "Sharedwith",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "ownerId",
+          "ownerName",
+          "level",
+          "accountIds",
+          "sharedWith",
+          "version"
+        ],
+        "title": "BudgetRow",
+        "type": "object"
+      },
+      "CashFlow": {
+        "additionalProperties": false,
+        "properties": {
+          "income": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Income",
+            "type": "string"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/Flow"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "spending": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Spending",
+            "type": "string"
+          },
+          "uses": {
+            "items": {
+              "$ref": "#/components/schemas/Flow"
+            },
+            "title": "Uses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "month",
+          "sources",
+          "uses",
+          "income",
+          "spending"
+        ],
+        "title": "CashFlow",
+        "type": "object"
+      },
       "Categorise": {
         "additionalProperties": false,
         "properties": {
@@ -1481,6 +1614,29 @@
           "lastError"
         ],
         "title": "EmailView",
+        "type": "object"
+      },
+      "Flow": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "amount"
+        ],
+        "title": "Flow",
         "type": "object"
       },
       "GroupChange": {
@@ -2521,6 +2677,163 @@
         "title": "Me",
         "type": "object"
       },
+      "MonthRow": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Actual",
+            "type": "string"
+          },
+          "cadence": {
+            "title": "Cadence",
+            "type": "string"
+          },
+          "carried": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Carried",
+            "type": "string"
+          },
+          "categoryId": {
+            "title": "Categoryid",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "planned": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Planned",
+            "type": "string"
+          },
+          "remaining": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Remaining",
+            "type": "string"
+          },
+          "rollover": {
+            "title": "Rollover",
+            "type": "boolean"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "categoryId",
+          "label",
+          "kind",
+          "cadence",
+          "rollover",
+          "planned",
+          "carried",
+          "actual",
+          "remaining",
+          "state"
+        ],
+        "title": "MonthRow",
+        "type": "object"
+      },
+      "MonthView": {
+        "additionalProperties": false,
+        "properties": {
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "daysLeft": {
+            "title": "Daysleft",
+            "type": "integer"
+          },
+          "expectedIncome": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Expectedincome",
+            "type": "string"
+          },
+          "income": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Income",
+            "type": "string"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "plannedSpending": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Plannedspending",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/MonthRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "spent": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Spent",
+            "type": "string"
+          },
+          "uncategorised": {
+            "title": "Uncategorised",
+            "type": "integer"
+          },
+          "unplanned": {
+            "items": {
+              "$ref": "#/components/schemas/Unplanned"
+            },
+            "title": "Unplanned",
+            "type": "array"
+          }
+        },
+        "required": [
+          "month",
+          "rows",
+          "unplanned",
+          "income",
+          "expectedIncome",
+          "spent",
+          "plannedSpending",
+          "uncategorised",
+          "daysLeft",
+          "canWrite"
+        ],
+        "title": "MonthView",
+        "type": "object"
+      },
       "NetWorthSeries": {
         "additionalProperties": false,
         "properties": {
@@ -2728,6 +3041,27 @@
           "balance"
         ],
         "title": "NewAnchor",
+        "type": "object"
+      },
+      "NewBudget": {
+        "additionalProperties": false,
+        "properties": {
+          "accountIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accountids",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "NewBudget",
         "type": "object"
       },
       "NewCategory": {
@@ -3086,6 +3420,71 @@
           "quantity"
         ],
         "title": "PickIn",
+        "type": "object"
+      },
+      "Plan": {
+        "additionalProperties": false,
+        "description": "The plan from a month on: the categories listed, and none other.",
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PlanLine"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "lines"
+        ],
+        "title": "Plan",
+        "type": "object"
+      },
+      "PlanLine": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "cadence": {
+            "default": "month",
+            "title": "Cadence",
+            "type": "string"
+          },
+          "categoryId": {
+            "title": "Categoryid",
+            "type": "string"
+          },
+          "rollover": {
+            "default": false,
+            "title": "Rollover",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "categoryId",
+          "amount"
+        ],
+        "title": "PlanLine",
         "type": "object"
       },
       "Point": {
@@ -3814,6 +4213,80 @@
           "codes"
         ],
         "title": "RecoveryCodes",
+        "type": "object"
+      },
+      "RecurringRow": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "every": {
+            "title": "Every",
+            "type": "string"
+          },
+          "last": {
+            "format": "date",
+            "title": "Last",
+            "type": "string"
+          },
+          "lastAmount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Lastamount",
+            "type": "string"
+          },
+          "missed": {
+            "title": "Missed",
+            "type": "boolean"
+          },
+          "next": {
+            "format": "date",
+            "title": "Next",
+            "type": "string"
+          },
+          "payee": {
+            "title": "Payee",
+            "type": "string"
+          },
+          "usual": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Usual",
+            "type": "string"
+          }
+        },
+        "required": [
+          "payee",
+          "accountId",
+          "accountName",
+          "every",
+          "last",
+          "next",
+          "usual",
+          "lastAmount",
+          "count",
+          "missed",
+          "changed"
+        ],
+        "title": "RecurringRow",
         "type": "object"
       },
       "ReturnRow": {
@@ -4780,6 +5253,39 @@
         "title": "TransferLink",
         "type": "object"
       },
+      "TrendPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Actual",
+            "type": "string"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "planned": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Planned",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "planned",
+          "actual"
+        ],
+        "title": "TrendPoint",
+        "type": "object"
+      },
       "TwoStep": {
         "additionalProperties": false,
         "properties": {
@@ -5712,6 +6218,34 @@
           "price"
         ],
         "title": "TypedPrice",
+        "type": "object"
+      },
+      "Unplanned": {
+        "additionalProperties": false,
+        "properties": {
+          "categoryId": {
+            "title": "Categoryid",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "spent": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Spent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "categoryId",
+          "label",
+          "spent"
+        ],
+        "title": "Unplanned",
         "type": "object"
       },
       "UserChange": {
@@ -6931,6 +7465,461 @@
         "summary": "Badges",
         "tags": [
           "alerts"
+        ]
+      }
+    },
+    "/ui/api/budgets": {
+      "get": {
+        "operationId": "list_budgets_ui_api_budgets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BudgetRow"
+                  },
+                  "title": "Response List Budgets Ui Api Budgets Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Budgets",
+        "tags": [
+          "budgets"
+        ]
+      },
+      "post": {
+        "operationId": "create_budget_ui_api_budgets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewBudget"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Budget",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/ui/api/budgets/{budget_id}": {
+      "delete": {
+        "operationId": "delete_budget_ui_api_budgets__budget_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "title": "Budget Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Budget",
+        "tags": [
+          "budgets"
+        ]
+      },
+      "patch": {
+        "operationId": "change_budget_ui_api_budgets__budget_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "title": "Budget Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Budget",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/ui/api/budgets/{budget_id}/cash-flow": {
+      "get": {
+        "operationId": "budget_cash_flow_ui_api_budgets__budget_id__cash_flow_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashFlow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Budget Cash Flow",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/ui/api/budgets/{budget_id}/month": {
+      "get": {
+        "operationId": "budget_month_ui_api_budgets__budget_id__month_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Budget Month",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/ui/api/budgets/{budget_id}/plan": {
+      "put": {
+        "description": "From the month given on, the plan is what the body lists; earlier months keep theirs.",
+        "operationId": "set_plan_ui_api_budgets__budget_id__plan_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "title": "Budget Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Plan"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Plan",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/ui/api/budgets/{budget_id}/recurring": {
+      "get": {
+        "description": "Found in the last 15 months of the budget's accounts each time it is asked.",
+        "operationId": "budget_recurring_ui_api_budgets__budget_id__recurring_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "title": "Budget Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecurringRow"
+                  },
+                  "title": "Response Budget Recurring Ui Api Budgets  Budget Id  Recurring Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Budget Recurring",
+        "tags": [
+          "budgets"
+        ]
+      }
+    },
+    "/ui/api/budgets/{budget_id}/trends": {
+      "get": {
+        "operationId": "budget_trends_ui_api_budgets__budget_id__trends_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "title": "Budget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "months",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "maximum": 36,
+              "minimum": 3,
+              "title": "Months",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TrendPoint"
+                  },
+                  "title": "Response Budget Trends Ui Api Budgets  Budget Id  Trends Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Budget Trends",
+        "tags": [
+          "budgets"
         ]
       }
     },
@@ -8989,7 +9978,8 @@
             "schema": {
               "enum": [
                 "account",
-                "portfolio"
+                "portfolio",
+                "budget"
               ],
               "title": "Kind",
               "type": "string"
@@ -9043,7 +10033,8 @@
             "schema": {
               "enum": [
                 "account",
-                "portfolio"
+                "portfolio",
+                "budget"
               ],
               "title": "Kind",
               "type": "string"

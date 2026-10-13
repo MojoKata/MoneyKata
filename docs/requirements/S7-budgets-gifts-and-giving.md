@@ -2,17 +2,33 @@
 
 1. **Budgets are per user, or per group** (a household budget a group shares at `write`).
    A budget covers chosen accounts and is monthly by default, or yearly per category.
+   1. **Shared like an account** (S10.3): its owner chooses its accounts, shares it, and
+      deletes it; a `write` share also changes its plan. Its actuals count every
+      transaction in its accounts, whoever can see them.
+   2. **The plan holds from a month on.** A change applies from the month it is made in,
+      so past months keep the plan they had; a category taken out of the plan stops from
+      that month. A plan line on a parent category counts its children with it.
 2. **Categories** form a two-level tree (*Housing › Rent*). Each is an expense, income or
    transfer category. A default set ships, and each category may carry a **tax tag**
    (charitable, medical, business, childcare, education, …) that feeds Taxes (S8.5).
 3. **Each period** has, per category, the **planned** amount, the **actual** from
    categorised transactions, and what remains, with optional **rollover** of the unspent or
-   overspent remainder to the next period.
+   overspent remainder to the next period. Spending shows as an amount spent, income as
+   received; a split transaction counts through its splits; matched transfers and transfer
+   categories never count (S1.7). A yearly line compares with the year to date and does not
+   roll over. Spending in a category with no plan is listed as *not in the plan*.
 4. **Screens**: the month's categories as progress bars (green, then amber at 90%, red over),
    income against spending, cash flow (a Sankey from income to categories), trends of a
    category over 12 months, and the uncategorised transactions to sort.
 5. **Recurring** transactions (rent, subscriptions, salary) are detected from history and
    listed with their next expected date and amount. A missed or changed one is flagged.
+   1. **A series** is three or more transactions in one account with the same payee (its
+      reference numbers aside) and sign, at a weekly, two-weekly, twice-monthly, monthly,
+      quarterly or yearly interval, give or take a few days, with amounts within half of
+      the usual one. They are found in the last 15 months each time the list is shown.
+   2. **Missed**: the next one is more than a few days late. **Changed**: the last amount
+      moved 5% or more from the usual, flagged only where the amounts are otherwise fixed
+      (a subscription, rent), since a utility bill varies anyway.
 6. **Budget alerts** *(later)*: a category passing a threshold, a large transaction, a low
    balance, raised as alerts (S12.11).
 7. **People and occasions.** Each user keeps their own list of **people** (on the Gifts

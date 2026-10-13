@@ -57,6 +57,8 @@ DIALOGS = (
     ("/ui/accounts", "Import", "dialog-import"),
     ("/ui/transactions", "Add", "dialog-transaction"),
     ("/ui/portfolios", "New portfolio", "dialog-portfolio"),
+    ("/ui/budgets", "New budget", "dialog-budget"),
+    ("/ui/budgets", "Edit plan", "dialog-plan"),
     ("/ui/users", "New user", "dialog-new-user"),
     ("/ui/users", "New group", "dialog-group"),
     ("/ui/settings/prices", "Add a source", "dialog-add-source"),
@@ -231,6 +233,10 @@ class Recorder:
             "/ui/activity",
             "/ui/alerts",
         ]
+        for b in self.api("/budgets"):
+            paths += [
+                f"/ui/budgets/{b['id']}/{t}" for t in ("month", "cash-flow", "trends", "recurring")
+            ]
         paths += ["/ui/profile", "/ui/transactions?category=none"]
         if admin:
             paths += ["/ui/users"] + [f"/ui/settings/{s}" for s in SETTINGS]

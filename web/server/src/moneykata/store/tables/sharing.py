@@ -31,8 +31,8 @@ PortfolioAccounts = pairs(
     PrimaryKeyConstraint("portfolioId", "accountId"),
 )
 
-# A grant of one item, at one level, to a user or a group (S10.3). Items of the other shareable
-# kinds join "account" and "portfolio" as they are built.
+# A grant of one item, at one level, to a user or a group (S10.3): any of the seven kinds,
+# each served as it is built.
 Share = record(
     "Share",
     "Share",
@@ -42,7 +42,11 @@ Share = record(
     Column("groupId", Text, ForeignKey("Group.id", ondelete="CASCADE")),
     Column("level", Text, nullable=False),
     Column("createdById", Text, ForeignKey("User.id")),
-    CheckConstraint("kind IN ('account', 'portfolio')", name="kind"),
+    CheckConstraint(
+        "kind IN ('account', 'portfolio', 'budget', 'person', 'giving-plan', 'tax-book', "
+        "'projection')",
+        name="kind",
+    ),
     CheckConstraint("level IN ('read', 'write')", name="level"),
     CheckConstraint('("userId" IS NULL) != ("groupId" IS NULL)', name="one_grantee"),
     Index("ix_Share_item", "kind", "itemId"),

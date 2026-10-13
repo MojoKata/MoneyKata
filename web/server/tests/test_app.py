@@ -204,6 +204,10 @@ def test_every_screen_and_tab_has_its_guide(page):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
     for p in ports:
         paths += [f"/ui/portfolios/{p}/performance", f"/ui/portfolios/{p}/holdings"]
+    budgets = page.evaluate("""async () => (await (await fetch('/ui/api/budgets')).json())
+        .map((b) => b.id)""")
+    for b in budgets:
+        paths += [f"/ui/budgets/{b}/{t}" for t in ("month", "cash-flow", "trends", "recurring")]
     for s in SETTINGS_SECTIONS:
         paths.append(f"/ui/settings/{s}")
     for path in paths:
@@ -254,6 +258,8 @@ def test_every_dialog_has_its_guide(page):
             "dialog-tick-off",
         ),
         ("/ui/portfolios", "New portfolio", "dialog-portfolio"),
+        ("/ui/budgets", "New budget", "dialog-budget"),
+        ("/ui/budgets", "Edit plan", "dialog-plan"),
         ("/ui/users", "New user", "dialog-new-user"),
         ("/ui/users", "New group", "dialog-group"),
         ("/ui/settings/prices", "Add a source", "dialog-add-source"),

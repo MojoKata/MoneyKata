@@ -139,6 +139,31 @@ def portfolio(
     return p, _require(lvl, need, "portfolio")
 
 
+def visible_budgets(s: Session, user_id: str) -> list[tuple]:
+    from .store.entities.budgets import Budget
+
+    r = reach(s, user_id)
+    shared = [i for (k, i) in r.levels if k == "budget"]
+    rows = s.scalars(
+        select(Budget)
+        .where(Budget.deleted == false(), or_(Budget.ownerId == user_id, Budget.id.in_(shared)))
+        .order_by(Budget.name)
+    ).all()
+    return [
+        (b, lvl)
+        for b in rows
+        if (lvl := level_of(s, user_id, "budget", b.ownerId, b.id, b.deleted, r))
+    ]
+
+
+def budget(s: Session, user_id: str, budget_id: str, need: str = "read"):
+    from .store.entities.budgets import Budget
+
+    b = s.get(Budget, budget_id)
+    lvl = level_of(s, user_id, "budget", b.ownerId, b.id, b.deleted) if b is not None else None
+    return b, _require(lvl, need, "budget")
+
+
 def _require(level: str | None, need: str, what: str) -> str:
     if level is None:
         raise Problem(404, "not-found", "Not found")

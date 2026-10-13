@@ -19,9 +19,10 @@
    and `localhost`, and the names and addresses listed in `[tls] names`, which are how
    browsers on the network reach it; a change to the list makes it again.
 4. **Background tasks** in the server process: price refresh (S4.4), bitcoin wallet reads
-   (S1.6), link pulls (S11.4), option expiry (S3.6), recurring detection (S7.5), backups
-   (S14.6), receipt and statement reading (S9.8, S1.3, in its own worker process), and
-   pruning. Each records its last run and error, which Settings shows.
+   (S1.6), link pulls (S11.4), option expiry (S3.6), backups (S14.6), sending email
+   (S16.2), alerts and their daily summary (S12.11), receipt and statement reading (S9.8,
+   S1.3, in its own worker process), and pruning. Recurring transactions are found when
+   they are shown (S7.5). Each records its last run and error, which Settings shows.
    They run in a thread pool with per-provider rate limits and never block a request.
 5. **Outbound calls** go through one httpx client with an **egress guard**: only the hosts of
    enabled price sources, the bitcoin explorer or node, the SMTP server, and links; never

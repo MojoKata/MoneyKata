@@ -5,6 +5,7 @@ from sqlalchemy.orm import registry
 
 from .entities import Record, _now
 from .entities import accounts as acc
+from .entities import budgets as bd
 from .entities import prices as pr
 from .entities import sharing as sh
 from .entities.alerts import Alert, AlertState
@@ -18,7 +19,7 @@ from .entities.users import (
     User,
     UserGroup,
 )
-from .tables import accounts, activity, alerts, core, prices, sharing, users
+from .tables import accounts, activity, alerts, budgets, core, prices, sharing, users
 
 mapper_registry = registry()
 _done = False
@@ -63,6 +64,9 @@ def map_all() -> None:
     _versioned(sh.Portfolio, sharing.Portfolio)
     _versioned(sh.Share, sharing.Share)
     mapper_registry.map_imperatively(sh.PortfolioAccount, sharing.PortfolioAccounts)
+    _versioned(bd.Budget, budgets.Budget)
+    _versioned(bd.BudgetLine, budgets.BudgetLine)
+    mapper_registry.map_imperatively(bd.BudgetAccount, budgets.BudgetAccounts)
     mapper_registry.map_imperatively(sh.CountedAccount, sharing.CountedAccounts)
     _versioned(Setting, core.Setting)
     mapper_registry.map_imperatively(Secret, core.Secret)

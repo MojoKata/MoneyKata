@@ -12,6 +12,7 @@ from ..auth import users as accounts
 from ..store.entities.alerts import Alert
 from ..store.entities.users import Group, User, UserGroup
 from .seed_accounts import seed_accounts
+from .seed_budgets import seed_budgets
 from .seed_sharing import seed_sharing
 
 log = logging.getLogger("moneykata.dev")
@@ -26,6 +27,7 @@ def seed(server) -> None:
         people = seed_users(s)
         seed_accounts(s, people)
         seed_sharing(s, people)
+        seed_budgets(s, people)
         seed_alerts(s)
     log.info("dev: seeded; sign in as admin, alice or bob with %r", PASSWORD)
 

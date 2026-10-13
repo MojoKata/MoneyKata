@@ -16,7 +16,7 @@ from .conventions import Model
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", tags=["sharing"])
-Kind = Literal["account", "portfolio"]
+Kind = Literal["account", "portfolio", "budget"]
 
 
 class Via(Model):

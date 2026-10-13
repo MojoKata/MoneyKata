@@ -73,6 +73,10 @@ TEXT = {
     "portfolio.created": "{actor} made the portfolio {subject}",
     "portfolio.updated": "{actor} changed {fields} of the portfolio {subject}",
     "portfolio.deleted": "{actor} deleted the portfolio {subject}",
+    "budget.created": "{actor} made the budget {subject}",
+    "budget.updated": "{actor} changed {fields} of the budget {subject}",
+    "budget.planned": "{actor} changed the plan of the budget {subject}",
+    "budget.deleted": "{actor} deleted the budget {subject}",
     "share.given": "{actor} shared {subject} with {grantee} ({level})",
     "share.changed": "{actor} changed {grantee}'s access to {subject} ({level})",
     "share.removed": "{actor} stopped sharing {subject} with {grantee}",
@@ -159,6 +163,10 @@ def _visible(s, c: Caller):
         Activity.ownerId == c.id,
         and_(Activity.subjectKind == "account", Activity.subjectId.in_(accounts)),
         and_(Activity.subjectKind == "portfolio", Activity.subjectId.in_(portfolios)),
+        and_(
+            Activity.subjectKind == "budget",
+            Activity.subjectId.in_([b.id for b, _ in access.visible_budgets(s, c.id)]),
+        ),
     ]
     if c.admin:
         conds.append(
@@ -240,4 +248,9 @@ def _names(s, rows: list[Activity]) -> dict[tuple[str, str], str]:
     port_ids = {a.subjectId for a in rows if a.subjectKind == "portfolio"}
     for p in s.scalars(select(Portfolio).where(Portfolio.id.in_(port_ids))):
         names[("portfolio", p.id)] = p.name
+    from ..store.entities.budgets import Budget
+
+    budget_ids = {a.subjectId for a in rows if a.subjectKind == "budget"}
+    for b in s.scalars(select(Budget).where(Budget.id.in_(budget_ids))):
+        names[("budget", b.id)] = b.name
     return names

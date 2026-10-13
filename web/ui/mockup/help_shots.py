@@ -53,6 +53,7 @@ def routes(page) -> dict[str, str]:
     accounts = page.evaluate("async () => (await (await fetch('/ui/api/accounts')).json())")
     ports = page.evaluate("async () => (await (await fetch('/ui/api/portfolios')).json())")
     by_type = {a["type"]: a["id"] for a in accounts}
+    budget = page.evaluate("async () => (await (await fetch('/ui/api/budgets')).json())")[0]["id"]
     checking, brokerage, port = by_type["checking"], by_type["brokerage"], ports[0]["id"]
     out = {
         "dashboard": "/ui/",
@@ -61,6 +62,7 @@ def routes(page) -> dict[str, str]:
         "portfolios": "/ui/portfolios",
         "activity": "/ui/activity",
         "alerts": "/ui/alerts",
+        "budgets-month": f"/ui/budgets/{budget}/month",
         "users": "/ui/users",
         "profile": "/ui/profile",
         "account-overview": f"/ui/accounts/{checking}/overview",

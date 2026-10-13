@@ -20,7 +20,9 @@ LEVELS = ("none", "read", "write")
 
 
 def item(s: Session, kind: str, item_id: str):
-    cls = {"account": Account, "portfolio": Portfolio}.get(kind)
+    from .store.entities.budgets import Budget
+
+    cls = {"account": Account, "portfolio": Portfolio, "budget": Budget}.get(kind)
     if cls is None:
         raise Problem(404, "not-found", "Not found")
     obj = s.get(cls, item_id)

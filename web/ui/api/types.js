@@ -161,6 +161,33 @@
  */
 
 /**
+ * @typedef {Object} BudgetChange
+ * @property {(string | null)} [name]
+ * @property {(Array<string> | null)} [accountIds]
+ */
+
+/**
+ * @typedef {Object} BudgetRow
+ * @property {string} id
+ * @property {string} name
+ * @property {string} ownerId
+ * @property {string} ownerName
+ * @property {string} level
+ * @property {Array<string>} accountIds
+ * @property {number} sharedWith
+ * @property {number} version
+ */
+
+/**
+ * @typedef {Object} CashFlow
+ * @property {string} month
+ * @property {Array<Flow>} sources
+ * @property {Array<Flow>} uses
+ * @property {string} income
+ * @property {string} spending
+ */
+
+/**
  * @typedef {Object} Categorise
  * @property {Array<string>} ids
  * @property {(string | null)} categoryId
@@ -256,6 +283,12 @@
  * @property {number} setAside
  * @property {(string | null)} lastRun
  * @property {(string | null)} lastError
+ */
+
+/**
+ * @typedef {Object} Flow
+ * @property {string} name
+ * @property {string} amount
  */
 
 /**
@@ -451,6 +484,34 @@
  */
 
 /**
+ * @typedef {Object} MonthRow
+ * @property {string} categoryId
+ * @property {string} label
+ * @property {string} kind
+ * @property {string} cadence
+ * @property {boolean} rollover
+ * @property {string} planned
+ * @property {string} carried
+ * @property {string} actual
+ * @property {string} remaining
+ * @property {string} state
+ */
+
+/**
+ * @typedef {Object} MonthView
+ * @property {string} month
+ * @property {Array<MonthRow>} rows
+ * @property {Array<Unplanned>} unplanned
+ * @property {string} income
+ * @property {string} expectedIncome
+ * @property {string} spent
+ * @property {string} plannedSpending
+ * @property {number} uncategorised
+ * @property {number} daysLeft
+ * @property {boolean} canWrite
+ */
+
+/**
  * @typedef {Object} NetWorthSeries
  * @property {Array<GroupPoint>} points
  * @property {Array<string>} groups
@@ -482,6 +543,12 @@
  * @property {string} date
  * @property {(number | string)} balance
  * @property {(string | null)} [note]
+ */
+
+/**
+ * @typedef {Object} NewBudget
+ * @property {string} name
+ * @property {Array<string>} [accountIds]
  */
 
 /**
@@ -570,6 +637,21 @@
  * @typedef {Object} PickIn
  * @property {string} lotId
  * @property {(number | string)} quantity
+ */
+
+/**
+ * The plan from a month on: the categories listed, and none other.
+ * @typedef {Object} Plan
+ * @property {string} month
+ * @property {Array<PlanLine>} lines
+ */
+
+/**
+ * @typedef {Object} PlanLine
+ * @property {string} categoryId
+ * @property {(number | string)} amount
+ * @property {string} [cadence]
+ * @property {boolean} [rollover]
  */
 
 /**
@@ -698,6 +780,21 @@
  * Shown once: only their hashes are kept.
  * @typedef {Object} RecoveryCodes
  * @property {Array<string>} codes
+ */
+
+/**
+ * @typedef {Object} RecurringRow
+ * @property {string} payee
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {string} every
+ * @property {string} last
+ * @property {string} next
+ * @property {string} usual
+ * @property {string} lastAmount
+ * @property {number} count
+ * @property {boolean} missed
+ * @property {boolean} changed
  */
 
 /**
@@ -899,6 +996,13 @@
  */
 
 /**
+ * @typedef {Object} TrendPoint
+ * @property {string} month
+ * @property {string} planned
+ * @property {string} actual
+ */
+
+/**
  * @typedef {Object} TwoStep
  * @property {boolean} on
  * @property {(string | null)} since
@@ -1010,6 +1114,13 @@
  * @typedef {Object} TypedPrice
  * @property {string} date
  * @property {(number | string)} price
+ */
+
+/**
+ * @typedef {Object} Unplanned
+ * @property {string} categoryId
+ * @property {string} label
+ * @property {string} spent
  */
 
 /**

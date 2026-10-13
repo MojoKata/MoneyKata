@@ -75,6 +75,8 @@ The prefixes of the tables that exist.
 | Actv   | Activity       | A change worth showing: who made it and what it is about, never an amount.                   |
 | Alert  | Alert          | Something that needs a user's attention, one per cause, open until the cause clears.         |
 | Anchr  | Anchor         | A balance the institution reported on a date, that the account's balance is checked against. |
+| BdgLn  | BudgetLine     | One category's planned amount in a budget, from a month on, monthly or yearly.               |
+| Bdgt   | Budget         | A user's plan per category over chosen accounts; shared with a group for a household.        |
 | Cat    | Category       | A budget category given to bank transactions.                                                |
 | Group  | Group          | A named set of users that shares are granted to.                                             |
 | Hold   | Holding        | What an account holds of one instrument at a point in time.                                  |
@@ -101,7 +103,6 @@ designed yet. A row moves to §3.1 when its table is.
 |--------|---------------|-----------------------------------------------------------------------------------|
 | AsItm  | AssetItem     | One item in a physical-asset account, with its cost basis and valuations.         |
 | Asmpt  | AssumptionSet | A user's expected returns, volatility and inflation for projections.              |
-| Bdgt   | Budget        | A period's planned amounts per category.                                          |
 | Dnatn  | Donation      | One charitable gift to an organisation, or a donor-advised fund grant.            |
 | Filng  | Filing        | One return in a tax book (federal, state or local), with its progress and result. |
 | Gift   | Gift          | A gift to or from a person for an occasion, from idea to given.                   |

@@ -155,3 +155,173 @@ export const RANGES = /** @type {[string, string][]} */ ([
   ['5Y', '5Y'],
   ['All', 'All'],
 ]);
+
+/**
+ * Any other chart: ECharts with the given option, behind the same table view.
+ * @param {{ label: string, option: (token: (n: string) => string) => any, head: string[],
+ *   rows: string[][], legend?: [string, string][], deps: any[] }} p
+ */
+function Chart({ label, option, head, rows, legend, deps }) {
+  const box = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const [table, setTable] = useState(false);
+  const themeNow = theme.value;
+  useEffect(() => {
+    if (table || !box.current) return;
+    /** @type {any} */
+    let chart = null;
+    let live = true;
+    const observer = new ResizeObserver(() => chart?.resize());
+    echarts().then((ec) => {
+      if (!live || !box.current) return;
+      chart = ec.init(box.current, null, { renderer: 'svg' });
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      chart.setOption({
+        animation: !reduce,
+        textStyle: { fontFamily: token('--sans'), color: token('--fg-muted') },
+        tooltip: {
+          backgroundColor: token('--bg-4'),
+          borderColor: token('--border-strong'),
+          textStyle: { color: token('--fg') },
+        },
+        ...option(token),
+      }, true);
+      observer.observe(box.current);
+    });
+    return () => {
+      live = false;
+      observer.disconnect();
+      chart?.dispose();
+    };
+  }, [table, themeNow, ...deps]);
+  return html`<div>
+    ${
+    table
+      ? html`
+        <div class="chart-table table-wrap">
+          <table class="t">
+            <caption class="sr-only">${label}</caption>
+            <thead>
+              <tr>${head.map((h, i) => html`<th class=${i ? 'num' : ''}>${h}</th>`)}</tr>
+            </thead>
+            <tbody>${rows.map((r) =>
+              html`<tr>${r.map((v, i) => html`<td class=${i ? 'num amt' : ''}>${v}</td>`)}</tr>`
+            )}</tbody>
+          </table>
+        </div>
+      `
+      : html`<div class="chart-box amt" ref=${box} role="img" aria-label=${label}></div>`
+  }
+    <div class="chart-tools">
+      ${
+    legend
+      ? html`<div class="legend">${
+        legend.map(([name, color]) =>
+          html`<span><i style=${{ background: `var(${color})` }}></i>${name}</span>`
+        )
+      }</div>`
+      : null
+  }<span class="spacer"></span>
+      <button type="button" class="linklike small" aria-pressed=${table ? 'true' : 'false'}
+        onClick=${() => setTable(!table)}>${table ? 'Show as chart' : 'Show as table'}</button>
+    </div>
+  </div>`;
+}
+
+/**
+ * Bars per period, one series beside another: planned against actual spending (S7.4).
+ * @param {{ label: string, periods: string[], series: { name: string, color: string,
+ *   values: string[] }[] }} p
+ */
+export function BarChart({ label, periods, series }) {
+  return html`
+    <${Chart} label=${label} legend=${series.map((s) => [s.name, s.color])}
+      head=${['', ...series.map((s) => s.name)]}
+      rows=${periods.map((p, i) => [p, ...series.map((s) => money(s.values[i]))])}
+      deps=${[JSON.stringify([periods, series])]}
+      option=${(/** @type {(n: string) => string} */ t) => ({
+        grid: { left: 64, right: 16, top: 16, bottom: 28 },
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: t('--bg-4'),
+          borderColor: t('--border-strong'),
+          textStyle: { color: t('--fg') },
+          valueFormatter: (/** @type {number} */ v) => money(v.toFixed(2)),
+        },
+        xAxis: {
+          type: 'category',
+          data: periods,
+          axisLine: { lineStyle: { color: t('--border') } },
+          axisLabel: { color: t('--fg-muted') },
+        },
+        yAxis: {
+          type: 'value',
+          splitLine: { lineStyle: { color: t('--border') } },
+          axisLabel: { color: t('--fg-muted'), formatter: (/** @type {number} */ v) => short(v) },
+        },
+        series: series.map((s) => ({
+          name: s.name,
+          type: 'bar',
+          barMaxWidth: 18,
+          data: s.values.map(Number),
+          itemStyle: { color: t(s.color) || s.color, borderRadius: [3, 3, 0, 0] },
+        })),
+      })} />
+  `;
+}
+
+/**
+ * Where the money went: income on the left flowing into spending on the right (S7.4).
+ * @param {{ label: string, sources: { name: string, amount: string }[],
+ *   uses: { name: string, amount: string }[] }} p
+ */
+export function FlowChart({ label, sources, uses }) {
+  const colors = ['--c1', '--c2', '--c3', '--c4', '--c5', '--c6', '--c7', '--c8'];
+  const total = sources.reduce((a, s) => a + Number(s.amount), 0);
+  return html`
+    <${Chart} label=${label} head=${['', 'Amount']}
+      rows=${[
+        ...sources.map((s) => [`In: ${s.name}`, money(s.amount)]),
+        ...uses.map((u) => [`Out: ${u.name}`, money(u.amount)]),
+      ]}
+      deps=${[JSON.stringify([sources, uses])]}
+      option=${(/** @type {(n: string) => string} */ t) => ({
+        tooltip: {
+          backgroundColor: t('--bg-4'),
+          borderColor: t('--border-strong'),
+          textStyle: { color: t('--fg') },
+          valueFormatter: (/** @type {number} */ v) => money(v.toFixed(2)),
+        },
+        series: [{
+          type: 'sankey',
+          left: 8,
+          right: 120,
+          top: 8,
+          bottom: 8,
+          nodeGap: 10,
+          draggable: false,
+          label: { color: t('--fg'), fontSize: 12 },
+          lineStyle: { color: 'gradient', opacity: 0.35 },
+          data: [
+            ...sources.map((s, i) => ({
+              name: s.name,
+              itemStyle: { color: t(colors[i % colors.length]) },
+            })),
+            { name: 'Income', itemStyle: { color: t('--accent') } },
+            ...uses.map((u, i) => ({
+              name: u.name,
+              itemStyle: { color: t(colors[(i + 2) % colors.length]) },
+            })),
+          ],
+          // Every source into one Income node, which spreads into the uses in proportion.
+          links: [
+            ...sources.map((s) => ({ source: s.name, target: 'Income', value: Number(s.amount) })),
+            ...uses.map((u) => ({
+              source: 'Income',
+              target: u.name,
+              value: Math.min(Number(u.amount), total || Number(u.amount)),
+            })),
+          ],
+        }],
+      })} />
+  `;
+}
