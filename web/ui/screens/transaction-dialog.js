@@ -2,6 +2,8 @@
 // for an investing account, trades with their instrument, quantity, price and fees; for a
 // retirement account, the contribution year and who contributed.
 import { useState } from 'preact/hooks';
+import { useApi } from '../app/hooks.js';
+import { ACCEPT, uploadAll } from '../components/receipt.js';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useSubmit } from '../app/hooks.js';
@@ -316,6 +318,7 @@ export function TransactionDialog({ close, txn, accounts, accountId }) {
         <${Field} label="Tags" hint="Yours only, separated by commas."><${Input} value=${f.tags}
           onInput=${set('tags')} /></${Field}>
         </fieldset>
+        ${editing ? html`<${TxnReceipts} txn=${txn} canWrite=${!readOnly} />` : null}
         ${reconciled
           ? html`<div class="notice warn" role="alert">${e.message}</div>`
           : html`<${FormError} error=${e || remove.error} shown=${[
@@ -333,5 +336,49 @@ export function TransactionDialog({ close, txn, accounts, accountId }) {
             'splits',
           ]} />`}
       </${Dialog}>
+  `;
+}
+
+/**
+ * The receipts attached to a transaction (S9.3), each opening its file, and a way to add one.
+ * @param {{ txn: any, canWrite: boolean }} p
+ */
+function TxnReceipts({ txn, canWrite }) {
+  const res = useApi(`/transactions/${txn.id}/receipts`);
+  const rows = /** @type {any[]} */ (res.data) || [];
+  const add = async (/** @type {FileList} */ files) => {
+    for (const r of await uploadAll(files)) {
+      try {
+        await api.post(`/receipts/${r.id}/links`, { transactionId: txn.id });
+      } catch (e) {
+        toast(/** @type {any} */ (e).message);
+      }
+    }
+    res.reload();
+  };
+  return html`
+    <div class="field" data-help="receipts" id="x-receipts">
+      <div class="small" style=${{ color: 'var(--fg-dim)', marginBottom: '6px' }}>Receipts</div>
+      <div class="toolbar" style=${{ flexWrap: 'wrap', margin: 0 }}>
+        ${rows.map((r) =>
+          html`
+            <a class="pill" href=${`/ui/api/receipts/${r.id}/file`} target="_blank"
+              rel="noopener">${r.payee || r.fileName}</a>
+          `
+        )}
+        ${canWrite
+          ? html`
+            <label class="btn sm" for="f-add-receipt">Add a receipt</label>
+            <input id="f-add-receipt" class="sr-only" type="file" multiple accept=${ACCEPT}
+              onChange=${(/** @type {any} */ e) => {
+                add(e.currentTarget.files);
+                e.currentTarget.value = '';
+              }} />
+          `
+          : rows.length
+          ? null
+          : html`<span class="small dim">None.</span>`}
+      </div>
+    </div>
   `;
 }

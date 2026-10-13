@@ -72,6 +72,7 @@ def reencrypt(config: Config, store: Store) -> Store:
     store.db.dispose()
     store = Store(Database(make_engine(config.db_path, new.keys.sqlcipher_key)), new)
     _rewrap_secrets(store.db, old.keys.secrets, new.keys.secrets)
+    _rewrap_receipts(config.receipts_dir, old.keys.receipts, new.keys.receipts)
     os.replace(next_keyring(config), config.keyring_path)
     log.info("re-encrypted under a new data key")
     return store
@@ -102,6 +103,27 @@ def _rewrap_secrets(db: Database, old_key: bytes, new_key: bytes) -> int:
     return n
 
 
+def _rewrap_receipts(folder: Path, old_key, new_key) -> int:
+    """Each receipt file again under the new receipts key, one at a time; a file that already
+    opens with the new key was done before an interruption."""
+    from ..keys import files
+
+    n = 0
+    if not folder.is_dir():
+        return 0
+    for path in sorted(folder.glob("*.mkr")):
+        name = path.stem
+        try:
+            for _ in files.open_stream(path, new_key, name):
+                pass
+            continue
+        except files.FileError:
+            pass
+        files.write(path, files.open_stream(path, old_key, name), new_key.public_key(), name)
+        n += 1
+    return n
+
+
 def _finish_reencrypt(config: Config, current: master.Unlocked) -> master.Unlocked:
     """A re-encryption was interrupted: use whichever key the database opens with."""
     master_key = master.check_key_file(config.key_file, config.data_dir, config.backup_dir)
@@ -118,6 +140,7 @@ def _finish_reencrypt(config: Config, current: master.Unlocked) -> master.Unlock
     mapping.map_all()
     db = Database(make_engine(config.db_path, pending.keys.sqlcipher_key))
     _rewrap_secrets(db, current.keys.secrets, pending.keys.secrets)
+    _rewrap_receipts(config.receipts_dir, current.keys.receipts, pending.keys.receipts)
     db.dispose()
     os.replace(next_keyring(config), config.keyring_path)
     log.warning("finished an interrupted re-encryption")

@@ -19,6 +19,8 @@ dependencies = [
     "numpy",
     "python-multipart",
     "segno>=1.6.6",
+    "pypdfium2>=5.14.0",
+    "pi-heif>=1.4.0",
 ]
 
 [project.scripts]

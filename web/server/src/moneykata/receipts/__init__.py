@@ -1,0 +1,376 @@
+"""Receipts (requirements S9.1–S9.7): files people upload, kept encrypted on disk and written
+once, with what is known about them in the database.
+
+- The type is found from the content, never the name: PDF, JPEG, PNG, WebP or HEIC.
+- Identical files are stored once, found by their SHA-256: a second upload of the same file
+  by the same person gives back the receipt they have; someone else's gets its own receipt
+  over the same stored file.
+- Thumbnails are made on upload, kept in the (encrypted) database: Pillow for images with
+  their EXIF orientation applied, pypdfium2 for a PDF's first page. Images over 40 million
+  pixels are refused before they are decoded.
+- Who can see a receipt follows what it is attached to (S9.6): its owner always, and whoever
+  can read an account one of its transactions is in. An unattached receipt is its owner's
+  alone (the inbox).
+- A receipt is deleted only by its owner, and only while nothing links to it. Its file stays
+  while any receipt row names it, deleted or not (schema.md §4).
+"""
+
+import datetime as dt
+import hashlib
+import io
+import json
+import logging
+import secrets
+from collections.abc import Iterator
+from dataclasses import dataclass
+from decimal import Decimal
+from pathlib import Path
+
+from sqlalchemy import false, select
+from sqlalchemy.orm import Session
+
+from .. import access, clock, ids
+from ..errors import Problem, refuse
+from ..keys import files
+from ..store.entities.accounts import Account, Transaction
+from ..store.entities.receipts import Receipt, ReceiptLink
+
+log = logging.getLogger("moneykata.receipts")
+
+MAX_PIXELS = 40_000_000
+THUMB = 360
+MATCH_DAYS = 5
+TIP = Decimal("1.25")
+TYPES = {
+    "application/pdf": "PDF",
+    "image/jpeg": "JPEG",
+    "image/png": "PNG",
+    "image/webp": "WebP",
+    "image/heic": "HEIC",
+}
+
+
+def sniff(head: bytes) -> str | None:
+    """The type from the file's first bytes, or None for anything else."""
+    if head.startswith(b"%PDF-"):
+        return "application/pdf"
+    if head.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "image/webp"
+    brands = (b"heic", b"heix", b"heim", b"heis", b"mif1", b"msf1")
+    if head[4:8] == b"ftyp" and head[8:12] in brands:
+        return "image/heic"
+    return None
+
+
+def file_path(receipts_dir: Path, file_id: str) -> Path:
+    return receipts_dir / f"{file_id}.mkr"
+
+
+def _open_image(data: bytes):
+    from PIL import Image, ImageOps
+
+    Image.MAX_IMAGE_PIXELS = MAX_PIXELS
+    try:
+        import pi_heif
+
+        pi_heif.register_heif_opener()
+    except ImportError:  # pragma: no cover - always installed
+        pass
+    img = Image.open(io.BytesIO(data))
+    w, h = img.size
+    if w * h > MAX_PIXELS:
+        raise refuse("file", "image-too-large", "The image is larger than 40 million pixels.")
+    return ImageOps.exif_transpose(img)
+
+
+def thumbnail(data: bytes, media_type: str) -> bytes | None:
+    """A small WebP of the image, or of a PDF's first page; None when it can't be drawn."""
+    from PIL import Image
+
+    try:
+        if media_type == "application/pdf":
+            import pypdfium2 as pdfium
+
+            pdf = pdfium.PdfDocument(data)
+            try:
+                page = pdf[0]
+                scale = THUMB / max(page.get_width(), page.get_height())
+                img = page.render(scale=max(scale, 0.1)).to_pil()
+            finally:
+                pdf.close()
+        else:
+            img = _open_image(data)
+        img = img.convert("RGB")
+        img.thumbnail((THUMB, THUMB), Image.Resampling.LANCZOS)
+        out = io.BytesIO()
+        img.save(out, "WEBP", quality=80)
+        return out.getvalue()
+    except Problem:
+        raise
+    except Exception as e:  # a broken file still uploads; it just has no picture
+        log.info("no thumbnail for a %s: %s", media_type, type(e).__name__)
+        return None
+
+
+def as_jpeg(data: bytes) -> bytes:
+    """An iPhone photo (HEIC) as JPEG for the browser, turned the way it was taken."""
+    img = _open_image(data).convert("RGB")
+    out = io.BytesIO()
+    img.save(out, "JPEG", quality=88)
+    return out.getvalue()
+
+
+@dataclass
+class Stored:
+    receipt: Receipt
+    existing: bool
+
+
+def store(s: Session, server, owner_id: str, name: str, data: bytes) -> Stored:
+    media = sniff(data[:16])
+    if media is None:
+        raise refuse(
+            "file",
+            "type-not-allowed",
+            f"{name}: only PDF, JPEG, PNG, WebP and HEIC files can be receipts.",
+            415,
+        )
+    digest = hashlib.sha256(data).hexdigest()
+    mine = s.scalars(
+        select(Receipt).where(
+            Receipt.sha256 == digest, Receipt.ownerId == owner_id, Receipt.deleted == false()
+        )
+    ).first()
+    if mine is not None:
+        return Stored(mine, True)
+    any_row = s.scalars(select(Receipt).where(Receipt.sha256 == digest)).first()
+    path = None
+    if any_row is not None:
+        file_id = any_row.fileId
+        path = file_path(server.config.receipts_dir, file_id)
+    if path is None or not path.exists():
+        file_id = secrets.token_hex(16)
+        path = file_path(server.config.receipts_dir, file_id)
+        files.write(
+            path,
+            (data[i : i + files.CHUNK] for i in range(0, len(data), files.CHUNK)),
+            server.keys.receipts.public_key(),
+            file_id,
+        )
+    r = Receipt(
+        id=ids.new_id("Rcpt"),
+        ownerId=owner_id,
+        fileName=Path(name).name[:200] or "receipt",
+        mediaType=media,
+        size=len(data),
+        sha256=digest,
+        fileId=file_id,
+        thumbnail=thumbnail(data, media),
+    )
+    s.add(r)
+    s.flush()
+    return Stored(r, False)
+
+
+def read_file(server, r: Receipt) -> Iterator[bytes]:
+    """The file's plaintext, streamed through decryption; its hash is checked as it goes."""
+    path = file_path(server.config.receipts_dir, r.fileId)
+    h = hashlib.sha256()
+    for chunk in files.open_stream(path, server.keys.receipts, r.fileId):
+        h.update(chunk)
+        yield chunk
+    if h.hexdigest() != r.sha256:
+        raise files.FileError("the receipt's file is not the one uploaded")
+
+
+def whole(server, r: Receipt) -> bytes:
+    return b"".join(read_file(server, r))
+
+
+# ---------- links and who can see what ----------
+
+
+def links(s: Session, receipt_id: str) -> list[ReceiptLink]:
+    return list(
+        s.scalars(
+            select(ReceiptLink).where(
+                ReceiptLink.receiptId == receipt_id, ReceiptLink.deleted == false()
+            )
+        )
+    )
+
+
+def level(s: Session, user_id: str, r: Receipt) -> str | None:
+    """owner, write or read; None when the user can't see it."""
+    if r.deleted:
+        return None
+    if r.ownerId == user_id:
+        return "owner"
+    best = None
+    reach = access.reach(s, user_id)
+    for ln in links(s, r.id):
+        t = s.get(Transaction, ln.itemId)
+        a = s.get(Account, t.accountId) if t else None
+        if a is None or t.deleted:
+            continue
+        lvl = access.account_level(s, user_id, a, reach)
+        best = access.higher(best, "write" if lvl in ("owner", "write") else lvl)
+    return best
+
+
+def get(s: Session, user_id: str, receipt_id: str, need: str = "read") -> tuple[Receipt, str]:
+    r = s.get(Receipt, receipt_id)
+    lvl = level(s, user_id, r) if r is not None else None
+    if lvl is None:
+        raise Problem(404, "not-found", "Not found")
+    if access.RANK[lvl] < access.RANK[need]:
+        raise Problem(403, "owner-only", "Only the receipt's owner can do this.")
+    return r, lvl
+
+
+def visible(s: Session, user_id: str) -> list[tuple[Receipt, str]]:
+    """The user's own receipts, and those attached to transactions in accounts they read."""
+    own = s.scalars(
+        select(Receipt).where(Receipt.ownerId == user_id, Receipt.deleted == false())
+    ).all()
+    accounts = [a.id for a, _ in access.visible_accounts(s, user_id)]
+    linked = s.scalars(
+        select(Receipt)
+        .join(ReceiptLink, ReceiptLink.receiptId == Receipt.id)
+        .join(Transaction, Transaction.id == ReceiptLink.itemId)
+        .where(
+            ReceiptLink.kind == "transaction",
+            ReceiptLink.deleted == false(),
+            Transaction.deleted == false(),
+            Transaction.accountId.in_(accounts),
+            Receipt.deleted == false(),
+            Receipt.ownerId != user_id,
+        )
+    ).all()
+    out = [(r, "owner") for r in own]
+    seen = {r.id for r in own}
+    for r in linked:
+        if r.id not in seen:
+            seen.add(r.id)
+            out.append((r, level(s, user_id, r) or "read"))
+    return out
+
+
+def attach(s: Session, user_id: str, r: Receipt, transaction_id: str) -> ReceiptLink:
+    """Onto a transaction in an account the user can write to (S9.3)."""
+    t = s.get(Transaction, transaction_id)
+    if t is None or t.deleted:
+        raise refuse("transactionId", "not-found", "That transaction is not there.", 404)
+    access.account(s, user_id, t.accountId, "write")
+    row = s.get(ReceiptLink, (r.id, "transaction", t.id))
+    now = clock.now()
+    if row is None:
+        row = ReceiptLink(
+            receiptId=r.id, kind="transaction", itemId=t.id, createdAt=now, linkedById=user_id
+        )
+        s.add(row)
+    elif row.deleted:
+        row.deleted, row.deletedAt, row.deletedById = False, None, None
+        row.linkedById = user_id
+    s.flush()
+    return row
+
+
+def detach(s: Session, user_id: str, r: Receipt, transaction_id: str) -> None:
+    t = s.get(Transaction, transaction_id)
+    if t is not None:
+        access.account(s, user_id, t.accountId, "write")
+    row = s.get(ReceiptLink, (r.id, "transaction", transaction_id))
+    if row is None or row.deleted:
+        raise Problem(404, "not-found", "The receipt is not attached to that transaction.")
+    row.deleted, row.deletedAt, row.deletedById = True, clock.now(), user_id
+
+
+def delete(s: Session, user_id: str, r: Receipt) -> None:
+    if links(s, r.id):
+        raise refuse(
+            None,
+            "receipt-linked",
+            "Detach it from everything first: a receipt is deleted only when nothing links to it.",
+            409,
+        )
+    r.mark_deleted(user_id)
+
+
+def receipts_of(s: Session, transaction_ids: list[str]) -> dict[str, list[str]]:
+    """Per transaction, the ids of the receipts attached to it."""
+    out: dict[str, list[str]] = {}
+    for chunk in range(0, len(transaction_ids), 500):
+        for ln in s.scalars(
+            select(ReceiptLink)
+            .join(Receipt, Receipt.id == ReceiptLink.receiptId)
+            .where(
+                ReceiptLink.kind == "transaction",
+                ReceiptLink.itemId.in_(transaction_ids[chunk : chunk + 500]),
+                ReceiptLink.deleted == false(),
+                Receipt.deleted == false(),
+            )
+        ):
+            out.setdefault(ln.itemId, []).append(ln.receiptId)
+    return out
+
+
+# ---------- suggestions (S9.3, S9.8.2.6) ----------
+
+
+@dataclass
+class Match:
+    transaction: Transaction
+    account: Account
+    score: float
+
+
+def matches(s: Session, user_id: str, r: Receipt, limit: int = 3) -> list[Match]:
+    """Transactions in accounts the user can write to with the receipt's amount, within 5 days
+    of its date; one up to 25% larger matches too, for a tip added after it was printed.
+    Ranked by days apart, then by how alike the payees are."""
+    if r.amount is None:
+        return []
+    amount = abs(r.amount)
+    day = r.date or r.createdAt.date()
+    writable = [a for a, lvl in access.visible_accounts(s, user_id) if lvl in ("owner", "write")]
+    by_id = {a.id: a for a in writable}
+    if not by_id:
+        return []
+    rows = s.scalars(
+        select(Transaction).where(
+            Transaction.accountId.in_(list(by_id)),
+            Transaction.deleted == false(),
+            Transaction.date >= day - dt.timedelta(days=MATCH_DAYS),
+            Transaction.date <= day + dt.timedelta(days=MATCH_DAYS),
+        )
+    ).all()
+    linked = {ln.itemId for ln in links(s, r.id)}
+    out = []
+    for t in rows:
+        paid = abs(t.amount)
+        if t.id in linked or not (amount <= paid <= amount * TIP):
+            continue
+        days = abs((t.date - day).days)
+        score = days + (0 if paid == amount else 2) - _alike(r.payee, t.payee)
+        out.append(Match(t, by_id[t.accountId], score))
+    return sorted(out, key=lambda m: m.score)[:limit]
+
+
+def _alike(a: str | None, b: str | None) -> float:
+    """0 to 1: how many of the shorter name's words the other has."""
+    if not a or not b:
+        return 0.0
+    wa = {w for w in a.lower().split() if len(w) > 2}
+    wb = {w for w in b.lower().split() if len(w) > 2}
+    if not wa or not wb:
+        return 0.0
+    return len(wa & wb) / min(len(wa), len(wb))
+
+
+def tags_of(r: Receipt) -> list[str]:
+    return json.loads(r.tags or "[]")

@@ -37,7 +37,19 @@ export function connect(ended) {
     if (data.version && data.version !== version) updated.value = true;
     badges.value = data.badges || {};
   });
-  for (const kind of ['prices', 'import', 'share', 'job', 'activity', 'task', 'signup', 'alert']) {
+  for (
+    const kind of [
+      'prices',
+      'import',
+      'share',
+      'job',
+      'activity',
+      'task',
+      'signup',
+      'alert',
+      'receipt',
+    ]
+  ) {
     source.addEventListener(kind, () => bump(kind));
   }
   // A new alert shows at once, with its count on the badge (S12.11.4).

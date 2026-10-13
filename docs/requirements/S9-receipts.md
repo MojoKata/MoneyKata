@@ -9,7 +9,11 @@
    `receipts/<random-id>.mkr`, **encrypted** (S15.3) and written once, never changed. The
    database holds the metadata: owner, original name, type, size, hash, upload time, date,
    amount, payee, notes, tags and links. Identical files are stored once, found by the hash
-   in the database, never by the file's name.
+   in the database, never by the file's name: the same file uploaded again by the same
+   person gives back the receipt they have, and someone else's upload of it is their own
+   receipt over the one stored file. Files use the streaming format of S11.9.6 under the
+   receipts key (S15.3.2), with the file's id as what the associated data names; a
+   re-encryption (S15.7.2) writes each one again under the new key.
 3. **Links**: a receipt can be attached to any number of transactions, tax items (a donation,
    a medical expense) or tax documents (a 1099), physical-asset items (a purchase receipt,
    an appraisal, a certificate, photos, S1.10), loans (a closing disclosure, a statement),
@@ -19,8 +23,9 @@
    viewer for PDFs, served `Content-Disposition: inline` with `Content-Security-Policy:
    sandbox` and `X-Content-Type-Options: nosniff`, from a path that needs the session. The
    server checks the type by the file's content, never by its name, and refuses anything else.
-5. **Thumbnails** are made on upload (Pillow for images, pypdfium2 for a PDF's first page)
-   and stored beside the file.
+5. **Thumbnails** are made on upload (Pillow for images, with their EXIF orientation
+   applied, pypdfium2 for a PDF's first page) and kept in the database, which is encrypted
+   (S15.1.1), as small WebP images.
 6. **Sharing** follows what the receipt is attached to: whoever can read a transaction can
    see its receipts. An unattached receipt is its owner's alone. Receipts cross a link only
    when the owner ticks **Include receipts** on that share, and then only as encrypted files

@@ -47,6 +47,7 @@ SETTINGS = (
     "passwords",
     "prices",
     "imports",
+    "receipts",
     "backups",
     "keys",
     "alerts",
@@ -59,6 +60,7 @@ DIALOGS = (
     ("/ui/portfolios", "New portfolio", "dialog-portfolio"),
     ("/ui/budgets", "New budget", "dialog-budget"),
     ("/ui/budgets", "Edit plan", "dialog-plan"),
+    ("/ui/receipts", "Receipt Kroger", "dialog-receipt"),
     ("/ui/users", "New user", "dialog-new-user"),
     ("/ui/users", "New group", "dialog-group"),
     ("/ui/settings/prices", "Add a source", "dialog-add-source"),
@@ -180,6 +182,16 @@ class Recorder:
             route.fallback()
             return
         r = route.fetch()
+        kind = r.headers.get("content-type", "")
+        if not kind.startswith("application/json") and r.status == 200 and r.body():
+            # A picture (a receipt's thumbnail): kept as it came, for the page's fetch.
+            self.answers["GET " + key_of(req.url)] = {
+                "status": r.status,
+                "type": kind,
+                "binary": base64.b64encode(r.body()).decode(),
+            }
+            route.fulfill(response=r)
+            return
         # Where this run kept its data is a temporary directory; the mockup shows a fixed one.
         text = r.text().replace(self.data, SHOWN_DIR)
         self.answers["GET " + key_of(req.url)] = {
@@ -232,6 +244,7 @@ class Recorder:
             "/ui/portfolios",
             "/ui/activity",
             "/ui/alerts",
+            "/ui/receipts",
         ]
         for b in self.api("/budgets"):
             paths += [

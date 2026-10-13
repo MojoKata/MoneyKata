@@ -83,6 +83,12 @@
       if (hit && stale && key === '/ui/api/prices/status') {
         return Promise.resolve(json(hit.status, { ...hit.body, stale: true }));
       }
+      if (hit?.binary) {
+        const bytes = Uint8Array.from(atob(hit.binary), (c) => c.charCodeAt(0));
+        return Promise.resolve(
+          new Response(bytes, { status: hit.status, headers: { 'Content-Type': hit.type } }),
+        );
+      }
       return Promise.resolve(hit ? json(hit.status, hit.body) : missing(key));
     }
     // A change succeeds and changes nothing: the answer echoes what was sent.

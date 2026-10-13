@@ -85,6 +85,7 @@ The prefixes of the tables that exist.
 | Lot    | Lot            | One acquisition of an instrument, and what remains open.                                     |
 | Map    | ImportMapping  | A saved column mapping for one institution's CSV files.                                      |
 | Portf  | Portfolio      | A named set of accounts, or parts of them, charted as one.                                   |
+| Rcpt   | Receipt        | An uploaded file, encrypted on disk, with a date, an amount and what it is attached to.      |
 | Recon  | Reconciliation | A statement's closing date and balance, ticked off against the transactions.                 |
 | Secr   | Secret         | A secret sealed on its own: an API key, a password or a private key.                         |
 | Sgnup  | SignupRequest  | A person's request for an account, from confirming the email to an admin's decision.       |
@@ -111,7 +112,6 @@ designed yet. A row moves to §3.1 when its table is.
 | Persn  | Person        | Someone in a user's life who need not be a user of the server.                    |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
 | Prjct  | Projection    | How money will grow toward a goal; an active one is tracked against its baseline. |
-| Rcpt   | Receipt       | An uploaded file with a date, an amount and links to what it supports.            |
 | TaxBk  | TaxBook       | One user's, or a married couple's, tax records for one tax year.                  |
 | Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |
 | TxDoc  | TaxDocument   | A tax document received (W-2, 1099) or filed (a return, a notice), with its file. |

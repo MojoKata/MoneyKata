@@ -84,6 +84,7 @@ class TxnOut(Model):
     amountWas: Money | None
     splits: list[SplitOut]
     tags: list[str]
+    receipts: int
     level: str
     version: int
 
@@ -232,6 +233,9 @@ def shape(
         ):
             splits.setdefault(sp.transactionId, []).append(sp)
     tags = _tags(s, user_id, ids_)
+    from .. import receipts as receipt_store
+
+    attached = receipt_store.receipts_of(s, ids_)
     finished = {
         r.id
         for r in s.scalars(select(Reconciliation).where(Reconciliation.finishedAt.is_not(None)))
@@ -272,6 +276,7 @@ def shape(
                     for x in splits.get(t.id, [])
                 ],
                 tags=tags.get(t.id, []),
+                receipts=len(attached.get(t.id, [])),
                 level=levels[t.accountId],
                 version=t.version,
             )

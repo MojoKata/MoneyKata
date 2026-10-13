@@ -22,6 +22,7 @@ const SECTIONS = /** @type {[string, string][]} */ ([
   ['passwords', 'Passwords'],
   ['prices', 'Prices'],
   ['imports', 'Imports'],
+  ['receipts', 'Receipts'],
   ['backups', 'Backups'],
   ['keys', 'Key storage'],
   ['alerts', 'Alerts'],
@@ -191,6 +192,24 @@ function Plain({ section }) {
                 ...f,
                 signupDomains: x.split(',').map((d) => d.trim()).filter(Boolean),
               })} />
+          </${Field}>
+      `,
+    );
+  }
+  if (section === 'receipts') {
+    return form(
+      ['receiptMaxMb'],
+      html`
+        <h3>Receipts</h3>
+        <p class="small dim" style=${{ marginTop: '-6px' }}>Receipts are kept encrypted in the data
+          directory, each file once, and go into every backup.</p>
+        <div class="list-item"><span class="grow dim">File types</span>PDF, JPEG, PNG, WebP, HEIC
+          <span class="small dim">· checked from the content</span></div>
+        <${Field} label="Largest file (MB)" id="receipt-max-mb" error=${errAt(e, 'receiptMaxMb')}>
+          <${Input} value=${f.receiptMaxMb} onInput=${set(
+            'receiptMaxMb',
+            true,
+          )} inputmode="numeric" />
           </${Field}>
       `,
     );

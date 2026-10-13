@@ -7,6 +7,7 @@ from .entities import Record, _now
 from .entities import accounts as acc
 from .entities import budgets as bd
 from .entities import prices as pr
+from .entities import receipts as rc
 from .entities import sharing as sh
 from .entities.alerts import Alert, AlertState
 from .entities.core import Activity, Secret, Setting, TaskRun
@@ -19,7 +20,17 @@ from .entities.users import (
     User,
     UserGroup,
 )
-from .tables import accounts, activity, alerts, budgets, core, prices, sharing, users
+from .tables import (
+    accounts,
+    activity,
+    alerts,
+    budgets,
+    core,
+    prices,
+    receipts,
+    sharing,
+    users,
+)
 
 mapper_registry = registry()
 _done = False
@@ -67,6 +78,8 @@ def map_all() -> None:
     _versioned(bd.Budget, budgets.Budget)
     _versioned(bd.BudgetLine, budgets.BudgetLine)
     mapper_registry.map_imperatively(bd.BudgetAccount, budgets.BudgetAccounts)
+    _versioned(rc.Receipt, receipts.Receipt)
+    mapper_registry.map_imperatively(rc.ReceiptLink, receipts.ReceiptLinks)
     mapper_registry.map_imperatively(sh.CountedAccount, sharing.CountedAccounts)
     _versioned(Setting, core.Setting)
     mapper_registry.map_imperatively(Secret, core.Secret)

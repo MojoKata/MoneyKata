@@ -829,6 +829,20 @@
         "title": "Approval",
         "type": "object"
       },
+      "Attach": {
+        "additionalProperties": false,
+        "properties": {
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId"
+        ],
+        "title": "Attach",
+        "type": "object"
+      },
       "Attention": {
         "additionalProperties": false,
         "properties": {
@@ -980,6 +994,20 @@
           "file"
         ],
         "title": "Body_upload_ui_api_accounts__account_id__imports_post",
+        "type": "object"
+      },
+      "Body_upload_ui_api_receipts_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_ui_api_receipts_post",
         "type": "object"
       },
       "BudgetChange": {
@@ -2501,6 +2529,57 @@
           "checks"
         ],
         "title": "KeyTest",
+        "type": "object"
+      },
+      "LinkOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "accountId",
+          "accountName",
+          "date",
+          "amount",
+          "payee"
+        ],
+        "title": "LinkOut",
         "type": "object"
       },
       "Login": {
@@ -4051,6 +4130,350 @@
         "title": "ProfileChange",
         "type": "object"
       },
+      "ReceiptChange": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "title": "ReceiptChange",
+        "type": "object"
+      },
+      "ReceiptDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "hasThumbnail": {
+            "title": "Hasthumbnail",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/LinkOut"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/Suggestion"
+            },
+            "title": "Matches",
+            "type": "array"
+          },
+          "mediaType": {
+            "title": "Mediatype",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "ownerId": {
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "uploadedAt": {
+            "format": "date-time",
+            "title": "Uploadedat",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "mediaType",
+          "size",
+          "uploadedAt",
+          "ownerId",
+          "ownerName",
+          "level",
+          "date",
+          "amount",
+          "payee",
+          "notes",
+          "tags",
+          "links",
+          "hasThumbnail",
+          "version",
+          "matches"
+        ],
+        "title": "ReceiptDetail",
+        "type": "object"
+      },
+      "ReceiptRow": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "hasThumbnail": {
+            "title": "Hasthumbnail",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/LinkOut"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "mediaType": {
+            "title": "Mediatype",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "ownerId": {
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "uploadedAt": {
+            "format": "date-time",
+            "title": "Uploadedat",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "mediaType",
+          "size",
+          "uploadedAt",
+          "ownerId",
+          "ownerName",
+          "level",
+          "date",
+          "amount",
+          "payee",
+          "notes",
+          "tags",
+          "links",
+          "hasThumbnail",
+          "version"
+        ],
+        "title": "ReceiptRow",
+        "type": "object"
+      },
       "ReconcileView": {
         "additionalProperties": false,
         "properties": {
@@ -5133,6 +5556,52 @@
         "title": "SplitOut",
         "type": "object"
       },
+      "Suggestion": {
+        "additionalProperties": false,
+        "properties": {
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "accountName",
+          "date",
+          "amount",
+          "payee"
+        ],
+        "title": "Suggestion",
+        "type": "object"
+      },
       "Suspects": {
         "additionalProperties": false,
         "properties": {
@@ -6099,6 +6568,10 @@
             ],
             "title": "Quantity"
           },
+          "receipts": {
+            "title": "Receipts",
+            "type": "integer"
+          },
           "reconciled": {
             "title": "Reconciled",
             "type": "boolean"
@@ -6182,6 +6655,7 @@
           "amountWas",
           "splits",
           "tags",
+          "receipts",
           "level",
           "version"
         ],
@@ -9448,6 +9922,413 @@
         ]
       }
     },
+    "/ui/api/receipts": {
+      "get": {
+        "description": "Newest first. *inbox*: the caller's receipts attached to nothing yet.",
+        "operationId": "list_receipts_ui_api_receipts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "show",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "title": "Show",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReceiptRow"
+                  },
+                  "title": "Response List Receipts Ui Api Receipts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Receipts",
+        "tags": [
+          "receipts"
+        ]
+      },
+      "post": {
+        "description": "One file per request; a batch is many requests. The same file again gives back the\nreceipt it made (200).",
+        "operationId": "upload_ui_api_receipts_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_ui_api_receipts_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
+    "/ui/api/receipts/{receipt_id}": {
+      "delete": {
+        "operationId": "delete_receipt_ui_api_receipts__receipt_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Receipt",
+        "tags": [
+          "receipts"
+        ]
+      },
+      "get": {
+        "operationId": "get_receipt_ui_api_receipts__receipt_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Receipt",
+        "tags": [
+          "receipts"
+        ]
+      },
+      "patch": {
+        "description": "Its date, amount, payee, notes and tags: by its owner, or by anyone who can write to\nan account it is attached in.",
+        "operationId": "change_receipt_ui_api_receipts__receipt_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Receipt",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
+    "/ui/api/receipts/{receipt_id}/file": {
+      "get": {
+        "description": "Streamed through decryption, never written out as plaintext. Served inline in a\nsandbox, with its checked type, so a PDF can't run script in the app (S9.4).",
+        "operationId": "receipt_file_ui_api_receipts__receipt_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Receipt File",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
+    "/ui/api/receipts/{receipt_id}/links": {
+      "post": {
+        "operationId": "attach_ui_api_receipts__receipt_id__links_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Attach"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Attach",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
+    "/ui/api/receipts/{receipt_id}/links/{transaction_id}": {
+      "delete": {
+        "operationId": "detach_ui_api_receipts__receipt_id__links__transaction_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "transaction_id",
+            "required": true,
+            "schema": {
+              "title": "Transaction Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Detach",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
+    "/ui/api/receipts/{receipt_id}/thumbnail": {
+      "get": {
+        "operationId": "receipt_thumbnail_ui_api_receipts__receipt_id__thumbnail_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Receipt Thumbnail",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
     "/ui/api/reconciliations/{rec_id}": {
       "patch": {
         "operationId": "finish_reconciliation_ui_api_reconciliations__rec_id__patch",
@@ -10644,6 +11525,52 @@
         "summary": "Newer Transactions",
         "tags": [
           "transactions"
+        ]
+      }
+    },
+    "/ui/api/transactions/{transaction_id}/receipts": {
+      "get": {
+        "operationId": "transaction_receipts_ui_api_transactions__transaction_id__receipts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transaction_id",
+            "required": true,
+            "schema": {
+              "title": "Transaction Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReceiptRow"
+                  },
+                  "title": "Response Transaction Receipts Ui Api Transactions  Transaction Id  Receipts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Transaction Receipts",
+        "tags": [
+          "receipts"
         ]
       }
     },

@@ -309,3 +309,15 @@ code.key { font-family: var(--mono); font-size: 13px; letter-spacing: .04em; use
 /* A budget's plan: a row per category, the amount right-aligned in a narrow box. */
 .t.plan td { padding: 6px 8px; }
 .t.plan td.num .in { max-width: 110px; margin-left: auto; text-align: right; }
+
+/* A receipt's card is a button; its thumbnail fills the top. */
+button.receipt { padding: 0; width: 100%; text-align: left; color: inherit; font: inherit; }
+.receipt .thumb { overflow: hidden; }
+.receipt .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.receipt .thumb .kind { z-index: 1; background: var(--bg-2); }
+label.drop { display: block; cursor: pointer; }
+.split > .receipt-view { flex: 1 1 320px; min-width: 0; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.receipt-view img { display: block; max-width: 100%; max-height: 60vh; margin: 0 auto; border-radius: 8px; background: var(--bg-3); }
+.receipt-view .pdf-open { display: grid; justify-items: center; gap: 10px; padding: 12px; border-radius: 8px; background: var(--bg-3); }
+.drop.over { border-color: var(--accent); color: var(--fg); }

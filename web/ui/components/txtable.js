@@ -77,7 +77,15 @@ export function TxTable({ rows, showAccount = true, onChanged, accounts = [] }) 
             }}
             onClick=${() =>
               openDialog(TransactionDialog, { txn: t, accounts }).then((v) => v && onChanged())}>
-            ${t.payee || (t.symbol ? `${t.kind} ${t.symbol}` : t.kind)}</button>
+            ${t.payee || (t.symbol ? `${t.kind} ${t.symbol}` : t.kind)}${
+              t.receipts
+                ? html`
+                  <span class="dim" title=${`${t.receipts} receipt${
+                    t.receipts === 1 ? '' : 's'
+                  }`}><${Icon} name="clip" /></span>
+                `
+                : null
+            }</button>
           ${
               t.symbol && t.quantity
                 ? html`<div class="small dim">${quantity(t.quantity)} ${t.symbol}${

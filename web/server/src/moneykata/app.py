@@ -64,6 +64,16 @@ class Server:
             counts["users and groups"] = waiting
         return counts
 
+    def upload_cap(self) -> int:
+        """The largest upload a request may carry: the larger of the import and receipt size
+        limits in Settings (S13.7.6)."""
+        if self.store is None:
+            return self.upload_limit
+        with self.db.read() as s:
+            mb = max(settings.get(s, "importMaxMb"), settings.get(s, "receiptMaxMb"))
+        # A file of the limit, with the form around it.
+        return (mb + 1) * 1024 * 1024
+
     def session_max_age(self) -> int:
         if self.store is None:
             return 30 * 86400
@@ -115,6 +125,7 @@ def create_app(server: Server) -> FastAPI:
         portfolios,
         prices,
         profile,
+        receipts,
         session,
         sharing,
         transactions,
@@ -136,6 +147,7 @@ def create_app(server: Server) -> FastAPI:
         activity,
         alerts,
         budgets,
+        receipts,
         dashboard,
     ):
         app.include_router(module.router)
@@ -145,7 +157,7 @@ def create_app(server: Server) -> FastAPI:
     # The last added runs first: the client's address, then the log, the headers, the Origin
     # check and the body limit.
     app.add_middleware(middleware.SessionCookie, max_age=server.session_max_age)
-    app.add_middleware(middleware.BodyLimit, upload_limit=lambda: server.upload_limit)
+    app.add_middleware(middleware.BodyLimit, upload_limit=server.upload_cap)
     app.add_middleware(middleware.OriginCheck)
     app.add_middleware(middleware.SecurityHeaders, tls=server.config.mode == "tls")
     app.add_middleware(middleware.AccessLog)

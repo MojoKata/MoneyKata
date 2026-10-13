@@ -63,3 +63,11 @@ A note.
 ## Tags
 
 Your own, separated by commas; others who share the account don't see them.
+
+## Receipts
+
+The receipts attached to it; each opens its file. **Add a receipt** uploads one or more and attaches them here. Whoever can read this account can see its receipts.
+
+## Add a receipt {#add-receipt}
+
+Upload PDFs or photos and attach them to this transaction at once.

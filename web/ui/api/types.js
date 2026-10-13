@@ -127,6 +127,11 @@
  */
 
 /**
+ * @typedef {Object} Attach
+ * @property {string} transactionId
+ */
+
+/**
  * @typedef {Object} Attention
  * @property {string} kind
  * @property {number} count
@@ -157,6 +162,11 @@
 
 /**
  * @typedef {Object} Body_upload_ui_api_accounts__account_id__imports_post
+ * @property {string} file
+ */
+
+/**
+ * @typedef {Object} Body_upload_ui_api_receipts_post
  * @property {string} file
  */
 
@@ -445,6 +455,16 @@
  * @typedef {Object} KeyTest
  * @property {boolean} ok
  * @property {Array<CheckOut>} checks
+ */
+
+/**
+ * @typedef {Object} LinkOut
+ * @property {string} transactionId
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {string} date
+ * @property {string} amount
+ * @property {(string | null)} payee
  */
 
 /**
@@ -750,6 +770,56 @@
  */
 
 /**
+ * @typedef {Object} ReceiptChange
+ * @property {(string | null)} [date]
+ * @property {((number | string) | null)} [amount]
+ * @property {(string | null)} [payee]
+ * @property {(string | null)} [notes]
+ * @property {(Array<string> | null)} [tags]
+ */
+
+/**
+ * @typedef {Object} ReceiptDetail
+ * @property {string} id
+ * @property {string} fileName
+ * @property {string} mediaType
+ * @property {number} size
+ * @property {string} uploadedAt
+ * @property {string} ownerId
+ * @property {string} ownerName
+ * @property {string} level
+ * @property {(string | null)} date
+ * @property {(string | null)} amount
+ * @property {(string | null)} payee
+ * @property {(string | null)} notes
+ * @property {Array<string>} tags
+ * @property {Array<LinkOut>} links
+ * @property {boolean} hasThumbnail
+ * @property {number} version
+ * @property {Array<Suggestion>} matches
+ */
+
+/**
+ * @typedef {Object} ReceiptRow
+ * @property {string} id
+ * @property {string} fileName
+ * @property {string} mediaType
+ * @property {number} size
+ * @property {string} uploadedAt
+ * @property {string} ownerId
+ * @property {string} ownerName
+ * @property {string} level
+ * @property {(string | null)} date
+ * @property {(string | null)} amount
+ * @property {(string | null)} payee
+ * @property {(string | null)} notes
+ * @property {Array<string>} tags
+ * @property {Array<LinkOut>} links
+ * @property {boolean} hasThumbnail
+ * @property {number} version
+ */
+
+/**
  * @typedef {Object} ReconcileView
  * @property {Array<PeriodRow>} periods
  * @property {Array<Array<string>>} gaps
@@ -967,6 +1037,15 @@
  */
 
 /**
+ * @typedef {Object} Suggestion
+ * @property {string} transactionId
+ * @property {string} accountName
+ * @property {string} date
+ * @property {string} amount
+ * @property {(string | null)} payee
+ */
+
+/**
  * @typedef {Object} Suspects
  * @property {Array<Array<string>>} duplicates
  * @property {Array<string>} changed
@@ -1106,6 +1185,7 @@
  * @property {(string | null)} amountWas
  * @property {Array<SplitOut>} splits
  * @property {Array<string>} tags
+ * @property {number} receipts
  * @property {string} level
  * @property {number} version
  */
