@@ -45,3 +45,9 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** the details of each node kind (Esplora, Electrum server, Bitcoin Core watch-only descriptors), xpub gap limits, and testing a node.
 
 **Touches:** S1.6.
+
+## G10: Statement intervals per account
+
+**What is missing:** the interval at which each account's statements or exports are expected (monthly for a bank or Schwab brokerage account, quarterly for many 401(k) plans), how it is set or learned from the imports, and the alert threshold that follows from it.
+
+**Touches:** S1.3, S1.11, S12.11.

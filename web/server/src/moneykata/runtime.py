@@ -36,6 +36,9 @@ def record_run(server: Server):
                 row.startedAt, row.finishedAt, row.error = run.started, run.finished, run.error
         # Its name only: Settings › Backups and Key storage reload when theirs ends.
         server.events.publish("task", {"name": name})
+        if name not in ("alerts", "alert-summaries"):
+            # A task's outcome can open or resolve an alert: look now, not in 15 minutes.
+            server.tasks.run_now("alerts")
 
     return record
 
@@ -105,6 +108,18 @@ def register_tasks(server: Server) -> None:
         server.services.mailer.send_waiting(smtp, server.guard, ctx.stop)
 
     server.tasks.register("mail", mail, Every(300), last.get("mail"))
+
+    from . import alerts
+
+    server.tasks.register(
+        "alerts", lambda ctx: alerts.evaluate(server), Every(900), last.get("alerts")
+    )
+    server.tasks.register(
+        "alert-summaries",
+        lambda ctx: alerts.daily_summaries(server),
+        Every(600),
+        last.get("alert-summaries"),
+    )
     server.services.mailer.notify = lambda: server.tasks.run_now("mail")
 
 

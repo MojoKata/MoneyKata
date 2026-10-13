@@ -73,6 +73,7 @@ The prefixes of the tables that exist.
 |--------|----------------|----------------------------------------------------------------------------------------------|
 | Acct   | Account        | One place money is held, owned by one user, with an account type.                            |
 | Actv   | Activity       | A change worth showing: who made it and what it is about, never an amount.                   |
+| Alert  | Alert          | Something that needs a user's attention, one per cause, open until the cause clears.         |
 | Anchr  | Anchor         | A balance the institution reported on a date, that the account's balance is checked against. |
 | Cat    | Category       | A budget category given to bank transactions.                                                |
 | Group  | Group          | A named set of users that shares are granted to.                                             |
@@ -98,7 +99,6 @@ designed yet. A row moves to §3.1 when its table is.
 
 | Prefix | Table         | Description                                                                       |
 |--------|---------------|-----------------------------------------------------------------------------------|
-| Alert  | Alert         | Something that needs a user's attention, open until its cause clears.             |
 | AsItm  | AssetItem     | One item in a physical-asset account, with its cost basis and valuations.         |
 | Asmpt  | AssumptionSet | A user's expected returns, volatility and inflation for projections.              |
 | Bdgt   | Budget        | A period's planned amounts per category.                                          |

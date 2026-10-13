@@ -2,6 +2,8 @@
 // data; a screen whose data changed reloads it through its usual routes.
 import { signal } from '@preact/signals';
 import { version } from './config.js';
+import { api } from '../api/client.js';
+import { toast } from '../components/toast.js';
 
 /** A counter per kind of change; screens subscribe by reading it. */
 export const changes = signal(/** @type {Record<string, number>} */ ({}));
@@ -20,6 +22,11 @@ function bump(kind) {
   changes.value = { ...changes.value, [kind]: (changes.value[kind] || 0) + 1 };
 }
 
+/** The navigation's counts again, after something that changes them. */
+export function refreshBadges() {
+  api.get('/badges').then((b) => (badges.value = b), () => {});
+}
+
 /** @param {(state: string) => void} ended */
 export function connect(ended) {
   onEnded = ended;
@@ -30,8 +37,16 @@ export function connect(ended) {
     if (data.version && data.version !== version) updated.value = true;
     badges.value = data.badges || {};
   });
-  for (const kind of ['prices', 'import', 'share', 'job', 'activity', 'task', 'signup']) {
+  for (const kind of ['prices', 'import', 'share', 'job', 'activity', 'task', 'signup', 'alert']) {
     source.addEventListener(kind, () => bump(kind));
+  }
+  // A new alert shows at once, with its count on the badge (S12.11.4).
+  source.addEventListener('alert', (e) => {
+    const data = JSON.parse(/** @type {MessageEvent} */ (e).data);
+    toast(`New alert: ${data.title}`);
+  });
+  for (const kind of ['alert', 'badges', 'signup']) {
+    source.addEventListener(kind, refreshBadges);
   }
   source.addEventListener('session', (e) => {
     const data = JSON.parse(/** @type {MessageEvent} */ (e).data);

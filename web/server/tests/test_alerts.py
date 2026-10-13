@@ -1,0 +1,204 @@
+"""Alerts (requirements S12.11)."""
+
+import datetime as dt
+import email
+import email.policy
+
+import pytest
+from conftest import make_user, sign_in
+
+from moneykata import alerts, clock, ids, settings
+from moneykata.store.entities.accounts import Account, Import
+from moneykata.store.entities.core import TaskRun
+from moneykata.store.entities.prices import PriceSource
+
+T0 = dt.datetime(2026, 10, 13, 12, 0, tzinfo=dt.UTC)
+
+
+@pytest.fixture
+def frozen():
+    clock.fix(T0)
+    yield
+    clock.fix(None)
+
+
+def at(**kw) -> None:
+    clock.fix(T0 + dt.timedelta(**kw))
+
+
+def failing_source(server, ok_hours_ago: float, error="Tiingo refused the key (HTTP 401)"):
+    with server.db.tx() as s:
+        s.add(
+            PriceSource(
+                id=ids.new_id("Src"),
+                name="tiingo",
+                enabled=True,
+                lastOkAt=clock.now() - dt.timedelta(hours=ok_hours_ago),
+                lastError=error,
+            )
+        )
+
+
+def set_source_error(server, error):
+    from sqlalchemy import select
+
+    with server.db.tx() as s:
+        src = s.scalars(select(PriceSource)).one()
+        src.lastError = error
+        if error is None:
+            src.lastOkAt = clock.now()
+
+
+def listed(c) -> dict:
+    r = c.get("/ui/api/alerts")
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def test_a_failing_source_alerts_admins_after_the_threshold(server, admin_client, frozen):
+    with server.db.tx() as s:
+        settings.put(s, "sessionIdleHours", 168, None)
+    alice = make_user(server, "alice")
+    failing_source(server, ok_hours_ago=10)
+    assert alerts.evaluate(server) == []
+    assert listed(admin_client)["open"] == [], "not before 48 hours"
+    at(hours=39)
+    opened = alerts.evaluate(server)
+    assert [a.title for a in opened] == ["Tiingo failing for 2 days"]
+    rows = listed(admin_client)["open"]
+    assert rows[0]["forAdmins"] and rows[0]["link"] == "/ui/settings/prices"
+    assert admin_client.get("/ui/api/badges").json() == {"alerts": 1}
+    assert listed(sign_in(server, "alice"))["open"] == [], f"not for {alice.username}"
+    # It stays one alert, however often the source fails again.
+    at(hours=60)
+    assert alerts.evaluate(server) == []
+    assert len(listed(admin_client)["open"]) == 1
+    # The source answers again: resolved by itself.
+    set_source_error(server, None)
+    alerts.evaluate(server)
+    body = listed(admin_client)
+    assert body["open"] == [] and body["resolved"][0]["resolution"] == "the cause cleared"
+    assert admin_client.get("/ui/api/badges").json() == {}
+
+
+def test_the_threshold_is_a_setting(server, admin_client, frozen):
+    with server.db.tx() as s:
+        settings.put(s, "alertSourceHours", 6, None)
+    failing_source(server, ok_hours_ago=7)
+    assert len(alerts.evaluate(server)) == 1
+
+
+def test_a_failed_backup_alerts_at_once_and_resolves(server, admin_client, frozen):
+    with server.db.tx() as s:
+        s.add(TaskRun(name="backups", startedAt=T0, finishedAt=T0, error="disk full"))
+    assert [a.title for a in alerts.evaluate(server)] == ["Backup failed"]
+    with server.db.tx() as s:
+        s.get(TaskRun, "backups").error = None
+    alerts.evaluate(server)
+    assert listed(admin_client)["open"] == []
+
+
+def test_an_account_without_imports_for_45_days_alerts_its_owner(server, admin_client, frozen):
+    alice = make_user(server, "alice")
+    with server.db.tx() as s:
+        a = Account(
+            id=ids.new_id("Acct"), ownerId=alice.id, name="Joint Household", type="checking"
+        )
+        s.add(a)
+        s.flush()
+        s.add(
+            Import(
+                id=ids.new_id("Imprt"),
+                accountId=a.id,
+                userId=alice.id,
+                format="ofx",
+                fileName="sep.ofx",
+                fileHash="x",
+                coveredFrom=dt.date(2026, 8, 1),
+                coveredTo=dt.date(2026, 8, 25),
+            )
+        )
+    alerts.evaluate(server)
+    c = sign_in(server, "alice")
+    rows = listed(c)["open"]
+    assert [r["title"] for r in rows] == ["Joint Household: nothing imported for 49 days"]
+    assert not rows[0]["forAdmins"]
+    assert listed(admin_client)["open"] == [], "an admin never sees someone's account"
+
+
+def test_seen_and_dismissed_are_each_persons_own(server, admin_client, frozen):
+    make_user(server, "root2", admin=True)
+    other = sign_in(server, "root2")
+    with server.db.tx() as s:
+        s.add(TaskRun(name="backups", startedAt=T0, finishedAt=T0, error="disk full"))
+    alerts.evaluate(server)
+    assert admin_client.post("/ui/api/alerts/seen").status_code == 204
+    assert admin_client.get("/ui/api/badges").json() == {}
+    assert other.get("/ui/api/badges").json() == {"alerts": 1}
+    aid = listed(other)["open"][0]["id"]
+    assert other.post(f"/ui/api/alerts/{aid}/dismiss").status_code == 204
+    assert listed(other)["open"] == []
+    assert len(listed(admin_client)["open"]) == 1
+    assert other.post(f"/ui/api/alerts/{aid}/dismiss").status_code == 404
+
+
+def test_the_phrase_check_comes_due_after_a_year(server, admin_client, frozen):
+    created = server.store.keys.ring.master_created
+    clock.fix(created + dt.timedelta(days=364))
+    assert alerts.evaluate(server) == []
+    clock.fix(created + dt.timedelta(days=366))
+    assert [a.kind for a in alerts.evaluate(server)] == ["phrase-check"]
+
+
+def _outbox_subjects(server) -> list[str]:
+    return [
+        email.message_from_bytes(p.read_bytes(), policy=email.policy.default)["Subject"]
+        for p in server.services.mailer.waiting()
+    ]
+
+
+def test_each_alert_is_emailed_once_when_smtp_is_set(server, admin_client, frozen):
+    with server.db.tx() as s:
+        s.add(TaskRun(name="backups", startedAt=T0, finishedAt=T0, error="disk full"))
+    alerts.evaluate(server)
+    assert _outbox_subjects(server) == [], "no SMTP: nothing is sent"
+    with server.db.tx() as s:
+        s.get(TaskRun, "backups").error = None
+    alerts.evaluate(server)
+    with server.db.tx() as s:
+        settings.put(s, "smtpHost", "smtp.home.lan", None)
+        s.get(TaskRun, "backups").error = "disk full again"
+    alerts.evaluate(server)
+    alerts.evaluate(server)
+    assert _outbox_subjects(server) == ["MoneyKata alert: Backup failed"]
+
+
+def test_the_daily_summary_goes_once_a_day_after_its_time(server, frozen):
+    alice = make_user(server, "alice")
+    with server.db.tx() as s:
+        settings.put(s, "smtpHost", "smtp.home.lan", None)
+        a = Account(id=ids.new_id("Acct"), ownerId=alice.id, name="Savings", type="savings")
+        s.add(a)
+        s.flush()
+        s.add(
+            Import(
+                id=ids.new_id("Imprt"),
+                accountId=a.id,
+                userId=alice.id,
+                format="csv",
+                fileName="a.csv",
+                fileHash="y",
+                coveredTo=dt.date(2026, 8, 1),
+            )
+        )
+    alerts.evaluate(server)
+    # 12:00 UTC is 08:00 in New York, past the 07:00 default.
+    with server.db.tx() as s:
+        from moneykata.store.entities.users import User
+
+        s.get(User, alice.id).timeZone = "America/New_York"
+    assert alerts.daily_summaries(server) == 1
+    assert alerts.daily_summaries(server) == 0, "once a day"
+    assert _outbox_subjects(server)[-1] == "MoneyKata: 1 new alert"
+    at(days=1)
+    assert alerts.daily_summaries(server) == 0, "none on a day without new alerts"

@@ -686,6 +686,135 @@
         "title": "ActivityItem",
         "type": "object"
       },
+      "AlertList": {
+        "additionalProperties": false,
+        "properties": {
+          "emails": {
+            "title": "Emails",
+            "type": "string"
+          },
+          "open": {
+            "items": {
+              "$ref": "#/components/schemas/AlertRow"
+            },
+            "title": "Open",
+            "type": "array"
+          },
+          "resolved": {
+            "items": {
+              "$ref": "#/components/schemas/AlertRow"
+            },
+            "title": "Resolved",
+            "type": "array"
+          }
+        },
+        "required": [
+          "open",
+          "resolved",
+          "emails"
+        ],
+        "title": "AlertList",
+        "type": "object"
+      },
+      "AlertRow": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "title": "About",
+            "type": "string"
+          },
+          "fix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fix"
+          },
+          "forAdmins": {
+            "title": "Foradmins",
+            "type": "boolean"
+          },
+          "icon": {
+            "title": "Icon",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "openedAt": {
+            "format": "date-time",
+            "title": "Openedat",
+            "type": "string"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution"
+          },
+          "resolvedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolvedat"
+          },
+          "seen": {
+            "title": "Seen",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "about",
+          "link",
+          "fix",
+          "icon",
+          "openedAt",
+          "resolvedAt",
+          "resolution",
+          "forAdmins",
+          "seen"
+        ],
+        "title": "AlertRow",
+        "type": "object"
+      },
       "Approval": {
         "additionalProperties": false,
         "properties": {
@@ -6704,6 +6833,104 @@
         "summary": "Newer",
         "tags": [
           "activity"
+        ]
+      }
+    },
+    "/ui/api/alerts": {
+      "get": {
+        "description": "Open alerts first, newest first, then those resolved in the last 90 days; an alert\nthe caller dismissed is left out.",
+        "operationId": "list_alerts_ui_api_alerts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Alerts",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
+    "/ui/api/alerts/seen": {
+      "post": {
+        "description": "Opening the screen marks the caller's alerts as seen, which clears the badge.",
+        "operationId": "seen_ui_api_alerts_seen_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Seen",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
+    "/ui/api/alerts/{alert_id}/dismiss": {
+      "post": {
+        "description": "Dismissed for the caller alone; it stays open for anyone else it is for.",
+        "operationId": "dismiss_ui_api_alerts__alert_id__dismiss_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dismiss",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
+    "/ui/api/badges": {
+      "get": {
+        "operationId": "badges_ui_api_badges_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Badges Ui Api Badges Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Badges",
+        "tags": [
+          "alerts"
         ]
       }
     },

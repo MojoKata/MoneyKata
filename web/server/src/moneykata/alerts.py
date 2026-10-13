@@ -1,0 +1,430 @@
+"""Alerts (requirements S12.11): what needs someone's attention. Activity records what
+happened; an alert asks for an action.
+
+Each kind of cause has a check that says which causes hold now. The alerts task runs the
+checks: a new cause opens an alert (after its delay, when it has one), a cause that holds
+keeps its alert open, and one that has cleared resolves its alert by itself. One alert per
+cause, never one per attempt. Opening an alert tells its people on the live stream, and by
+email those who chose each alert; the daily summary task emails the rest.
+
+An admin's alert about someone else's account names its owner and source, never the
+account's name or figures (S10.2).
+"""
+
+import datetime as dt
+import logging
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from zoneinfo import ZoneInfo
+
+from sqlalchemy import and_, false, or_, select
+from sqlalchemy.orm import Session
+
+from . import clock, ids, settings, timezones
+from .store.entities.alerts import Alert, AlertState
+from .store.entities.users import User
+
+log = logging.getLogger("moneykata.alerts")
+
+KEEP_RESOLVED_DAYS = 90
+STALE_IMPORT_DAYS = 45
+MISMATCH_DAYS = 7
+PHRASE_CHECK_DAYS = 365
+
+
+@dataclass
+class Cause:
+    key: str
+    kind: str
+    title: str
+    about: str = ""
+    user_id: str | None = None  # None: for every admin
+    link: str | None = None
+    fix: str | None = None
+    icon: str = "alert"
+    since: dt.datetime | None = None  # when it began, if known; else when first seen
+    delay: dt.timedelta = dt.timedelta(0)
+
+
+Check = Callable[[Session, object], Iterable[Cause]]
+CHECKS: list[Check] = []
+
+
+def check(fn: Check) -> Check:
+    CHECKS.append(fn)
+    return fn
+
+
+def _ago(delta: dt.timedelta) -> str:
+    hours = int(delta.total_seconds() // 3600)
+    if hours < 48:
+        return f"{hours} hours"
+    return f"{hours // 24} days"
+
+
+# ---------- the causes this release has ----------
+
+
+@check
+def price_sources(s: Session, server) -> Iterable[Cause]:
+    """A price source failing for longer than Settings › Alerts allows (admins)."""
+    from .prices.refresh import SOURCES, enabled
+
+    limit = dt.timedelta(hours=settings.get(s, "alertSourceHours"))
+    now = clock.now()
+    for src in enabled(s, server.config.dev):
+        if not src.lastError:
+            continue
+        since = src.lastOkAt or src.createdAt
+        label = SOURCES[src.name].label if src.name in SOURCES else src.name
+        yield Cause(
+            key=f"prices:{src.name}",
+            kind="source-failing",
+            title=f"{label} failing for {_ago(now - since)}",
+            about=f"price source · {src.lastError}",
+            link="/ui/settings/prices",
+            fix="Prices settings",
+            icon="sync",
+            since=since,
+            delay=limit,
+        )
+
+
+@check
+def backups(s: Session, server) -> Iterable[Cause]:
+    from .store.entities.core import TaskRun
+
+    run = s.get(TaskRun, "backups")
+    if run is not None and run.error:
+        yield Cause(
+            key="backups",
+            kind="backup-failed",
+            title="Backup failed",
+            about=run.error,
+            link="/ui/settings/backups",
+            fix="Backups",
+            icon="alert",
+            since=run.finishedAt or run.startedAt,
+        )
+
+
+@check
+def email(s: Session, server) -> Iterable[Cause]:
+    """Email that can't be sent for longer than the source threshold (admins)."""
+    from .store.entities.core import TaskRun
+
+    run = s.get(TaskRun, "mail")
+    waiting = server.services.mailer.waiting()
+    if run is None or not run.error or not waiting:
+        return
+    oldest = dt.datetime.fromtimestamp(waiting[0].stat().st_mtime, dt.UTC)
+    yield Cause(
+        key="mail",
+        kind="source-failing",
+        title=f"Email can't be sent: {len(waiting)} waiting",
+        about=f"SMTP · {run.error}",
+        link="/ui/settings/email",
+        fix="Email settings",
+        icon="sync",
+        since=oldest,
+        delay=dt.timedelta(hours=settings.get(s, "alertSourceHours")),
+    )
+
+
+@check
+def recovery_phrase(s: Session, server) -> Iterable[Cause]:
+    """The yearly check of the master key's recovery phrase (S15.6.5)."""
+    from .store.entities.core import Activity
+
+    last = s.scalars(
+        select(Activity.at).where(Activity.kind == "key.verified").order_by(Activity.at.desc())
+    ).first()
+    since = last or server.store.keys.ring.master_created
+    due = since + dt.timedelta(days=PHRASE_CHECK_DAYS)
+    if clock.now() >= due:
+        yield Cause(
+            key="keys:phrase",
+            kind="phrase-check",
+            title="Check the recovery phrase: it's been a year",
+            about="run `moneykata keys verify` on the host with a copy of the phrase",
+            link="/ui/settings/keys",
+            fix="Key storage",
+            icon="lock",
+            since=due,
+        )
+
+
+@check
+def accounts(s: Session, server) -> Iterable[Cause]:
+    """For each account's owner: nothing imported for a month and a half, and a balance the
+    institution reported that has disagreed for 7 days (S1.11)."""
+    from .ledger import reconcile
+    from .store.entities.accounts import Account, Import
+    from .store.repos import ledger as repo
+
+    today = clock.today()
+    rows = s.scalars(select(Account).where(Account.deleted == false(), Account.active)).all()
+    for a in rows:
+        imports = s.scalars(
+            select(Import).where(Import.accountId == a.id, Import.deleted == false())
+        ).all()
+        if not imports:
+            continue
+        last = max((i.coveredTo or i.createdAt.date()) for i in imports)
+        if (today - last).days > STALE_IMPORT_DAYS:
+            yield Cause(
+                key=f"stale:{a.id}",
+                kind="import-stale",
+                title=f"{a.name}: nothing imported for {(today - last).days} days",
+                about=f"the last import covers up to {last:%b %-d, %Y}",
+                user_id=a.ownerId,
+                link=f"/ui/accounts/{a.id}/reconcile",
+                fix="Import a statement",
+                icon="receipt",
+                since=dt.datetime.combine(
+                    last + dt.timedelta(days=STALE_IMPORT_DAYS), dt.time(), dt.UTC
+                ),
+            )
+        ledger = repo.load(s, a)
+        checks = reconcile.checks(
+            ledger.opening(), ledger.transactions, ledger.anchors, reconcile.coverage(imports)
+        )
+        if checks and not checks[-1].ok:
+            yield Cause(
+                key=f"mismatch:{a.id}",
+                kind="reconcile-mismatch",
+                title=f"{a.name}: the balance disagrees with the institution's",
+                about=f"since {checks[-1].date:%b %-d, %Y}",
+                user_id=a.ownerId,
+                link=f"/ui/accounts/{a.id}/reconcile",
+                fix="Reconcile",
+                icon="alert",
+                delay=dt.timedelta(days=MISMATCH_DAYS),
+            )
+
+
+# ---------- running the checks ----------
+
+
+def recipients(s: Session, alert: Alert) -> list[User]:
+    from .auth.users import admin_ids
+
+    wanted = [alert.userId] if alert.userId else admin_ids(s)
+    return [
+        u for u in (s.get(User, i) for i in wanted) if u is not None and u.active and not u.deleted
+    ]
+
+
+def evaluate(server) -> list[Alert]:
+    """Run every check; open, update and resolve alerts. Returns the alerts that opened."""
+    now = clock.now()
+    opened: list[Alert] = []
+    with server.db.tx() as s:
+        holding: dict[str, Cause] = {}
+        failed: set[str] = set()
+        for fn in CHECKS:
+            try:
+                for cause in fn(s, server):
+                    holding[cause.key] = cause
+            except Exception:
+                # A check that fails says nothing: its alerts stay as they are.
+                log.exception("the alert check %s failed", fn.__name__)
+                failed |= _KINDS.get(fn.__name__, set())
+        for a in _unresolved(s):
+            cause = holding.pop(a.causeKey, None)
+            if cause is None:
+                if a.kind not in failed:
+                    a.resolvedAt = now
+                    a.resolution = "the cause cleared"
+                continue
+            a.title, a.about, a.link, a.fix = cause.title, cause.about, cause.link, cause.fix
+            if a.openedAt is None and a.seenSince + cause.delay <= now:
+                a.openedAt = now
+                opened.append(a)
+        for cause in holding.values():
+            since = min(cause.since or now, now)
+            a = Alert(
+                id=ids.new_id("Alert"),
+                kind=cause.kind,
+                causeKey=cause.key,
+                userId=cause.user_id,
+                title=cause.title,
+                about=cause.about,
+                link=cause.link,
+                fix=cause.fix,
+                icon=cause.icon,
+                seenSince=since,
+                openedAt=now if since + cause.delay <= now else None,
+            )
+            s.add(a)
+            if a.openedAt:
+                opened.append(a)
+        s.flush()
+        for a in opened:
+            _announce(s, server, a)
+        notify = {a.id: [u.id for u in recipients(s, a)] for a in opened}
+        titles = {a.id: a.title for a in opened}
+    for alert_id, users in notify.items():
+        server.events.publish("alert", {"title": titles[alert_id]}, users=users)
+    return opened
+
+
+_KINDS = {
+    "price_sources": {"source-failing"},
+    "email": {"source-failing"},
+    "backups": {"backup-failed"},
+    "recovery_phrase": {"phrase-check"},
+    "accounts": {"import-stale", "reconcile-mismatch"},
+}
+
+
+def _unresolved(s: Session) -> list[Alert]:
+    return list(s.scalars(select(Alert).where(Alert.resolvedAt.is_(None))))
+
+
+def _sends(s: Session, server) -> bool:
+    """Without SMTP the choice is kept, but nothing is sent (dev mode writes to its folder)."""
+    return server.config.dev or bool(settings.get(s, "smtpHost"))
+
+
+def _announce(s: Session, server, a: Alert) -> None:
+    """Email it to those who chose each alert: once, when it opens."""
+    if not _sends(s, server):
+        return
+    from .mail import Email
+
+    for u in recipients(s, a):
+        if u.alertEmails != "each" or not u.email:
+            continue
+        server.services.mailer.send(
+            s,
+            Email(
+                u.email,
+                f"MoneyKata alert: {a.title}",
+                (
+                    f"Hello {u.displayName},\n\n{a.title}\n{a.about}\n\n"
+                    f"{_where(s, server, a)}"
+                    "Alerts resolve by themselves when their cause clears. Choose how they "
+                    "reach you in Profile.\n"
+                ),
+            ),
+        )
+        state = _state(s, a.id, u.id)
+        state.emailedAt = clock.now()
+
+
+def _where(s: Session, server, a: Alert) -> str:
+    from .mail import base_url
+
+    try:
+        return f"{a.fix or 'See it'}: {base_url(s, server.config)}{a.link or '/ui/alerts'}\n\n"
+    except Exception:
+        return ""
+
+
+def _state(s: Session, alert_id: str, user_id: str) -> AlertState:
+    st = s.get(AlertState, (alert_id, user_id))
+    if st is None:
+        st = AlertState(alertId=alert_id, userId=user_id)
+        s.add(st)
+    return st
+
+
+# ---------- what a user sees ----------
+
+
+def visible(s: Session, user_id: str, admin: bool):
+    """The alerts for one user: their own, and the admins' when they are one."""
+    who = Alert.userId == user_id
+    if admin:
+        who = or_(who, Alert.userId.is_(None))
+    cutoff = clock.now() - dt.timedelta(days=KEEP_RESOLVED_DAYS)
+    return (
+        select(Alert, AlertState)
+        .outerjoin(AlertState, and_(AlertState.alertId == Alert.id, AlertState.userId == user_id))
+        .where(
+            who,
+            Alert.openedAt.is_not(None),
+            or_(Alert.resolvedAt.is_(None), Alert.resolvedAt >= cutoff),
+        )
+        .order_by(Alert.openedAt.desc())
+    )
+
+
+def unseen(s: Session, user_id: str, admin: bool) -> int:
+    return sum(
+        1
+        for a, st in s.execute(visible(s, user_id, admin))
+        if a.resolvedAt is None and (st is None or (st.seenAt is None and st.dismissedAt is None))
+    )
+
+
+def mark_seen(s: Session, user_id: str, admin: bool) -> None:
+    now = clock.now()
+    for a, st in s.execute(visible(s, user_id, admin)).all():
+        if a.resolvedAt is None and (st is None or st.seenAt is None):
+            _state(s, a.id, user_id).seenAt = now
+
+
+def dismiss(s: Session, user_id: str, admin: bool, alert_id: str) -> bool:
+    for a, st in s.execute(visible(s, user_id, admin)).all():
+        if a.id == alert_id and a.resolvedAt is None and (st is None or st.dismissedAt is None):
+            st = _state(s, a.id, user_id)
+            st.dismissedAt = st.seenAt = clock.now()
+            return True
+    return False
+
+
+# ---------- the daily summary (S12.11.5) ----------
+
+
+def daily_summaries(server) -> int:
+    """For each user on the daily summary, once their day has passed the summary's time:
+    the alerts opened since the last one, or nothing on a day without any."""
+    from .auth.users import is_admin
+    from .mail import Email
+
+    sent = 0
+    now = clock.now()
+    with server.db.tx() as s:
+        if not _sends(s, server):
+            return 0
+        at = settings.time_of(s, "alertSummaryTime")
+        users = s.scalars(
+            select(User).where(
+                User.deleted == false(),
+                User.active,
+                User.alertEmails == "daily",
+                User.email.is_not(None),
+            )
+        ).all()
+        for u in users:
+            zone = ZoneInfo(timezones.zone_for(u.timeZone))
+            local = now.astimezone(zone)
+            if local.time() < at:
+                continue
+            if u.alertSummaryAt and u.alertSummaryAt.astimezone(zone).date() >= local.date():
+                continue
+            since = u.alertSummaryAt or now - dt.timedelta(days=1)
+            fresh = [
+                a
+                for a, st in s.execute(visible(s, u.id, is_admin(s, u.id))).all()
+                if a.openedAt > since and (st is None or st.dismissedAt is None)
+            ]
+            u.alertSummaryAt = now
+            if not fresh:
+                continue
+            lines = "\n".join(f"- {a.title} ({a.about})" for a in fresh)
+            server.services.mailer.send(
+                s,
+                Email(
+                    u.email,
+                    f"MoneyKata: {len(fresh)} new alert{'' if len(fresh) == 1 else 's'}",
+                    (
+                        f"Hello {u.displayName},\n\nOpened since your last summary:\n\n{lines}\n\n"
+                        "See them on the Alerts screen. Choose how alerts reach you in Profile.\n"
+                    ),
+                ),
+            )
+            sent += 1
+    return sent

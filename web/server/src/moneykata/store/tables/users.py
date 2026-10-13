@@ -39,6 +39,8 @@ User = record(
     # last step a code was accepted for, so a code is never accepted twice.
     Column("twoStepAt", UtcTimestamp),
     Column("totpLastStep", Integer),
+    # When the last daily summary of alerts was sent (S12.11.5).
+    Column("alertSummaryAt", UtcTimestamp),
     CheckConstraint("theme IN ('dark', 'light', 'system')", name="theme"),
     CheckConstraint("\"alertEmails\" IN ('each', 'daily', 'none')", name="alert_emails"),
 )

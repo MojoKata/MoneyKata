@@ -7,6 +7,7 @@ from .entities import Record, _now
 from .entities import accounts as acc
 from .entities import prices as pr
 from .entities import sharing as sh
+from .entities.alerts import Alert, AlertState
 from .entities.core import Activity, Secret, Setting, TaskRun
 from .entities.users import (
     Group,
@@ -17,7 +18,7 @@ from .entities.users import (
     User,
     UserGroup,
 )
-from .tables import accounts, activity, core, prices, sharing, users
+from .tables import accounts, activity, alerts, core, prices, sharing, users
 
 mapper_registry = registry()
 _done = False
@@ -39,6 +40,8 @@ def map_all() -> None:
     mapper_registry.map_imperatively(OneTimeToken, users.OneTimeToken)
     mapper_registry.map_imperatively(RecoveryCode, users.RecoveryCode)
     mapper_registry.map_imperatively(SignupRequest, users.SignupRequest)
+    mapper_registry.map_imperatively(Alert, alerts.Alert)
+    mapper_registry.map_imperatively(AlertState, alerts.AlertState)
     for entity, table in (
         (acc.Category, accounts.Category),
         (acc.Account, accounts.Account),

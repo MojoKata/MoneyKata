@@ -50,13 +50,18 @@ class Server:
         """The navigation's counts (S12.1.1), sent on the live stream; they grow with the
         screens that have them. Keys are the entries' labels, lowercased."""
         counts: dict[str, int] = {}
-        if caller.admin and self.store is not None:
-            from .auth import signup
+        if self.store is None:
+            return counts
+        from . import alerts
+        from .auth import signup
 
-            with self.db.read() as s:
-                waiting = len(signup.waiting(s))
-            if waiting:
-                counts["users and groups"] = waiting
+        with self.db.read() as s:
+            unseen = alerts.unseen(s, caller.id, caller.admin)
+            waiting = len(signup.waiting(s)) if caller.admin else 0
+        if unseen:
+            counts["alerts"] = unseen
+        if waiting:
+            counts["users and groups"] = waiting
         return counts
 
     def session_max_age(self) -> int:
@@ -103,6 +108,7 @@ def create_app(server: Server) -> FastAPI:
     from .ui import (
         accounts,
         activity,
+        alerts,
         dashboard,
         imports,
         portfolios,
@@ -127,6 +133,7 @@ def create_app(server: Server) -> FastAPI:
         sharing,
         portfolios,
         activity,
+        alerts,
         dashboard,
     ):
         app.include_router(module.router)

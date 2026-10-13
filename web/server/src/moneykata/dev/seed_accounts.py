@@ -175,7 +175,18 @@ def seed_accounts(s, people: dict, today: dt.date | None = None) -> None:
         coveredFrom=b.today - dt.timedelta(days=28),
         coveredTo=b.today,
     )
-    s.add_all([imp_check, imp_card, imp_card2])
+    # Savings statements stopped coming: an alert asks for one (S12.11).
+    imp_savings = Import(
+        id=ids.new_id("Imprt"),
+        accountId=savings.id,
+        userId=alice.id,
+        format="ofx",
+        fileName="savings-august.qfx",
+        fileHash="seed3",
+        coveredFrom=b.today - dt.timedelta(days=82),
+        coveredTo=b.today - dt.timedelta(days=52),
+    )
+    s.add_all([imp_check, imp_card, imp_card2, imp_savings])
     s.flush()
     s.add(
         Transaction(

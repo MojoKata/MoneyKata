@@ -49,6 +49,7 @@ SETTINGS = (
     "imports",
     "backups",
     "keys",
+    "alerts",
 )
 # (path, button, guide): the dialogs that load something when they open.
 DIALOGS = (
@@ -222,7 +223,14 @@ class Recorder:
     def crawl(self) -> None:
         session = self.api("/session")
         admin = session["user"]["admin"]
-        paths = ["/ui/", "/ui/accounts", "/ui/transactions", "/ui/portfolios", "/ui/activity"]
+        paths = [
+            "/ui/",
+            "/ui/accounts",
+            "/ui/transactions",
+            "/ui/portfolios",
+            "/ui/activity",
+            "/ui/alerts",
+        ]
         paths += ["/ui/profile", "/ui/transactions?category=none"]
         if admin:
             paths += ["/ui/users"] + [f"/ui/settings/{s}" for s in SETTINGS]

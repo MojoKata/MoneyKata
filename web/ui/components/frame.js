@@ -40,6 +40,7 @@ export const NAV = [
   { href: '/ui/transactions', label: 'Transactions', icon: 'tx', match: /^\/ui\/transactions/ },
   { href: '/ui/portfolios', label: 'Portfolios', icon: 'pie', match: /^\/ui\/portfolios/ },
   { href: '/ui/activity', label: 'Activity', icon: 'pulse', match: /^\/ui\/activity/ },
+  { href: '/ui/alerts', label: 'Alerts', icon: 'bell', match: /^\/ui\/alerts/ },
 ];
 export const ADMIN_NAV = [
   { href: '/ui/users', label: 'Users and Groups', icon: 'users', match: /^\/ui\/users/ },

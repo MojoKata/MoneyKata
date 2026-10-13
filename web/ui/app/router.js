@@ -12,6 +12,7 @@ const Transactions = screen('transactions');
 const Portfolios = screen('portfolios');
 const Portfolio = screen('portfolio');
 const Activity = screen('activity');
+const Alerts = screen('alerts');
 const Users = screen('users');
 const Settings = screen('settings');
 const Profile = screen('profile');
@@ -29,6 +30,7 @@ export function Screens() {
       <${Route} path="/ui/portfolios/:id" component=${Portfolio} />
       <${Route} path="/ui/portfolios/:id/:tab" component=${Portfolio} />
       <${Route} path="/ui/activity" component=${Activity} />
+      <${Route} path="/ui/alerts" component=${Alerts} />
       <${Route} path="/ui/users" component=${Users} />
       <${Route} path="/ui/settings" component=${Settings} />
       <${Route} path="/ui/settings/:section" component=${Settings} />

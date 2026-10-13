@@ -1,13 +1,15 @@
 """Dev mode's seed data (requirements S17.7): the users admin, alice and bob, a Household
 group, and a year of their accounts; each part of the app adds its own."""
 
+import datetime as dt
 import logging
 
 from sqlalchemy import select
 
-from .. import ids, settings
+from .. import clock, ids, settings
 from ..auth import passwords
 from ..auth import users as accounts
+from ..store.entities.alerts import Alert
 from ..store.entities.users import Group, User, UserGroup
 from .seed_accounts import seed_accounts
 from .seed_sharing import seed_sharing
@@ -24,6 +26,7 @@ def seed(server) -> None:
         people = seed_users(s)
         seed_accounts(s, people)
         seed_sharing(s, people)
+        seed_alerts(s)
     log.info("dev: seeded; sign in as admin, alice or bob with %r", PASSWORD)
 
 
@@ -49,6 +52,8 @@ def seed_users(s) -> dict[str, User]:
         s.add(u)
         people[username] = u
     s.flush()
+    # An admin starts on an email for each alert (S12.11.5).
+    people["alice"].alertEmails = "each"
     people["alice"].spouseId, people["bob"].spouseId = people["bob"].id, people["alice"].id
     s.add(
         UserGroup(
@@ -61,3 +66,24 @@ def seed_users(s) -> dict[str, User]:
     for u in ("alice", "bob"):
         s.add(UserGroup(userId=people[u].id, groupId=household.id, createdAt=accounts.now()))
     return people
+
+
+def seed_alerts(s) -> None:
+    """A resolved alert for the admins; open ones come from the seed's own causes."""
+
+    now = clock.now()
+    s.add(
+        Alert(
+            id=ids.new_id("Alert"),
+            kind="backup-failed",
+            causeKey="backups",
+            title="Backup failed",
+            about="the backup directory was full",
+            link="/ui/settings/backups",
+            fix="Backups",
+            seenSince=now - dt.timedelta(days=6),
+            openedAt=now - dt.timedelta(days=6),
+            resolvedAt=now - dt.timedelta(days=5),
+            resolution="the next backup succeeded",
+        )
+    )

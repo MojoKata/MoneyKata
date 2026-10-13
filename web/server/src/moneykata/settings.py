@@ -190,6 +190,9 @@ _d("importMaxMb", "imports", 25, _int(1, 200))
 # Backups (S16.12, S14.6)
 _d("backupTime", "backups", "02:30", _time)
 _d("backupCopies", "backups", 14, _int(1, 365))
+# Alerts (S16.16, S12.11): how long a source may fail first, and the daily summary's time
+_d("alertSourceHours", "alerts", 48, _int(1, 24 * 14))
+_d("alertSummaryTime", "alerts", "07:00", _time)
 # Key storage (S15.8.2): remind admins of the key's age; 0 is off
 _d("keyReminderMonths", "keys", 12, _int(0, 120))
 

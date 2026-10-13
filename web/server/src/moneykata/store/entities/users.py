@@ -24,6 +24,7 @@ class User(Record):
     reactivationAskedAt: dt.datetime | None = None
     twoStepAt: dt.datetime | None = None
     totpLastStep: int | None = None
+    alertSummaryAt: dt.datetime | None = None
 
 
 @dataclass(kw_only=True, eq=False)

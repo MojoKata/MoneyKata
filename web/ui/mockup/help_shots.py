@@ -16,7 +16,18 @@ ROOT = UI.parents[1]
 PAGE = ROOT / "docs" / "mockups" / "MoneyKata-app.html"
 SHOTS = UI / "guides" / "shots"
 SIZE = {"width": 1280, "height": 800}
-SETTINGS = ("general", "sessions", "passwords", "prices", "imports", "backups", "keys")
+SETTINGS = (
+    "general",
+    "email",
+    "sessions",
+    "signup",
+    "passwords",
+    "prices",
+    "imports",
+    "backups",
+    "keys",
+    "alerts",
+)
 
 TO_WEBP = """async (png) => {
   const img = new Image();
@@ -49,6 +60,7 @@ def routes(page) -> dict[str, str]:
         "transactions": "/ui/transactions",
         "portfolios": "/ui/portfolios",
         "activity": "/ui/activity",
+        "alerts": "/ui/alerts",
         "users": "/ui/users",
         "profile": "/ui/profile",
         "account-overview": f"/ui/accounts/{checking}/overview",

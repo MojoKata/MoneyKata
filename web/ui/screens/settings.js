@@ -24,6 +24,7 @@ const SECTIONS = /** @type {[string, string][]} */ ([
   ['imports', 'Imports'],
   ['backups', 'Backups'],
   ['keys', 'Key storage'],
+  ['alerts', 'Alerts'],
 ]);
 
 /** @param {{ section?: string }} p */
@@ -191,6 +192,35 @@ function Plain({ section }) {
                 signupDomains: x.split(',').map((d) => d.trim()).filter(Boolean),
               })} />
           </${Field}>
+      `,
+    );
+  }
+  if (section === 'alerts') {
+    return form(
+      ['alertSourceHours', 'alertSummaryTime'],
+      html`
+        <h3>Alerts</h3>
+        <p class="small dim" style=${{
+          marginTop: '-6px',
+        }}>Alerts tell people when something needs them.
+          Each user chooses in Profile whether they are emailed.</p>
+        <${Field} label="Alert when a source has failed for" id="alert-source-hours"
+          error=${errAt(e, 'alertSourceHours')}
+          hint="Price sources and email. Admins are alerted.">
+          <${Select} value=${String(f.alertSourceHours)}
+            onChange=${(/** @type {string} */ x) => setF({ ...f, alertSourceHours: Number(x) })}
+            options=${[['24', '24 hours'], ['48', '48 hours'], ['72', '72 hours'], [
+              '168',
+              '1 week',
+            ]]} />
+          </${Field}>
+          <${Field} label="Daily summary at" id="alert-summary-time" error=${errAt(
+            e,
+            'alertSummaryTime',
+          )}
+            hint="In each person's time zone, for those who chose the daily summary.">
+            <${Input} type="time" value=${f.alertSummaryTime} onInput=${set('alertSummaryTime')} />
+            </${Field}>
       `,
     );
   }

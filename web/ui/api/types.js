@@ -99,6 +99,29 @@
  */
 
 /**
+ * @typedef {Object} AlertList
+ * @property {Array<AlertRow>} open
+ * @property {Array<AlertRow>} resolved
+ * @property {string} emails
+ */
+
+/**
+ * @typedef {Object} AlertRow
+ * @property {string} id
+ * @property {string} kind
+ * @property {string} title
+ * @property {string} about
+ * @property {(string | null)} link
+ * @property {(string | null)} fix
+ * @property {string} icon
+ * @property {string} openedAt
+ * @property {(string | null)} resolvedAt
+ * @property {(string | null)} resolution
+ * @property {boolean} forAdmins
+ * @property {boolean} seen
+ */
+
+/**
  * @typedef {Object} Approval
  * @property {Array<string>} [groupIds]
  */

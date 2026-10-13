@@ -158,19 +158,22 @@
     alert asks for an action.
     1. **What raises one**:
        1. **for admins**: a source that has failed for longer than the threshold in Settings
-          › Alerts (48 hours by default): the bitcoin explorer or node, a price source, or a
-          linked server's pulls; a backup that failed;
+          › Alerts (48 hours by default): the bitcoin explorer or node, a price source, email
+          that can't be sent, or a linked server's pulls; a backup that failed;
           a link's first share waiting for its access key (S11.9.2); and the yearly check of
-          the master key's recovery phrase (S15.6.5). An admin's alert about someone else's
+          the master key's recovery phrase (S15.6.5), due a year after the phrase was last
+          confirmed with `keys verify`, or after the key was made. An admin's alert about someone else's
           account names its owner and source, never the account's name or figures (S10.2);
        2. **for an account's owner**: their wallet's explorer or node failing for longer
           than the threshold, and an account whose latest statement or import is older than
-          its expected interval (a month and a half for a monthly statement), and a
+          its expected interval (a month and a half for a monthly statement; every account
+          kept from files uses it until an account has an interval of its own, G10), and a
           reconciliation mismatch left open for 7 days (S1.11);
        3. **for each user**: an occasion entering its lead time (S7.7.3), an option
           expiring within a week, a pledge due (S7.9), an active projection falling
           behind (S6.7.5), and budget alerts when they come (S7.6).
-    2. **One alert per cause.** A failing source raises one alert, not one per attempt. It
+    2. **One alert per cause.** The alerts task looks at every cause every 15 minutes, and
+       at once after any other background task ends. A failing source raises one alert, not one per attempt. It
        stays **open** while the cause lasts and is **resolved** by itself when the cause
        clears (the source answers again). A user can **dismiss** an open alert for themselves.
        Resolved alerts stay listed for 90 days.

@@ -32,6 +32,7 @@ SETTINGS_SECTIONS = (
     "imports",
     "backups",
     "keys",
+    "alerts",
 )
 
 
@@ -194,6 +195,7 @@ def test_every_screen_and_tab_has_its_guide(page):
         "/ui/transactions",
         "/ui/portfolios",
         "/ui/activity",
+        "/ui/alerts",
         "/ui/users",
         "/ui/profile",
     ]
