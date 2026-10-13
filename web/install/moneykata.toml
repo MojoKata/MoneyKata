@@ -27,3 +27,5 @@ master = "/etc/moneykata/master.key"
 # [tls]   in "tls" mode: a certificate and key; without them, a self-signed pair is made on
 # cert = "/etc/moneykata/tls/fullchain.pem"   first start and kept in the data directory.
 # key = "/etc/moneykata/tls/privkey.pem"
+# names = ["money.lan", "192.168.1.20"]   what browsers use to reach it, for the self-signed
+#                                         certificate (it always names the server and localhost)

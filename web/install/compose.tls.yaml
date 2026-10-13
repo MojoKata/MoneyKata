@@ -1,6 +1,7 @@
 # MoneyKata with its own HTTPS listener and a self-signed certificate, for testing on a local
 # network (requirements §16.3, §20.8.4). Use compose.yaml behind a reverse proxy for real use.
-# Copy moneykata.toml to moneykata-tls.toml and set mode = "tls" in it first.
+# Copy moneykata.toml to moneykata-tls.toml, set mode = "tls" in it, and list under [tls] names
+# the name or address browsers will use, for the self-signed certificate.
 
 services:
   moneykata:

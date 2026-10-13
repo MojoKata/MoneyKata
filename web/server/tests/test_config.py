@@ -32,6 +32,7 @@ def test_parses_a_full_config():
         ({"keys": {"master": "/var/backups/moneykata/k"}}, "inside the backup directory"),
         ({"paths": {"data": "relative", "backups": "/b"}}, "absolute"),
         ({"tls": {"cert": "/a.crt"}}, "both cert and key"),
+        ({"tls": {"names": "money.lan"}}, "list of host names"),
         ({"extra": {}}, "unknown section"),
     ],
 )
@@ -90,3 +91,21 @@ def test_dev_hostnames_join_the_self_signed_certificate_which_is_remade_to_cover
 
     hypercorn_config(dev_config(37373, stubs=False, peer=False, base=tmp_path))
     assert cert.read_bytes() == second  # a certificate that covers more is kept
+
+
+def test_tls_names_join_the_self_signed_certificate(tmp_path):
+    """tls mode on a local network: the certificate also names what the browser uses."""
+    import dataclasses
+
+    from moneykata.listener import _covers, hypercorn_config
+
+    raw = {k: dict(v) for k, v in BASE.items()}
+    raw["server"]["mode"] = "tls"
+    raw["paths"] = {"data": str(tmp_path / "data"), "backups": str(tmp_path / "backups")}
+    raw["keys"] = {"master": str(tmp_path / "keys" / "master.key")}
+    raw["tls"] = {"names": ["money.lan", "192.168.1.20"]}
+    config = parse(raw, "test")
+    assert config.cert_names == ("money.lan", "192.168.1.20")
+    hypercorn_config(dataclasses.replace(config, host="127.0.0.1"))
+    cert = tmp_path / "data" / "tls" / "self-signed.crt"
+    assert _covers(cert) == {"money.lan", "192.168.1.20", "home", "localhost"}

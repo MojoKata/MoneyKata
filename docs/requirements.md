@@ -1432,7 +1432,9 @@ preparer.
    are trusted only from the configured proxy addresses); or **`tls`**, its own HTTPS
    listener with HTTP/2 (forwarded headers ignored). **`proxy`** is the expected setup.
    **`tls`** is for testing on a local network: given no certificate, the server makes a
-   self-signed one on first start and keeps it in the data directory.
+   self-signed one on first start and keeps it in the data directory. It names the server
+   and `localhost`, and the names and addresses listed in `[tls] names`, which are how
+   browsers on the network reach it; a change to the list makes it again.
 4. **Background tasks** in the server process: price refresh (§7.4), bitcoin wallet reads
    (§4.6), link pulls (§14.4), option expiry (§6.6), recurring detection (§10.5), backups
    (§17.6), receipt and statement reading (§12.8, §4.3, in its own worker process), and

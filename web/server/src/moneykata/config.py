@@ -44,7 +44,7 @@ class Config:
     stubs: bool = False
     path: Path | None = None
     mail_folder: Path | None = None
-    cert_names: tuple[str, ...] = ()  # dev mode: more names for the self-signed certificate
+    cert_names: tuple[str, ...] = ()  # more names for the self-signed certificate
 
     @property
     def db_path(self) -> Path:
@@ -130,6 +130,9 @@ def parse(raw: dict, where: str, path: Path | None = None) -> Config:
     key = tls.get("key")
     if bool(cert) != bool(key):
         raise RefuseStart(f"{where}: [tls] needs both cert and key, or neither")
+    names = tls.get("names", [])
+    if not isinstance(names, list) or not all(isinstance(n, str) and n.strip() for n in names):
+        raise RefuseStart(f"{where}: [tls] names must be a list of host names or addresses")
 
     for p, label in ((data_dir, "data"), (backup_dir, "backups"), (key_file, "master key")):
         if not p.is_absolute():
@@ -147,6 +150,7 @@ def parse(raw: dict, where: str, path: Path | None = None) -> Config:
         key_file=key_file,
         tls_cert=Path(cert) if cert else None,
         tls_key=Path(key) if key else None,
+        cert_names=tuple(n.strip() for n in names),
         previous_keys=tuple(previous),
         path=path,
     )
