@@ -68,6 +68,8 @@ DIALOGS = (
     ("/ui/users", "New group", "dialog-group"),
     ("/ui/settings/prices", "Add a source", "dialog-add-source"),
 )
+# POSTs that only work something out: the first answer is kept, for the page to show.
+COMPUTED = re.compile(r"/ui/api/accounts/[^/]+/loan/(payoff|split)$")
 IMPORTS = re.compile(r"""(\bfrom\s*|\bimport\s*\(?\s*)(['"])(\.{1,2}/[^'"]+)\2""")
 SCREENS = re.compile(r"import\(`\.\./screens/\$\{name\}\.js`\)")
 
@@ -181,6 +183,13 @@ class Recorder:
             route.fulfill(status=204)
             return
         self.pace()
+        if req.method == "POST" and COMPUTED.search(key_of(req.url)):
+            r = route.fetch()
+            self.answers.setdefault(
+                "POST " + key_of(req.url), {"status": r.status, "body": json.loads(r.text())}
+            )
+            route.fulfill(response=r)
+            return
         if req.method != "GET":
             route.fallback()
             return

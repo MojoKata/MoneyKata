@@ -17,6 +17,7 @@
 import calendar
 import datetime as dt
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -275,10 +276,14 @@ def _months_between(a: dt.date, b: dt.date) -> int:
 
 
 def schedule(
-    t: Terms, payments: list[Payment], draws, today: dt.date, extra: dict | None = None
+    t: Terms,
+    payments: list[Payment],
+    draws,
+    today: dt.date,
+    extra: Callable[[dt.date, Decimal], Decimal] | None = None,
 ) -> list[Row]:
-    """The payments made, then those ahead until the balance is paid. `extra` adds the
-    payoff planner's overpayments ahead: {date: amount}."""
+    """The payments made, then those ahead until the balance is paid. `extra` gives the
+    payoff planner's overpayment on a payment's day, from the principal and interest due."""
     rows: list[Row] = []
     for p in payments:
         rows.append(
@@ -317,20 +322,29 @@ def schedule(
         k += 1
     day = add_months(t.start, k)
     previous = last if payments else t.start
+    # The payment stays level between the days that change it: a recast, a rate reset, or a
+    # HELOC's draw period ending. Overpayments in between shorten the loan.
+    changes = sorted({d for d, _ in t.recasts} | {d for d, _ in t.resets})
+    pi = _pi_payment(t, owed, day)
+    first = True
     guard = 0
     while owed > 0 and guard < 1200:
         guard += 1
+        if not first and (
+            any(previous <= d < day for d in changes)
+            or (_in_draw(t, previous) and not _in_draw(t, day))
+        ):
+            pi = _pi_payment(t, owed, day)
+        first = False
         rate = t.rate_on(day) / 100
         if t.method == "daily":
             interest = cents(owed * rate * (day - previous).days / 365)
         else:
             interest = cents(owed * rate / 12)
-        if _in_draw(t, day):
-            principal = ZERO
-        else:
-            principal = min(max(_pi_payment(t, owed, day) - interest, ZERO), owed)
-        bonus = Decimal(str((extra or {}).get(day, 0)))
-        principal = min(principal + bonus, owed)
+        principal = ZERO if _in_draw(t, day) else min(max(pi - interest, ZERO), owed)
+        bonus = cents(extra(day, pi)) if extra else ZERO
+        bonus = min(bonus, owed - principal)
+        principal = principal + bonus
         if day >= t.end or owed - principal < 1:
             # The last payment takes what rounding left over.
             principal = owed

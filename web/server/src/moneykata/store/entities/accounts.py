@@ -197,3 +197,14 @@ class Loan(Record):
     resets: str = "[]"
     recasts: str = "[]"
     originalValue: Decimal | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class PayoffPlan(Record):
+    id: str
+    accountId: str
+    name: str
+    inputs: str
+    following: bool = False
+    followingSince: dt.date | None = None
+    createdById: str | None = None

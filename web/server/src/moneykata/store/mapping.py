@@ -64,6 +64,7 @@ def map_all() -> None:
         (acc.ImportMapping, accounts.ImportMapping),
         (acc.StatementLayout, accounts.StatementLayout),
         (acc.Loan, loans.Loan),
+        (acc.PayoffPlan, loans.PayoffPlan),
         (acc.Import, accounts.Import),
         (acc.Transaction, accounts.Transaction),
         (acc.Split, accounts.Split),

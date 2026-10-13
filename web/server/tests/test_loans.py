@@ -9,6 +9,7 @@ from test_accounts import add, new_account
 
 from moneykata import clock
 from moneykata import loans as L
+from moneykata.loans import payoff as P
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 
@@ -164,3 +165,94 @@ def test_terms_are_checked(server, frozen):
         json={"principal": "-1", "startDate": "2026-01-01", "termMonths": 0, "rate": "99"},
     )
     assert {e["field"] for e in r.json()["errors"]} == {"principal", "termMonths", "rate"}
+
+
+# ---- The payoff planner (S6.10) ----
+
+
+def test_extra_each_month_pays_off_sooner_and_saves_interest():
+    t = mortgage_terms()
+    r = P.plan_outcomes(t, [], [], dt.date(2025, 1, 15), P.Plan(monthly=D(300)), 7.0)
+    assert r.schedule.payoffDate == dt.date(2055, 1, 1)
+    assert r.plan.payoffDate < dt.date(2049, 1, 1)
+    assert r.schedule.interest - r.plan.interest > 80000
+    assert r.invested.contributed > 0 and r.invested.value > r.invested.contributed
+
+
+def test_biweekly_is_a_thirteenth_payment_a_year():
+    t = mortgage_terms()
+    r = P.plan_outcomes(t, [], [], dt.date(2025, 1, 15), P.Plan(biweekly=True), 7.0)
+    extra = next(x for x in r.plan.rows if not x.past).overpayment
+    assert extra == (D("1798.65") / 12).quantize(D("0.01"))
+    assert 4 <= (r.schedule.payoffDate.year - r.plan.payoffDate.year) <= 7
+
+
+def test_a_lump_sum_shortens_or_recasts():
+    t = mortgage_terms()
+    plan = P.Plan(lumps=[(dt.date(2026, 6, 15), D(50000))], recast=True, recastFee=D(250))
+    r = P.plan_outcomes(t, [], [], dt.date(2025, 1, 15), plan, 7.0)
+    # Shortened: the payment stays and the loan ends years sooner.
+    assert r.plan.paymentAfter == r.plan.payment and r.plan.payoffDate < dt.date(2047, 1, 1)
+    # Recast: the payment drops and the end stays.
+    assert r.recast.paymentAfter < r.recast.payment - 250
+    assert r.recast.payoffDate == dt.date(2055, 1, 1) and r.recast.fees == D(250)
+    assert r.schedule.interest - r.plan.interest > r.schedule.interest - r.recast.interest
+
+
+def test_rounding_up_each_payment():
+    t = mortgage_terms(escrowTax=D(300))
+    r = P.plan_outcomes(t, [], [], dt.date(2025, 1, 15), P.Plan(roundTo=D(100)), 7.0)
+    first = next(x for x in r.plan.rows if not x.past)
+    assert first.payment == D(2100)
+
+
+def test_the_planner_and_plans_through_the_api(server, frozen):
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    loan = new_account(c, name="Home", type="mortgage")
+    c.put(
+        f"/ui/api/accounts/{loan['id']}/loan",
+        json={"principal": "300000", "startDate": "2026-01-01", "termMonths": 360, "rate": "6"},
+    )
+    r = c.post(f"/ui/api/accounts/{loan['id']}/loan/payoff", json={"monthly": "300"})
+    assert r.status_code == 200, r.text
+    v = r.json()
+    assert v["plan"]["monthsSaved"] > 60 and float(v["plan"]["interestSaved"]) > 80000
+    assert v["invested"]["assetClass"] == "usStocks" and v["invested"]["rate"] == 7.0
+    assert v["recast"] is None and v["planRows"][0]["overpayment"] == "300.00"
+    bad = c.post(f"/ui/api/accounts/{loan['id']}/loan/payoff", json={"monthly": "-1"})
+    assert bad.status_code == 422 and bad.json()["errors"][0]["field"] == "monthly"
+    # Saved, then followed: overpaying less than the plan is behind it.
+    r = c.post(
+        f"/ui/api/accounts/{loan['id']}/loan/plans",
+        json={"name": "Extra $300", "inputs": {"monthly": "300"}},
+    )
+    assert r.status_code == 201, r.text
+    plan = r.json()
+    assert plan["headline"].startswith("Paid off ")
+    r = c.put(
+        f"/ui/api/accounts/{loan['id']}/loan/plans/{plan['id']}/following",
+        json={"following": True},
+    )
+    assert r.json()["following"] and r.json()["followingSince"] == "2026-10-13"
+    clock.fix(dt.datetime(2026, 12, 20, 12, tzinfo=dt.UTC))
+    c = sign_in(server, "alice")
+    c.post(
+        f"/ui/api/accounts/{loan['id']}/loan/payments",
+        json={"date": "2026-11-01", "amount": "1898.65"},
+    )
+    f = c.get(f"/ui/api/accounts/{loan['id']}/loan").json()["following"]
+    assert f["name"] == "Extra $300" and f["expected"] == "600.00"
+    assert f["actual"] == "100.00" and f["ahead"] == "-500.00"
+    # Another followed replaces it.
+    other = c.post(
+        f"/ui/api/accounts/{loan['id']}/loan/plans",
+        json={"name": "Biweekly", "inputs": {"biweekly": True}},
+    ).json()
+    c.put(
+        f"/ui/api/accounts/{loan['id']}/loan/plans/{other['id']}/following",
+        json={"following": True},
+    )
+    rows = {p["name"]: p for p in c.get(f"/ui/api/accounts/{loan['id']}/loan/plans").json()}
+    assert rows["Biweekly"]["following"] and not rows["Extra $300"]["following"]
+    assert c.delete(f"/ui/api/accounts/{loan['id']}/loan/plans/{other['id']}").status_code == 204

@@ -78,6 +78,7 @@ TEXT = {
     "receipt.attached": "{actor} attached a receipt to a transaction in {subject}",
     "receipt.deleted": "{actor} deleted a receipt",
     "loan.payment": "{actor} recorded a payment on {subject}",
+    "loan.plan-saved": "{actor} saved a payoff plan for {subject}",
     "projection.created": "{actor} made the projection {subject}",
     "projection.updated": "{actor} changed {fields} of the projection {subject}",
     "projection.activated": "{actor} made {subject} the active plan",

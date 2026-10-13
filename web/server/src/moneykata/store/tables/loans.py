@@ -1,6 +1,7 @@
-"""Loans (requirements S1.9): a loan account's terms, from which its schedule is computed."""
+"""Loans (requirements S1.9): a loan account's terms, from which its schedule is computed, and
+the payoff planner's saved plans (S6.10)."""
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Text, text
+from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Integer, Text, text
 
 from ..types import Day, Dec
 from ._base import record, unique_live
@@ -31,3 +32,16 @@ Loan = record(
     CheckConstraint('"termMonths" > 0', name="term"),
 )
 unique_live(Loan, "accountId")
+
+# A saved overpayment plan for one loan; at most one is the plan being followed, tracked from
+# the day it was chosen.
+PayoffPlan = record(
+    "PayoffPlan",
+    "Pyoff",
+    Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
+    Column("name", Text, nullable=False),
+    Column("inputs", Text, nullable=False),  # JSON: the plan's overpayments
+    Column("following", Boolean, nullable=False, server_default=text("0")),
+    Column("followingSince", Day),
+    Column("createdById", Text, ForeignKey("User.id")),
+)

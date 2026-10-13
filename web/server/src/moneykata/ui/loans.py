@@ -6,14 +6,24 @@ import datetime as dt
 import json
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import Field
 from sqlalchemy import false, or_, select
 
 from .. import access, activity, clock, ids, loans
 from ..errors import FieldError, Problem, refuse
-from ..store.entities.accounts import Account, Anchor, Category, Loan, Split, Transaction
-from .conventions import Model, Money
+from ..loans import payoff
+from ..projections import assumptions
+from ..store.entities.accounts import (
+    Account,
+    Anchor,
+    Category,
+    Loan,
+    PayoffPlan,
+    Split,
+    Transaction,
+)
+from .conventions import Model, Money, if_match, stale
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", tags=["loans"])
@@ -93,6 +103,15 @@ class ServicerCheck(Model):
     difference: Money
 
 
+class Following(Model):
+    planId: str
+    name: str
+    since: dt.date
+    expected: Money  # what the plan has had overpaid since it was chosen
+    actual: Money  # what was overpaid
+    ahead: Money  # actual less expected: below zero is behind
+
+
 class LoanView(Model):
     terms: TermsOut | None
     balance: Money
@@ -108,6 +127,7 @@ class LoanView(Model):
     overpaid: Money
     rows: list[RowOut]
     servicer: ServicerCheck | None
+    following: Following | None = None
     canWrite: bool
 
 
@@ -224,6 +244,7 @@ def view(s, a: Account, level: str) -> LoanView:
         overpaid=sm.overpaid,
         rows=[RowOut(**r.__dict__) for r in rows],
         servicer=servicer,
+        following=_following(s, a, terms, rows, sm.payment, today),
         canWrite=level in ("owner", "write"),
     )
 
@@ -459,3 +480,353 @@ def candidates(account_id: str, request: Request, c: Caller = Depends(caller)):
                     )
                 )
         return sorted(out, key=lambda x: x.date, reverse=True)
+
+
+# ---- The payoff planner (S6.10) ----
+
+
+class Lump(Model):
+    date: dt.date
+    amount: Money
+
+
+class PlanIn(Model):
+    monthly: Money = Decimal(0)
+    monthlyFrom: dt.date | None = None
+    monthlyUntil: dt.date | None = None
+    yearly: Money = Decimal(0)
+    yearlyMonth: int = 12
+    lumps: list[Lump] = Field(default_factory=list)
+    biweekly: bool = False
+    roundTo: Money = Decimal(0)
+    recast: bool = False
+    recastFee: Money = Decimal(0)
+    investClass: str = "usStocks"
+
+
+class LumpView(Model):
+    date: dt.date
+    amount: Money
+
+
+class PlanView(Model):
+    """The inputs as saved; its own models, so the contract has one schema for each direction."""
+
+    monthly: Money
+    monthlyFrom: dt.date | None
+    monthlyUntil: dt.date | None
+    yearly: Money
+    yearlyMonth: int
+    lumps: list[LumpView]
+    biweekly: bool
+    roundTo: Money
+    recast: bool
+    recastFee: Money
+    investClass: str
+
+
+class Point(Model):
+    date: dt.date
+    balance: Money
+
+
+class OutcomeOut(Model):
+    payoffDate: dt.date | None
+    months: int
+    interest: Money
+    paid: Money
+    payment: Money
+    paymentAfter: Money
+    fees: Money
+    monthsSaved: int
+    interestSaved: Money  # against the schedule, less any recast fees
+    balances: list[Point]
+
+
+class InvestedOut(Model):
+    assetClass: str
+    rate: float
+    contributed: Money
+    value: Money
+    gain: Money
+
+
+class PayoffOut(Model):
+    schedule: OutcomeOut
+    plan: OutcomeOut
+    recast: OutcomeOut | None
+    invested: InvestedOut
+    planRows: list[RowOut]
+    recastRows: list[RowOut]
+    # An ARM's future rates are the user's assumption, and shown as such (S6.10.6).
+    assumedRates: list[ResetView]
+
+
+class SavedPlanIn(Model):
+    name: str
+    inputs: PlanIn
+
+
+class SavedPlan(Model):
+    id: str
+    name: str
+    inputs: PlanView
+    following: bool
+    followingSince: dt.date | None
+    createdAt: dt.datetime
+    version: int
+    headline: str  # "Paid off Apr 2049 · $41,210 interest saved"
+
+
+def _plan(body: PlanIn) -> payoff.Plan:
+    return payoff.Plan(
+        monthly=body.monthly,
+        monthlyFrom=body.monthlyFrom,
+        monthlyUntil=body.monthlyUntil,
+        yearly=body.yearly,
+        yearlyMonth=body.yearlyMonth,
+        lumps=[(x.date, x.amount) for x in body.lumps],
+        biweekly=body.biweekly,
+        roundTo=body.roundTo,
+        recast=body.recast,
+        recastFee=body.recastFee,
+        investClass=body.investClass,
+    )
+
+
+def _check_plan(body: PlanIn) -> None:
+    e = []
+    for f in ("monthly", "yearly", "roundTo", "recastFee"):
+        if getattr(body, f) < 0:
+            e.append(FieldError(f, "amount-invalid", "Zero or more."))
+    if not 1 <= body.yearlyMonth <= 12:
+        e.append(FieldError("yearlyMonth", "month-invalid", "A month, 1 to 12."))
+    if body.monthlyFrom and body.monthlyUntil and body.monthlyUntil < body.monthlyFrom:
+        e.append(FieldError("monthlyUntil", "until-before-from", "After the start."))
+    for i, x in enumerate(body.lumps):
+        if x.amount <= 0:
+            e.append(FieldError(f"lumps.{i}.amount", "amount-invalid", "More than zero."))
+    if body.investClass not in assumptions.CLASS_KEYS:
+        e.append(FieldError("investClass", "class-invalid", "One of the asset classes."))
+    if e:
+        raise Problem(422, e[0].code, e[0].message, e)
+
+
+def _months(a: dt.date | None, b: dt.date | None) -> int:
+    if a is None or b is None:
+        return 0
+    return (b.year - a.year) * 12 + b.month - a.month
+
+
+def _outcome_out(o: payoff.Outcome, base: payoff.Outcome) -> OutcomeOut:
+    return OutcomeOut(
+        payoffDate=o.payoffDate,
+        months=o.months,
+        interest=o.interest,
+        paid=o.paid,
+        payment=o.payment,
+        paymentAfter=o.paymentAfter,
+        fees=o.fees,
+        monthsSaved=_months(o.payoffDate, base.payoffDate),
+        interestSaved=base.interest - o.interest - o.fees,
+        balances=[Point(date=r.date, balance=r.balance) for r in o.rows if not r.past],
+    )
+
+
+def _compute(s, c: Caller, a: Account, plan: payoff.Plan) -> payoff.Result:
+    row = loans.loan_of(s, a)
+    if row is None:
+        raise Problem(409, "no-terms", "Set the loan's terms first.")
+    figures = assumptions.load(s, c.id)
+    rate = float(figures["classes"][plan.investClass]["return"])
+    payments, draws = loans.history(s, a)
+    return payoff.plan_outcomes(loans.terms_of(row), payments, draws, clock.today(), plan, rate)
+
+
+def _rows(rows) -> list[RowOut]:
+    return [RowOut(**r.__dict__) for r in rows if not r.past]
+
+
+@router.post("/accounts/{account_id}/loan/payoff", response_model=PayoffOut)
+def plan_payoff(account_id: str, body: PlanIn, request: Request, c: Caller = Depends(caller)):
+    """A plan's overpayments against the schedule: the new payoff date, months and interest
+    saved, a recast after its lump sums, and the same money invested instead."""
+    _check_plan(body)
+    with server(request).db.read() as s:
+        a, _ = _account(s, c, account_id)
+        plan = _plan(body)
+        r = _compute(s, c, a, plan)
+        row = loans.loan_of(s, a)
+        today = clock.today()
+        return PayoffOut(
+            schedule=_outcome_out(r.schedule, r.schedule),
+            plan=_outcome_out(r.plan, r.schedule),
+            recast=_outcome_out(r.recast, r.schedule) if r.recast else None,
+            invested=InvestedOut(
+                assetClass=plan.investClass,
+                rate=r.invested.rate,
+                contributed=r.invested.contributed,
+                value=r.invested.value,
+                gain=r.invested.value - r.invested.contributed,
+            ),
+            planRows=_rows(r.plan.rows),
+            recastRows=_rows(r.recast.rows) if r.recast else [],
+            assumedRates=[
+                ResetView(date=d, rate=x) for d, x in loans.terms_of(row).resets if d > today
+            ],
+        )
+
+
+def _plans(s, a: Account) -> list[PayoffPlan]:
+    return list(
+        s.scalars(
+            select(PayoffPlan)
+            .where(PayoffPlan.accountId == a.id, PayoffPlan.deleted == false())
+            .order_by(PayoffPlan.createdAt)
+        )
+    )
+
+
+def _saved(s, c: Caller, a: Account, p: PayoffPlan) -> SavedPlan:
+    plan_in = PlanIn(**json.loads(p.inputs))
+    inputs = PlanView(**plan_in.model_dump())
+    headline = ""
+    if loans.loan_of(s, a) is not None:
+        r = _compute(s, c, a, _plan(plan_in))
+        best = r.plan
+        saved = r.schedule.interest - best.interest - best.fees
+        when = f"{best.payoffDate:%b %Y}" if best.payoffDate else "—"
+        headline = f"Paid off {when} · ${saved:,.0f} interest saved"
+    return SavedPlan(
+        id=p.id,
+        name=p.name,
+        inputs=inputs,
+        following=p.following,
+        followingSince=p.followingSince,
+        createdAt=p.createdAt,
+        version=p.version,
+        headline=headline,
+    )
+
+
+def _following(s, a: Account, terms, rows, pi, today) -> Following | None:
+    p = s.scalars(
+        select(PayoffPlan).where(
+            PayoffPlan.accountId == a.id,
+            PayoffPlan.deleted == false(),
+            PayoffPlan.following.is_(True),
+        )
+    ).first()
+    if p is None or p.followingSince is None:
+        return None
+    inputs = PlanIn(**json.loads(p.inputs))
+    expected = payoff.expected_extra(terms, _plan(inputs), p.followingSince, today, pi)
+    actual = sum((r.overpayment for r in rows if r.past and r.date > p.followingSince), Decimal(0))
+    return Following(
+        planId=p.id,
+        name=p.name,
+        since=p.followingSince,
+        expected=expected,
+        actual=actual,
+        ahead=actual - expected,
+    )
+
+
+@router.get("/accounts/{account_id}/loan/plans", response_model=list[SavedPlan])
+def list_plans(account_id: str, request: Request, c: Caller = Depends(caller)):
+    with server(request).db.read() as s:
+        a, _ = _account(s, c, account_id)
+        return [_saved(s, c, a, p) for p in _plans(s, a)]
+
+
+def _check_name(name: str) -> str:
+    name = name.strip()
+    if not name or len(name) > 80:
+        raise refuse("name", "name-invalid", "A name, up to 80 characters.")
+    return name
+
+
+@router.post("/accounts/{account_id}/loan/plans", response_model=SavedPlan, status_code=201)
+def save_plan(account_id: str, body: SavedPlanIn, request: Request, c: Caller = Depends(caller)):
+    name = _check_name(body.name)
+    _check_plan(body.inputs)
+    with server(request).db.tx() as s:
+        a, _ = _account(s, c, account_id, "write")
+        p = PayoffPlan(
+            id=ids.new_id("Pyoff"),
+            accountId=a.id,
+            name=name,
+            inputs=body.inputs.model_dump_json(),
+            createdById=c.id,
+        )
+        s.add(p)
+        s.flush()
+        activity.record(
+            s,
+            "loan.plan-saved",
+            actor=c.id,
+            subject_kind="account",
+            subject_id=a.id,
+            owner=a.ownerId,
+        )
+        return _saved(s, c, a, p)
+
+
+def _get_plan(s, c: Caller, account_id: str, plan_id: str) -> tuple[Account, PayoffPlan]:
+    a, _ = _account(s, c, account_id, "write")
+    p = s.get(PayoffPlan, plan_id)
+    if p is None or p.deleted or p.accountId != a.id:
+        raise Problem(404, "not-found", "No such plan.")
+    return a, p
+
+
+@router.put("/accounts/{account_id}/loan/plans/{plan_id}", response_model=SavedPlan)
+def change_plan(
+    account_id: str,
+    plan_id: str,
+    body: SavedPlanIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
+    name = _check_name(body.name)
+    _check_plan(body.inputs)
+    with server(request).db.tx() as s:
+        a, p = _get_plan(s, c, account_id, plan_id)
+        if p.version != version:
+            raise stale(_saved(s, c, a, p))
+        p.name = name
+        p.inputs = body.inputs.model_dump_json()
+        p.updatedAt = clock.now()
+        s.flush()
+        return _saved(s, c, a, p)
+
+
+@router.delete("/accounts/{account_id}/loan/plans/{plan_id}", status_code=204)
+def delete_plan(account_id: str, plan_id: str, request: Request, c: Caller = Depends(caller)):
+    with server(request).db.tx() as s:
+        _, p = _get_plan(s, c, account_id, plan_id)
+        p.mark_deleted(c.id)
+    return Response(status_code=204)
+
+
+class FollowIn(Model):
+    following: bool
+
+
+@router.put("/accounts/{account_id}/loan/plans/{plan_id}/following", response_model=SavedPlan)
+def follow_plan(
+    account_id: str, plan_id: str, body: FollowIn, request: Request, c: Caller = Depends(caller)
+):
+    """Marks the plan being followed, tracked from today; the one followed before stops."""
+    with server(request).db.tx() as s:
+        a, p = _get_plan(s, c, account_id, plan_id)
+        for other in _plans(s, a):
+            if other.following and other.id != p.id:
+                other.following, other.followingSince = False, None
+        if body.following and not p.following:
+            p.following, p.followingSince = True, clock.today()
+        elif not body.following:
+            p.following, p.followingSince = False, None
+        s.flush()
+        return _saved(s, c, a, p)

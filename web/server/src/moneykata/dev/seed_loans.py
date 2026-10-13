@@ -1,14 +1,24 @@
 """Dev mode's loans (requirements S17.7): Bob's mortgage, paid each month from his checking
 and split by its schedule, with one overpayment and the servicer's last balance typed in,
-shared with Alice; and Alice's new car loan, its first payment still to come."""
+two payoff plans (one followed), shared with Alice; and Alice's new car loan, its first
+payment still to come."""
 
 import datetime as dt
+import json
 from decimal import Decimal as D
 
 from sqlalchemy import select
 
 from .. import clock, ids, loans
-from ..store.entities.accounts import Account, Anchor, Category, Loan, Split, Transaction
+from ..store.entities.accounts import (
+    Account,
+    Anchor,
+    Category,
+    Loan,
+    PayoffPlan,
+    Split,
+    Transaction,
+)
 from ..store.entities.sharing import CountedAccount, Share
 
 
@@ -98,6 +108,30 @@ def seed_loans(s, people: dict) -> None:
         )
     )
     home.updatedAt = clock.now()
+    for name, inputs, since in (
+        ("Extra $300 a month", {"monthly": "300"}, loans.add_months(start, 6)),
+        (
+            "$300 a month and $10,000 next year",
+            {
+                "monthly": "300",
+                "lumps": [{"date": f"{today.year + 1}-01-15", "amount": "10000"}],
+                "recast": True,
+                "recastFee": "250",
+            },
+            None,
+        ),
+    ):
+        s.add(
+            PayoffPlan(
+                id=ids.new_id("Pyoff"),
+                accountId=home.id,
+                name=name,
+                inputs=json.dumps(inputs),
+                following=since is not None,
+                followingSince=since,
+                createdById=bob.id,
+            )
+        )
     s.add(
         Share(
             id=ids.new_id("Share"),

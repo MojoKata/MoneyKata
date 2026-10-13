@@ -91,6 +91,9 @@
       }
       return Promise.resolve(hit ? json(hit.status, hit.body) : missing(key));
     }
+    // What the crawl worked out (a payoff plan): the same answer for any inputs.
+    const worked = data.api[user]['POST ' + key];
+    if (method === 'POST' && worked) return Promise.resolve(json(worked.status, worked.body));
     // A change succeeds and changes nothing: the answer echoes what was sent.
     if (method === 'DELETE') return Promise.resolve(json(204, null));
     let body = {};

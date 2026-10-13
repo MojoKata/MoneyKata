@@ -207,7 +207,7 @@ def test_every_screen_and_tab_has_its_guide(page):
         for tab in ("overview", "holdings", "transactions", "reconcile", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
     for t in ("mortgage", "auto-loan"):
-        for tab in ("overview", "schedule", "transactions", "sharing", "settings"):
+        for tab in ("overview", "schedule", "payoff", "transactions", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
     for p in ports:
         paths += [f"/ui/portfolios/{p}/{t}" for t in ("performance", "holdings", "projections")]
@@ -303,6 +303,12 @@ def test_every_dialog_has_its_guide(page):
     page.get_by_role("button", name="Add a reset").click()
     page.get_by_role("button", name="Add a recast").click()
     check_guide(page, ".content", "a loan's resets and recasts")
+    # The planner's lump sums add rows, and a recast its fee.
+    visit(page, f"/ui/accounts/{ids['mortgage']}/payoff")
+    page.get_by_role("button", name="Add a lump sum").click()
+    page.get_by_role("switch", name="Recast after the lump sums").click()
+    page.wait_for_selector("#f-recast-fee")
+    check_guide(page, ".content", "a payoff plan with a lump sum and a recast")
     # Splits add rows that name their heading.
     open_dialog(page, "/ui/transactions", "Add", "dialog-transaction")
     page.select_option(".dialog #f-account", label="Everyday checking")

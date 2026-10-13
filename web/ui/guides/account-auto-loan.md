@@ -18,6 +18,10 @@ bank account, its half of the transfer is recorded too.
 The principal the servicer says is owed, typed from its statement. A difference from the schedule's
 balance shows until it is explained: a fee, a missed payment, a wrong rate.
 
+## Following
+
+The payoff plan you're following (the Payoff tab), and whether what you've overpaid since you chose it is ahead of the plan or behind.
+
 ## Looks like a payment
 
 Bank transactions of the last 90 days within 2% of the payment that aren't a transfer yet. **Link**

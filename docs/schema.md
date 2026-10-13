@@ -89,6 +89,7 @@ The prefixes of the tables that exist.
 | Map    | ImportMapping  | A saved column mapping for one institution's CSV files.                                      |
 | Portf  | Portfolio      | A named set of accounts, or parts of them, charted as one.                                   |
 | Prjct  | Projection     | How money will grow toward a goal; an active one is tracked against its baseline.            |
+| Pyoff  | PayoffPlan     | A saved overpayment plan for a loan; one may be the plan being followed.                     |
 | Rcpt   | Receipt        | An uploaded file, encrypted on disk, with a date, an amount and what it is attached to.      |
 | Recon  | Reconciliation | A statement's closing date and balance, ticked off against the transactions.                 |
 | Secr   | Secret         | A secret sealed on its own: an API key, a password or a private key.                         |

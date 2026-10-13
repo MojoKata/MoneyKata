@@ -5,6 +5,7 @@ import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { PlansFor } from '../components/plans.js';
 import { LoanSummary, Schedule, TermsCard } from '../components/loan.js';
+import { Payoff } from '../components/payoff.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { ago, date, price, quantity } from '../app/format.js';
@@ -36,7 +37,7 @@ export default function Account({ id, tab }) {
   const type = a ? BY_TYPE[a.type] : null;
   const tabs = !a ? [] : /** @type {[string, string][]} */ ([
     ['overview', 'Overview'],
-    ...(type?.loan ? [['schedule', 'Schedule']] : []),
+    ...(type?.loan ? [['schedule', 'Schedule'], ['payoff', 'Payoff']] : []),
     ...(type?.investing ? [['holdings', 'Holdings']] : []),
     ['transactions', 'Transactions'],
     ...(type?.reconcilable ? [['reconcile', 'Reconcile']] : []),
@@ -65,6 +66,7 @@ export default function Account({ id, tab }) {
     <${Tabs} tabs=${tabs} current=${current} base=${`/ui/accounts/${a.id}`} />
     ${current === 'overview' ? html`<${Overview} a=${a} reload=${res.reload} />` : null}
     ${current === 'schedule' ? html`<${Schedule} a=${a} />` : null}
+    ${current === 'payoff' ? html`<${Payoff} a=${a} />` : null}
     ${current === 'holdings' ? html`<${Holdings} a=${a} />` : null}
     ${current === 'transactions' ? html`<${Transactions} a=${a} all=${all} />` : null}
     ${current === 'reconcile'

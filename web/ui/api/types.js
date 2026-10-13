@@ -323,6 +323,21 @@
  */
 
 /**
+ * @typedef {Object} FollowIn
+ * @property {boolean} following
+ */
+
+/**
+ * @typedef {Object} Following
+ * @property {string} planId
+ * @property {string} name
+ * @property {string} since
+ * @property {string} expected
+ * @property {string} actual
+ * @property {string} ahead
+ */
+
+/**
  * @typedef {Object} GroupChange
  * @property {(string | null)} [name]
  * @property {(boolean | null)} [active]
@@ -439,6 +454,15 @@
  */
 
 /**
+ * @typedef {Object} InvestedOut
+ * @property {string} assetClass
+ * @property {number} rate
+ * @property {string} contributed
+ * @property {string} value
+ * @property {string} gain
+ */
+
+/**
  * @typedef {Object} InvitationInfo
  * @property {string} username
  * @property {string} displayName
@@ -505,6 +529,7 @@
  * @property {string} overpaid
  * @property {Array<RowOut>} rows
  * @property {(ServicerCheck | null)} servicer
+ * @property {(Following | null)} [following]
  * @property {boolean} canWrite
  */
 
@@ -522,6 +547,18 @@
  * @property {boolean} basisMissing
  * @property {boolean} standIn
  * @property {boolean} longTerm
+ */
+
+/**
+ * @typedef {Object} Lump
+ * @property {string} date
+ * @property {(number | string)} amount
+ */
+
+/**
+ * @typedef {Object} LumpView
+ * @property {string} date
+ * @property {string} amount
  */
 
 /**
@@ -682,6 +719,20 @@
  */
 
 /**
+ * @typedef {Object} OutcomeOut
+ * @property {(string | null)} payoffDate
+ * @property {number} months
+ * @property {string} interest
+ * @property {string} paid
+ * @property {string} payment
+ * @property {string} paymentAfter
+ * @property {string} fees
+ * @property {number} monthsSaved
+ * @property {string} interestSaved
+ * @property {Array<moneykata__ui__loans__Point>} balances
+ */
+
+/**
  * @typedef {Object} Page_ActivityItem_
  * @property {Array<ActivityItem>} items
  * @property {(string | null)} next
@@ -716,6 +767,17 @@
  * @property {((number | string) | null)} [escrowInsurance]
  * @property {((number | string) | null)} [pmi]
  * @property {((number | string) | null)} [fees]
+ */
+
+/**
+ * @typedef {Object} PayoffOut
+ * @property {OutcomeOut} schedule
+ * @property {OutcomeOut} plan
+ * @property {(OutcomeOut | null)} recast
+ * @property {InvestedOut} invested
+ * @property {Array<RowOut>} planRows
+ * @property {Array<RowOut>} recastRows
+ * @property {Array<ResetView>} assumedRates
  */
 
 /**
@@ -758,6 +820,21 @@
  */
 
 /**
+ * @typedef {Object} PlanIn
+ * @property {(number | string)} [monthly]
+ * @property {(string | null)} [monthlyFrom]
+ * @property {(string | null)} [monthlyUntil]
+ * @property {(number | string)} [yearly]
+ * @property {number} [yearlyMonth]
+ * @property {Array<Lump>} [lumps]
+ * @property {boolean} [biweekly]
+ * @property {(number | string)} [roundTo]
+ * @property {boolean} [recast]
+ * @property {(number | string)} [recastFee]
+ * @property {string} [investClass]
+ */
+
+/**
  * @typedef {Object} PlanLine
  * @property {string} categoryId
  * @property {(number | string)} amount
@@ -766,9 +843,19 @@
  */
 
 /**
- * @typedef {Object} Point
- * @property {string} date
- * @property {string} value
+ * The inputs as saved; its own models, so the contract has one schema for each direction.
+ * @typedef {Object} PlanView
+ * @property {string} monthly
+ * @property {(string | null)} monthlyFrom
+ * @property {(string | null)} monthlyUntil
+ * @property {string} yearly
+ * @property {number} yearlyMonth
+ * @property {Array<LumpView>} lumps
+ * @property {boolean} biweekly
+ * @property {string} roundTo
+ * @property {boolean} recast
+ * @property {string} recastFee
+ * @property {string} investClass
  */
 
 /**
@@ -1075,8 +1162,26 @@
  */
 
 /**
+ * @typedef {Object} SavedPlan
+ * @property {string} id
+ * @property {string} name
+ * @property {PlanView} inputs
+ * @property {boolean} following
+ * @property {(string | null)} followingSince
+ * @property {string} createdAt
+ * @property {number} version
+ * @property {string} headline
+ */
+
+/**
+ * @typedef {Object} SavedPlanIn
+ * @property {string} name
+ * @property {PlanIn} inputs
+ */
+
+/**
  * @typedef {Object} Series
- * @property {Array<Point>} points
+ * @property {Array<moneykata__ui__accounts__Point>} points
  * @property {string} asOf
  */
 
@@ -1543,6 +1648,18 @@
  * @typedef {Object} Zones
  * @property {string} server
  * @property {Array<string>} zones
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__accounts__Point
+ * @property {string} date
+ * @property {string} value
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__loans__Point
+ * @property {string} date
+ * @property {string} balance
  */
 
 /**

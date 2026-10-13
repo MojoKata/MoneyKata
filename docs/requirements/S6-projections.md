@@ -124,9 +124,11 @@
        with the amortization table of each.
     3. **Recast**: after a lump sum, a mortgage can be **recast** (the term kept, the payment
        lowered) instead of shortened. The planner shows both, with the servicer's recast fee.
-    4. **Against investing the extra**: the same money invested at the user's expected
-       return (S6.3) shows its value at the payoff date next to the interest saved.
+    4. **Against investing the extra**: the same money invested in an asset class the user
+       picks, at their expected return for it (S6.3), shows its value at the payoff date
+       next to the interest saved.
        It is a comparison, not advice, and says so (R1.16).
     5. **Saved plans** are kept per loan. One can be marked **the plan I'm following**, and
-       the loan's screen then shows whether actual overpayments are ahead of it or behind.
+       the loan's screen then shows whether actual overpayments since it was chosen are
+       ahead of it or behind. The *Payoff* tab opens on that plan.
     6. Rates for an ARM's future resets are the user's assumption, shown as such.

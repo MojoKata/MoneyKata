@@ -174,7 +174,7 @@ export function LoanSummary({ a, reload }) {
       <div class="list-item"><span class="grow dim">Rate</span>${Number(v.rate).toFixed(3)}% ${t
           .resets.length
         ? 'adjustable'
-        : 'fixed'}<span class="small dim">\\u00a0· ${METHODS.find(([k]) => k === t.method)?.[1]
+        : 'fixed'}<span class="small dim">${'\u00a0'}· ${METHODS.find(([k]) => k === t.method)?.[1]
         .toLowerCase()}</span></div>
       <div class="list-item"><span class="grow dim">Payment</span><span><${Amt} v=${v
         .payment} />${Number(v.total) > Number(v.payment)
@@ -197,6 +197,20 @@ export function LoanSummary({ a, reload }) {
       ${Number(v.overpaid)
         ? html`<div class="list-item"><span class="grow dim">Overpaid</span><${Amt} v=${v.overpaid} /></div>`
         : null}
+      ${v.following
+        ? html`
+          <div
+            class="list-item"><span class="grow dim">Following</span><span>${v.following
+              .name}<span class=${'small ' +
+              (Number(v.following.ahead) < 0 ? 'down' : 'up')}> · ${Number(
+                v.following.ahead,
+              ) < 0
+              ? 'behind'
+              : 'ahead'} by <${Amt} v=${String(
+                Math.abs(Number(v.following.ahead)),
+              )} /></span></span></div>
+        `
+        : null}
       <div class="list-item"><span class="grow dim">Servicer's balance</span>${s
         ? html`<span><${Amt} v=${s.servicer} /> on ${date(s.date)} ${
           Number(s.difference) === 0
@@ -204,7 +218,7 @@ export function LoanSummary({ a, reload }) {
             : html`<span class="pill warn">off by <${Amt} v=${s.difference} signed /></span>`
         }</span>`
         : html`<span class="dim">not typed</span>`}${v.canWrite
-        ? html`\u00a0<button class="btn sm" onClick=${() =>
+        ? html`${'\u00a0'}<button class="btn sm" onClick=${() =>
           openDialog(ServicerDialog, { a }).then((ok) => ok && again())}>Type it</button>`
         : null}</div>
     </div>

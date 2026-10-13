@@ -1785,6 +1785,72 @@
         "title": "Flow",
         "type": "object"
       },
+      "FollowIn": {
+        "additionalProperties": false,
+        "properties": {
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "following"
+        ],
+        "title": "FollowIn",
+        "type": "object"
+      },
+      "Following": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Actual",
+            "type": "string"
+          },
+          "ahead": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Ahead",
+            "type": "string"
+          },
+          "expected": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Expected",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "planId": {
+            "title": "Planid",
+            "type": "string"
+          },
+          "since": {
+            "format": "date",
+            "title": "Since",
+            "type": "string"
+          }
+        },
+        "required": [
+          "planId",
+          "name",
+          "since",
+          "expected",
+          "actual",
+          "ahead"
+        ],
+        "title": "Following",
+        "type": "object"
+      },
       "GroupChange": {
         "additionalProperties": false,
         "properties": {
@@ -2466,6 +2532,52 @@
         "title": "InstrumentOut",
         "type": "object"
       },
+      "InvestedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "assetClass": {
+            "title": "Assetclass",
+            "type": "string"
+          },
+          "contributed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Contributed",
+            "type": "string"
+          },
+          "gain": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Gain",
+            "type": "string"
+          },
+          "rate": {
+            "title": "Rate",
+            "type": "number"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetClass",
+          "rate",
+          "contributed",
+          "value",
+          "gain"
+        ],
+        "title": "InvestedOut",
+        "type": "object"
+      },
       "InvitationInfo": {
         "additionalProperties": false,
         "properties": {
@@ -2737,6 +2849,16 @@
             "title": "Canwrite",
             "type": "boolean"
           },
+          "following": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Following"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "interestAhead": {
             "examples": [
               "1234.50"
@@ -2956,6 +3078,62 @@
           "longTerm"
         ],
         "title": "LotRow",
+        "type": "object"
+      },
+      "Lump": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "amount"
+        ],
+        "title": "Lump",
+        "type": "object"
+      },
+      "LumpView": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "amount"
+        ],
+        "title": "LumpView",
         "type": "object"
       },
       "MappingIn": {
@@ -3737,6 +3915,100 @@
         "title": "Newer",
         "type": "object"
       },
+      "OutcomeOut": {
+        "additionalProperties": false,
+        "properties": {
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/moneykata__ui__loans__Point"
+            },
+            "title": "Balances",
+            "type": "array"
+          },
+          "fees": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Fees",
+            "type": "string"
+          },
+          "interest": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interest",
+            "type": "string"
+          },
+          "interestSaved": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interestsaved",
+            "type": "string"
+          },
+          "months": {
+            "title": "Months",
+            "type": "integer"
+          },
+          "monthsSaved": {
+            "title": "Monthssaved",
+            "type": "integer"
+          },
+          "paid": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Paid",
+            "type": "string"
+          },
+          "payment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Payment",
+            "type": "string"
+          },
+          "paymentAfter": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Paymentafter",
+            "type": "string"
+          },
+          "payoffDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payoffdate"
+          }
+        },
+        "required": [
+          "payoffDate",
+          "months",
+          "interest",
+          "paid",
+          "payment",
+          "paymentAfter",
+          "fees",
+          "monthsSaved",
+          "interestSaved",
+          "balances"
+        ],
+        "title": "OutcomeOut",
+        "type": "object"
+      },
       "Page_ActivityItem_": {
         "properties": {
           "items": {
@@ -4018,6 +4290,62 @@
         "title": "PaymentIn",
         "type": "object"
       },
+      "PayoffOut": {
+        "additionalProperties": false,
+        "properties": {
+          "assumedRates": {
+            "items": {
+              "$ref": "#/components/schemas/ResetView"
+            },
+            "title": "Assumedrates",
+            "type": "array"
+          },
+          "invested": {
+            "$ref": "#/components/schemas/InvestedOut"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/OutcomeOut"
+          },
+          "planRows": {
+            "items": {
+              "$ref": "#/components/schemas/RowOut"
+            },
+            "title": "Planrows",
+            "type": "array"
+          },
+          "recast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OutcomeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recastRows": {
+            "items": {
+              "$ref": "#/components/schemas/RowOut"
+            },
+            "title": "Recastrows",
+            "type": "array"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/OutcomeOut"
+          }
+        },
+        "required": [
+          "schedule",
+          "plan",
+          "recast",
+          "invested",
+          "planRows",
+          "recastRows",
+          "assumedRates"
+        ],
+        "title": "PayoffOut",
+        "type": "object"
+      },
       "PeriodRow": {
         "additionalProperties": false,
         "properties": {
@@ -4216,6 +4544,132 @@
         "title": "Plan",
         "type": "object"
       },
+      "PlanIn": {
+        "additionalProperties": false,
+        "properties": {
+          "biweekly": {
+            "default": false,
+            "title": "Biweekly",
+            "type": "boolean"
+          },
+          "investClass": {
+            "default": "usStocks",
+            "title": "Investclass",
+            "type": "string"
+          },
+          "lumps": {
+            "items": {
+              "$ref": "#/components/schemas/Lump"
+            },
+            "title": "Lumps",
+            "type": "array"
+          },
+          "monthly": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Monthly",
+            "type": "string"
+          },
+          "monthlyFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthlyfrom"
+          },
+          "monthlyUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthlyuntil"
+          },
+          "recast": {
+            "default": false,
+            "title": "Recast",
+            "type": "boolean"
+          },
+          "recastFee": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Recastfee",
+            "type": "string"
+          },
+          "roundTo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Roundto",
+            "type": "string"
+          },
+          "yearly": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Yearly",
+            "type": "string"
+          },
+          "yearlyMonth": {
+            "default": 12,
+            "title": "Yearlymonth",
+            "type": "integer"
+          }
+        },
+        "title": "PlanIn",
+        "type": "object"
+      },
       "PlanLine": {
         "additionalProperties": false,
         "properties": {
@@ -4257,28 +4711,104 @@
         "title": "PlanLine",
         "type": "object"
       },
-      "Point": {
+      "PlanView": {
         "additionalProperties": false,
+        "description": "The inputs as saved; its own models, so the contract has one schema for each direction.",
         "properties": {
-          "date": {
-            "format": "date",
-            "title": "Date",
+          "biweekly": {
+            "title": "Biweekly",
+            "type": "boolean"
+          },
+          "investClass": {
+            "title": "Investclass",
             "type": "string"
           },
-          "value": {
+          "lumps": {
+            "items": {
+              "$ref": "#/components/schemas/LumpView"
+            },
+            "title": "Lumps",
+            "type": "array"
+          },
+          "monthly": {
             "examples": [
               "1234.50"
             ],
             "format": "money",
-            "title": "Value",
+            "title": "Monthly",
             "type": "string"
+          },
+          "monthlyFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthlyfrom"
+          },
+          "monthlyUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthlyuntil"
+          },
+          "recast": {
+            "title": "Recast",
+            "type": "boolean"
+          },
+          "recastFee": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Recastfee",
+            "type": "string"
+          },
+          "roundTo": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Roundto",
+            "type": "string"
+          },
+          "yearly": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Yearly",
+            "type": "string"
+          },
+          "yearlyMonth": {
+            "title": "Yearlymonth",
+            "type": "integer"
           }
         },
         "required": [
-          "date",
-          "value"
+          "monthly",
+          "monthlyFrom",
+          "monthlyUntil",
+          "yearly",
+          "yearlyMonth",
+          "lumps",
+          "biweekly",
+          "roundTo",
+          "recast",
+          "recastFee",
+          "investClass"
         ],
-        "title": "Point",
+        "title": "PlanView",
         "type": "object"
       },
       "PortfolioChange": {
@@ -6048,6 +6578,81 @@
         "title": "Saved",
         "type": "object"
       },
+      "SavedPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          },
+          "followingSince": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Followingsince"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inputs": {
+            "$ref": "#/components/schemas/PlanView"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "inputs",
+          "following",
+          "followingSince",
+          "createdAt",
+          "version",
+          "headline"
+        ],
+        "title": "SavedPlan",
+        "type": "object"
+      },
+      "SavedPlanIn": {
+        "additionalProperties": false,
+        "properties": {
+          "inputs": {
+            "$ref": "#/components/schemas/PlanIn"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "inputs"
+        ],
+        "title": "SavedPlanIn",
+        "type": "object"
+      },
       "Series": {
         "additionalProperties": false,
         "properties": {
@@ -6058,7 +6663,7 @@
           },
           "points": {
             "items": {
-              "$ref": "#/components/schemas/Point"
+              "$ref": "#/components/schemas/moneykata__ui__accounts__Point"
             },
             "title": "Points",
             "type": "array"
@@ -8905,6 +9510,54 @@
         "title": "Zones",
         "type": "object"
       },
+      "moneykata__ui__accounts__Point": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "value": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "value"
+        ],
+        "title": "Point",
+        "type": "object"
+      },
+      "moneykata__ui__loans__Point": {
+        "additionalProperties": false,
+        "properties": {
+          "balance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "balance"
+        ],
+        "title": "Point",
+        "type": "object"
+      },
       "moneykata__ui__loans__SplitOut": {
         "additionalProperties": false,
         "properties": {
@@ -9750,6 +10403,320 @@
           }
         },
         "summary": "Add Payment",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/loan/payoff": {
+      "post": {
+        "description": "A plan's overpayments against the schedule: the new payoff date, months and interest\nsaved, a recast after its lump sums, and the same money invested instead.",
+        "operationId": "plan_payoff_ui_api_accounts__account_id__loan_payoff_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoffOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan Payoff",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/loan/plans": {
+      "get": {
+        "operationId": "list_plans_ui_api_accounts__account_id__loan_plans_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SavedPlan"
+                  },
+                  "title": "Response List Plans Ui Api Accounts  Account Id  Loan Plans Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Plans",
+        "tags": [
+          "loans"
+        ]
+      },
+      "post": {
+        "operationId": "save_plan_ui_api_accounts__account_id__loan_plans_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedPlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Plan",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/loan/plans/{plan_id}": {
+      "delete": {
+        "operationId": "delete_plan_ui_api_accounts__account_id__loan_plans__plan_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Plan",
+        "tags": [
+          "loans"
+        ]
+      },
+      "put": {
+        "operationId": "change_plan_ui_api_accounts__account_id__loan_plans__plan_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedPlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Plan",
+        "tags": [
+          "loans"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/loan/plans/{plan_id}/following": {
+      "put": {
+        "description": "Marks the plan being followed, tracked from today; the one followed before stops.",
+        "operationId": "follow_plan_ui_api_accounts__account_id__loan_plans__plan_id__following_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Follow Plan",
         "tags": [
           "loans"
         ]

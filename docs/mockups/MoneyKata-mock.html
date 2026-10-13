@@ -1017,13 +1017,15 @@ function payoffTab(a) {
     <div class="kv mt"><div><div class="k">Paid off</div><div class="v">${monthLabel(L, plan.months - 1)}</div></div><div><div class="k">Months saved</div><div class="v">${months}</div></div><div><div class="k">Interest saved</div><div class="v up">${money(saved, { cents: false })}</div></div><div><div class="k">Interest still to pay</div><div class="v">${money(plan.interest, { cents: false })}</div></div></div>
     ${recast ? `<div class="table-wrap"><table class="t mt"><thead><tr><th>After the ${money(P.lump, { cents: false })} lump sum</th><th class="num">Payment</th><th>Paid off</th><th class="num">Interest saved</th></tr></thead><tbody><tr><td>Shorten the loan</td><td class="num">${money(base.pmt)}</td><td>${monthLabel(L, plan.months - 1)}</td><td class="num">${money(saved, { cents: false })}</td></tr><tr><td>Recast <span class="small dim">· $250 fee</span></td><td class="num">${money(recast.rows[lumpAt + 1] ? recast.rows[lumpAt + 1].pmt : base.pmt)}</td><td>${monthLabel(L, recast.months - 1)}</td><td class="num">${money(base.interest - recast.interest - 250, { cents: false })}</td></tr></tbody></table></div>` : ''}
     <div class="notice mt">${icon('info')}<div>Investing the same money at 6% a year instead would be worth about <b>${money(inv, { cents: false })}</b> by ${monthLabel(L, plan.months - 1)}, against <b>${money(saved, { cents: false })}</b> of interest saved. A comparison, not advice: the return is an assumption; the interest saved is certain.</div></div></div>
-    <div class="grid"><div class="card"><h3>Your plan</h3>${pfIn('Extra each month', 'extra', 'Added to principal with every payment.')}${pfIn('Extra once a year', 'yearly', 'A bonus payment each December.')}<div class="row">${pfIn('Lump sum', 'lump')}${field('Lump sum date', inp('2027-01-01', '', 'date'))}</div>
-      ${pfSw('Biweekly payments', 'biweekly', 'Half a payment every two weeks: one extra payment a year.')}${pfSw('Recast after the lump sum', 'recast', 'Keep the term and lower the payment, instead of paying off sooner.')}
-      <div class="toolbar mt"><button class="btn primary" data-act="toast" data-v="Plan saved">Save plan</button></div></div>
+    <div class="grid"><div class="card"><h3>Your plan</h3>${pfIn('Extra each month', 'extra', 'Added to principal with every payment.')}<div class="row">${field('From', inp('', '', 'date'))}${field('Until', inp('', '', 'date'))}</div>
+      <div class="row">${pfIn('Extra once a year', 'yearly')}${field('In', sel(['January', 'June', 'December'], 'December'))}</div><div class="row">${pfIn('Lump sum', 'lump')}${field('Lump sum date', inp('2027-01-01', '', 'date'))}</div>
+      ${pfSw('Biweekly payments', 'biweekly', 'Half a payment every two weeks: one extra payment a year.')}${field('Round each payment up to', inp('', '0'), 'The next multiple of this, escrow included.')}${pfSw('Recast after the lump sum', 'recast', 'Keep the term and lower the payment, instead of paying off sooner.')}
+      ${field('Invest the extra in', sel(['US stocks', 'Bonds', 'Cash'], 'US stocks'), 'For the comparison, at your expected return for it.')}</div>
       <div class="card"><h3>Saved plans</h3>
-        <div class="list-item"><div class="grow">Extra $300 a month<div class="small dim">the plan I’m following · <span class="up">ahead by $1,240</span></div></div>${icon('check')}</div>
-        <div class="list-item"><div class="grow">$300 a month + $10,000 in Jan 2027<div class="small dim">saved 2026-09-02</div></div><button class="btn sm" data-act="toast" data-v="Now following this plan">Follow</button></div>
-        <div class="list-item"><div class="grow">Biweekly<div class="small dim">saved 2026-08-14</div></div><button class="btn sm" data-act="toast" data-v="Now following this plan">Follow</button></div></div></div></div>`;
+        <div class="list-item"><div class="grow">Extra $300 a month<div class="small dim">the plan you’re following, since Mar 1, 2026 · <span class="up">ahead by $1,240</span></div></div><button class="btn sm">Show</button><button class="btn sm primary" aria-pressed="true">${icon('check')} Following</button></div>
+        <div class="list-item"><div class="grow">$300 a month + $10,000 in Jan 2027<div class="small dim">Paid off Aug 2043 · $121,400 interest saved</div></div><button class="btn sm">Show</button><button class="btn sm" data-act="toast" data-v="Following it from today">Follow</button></div>
+        <div class="list-item"><div class="grow">Biweekly<div class="small dim">Paid off Jan 2048 · $63,900 interest saved</div></div><button class="btn sm">Show</button><button class="btn sm" data-act="toast" data-v="Following it from today">Follow</button></div>
+        <div class="row mt">${field('Plan name', inp('', 'Extra $300 a month'))}<button class="btn primary" style="align-self:end" data-act="toast" data-v="Plan saved">Save plan</button></div></div></div></div>`;
 }
 function goalCalc() {
   const G = state.goal, start = 2036, rr = 0.06, end = start + +G.years;
@@ -1808,10 +1810,16 @@ const GUIDES = {
     <h2 ${hid('Escrow')}>Escrow</h2><p>Property tax and insurance, paid on by the servicer.</p>
     <h2 ${hid('PMI')}>PMI</h2><p>Mortgage insurance, until it can be dropped.</p>
     <h2 ${hid('Extra each month')}>Extra each month</h2><p>Principal paid with every payment beyond the schedule. The payoff planner shows the new payoff date and the interest saved.</p>
+    <h2 ${hid('From')}>From</h2><p>The first payment the monthly extra goes with. Blank: the next one.</p>
+    <h2 ${hid('Until')}>Until</h2><p>The last payment it goes with. Blank: until the loan is paid.</p>
     <h2 ${hid('Extra once a year')}>Extra once a year</h2><p>A bonus payment each December, such as from a year-end bonus.</p>
+    <h2 ${hid('In')}>In</h2><p>The month the yearly extra goes with.</p>
     <h2 ${hid('Lump sum')}>Lump sum</h2><p>A one-time payment toward principal on a date.</p>
     <h2>Biweekly payments</h2><p>Half a payment every two weeks makes 26 half-payments, one extra payment a year.</p>
+    <h2 ${hid('Round each payment up to')}>Round each payment up to</h2><p>Each payment, escrow included, rounded up to the next multiple of this; the difference goes to principal.</p>
     <h2>Recast after the lump sum</h2><p>The servicer re-amortizes the lower balance over the remaining term: a smaller payment instead of an earlier payoff, usually for a fee.</p>
+    <h2 ${hid('Invest the extra in')}>Invest the extra in</h2><p>The asset class the comparison invests the same money in, at your expected return for it (Profile › Assumptions).</p>
+    <h2 ${hid('Plan name')}>Plan name</h2><p>Saved plans are kept for the loan. Following one shows on the Overview whether you’re ahead of it or behind, from the day you chose it; the Payoff tab opens on it.</p>
     <h2>529 plans</h2><p>College savings for one beneficiary. Contributions are gifts to them, shown against the annual gift exclusion. Withdrawals are matched with qualified expenses and their receipts.</p>
     <h2 ${hid('Beneficiary')}>Beneficiary</h2><p>A person from Gifts › People, or a user. The 529 counts in the owner’s net worth.</p>
     <h2 ${hid('Years of school')}>Years of school</h2><p>How many years the goal pays for.</p>
