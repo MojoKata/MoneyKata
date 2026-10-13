@@ -114,7 +114,8 @@ class KeyTest(Model):
 
 def _database_bytes(s) -> int:
     """The database's size as SQLite counts it, reading through the write-ahead log, where a
-    new server's data sits until a checkpoint: the file alone can say 0.0 MB."""
+    new server's data sits until a checkpoint: the file alone can say 0.0 MB. On a keyed
+    connection SQLCipher answers `page_size` itself, as text, hence the casts."""
     pages = int(s.execute(text("PRAGMA page_count")).scalar_one())
     return pages * int(s.execute(text("PRAGMA page_size")).scalar_one())
 
