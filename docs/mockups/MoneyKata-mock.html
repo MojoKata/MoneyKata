@@ -242,6 +242,9 @@ input.in.bad { border-color: var(--deny); }
 .list-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
 .list-item:last-child { border-bottom: 0; }
 .list-item .grow { flex: 1; min-width: 0; }
+/* A label and its value: the label keeps its width, a long value wraps to the right. */
+.kv .list-item { justify-content: space-between; text-align: right; }
+.kv .list-item > .grow { flex: 0 0 auto; max-width: 60%; text-align: left; }
 .mark { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--fg-muted); }
 .mark svg.i { width: 13px; height: 13px; }
 .drop { border: 2px dashed var(--border-strong); border-radius: var(--r); padding: 26px; text-align: center; color: var(--fg-muted); background: var(--bg-2); }
@@ -918,7 +921,7 @@ SCREENS.account = (id) => {
   let body = '';
   if (cur === 'Overview') {
     body = `<div class="grid g-main"><div class="card"><h3>Balance<span class="spacer"></span>${rangeChips()}</h3>${lineChart({ labels: rangeSlice(MONTHS), series: [{ name: 'Balance', color: `var(--hue-${a.linked ? 'linked' : a.group})`, values: rangeSlice(walk(60, Math.abs(a.bal), 0.06, 0.008, a.name.length)) }] })}</div>
-    <div class="card"><h3>Details</h3>
+    <div class="card kv"><h3>Details</h3>
       <div class="list-item"><span class="grow dim">Type</span>${TYPE_LABEL[a.type]}</div>
       <div class="list-item"><span class="grow dim">Institution</span>${esc(a.inst)}</div>
       <div class="list-item"><span class="grow dim">Kept current by</span>${esc(a.sync)}</div>
