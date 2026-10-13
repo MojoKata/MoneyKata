@@ -170,7 +170,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return func(args)
     except RefuseStart as e:
-        print(f"refusing to start: {e}", file=sys.stderr)
+        # A one-off command (keys, db) refuses; only the server "starts".
+        starting = args.command in (None, "serve", "dev")
+        print(f"{'refusing to start' if starting else 'refused'}: {e}", file=sys.stderr)
         return EX_CONFIG
     except KeyboardInterrupt:
         return 130

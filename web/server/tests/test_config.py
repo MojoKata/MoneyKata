@@ -58,6 +58,8 @@ def test_refused_start_exits_78_with_one_line(tmp_path, capsys):
     assert code == 78
     err = capsys.readouterr().err.strip().splitlines()
     assert err[-1].startswith("refusing to start: ")
+    assert main(["--config", str(tmp_path / "none.toml"), "keys", "check"]) == 78
+    assert capsys.readouterr().err.strip().splitlines()[-1].startswith("refused: ")
 
 
 def test_a_connection_is_not_closed_after_a_thousand_requests(tmp_path):
