@@ -389,7 +389,7 @@ function SetKey({ close, src }) {
 }
 
 function Backups() {
-  const res = useApi('/settings/backups');
+  const res = useApi('/settings/backups', {}, ['task']);
   const s = useApi('/settings');
   const v = /** @type {any} */ (res.data);
   const values = /** @type {any} */ (s.data)?.values;
@@ -429,7 +429,7 @@ function Backups() {
           <button type="button" class="btn" disabled=${v.running} onClick=${() =>
             api.post('/settings/backups/run').then(() => {
               toast('Backing up now');
-              setTimeout(res.reload, 3000);
+              res.reload(); // shows it running; the live stream says when it ends
             }, (e) => toast(e.message))}><${Icon} name="refresh" /> Back up now</button></div>
         <div class=${'notice ' + (v.lastError ? 'bad' : '')}><${Icon} name=${v.lastError
           ? 'alert'
@@ -468,7 +468,7 @@ function Backups() {
 }
 
 function Keys() {
-  const res = useApi('/settings/keys');
+  const res = useApi('/settings/keys', {}, ['task']);
   const v = /** @type {any} */ (res.data);
   const [test, setTest] = useState(/** @type {any} */ (null));
   const [armed, setArmed] = useState(false);
@@ -548,7 +548,7 @@ function Keys() {
       ? api.post('/settings/keys/reencrypt').then(() => {
         toast('Re-encrypting under a new data key');
         setArmed(false);
-        setTimeout(res.reload, 2000);
+        res.reload();
       })
       : setArmed(true)}>${
     v.reencrypting ? 'Re-encrypting…' : armed ? 'Click again to re-encrypt' : 'Re-encrypt'

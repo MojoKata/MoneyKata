@@ -34,6 +34,8 @@ def record_run(server: Server):
                 )
             else:
                 row.startedAt, row.finishedAt, row.error = run.started, run.finished, run.error
+        # Its name only: Settings › Backups and Key storage reload when theirs ends.
+        server.events.publish("task", {"name": name})
 
     return record
 

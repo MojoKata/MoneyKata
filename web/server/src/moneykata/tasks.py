@@ -177,11 +177,16 @@ class Tasks:
         return out
 
     def run_now(self, name: str) -> bool:
-        """Ask for a run at the next tick (Refresh prices, Back up now)."""
+        """Ask for a run (Refresh prices, Back up now): at once once the tasks have started,
+        else at the first tick. A task already running runs again when it finishes."""
         task = self._tasks.get(name)
         if task is None:
             return False
-        task.requested = True
+        with self._lock:
+            if self._runner is not None and not task.running and not self._stop.is_set():
+                self._launch(task)
+            else:
+                task.requested = True
         return True
 
     def _launch(self, task: Task) -> None:
@@ -215,15 +220,16 @@ class Tasks:
 
     def tick(self) -> None:
         now = self._now()
-        for task in self._tasks.values():
-            if task.running:
-                continue
-            due = task.requested
-            if not due and task.schedule is not None:
-                last = task.last.started if task.last else None
-                due = task.schedule.next_due(last, self._started) <= now
-            if due:
-                self._launch(task)
+        with self._lock:
+            for task in self._tasks.values():
+                if task.running:
+                    continue
+                due = task.requested
+                if not due and task.schedule is not None:
+                    last = task.last.started if task.last else None
+                    due = task.schedule.next_due(last, self._started) <= now
+                if due:
+                    self._launch(task)
 
     async def run(self) -> None:
         while not self._stop.is_set():

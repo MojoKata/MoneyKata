@@ -1295,8 +1295,8 @@ preparer.
    price refresh with a dot that turns amber when prices are stale (§7.7).
 6. **Live updates**: the frame keeps one Server-Sent Events stream open (`GET
    /ui/api/events`). It carries fingerprints and counts, never data: prices refreshed, an
-   import finished, a statement read, a share received or removed, a linked pull done, a new
-   alert, the badges' counts (Alerts among them), and the server's version. A screen whose data changed reloads it through
+   import finished, a statement read, a share received or removed, a linked pull done, a
+   background task finished (a backup, a re-encryption), a new alert, the badges' counts (Alerts among them), and the server's version. A screen whose data changed reloads it through
    its usual routes. The stream never extends the session, ends after a few minutes (the
    browser reconnects), and takes the page to sign-in or *account is disabled* when the
    session ends.

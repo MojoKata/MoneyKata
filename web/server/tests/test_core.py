@@ -199,3 +199,20 @@ def test_jobs_are_their_users_own():
     jobs.update(job, state="done", progress=1.0, result={"added": 3})
     assert seen == [job] and job.finished is not None
     time.sleep(0)
+
+
+def test_run_now_starts_at_once_once_the_tasks_have_started():
+    ran = threading.Event()
+    tasks = Tasks()
+    tasks.register("backups", lambda ctx: ran.set(), None)
+
+    async def main():
+        tasks.start()  # its first tick runs nothing: the task has no schedule
+        await asyncio.sleep(0)
+        try:
+            assert tasks.run_now("backups")
+            return await asyncio.to_thread(ran.wait, 2)  # well inside a 15-second tick
+        finally:
+            tasks.stop()
+
+    assert asyncio.run(main())
