@@ -125,3 +125,19 @@ SignupRequest = record(
     CheckConstraint("status IN ('confirming', 'waiting', 'approved', 'rejected')", name="status"),
     Index("ix_SignupRequest_confirmTokenHash", "confirmTokenHash"),
 )
+
+# A user's read-only token for the MCP endpoint (S10.9.1): shown once, kept as a hash of its
+# secret part. Revoking it deletes it (soft, so Activity still names it).
+AccessToken = record(
+    "AccessToken",
+    "Token",
+    Column("userId", Text, ForeignKey("User.id"), nullable=False),
+    Column("name", Text, nullable=False),
+    Column("scope", Text, nullable=False),  # all, or chosen
+    Column("items", Text, nullable=False, server_default=text("'[]'")),  # chosen: kind and id
+    Column("secretHash", Text, nullable=False),
+    Column("expiresAt", UtcTimestamp, nullable=False),
+    Column("lastUsedAt", UtcTimestamp),
+    CheckConstraint("scope IN ('all', 'chosen')", name="scope"),
+    Index("ix_AccessToken_userId", "userId"),
+)

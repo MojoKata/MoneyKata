@@ -88,3 +88,15 @@ class SignupRequest(Record):
     decidedAt: dt.datetime | None = None
     decidedById: str | None = None
     userId: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class AccessToken(Record):
+    id: str
+    userId: str
+    name: str
+    scope: str
+    secretHash: str
+    expiresAt: dt.datetime
+    items: str = "[]"
+    lastUsedAt: dt.datetime | None = None

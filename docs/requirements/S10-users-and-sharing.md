@@ -119,7 +119,9 @@
    1. **Access tokens**: each user makes their own in **Profile › Access tokens**: a name,
       what it can read (everything the user can see, or chosen items), and an expiry (30
       days, 90 days by default, or a year). The token is shown once and stored as a hash.
-      The list shows each token's name, scope, expiry and last use, with **Revoke**.
+      The list shows each token's name, scope, expiry and last use, with **Revoke**. A token
+      reads `mkt_<id>.<secret>`; only a SHA-256 hash of its random secret is kept, and it is
+      sent as a bearer token. Chosen items are accounts and portfolios the user can see.
    2. **Read only, always.** There is no write scope. The tools list and read accounts,
       balances, holdings, transactions, portfolios, budgets, gifts, giving and tax panels,
       through the user's shares at the moment of the call. A write share gives a token no

@@ -59,6 +59,14 @@ that sign in when the phone is lost. Turning it on or off emails you.
 
 Asked again when you last gave it more than 10 minutes ago.
 
+## Access tokens {#access-tokens}
+
+Let an AI assistant, or another tool that speaks the Model Context Protocol, read your finances at
+the MCP endpoint shown. A token reads, never changes anything, and sees only what you can see, or
+the accounts and portfolios you chose for it; never secrets, Settings or linked households. Each
+shows what it can read, when it expires and when it was last used. **Revoke** stops it at once (the
+click asks again first). Its calls are recorded in Activity under its name.
+
 ## Assumptions
 
 Used by all your projections, so they agree: each asset class's expected yearly return and

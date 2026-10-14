@@ -113,6 +113,7 @@ The prefixes of the tables that exist.
 | Src    | PriceSource      | A source of daily prices: its name, whether it is on, and its order per class.                        |
 | TaxBk  | TaxBook          | One user's, or a married couple's, tax records for one tax year.                                      |
 | TaxFg  | TaxFigure        | An admin's correction of a shipped tax-table figure for one year.                                     |
+| Token  | AccessToken      | A user's read-only token for the MCP endpoint, kept as a hash of its secret.                          |
 | TxDoc  | TaxDocument      | A tax document received (W-2, 1099) or filed (a return, a notice), with its file.                     |
 | Txn    | Transaction      | One dated movement in an account.                                                                     |
 | User   | User             | A person who signs in here, or a user of a linked server (with `linkId`).                             |
@@ -130,7 +131,6 @@ designed yet. A row moves to §3.1 when its table is.
 |--------|---------------|-----------------------------------------------------------------------------------|
 | Link   | Link          | A link with another MoneyKata server.                                             |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
-| Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |
 
 ## 4. Soft deletes
 

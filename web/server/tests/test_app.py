@@ -316,6 +316,7 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/taxes/filings", "Add a filing", "dialog-filing"),
         ("/ui/taxes/documents", "Add a document", "dialog-tax-document"),
         ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
+        ("/ui/profile", "New token", "dialog-new-token"),
         ("/ui/users", "New user", "dialog-new-user"),
         ("/ui/users", "New group", "dialog-group"),
         ("/ui/settings/prices", "Add a source", "dialog-add-source"),
@@ -429,6 +430,17 @@ def test_every_dialog_has_its_guide(page):
     page.select_option(".dialog #f-beneficiary", "new")
     page.wait_for_selector(".dialog #f-new-name")
     check_guide(page, ".dialog", "the 529 form")
+    close_dialog(page)
+    # A token's chosen items, then the token shown once.
+    open_dialog(page, "/ui/profile", "New token", "dialog-new-token")
+    page.select_option(".dialog #f-can-read", "chosen")
+    check_guide(page, ".dialog", "a token's chosen items")
+    page.fill(".dialog #f-token-name", "A test token")
+    page.select_option(".dialog #f-can-read", "all")
+    page.get_by_role("button", name="Create token").click()
+    wait_guide(page, "dialog-token-shown")
+    check_guide(page, ".dialog", "a token shown once")
+    assert "mkt_" in page.inner_text(".dialog")
     close_dialog(page)
     # Settings › Bitcoin with each kind of node's fields.
     visit(page, "/ui/settings/bitcoin")

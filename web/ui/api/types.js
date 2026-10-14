@@ -1372,6 +1372,14 @@
  */
 
 /**
+ * @typedef {Object} NewToken
+ * @property {string} name
+ * @property {string} [scope]
+ * @property {Array<TokenItem>} [items]
+ * @property {number} [days]
+ */
+
+/**
  * @typedef {Object} NewUser
  * @property {string} displayName
  * @property {string} username
@@ -2464,6 +2472,37 @@
 /**
  * @typedef {Object} Token
  * @property {string} token
+ */
+
+/**
+ * @typedef {Object} TokenItem
+ * @property {string} kind
+ * @property {string} id
+ */
+
+/**
+ * @typedef {Object} TokenItemOut
+ * @property {string} kind
+ * @property {string} id
+ * @property {string} name
+ */
+
+/**
+ * @typedef {Object} TokenMade
+ * @property {TokenOut} token
+ * @property {string} secret
+ */
+
+/**
+ * @typedef {Object} TokenOut
+ * @property {string} id
+ * @property {string} name
+ * @property {string} scope
+ * @property {Array<TokenItemOut>} items
+ * @property {string} createdAt
+ * @property {string} expiresAt
+ * @property {(string | null)} lastUsedAt
+ * @property {boolean} expired
  */
 
 /**

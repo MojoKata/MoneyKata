@@ -17,6 +17,7 @@ from .entities import taxes as tx
 from .entities.alerts import Alert, AlertState
 from .entities.core import Activity, Secret, Setting, TaskRun
 from .entities.users import (
+    AccessToken,
     Group,
     OneTimeToken,
     RecoveryCode,
@@ -61,6 +62,7 @@ def map_all() -> None:
     _done = True
     _versioned(User, users.User)
     _versioned(Group, users.Group)
+    _versioned(AccessToken, users.AccessToken)
     mapper_registry.map_imperatively(UserGroup, users.UserGroups)
     mapper_registry.map_imperatively(Session, users.Session)
     mapper_registry.map_imperatively(OneTimeToken, users.OneTimeToken)

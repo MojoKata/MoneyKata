@@ -13,6 +13,7 @@ import { ModelsChart } from '../charts/chart.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { applyTheme, theme } from '../store/prefs.js';
 import { loadSession } from '../store/session.js';
+import { AccessTokens } from '../components/tokens.js';
 
 export default function Profile() {
   useTitle('Profile');
@@ -144,6 +145,7 @@ export default function Profile() {
           <${Email} p=${p} reload=${res.reload} />
           <${Password} />
           <${TwoStep} p=${p} reload=${res.reload} />
+          <${AccessTokens} />
         </div></div>
       <${Assumptions} />
   `;
