@@ -4,12 +4,6 @@ Areas the requirements name but don't yet specify. Each has a lasting id: a gap 
 closed is removed, its text goes into the section it belongs to, and its id is never used
 again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
-## G5: Data sunset
-
-**What is missing:** how data older than the seven-year audit period is retired: what goes, what is summarised, who decides, and how it is confirmed (S14.10).
-
-**Touches:** S14, `schema.md` §4.
-
 ## G6: Operations
 
 **What is missing:** `docs/operations.md`: upgrades and migrations in the Docker image, health checks, logs, monitoring, restore drills.
@@ -51,3 +45,15 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** the window's fuller screens (Positions, a projection's charts, a giving plan's months and organisations, a budget's cash flow and recurring payments), which each need their documents added to what the source sends; a separate listener port for `/link` (it is served under the public address's `/link/` path, for a reverse proxy to expose apart); links tried across two real networks (an overlay such as Tailscale, and a forwarded port), not only two servers on one host; the linked window in the generated mockup; and how much a large household's first full snapshot weighs.
 
 **Touches:** S11.2, S11.3.1, S12.9, S12.10.
+
+## G15: What a prune's yearly summaries hold
+
+**What is missing:** what the yearly summaries left by a prune (S14.10.5) hold beyond income and spending by category, gifts, donations and contributions per owner and year: totals by payee, income by holding, a closed account's yearly balances; and which reports and charts read them for the pruned years.
+
+**Touches:** S5, S7, S14.10.
+
+## G16: How each record decides it has ended
+
+**What is missing:** the end of each kind of record beyond the few in `schema.md` §6.2, and what a record shows for one it names that has been deleted or pruned. A gift to a person who was deleted is still money spent, and stays with the year's spending, but who it was given to is open: kept as the person's name at the time, shown as a deleted person, or left blank. The same question arises wherever a record outlives what it names: a donation and its organisation, a transaction and its category or payee, a budget line and its category, a share and its user, a contribution and its 529 plan's beneficiary.
+
+**Touches:** S1, S5, S6, S7, S14.10, `schema.md` §4, §6.

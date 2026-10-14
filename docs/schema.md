@@ -182,7 +182,8 @@ Records are never removed from the database: they are marked deleted. The except
       link brings in, replaced from each pull.
 
    Activity entries and alerts are never deleted at all: Activity is kept as it was
-   written, and alerts are resolved, then age out of the list (requirements S12.11).
+   written until it is pruned (§6), and alerts are resolved, then age out of the list
+   (requirements S12.11).
 
 ## 5. Checks
 
@@ -194,3 +195,40 @@ A test fails when:
 3. a table with an `id` lacks the `WITHOUT ROWID` option or the ID's `CHECK` constraint.
 4. a table outside the exceptions of §4.4 lacks the fields of §4.1 or their `CHECK`, or its
    `<Table>Effective` view is missing or does not match its cascading foreign keys.
+
+## 6. Ended records
+
+Pruning (requirements S14.10) removes records that ended more than seven years ago. When a
+record ended is worked out, never stored, so it follows the records as they change.
+
+1. **`endedAt`**: each soft-deleting table, and Activity, has a view, `<Table>Ended`, with its keys and
+   `endedAt`: when the record stopped being needed for anything ongoing, or null while it
+   still is. The views are generated from the table declarations, like the
+   `<Table>Effective` views (§4.2), and only pruning reads them, so their cost never falls
+   on everyday queries.
+2. **Its own end**: declared with the table, as an expression over its own row and the
+   rows it belongs to. Without one, a record ends only when it is effectively deleted, at
+   its `effectiveDeletedAt`.
+
+   | Table          | Its own end                                                         |
+   |----------------|---------------------------------------------------------------------|
+   | `Lot`          | the date of the sale that takes its last share; none while any is held |
+   | `Transaction`  | its date                                                            |
+   | `Split`, `TransactionTags` | their transaction's end                                 |
+   | `Receipt`      | the latest end of what it is attached to; its own date when it is attached to nothing |
+   | `Import`       | the latest end of the transactions it brought in                    |
+   | `Activity`     | when it was written                                                 |
+   | `TaxBook`      | none: tax books are never pruned                                    |
+
+   A deleted record's own end is the earlier of its declared end and its
+   `effectiveDeletedAt`.
+3. **Keeping alive**: a foreign key may be declared to keep what it points at alive: the
+   record it points at ends no earlier than the record holding the key. A lot keeps the
+   purchase that opened it alive, and a lot pick keeps its sale. A record's `endedAt` is
+   the latest of its own end and the `endedAt` of every record that keeps it alive; if any
+   of those is null, so is its own.
+4. **Prices** never end (requirements S4.6), and the exceptions of §4.4 are removed on
+   their own schedules, not pruned.
+
+How each kind of record decides it has ended beyond this table, and what a record that
+outlives the record it names shows for it, is open (G16).

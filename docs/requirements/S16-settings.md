@@ -1,7 +1,8 @@
 # S16. Settings (admins)
 
 One screen with a section list on the left, **General first** and selected when Settings
-opens. Each section has its own help guide. In this order:
+opens. Each section has its own help guide. In the order below, except Storage (17), which
+follows Backups:
 
 1. **General**: server name (shown to linked servers), the **household name and avatar** (an
    image, or initials; shown at the top of the sidebar here, and sent to linked servers,
@@ -49,3 +50,5 @@ opens. Each section has its own help guide. In this order:
 16. **Alerts** (S12.11): how long a source may fail before it raises an alert (48 hours
     by default), and the time of the daily summary email (07:00 by default, in each user's
     time zone).
+17. **Storage** (S14.10): the size of the database and of the receipts directory, what could
+    be pruned against the rest, the prunable data by the year it ended, and **Prune…**.
