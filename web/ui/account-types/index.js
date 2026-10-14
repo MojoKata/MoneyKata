@@ -24,6 +24,7 @@ import t19 from './collectables.js';
 import t20 from './real-estate.js';
 import t21 from './vehicle.js';
 import t22 from './other-asset.js';
+import t23 from './529.js';
 
 /**
  * @typedef {Object} AccountType
@@ -36,6 +37,7 @@ import t22 from './other-asset.js';
  * @property {boolean} reconcilable  has a Reconcile tab
  * @property {boolean} contributions  records contribution years and sources
  * @property {boolean} [loan]  has terms, a schedule and a payoff planner (S1.9)
+ * @property {boolean} [education]  a 529 plan: its plan, contributions, withdrawals and goal (S1.8)
  * @property {string} [physical]  holds items (S1.10), valued this way unless one says otherwise
  */
 
@@ -64,6 +66,7 @@ export const TYPES = [
   t20,
   t21,
   t22,
+  t23,
 ];
 
 /** @type {Record<string, AccountType>} */

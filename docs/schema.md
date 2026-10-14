@@ -69,40 +69,44 @@ list is sorted by prefix, and a prefix is unique across both.
 
 The prefixes of the tables that exist.
 
-| Prefix | Table          | Description                                                                                  |
-|--------|----------------|----------------------------------------------------------------------------------------------|
-| Acct   | Account        | One place money is held, owned by one user, with an account type.                            |
-| Actv   | Activity       | A change worth showing: who made it and what it is about, never an amount.                   |
-| Alert  | Alert          | Something that needs a user's attention, one per cause, open until the cause clears.         |
-| Anchr  | Anchor         | A balance the institution reported on a date, that the account's balance is checked against. |
-| Asmpt  | AssumptionSet  | A user's expected returns, volatility and inflation for projections.                         |
-| BdgLn  | BudgetLine     | One category's planned amount in a budget, from a month on, monthly or yearly.               |
-| Bdgt   | Budget         | A user's plan per category over chosen accounts; shared with a group for a household.        |
-| Cat    | Category       | A budget category given to bank transactions.                                                |
-| Group  | Group          | A named set of users that shares are granted to.                                             |
-| Hold   | Holding        | What an account holds of one instrument at a point in time.                                  |
-| Imprt  | Import         | One file imported into an account, with the dates it covers.                                 |
-| Imprv  | Improvement    | An improvement to a property, added to its cost basis.                                       |
-| Instr  | Instrument     | A thing with a price: a stock, fund, coin, option contract or currency.                      |
-| Item   | Item           | A physical asset: metals, a collectable, a property or a vehicle, with how it is valued.     |
-| Loan   | Loan           | A loan account's terms: principal, rate, term, escrow, PMI, resets and recasts.              |
-| Lot    | Lot            | One acquisition of an instrument, and what remains open.                                     |
-| Lyout  | StatementLayout | What statement import learned of an institution's layout: section signs, lines to skip.   |
-| Map    | ImportMapping  | A saved column mapping for one institution's CSV files.                                      |
-| Portf  | Portfolio      | A named set of accounts, or parts of them, charted as one.                                   |
-| Prjct  | Projection     | How money will grow toward a goal; an active one is tracked against its baseline.            |
-| Pyoff  | PayoffPlan     | A saved overpayment plan for a loan; one may be the plan being followed.                     |
-| Rcpt   | Receipt        | An uploaded file, encrypted on disk, with a date, an amount and what it is attached to.      |
-| Recon  | Reconciliation | A statement's closing date and balance, ticked off against the transactions.                 |
-| Secr   | Secret         | A secret sealed on its own: an API key, a password or a private key.                         |
-| Sgnup  | SignupRequest  | A person's request for an account, from confirming the email to an admin's decision.       |
-| Share  | Share          | A grant of an account or portfolio to a user, group or linked server.                        |
-| Split  | Split          | A part of a transaction's amount given its own category.                                     |
-| Src    | PriceSource    | A source of daily prices: its name, whether it is on, and its order per class.               |
-| TaxFg  | TaxFigure      | An admin's correction of a shipped tax-table figure for one year.                            |
-| Txn    | Transaction    | One dated movement in an account.                                                            |
-| User   | User           | A person who signs in here, or a user of a linked server (with `linkId`).                    |
-| Valtn  | ItemValuation  | A dated value of an item, with its source.                                                   |
+| Prefix | Table            | Description                                                                                  |
+|--------|------------------|----------------------------------------------------------------------------------------------|
+| Acct   | Account          | One place money is held, owned by one user, with an account type.                            |
+| Actv   | Activity         | A change worth showing: who made it and what it is about, never an amount.                   |
+| Alert  | Alert            | Something that needs a user's attention, one per cause, open until the cause clears.         |
+| Anchr  | Anchor           | A balance the institution reported on a date, that the account's balance is checked against. |
+| Asmpt  | AssumptionSet    | A user's expected returns, volatility and inflation for projections.                         |
+| BdgLn  | BudgetLine       | One category's planned amount in a budget, from a month on, monthly or yearly.               |
+| Bdgt   | Budget           | A user's plan per category over chosen accounts; shared with a group for a household.        |
+| Cat    | Category         | A budget category given to bank transactions.                                                |
+| Cntrb  | Contribution     | Who a deposit into a 529 came from, and whether it is a five-year election.                  |
+| EdPln  | EducationPlan    | A 529 account's plan: its state, name, beneficiary and opening date.                         |
+| Group  | Group            | A named set of users that shares are granted to.                                             |
+| Hold   | Holding          | What an account holds of one instrument at a point in time.                                  |
+| Imprt  | Import           | One file imported into an account, with the dates it covers.                                 |
+| Imprv  | Improvement      | An improvement to a property, added to its cost basis.                                       |
+| Instr  | Instrument       | A thing with a price: a stock, fund, coin, option contract or currency.                      |
+| Item   | Item             | A physical asset: metals, a collectable, a property or a vehicle, with how it is valued.     |
+| Loan   | Loan             | A loan account's terms: principal, rate, term, escrow, PMI, resets and recasts.              |
+| Lot    | Lot              | One acquisition of an instrument, and what remains open.                                     |
+| Lyout  | StatementLayout  | What statement import learned of an institution's layout: section signs, lines to skip.      |
+| Map    | ImportMapping    | A saved column mapping for one institution's CSV files.                                      |
+| Persn  | Person           | Someone in a user's life who need not be a user of the server.                               |
+| Portf  | Portfolio        | A named set of accounts, or parts of them, charted as one.                                   |
+| Prjct  | Projection       | How money will grow toward a goal; an active one is tracked against its baseline.            |
+| Pyoff  | PayoffPlan       | A saved overpayment plan for a loan; one may be the plan being followed.                     |
+| QExpn  | QualifiedExpense | A qualified education expense a 529's withdrawals are matched with.                          |
+| Rcpt   | Receipt          | An uploaded file, encrypted on disk, with a date, an amount and what it is attached to.      |
+| Recon  | Reconciliation   | A statement's closing date and balance, ticked off against the transactions.                 |
+| Secr   | Secret           | A secret sealed on its own: an API key, a password or a private key.                         |
+| Sgnup  | SignupRequest    | A person's request for an account, from confirming the email to an admin's decision.         |
+| Share  | Share            | A grant of an account or portfolio to a user, group or linked server.                        |
+| Split  | Split            | A part of a transaction's amount given its own category.                                     |
+| Src    | PriceSource      | A source of daily prices: its name, whether it is on, and its order per class.               |
+| TaxFg  | TaxFigure        | An admin's correction of a shipped tax-table figure for one year.                            |
+| Txn    | Transaction      | One dated movement in an account.                                                            |
+| User   | User             | A person who signs in here, or a user of a linked server (with `linkId`).                    |
+| Valtn  | ItemValuation    | A dated value of an item, with its source.                                                   |
 
 ### 3.2 Reserved
 
@@ -111,13 +115,11 @@ designed yet. A row moves to §3.1 when its table is.
 
 | Prefix | Table         | Description                                                                       |
 |--------|---------------|-----------------------------------------------------------------------------------|
-| AsItm  | AssetItem     | One item in a physical-asset account, with its cost basis and valuations.         |
 | Dnatn  | Donation      | One charitable gift to an organisation, or a donor-advised fund grant.            |
 | Filng  | Filing        | One return in a tax book (federal, state or local), with its progress and result. |
 | Gift   | Gift          | A gift to or from a person for an occasion, from idea to given.                   |
 | Link   | Link          | A link with another MoneyKata server.                                             |
 | Occsn  | Occasion      | A dated occasion for a person: a birthday, an anniversary, a holiday.             |
-| Persn  | Person        | Someone in a user's life who need not be a user of the server.                    |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
 | TaxBk  | TaxBook       | One user's, or a married couple's, tax records for one tax year.                  |
 | Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |

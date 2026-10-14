@@ -173,6 +173,20 @@
  */
 
 /**
+ * @typedef {Object} BeneficiaryOut
+ * @property {string} kind
+ * @property {string} id
+ * @property {string} name
+ * @property {(number | null)} birthYear
+ */
+
+/**
+ * @typedef {Object} BeneficiaryRef
+ * @property {string} kind
+ * @property {string} id
+ */
+
+/**
  * @typedef {Object} Body_upload_ui_api_accounts__account_id__imports_post
  * @property {string} file
  */
@@ -275,6 +289,33 @@
  */
 
 /**
+ * @typedef {Object} ContributionIn
+ * @property {string} date
+ * @property {(number | string)} amount
+ * @property {string} [contributor]
+ * @property {boolean} [fiveYear]
+ * @property {(string | null)} [fromAccountId]
+ */
+
+/**
+ * @typedef {Object} ContributionOut
+ * @property {string} transactionId
+ * @property {string} date
+ * @property {string} amount
+ * @property {string} contributor
+ * @property {string} name
+ * @property {(string | null)} relationship
+ * @property {boolean} fiveYear
+ */
+
+/**
+ * @typedef {Object} ContributionsView
+ * @property {Array<ContributionOut>} rows
+ * @property {Array<GiftYearOut>} years
+ * @property {boolean} canWrite
+ */
+
+/**
  * @typedef {Object} Counted
  * @property {boolean} counted
  */
@@ -336,6 +377,27 @@
  */
 
 /**
+ * @typedef {Object} ExpenseIn
+ * @property {string} date
+ * @property {(number | null)} [year]
+ * @property {string} kind
+ * @property {(string | null)} [description]
+ * @property {(number | string)} amount
+ */
+
+/**
+ * @typedef {Object} ExpenseOut
+ * @property {string} id
+ * @property {string} date
+ * @property {number} year
+ * @property {string} kind
+ * @property {string} kindLabel
+ * @property {(string | null)} description
+ * @property {string} amount
+ * @property {Array<ReceiptRow>} documents
+ */
+
+/**
  * @typedef {Object} Flow
  * @property {string} name
  * @property {string} amount
@@ -354,6 +416,24 @@
  * @property {string} expected
  * @property {string} actual
  * @property {string} ahead
+ */
+
+/**
+ * @typedef {Object} GiftYearOut
+ * @property {string} contributor
+ * @property {string} name
+ * @property {number} year
+ * @property {string} counted
+ * @property {string} exclusion
+ * @property {boolean} over
+ * @property {(number | null)} fromElection
+ */
+
+/**
+ * @typedef {Object} GoalView
+ * @property {(BeneficiaryOut | null)} beneficiary
+ * @property {(ProjectionDetail | null)} projection
+ * @property {number} others
  */
 
 /**
@@ -951,6 +1031,28 @@
  */
 
 /**
+ * @typedef {Object} PersonIn
+ * @property {string} name
+ * @property {(string | null)} [relationship]
+ * @property {(string | null)} [userId]
+ * @property {(number | null)} [birthMonth]
+ * @property {(number | null)} [birthDay]
+ * @property {(number | null)} [birthYear]
+ */
+
+/**
+ * @typedef {Object} PersonOut
+ * @property {string} id
+ * @property {string} name
+ * @property {(string | null)} relationship
+ * @property {(string | null)} userId
+ * @property {(number | null)} birthMonth
+ * @property {(number | null)} birthDay
+ * @property {(number | null)} birthYear
+ * @property {number} version
+ */
+
+/**
  * @typedef {Object} PickIn
  * @property {string} lotId
  * @property {(number | string)} quantity
@@ -977,26 +1079,23 @@
  */
 
 /**
- * @typedef {Object} PlanIn
- * @property {(number | string)} [monthly]
- * @property {(string | null)} [monthlyFrom]
- * @property {(string | null)} [monthlyUntil]
- * @property {(number | string)} [yearly]
- * @property {number} [yearlyMonth]
- * @property {Array<Lump>} [lumps]
- * @property {boolean} [biweekly]
- * @property {(number | string)} [roundTo]
- * @property {boolean} [recast]
- * @property {(number | string)} [recastFee]
- * @property {string} [investClass]
- */
-
-/**
  * @typedef {Object} PlanLine
  * @property {string} categoryId
  * @property {(number | string)} amount
  * @property {string} [cadence]
  * @property {boolean} [rollover]
+ */
+
+/**
+ * @typedef {Object} PlanOut
+ * @property {(string | null)} planState
+ * @property {(string | null)} planName
+ * @property {(BeneficiaryOut | null)} beneficiary
+ * @property {(string | null)} openedOn
+ * @property {(string | null)} stateDeduction
+ * @property {string} contributedThisYear
+ * @property {RolloverOut} rollover
+ * @property {boolean} canWrite
  */
 
 /**
@@ -1300,6 +1399,15 @@
  */
 
 /**
+ * @typedef {Object} RolloverOut
+ * @property {(string | null)} possibleFrom
+ * @property {string} limit
+ * @property {string} used
+ * @property {string} eligible
+ * @property {string} available
+ */
+
+/**
  * @typedef {Object} RowOut
  * @property {string} date
  * @property {string} payment
@@ -1350,7 +1458,7 @@
 /**
  * @typedef {Object} SavedPlanIn
  * @property {string} name
- * @property {PlanIn} inputs
+ * @property {moneykata__ui__loans__PlanIn} inputs
  */
 
 /**
@@ -1569,6 +1677,12 @@
  * @property {Array<string>} changed
  * @property {Array<Array<string>>} gaps
  * @property {(string | null)} firstParting
+ */
+
+/**
+ * @typedef {Object} TagIn
+ * @property {string} [contributor]
+ * @property {boolean} [fiveYear]
  */
 
 /**
@@ -1853,6 +1967,22 @@
  */
 
 /**
+ * @typedef {Object} WithdrawalYearOut
+ * @property {number} year
+ * @property {string} distributions
+ * @property {string} expenses
+ * @property {string} notCovered
+ */
+
+/**
+ * @typedef {Object} WithdrawalsView
+ * @property {Array<WithdrawalYearOut>} years
+ * @property {Array<ExpenseOut>} expenses
+ * @property {Array<Array<unknown>>} kinds
+ * @property {boolean} canWrite
+ */
+
+/**
  * @typedef {Object} Zones
  * @property {string} server
  * @property {Array<string>} zones
@@ -1862,6 +1992,30 @@
  * @typedef {Object} moneykata__ui__accounts__Point
  * @property {string} date
  * @property {string} value
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__education__PlanIn
+ * @property {(string | null)} [planState]
+ * @property {(string | null)} [planName]
+ * @property {(BeneficiaryRef | null)} [beneficiary]
+ * @property {(string | null)} [openedOn]
+ * @property {((number | string) | null)} [stateDeduction]
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__loans__PlanIn
+ * @property {(number | string)} [monthly]
+ * @property {(string | null)} [monthlyFrom]
+ * @property {(string | null)} [monthlyUntil]
+ * @property {(number | string)} [yearly]
+ * @property {number} [yearlyMonth]
+ * @property {Array<Lump>} [lumps]
+ * @property {boolean} [biweekly]
+ * @property {(number | string)} [roundTo]
+ * @property {boolean} [recast]
+ * @property {(number | string)} [recastFee]
+ * @property {string} [investClass]
  */
 
 /**

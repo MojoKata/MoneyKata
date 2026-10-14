@@ -12,6 +12,34 @@ The bank, broker or plan administrator.
 
 The last four digits of the account number.
 
+## Plan state {#plan-state}
+
+A 529's sponsoring state, which may not be yours.
+
+## Plan name {#plan-name}
+
+my529, Bright Start, and so on.
+
+## Beneficiary
+
+Who a 529 is for: someone on your list of people, or **Add a person…**.
+
+## Their name {#new-name}
+
+The new person's name.
+
+## Year of birth {#new-birth-year}
+
+Their year of birth, for when school starts.
+
+## Opened {#opened-on}
+
+The day it was opened: a Roth IRA rollover is possible 15 years on.
+
+## State tax deduction a year {#state-deduction}
+
+What you expect to deduct on your state return each year, typed.
+
 ## Keep it current by {#kept-by}
 
 From files you import, or by hand.
@@ -66,11 +94,13 @@ Mortgage insurance, until it can be dropped.
 
 ## Secured by {#secured-by}
 
-The property or vehicle the loan is secured by, from a physical-asset account. The Overview then shows your equity in it and the loan-to-value.
+The property or vehicle the loan is secured by, from a physical-asset account. The Overview then
+shows your equity in it and the loan-to-value.
 
 ## Home's original value {#original-value}
 
-The appraisal or price when the loan was made. PMI can be dropped on request once the balance is 80% of it, and ends by itself at 78%.
+The appraisal or price when the loan was made. PMI can be dropped on request once the balance is 80%
+of it, and ends by itself at 78%.
 
 ## Draw period (months) {#draw-months}
 

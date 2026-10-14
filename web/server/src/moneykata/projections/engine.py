@@ -123,6 +123,16 @@ def _simulate(plan: Plan, rets: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             bal = bal + plan.contribution * (1 + plan.contribution_growth) ** (t - 1) * part
         if plan.withdraw_from is not None and t >= plan.withdraw_from:
             method = plan.withdrawal.get("method", "fourPercent")
+            if method == "costs":
+                # An education goal: each year of school's cost, rising with its own
+                # inflation, until school ends; whatever is left over stays.
+                if t < plan.withdraw_from + int(plan.withdrawal.get("years", 4)):
+                    cost = plan.withdrawal["amount"] * (1 + plan.withdrawal["growth"]) ** t
+                    bal = bal - cost
+                    alive &= bal >= -0.005
+                bal = np.maximum(bal, 0.0)
+                path[:, t] = bal
+                continue
             if method == "percent":
                 need = bal * plan.withdrawal.get("percent", 4.0) / 100
             else:

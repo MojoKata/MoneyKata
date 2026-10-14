@@ -20,7 +20,8 @@ balance shows until it is explained: a fee, a missed payment, a wrong rate.
 
 ## Equity
 
-When the loan is secured by a property or vehicle: what it's worth less every loan it secures, the loan-to-value, and for a mortgage with PMI, when it can be dropped.
+When the loan is secured by a property or vehicle: what it's worth less every loan it secures, the
+loan-to-value, and for a mortgage with PMI, when it can be dropped.
 
 ## Following
 
@@ -79,11 +80,13 @@ Mortgage insurance, until the loan is 80% of the home's original value (on reque
 
 ## Secured by {#secured-by}
 
-The property or vehicle the loan is secured by, from a physical-asset account. The Overview then shows your equity in it and the loan-to-value.
+The property or vehicle the loan is secured by, from a physical-asset account. The Overview then
+shows your equity in it and the loan-to-value.
 
 ## Home's original value {#original-value}
 
-The appraisal or price when the loan was made. PMI can be dropped on request once the balance is 80% of it, and ends by itself at 78%.
+The appraisal or price when the loan was made. PMI can be dropped on request once the balance is 80%
+of it, and ends by itself at 78%.
 
 ## Rate resets
 

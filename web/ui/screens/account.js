@@ -7,6 +7,7 @@ import { PlansFor } from '../components/plans.js';
 import { LoanSummary, Schedule, TermsCard } from '../components/loan.js';
 import { Payoff } from '../components/payoff.js';
 import { Items, ItemsSummary } from '../components/items.js';
+import { Contributions, Goal, PlanCard, PlanFacts, Withdrawals } from '../components/edu.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { ago, date, price, quantity } from '../app/format.js';
@@ -41,6 +42,9 @@ export default function Account({ id, tab }) {
     ...(type?.loan ? [['schedule', 'Schedule'], ['payoff', 'Payoff']] : []),
     ...(type?.physical ? [['items', 'Items']] : []),
     ...(type?.investing ? [['holdings', 'Holdings']] : []),
+    ...(type?.education
+      ? [['contributions', 'Contributions'], ['withdrawals', 'Withdrawals'], ['goal', 'Goal']]
+      : []),
     ['transactions', 'Transactions'],
     ...(type?.reconcilable ? [['reconcile', 'Reconcile']] : []),
     ['sharing', 'Sharing'],
@@ -70,6 +74,9 @@ export default function Account({ id, tab }) {
     ${current === 'schedule' ? html`<${Schedule} a=${a} />` : null}
     ${current === 'payoff' ? html`<${Payoff} a=${a} />` : null}
     ${current === 'items' ? html`<${Items} a=${a} />` : null}
+    ${current === 'contributions' ? html`<${Contributions} a=${a} />` : null}
+    ${current === 'withdrawals' ? html`<${Withdrawals} a=${a} />` : null}
+    ${current === 'goal' ? html`<${Goal} a=${a} />` : null}
     ${current === 'holdings' ? html`<${Holdings} a=${a} />` : null}
     ${current === 'transactions' ? html`<${Transactions} a=${a} all=${all} />` : null}
     ${current === 'reconcile'
@@ -108,6 +115,14 @@ function Overview({ a, reload }) {
         `
         : BY_TYPE[a.type]?.physical
         ? html`<${ItemsSummary} a=${a} />`
+        : BY_TYPE[a.type]?.education
+        ? html`
+          <div class="grid" style=${{ alignContent: 'start' }}>
+            <${PlanFacts} a=${a} />
+            <${Details}
+              a=${a} />
+          </div>
+        `
         : html`<${Details} a=${a} />`}
     </div>
   `;
@@ -888,7 +903,20 @@ function Settings({ a, reload }) {
           : 'Delete account…'}</button><span class="spacer"></span><button class="btn primary" disabled=${save
           .busy}>Save</button></div>
       </form>
-      ${loan ? html`<${TermsCard} a=${a} />` : physical
+      ${loan ? html`<${TermsCard} a=${a} />` : BY_TYPE[a.type]?.education
+        ? html`
+          <div class="grid" style=${{ alignContent: 'start' }}>
+            <div class="card">
+              <h3>Keeping it current</h3>
+              <${Field} label="Method" id="kept-by">
+                <${Select}
+                  value=${f.keptBy} onChange=${set('keptBy')} options=${KEPT_BY} />
+                </${Field}>
+                </div>
+                <${PlanCard} a=${a} />
+                </div>
+        `
+        : physical
         ? html`
           <div class="card">
             <h3>Keeping it current</h3>

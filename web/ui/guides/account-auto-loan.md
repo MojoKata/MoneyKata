@@ -20,7 +20,8 @@ balance shows until it is explained: a fee, a missed payment, a wrong rate.
 
 ## Equity
 
-When the loan is secured by a property or vehicle: what it's worth less every loan it secures, the loan-to-value, and for a mortgage with PMI, when it can be dropped.
+When the loan is secured by a property or vehicle: what it's worth less every loan it secures, the
+loan-to-value, and for a mortgage with PMI, when it can be dropped.
 
 ## Following
 
@@ -66,7 +67,8 @@ differs by a few cents.
 
 ## Secured by {#secured-by}
 
-The property or vehicle the loan is secured by, from a physical-asset account. The Overview then shows your equity in it and the loan-to-value.
+The property or vehicle the loan is secured by, from a physical-asset account. The Overview then
+shows your equity in it and the loan-to-value.
 
 ## Rate resets
 

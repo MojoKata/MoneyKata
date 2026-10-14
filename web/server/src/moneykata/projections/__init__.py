@@ -198,6 +198,21 @@ def prepare(s: Session, p: Projection, viewer: str) -> Prepared:
                 (start, float(item.get("monthly", 0)) * 12, bool(item.get("inflates", True)))
             )
         withdrawal = inputs.get("withdrawal") or {"method": "fourPercent"}
+    elif p.goal == "education":
+        school = education_school(s, inputs, year)
+        target_index = school["startIndex"]
+        years = target_index + school["years"]
+        contribution = float(inputs.get("monthly", 0) or 0) * 12
+        contribute_years = target_index - 1
+        income = []
+        withdrawal = {
+            "method": "costs",
+            "amount": school["cost"],
+            "growth": figures["educationInflation"] / 100,
+            "years": school["years"],
+        }
+        retire_index = target_index
+        last_part = 1.0
     else:
         target_date = dt.date.fromisoformat(inputs.get("date") or f"{year + 3}-01-01")
         span = max((target_date - today).days, 1) / 365.25
@@ -208,7 +223,7 @@ def prepare(s: Session, p: Projection, viewer: str) -> Prepared:
         contribution = float(inputs.get("monthly", 0) or 0) * 12
         contribute_years = target_index
         income, withdrawal = [], {}
-    if p.goal == "retirement":
+    if p.goal in ("retirement", "education"):
         last_part = 1.0
     btc_now = _btc_price(s) or 100_000.0
     crypto_path = None
@@ -276,6 +291,8 @@ def compute(s: Session, p: Projection, viewer: str) -> dict:
             "retireYear": plan.first_year + prep.retire_index,
             "people": prep.people,
         }
+    elif p.goal == "education":
+        out["answer"] = _education_answer(s, p, prep, result, inputs)
     else:
         target = float(inputs.get("target", 0) or 0)
         idx = prep.target_index
@@ -292,7 +309,78 @@ def compute(s: Session, p: Projection, viewer: str) -> dict:
     return out
 
 
+def education_school(s: Session, inputs: dict, year: int) -> dict:
+    """The beneficiary and their years of school: from their birth year and the age school
+    starts, the years of it, and the cost of a year in today's dollars (typed, or a shipped
+    average)."""
+    from ..store.entities.education import Person
+
+    who = inputs.get("beneficiary") or {}
+    name, birth = "the beneficiary", None
+    if who.get("kind") == "person":
+        person = s.get(Person, who.get("id") or "")
+        if person is not None and not person.deleted:
+            name, birth = person.name, person.birthYear
+    elif who.get("kind") == "user":
+        u = s.get(User, who.get("id") or "")
+        if u is not None:
+            name, birth = u.displayName, u.birthYear
+    start_age = int(inputs.get("startAge") or 18)
+    first = int(inputs.get("firstYear") or 0) or ((birth or year - 10) + start_age)
+    basis = inputs.get("costBasis") or "public"
+    if basis in ("public", "private"):
+        figure = "collegePublic" if basis == "public" else "collegePrivate"
+        cost = float(taxtables.figures(s, year)[figure])
+    else:
+        cost = float(inputs.get("cost") or 0)
+    return {
+        "name": name,
+        "birthYear": birth,
+        "firstYear": first,
+        "startIndex": max(1, first - year),
+        "years": max(1, int(inputs.get("schoolYears") or 4)),
+        "cost": cost,
+        "basis": basis,
+    }
+
+
+def _education_answer(s: Session, p: Projection, prep: Prepared, result, inputs: dict) -> dict:
+    """The projected balance when school starts against what its years will cost, the
+    percentage funded, and the monthly contribution that would fund it fully (S6.2.2)."""
+    plan = prep.plan
+    school = education_school(s, inputs, plan.first_year)
+    start = prep.target_index
+    growth = plan.withdrawal["growth"]
+    rate = sum(w * plan.returns.get(c, 0.0) for c, w in plan.weights.items()) - plan.fees
+    costs = [school["cost"] * (1 + growth) ** t for t in range(start, start + school["years"])]
+    # What the years of school are worth at the start, the balance going on growing.
+    needed = sum(c / (1 + rate) ** (k + 1) for k, c in enumerate(costs))
+    at_start = result.percentiles[50][start - 1]
+    funded = min(100.0, at_start / needed * 100) if needed else 100.0
+    monthly = 0.0
+    if needed and at_start < needed:
+        trial = engine.Plan(**{**plan.__dict__, "withdraw_from": None})
+        monthly = engine.needed_saving(trial, needed, start - 1, chance=0.5) / 12
+    return {
+        "kind": "education",
+        "name": school["name"],
+        "firstYear": school["firstYear"],
+        "years": school["years"],
+        "costToday": school["cost"],
+        "costBasis": school["basis"],
+        "costs": costs,
+        "atStart": at_start,
+        "needed": needed,
+        "funded": funded,
+        "chance": result.lasted,
+        "monthly": float(inputs.get("monthly", 0) or 0),
+        "neededMonthly": monthly,
+    }
+
+
 def headline(p: Projection, answer: dict) -> str:
+    if answer["kind"] == "education":
+        return f"{answer['funded']:.0f}% funded for {answer['name']}'s {answer['years']} years"
     if answer["kind"] == "retirement":
         return f"{answer['chance'] * 100:.0f}% chance the money lasts to {answer['horizonAge']}"
     return f"{answer['chance'] * 100:.0f}% chance of {answer['target']:,.0f} by {answer['date']}"
@@ -311,6 +399,9 @@ def subject(p: Projection) -> str:
             for x in (inputs.get("people") or [{"name": p.ownerId}])
         )
         return f"{p.ownerId}:retirement:{'|'.join(people)}"
+    if p.goal == "education":
+        who = inputs.get("beneficiary") or {}
+        return f"{p.ownerId}:education:{who.get('kind')}:{who.get('id')}"
     return f"{p.ownerId}:{p.goal}:{p.id}"
 
 

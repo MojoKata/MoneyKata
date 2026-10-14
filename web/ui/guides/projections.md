@@ -75,6 +75,29 @@ Taken from each year's balance.
 
 Social Security or a pension, from an age, a month. It covers part of each withdrawal.
 
+## For {#beneficiary}
+
+An education goal is for one person: someone on your list of people. Their year of birth gives the
+first year of school.
+
+## Age school starts {#start-age}
+
+18 for college; younger for a private school.
+
+## Years of school {#school-years}
+
+How many years it pays for: four for a bachelor's degree.
+
+## Cost per year {#cost-basis}
+
+Tuition, fees, room and board for a year, in today's dollars: a shipped average for public four-year
+(in-state) or private nonprofit four-year colleges, from the National Center for Education
+Statistics, or a figure you type. It rises each year by education inflation, from your assumptions.
+
+## Cost per year, typed {#cost}
+
+Your own figure for a year, in today's dollars.
+
 ## Target amount {#target}
 
 What the savings target is.

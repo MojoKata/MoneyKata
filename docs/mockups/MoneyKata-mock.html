@@ -1051,7 +1051,9 @@ function goalTab() {
 }
 function contribTab() {
   const rows = [['2026', 'Alice Griffin', 'owner', 6000, ''], ['2026', 'Margaret Griffin', 'grandmother', 0, 'Covered by her 2024 five-year election (year 3 of 5)'], ['2025', 'Alice Griffin', 'owner', 6000, ''], ['2025', 'Bob Griffin', 'father', 2500, ''], ['2024', 'Margaret Griffin', 'grandmother', 90000, 'Five-year election 2024–2028: $18,000 a year against the exclusion']];
-  return `<div class="card" style="padding:4px 8px"><div class="table-wrap"><table class="t"><thead><tr><th>Year</th><th>Contributor</th><th class="num">Amount</th><th>Against the annual gift exclusion</th></tr></thead><tbody>
+  return `<div class="card"><h3>Record a contribution</h3><div class="row">${field('Contribution date', inp('2026-10-05', '', 'date'))}${field('Contribution amount', inp('', '250.00'))}${field('Contributor', sel(['You', 'Margaret Griffin', 'Bob Griffin'], 'You'))}${field('Paid from', sel(['Not recorded here', 'Joint Household', 'Everyday Checking'], 'Joint Household'))}</div>
+  <div class="list-item"><span class="grow">Five-year election<div class="small dim">Superfunding: counted as a fifth in each of five years against the gift exclusion.</div></span>${sw(false)}</div><div class="toolbar mt"><span class="spacer"></span><button class="btn primary" data-act="toast" data-v="Contribution recorded">Record</button></div></div>
+  <div class="card mt" style="padding:4px 8px"><div class="table-wrap"><table class="t"><thead><tr><th>Year</th><th>Contributor</th><th class="num">Amount</th><th>Against the annual gift exclusion</th></tr></thead><tbody>
   ${rows.map((r) => `<tr><td>${r[0]}</td><td style="white-space:nowrap">${r[1]} <span class="small dim">· ${r[2]}</span></td><td class="num">${r[3] ? money(r[3], { cents: false }) : '<span class="dim">—</span>'}</td><td class="small">${r[4] || `${money(r[3], { cents: false })} of ${money(19000, { cents: false })} for ${r[0]}`}</td></tr>`).join('')}
   </tbody></table></div></div>
   <div class="grid g2 mt"><div class="card"><h3>State tax deduction</h3><p class="small dim" style="margin-top:0">Typed by the owner. MoneyKata doesn’t model state rules.</p><div class="list-item"><span class="grow dim">Utah credit, ${state.year}</span>on up to ${money(2410, { cents: false })}</div></div>
@@ -1060,7 +1062,8 @@ function contribTab() {
 function withdrawTab() {
   return `<div class="card"><div class="empty" style="padding:16px 0">${icon('grad')}<div><b>No withdrawals yet</b></div><div class="small dim">When school starts, each year lists its distributions (Form 1099-Q) against the qualified expenses and their receipts, and any part not covered.</div></div>
   <div class="table-wrap"><table class="t mt"><thead><tr><th>Example year</th><th class="num">Distributions</th><th class="num">Qualified expenses</th><th class="num">Not covered</th></tr></thead><tbody><tr><td class="dim">2036</td><td class="num dim">${money(46000, { cents: false })}</td><td class="num dim">${money(44200, { cents: false })}</td><td class="num"><span class="pill warn">${money(1800, { cents: false })}</span></td></tr></tbody></table></div>
-  <p class="small dim">The earnings in what isn’t covered may be taxable, with a 10% additional tax. Your preparer applies the rules, and coordinates them with education credits.</p></div>`;
+  <p class="small dim">The earnings in what isn’t covered may be taxable, with a 10% additional tax. Your preparer applies the rules, and coordinates them with education credits.</p></div>
+  <div class="card mt"><h3>Add a qualified expense</h3><div class="row">${field('Expense date', inp('2026-08-15', '', 'date'))}${field('Kind', sel(['Tuition and fees', 'Room and board', 'Books and supplies', 'A computer and internet', 'K-12 tuition', 'Apprenticeship', 'Student-loan repayment'], 'Tuition and fees'))}${field('Expense amount', inp('', '22,100.00'))}</div>${field('Description', inp('', 'Fall tuition, State University'))}<div class="toolbar"><button class="btn sm" data-act="dlg" data-v="upload">${icon('clip')} Receipt</button><span class="spacer"></span><button class="btn primary" data-act="toast" data-v="Expense added">Add</button></div></div>`;
 }
 function itemsTab(a) {
   if (a.type === 'precious-metals') {
@@ -1827,6 +1830,15 @@ const GUIDES = {
     <h2 ${hid('Selling premium')}>Selling premium</h2><p>For metals at spot: what you’d expect over spot (or under it, negative) when selling. 0% by default.</p>
     <h2 ${hid('Condition or grade')}>Condition or grade</h2><p>Its condition, or its grade (MS-65, PCGS 64).</p>
     <h2 ${hid('Insurance policy')}>Insurance policy</h2><p>The policy that covers it, beside its insured value.</p>
+    <h2 ${hid('Contribution date')}>Contribution date</h2><p>The day a contribution was deposited into the 529.</p>
+    <h2 ${hid('Contribution amount')}>Contribution amount</h2><p>What was put in.</p>
+    <h2 ${hid('Contributor')}>Contributor</h2><p>You, or a person on your list: a grandparent’s contribution is their gift to the beneficiary, counted against the annual gift exclusion.</p>
+    <h2 ${hid('Paid from')}>Paid from</h2><p>The bank account it came from, to record both halves of the transfer.</p>
+    <h2>Five-year election</h2><p>Superfunding: five years of exclusions given at once, counted a fifth a year, and elected on Form 709.</p>
+    <h2 ${hid('Expense date')}>Expense date</h2><p>The day a qualified expense was paid; it counts in that tax year.</p>
+    <h2 ${hid('Kind')}>Kind</h2><p>Which qualified expense: tuition and fees, room and board, books, a computer, K-12 tuition, an apprenticeship, or student-loan repayment.</p>
+    <h2 ${hid('Expense amount')}>Expense amount</h2><p>What it cost.</p>
+    <h2 ${hid('Description')}>Description</h2><p>What it was for, kept with its receipts.</p>
     <h2 ${hid('Beneficiary')}>Beneficiary</h2><p>A person from Gifts › People, or a user. The 529 counts in the owner’s net worth.</p>
     <h2 ${hid('Years of school')}>Years of school</h2><p>How many years the goal pays for.</p>
     <h2 ${hid('Cost per year (today’s dollars)')}>Cost per year</h2><p>In today’s dollars; education inflation raises it each year. The shipped averages are a starting point.</p>

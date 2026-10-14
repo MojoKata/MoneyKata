@@ -19,6 +19,7 @@ GROUPS = {
     "student-loan": "liabilities",
     "personal-loan": "liabilities",
     "loan": "liabilities",
+    "529": "education",
     "precious-metals": "physical-assets",
     "collectables": "physical-assets",
     "real-estate": "physical-assets",
@@ -54,6 +55,7 @@ LABELS = {
     "student-loan": "Student loan",
     "personal-loan": "Personal loan",
     "loan": "Loan",
+    "529": "529 plan",
     "precious-metals": "Precious metals",
     "collectables": "Collectables",
     "real-estate": "Real estate",
@@ -79,6 +81,7 @@ TAX = {
     "student-loan": None,
     "personal-loan": None,
     "loan": None,
+    "529": "free",  # for qualified expenses (S1.8.3)
     # A sale's gain is taxable; metals and collectables at the collectables rate (S1.10.5).
     "precious-metals": "taxable",
     "collectables": "taxable",
@@ -90,7 +93,7 @@ TAX = {
 
 def investing(account_type: str) -> bool:
     """Holds instruments, so it has Holdings and Positions tabs."""
-    return GROUPS[account_type] in ("investing", "retirement")
+    return GROUPS[account_type] in ("investing", "retirement", "education")
 
 
 def reconcilable(account_type: str) -> bool:

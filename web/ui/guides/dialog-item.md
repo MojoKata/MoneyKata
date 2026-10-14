@@ -20,7 +20,8 @@ Gold, silver, platinum or palladium: the spot price that values it.
 
 ## Form {#category}
 
-A coin, bar, round or jewellery. A numismatic coin worth more than its metal belongs in a collectables account instead.
+A coin, bar, round or jewellery. A numismatic coin worth more than its metal belongs in a
+collectables account instead.
 
 ## Category
 
@@ -28,7 +29,8 @@ The kind of collectable: a watch, art, wine, cards and so on.
 
 ## Valued by {#valuation}
 
-**Valuations**: the latest dated value counts. **Depreciation**: a yearly percentage off the cost basis, until a valuation replaces it.
+**Valuations**: the latest dated value counts. **Depreciation**: a yearly percentage off the cost
+basis, until a valuation replaces it.
 
 ## Weight per unit {#unit-weight}
 
@@ -40,7 +42,8 @@ Troy ounces, grams or kilograms. A troy ounce is 31.1 grams.
 
 ## Purity
 
-The share of the weight that is the metal: .9999 for most gold coins and bars, .999 for silver, .925 for sterling, 22k (.9167) for a Krugerrand. Fine weight is weight × purity × quantity.
+The share of the weight that is the metal: .9999 for most gold coins and bars, .999 for silver, .925
+for sterling, 22k (.9167) for a Krugerrand. Fine weight is weight × purity × quantity.
 
 ## Quantity
 
@@ -56,11 +59,13 @@ The day it was bought, given or inherited. A sale's holding period starts here.
 
 ## How acquired {#acquired-how}
 
-Bought, a gift or inherited. A gift's basis is usually the giver's; an inherited item's is its value at death.
+Bought, a gift or inherited. A gift's basis is usually the giver's; an inherited item's is its value
+at death.
 
 ## Cost basis {#cost-basis}
 
-What it cost: the price plus premium, fees and shipping, or for a property the purchase price. A gift's carried-over basis, or an inherited item's value at death.
+What it cost: the price plus premium, fees and shipping, or for a property the purchase price. A
+gift's carried-over basis, or an inherited item's value at death.
 
 ## Closing costs
 
@@ -100,16 +105,20 @@ Anything else, in Markdown: provenance, service history.
 
 ## Valuations
 
-Dated values with their source: an appraisal, a recent sale, a price guide or your estimate. The latest counts; one over a year old is marked.
+Dated values with their source: an appraisal, a recent sale, a price guide or your estimate. The
+latest counts; one over a year old is marked.
 
 ## Improvements
 
-A property's improvements: a new roof, a remodel. Each adds to the cost basis on its date, with its receipts kept as documents.
+A property's improvements: a new roof, a remodel. Each adds to the cost basis on its date, with its
+receipts kept as documents.
 
 ## Photos and documents
 
-The purchase receipt, an appraisal, a certificate, the title, photos. Kept as receipts, encrypted on this server.
+The purchase receipt, an appraisal, a certificate, the title, photos. Kept as receipts, encrypted on
+this server.
 
 ## Sale
 
-The day it was sold, the proceeds and the fees. The gain or loss is realized and shown in Taxes; metals and collectables are flagged as collectables for Form 8949.
+The day it was sold, the proceeds and the fees. The gain or loss is realized and shown in Taxes;
+metals and collectables are flagged as collectables for Form 8949.

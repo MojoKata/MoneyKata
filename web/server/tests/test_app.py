@@ -209,6 +209,8 @@ def test_every_screen_and_tab_has_its_guide(page):
     for t in ("mortgage", "auto-loan"):
         for tab in ("overview", "schedule", "payoff", "transactions", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
+    for tab in ("overview", "holdings", "contributions", "withdrawals", "goal", "settings"):
+        paths.append(f"/ui/accounts/{ids['529']}/{tab}")
     for t in ("precious-metals", "collectables", "real-estate", "vehicle"):
         for tab in ("overview", "items", "transactions", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
@@ -328,6 +330,19 @@ def test_every_dialog_has_its_guide(page):
         check_guide(page, ".dialog", f"a {t} item")
         close_dialog(page)
     open_dialog(page, f"/ui/accounts/{ids['collectables']}/items", "Add an item", "dialog-item")
+    close_dialog(page)
+    # A 529's form, with a person added in it.
+    open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")
+    page.get_by_role("button", name=re.compile("^529 plan")).click()
+    wait_guide(page, "dialog-account-form")
+    page.select_option(".dialog #f-beneficiary", "new")
+    page.wait_for_selector(".dialog #f-new-name")
+    check_guide(page, ".dialog", "the 529 form")
+    close_dialog(page)
+    # An education projection's inputs.
+    open_dialog(page, "/ui/projections", "New projection", "dialog-new-projection")
+    page.get_by_role("radio", name="Education").click()
+    check_guide(page, ".dialog", "a new education projection")
     close_dialog(page)
     # Splits add rows that name their heading.
     open_dialog(page, "/ui/transactions", "Add", "dialog-transaction")

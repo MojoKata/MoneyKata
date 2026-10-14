@@ -1054,6 +1054,61 @@
         "title": "Backups",
         "type": "object"
       },
+      "BeneficiaryOut": {
+        "additionalProperties": false,
+        "properties": {
+          "birthYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthyear"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "birthYear"
+        ],
+        "title": "BeneficiaryOut",
+        "type": "object"
+      },
+      "BeneficiaryRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "BeneficiaryRef",
+        "type": "object"
+      },
       "Body_upload_ui_api_accounts__account_id__imports_post": {
         "properties": {
           "file": {
@@ -1554,6 +1609,145 @@
         "title": "Confirmation",
         "type": "object"
       },
+      "ContributionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "contributor": {
+            "default": "owner",
+            "title": "Contributor",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "fiveYear": {
+            "default": false,
+            "title": "Fiveyear",
+            "type": "boolean"
+          },
+          "fromAccountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fromaccountid"
+          }
+        },
+        "required": [
+          "date",
+          "amount"
+        ],
+        "title": "ContributionIn",
+        "type": "object"
+      },
+      "ContributionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "contributor": {
+            "title": "Contributor",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "fiveYear": {
+            "title": "Fiveyear",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "date",
+          "amount",
+          "contributor",
+          "name",
+          "relationship",
+          "fiveYear"
+        ],
+        "title": "ContributionOut",
+        "type": "object"
+      },
+      "ContributionsView": {
+        "additionalProperties": false,
+        "properties": {
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ContributionOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "years": {
+            "items": {
+              "$ref": "#/components/schemas/GiftYearOut"
+            },
+            "title": "Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows",
+          "years",
+          "canWrite"
+        ],
+        "title": "ContributionsView",
+        "type": "object"
+      },
       "Counted": {
         "additionalProperties": false,
         "properties": {
@@ -1863,6 +2057,129 @@
         "title": "Equity",
         "type": "object"
       },
+      "ExpenseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "date",
+          "kind",
+          "amount"
+        ],
+        "title": "ExpenseIn",
+        "type": "object"
+      },
+      "ExpenseOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptRow"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "kindLabel": {
+            "title": "Kindlabel",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "year",
+          "kind",
+          "kindLabel",
+          "description",
+          "amount",
+          "documents"
+        ],
+        "title": "ExpenseOut",
+        "type": "object"
+      },
       "Flow": {
         "additionalProperties": false,
         "properties": {
@@ -1950,6 +2267,101 @@
           "ahead"
         ],
         "title": "Following",
+        "type": "object"
+      },
+      "GiftYearOut": {
+        "additionalProperties": false,
+        "properties": {
+          "contributor": {
+            "title": "Contributor",
+            "type": "string"
+          },
+          "counted": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Counted",
+            "type": "string"
+          },
+          "exclusion": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Exclusion",
+            "type": "string"
+          },
+          "fromElection": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fromelection"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "over": {
+            "title": "Over",
+            "type": "boolean"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contributor",
+          "name",
+          "year",
+          "counted",
+          "exclusion",
+          "over",
+          "fromElection"
+        ],
+        "title": "GiftYearOut",
+        "type": "object"
+      },
+      "GoalView": {
+        "additionalProperties": false,
+        "properties": {
+          "beneficiary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BeneficiaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "others": {
+            "title": "Others",
+            "type": "integer"
+          },
+          "projection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectionDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "beneficiary",
+          "projection",
+          "others"
+        ],
+        "title": "GoalView",
         "type": "object"
       },
       "GroupChange": {
@@ -5671,6 +6083,159 @@
         "title": "Person",
         "type": "object"
       },
+      "PersonIn": {
+        "additionalProperties": false,
+        "properties": {
+          "birthDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
+          "birthMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthmonth"
+          },
+          "birthYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthyear"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship"
+          },
+          "userId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userid"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "PersonIn",
+        "type": "object"
+      },
+      "PersonOut": {
+        "additionalProperties": false,
+        "properties": {
+          "birthDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
+          "birthMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthmonth"
+          },
+          "birthYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthyear"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship"
+          },
+          "userId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userid"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "relationship",
+          "userId",
+          "birthMonth",
+          "birthDay",
+          "birthYear",
+          "version"
+        ],
+        "title": "PersonOut",
+        "type": "object"
+      },
       "PickIn": {
         "additionalProperties": false,
         "properties": {
@@ -5821,132 +6386,6 @@
         "title": "Plan",
         "type": "object"
       },
-      "PlanIn": {
-        "additionalProperties": false,
-        "properties": {
-          "biweekly": {
-            "default": false,
-            "title": "Biweekly",
-            "type": "boolean"
-          },
-          "investClass": {
-            "default": "usStocks",
-            "title": "Investclass",
-            "type": "string"
-          },
-          "lumps": {
-            "items": {
-              "$ref": "#/components/schemas/Lump"
-            },
-            "title": "Lumps",
-            "type": "array"
-          },
-          "monthly": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Monthly",
-            "type": "string"
-          },
-          "monthlyFrom": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Monthlyfrom"
-          },
-          "monthlyUntil": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Monthlyuntil"
-          },
-          "recast": {
-            "default": false,
-            "title": "Recast",
-            "type": "boolean"
-          },
-          "recastFee": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Recastfee",
-            "type": "string"
-          },
-          "roundTo": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Roundto",
-            "type": "string"
-          },
-          "yearly": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Yearly",
-            "type": "string"
-          },
-          "yearlyMonth": {
-            "default": 12,
-            "title": "Yearlymonth",
-            "type": "integer"
-          }
-        },
-        "title": "PlanIn",
-        "type": "object"
-      },
       "PlanLine": {
         "additionalProperties": false,
         "properties": {
@@ -5986,6 +6425,97 @@
           "amount"
         ],
         "title": "PlanLine",
+        "type": "object"
+      },
+      "PlanOut": {
+        "additionalProperties": false,
+        "properties": {
+          "beneficiary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BeneficiaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "contributedThisYear": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Contributedthisyear",
+            "type": "string"
+          },
+          "openedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openedon"
+          },
+          "planName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planname"
+          },
+          "planState": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planstate"
+          },
+          "rollover": {
+            "$ref": "#/components/schemas/RolloverOut"
+          },
+          "stateDeduction": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statededuction"
+          }
+        },
+        "required": [
+          "planState",
+          "planName",
+          "beneficiary",
+          "openedOn",
+          "stateDeduction",
+          "contributedThisYear",
+          "rollover",
+          "canWrite"
+        ],
+        "title": "PlanOut",
         "type": "object"
       },
       "PlanView": {
@@ -7754,6 +8284,64 @@
         "title": "ReturnRow",
         "type": "object"
       },
+      "RolloverOut": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Available",
+            "type": "string"
+          },
+          "eligible": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Eligible",
+            "type": "string"
+          },
+          "limit": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Limit",
+            "type": "string"
+          },
+          "possibleFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Possiblefrom"
+          },
+          "used": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Used",
+            "type": "string"
+          }
+        },
+        "required": [
+          "possibleFrom",
+          "limit",
+          "used",
+          "eligible",
+          "available"
+        ],
+        "title": "RolloverOut",
+        "type": "object"
+      },
       "RowOut": {
         "additionalProperties": false,
         "properties": {
@@ -8017,7 +8605,7 @@
         "additionalProperties": false,
         "properties": {
           "inputs": {
-            "$ref": "#/components/schemas/PlanIn"
+            "$ref": "#/components/schemas/moneykata__ui__loans__PlanIn"
           },
           "name": {
             "title": "Name",
@@ -9117,6 +9705,23 @@
           "firstParting"
         ],
         "title": "Suspects",
+        "type": "object"
+      },
+      "TagIn": {
+        "additionalProperties": false,
+        "properties": {
+          "contributor": {
+            "default": "owner",
+            "title": "Contributor",
+            "type": "string"
+          },
+          "fiveYear": {
+            "default": false,
+            "title": "Fiveyear",
+            "type": "boolean"
+          }
+        },
+        "title": "TagIn",
         "type": "object"
       },
       "TaxChange": {
@@ -11040,6 +11645,95 @@
         "title": "Via",
         "type": "object"
       },
+      "WithdrawalYearOut": {
+        "additionalProperties": false,
+        "properties": {
+          "distributions": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Distributions",
+            "type": "string"
+          },
+          "expenses": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Expenses",
+            "type": "string"
+          },
+          "notCovered": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Notcovered",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "distributions",
+          "expenses",
+          "notCovered"
+        ],
+        "title": "WithdrawalYearOut",
+        "type": "object"
+      },
+      "WithdrawalsView": {
+        "additionalProperties": false,
+        "properties": {
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "expenses": {
+            "items": {
+              "$ref": "#/components/schemas/ExpenseOut"
+            },
+            "title": "Expenses",
+            "type": "array"
+          },
+          "kinds": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Kinds",
+            "type": "array"
+          },
+          "years": {
+            "items": {
+              "$ref": "#/components/schemas/WithdrawalYearOut"
+            },
+            "title": "Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "years",
+          "expenses",
+          "kinds",
+          "canWrite"
+        ],
+        "title": "WithdrawalsView",
+        "type": "object"
+      },
       "Zones": {
         "additionalProperties": false,
         "properties": {
@@ -11084,6 +11778,206 @@
           "value"
         ],
         "title": "Point",
+        "type": "object"
+      },
+      "moneykata__ui__education__PlanIn": {
+        "additionalProperties": false,
+        "properties": {
+          "beneficiary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BeneficiaryRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "openedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openedon"
+          },
+          "planName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planname"
+          },
+          "planState": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planstate"
+          },
+          "stateDeduction": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statededuction"
+          }
+        },
+        "title": "PlanIn",
+        "type": "object"
+      },
+      "moneykata__ui__loans__PlanIn": {
+        "additionalProperties": false,
+        "properties": {
+          "biweekly": {
+            "default": false,
+            "title": "Biweekly",
+            "type": "boolean"
+          },
+          "investClass": {
+            "default": "usStocks",
+            "title": "Investclass",
+            "type": "string"
+          },
+          "lumps": {
+            "items": {
+              "$ref": "#/components/schemas/Lump"
+            },
+            "title": "Lumps",
+            "type": "array"
+          },
+          "monthly": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Monthly",
+            "type": "string"
+          },
+          "monthlyFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthlyfrom"
+          },
+          "monthlyUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthlyuntil"
+          },
+          "recast": {
+            "default": false,
+            "title": "Recast",
+            "type": "boolean"
+          },
+          "recastFee": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Recastfee",
+            "type": "string"
+          },
+          "roundTo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Roundto",
+            "type": "string"
+          },
+          "yearly": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Yearly",
+            "type": "string"
+          },
+          "yearlyMonth": {
+            "default": 12,
+            "title": "Yearlymonth",
+            "type": "integer"
+          }
+        },
+        "title": "PlanIn",
         "type": "object"
       },
       "moneykata__ui__loans__Point": {
@@ -11583,6 +12477,99 @@
         ]
       }
     },
+    "/ui/api/accounts/{account_id}/contributions": {
+      "get": {
+        "operationId": "list_contributions_ui_api_accounts__account_id__contributions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Contributions",
+        "tags": [
+          "education"
+        ]
+      },
+      "post": {
+        "description": "A deposit into the 529, with who made it; from a bank account, both halves.",
+        "operationId": "add_contribution_ui_api_accounts__account_id__contributions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContributionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Contribution",
+        "tags": [
+          "education"
+        ]
+      }
+    },
     "/ui/api/accounts/{account_id}/counted": {
       "put": {
         "description": "A receiver's Count in my totals (S10.7); off by default.",
@@ -11626,6 +12613,142 @@
         "summary": "Set Counted",
         "tags": [
           "sharing"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/expenses": {
+      "post": {
+        "operationId": "add_expense_ui_api_accounts__account_id__expenses_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpenseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WithdrawalsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Expense",
+        "tags": [
+          "education"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/goal": {
+      "get": {
+        "description": "The beneficiary's education projection: the active one, else the first made.",
+        "operationId": "get_goal_ui_api_accounts__account_id__goal_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Goal",
+        "tags": [
+          "education"
+        ]
+      },
+      "post": {
+        "description": "An education projection for the beneficiary, built on their 529s the caller can see,\nstarting from the shipped public-college average and this year's contributions.",
+        "operationId": "start_goal_ui_api_accounts__account_id__goal_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Goal",
+        "tags": [
+          "education"
         ]
       }
     },
@@ -12071,7 +13194,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PlanIn"
+                "$ref": "#/components/schemas/moneykata__ui__loans__PlanIn"
               }
             }
           },
@@ -12419,6 +13542,98 @@
         ]
       }
     },
+    "/ui/api/accounts/{account_id}/plan529": {
+      "get": {
+        "operationId": "get_plan_ui_api_accounts__account_id__plan529_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Plan",
+        "tags": [
+          "education"
+        ]
+      },
+      "put": {
+        "operationId": "put_plan_ui_api_accounts__account_id__plan529_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/moneykata__ui__education__PlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Plan",
+        "tags": [
+          "education"
+        ]
+      }
+    },
     "/ui/api/accounts/{account_id}/reconcile": {
       "get": {
         "operationId": "account_reconcile_ui_api_accounts__account_id__reconcile_get",
@@ -12564,6 +13779,48 @@
         "summary": "Account Series",
         "tags": [
           "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/withdrawals": {
+      "get": {
+        "operationId": "list_withdrawals_ui_api_accounts__account_id__withdrawals_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WithdrawalsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Withdrawals",
+        "tags": [
+          "education"
         ]
       }
     },
@@ -13405,6 +14662,59 @@
         ]
       }
     },
+    "/ui/api/contributions/{transaction_id}": {
+      "put": {
+        "description": "Who an existing deposit (an imported one) came from, and whether it is a five-year\nelection.",
+        "operationId": "tag_contribution_ui_api_contributions__transaction_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transaction_id",
+            "required": true,
+            "schema": {
+              "title": "Transaction Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Tag Contribution",
+        "tags": [
+          "education"
+        ]
+      }
+    },
     "/ui/api/dashboard": {
       "get": {
         "operationId": "dashboard_ui_api_dashboard_get",
@@ -13545,6 +14855,100 @@
         "summary": "Events",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/ui/api/expenses/{expense_id}": {
+      "delete": {
+        "operationId": "delete_expense_ui_api_expenses__expense_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "expense_id",
+            "required": true,
+            "schema": {
+              "title": "Expense Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WithdrawalsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Expense",
+        "tags": [
+          "education"
+        ]
+      }
+    },
+    "/ui/api/expenses/{expense_id}/documents": {
+      "post": {
+        "operationId": "attach_receipt_ui_api_expenses__expense_id__documents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "expense_id",
+            "required": true,
+            "schema": {
+              "title": "Expense Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WithdrawalsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Attach Receipt",
+        "tags": [
+          "education"
         ]
       }
     },
@@ -14695,6 +16099,106 @@
         "summary": "Password Reset Confirm",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/ui/api/people": {
+      "get": {
+        "description": "The caller's own list of people: nobody else's.",
+        "operationId": "list_people_ui_api_people_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PersonOut"
+                  },
+                  "title": "Response List People Ui Api People Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List People",
+        "tags": [
+          "education"
+        ]
+      },
+      "post": {
+        "operationId": "add_person_ui_api_people_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Person",
+        "tags": [
+          "education"
+        ]
+      }
+    },
+    "/ui/api/people/{person_id}": {
+      "delete": {
+        "operationId": "delete_person_ui_api_people__person_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Person",
+        "tags": [
+          "education"
         ]
       }
     },

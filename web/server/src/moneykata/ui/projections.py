@@ -19,7 +19,7 @@ from .conventions import Model, if_match, stale
 from .deps import Caller, admin, caller, server
 
 router = APIRouter(prefix="/ui/api", tags=["projections"])
-GOALS = ("retirement", "savings")
+GOALS = ("retirement", "savings", "education")
 
 
 class ProjectionRow(Model):
@@ -128,7 +128,7 @@ def _check(s, user_id: str, name, goal, built, inputs) -> list[FieldError]:
         errors.append(FieldError("name", "name-invalid", "Enter a name of up to 80 characters."))
     if goal is not None and goal not in GOALS:
         errors.append(
-            FieldError("goal", "goal-invalid", "Retirement or a savings target, for now.")
+            FieldError("goal", "goal-invalid", "Retirement, education or a savings target.")
         )
     if built is not None:
         kind = built.get("kind")
@@ -151,7 +151,26 @@ def _check(s, user_id: str, name, goal, built, inputs) -> list[FieldError]:
                 errors.append(FieldError("builtOn", "accounts-unknown", "Choose accounts."))
     if inputs is not None:
         errors += _check_inputs(inputs)
+        who = inputs.get("beneficiary")
+        if goal == "education" or who is not None:
+            errors += _check_beneficiary(s, user_id, who)
     return errors
+
+
+def _check_beneficiary(s, user_id: str, who) -> list[FieldError]:
+    """An education goal is for a person on the user's list, or a user."""
+    from ..store.entities.education import Person
+    from ..store.entities.users import User
+
+    bad = [FieldError("inputs.beneficiary", "beneficiary-invalid", "Choose who it is for.")]
+    if not isinstance(who, dict):
+        return bad
+    if who.get("kind") == "person":
+        p = s.get(Person, who.get("id") or "")
+        return [] if p is not None and not p.deleted and p.ownerId == user_id else bad
+    if who.get("kind") == "user":
+        return [] if s.get(User, who.get("id") or "") is not None else bad
+    return bad
 
 
 def _num(inputs: dict, path: str, lo: float, hi: float, errors: list, message: str) -> None:
@@ -173,6 +192,11 @@ def _check_inputs(inputs: dict) -> list[FieldError]:
     _num(inputs, "horizonAge", 60, 120, e, "Between 60 and 120.")
     _num(inputs, "fees", 0, 5, e, "Between 0% and 5%.")
     _num(inputs, "runs", 100, 5000, e, "Between 100 and 5,000.")
+    _num(inputs, "startAge", 3, 40, e, "Between 3 and 40.")
+    _num(inputs, "schoolYears", 1, 12, e, "Between 1 and 12.")
+    _num(inputs, "cost", 0, 1_000_000, e, "Zero or more.")
+    if inputs.get("costBasis") not in (None, "public", "private", "typed"):
+        e.append(FieldError("inputs.costBasis", "input-invalid", "Public, private or typed."))
     for i, p in enumerate(inputs.get("people") or []):
         _num({"x": p}, "x.retireAge", 30, 90, e, "Between 30 and 90.")
         if e and e[-1].field == "inputs.x.retireAge":

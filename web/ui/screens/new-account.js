@@ -11,6 +11,7 @@ import { Tile } from '../components/bits.js';
 import { toast } from '../components/toast.js';
 import { BY_TYPE, TYPES } from '../account-types/index.js';
 import { TERM_FIELDS, termsBody, TermsFields, termsForm } from '../components/loan.js';
+import { PLAN_FIELDS, planBody, PlanFields, planForm } from '../components/edu.js';
 
 export const LOT_METHODS = /** @type {[string, string][]} */ ([
   ['fifo', 'FIFO (first in, first out)'],
@@ -61,6 +62,7 @@ function AccountForm({ type, close, back }) {
     openingBalance: '',
     openingDate: '',
     ...termsForm(null, type),
+    ...planForm(null),
   });
   const set = (/** @type {string} */ k) => (/** @type {string} */ v) => setF({ ...f, [k]: v });
   const [made, setMade] = useState(/** @type {any} */ (null));
@@ -83,6 +85,10 @@ function AccountForm({ type, close, back }) {
     if (t.loan) {
       setMade(a);
       await api.put(`/accounts/${a.id}/loan`, termsBody(f));
+    }
+    if (t.education) {
+      setMade(a);
+      await api.put(`/accounts/${a.id}/plan529`, await planBody(f));
     }
     toast(`${a.name} made`);
     close(a);
@@ -113,6 +119,7 @@ function AccountForm({ type, close, back }) {
                 onInput=${set('mask')} inputmode="numeric" placeholder="4821" />
               </${Field}>
               </div>
+              ${t.education ? html`<${PlanFields} f=${f} set=${set} e=${e} />` : null}
               ${t.loan
                 ? html`<${TermsFields} f=${f} set=${set} e=${e} type=${type} />`
                 : t.physical
@@ -157,6 +164,7 @@ function AccountForm({ type, close, back }) {
           'openingBalance',
           'openingDate',
           ...TERM_FIELDS,
+          ...PLAN_FIELDS,
         ]} />
       </${Dialog}>
   `;

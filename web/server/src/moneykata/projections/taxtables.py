@@ -39,6 +39,21 @@ FIGURES = [
     Figure("rothFrom529", "529 to Roth IRA, lifetime", "money", "Gifts and giving", "IRS"),
     Figure("qcdLimit", "QCD limit", "money", "Gifts and giving", "IRS"),
     Figure("collectablesRate", "Collectables rate (max)", "percent", "Taxes", "IRS"),
+    # A year of college, tuition, fees, room and board, for the education goal (S6.2.2).
+    Figure(
+        "collegePublic",
+        "College a year, public four-year (in-state)",
+        "money",
+        "Education",
+        "NCES Digest of Education Statistics, table 330.10",
+    ),
+    Figure(
+        "collegePrivate",
+        "College a year, private nonprofit four-year",
+        "money",
+        "Education",
+        "NCES Digest of Education Statistics, table 330.10",
+    ),
     # Metal spot from the trusts' share prices (S4.3): troy ounces each share holds, which
     # falls a little each year by the trust's fee.
     Figure("slvOzPerShare", "Silver per SLV share (troy oz)", "number", "Metal spot", "iShares"),
@@ -104,6 +119,8 @@ SHIPPED: dict[int, dict] = {
         "rothFrom529": 35000,
         "qcdLimit": 108000,
         "collectablesRate": 28,
+        "collegePublic": 26000,
+        "collegePrivate": 58000,
         "slvOzPerShare": 0.8634,
         "ppltOzPerShare": 0.0915,
         "pallOzPerShare": 0.0915,
@@ -122,6 +139,8 @@ SHIPPED: dict[int, dict] = {
         "rothFrom529": 35000,
         "qcdLimit": 111000,
         "collectablesRate": 28,
+        "collegePublic": 27100,
+        "collegePrivate": 60300,
         "slvOzPerShare": 0.8591,
         "ppltOzPerShare": 0.0909,
         "pallOzPerShare": 0.0909,
