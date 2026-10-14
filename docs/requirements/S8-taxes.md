@@ -14,7 +14,8 @@ produces worksheets and exports. It never files, and says so (R1.16).
    the flags left for review.
 4. **Missing or doubtful data**: lots without a basis, sales without a matching lot, options
    with an unresolved expiry, transfers between users' accounts (a gift's carry-over basis),
-   and crypto without a known acquisition.
+   crypto without a known acquisition, and possible wash sales the rules leave to the
+   preparer (S3.8.5).
 5. **Income**: interest (1099-INT), dividends ordinary, qualified and capital-gain
    distributions (1099-DIV), foreign tax paid, and crypto income (staking, rewards) at fair
    value when received.

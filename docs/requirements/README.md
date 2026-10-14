@@ -61,7 +61,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | Id | Gap | What is missing |
 |---|---|---|
 | **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | reading a brokerage statement's positions, cash activity and trades; until then it is kept without reading |
-| **G12** | [Adjusted contracts and wash-sale edges](gaps.md#g12-adjusted-contracts-and-wash-sale-edges) | contracts adjusted after a split, wash sales through shorts, options and assignment, and capital at risk for spreads |
+| **G12** | [Adjusted contracts and capital at risk](gaps.md#g12-adjusted-contracts-and-capital-at-risk) | option contracts adjusted after a split, and capital at risk for spreads and covered calls |
 | **G13** | [Bitcoin wallets beyond the common case](gaps.md#g13-bitcoin-wallets-beyond-the-common-case) | live nodes, Electrum certificate pinning, taproot and multisig wallets, transfers matched across wallets and exchanges, the network fee for taxes, reorganisations |
 | **G14** | [Linked households beyond the first build](gaps.md#g14-linked-households-beyond-the-first-build) | the window's fuller screens, a separate /link listener port, links across two real networks, the linked window in the generated mockup, and a first snapshot's size |
 | **G15** | [What database pruning's yearly summaries hold](gaps.md#g15-what-database-prunings-yearly-summaries-hold) | what the yearly summaries left by database pruning hold beyond the averages, and which reports read them (S14.10.5) |

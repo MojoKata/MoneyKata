@@ -42,6 +42,18 @@
    4. The household's wash sales are worked out again whenever a trade in it is added,
       changed, deleted or imported, so a later purchase that replaces an earlier loss, or a
       deleted one that no longer does, takes effect at once.
+   5. **Flagged for review, never adjusted**: where the rules are unsettled or depend on
+      facts MoneyKata can't see, a possible wash sale is listed among the tax book's issues
+      (S8.3) with the trades involved, and no basis is changed:
+      1. a loss on a **short sale** closed with shares bought within 30 days of another
+         short sale of the same stock, or of opening one;
+      2. a loss on an **option itself** (a call or put closed or expired at a loss) with the
+         same option, or one on the same underlying, opened within 30 days either side;
+      3. a loss on stock whose **replacement came through an option**: a put assigned to the
+         user, or a call they exercised, within 30 days either side of the loss sale;
+      4. a loss on stock with an **option on it bought or sold** within 30 days either side.
+
+      The issue names the rule it may fall under and says the preparer decides.
 9. **Gain/loss views**: realized by year, month, account, instrument and short- or long-term;
    unrealized now; and **per trade** for options (open date, close date, premium in and out,
    P/L, return on capital at risk).
