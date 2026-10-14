@@ -1,16 +1,28 @@
-"""CBOE's delayed quotes (requirements S4.3, S4.5): the whole option chain of an underlying in
-one answer, 15 minutes delayed, from the JSON behind cboe.com's quote pages. No key. It isn't
-an official API: CBOE offers it for personal, non-commercial use, and may change it. Asked
-once a day after the close, one request per underlying, every held contract on it marked from
-that one answer."""
+"""CBOE's delayed quotes (requirements S4.3, S4.5), from the JSON behind cboe.com's quote
+pages, 15 minutes delayed, with no key. It isn't an official API: CBOE offers it for personal,
+non-commercial use, and may change it.
+
+- Options: an underlying's whole chain in one answer, asked once a day after the close, every
+  held contract on it marked from that one answer.
+- Stocks and ETFs listed on an exchange: daily closes back to 2010 for a backfill, and the
+  day's close from the quote once the market has closed. Mutual funds aren't listed: Tiingo
+  prices them.
+"""
 
 import datetime as dt
 from decimal import ROUND_HALF_EVEN, Decimal
+from zoneinfo import ZoneInfo
 
+from .. import clock
 from .base import Ref, SourceError, TickerSource, register
 
-API = "https://cdn-api.cboe.com/api/global/delayed_quotes/options"
+BASE = "https://cdn-api.cboe.com/api/global/delayed_quotes"
+API = f"{BASE}/options"
 CENT = Decimal("0.01")
+EASTERN = ZoneInfo("America/New_York")
+# The day's close is final a little after 4:00 PM Eastern; before then the quote's "close" is
+# the price so far.
+CLOSED = dt.time(16, 15)
 
 # Index options are listed under the index's chain, `_SPX`, whose weeklies (and PM-settled
 # contracts) carry their own root: an SPX contract may be SPX or SPXW (S3.2).
@@ -49,13 +61,13 @@ def mark(row: dict) -> Decimal | None:
 class Cboe(TickerSource):
     name = "cboe"
     label = "CBOE delayed quotes"
-    classes = frozenset({"option"})
+    classes = frozenset({"option", "equity", "etf"})
     limits = ((30, 60),)
     hosts = ("cdn-api.cboe.com",)
     terms = (
         "Not an official API: the delayed quotes behind cboe.com's pages, 15 minutes "
-        "delayed, which CBOE offers for personal, non-commercial use and may change. One "
-        "request per underlying, after the close."
+        "delayed, which CBOE offers for personal, non-commercial use and may change. Stocks "
+        "and ETFs listed on an exchange, and options; not mutual funds."
     )
     terms_checked = dt.date(2026, 10, 14)
 
@@ -77,7 +89,49 @@ class Cboe(TickerSource):
             self._chains[chain] = (day, {r["option"]: r for r in data.get("options") or []})
         return self._chains[chain]
 
+    def listed(self, path: str, symbol: str):
+        """A stock's or ETF's answer; a symbol CBOE doesn't list fails, so the next source
+        that serves the class is asked."""
+        if self.client is None:
+            raise SourceError(f"{self.label} has no network client")
+        self.wait()
+        try:
+            r, body = self.client.get_bytes(f"{BASE}/{path}/{symbol}.json")
+        except Exception as e:
+            raise SourceError(f"{self.label} could not be reached ({type(e).__name__})") from None
+        if r.status_code in (403, 404):
+            raise SourceError(f"{self.label} doesn't list {symbol}")
+        if r.status_code >= 400:
+            raise SourceError(f"{self.label} answered HTTP {r.status_code}")
+        import json
+
+        try:
+            return json.loads(body).get("data")
+        except (ValueError, AttributeError):
+            raise SourceError(f"{self.label} answered with something that is not JSON") from None
+
     def history(self, ref: Ref, start: dt.date, end: dt.date) -> list[tuple[dt.date, Decimal]]:
+        if ref.instrumentClass == "option":
+            return self.option(ref, start, end)
+        symbol = ref.symbol.upper()
+        rows = self.listed("charts/historical", symbol) or []
+        out = {}
+        for r in rows:
+            day = dt.date.fromisoformat(r["date"])
+            if start <= day <= end and r.get("close"):
+                out[day] = Decimal(str(r["close"]))
+        # Today's close isn't in the history until tomorrow: it comes from the quote, once
+        # the market has closed.
+        now = clock.now().astimezone(EASTERN)
+        today = now.date()
+        if start <= today <= end and today not in out and now.time() >= CLOSED:
+            q = self.listed("quotes", symbol) or {}
+            when = str(q.get("last_trade_time") or "")[:10]
+            if when == today.isoformat() and q.get("close"):
+                out[today] = Decimal(str(q["close"]))
+        return sorted(out.items())
+
+    def option(self, ref: Ref, start: dt.date, end: dt.date) -> list[tuple[dt.date, Decimal]]:
         """Only the latest close: CBOE gives the chain as it is now, not its history."""
         root, rest = split_occ(ref.symbol)
         chain, roots = INDEXES.get(root, (root, (root,)))

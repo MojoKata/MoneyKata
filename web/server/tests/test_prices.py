@@ -300,3 +300,35 @@ def test_cboe_marks_options_from_one_chain_per_underlying():
     assert (
         src.history(Ref("a", "O:AAPL270115C00230000", "option"), end + dt.timedelta(1), end) == []
     )
+
+
+def test_cboe_prices_listed_stocks_and_waits_for_the_close():
+    """Stocks and ETFs from CBOE (S4.3): daily closes for a backfill, and the day's close from
+    the quote only once the market has closed; a symbol it doesn't list goes to the next
+    source."""
+    from pathlib import Path
+
+    from moneykata.prices.cboe import Cboe
+
+    answers = json.loads((Path(__file__).parent / "fixtures" / "cboe-listed.json").read_text())
+
+    def answer(url):
+        key = url.split("/delayed_quotes/", 1)[1].removesuffix(".json")
+        return (200, answers[key]) if key in answers else (403, {})
+
+    tsla = Ref("t", "TSLA", "equity")
+    start, day = dt.date(2026, 10, 1), dt.date(2026, 10, 14)
+    try:
+        # 2:00 PM Eastern: the history only, up to yesterday's close.
+        clock.fix(dt.datetime(2026, 10, 14, 18, 0, tzinfo=dt.UTC))
+        rows = Cboe(FakeClient(answer), None).history(tsla, start, day)
+        assert rows[-1] == (dt.date(2026, 10, 13), D("375.23")) and len(rows) == 7
+        # 8:00 PM Eastern: today's close from the quote.
+        clock.fix(dt.datetime(2026, 10, 15, 0, 0, tzinfo=dt.UTC))
+        rows = Cboe(FakeClient(answer), None).history(tsla, start, day)
+        assert rows[-1] == (day, D("367.16")) and len(rows) == 8
+    finally:
+        clock.fix(None)
+    with pytest.raises(SourceError, match="doesn't list VFIAX"):
+        Cboe(FakeClient(answer), None).history(Ref("f", "VFIAX", "etf"), start, day)
+    assert "mutual-fund" not in Cboe.classes
