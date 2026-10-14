@@ -64,6 +64,7 @@ def routes(page) -> dict[str, str]:
         "portfolios": "/ui/portfolios",
         "positions-open": "/ui/positions/open",
         "positions-closed": "/ui/positions/closed",
+        "positions-trades": "/ui/positions/trades",
         "positions-gains": "/ui/positions/gains",
         "activity": "/ui/activity",
         "alerts": "/ui/alerts",

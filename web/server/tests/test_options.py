@@ -243,3 +243,35 @@ def test_out_of_the_money_expires_the_day_after(server, alice):
     from moneykata import alerts
 
     assert [a.kind for a in alerts.evaluate(server)] == ["option-expired"]
+
+
+def test_each_option_trade_has_its_premium_pl_and_return(alice):
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    add(alice, brk["id"], amount="100000.00", kind="deposit")
+    # A short put: 2 sold at 5.00, 1 bought back at 2.00, the other expires.
+    opt(alice, brk["id"], "sell-to-open", "2026-09-01", "5.00", contracts="2")
+    opt(alice, brk["id"], "buy-to-close", "2026-09-15", "2.00")
+    assert (
+        opt(alice, brk["id"], "sell-to-open", "2026-09-02", "3.00", right="call").status_code == 201
+    )
+    r = alice.post(
+        f"/ui/api/accounts/{brk['id']}/options/"
+        + next(
+            p["instrumentId"]
+            for p in alice.get("/ui/api/positions").json()["open"]
+            if p["symbol"].endswith("480 P")
+        )
+        + "/settle",
+        json={"how": "expired", "date": "2026-10-01"},
+    )
+    assert r.status_code == 201, r.text
+    rows = alice.get("/ui/api/positions/option-trades").json()
+    put = next(x for x in rows if x["symbol"].endswith("480 P"))
+    assert put["side"] == "short" and put["contracts"] == "2"
+    assert (put["opened"], put["closed"], put["how"]) == ("2026-09-01", "2026-10-01", "expired")
+    assert put["premiumIn"] == "999.35" and put["premiumOut"] == "200.65"
+    assert put["pl"] == "798.70"
+    assert put["capitalAtRisk"] == "96000.00", "480 a share on 200 shares, cash secured"
+    assert put["returnPct"] == 0.83
+    call = next(x for x in rows if x["symbol"].endswith("480 C"))
+    assert call["closed"] is None and rows[0] is call, "open trades first"

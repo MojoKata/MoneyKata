@@ -21,6 +21,13 @@ def symbol(underlying: str, expiry: dt.date, right: str, strike: Decimal) -> str
     return f"{underlying} {expiry:%d%b%y}".upper() + f" {k} {'C' if right == 'call' else 'P'}"
 
 
+def occ(underlying: str, c: OptionContract) -> str:
+    """The contract's OCC ticker, as option data sources name it: O:MSFT261120P00480000."""
+    strike = int((c.strike * 1000).to_integral_value())
+    side = "C" if c.right == "call" else "P"
+    return f"O:{underlying}{c.expiry:%y%m%d}{side}{strike:08d}"
+
+
 def contract_of(s: Session, instrument_id: str) -> OptionContract | None:
     return s.scalars(
         select(OptionContract).where(

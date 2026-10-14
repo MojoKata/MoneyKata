@@ -41,7 +41,12 @@
    for that class; Settings shows the last error, and a failure lasting past the alert
    threshold raises an alert (S12.11). Intraday quotes are not fetched.
 5. **Option marks**: the day's close from the source that serves options, else manual or
-   intrinsic value (S3.7). A close older than the last trading day is marked stale. Greeks
+   intrinsic value (S3.7). A close older than the last trading day is marked stale.
+   Massive is asked for an option by its OCC ticker (`O:MSFT261120P00480000`: underlying,
+   expiry, put or call, and the strike in thousandths). A typed mark is a price on the
+   option's instrument, entered from the open position (**Type a mark**). Intrinsic value is
+   the underlying's latest close past the strike, never below zero. The Open tab labels a
+   mark that is typed or intrinsic. Greeks
    are out of scope ([out of scope](out-of-scope.md)).
 6. **Stored prices** are kept: daily closes for ever.
    Charts read stored prices only, never a price source during a request.

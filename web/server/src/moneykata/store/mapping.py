@@ -114,6 +114,7 @@ def map_all() -> None:
     _versioned(rc.Receipt, receipts.Receipt)
     mapper_registry.map_imperatively(rc.ReceiptLink, receipts.ReceiptLinks)
     mapper_registry.map_imperatively(ed.GiftPerson, people.GiftPersons)
+    mapper_registry.map_imperatively(acc.WashSale, options.WashSale)
     mapper_registry.map_imperatively(tx.TaxBookFiler, taxes.TaxBookFilers)
     mapper_registry.map_imperatively(tx.TaxBookAccount, taxes.TaxBookAccounts)
     _versioned(pj.AssumptionSet, projections.AssumptionSet)

@@ -14,7 +14,7 @@ from decimal import Decimal
 from sqlalchemy import and_, false, func, insert, select
 from sqlalchemy.orm import Session
 
-from .. import clock, valuation
+from .. import clock, options, valuation
 from ..projections import taxtables
 from ..store.entities.accounts import Account, Holding, Instrument, Transaction
 from ..store.entities.assets import Item
@@ -280,6 +280,14 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
             continue
         candidates = for_class(sources, inst.instrumentClass)
         ref = Ref(inst.id, inst.symbol, inst.instrumentClass)
+        if inst.instrumentClass == "option":
+            # An option is fetched by its OCC ticker, and only until it expires.
+            with server.db.read() as s:
+                c = options.contract_of(s, inst.id)
+                under = s.get(Instrument, c.underlyingId) if c else None
+            if c is None or under is None:
+                continue
+            ref = Ref(inst.id, options.occ(under.symbol, c), "option")
         per_share = None
         if not candidates and inst.symbol in METAL_PROXIES:
             # Metal spot from a proxy's closes, divided by the metal each share holds (S4.3).

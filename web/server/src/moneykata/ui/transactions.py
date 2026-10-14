@@ -10,7 +10,7 @@ from pydantic import Field
 from sqlalchemy import and_, false, func, or_, select, type_coerce
 from sqlalchemy.orm import Session
 
-from .. import access, activity, clock, ids
+from .. import access, activity, clock, ids, washes
 from ..errors import FieldError, Problem, refuse
 from ..ledger import types as atypes
 from ..store.entities.accounts import (
@@ -608,6 +608,8 @@ def create_transaction(body: TxnIn, request: Request, c: Caller = Depends(caller
         _set_tags(s, t, c.id, body.tags)
         repo.match_transfer(s, t, a.ownerId)
         s.flush()
+        if inst_id:
+            washes.recompute(s, a.ownerId)
         out = shape(s, c.id, [t], {a.id: level})[0]
     payload = out.model_dump(mode="json")
     headers = {"Location": f"/ui/api/transactions/{t.id}"}
@@ -701,6 +703,8 @@ def change_transaction(
                 detail={"fields": changed, "count": 1},
             )
         s.flush()
+        if t.instrumentId:
+            washes.recompute(s, a.ownerId)
         return shape(s, c.id, [t], {a.id: level})[0]
 
 
@@ -716,6 +720,9 @@ def delete_transaction(
         t, a, _ = _editable(s, c, txn_id, version, confirm)
         repo.unlink_transfer(s, t)
         t.mark_deleted(c.id)
+        if t.instrumentId:
+            s.flush()
+            washes.recompute(s, a.ownerId)
         activity.record(
             s,
             "transaction.deleted",

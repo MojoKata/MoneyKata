@@ -1,0 +1,127 @@
+"""Wash sales (requirements S3.8): a loss sale of a stock or fund with the same instrument bought
+within 30 days either side, in any of the user's accounts (IRAs included) or their spouse's.
+The disallowed loss moves to the replacement's basis, with the sold shares' holding period.
+Worked out again from the trades whenever they change, for the user and their spouse together,
+and stored for the ledger to apply."""
+
+import datetime as dt
+from dataclasses import dataclass
+from decimal import Decimal
+
+from sqlalchemy import delete, false, select
+from sqlalchemy.orm import Session
+
+from . import clock, ids
+from .ledger import types as atypes
+from .store.entities.accounts import Account, Instrument, Lot, Transaction, WashSale
+from .store.entities.users import User
+from .store.repos import ledger as repo
+
+DAYS = 30
+CENT = Decimal("0.01")
+CLASSES = ("equity", "etf", "mutual-fund")
+
+
+def household(s: Session, user_id: str) -> list[str]:
+    """The user and whoever is married to them, either way round."""
+    out = {user_id}
+    u = s.get(User, user_id)
+    if u is not None and u.spouseId:
+        out.add(u.spouseId)
+    out |= set(s.scalars(select(User.id).where(User.spouseId == user_id)))
+    return sorted(out)
+
+
+@dataclass
+class _Buy:
+    txn: Transaction
+    remaining: Decimal
+
+
+def recompute(s: Session, user_id: str) -> int:
+    """The household's wash sales, worked out from its trades and stored whole."""
+    who = household(s, user_id)
+    s.execute(delete(WashSale).where(WashSale.ownerId.in_(who)))
+    accounts = list(
+        s.scalars(select(Account).where(Account.ownerId.in_(who), Account.deleted == false()))
+    )
+    if not accounts:
+        return 0
+    by_id = {a.id: a for a in accounts}
+    classes = {
+        i.id: i.instrumentClass
+        for i in s.scalars(select(Instrument).where(Instrument.instrumentClass.in_(CLASSES)))
+    }
+    buys: dict[str, list[_Buy]] = {}
+    for t in s.scalars(
+        select(Transaction).where(
+            Transaction.accountId.in_(list(by_id)),
+            Transaction.deleted == false(),
+            Transaction.kind.in_(("buy", "reinvest")),
+            Transaction.instrumentId.in_(list(classes)),
+        )
+    ):
+        if t.quantity:
+            buys.setdefault(t.instrumentId, []).append(_Buy(t, abs(t.quantity)))
+    lot_txn = {
+        lot.id: lot.transactionId
+        for lot in s.scalars(select(Lot).where(Lot.accountId.in_(list(by_id))))
+    }
+    losses = []
+    for a in accounts:
+        if atypes.TAX.get(a.type) != "taxable" or not atypes.investing(a.type):
+            continue
+        for d in repo.load(s, a, raw=True).replay().disposals:
+            if d.instrumentId in classes and d.gain is not None and d.gain < 0 and d.saleId:
+                losses.append((a, d))
+    losses.sort(key=lambda x: x[1].soldOn)
+    made = 0
+    now = clock.now()
+    for a, d in losses:
+        own = lot_txn.get(d.lotId) if d.lotId else None
+        left = d.quantity
+        loss = -d.gain
+        for b in sorted(
+            buys.get(d.instrumentId, []), key=lambda b: abs((b.txn.date - d.soldOn).days)
+        ):
+            if left <= 0:
+                break
+            if abs((b.txn.date - d.soldOn).days) > DAYS or b.remaining <= 0:
+                continue
+            if b.txn.id == own or b.txn.id == d.saleId:
+                continue
+            if own is None and b.txn.date == d.acquiredOn and b.txn.accountId == a.id:
+                continue  # the shares that were sold
+            take = min(left, b.remaining)
+            b.remaining -= take
+            left -= take
+            s.add(
+                WashSale(
+                    id=ids.new_id("WashS"),
+                    ownerId=a.ownerId,
+                    saleId=d.saleId,
+                    replacementId=b.txn.id,
+                    quantity=take,
+                    disallowed=(loss * take / d.quantity).quantize(CENT),
+                    heldFrom=b.txn.date - (d.soldOn - d.acquiredOn),
+                    createdAt=now,
+                )
+            )
+            made += 1
+    s.flush()
+    return made
+
+
+def for_users(s: Session, user_ids: list[str], first: dt.date, last: dt.date) -> list[WashSale]:
+    """The wash sales of these users' sales between two days."""
+    return list(
+        s.scalars(
+            select(WashSale)
+            .join(Transaction, Transaction.id == WashSale.saleId)
+            .where(
+                WashSale.ownerId.in_(user_ids),
+                Transaction.date >= first,
+                Transaction.date <= last,
+            )
+        )
+    )

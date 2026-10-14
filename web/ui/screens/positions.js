@@ -10,13 +10,20 @@ import { Amt } from '../components/amount.js';
 import { Chips, Empty, Failed, Loading, Tabs } from '../components/bits.js';
 import { openDialog } from '../components/dialog.js';
 import { Icon } from '../components/icon.js';
-import { OptionTrade, Settle } from '../components/optiontrade.js';
+import { Mark, OptionTrade, Settle } from '../components/optiontrade.js';
 
 const TABS = /** @type {[string, string][]} */ ([
   ['open', 'Open'],
   ['closed', 'Closed'],
+  ['trades', 'Option trades'],
   ['gains', 'Gains'],
 ]);
+const SOURCE = /** @type {Record<string, string>} */ ({
+  manual: 'typed mark',
+  intrinsic: 'intrinsic value',
+  statement: 'statement',
+  trade: 'last trade',
+});
 const KIND = /** @type {[string, string][]} */ ([
   ['all', 'All'],
   ['stocks', 'Stocks and funds'],
@@ -96,6 +103,8 @@ export default function Positions({ tab }) {
       ? html`<${Open} rows=${v.open} reload=${res.reload} />`
       : current === 'closed'
       ? html`<${Closed} rows=${v.closed} />`
+      : current === 'trades'
+      ? html`<${Trades} />`
       : html`<${Gains} />`}
   `;
 }
@@ -149,7 +158,11 @@ function Open({ rows, reload }) {
                   <span
                     class="pill warn">missing</span>
                 `}</td>
-                <td class="num">${r.value ? html`<${Amt} v=${r.value} />` : '—'}</td>
+                <td class="num">${r.value ? html`<${Amt} v=${r.value} />` : '—'}${SOURCE[
+                    r.priceSource
+                  ]
+                  ? html`<div class="small dim">${SOURCE[r.priceSource]}</div>`
+                  : null}</td>
                 <td class="num">${r.unrealized
                   ? html`
                     <${Amt} v=${r.unrealized} signed />
@@ -194,7 +207,11 @@ function Open({ rows, reload }) {
                                                                           }).then((x) =>
                                                                             x && reload()
                                                                           );
-                                                                        }}>Expired, assigned or exercised…</button></div>
+                                                                        }}>Expired, assigned or exercised…</button><button class="btn sm"
+                                        onClick=${(/** @type {Event} */ ev) => {
+                                          ev.stopPropagation();
+                                          openDialog(Mark, { row: r }).then((x) => x && reload());
+                                        }}>Type a mark…</button></div>
                                   `
                                   : null}</div>
                               </td>
@@ -245,7 +262,16 @@ function Closed({ rows }) {
                 <td class="num">${r.cost
                   ? html`<${Amt} v=${r.cost} />`
                   : html`<span class="pill warn">missing</span>`}</td>
-                <td class="num">${r.realized ? html`<${Amt} v=${r.realized} signed />` : '—'}</td>
+                <td class="num">${r.realized
+                  ? html`<${Amt} v=${r.realized} signed />`
+                  : '—'}${Number(
+                    r.washDisallowed,
+                  )
+                  ? html`
+                    <div class="small"><span class="pill warn" title="Wash sale">W</span> <${Amt}
+                        v=${r.washDisallowed} /> disallowed</div>
+                  `
+                  : null}</td>
                 <td class="small">${TERM[r.term]}</td>
               </tr>
             `
@@ -260,6 +286,65 @@ function Closed({ rows }) {
               <td></td>
             </tr>
           </tfoot>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function Trades() {
+  const res = useApi('/positions/option-trades', {}, ['import', 'prices']);
+  const rows = /** @type {any[]} */ (res.data);
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!rows) return html`<${Loading} lines=${4} />`;
+  if (!rows.length) return html`<${Empty}>No option trades yet.</${Empty}>`;
+  return html`
+    <div class="card" style=${{ padding: '4px 8px' }}>
+      <div class="table-wrap">
+        <table class="t">
+          <caption class="sr-only">Option trades</caption>
+          <thead>
+            <tr>
+              <th>Contract</th>
+              <th>Account</th>
+              <th>Opened</th>
+              <th>Closed</th>
+              <th class="num">Premium in</th>
+              <th class="num">Premium out</th>
+              <th class="num">P/L</th>
+              <th class="num" data-help="capital-at-risk">Capital at risk</th>
+              <th class="num">Return</th>
+            </tr>
+          </thead>
+          <tbody>${rows.map((r) =>
+            html`
+              <tr>
+                <td><b>${r.symbol}</b> <span class=${'pill ' +
+                  (r.side === 'short' ? 'warn' : '')}>${r
+                    .side === 'short'
+                  ? 'Short'
+                  : 'Long'}</span> <span class="small dim">×${quantity(r.contracts)}</span></td>
+                <td class="small dim">${r.accountName}</td>
+                <td class="small dim">${date(r.opened)}</td>
+                <td class="small">${r.closed
+                  ? html`<span class="dim">${date(r.closed)}</span> ${r.how}`
+                  : html`<span class="pill">open</span>`}</td>
+                <td class="num">
+                  <${Amt} v=${r.premiumIn} />
+                </td>
+                <td class="num">
+                  <${Amt} v=${r.premiumOut} />
+                </td>
+                <td class="num">${r.pl ? html`<${Amt} v=${r.pl} signed />` : '—'}${r.closed
+                  ? null
+                  : html`<div class="small dim">if closed now</div>`}</td>
+                <td class="num">
+                  <${Amt} v=${r.capitalAtRisk} cents=${false} />
+                </td>
+                <td class="num">${r.returnPct != null ? `${r.returnPct}%` : '—'}</td>
+              </tr>
+            `
+          )}</tbody>
         </table>
       </div>
     </div>

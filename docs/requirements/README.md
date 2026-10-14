@@ -68,7 +68,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | brokerage statements, statements of several accounts, and learning column positions for layouts without sections or a running balance |
 | **G9** | [Bitcoin node integration](gaps.md#g9-bitcoin-node-integration) | the details of each node kind (Esplora, Electrum server, Bitcoin Core watch-only descriptors), xpub gap limits, and testing a node |
 | **G10** | [Statement intervals per account](gaps.md#g10-statement-intervals-per-account) | the interval each account's statements are expected at, how it is set or learned, and the alert threshold that follows |
-| **G11** | [Wash-sale basis carried into holdings](gaps.md#g11-wash-sale-basis-carried-into-holdings) | the replacement lot's adjusted basis and holding period in Holdings and its later sale |
+| **G12** | [Option prices and wash-sale edges](gaps.md#g12-option-prices-and-wash-sale-edges) | an option source tried with a live key, index and weekly tickers, wash sales through shorts, options and assignment, and capital at risk for spreads |
 
 ## Also here
 

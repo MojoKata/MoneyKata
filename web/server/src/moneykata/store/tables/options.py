@@ -1,10 +1,10 @@
 """Option contracts (requirements S3.2): what makes an option instrument one: its underlying,
-call or put, strike, expiry and the shares a contract covers."""
+call or put, strike, expiry and the shares a contract covers; and wash sales (S3.8)."""
 
 from sqlalchemy import CheckConstraint, Column, ForeignKey, Index, Integer, Text, text
 
-from ..types import Day, Dec
-from ._base import record, unique_live
+from ..types import Day, Dec, UtcTimestamp
+from ._base import exception, record, unique_live
 
 OptionContract = record(
     "OptionContract",
@@ -21,3 +21,22 @@ OptionContract = record(
     Index("ix_OptionContract_underlying", "underlyingId", "expiry"),
 )
 unique_live(OptionContract, "instrumentId")
+
+# A wash sale (S3.8): a loss disallowed because the same instrument was bought within 30 days,
+# moved to the replacement's basis with the sold shares' holding period. Worked out from the
+# trades whenever they change, and replaced whole: a cache (schema.md §4.4.5).
+WashSale = exception(
+    "WashSale",
+    "cache: worked out again from the transactions whenever they change (§4.4.5)",
+    Column("ownerId", Text, ForeignKey("User.id", ondelete="CASCADE"), nullable=False),
+    Column("saleId", Text, ForeignKey("Transaction.id", ondelete="CASCADE"), nullable=False),
+    Column("replacementId", Text, ForeignKey("Transaction.id", ondelete="CASCADE"), nullable=False),
+    Column("quantity", Dec, nullable=False),  # replacement shares used
+    Column("disallowed", Dec, nullable=False),
+    Column("heldFrom", Day, nullable=False),  # the replacement's holding period starts here
+    Column("createdAt", UtcTimestamp, nullable=False),
+    prefix="WashS",
+)
+Index("ix_WashSale_owner", WashSale.c.ownerId)
+Index("ix_WashSale_sale", WashSale.c.saleId)
+Index("ix_WashSale_replacement", WashSale.c.replacementId)

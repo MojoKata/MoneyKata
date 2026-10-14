@@ -14,7 +14,15 @@ from sqlalchemy.orm import Session
 from .. import assets, education, gifts, giving, loans
 from ..ledger import types as atypes
 from ..projections import taxtables
-from ..store.entities.accounts import Account, Category, Instrument, Lot, Split, Transaction
+from ..store.entities.accounts import (
+    Account,
+    Category,
+    Instrument,
+    Lot,
+    OptionContract,
+    Split,
+    Transaction,
+)
 from ..store.entities.assets import Item
 from ..store.entities.receipts import ReceiptLink
 from ..store.entities.taxes import EstimatedPayment, TaxBook
@@ -80,6 +88,7 @@ class Wash:
     replacementAccount: str
     replacementQty: Decimal
     adjustedBasis: Decimal | None  # the replacement lot's basis with the loss added
+    review: bool = False  # options on the same underlying: for the preparer to decide
 
 
 def _box(long_term: bool, reported: bool, covered: bool) -> str:
@@ -107,14 +116,15 @@ def _covered(cls: str, acquired: dt.date) -> bool:
 
 
 def form_8949(s: Session, book: TaxBook, spouse_accounts: list[Account] | None = None):
-    """Every sale in the book's taxable accounts in the year, and each sold item, as 8949 rows,
-    with wash sales found across the book's accounts (IRAs included) and the spouse's."""
+    """Every sale in the book's taxable accounts in the year, and each sold item, as 8949 rows.
+    A wash sale's disallowed loss (worked out across the filers' accounts, IRAs included, and a
+    spouse's, S3.8) is the row's W adjustment; options on the same underlying bought or sold
+    within 30 days are flagged for review, not decided."""
     first, last = _span(book.year)
     counted = books.counted(s, book).accounts
     rows: list[Row] = []
-    washes: list[Wash] = []
     insts: dict[str, Instrument] = {}
-    buys = _purchases(s, counted + (spouse_accounts or []), first, last)
+    losses: dict[str, Decimal] = {}
     for a in _taxable(counted):
         if a.type not in ("brokerage", "crypto-exchange", "crypto-wallet"):
             continue
@@ -131,8 +141,8 @@ def form_8949(s: Session, book: TaxBook, spouse_accounts: list[Account] | None =
                 sold=d.soldOn,
                 proceeds=d.proceeds,
                 basis=d.basis,
-                code="",
-                adjustment=ZERO,
+                code="W" if d.adjustment else "",
+                adjustment=d.adjustment,
                 longTerm=d.longTerm,
                 box=_box(d.longTerm, not crypto, _covered(inst.instrumentClass, d.acquiredOn)),
                 account=a.name,
@@ -140,92 +150,102 @@ def form_8949(s: Session, book: TaxBook, spouse_accounts: list[Account] | None =
                 instrumentId=inst.id,
                 quantity=d.quantity,
             )
-            loss = -(row.gain or ZERO)
-            if loss > 0 and inst.instrumentClass in ("equity", "etf", "mutual-fund"):
-                w = _wash(row, d, buys, inst, loss)
-                if w is not None:
-                    row.code, row.adjustment = "W", w.disallowed
-                    washes.append(w)
+            if d.basis is not None and d.saleId and d.proceeds < d.basis:
+                losses[d.saleId] = losses.get(d.saleId, ZERO) + d.basis - d.proceeds
             rows.append(row)
+    washes_ = _stored_washes(s, book, losses)
+    washes_ += _option_reviews(s, rows, counted + (spouse_accounts or []), insts)
     rows += _items(s, counted, first, last)
-    return rows, washes
+    return rows, washes_
+
+
+def _stored_washes(s: Session, book: TaxBook, losses: dict[str, Decimal]) -> list[Wash]:
+    from .. import washes
+
+    first, last = _span(book.year)
+    who = [f.userId for f in books.filers(s, book) if f.acceptedAt is not None]
+    out = []
+    for w in washes.for_users(s, who, first, last):
+        sale = s.get(Transaction, w.saleId)
+        repl = s.get(Transaction, w.replacementId)
+        inst = s.get(Instrument, sale.instrumentId)
+        lot = s.scalars(select(Lot).where(Lot.transactionId == repl.id)).first()
+        basis = None
+        if lot is not None and lot.costBasis is not None and lot.quantity:
+            basis = (lot.costBasis * w.quantity / lot.quantity).quantize(CENT) + w.disallowed
+        out.append(
+            Wash(
+                sale.date,
+                inst.symbol,
+                s.get(Account, sale.accountId).name,
+                losses.get(sale.id, w.disallowed),
+                w.disallowed,
+                repl.date,
+                s.get(Account, repl.accountId).name,
+                w.quantity,
+                basis,
+            )
+        )
+    return out
+
+
+def _option_reviews(s: Session, rows: list[Row], accounts: list[Account], insts) -> list[Wash]:
+    """A loss sale of a stock with an option on it bought within 30 days, or an option's loss
+    with its stock bought: flagged for the preparer (S3.8, S8.3)."""
+    from .. import options as opts
+
+    ids_ = {a.id: a for a in accounts}
+    out = []
+    for r in rows:
+        if r.gain is None or r.gain >= 0 or r.instrumentId is None:
+            continue
+        inst = insts.get(r.instrumentId)
+        if inst is None:
+            continue
+        if inst.instrumentClass == "option":
+            c = opts.contract_of(s, inst.id)
+            targets = [c.underlyingId] if c else []
+            kinds = ("buy", "reinvest")
+        else:
+            targets = [
+                oc.instrumentId
+                for oc in s.scalars(
+                    select(OptionContract).where(OptionContract.underlyingId == inst.id)
+                )
+            ]
+            kinds = ("buy-to-open",)
+        if not targets or not ids_:
+            continue
+        hit = s.scalars(
+            select(Transaction).where(
+                Transaction.accountId.in_(list(ids_)),
+                Transaction.instrumentId.in_(targets),
+                Transaction.kind.in_(kinds),
+                Transaction.deleted == false(),
+                Transaction.date >= r.sold - dt.timedelta(days=WASH_DAYS),
+                Transaction.date <= r.sold + dt.timedelta(days=WASH_DAYS),
+            )
+        ).first()
+        if hit is not None:
+            out.append(
+                Wash(
+                    r.sold,
+                    inst.symbol,
+                    r.account,
+                    -r.gain,
+                    ZERO,
+                    hit.date,
+                    ids_[hit.accountId].name,
+                    abs(hit.quantity or ZERO),
+                    None,
+                    review=True,
+                )
+            )
+    return out
 
 
 def _qty(q: Decimal) -> str:
     return f"{q.normalize():f}"
-
-
-@dataclass
-class Buy:
-    accountName: str
-    date: dt.date
-    quantity: Decimal
-    lot: Lot | None
-    used: Decimal = ZERO  # shares already a replacement for an earlier loss
-
-
-def _purchases(s: Session, accounts: list[Account], first: dt.date, last: dt.date):
-    """Buys within the year and 30 days either side, by instrument."""
-    names = {a.id: a.name for a in accounts}
-    out: dict[str, list[Buy]] = defaultdict(list)
-    if not names:
-        return out
-    lots = {
-        lot.transactionId: lot
-        for lot in s.scalars(select(Lot).where(Lot.accountId.in_(list(names))))
-    }
-    for t in s.scalars(
-        select(Transaction).where(
-            Transaction.accountId.in_(list(names)),
-            Transaction.deleted == false(),
-            Transaction.kind.in_(("buy", "reinvest")),
-            Transaction.date >= first - dt.timedelta(days=WASH_DAYS),
-            Transaction.date <= last + dt.timedelta(days=WASH_DAYS),
-        )
-    ):
-        out[t.instrumentId].append(Buy(names[t.accountId], t.date, t.quantity, lots.get(t.id)))
-    return out
-
-
-def _wash(row: Row, d, buys, inst: Instrument, loss: Decimal) -> Wash | None:
-    """The replacements bought within 30 days of a loss sale, nearest first and each share used
-    once, other than the lot sold (S3.8)."""
-    left = d.quantity
-    disallowed = ZERO
-    first = None
-    for b in sorted(buys.get(inst.id, []), key=lambda b: abs((b.date - d.soldOn).days)):
-        if left <= 0:
-            break
-        if abs((b.date - d.soldOn).days) > WASH_DAYS:
-            break
-        if b.lot is not None and b.lot.id == d.lotId:
-            continue
-        if b.date == d.acquiredOn and b.accountName == row.account and b.quantity == d.quantity:
-            continue  # the lot that was sold
-        take = min(left, b.quantity - b.used)
-        if take <= 0:
-            continue
-        b.used += take
-        left -= take
-        part = (loss * take / d.quantity).quantize(CENT) if d.quantity else loss
-        disallowed += part
-        if first is None:
-            basis = b.lot.costBasis if b.lot is not None else None
-            first = (b, part, basis)
-    if first is None:
-        return None
-    b, part, basis = first
-    return Wash(
-        d.soldOn,
-        inst.symbol,
-        row.account,
-        loss,
-        disallowed,
-        b.date,
-        b.accountName,
-        b.quantity,
-        basis + part if basis is not None else None,
-    )
 
 
 def _items(s: Session, accounts: list[Account], first: dt.date, last: dt.date) -> list[Row]:

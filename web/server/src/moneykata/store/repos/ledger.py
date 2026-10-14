@@ -23,6 +23,7 @@ from ..entities.accounts import (
     Lot,
     LotPick,
     Transaction,
+    WashSale,
 )
 from ..tables import accounts as t
 
@@ -38,6 +39,7 @@ class Ledger:
     snapshots: list[Holding]
     anchors: list[Anchor]
     imports: list[Import]
+    washes: list = field(default_factory=list)  # wash sales touching its trades (S3.8)
 
     def opening(self) -> balances.Opening:
         return balances.opening(self.account, self.transactions, self.anchors)
@@ -48,11 +50,17 @@ class Ledger:
 
     def replay(self) -> lots.Replay:
         return lots.replay(
-            self.account.lotMethod, self.transactions, self.lots, self.picks, self.snapshots
+            self.account.lotMethod,
+            self.transactions,
+            self.lots,
+            self.picks,
+            self.snapshots,
+            self.washes,
         )
 
 
-def load(s: Session, account: Account) -> Ledger:
+def load(s: Session, account: Account, raw: bool = False) -> Ledger:
+    """The account's ledger; raw leaves out the wash sales, for working them out."""
     aid = account.id
     txns = s.scalars(
         select(Transaction)
@@ -81,8 +89,23 @@ def load(s: Session, account: Account) -> Ledger:
         .where(Import.accountId == aid, Import.deleted == false())
         .order_by(Import.createdAt)
     ).all()
+    ids_ = [x.id for x in txns]
+    washes = (
+        s.scalars(
+            select(WashSale).where((WashSale.saleId.in_(ids_)) | (WashSale.replacementId.in_(ids_)))
+        ).all()
+        if ids_ and not raw
+        else []
+    )
     return Ledger(
-        account, list(txns), list(lot_rows), list(picks), list(snaps), list(anchors), list(imports)
+        account,
+        list(txns),
+        list(lot_rows),
+        list(picks),
+        list(snaps),
+        list(anchors),
+        list(imports),
+        list(washes),
     )
 
 
@@ -364,7 +387,22 @@ def apply_import(
             "format": parsed.format,
         },
     )
+    if any(r.instrumentId for r in txns_made(s, imp.id)):
+        from ... import washes
+
+        s.flush()
+        washes.recompute(s, account.ownerId)
     return result
+
+
+def txns_made(s: Session, import_id: str) -> list[Transaction]:
+    return list(
+        s.scalars(
+            select(Transaction).where(
+                Transaction.importId == import_id, Transaction.deleted == false()
+            )
+        )
+    )
 
 
 def _loose_key(day: dt.date, amount: Decimal, payee: str | None) -> tuple:

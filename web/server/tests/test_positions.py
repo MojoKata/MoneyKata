@@ -79,3 +79,28 @@ def test_gains_by_month_account_and_term(alice):
             "total": "50.00",
         }
     ]
+
+
+def test_a_wash_sale_moves_the_loss_into_the_replacement_lot(server, alice):
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    ira = new_account(alice, name="IRA", type="ira")
+    trade(alice, brk["id"], "2025-03-01", "buy", "10", "200", "AAPL")
+    trade(alice, brk["id"], "2026-06-01", "sell", "10", "150", "AAPL")  # a 500 loss, long term
+    trade(alice, ira["id"], "2026-06-20", "buy", "4", "155", "AAPL")
+    v = alice.get("/ui/api/positions").json()
+    sale = next(r for r in v["closed"] if r["symbol"] == "AAPL")
+    assert sale["realized"] == "-300.00", "200 of the 500 loss disallowed: 4 of 10 replaced"
+    held = next(r for r in v["open"] if r["symbol"] == "AAPL")
+    assert held["cost"] == "820.00", "620 paid and the 200 disallowed"
+    lot = held["lots"][0]
+    assert lot["acquiredOn"] == "2025-03-20", "the sold shares' 457 days carried over"
+    assert lot["longTerm"]
+    # Selling the replacement in the IRA undoes nothing; deleting the buy removes the wash.
+    items = alice.get("/ui/api/transactions", params={"account": ira["id"]}).json()["items"]
+    buy = items[0]
+    r = alice.delete(
+        f"/ui/api/transactions/{buy['id']}", headers={"If-Match": f'"{buy["version"]}"'}
+    )
+    assert r.status_code == 204
+    sale = next(r for r in alice.get("/ui/api/positions").json()["closed"] if r["symbol"] == "AAPL")
+    assert sale["realized"] == "-500.00"

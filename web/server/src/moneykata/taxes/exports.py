@@ -9,8 +9,8 @@ from decimal import Decimal
 from .panels import Row, ScheduleD
 
 COVERS = (
-    "Every sale in the tax book's taxable accounts and each physical asset sold, with wash "
-    "sales found across the filers' accounts. Not covered: options (they come later), and "
+    "Every sale and closed option in the tax book's taxable accounts and each physical asset "
+    "sold, with wash sales found across the filers' accounts and a spouse's. Not covered: "
     "anything in accounts left out of the book."
 )
 # TXF's codes for Form 8949, by box (format V042).

@@ -72,7 +72,8 @@ def prices(s: Session, instrument_ids: list[str], day: dt.date | None = None) ->
         ):
             if h.quantity:
                 out[h.instrumentId] = Price(h.marketValue / h.quantity, h.asOf, "statement")
-    missing = [i for i in ids_ if i not in out]
+    # An option's last trade isn't its mark: intrinsic value stands in instead (S3.7).
+    missing = [i for i in ids_ if i not in out and i not in multipliers(s, ids_)]
     if missing:
         for txn in s.scalars(
             select(Transaction)
@@ -117,6 +118,11 @@ def positions(s: Session, ledger, day: dt.date | None = None) -> list[Position]:
         by.setdefault(lot.instrumentId, []).append(lot)
     found = prices(s, list(by), day)
     mult = multipliers(s, list(by))
+    for iid in by:
+        if iid in mult and iid not in found:
+            mark = intrinsic(s, iid, day)
+            if mark is not None:
+                found[iid] = mark
     out = []
     for iid, open_lots in by.items():
         qty = sum((x.quantity for x in open_lots), ZERO)
@@ -127,6 +133,21 @@ def positions(s: Session, ledger, day: dt.date | None = None) -> list[Position]:
         )
         out.append(Position(iid, qty, basis, found.get(iid), mult.get(iid, 1)))
     return out
+
+
+def intrinsic(s: Session, instrument_id: str, day: dt.date | None = None) -> Price | None:
+    """An option's value at the underlying's close, when no close or typed mark is known:
+    what exercising it would be worth, labelled as such (S3.7)."""
+    from . import options
+
+    c = options.contract_of(s, instrument_id)
+    if c is None:
+        return None
+    under = prices(s, [c.underlyingId], day).get(c.underlyingId)
+    if under is None:
+        return None
+    worth = under.price - c.strike if c.right == "call" else c.strike - under.price
+    return Price(max(worth, ZERO), under.asOf, "intrinsic")
 
 
 def multipliers(s: Session, instrument_ids: list[str]) -> dict[str, int]:

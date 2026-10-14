@@ -222,3 +222,15 @@ class OptionContract(Record):
     strike: Decimal
     expiry: dt.date
     multiplier: int = 100
+
+
+@dataclass(kw_only=True, eq=False)
+class WashSale:
+    id: str
+    ownerId: str
+    saleId: str
+    replacementId: str
+    quantity: Decimal
+    disallowed: Decimal
+    heldFrom: dt.date
+    createdAt: dt.datetime

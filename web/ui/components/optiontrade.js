@@ -182,3 +182,40 @@ export function Settle({ close, row }) {
             </${Dialog}>
   `;
 }
+
+/** A typed mark for an option the source doesn't price (S3.7, S4.5). */
+/** @param {{ close: (v?: any) => void, row: any }} p */
+export function Mark({ close, row }) {
+  useDialogGuide('dialog-option-mark');
+  const [f, setF] = useState({ date: new Date().toISOString().slice(0, 10), price: '' });
+  const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
+  const save = useSubmit(async () => {
+    await api.post(`/instruments/${row.instrumentId}/prices`, {
+      date: f.date,
+      price: clean(f.price),
+    });
+    toast(`${row.symbol}: marked`);
+    close(true);
+  });
+  const e = save.error;
+  return html`
+    <${Dialog} title=${`Mark ${row.symbol}`} close=${close} onSubmit=${() =>
+      save.run().catch(() => {})}
+      footer=${html`<button class="btn primary" disabled=${save.busy}>Save</button>`}>
+      <div class="row">
+        <${Field} label="On" id="mark-date" error=${errAt(e, 'date')}>
+          <${Input} type="date" value=${f.date} onInput=${set('date')} />
+          </${Field}>
+          <${Field} label="Mark" id="mark-price" error=${errAt(
+            e,
+            'price',
+          )} hint="A share, as quoted.">
+            <${Input} value=${f.price} onInput=${set('price')} inputmode="decimal" required />
+            </${Field}>
+            </div>
+            <p class="small dim">Used until the price source has a close for it. Without either, an
+        option is marked at its intrinsic value.</p>
+            <${FormError} error=${e} />
+            </${Dialog}>
+  `;
+}

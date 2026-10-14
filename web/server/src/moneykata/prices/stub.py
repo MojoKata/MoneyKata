@@ -35,7 +35,9 @@ def walk(symbol: str, day: dt.date) -> Decimal:
 class Stub(TickerSource):
     name = "stub"
     label = "Dev stub"
-    classes = frozenset({"equity", "etf", "mutual-fund", "bond", "crypto", "metal", "other"})
+    classes = frozenset(
+        {"equity", "etf", "mutual-fund", "bond", "crypto", "metal", "option", "other"}
+    )
     terms = "Dev mode only: made-up prices."
     dev_only = True
 
@@ -47,6 +49,10 @@ class Stub(TickerSource):
         end = min(end, clock.today() - dt.timedelta(days=0 if trading else 1))
         while day <= end:
             if trading or day.weekday() < 5:
-                out.append((day, walk(ref.symbol, day)))
+                price = walk(ref.symbol, day)
+                if ref.instrumentClass == "option":
+                    # Option premiums are a few dollars a share.
+                    price = (price / 60).quantize(Decimal("0.01"))
+                out.append((day, price))
             day += dt.timedelta(days=1)
         return out

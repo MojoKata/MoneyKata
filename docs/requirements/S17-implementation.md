@@ -221,7 +221,7 @@
       4. **Option marks and trades** (S3.7, S3.9, S4.5): marks from a source, typed, or
          intrinsic; per-trade P/L and return on capital at risk; options in Form 8949 and
          flagged for wash-sale review; and the wash-sale basis carried into the replacement
-         lot (G11).
+         lot.
       5. **Bitcoin wallets** (S1.6.1, S1.6.3): addresses and extended public keys, the
          addresses derived from them with a gap limit, and the form that refuses keys and
          seed phrases.

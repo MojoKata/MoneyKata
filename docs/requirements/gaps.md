@@ -52,8 +52,8 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S1.3, S1.11, S12.11.
 
-## G11: Wash-sale basis carried into holdings
+## G12: Option prices and wash-sale edges
 
-**What is missing:** the replacement lot's adjusted basis (and its tacked-on holding period) in Holdings, unrealized gain and the later sale of that lot. Taxes computes the disallowed loss and shows the replacement lot with its adjusted basis; the ledger's lots keep their own cost.
+**What is missing:** an option price source tried against a live Massive key (the Basic plan's limits, its history for expired contracts, and how an adjusted contract after a split is named); index and weekly options' tickers; wash sales across a short sale, a loss on an option itself, and a replacement bought through an option assigned or exercised; and capital at risk for spreads and covered calls, which wait on strategies (S3.5).
 
-**Touches:** S2.2, S3.8, S8.3.
+**Touches:** S3.5, S3.8, S3.9, S4.5.

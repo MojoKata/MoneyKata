@@ -45,6 +45,7 @@ class OpenRow(Model):
     cost: Money | None  # the basis, or for a short position the credit
     averageCost: Quantity | None
     value: Money | None
+    priceSource: str | None  # close, manual, intrinsic, statement, trade
     unrealized: Money | None
     unrealizedPct: float | None
     realized: Money  # all its closes so far
@@ -71,6 +72,7 @@ class ClosedRow(Model):
     proceeds: Money
     cost: Money | None
     realized: Money | None
+    washDisallowed: Money  # a wash sale's loss moved to its replacement (S3.8)
     term: str
 
 
@@ -184,6 +186,7 @@ def gather(s, c: Caller, kind: str = "all"):
                     cost=cost,
                     averageCost=(cost / qty).quantize(Decimal("0.0001")) if cost and qty else None,
                     value=value,
+                    priceSource=p.price.source if p is not None and p.price else None,
                     unrealized=gain,
                     unrealizedPct=round(float(gain / abs(cost) * 100), 2)
                     if gain is not None and cost
@@ -227,7 +230,8 @@ def gather(s, c: Caller, kind: str = "all"):
                     how=_how(t),
                     proceeds=proceeds,
                     cost=cost,
-                    realized=proceeds - cost if cost is not None else None,
+                    realized=(sum((d.gain for d in ds), ZERO) if cost is not None else None),
+                    washDisallowed=sum((d.adjustment for d in ds), ZERO),
                     term=_term([d.longTerm for d in ds]),
                 )
             )
@@ -327,3 +331,110 @@ def gains(request: Request, by: str = "year", year: int | None = None, c: Caller
                 for k, v in sorted(un.items(), key=lambda x: -(x[1][0] + x[1][1]))
             ],
         )
+
+
+class OptionTradeRow(Model):
+    accountId: str
+    accountName: str
+    instrumentId: str
+    symbol: str
+    side: str  # long or short: how it was opened
+    contracts: Quantity  # the most open at once
+    opened: dt.date
+    closed: dt.date | None  # None while any of it is open
+    how: str | None  # sold, bought back, expired, assigned, exercised
+    premiumIn: Money  # credits received, after fees
+    premiumOut: Money  # debits paid, with fees
+    value: Money | None  # what is still open is worth now
+    pl: Money | None  # in less out, plus what is open
+    capitalAtRisk: Money
+    returnPct: float | None
+
+
+OPTION_KINDS = ("buy-to-open", "sell-to-open", "buy-to-close", "sell-to-close")
+ENDS = ("expire", "assign", "exercise")
+
+
+@router.get("/positions/option-trades", response_model=list[OptionTradeRow])
+def option_trades(request: Request, c: Caller = Depends(caller)):
+    """Each option trade (S3.9): from the first contract opened to the last one closed, with the
+    premium in and out, its P/L and its return on the capital at risk. A long option risks its
+    premium; a short one the strike on every contract's shares, cash for a put and the shares
+    for a call."""
+    out: list[OptionTradeRow] = []
+    with server(request).db.read() as s:
+        for a, _ in access.visible_accounts(s, c.id):
+            if not atypes.investing(a.type):
+                continue
+            led = repo.load(s, a)
+            positions = {p.instrumentId: p for p in valuation.positions(s, led)}
+            by_inst: dict[str, list[Transaction]] = defaultdict(list)
+            for t in led.transactions:
+                if t.instrumentId and t.kind in OPTION_KINDS + ENDS and not t.deleted:
+                    by_inst[t.instrumentId].append(t)
+            for iid, txns in by_inst.items():
+                oc = options.contract_of(s, iid)
+                if oc is None:
+                    continue
+                inst = s.get(Instrument, iid)
+                txns.sort(key=lambda t: (t.date, t.createdAt))
+                trade: dict | None = None
+                net = ZERO
+                for t in txns:
+                    qty = abs(t.quantity or ZERO)
+                    if t.kind in ("buy-to-open", "buy-to-close"):
+                        step = qty
+                    elif t.kind in ("sell-to-open", "sell-to-close"):
+                        step = -qty
+                    else:
+                        step = -qty if net > 0 else qty
+                    if trade is None:
+                        trade = {
+                            "opened": t.date,
+                            "side": "short" if step < 0 else "long",
+                            "in": ZERO,
+                            "out": ZERO,
+                            "most": ZERO,
+                        }
+                    if t.amount > 0:
+                        trade["in"] += t.amount
+                    else:
+                        trade["out"] -= t.amount
+                    net += step
+                    trade["most"] = max(trade["most"], abs(net))
+                    if not net:
+                        out.append(_trade_row(a, inst, oc, trade, t, None))
+                        trade = None
+                if trade is not None:
+                    p = positions.get(iid)
+                    out.append(_trade_row(a, inst, oc, trade, None, p.value if p else None))
+    open_rows = [r for r in out if r.closed is None]
+    done = sorted((r for r in out if r.closed is not None), key=lambda r: r.closed, reverse=True)
+    return sorted(open_rows, key=lambda r: r.opened, reverse=True) + done
+
+
+def _trade_row(a, inst, oc, trade, last: Transaction | None, value) -> OptionTradeRow:
+    pl = trade["in"] - trade["out"]
+    if last is None:
+        pl = pl + value if value is not None else None
+    if trade["side"] == "long":
+        risk = trade["out"]
+    else:
+        risk = (oc.strike * oc.multiplier * trade["most"]).quantize(Decimal("0.01"))
+    return OptionTradeRow(
+        accountId=a.id,
+        accountName=a.name,
+        instrumentId=inst.id,
+        symbol=inst.symbol,
+        side=trade["side"],
+        contracts=trade["most"],
+        opened=trade["opened"],
+        closed=last.date if last else None,
+        how=_how(last) if last else None,
+        premiumIn=trade["in"],
+        premiumOut=trade["out"],
+        value=value if last is None else None,
+        pl=pl,
+        capitalAtRisk=risk,
+        returnPct=round(float(pl / risk * 100), 2) if pl is not None and risk else None,
+    )

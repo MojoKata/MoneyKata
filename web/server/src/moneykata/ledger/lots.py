@@ -39,10 +39,13 @@ class Disposal:
     proceeds: Decimal
     basis: Decimal | None
     method: str
+    adjustment: Decimal = ZERO  # a wash sale's disallowed loss, added back (code W, S3.8)
 
     @property
     def gain(self) -> Decimal | None:
-        return None if self.basis is None else (self.proceeds - self.basis).quantize(CENT)
+        if self.basis is None:
+            return None
+        return (self.proceeds - self.basis + self.adjustment).quantize(CENT)
 
     @property
     def longTerm(self) -> bool:
@@ -104,7 +107,12 @@ def _take(lot: OpenLot, qty: Decimal) -> Decimal | None:
 
 
 def replay(
-    account_method: str, transactions: list, lots: list, picks: list, snapshots: list
+    account_method: str,
+    transactions: list,
+    lots: list,
+    picks: list,
+    snapshots: list,
+    washes: list = (),
 ) -> Replay:
     """Transactions, lots (acquisitions), specific-identification picks and holding
     snapshots of one account, as entities; returns the open lots, disposals and problems."""
@@ -126,6 +134,9 @@ def replay(
         events.append((h.asOf, 1, h.createdAt, h.id, "snapshot", h))  # at the day's end
     events.sort(key=lambda e: e[:4])
 
+    replaced: dict[str, list] = {}
+    for w in washes:
+        replaced.setdefault(w.replacementId, []).append(w)
     out = Replay()
     for _, _, _, _, what, obj in events:
         if what == "lot":
@@ -141,11 +152,63 @@ def replay(
         elif what == "snapshot":
             _snapshot(out, obj)
         else:
+            before = len(out.open)
             _transaction(
                 out, obj, account_method, lots_by_txn.get(obj.id, []), picks_by_sale.get(obj.id, [])
             )
+            if obj.id in replaced:
+                _replacement(out, before, replaced[obj.id])
+    _disallow(out, washes)
     out.open = [lot for lot in out.open if lot.quantity]
     return out
+
+
+def _replacement(out: Replay, before: int, rows: list) -> None:
+    """A wash sale's replacement (S3.8): the shares bought take the disallowed loss into their
+    basis and the sold shares' holding period, split from the rest of the lot."""
+    made = out.open[before:]
+    for row in rows:
+        left = row.quantity
+        for lot in made:
+            if left <= 0 or lot.quantity <= 0:
+                continue
+            take = min(left, lot.quantity)
+            left -= take
+            share = None
+            if lot.basis is not None:
+                share = (lot.basis * take / lot.quantity).quantize(CENT)
+                lot.basis -= share
+            lot.quantity -= take
+            out.open.append(
+                OpenLot(
+                    lot.lotId,
+                    lot.instrumentId,
+                    row.heldFrom,
+                    take,
+                    None if share is None else share + row.disallowed,
+                    lot.standIn,
+                )
+            )
+            break
+
+
+def _disallow(out: Replay, washes) -> None:
+    """A loss sale's disallowed part, spread over its losing disposals."""
+    by_sale: dict[str, Decimal] = {}
+    for w in washes:
+        by_sale[w.saleId] = by_sale.get(w.saleId, ZERO) + w.disallowed
+    for sale, amount in by_sale.items():
+        losing = [d for d in out.disposals if d.saleId == sale and (d.gain or ZERO) < 0]
+        total = -sum((d.gain for d in losing), ZERO)
+        given = ZERO
+        for i, d in enumerate(losing):
+            part = (
+                amount - given
+                if i == len(losing) - 1
+                else (amount * -d.gain / total).quantize(CENT)
+            )
+            d.adjustment = part
+            given += part
 
 
 def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -> None:

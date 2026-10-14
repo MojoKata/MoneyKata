@@ -369,6 +369,7 @@
  * @property {string} proceeds
  * @property {(string | null)} cost
  * @property {(string | null)} realized
+ * @property {string} washDisallowed
  * @property {string} term
  */
 
@@ -1412,6 +1413,7 @@
  * @property {(string | null)} cost
  * @property {(string | null)} averageCost
  * @property {(string | null)} value
+ * @property {(string | null)} priceSource
  * @property {(string | null)} unrealized
  * @property {(number | null)} unrealizedPct
  * @property {string} realized
@@ -1435,6 +1437,25 @@
  * @property {(number | string)} premium
  * @property {(number | string)} [fees]
  * @property {number} [multiplier]
+ */
+
+/**
+ * @typedef {Object} OptionTradeRow
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {string} instrumentId
+ * @property {string} symbol
+ * @property {string} side
+ * @property {string} contracts
+ * @property {string} opened
+ * @property {(string | null)} closed
+ * @property {(string | null)} how
+ * @property {string} premiumIn
+ * @property {string} premiumOut
+ * @property {(string | null)} value
+ * @property {(string | null)} pl
+ * @property {string} capitalAtRisk
+ * @property {(number | null)} returnPct
  */
 
 /**
@@ -2655,6 +2676,7 @@
  * @property {string} replacementAccount
  * @property {string} replacementQty
  * @property {(string | null)} adjustedBasis
+ * @property {boolean} review
  */
 
 /**

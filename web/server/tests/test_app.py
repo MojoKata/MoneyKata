@@ -198,6 +198,7 @@ def test_every_screen_and_tab_has_its_guide(page):
         "/ui/portfolios",
         "/ui/positions/open",
         "/ui/positions/closed",
+        "/ui/positions/trades",
         "/ui/positions/gains",
         "/ui/activity",
         "/ui/alerts",
@@ -412,6 +413,11 @@ def test_every_dialog_has_its_guide(page):
     page.wait_for_selector(".dialog")
     wait_guide(page, "dialog-option-settle")
     check_guide(page, ".dialog", "an option's end")
+    close_dialog(page)
+    page.get_by_role("button", name="Type a mark…").click()
+    page.wait_for_selector(".dialog")
+    wait_guide(page, "dialog-option-mark")
+    check_guide(page, ".dialog", "an option's mark")
     close_dialog(page)
     # A 529's form, with a person added in it.
     open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")

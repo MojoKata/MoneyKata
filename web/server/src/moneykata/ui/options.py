@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Request
 
-from .. import access, activity, ids, options
+from .. import access, activity, ids, options, washes
 from ..errors import FieldError, Problem, refuse
 from ..ledger import types as atypes
 from ..store.entities.accounts import Instrument, Transaction
@@ -125,6 +125,7 @@ def settle(
         if inst is None or inst.deleted:
             raise refuse("instrumentId", "not-found", "No such option.")
         made = options.settle(s, c.id, a, inst, body.how, body.date, body.contracts)
+        washes.recompute(s, a.ownerId)
         activity.record(
             s,
             "option.settled",

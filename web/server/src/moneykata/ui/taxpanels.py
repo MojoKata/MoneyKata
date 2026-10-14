@@ -38,6 +38,7 @@ class WashOut(Model):
     replacementAccount: str
     replacementQty: Quantity
     adjustedBasis: Money | None
+    review: bool
 
 
 class BoxTotal(Model):

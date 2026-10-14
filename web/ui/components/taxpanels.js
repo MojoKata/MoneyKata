@@ -210,8 +210,15 @@ function Gains({ p }) {
               date(w.replacedOn)
             } in ${w.replacementAccount} (${quantity(w.replacementQty)} shares)${
               w.adjustedBasis ? html`, basis now <${Amt} v=${w.adjustedBasis} />` : ''
-            }</div></div><span class="small"><${Amt} v=${w.disallowed} /> of <${Amt}
-                v=${w.loss} /></span></div>`
+            }</div></div>${
+              w.review
+                ? html`<span class="pill warn" title="An option on the same underlying">review</span>`
+                : html`
+                  <span
+                    class="small"><span class="pill warn">W</span> <${Amt} v=${w
+                      .disallowed} /> of <${Amt} v=${w.loss} /></span>
+                `
+            }</div>`
           )
           : html`<p class="small dim">None found: no loss sale was replaced within 30 days.</p>`}
           <p class="small dim">Same instrument, in any of the filers' accounts (IRAs included)

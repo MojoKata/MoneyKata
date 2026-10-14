@@ -2208,6 +2208,14 @@
           "term": {
             "title": "Term",
             "type": "string"
+          },
+          "washDisallowed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Washdisallowed",
+            "type": "string"
           }
         },
         "required": [
@@ -2225,6 +2233,7 @@
           "proceeds",
           "cost",
           "realized",
+          "washDisallowed",
           "term"
         ],
         "title": "ClosedRow",
@@ -8724,6 +8733,17 @@
             ],
             "title": "Name"
           },
+          "priceSource": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricesource"
+          },
           "quantity": {
             "examples": [
               "12.5"
@@ -8806,6 +8826,7 @@
           "cost",
           "averageCost",
           "value",
+          "priceSource",
           "unrealized",
           "unrealizedPct",
           "realized",
@@ -8923,6 +8944,151 @@
           "premium"
         ],
         "title": "OptionTrade",
+        "type": "object"
+      },
+      "OptionTradeRow": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "capitalAtRisk": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Capitalatrisk",
+            "type": "string"
+          },
+          "closed": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed"
+          },
+          "contracts": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Contracts",
+            "type": "string"
+          },
+          "how": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "How"
+          },
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "opened": {
+            "format": "date",
+            "title": "Opened",
+            "type": "string"
+          },
+          "pl": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pl"
+          },
+          "premiumIn": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Premiumin",
+            "type": "string"
+          },
+          "premiumOut": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Premiumout",
+            "type": "string"
+          },
+          "returnPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Returnpct"
+          },
+          "side": {
+            "title": "Side",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "accountId",
+          "accountName",
+          "instrumentId",
+          "symbol",
+          "side",
+          "contracts",
+          "opened",
+          "closed",
+          "how",
+          "premiumIn",
+          "premiumOut",
+          "value",
+          "pl",
+          "capitalAtRisk",
+          "returnPct"
+        ],
+        "title": "OptionTradeRow",
         "type": "object"
       },
       "OrganisationIn": {
@@ -16176,6 +16342,10 @@
             "title": "Replacementqty",
             "type": "string"
           },
+          "review": {
+            "title": "Review",
+            "type": "boolean"
+          },
           "sold": {
             "format": "date",
             "title": "Sold",
@@ -16195,7 +16365,8 @@
           "replacedOn",
           "replacementAccount",
           "replacementQty",
-          "adjustedBasis"
+          "adjustedBasis",
+          "review"
         ],
         "title": "WashOut",
         "type": "object"
@@ -23049,6 +23220,32 @@
           }
         },
         "summary": "Gains",
+        "tags": [
+          "positions"
+        ]
+      }
+    },
+    "/ui/api/positions/option-trades": {
+      "get": {
+        "description": "Each option trade (S3.9): from the first contract opened to the last one closed, with the\npremium in and out, its P/L and its return on the capital at risk. A long option risks its\npremium; a short one the strike on every contract's shares, cash for a put and the shares\nfor a call.",
+        "operationId": "option_trades_ui_api_positions_option_trades_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OptionTradeRow"
+                  },
+                  "title": "Response Option Trades Ui Api Positions Option Trades Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Option Trades",
         "tags": [
           "positions"
         ]
