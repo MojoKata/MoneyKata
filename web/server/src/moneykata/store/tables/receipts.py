@@ -58,7 +58,8 @@ Receipt = record(
 
 # What a receipt is attached to (S9.3): transactions, an account (a statement kept as a
 # receipt, S1.3.3), a physical-asset item's photos and documents (S1.10.1), a 529's qualified
-# expenses (S1.8.3), gifts (S7.8.1), and other kinds as they are built.
+# expenses (S1.8.3), gifts (S7.8.1), donations' acknowledgements (S8.9), and other kinds as
+# they are built.
 ReceiptLinks = pairs(
     "ReceiptLinks",
     Column("receiptId", Text, ForeignKey("Receipt.id", ondelete="CASCADE"), nullable=False),
@@ -66,7 +67,10 @@ ReceiptLinks = pairs(
     Column("itemId", Text, nullable=False),
     Column("linkedById", Text, ForeignKey("User.id")),
     PrimaryKeyConstraint("receiptId", "kind", "itemId"),
-    CheckConstraint("kind IN ('transaction', 'account', 'item', 'expense', 'gift')", name="kind"),
+    CheckConstraint(
+        "kind IN ('transaction', 'account', 'item', 'expense', 'gift', 'donation')",
+        name="kind",
+    ),
     Index("ix_ReceiptLinks_item", "kind", "itemId"),
 )
 

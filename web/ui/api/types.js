@@ -345,6 +345,55 @@
  */
 
 /**
+ * @typedef {Object} DonationChange
+ * @property {(boolean | null)} [acknowledged]
+ * @property {(boolean | null)} [granted]
+ * @property {(string | null)} [notes]
+ * @property {(string | null)} [organisationId]
+ */
+
+/**
+ * @typedef {Object} DonationIn
+ * @property {string} date
+ * @property {string} kind
+ * @property {(string | null)} [organisationId]
+ * @property {((number | string) | null)} [amount]
+ * @property {(string | null)} [description]
+ * @property {(string | null)} [transactionId]
+ * @property {(string | null)} [fromAccountId]
+ * @property {(string | null)} [dafAccountId]
+ * @property {(string | null)} [lotId]
+ * @property {((number | string) | null)} [quantity]
+ * @property {boolean} [acknowledged]
+ * @property {(boolean | null)} [granted]
+ * @property {(string | null)} [notes]
+ */
+
+/**
+ * @typedef {Object} DonationOut
+ * @property {(string | null)} id
+ * @property {string} date
+ * @property {string} kind
+ * @property {string} kindLabel
+ * @property {string} name
+ * @property {(string | null)} organisationId
+ * @property {string} amount
+ * @property {boolean} deductible
+ * @property {boolean} counted
+ * @property {boolean} needsAck
+ * @property {boolean} acknowledged
+ * @property {(string | null)} transactionId
+ * @property {(string | null)} description
+ * @property {(string | null)} symbol
+ * @property {(string | null)} quantity
+ * @property {(string | null)} basis
+ * @property {(boolean | null)} longTerm
+ * @property {(boolean | null)} granted
+ * @property {(string | null)} notes
+ * @property {boolean} canWrite
+ */
+
+/**
  * @typedef {Object} Done
  * @property {number} changed
  */
@@ -432,6 +481,16 @@
  */
 
 /**
+ * @typedef {Object} FundOut
+ * @property {string} accountId
+ * @property {string} name
+ * @property {(string | null)} institution
+ * @property {string} balance
+ * @property {string} contributed
+ * @property {string} granted
+ */
+
+/**
  * @typedef {Object} GiftIn
  * @property {Array<string>} people
  * @property {(string | null)} [occasion]
@@ -477,6 +536,26 @@
  * @property {string} exclusion
  * @property {boolean} over
  * @property {(number | null)} fromElection
+ */
+
+/**
+ * @typedef {Object} GivingView
+ * @property {number} year
+ * @property {(moneykata__ui__giving__PlanOut | null)} plan
+ * @property {string} income
+ * @property {string} target
+ * @property {string} given
+ * @property {string} pace
+ * @property {string} pledged
+ * @property {string} projected
+ * @property {Array<string>} byMonth
+ * @property {Array<Share>} byOrganisation
+ * @property {Array<Share>} byCause
+ * @property {Array<Share>} byKind
+ * @property {Array<YearPct>} history
+ * @property {Array<FundOut>} funds
+ * @property {number} missingAcks
+ * @property {Array<string>} notes
  */
 
 /**
@@ -935,7 +1014,7 @@
  * @property {string} [lotMethod]
  * @property {((number | string) | null)} [openingBalance]
  * @property {(string | null)} [openingDate]
- * @property {boolean} [countInNetWorth]
+ * @property {(boolean | null)} [countInNetWorth]
  */
 
 /**
@@ -1044,6 +1123,32 @@
  * @property {string} id
  * @property {string} label
  * @property {(string | null)} next
+ */
+
+/**
+ * @typedef {Object} OrganisationIn
+ * @property {string} name
+ * @property {(string | null)} [ein]
+ * @property {boolean} [deductible]
+ * @property {Array<string>} [causes]
+ * @property {((number | string) | null)} [pledge]
+ * @property {(string | null)} [pledgeEvery]
+ * @property {(string | null)} [notes]
+ */
+
+/**
+ * @typedef {Object} OrganisationOut
+ * @property {string} name
+ * @property {(string | null)} [ein]
+ * @property {boolean} [deductible]
+ * @property {Array<string>} [causes]
+ * @property {(string | null)} [pledge]
+ * @property {(string | null)} [pledgeEvery]
+ * @property {(string | null)} [notes]
+ * @property {string} id
+ * @property {string} given
+ * @property {boolean} canWrite
+ * @property {number} version
  */
 
 /**
@@ -1211,18 +1316,6 @@
  * @property {(number | string)} amount
  * @property {string} [cadence]
  * @property {boolean} [rollover]
- */
-
-/**
- * @typedef {Object} PlanOut
- * @property {(string | null)} planState
- * @property {(string | null)} planName
- * @property {(BeneficiaryOut | null)} beneficiary
- * @property {(string | null)} openedOn
- * @property {(string | null)} stateDeduction
- * @property {string} contributedThisYear
- * @property {RolloverOut} rollover
- * @property {boolean} canWrite
  */
 
 /**
@@ -1657,6 +1750,12 @@
  * @property {string} password
  * @property {string} email
  * @property {(string | null)} [displayName]
+ */
+
+/**
+ * @typedef {Object} Share
+ * @property {string} label
+ * @property {string} amount
  */
 
 /**
@@ -2144,6 +2243,12 @@
  */
 
 /**
+ * @typedef {Object} YearPct
+ * @property {number} year
+ * @property {(number | null)} percent
+ */
+
+/**
  * @typedef {Object} Zones
  * @property {string} server
  * @property {Array<string>} zones
@@ -2162,6 +2267,44 @@
  * @property {(BeneficiaryRef | null)} [beneficiary]
  * @property {(string | null)} [openedOn]
  * @property {((number | string) | null)} [stateDeduction]
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__education__PlanOut
+ * @property {(string | null)} planState
+ * @property {(string | null)} planName
+ * @property {(BeneficiaryOut | null)} beneficiary
+ * @property {(string | null)} openedOn
+ * @property {(string | null)} stateDeduction
+ * @property {string} contributedThisYear
+ * @property {RolloverOut} rollover
+ * @property {boolean} canWrite
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__giving__PlanIn
+ * @property {number} year
+ * @property {string} [targetKind]
+ * @property {((number | string) | null)} [percent]
+ * @property {((number | string) | null)} [amount]
+ * @property {string} [incomeBasis]
+ * @property {((number | string) | null)} [income]
+ * @property {string} [dafCounted]
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__giving__PlanOut
+ * @property {string} id
+ * @property {number} year
+ * @property {string} targetKind
+ * @property {(string | null)} percent
+ * @property {(string | null)} amount
+ * @property {string} incomeBasis
+ * @property {(string | null)} income
+ * @property {string} dafCounted
+ * @property {string} level
+ * @property {string} ownerName
+ * @property {number} version
  */
 
 /**

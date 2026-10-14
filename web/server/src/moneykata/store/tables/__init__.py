@@ -8,6 +8,7 @@ from . import (  # noqa: F401 - each adds its tables
     budgets,
     core,
     education,
+    giving,
     loans,
     people,
     prices,

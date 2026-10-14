@@ -25,6 +25,7 @@ import t20 from './real-estate.js';
 import t21 from './vehicle.js';
 import t22 from './other-asset.js';
 import t23 from './529.js';
+import t24 from './daf.js';
 
 /**
  * @typedef {Object} AccountType
@@ -67,6 +68,7 @@ export const TYPES = [
   t21,
   t22,
   t23,
+  t24,
 ];
 
 /** @type {Record<string, AccountType>} */

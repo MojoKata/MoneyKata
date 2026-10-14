@@ -1889,6 +1889,408 @@
         "title": "DocumentIn",
         "type": "object"
       },
+      "DonationChange": {
+        "additionalProperties": false,
+        "properties": {
+          "acknowledged": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged"
+          },
+          "granted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Granted"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "organisationId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organisationid"
+          }
+        },
+        "title": "DonationChange",
+        "type": "object"
+      },
+      "DonationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "acknowledged": {
+            "default": false,
+            "title": "Acknowledged",
+            "type": "boolean"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "dafAccountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dafaccountid"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "fromAccountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fromaccountid"
+          },
+          "granted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Granted"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "lotId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lotid"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "organisationId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organisationid"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "transactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
+          }
+        },
+        "required": [
+          "date",
+          "kind"
+        ],
+        "title": "DonationIn",
+        "type": "object"
+      },
+      "DonationOut": {
+        "additionalProperties": false,
+        "properties": {
+          "acknowledged": {
+            "title": "Acknowledged",
+            "type": "boolean"
+          },
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "counted": {
+            "title": "Counted",
+            "type": "boolean"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "deductible": {
+            "title": "Deductible",
+            "type": "boolean"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "granted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Granted"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "kindLabel": {
+            "title": "Kindlabel",
+            "type": "string"
+          },
+          "longTerm": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longterm"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "needsAck": {
+            "title": "Needsack",
+            "type": "boolean"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "organisationId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organisationid"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "transactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "kind",
+          "kindLabel",
+          "name",
+          "organisationId",
+          "amount",
+          "deductible",
+          "counted",
+          "needsAck",
+          "acknowledged",
+          "transactionId",
+          "description",
+          "symbol",
+          "quantity",
+          "basis",
+          "longTerm",
+          "granted",
+          "notes",
+          "canWrite"
+        ],
+        "title": "DonationOut",
+        "type": "object"
+      },
       "Done": {
         "additionalProperties": false,
         "properties": {
@@ -2323,6 +2725,64 @@
         "title": "Following",
         "type": "object"
       },
+      "FundOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "balance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "contributed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Contributed",
+            "type": "string"
+          },
+          "granted": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Granted",
+            "type": "string"
+          },
+          "institution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "name",
+          "institution",
+          "balance",
+          "contributed",
+          "granted"
+        ],
+        "title": "FundOut",
+        "type": "object"
+      },
       "GiftIn": {
         "additionalProperties": false,
         "properties": {
@@ -2658,6 +3118,150 @@
           "fromElection"
         ],
         "title": "GiftYearOut",
+        "type": "object"
+      },
+      "GivingView": {
+        "additionalProperties": false,
+        "properties": {
+          "byCause": {
+            "items": {
+              "$ref": "#/components/schemas/Share"
+            },
+            "title": "Bycause",
+            "type": "array"
+          },
+          "byKind": {
+            "items": {
+              "$ref": "#/components/schemas/Share"
+            },
+            "title": "Bykind",
+            "type": "array"
+          },
+          "byMonth": {
+            "items": {
+              "examples": [
+                "1234.50"
+              ],
+              "format": "money",
+              "type": "string"
+            },
+            "title": "Bymonth",
+            "type": "array"
+          },
+          "byOrganisation": {
+            "items": {
+              "$ref": "#/components/schemas/Share"
+            },
+            "title": "Byorganisation",
+            "type": "array"
+          },
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/FundOut"
+            },
+            "title": "Funds",
+            "type": "array"
+          },
+          "given": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Given",
+            "type": "string"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/YearPct"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "income": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Income",
+            "type": "string"
+          },
+          "missingAcks": {
+            "title": "Missingacks",
+            "type": "integer"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "pace": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Pace",
+            "type": "string"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/moneykata__ui__giving__PlanOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pledged": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Pledged",
+            "type": "string"
+          },
+          "projected": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Projected",
+            "type": "string"
+          },
+          "target": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Target",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "plan",
+          "income",
+          "target",
+          "given",
+          "pace",
+          "pledged",
+          "projected",
+          "byMonth",
+          "byOrganisation",
+          "byCause",
+          "byKind",
+          "history",
+          "funds",
+          "missingAcks",
+          "notes"
+        ],
+        "title": "GivingView",
         "type": "object"
       },
       "GoalView": {
@@ -5547,9 +6151,15 @@
         "additionalProperties": false,
         "properties": {
           "countInNetWorth": {
-            "default": true,
-            "title": "Countinnetworth",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countinnetworth"
           },
           "institution": {
             "anyOf": [
@@ -6207,6 +6817,186 @@
           "next"
         ],
         "title": "OccasionOut",
+        "type": "object"
+      },
+      "OrganisationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "causes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Causes",
+            "type": "array"
+          },
+          "deductible": {
+            "default": true,
+            "title": "Deductible",
+            "type": "boolean"
+          },
+          "ein": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ein"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "pledge": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pledge"
+          },
+          "pledgeEvery": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pledgeevery"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "OrganisationIn",
+        "type": "object"
+      },
+      "OrganisationOut": {
+        "additionalProperties": false,
+        "properties": {
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "causes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Causes",
+            "type": "array"
+          },
+          "deductible": {
+            "default": true,
+            "title": "Deductible",
+            "type": "boolean"
+          },
+          "ein": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ein"
+          },
+          "given": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Given",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "pledge": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pledge"
+          },
+          "pledgeEvery": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pledgeevery"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "given",
+          "canWrite",
+          "version"
+        ],
+        "title": "OrganisationOut",
         "type": "object"
       },
       "OutcomeOut": {
@@ -7281,97 +8071,6 @@
           "amount"
         ],
         "title": "PlanLine",
-        "type": "object"
-      },
-      "PlanOut": {
-        "additionalProperties": false,
-        "properties": {
-          "beneficiary": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/BeneficiaryOut"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "canWrite": {
-            "title": "Canwrite",
-            "type": "boolean"
-          },
-          "contributedThisYear": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Contributedthisyear",
-            "type": "string"
-          },
-          "openedOn": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Openedon"
-          },
-          "planName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Planname"
-          },
-          "planState": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Planstate"
-          },
-          "rollover": {
-            "$ref": "#/components/schemas/RolloverOut"
-          },
-          "stateDeduction": {
-            "anyOf": [
-              {
-                "examples": [
-                  "1234.50"
-                ],
-                "format": "money",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Statededuction"
-          }
-        },
-        "required": [
-          "planState",
-          "planName",
-          "beneficiary",
-          "openedOn",
-          "stateDeduction",
-          "contributedThisYear",
-          "rollover",
-          "canWrite"
-        ],
-        "title": "PlanOut",
         "type": "object"
       },
       "PlanView": {
@@ -9803,6 +10502,29 @@
           "email"
         ],
         "title": "Setup",
+        "type": "object"
+      },
+      "Share": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "amount"
+        ],
+        "title": "Share",
         "type": "object"
       },
       "ShareSave": {
@@ -12783,6 +13505,32 @@
         "title": "WithdrawalsView",
         "type": "object"
       },
+      "YearPct": {
+        "additionalProperties": false,
+        "properties": {
+          "percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "percent"
+        ],
+        "title": "YearPct",
+        "type": "object"
+      },
       "Zones": {
         "additionalProperties": false,
         "properties": {
@@ -12901,6 +13649,293 @@
           }
         },
         "title": "PlanIn",
+        "type": "object"
+      },
+      "moneykata__ui__education__PlanOut": {
+        "additionalProperties": false,
+        "properties": {
+          "beneficiary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BeneficiaryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "contributedThisYear": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Contributedthisyear",
+            "type": "string"
+          },
+          "openedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openedon"
+          },
+          "planName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planname"
+          },
+          "planState": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planstate"
+          },
+          "rollover": {
+            "$ref": "#/components/schemas/RolloverOut"
+          },
+          "stateDeduction": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statededuction"
+          }
+        },
+        "required": [
+          "planState",
+          "planName",
+          "beneficiary",
+          "openedOn",
+          "stateDeduction",
+          "contributedThisYear",
+          "rollover",
+          "canWrite"
+        ],
+        "title": "PlanOut",
+        "type": "object"
+      },
+      "moneykata__ui__giving__PlanIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "dafCounted": {
+            "default": "funded",
+            "title": "Dafcounted",
+            "type": "string"
+          },
+          "income": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Income"
+          },
+          "incomeBasis": {
+            "default": "take-home",
+            "title": "Incomebasis",
+            "type": "string"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "10",
+            "title": "Percent"
+          },
+          "targetKind": {
+            "default": "percent",
+            "title": "Targetkind",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year"
+        ],
+        "title": "PlanIn",
+        "type": "object"
+      },
+      "moneykata__ui__giving__PlanOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "dafCounted": {
+            "title": "Dafcounted",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "income": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Income"
+          },
+          "incomeBasis": {
+            "title": "Incomebasis",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percent"
+          },
+          "targetKind": {
+            "title": "Targetkind",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "year",
+          "targetKind",
+          "percent",
+          "amount",
+          "incomeBasis",
+          "income",
+          "dafCounted",
+          "level",
+          "ownerName",
+          "version"
+        ],
+        "title": "PlanOut",
         "type": "object"
       },
       "moneykata__ui__loans__PlanIn": {
@@ -14610,7 +15645,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanOut"
+                  "$ref": "#/components/schemas/moneykata__ui__education__PlanOut"
                 }
               }
             },
@@ -14660,7 +15695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlanOut"
+                  "$ref": "#/components/schemas/moneykata__ui__education__PlanOut"
                 }
               }
             },
@@ -16343,6 +17378,477 @@
         "summary": "Attach Receipt",
         "tags": [
           "gifts"
+        ]
+      }
+    },
+    "/ui/api/giving": {
+      "get": {
+        "operationId": "get_giving_ui_api_giving_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GivingView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Giving",
+        "tags": [
+          "giving"
+        ]
+      }
+    },
+    "/ui/api/giving/donations": {
+      "get": {
+        "operationId": "list_donations_ui_api_giving_donations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DonationOut"
+                  },
+                  "title": "Response List Donations Ui Api Giving Donations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Donations",
+        "tags": [
+          "giving"
+        ]
+      },
+      "post": {
+        "operationId": "add_donation_ui_api_giving_donations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DonationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Donation",
+        "tags": [
+          "giving"
+        ]
+      }
+    },
+    "/ui/api/giving/donations/{donation_id}": {
+      "delete": {
+        "description": "Deletes the record; the transactions it made stay, to be changed or deleted there.",
+        "operationId": "delete_donation_ui_api_giving_donations__donation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "donation_id",
+            "required": true,
+            "schema": {
+              "title": "Donation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Donation",
+        "tags": [
+          "giving"
+        ]
+      },
+      "patch": {
+        "description": "What changes after the fact: the acknowledgement arriving, a grant paid, notes.",
+        "operationId": "change_donation_ui_api_giving_donations__donation_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "donation_id",
+            "required": true,
+            "schema": {
+              "title": "Donation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DonationChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Donation",
+        "tags": [
+          "giving"
+        ]
+      }
+    },
+    "/ui/api/giving/donations/{donation_id}/acknowledgement": {
+      "post": {
+        "description": "The organisation's written acknowledgement, kept as a receipt: it is then received.",
+        "operationId": "attach_acknowledgement_ui_api_giving_donations__donation_id__acknowledgement_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "donation_id",
+            "required": true,
+            "schema": {
+              "title": "Donation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Attach Acknowledgement",
+        "tags": [
+          "giving"
+        ]
+      }
+    },
+    "/ui/api/giving/organisations": {
+      "get": {
+        "operationId": "list_organisations_ui_api_giving_organisations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OrganisationOut"
+                  },
+                  "title": "Response List Organisations Ui Api Giving Organisations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Organisations",
+        "tags": [
+          "giving"
+        ]
+      },
+      "post": {
+        "operationId": "add_organisation_ui_api_giving_organisations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Organisation",
+        "tags": [
+          "giving"
+        ]
+      }
+    },
+    "/ui/api/giving/organisations/{org_id}": {
+      "delete": {
+        "operationId": "delete_organisation_ui_api_giving_organisations__org_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Organisation",
+        "tags": [
+          "giving"
+        ]
+      },
+      "put": {
+        "operationId": "change_organisation_ui_api_giving_organisations__org_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Organisation",
+        "tags": [
+          "giving"
+        ]
+      }
+    },
+    "/ui/api/giving/plan": {
+      "put": {
+        "operationId": "put_plan_ui_api_giving_plan_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/moneykata__ui__giving__PlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__giving__PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Plan",
+        "tags": [
+          "giving"
         ]
       }
     },
@@ -19907,7 +21413,8 @@
                 "portfolio",
                 "budget",
                 "projection",
-                "person"
+                "person",
+                "giving-plan"
               ],
               "title": "Kind",
               "type": "string"
@@ -19964,7 +21471,8 @@
                 "portfolio",
                 "budget",
                 "projection",
-                "person"
+                "person",
+                "giving-plan"
               ],
               "title": "Kind",
               "type": "string"

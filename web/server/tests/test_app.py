@@ -204,6 +204,10 @@ def test_every_screen_and_tab_has_its_guide(page):
         "/ui/gifts/people",
         "/ui/gifts/gifts",
         "/ui/gifts/spending",
+        "/ui/giving/overview",
+        "/ui/giving/donations",
+        "/ui/giving/organisations",
+        "/ui/giving/fund",
         "/ui/users",
         "/ui/profile",
     ]
@@ -213,6 +217,8 @@ def test_every_screen_and_tab_has_its_guide(page):
     for t in ("mortgage", "auto-loan"):
         for tab in ("overview", "schedule", "payoff", "transactions", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
+    for tab in ("overview", "holdings", "settings"):
+        paths.append(f"/ui/accounts/{ids['daf']}/{tab}")
     for tab in ("overview", "holdings", "contributions", "withdrawals", "goal", "settings"):
         paths.append(f"/ui/accounts/{ids['529']}/{tab}")
     for t in ("precious-metals", "collectables", "real-estate", "vehicle"):
@@ -285,6 +291,8 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/projections", "New projection", "dialog-new-projection"),
         ("/ui/gifts/people", "Add a person", "dialog-person"),
         ("/ui/gifts/gifts", "Add a gift", "dialog-gift"),
+        ("/ui/giving/donations", "Record a donation", "dialog-donation"),
+        ("/ui/giving/organisations", "Add an organisation", "dialog-organisation"),
         ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
         ("/ui/users", "New user", "dialog-new-user"),
         ("/ui/users", "New group", "dialog-group"),
@@ -347,6 +355,28 @@ def test_every_dialog_has_its_guide(page):
     page.get_by_role("row", name=re.compile("Riding lessons")).click()
     wait_guide(page, "dialog-gift")
     check_guide(page, ".dialog", "a planned gift")
+    close_dialog(page)
+    # The giving plan, a donation of shares, a recorded donation and an organisation.
+    visit(page, "/ui/giving/overview")
+    page.get_by_role("link", name="Edit").click()
+    wait_guide(page, "dialog-giving-plan")
+    check_guide(page, ".dialog", "the giving plan")
+    close_dialog(page)
+    open_dialog(page, "/ui/giving/donations", "Record a donation", "dialog-donation")
+    page.select_option(".dialog #f-kind", "securities")
+    page.select_option(".dialog #f-from-account", label="Taxable brokerage")
+    page.wait_for_selector(".dialog #f-lot")
+    check_guide(page, ".dialog", "a donation of shares")
+    close_dialog(page)
+    visit(page, "/ui/giving/donations")
+    page.get_by_role("row", name=re.compile("American Red Cross")).click()
+    wait_guide(page, "dialog-donation")
+    check_guide(page, ".dialog", "a recorded donation")
+    close_dialog(page)
+    visit(page, "/ui/giving/organisations")
+    page.get_by_role("row", name=re.compile("Goodwill")).click()
+    wait_guide(page, "dialog-organisation")
+    check_guide(page, ".dialog", "an organisation")
     close_dialog(page)
     # A 529's form, with a person added in it.
     open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")

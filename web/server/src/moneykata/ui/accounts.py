@@ -76,7 +76,8 @@ class NewAccount(Model):
     lotMethod: str = "fifo"
     openingBalance: Money | None = None
     openingDate: dt.date | None = None
-    countInNetWorth: bool = True
+    # A donor-advised fund counts in no one's net worth unless said (S1.1).
+    countInNetWorth: bool | None = None
 
 
 class AccountChange(Model):
@@ -348,7 +349,9 @@ def create_account(body: NewAccount, request: Request, c: Caller = Depends(calle
             lotMethod=body.lotMethod,
             openingBalance=body.openingBalance,
             openingDate=body.openingDate,
-            countInNetWorth=body.countInNetWorth,
+            countInNetWorth=(
+                body.countInNetWorth if body.countInNetWorth is not None else body.type != "daf"
+            ),
         )
         s.add(a)
         s.flush()

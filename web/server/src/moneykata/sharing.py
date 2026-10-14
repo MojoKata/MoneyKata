@@ -22,6 +22,7 @@ LEVELS = ("none", "read", "write")
 def item(s: Session, kind: str, item_id: str):
     from .store.entities.budgets import Budget
     from .store.entities.education import Person
+    from .store.entities.giving import GivingPlan
     from .store.entities.projections import Projection
 
     cls = {
@@ -30,6 +31,7 @@ def item(s: Session, kind: str, item_id: str):
         "budget": Budget,
         "projection": Projection,
         "person": Person,
+        "giving-plan": GivingPlan,
     }.get(kind)
     if cls is None:
         raise Problem(404, "not-found", "Not found")

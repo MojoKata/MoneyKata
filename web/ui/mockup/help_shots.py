@@ -85,6 +85,10 @@ def routes(page) -> dict[str, str]:
         "gifts-people": "/ui/gifts/people",
         "gifts-gifts": "/ui/gifts/gifts",
         "gifts-spending": "/ui/gifts/spending",
+        "giving-overview": "/ui/giving/overview",
+        "giving-donations": "/ui/giving/donations",
+        "giving-organisations": "/ui/giving/organisations",
+        "giving-fund": "/ui/giving/fund",
         "portfolio-performance": f"/ui/portfolios/{port}/performance",
         "portfolio-holdings": f"/ui/portfolios/{port}/holdings",
     }

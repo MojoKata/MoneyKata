@@ -65,6 +65,8 @@ DIALOGS = (
     ("/ui/projections", "New projection", "dialog-new-projection"),
     ("/ui/gifts/people", "Add a person", "dialog-person"),
     ("/ui/gifts/gifts", "Add a gift", "dialog-gift"),
+    ("/ui/giving/donations", "Record a donation", "dialog-donation"),
+    ("/ui/giving/organisations", "Add an organisation", "dialog-organisation"),
     ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
     ("/ui/users", "New user", "dialog-new-user"),
     ("/ui/users", "New group", "dialog-group"),
@@ -264,6 +266,10 @@ class Recorder:
             "/ui/gifts/people",
             "/ui/gifts/gifts",
             "/ui/gifts/spending",
+            "/ui/giving/overview",
+            "/ui/giving/donations",
+            "/ui/giving/organisations",
+            "/ui/giving/fund",
         ]
         for x in self.api("/projections"):
             paths.append(f"/ui/projections/{x['id']}")

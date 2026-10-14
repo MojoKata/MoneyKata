@@ -16,6 +16,7 @@ const Budgets = screen('budgets');
 const Receipts = screen('receipts');
 const Projections = screen('projections');
 const Gifts = screen('gifts');
+const Giving = screen('giving');
 const Alerts = screen('alerts');
 const Users = screen('users');
 const Settings = screen('settings');
@@ -39,6 +40,8 @@ export function Screens() {
       <${Route} path="/ui/projections/:id" component=${Projections} />
       <${Route} path="/ui/gifts" component=${Gifts} />
       <${Route} path="/ui/gifts/:tab" component=${Gifts} />
+      <${Route} path="/ui/giving" component=${Giving} />
+      <${Route} path="/ui/giving/:tab" component=${Giving} />
       <${Route} path="/ui/receipts" component=${Receipts} />
       <${Route} path="/ui/activity" component=${Activity} />
       <${Route} path="/ui/alerts" component=${Alerts} />

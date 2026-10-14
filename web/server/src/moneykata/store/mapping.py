@@ -8,6 +8,7 @@ from .entities import accounts as acc
 from .entities import assets as asx
 from .entities import budgets as bd
 from .entities import education as ed
+from .entities import giving as gv
 from .entities import prices as pr
 from .entities import projections as pj
 from .entities import receipts as rc
@@ -31,6 +32,7 @@ from .tables import (
     budgets,
     core,
     education,
+    giving,
     loans,
     people,
     prices,
@@ -70,6 +72,9 @@ def map_all() -> None:
         (acc.StatementLayout, accounts.StatementLayout),
         (acc.Loan, loans.Loan),
         (acc.PayoffPlan, loans.PayoffPlan),
+        (gv.GivingPlan, giving.GivingPlan),
+        (gv.Organisation, giving.Organisation),
+        (gv.Donation, giving.Donation),
         (ed.Person, people.Person),
         (ed.Occasion, people.Occasion),
         (ed.Gift, people.Gift),
