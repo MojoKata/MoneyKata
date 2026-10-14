@@ -16287,6 +16287,193 @@
         "title": "Via",
         "type": "object"
       },
+      "WalletAddressOut": {
+        "additionalProperties": false,
+        "properties": {
+          "address": {
+            "title": "Address",
+            "type": "string"
+          },
+          "balanceSats": {
+            "title": "Balancesats",
+            "type": "integer"
+          },
+          "chain": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chain"
+          },
+          "checkedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkedat"
+          },
+          "index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Index"
+          },
+          "keyId": {
+            "title": "Keyid",
+            "type": "string"
+          },
+          "txCount": {
+            "title": "Txcount",
+            "type": "integer"
+          },
+          "used": {
+            "title": "Used",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "address",
+          "keyId",
+          "chain",
+          "index",
+          "used",
+          "txCount",
+          "balanceSats",
+          "checkedAt"
+        ],
+        "title": "WalletAddressOut",
+        "type": "object"
+      },
+      "WalletIn": {
+        "additionalProperties": false,
+        "properties": {
+          "gapLimit": {
+            "default": 20,
+            "title": "Gaplimit",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "WalletIn",
+        "type": "object"
+      },
+      "WalletKeyOut": {
+        "additionalProperties": false,
+        "properties": {
+          "addresses": {
+            "title": "Addresses",
+            "type": "integer"
+          },
+          "gapLimit": {
+            "title": "Gaplimit",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "script": {
+            "title": "Script",
+            "type": "string"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "value",
+          "script",
+          "gapLimit",
+          "addresses",
+          "used"
+        ],
+        "title": "WalletKeyOut",
+        "type": "object"
+      },
+      "WalletView": {
+        "additionalProperties": false,
+        "properties": {
+          "addresses": {
+            "items": {
+              "$ref": "#/components/schemas/WalletAddressOut"
+            },
+            "title": "Addresses",
+            "type": "array"
+          },
+          "balanceSats": {
+            "title": "Balancesats",
+            "type": "integer"
+          },
+          "checkedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkedat"
+          },
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/WalletKeyOut"
+            },
+            "title": "Keys",
+            "type": "array"
+          },
+          "used": {
+            "title": "Used",
+            "type": "integer"
+          },
+          "watched": {
+            "title": "Watched",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "keys",
+          "addresses",
+          "watched",
+          "used",
+          "balanceSats",
+          "checkedAt"
+        ],
+        "title": "WalletView",
+        "type": "object"
+      },
       "WashOut": {
         "additionalProperties": false,
         "properties": {
@@ -19372,6 +19559,99 @@
         "summary": "Account Series",
         "tags": [
           "accounts"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/wallet": {
+      "get": {
+        "operationId": "get_wallet_ui_api_accounts__account_id__wallet_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Wallet",
+        "tags": [
+          "wallets"
+        ]
+      },
+      "put": {
+        "description": "The wallet's keys and addresses, replaced whole.",
+        "operationId": "put_wallet_ui_api_accounts__account_id__wallet_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WalletIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Wallet",
+        "tags": [
+          "wallets"
         ]
       }
     },

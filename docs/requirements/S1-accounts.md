@@ -76,6 +76,14 @@
 6. **Self-custody wallets** hold **bitcoin**. Other coins and chains come later ([out of scope](out-of-scope.md)).
    1. **What the account holds**: addresses, or an **xpub/ypub/zpub** from which addresses
       are derived (with a gap limit of 20 unused addresses by default).
+      1. An xpub's addresses are legacy (1…), a ypub's nested segwit (3…) and a zpub's
+         native segwit (bc1q…), on the receive chain (0/i) and the change chain (1/i).
+         Addresses typed are checked: legacy, script (3…), native segwit and taproot (bc1p…).
+         Mainnet only: a testnet key or address is refused.
+      2. Each chain is derived until the gap limit (1 to 200) of addresses in a row past the
+         last used one are unused; when the explorer or node finds one used, more are
+         derived. The account's Settings lists the addresses watched, by chain and index.
+      3. Taking a key or address out of the list stops watching its addresses.
    2. **Where balances and history come from**, set by an admin in Settings › Bitcoin:
       1. a **public explorer** with the Esplora API (mempool.space by default, or
          Blockstream);
@@ -85,7 +93,9 @@
          recommended. Its address is named by the admin, so the egress guard (S13.5) lets
          MoneyKata reach it on the LAN; its credentials are a secret (S14.4).
    3. The form **refuses anything that looks like a private key or seed phrase** (WIF, 64
-      hex digits, 12 or 24 BIP-39 words), says why, and never stores or logs it.
+      hex digits, 12 or 24 BIP-39 words, an extended private key such as an xprv), says why,
+      and never stores or logs it. The browser clears it from the form as it is typed, before
+      anything is sent; the server checks again and its refusal never repeats it.
 7. **Transfers** between two of a user's accounts are matched (same amount, a few days apart),
    so they count neither as spending nor as income, nor as a buy or sell of cash.
 8. **529 plans.** A `529` account holds funds and cash like a brokerage account, plus:

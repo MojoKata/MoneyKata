@@ -25,7 +25,7 @@ from .deps import Caller, caller, server
 from .sharing import counted_for
 
 router = APIRouter(prefix="/ui/api", tags=["accounts"])
-KEPT_BY = ("manual", "file", "statement")
+KEPT_BY = ("manual", "file", "statement", "bitcoin")
 RANGES = {"1M": 31, "3M": 92, "1Y": 366, "5Y": 1827}
 
 
@@ -223,7 +223,7 @@ def _check(body: NewAccount | AccountChange) -> list[FieldError]:
         )
     if body.keptBy is not None and (not body.keptBy or any(k not in KEPT_BY for k in body.keptBy)):
         errors.append(
-            FieldError("keptBy", "kept-by-invalid", "Manual, file import or statement import.")
+            FieldError("keptBy", "kept-by-invalid", "Manual, file import, statement import or bitcoin.")
         )
     if body.notes and len(body.notes) > 20000:
         errors.append(FieldError("notes", "notes-too-long", "Notes are up to 20,000 characters."))

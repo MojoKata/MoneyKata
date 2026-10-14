@@ -239,6 +239,8 @@ def test_every_screen_and_tab_has_its_guide(page):
     for t in ("precious-metals", "collectables", "real-estate", "vehicle"):
         for tab in ("overview", "items", "transactions", "sharing", "settings"):
             paths.append(f"/ui/accounts/{ids[t]}/{tab}")
+    for tab in ("overview", "holdings", "transactions", "sharing", "settings"):
+        paths.append(f"/ui/accounts/{ids['crypto-wallet']}/{tab}")
     for p in ports:
         paths += [f"/ui/portfolios/{p}/{t}" for t in ("performance", "holdings", "projections")]
     budgets = page.evaluate("""async () => (await (await fetch('/ui/api/budgets')).json())
@@ -426,6 +428,15 @@ def test_every_dialog_has_its_guide(page):
     page.select_option(".dialog #f-beneficiary", "new")
     page.wait_for_selector(".dialog #f-new-name")
     check_guide(page, ".dialog", "the 529 form")
+    close_dialog(page)
+    # A wallet's form, which clears a seed phrase at once.
+    open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")
+    page.get_by_role("button", name=re.compile("^Self-custody wallet")).click()
+    wait_guide(page, "dialog-account-form")
+    check_guide(page, ".dialog", "the wallet form")
+    page.fill(".dialog #f-wallet-keys", "abandon " * 11 + "about")
+    assert page.input_value(".dialog #f-wallet-keys") == ""
+    assert "never accepts one" in page.inner_text(".dialog #f-wallet-keys-err")
     close_dialog(page)
     # An education projection's inputs.
     open_dialog(page, "/ui/projections", "New projection", "dialog-new-projection")

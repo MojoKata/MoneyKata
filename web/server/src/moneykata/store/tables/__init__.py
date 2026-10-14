@@ -18,6 +18,7 @@ from . import (  # noqa: F401 - each adds its tables
     sharing,
     taxes,
     users,
+    wallets,
 )
 from ._base import metadata
 

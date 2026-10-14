@@ -12,6 +12,7 @@ import { toast } from '../components/toast.js';
 import { BY_TYPE, TYPES } from '../account-types/index.js';
 import { TERM_FIELDS, termsBody, TermsFields, termsForm } from '../components/loan.js';
 import { PLAN_FIELDS, planBody, PlanFields, planForm } from '../components/edu.js';
+import { WALLET_FIELDS, walletBody, WalletFields } from '../components/wallet.js';
 
 export const LOT_METHODS = /** @type {[string, string][]} */ ([
   ['fifo', 'FIFO (first in, first out)'],
@@ -63,6 +64,8 @@ function AccountForm({ type, close, back }) {
     openingDate: '',
     ...termsForm(null, type),
     ...planForm(null),
+    walletText: '',
+    gapLimit: '20',
   });
   const set = (/** @type {string} */ k) => (/** @type {string} */ v) => setF({ ...f, [k]: v });
   const [made, setMade] = useState(/** @type {any} */ (null));
@@ -80,11 +83,18 @@ function AccountForm({ type, close, back }) {
     if (t.loan || t.physical) {
       Object.assign(body, { keptBy: ['manual'], openingBalance: null, openingDate: null });
     }
+    if (t.wallet) {
+      Object.assign(body, { keptBy: ['bitcoin'], openingBalance: null, openingDate: null });
+    }
     // A loan is made, then given its terms; a refusal of the terms keeps the account made.
     const a = made || await api.post('/accounts', body, { idempotent: true });
     if (t.loan) {
       setMade(a);
       await api.put(`/accounts/${a.id}/loan`, termsBody(f));
+    }
+    if (t.wallet && f.walletText.trim()) {
+      setMade(a);
+      await api.put(`/accounts/${a.id}/wallet`, walletBody(f));
     }
     if (t.education) {
       setMade(a);
@@ -120,7 +130,17 @@ function AccountForm({ type, close, back }) {
               </${Field}>
               </div>
               ${t.education ? html`<${PlanFields} f=${f} set=${set} e=${e} />` : null}
-              ${t.loan
+              ${t.wallet
+                ? html`
+                  <p class="small dim">Bitcoin. Other coins come later.</p>
+                  <${WalletFields} f=${f} set=${set} e=${e} />
+                  <${Field} label="Lot method" error=${errAt(e, 'lotMethod')}
+                    hint="How sales pick lots. The method in force at a sale is recorded with it.">
+                    <${Select} value=${f.lotMethod} onChange=${set('lotMethod')}
+                      options=${LOT_METHODS} />
+                    </${Field}>
+                `
+                : t.loan
                 ? html`<${TermsFields} f=${f} set=${set} e=${e} type=${type} />`
                 : t.physical
                 ? html`<p class="small dim">Add the items after making the account, each with its
@@ -165,6 +185,7 @@ function AccountForm({ type, close, back }) {
           'openingDate',
           ...TERM_FIELDS,
           ...PLAN_FIELDS,
+          ...WALLET_FIELDS,
         ]} />
       </${Dialog}>
   `;

@@ -23,6 +23,7 @@ from .seed_projections import seed_projections
 from .seed_receipts import seed_receipts
 from .seed_sharing import seed_sharing
 from .seed_taxes import seed_taxes
+from .seed_wallets import seed_wallets
 
 log = logging.getLogger("moneykata.dev")
 PASSWORD = "moneykata-dev"  # noqa: S105 - dev mode's seed users only
@@ -42,6 +43,7 @@ def seed(server) -> None:
         seed_giving(s, people)
         seed_taxes(s, people)
         seed_options(s, people)
+        seed_wallets(s, people)
         seed_sharing(s, people)
         seed_budgets(s, people)
         seed_receipts(server, s, people)

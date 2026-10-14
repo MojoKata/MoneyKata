@@ -13,6 +13,8 @@ import t8 from './401k.js';
 import t9 from './403b.js';
 import t10 from './457b.js';
 import t11 from './hsa.js';
+import t25 from './crypto-exchange.js';
+import t26 from './crypto-wallet.js';
 import t12 from './mortgage.js';
 import t13 from './heloc.js';
 import t14 from './auto-loan.js';
@@ -39,6 +41,7 @@ import t24 from './daf.js';
  * @property {boolean} contributions  records contribution years and sources
  * @property {boolean} [loan]  has terms, a schedule and a payoff planner (S1.9)
  * @property {boolean} [education]  a 529 plan: its plan, contributions, withdrawals and goal (S1.8)
+ * @property {boolean} [wallet]  a self-custody wallet: its keys and addresses (S1.6)
  * @property {string} [physical]  holds items (S1.10), valued this way unless one says otherwise
  */
 
@@ -56,6 +59,8 @@ export const TYPES = [
   t9,
   t10,
   t11,
+  t25,
+  t26,
   t12,
   t13,
   t14,

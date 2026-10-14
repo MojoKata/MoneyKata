@@ -8,6 +8,7 @@ import { LoanSummary, Schedule, TermsCard } from '../components/loan.js';
 import { Payoff } from '../components/payoff.js';
 import { OptionTrade } from '../components/optiontrade.js';
 import { Items, ItemsSummary } from '../components/items.js';
+import { WalletCard } from '../components/wallet.js';
 import { Contributions, Goal, PlanCard, PlanFacts, Withdrawals } from '../components/edu.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
@@ -802,6 +803,7 @@ function Settings({ a, reload }) {
   const owner = a.level === 'owner';
   const loan = BY_TYPE[a.type]?.loan;
   const physical = BY_TYPE[a.type]?.physical;
+  const wallet = BY_TYPE[a.type]?.wallet;
   const [f, setF] = useState({
     name: a.name,
     institution: a.institution || '',
@@ -878,7 +880,7 @@ function Settings({ a, reload }) {
               </${Field}>
           `
           : null}
-        ${loan || physical ? null : html`
+        ${loan || physical || wallet ? null : html`
           <div class="row">
             <${Field} label="Opening balance" error=${errAt(
               e,
@@ -915,7 +917,11 @@ function Settings({ a, reload }) {
           : 'Delete account…'}</button><span class="spacer"></span><button class="btn primary" disabled=${save
           .busy}>Save</button></div>
       </form>
-      ${loan ? html`<${TermsCard} a=${a} />` : BY_TYPE[a.type]?.education
+      ${loan
+        ? html`<${TermsCard} a=${a} />`
+        : BY_TYPE[a.type]?.wallet
+        ? html`<${WalletCard} a=${a} />`
+        : BY_TYPE[a.type]?.education
         ? html`
           <div class="grid" style=${{ alignContent: 'start' }}>
             <div class="card">

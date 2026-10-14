@@ -21,6 +21,8 @@ GROUPS = {
     "loan": "liabilities",
     "529": "education",
     "daf": "giving",
+    "crypto-exchange": "crypto",
+    "crypto-wallet": "crypto",
     "precious-metals": "physical-assets",
     "collectables": "physical-assets",
     "real-estate": "physical-assets",
@@ -58,6 +60,8 @@ LABELS = {
     "loan": "Loan",
     "529": "529 plan",
     "daf": "Donor-advised fund",
+    "crypto-exchange": "Crypto exchange",
+    "crypto-wallet": "Self-custody wallet",
     "precious-metals": "Precious metals",
     "collectables": "Collectables",
     "real-estate": "Real estate",
@@ -85,6 +89,8 @@ TAX = {
     "loan": None,
     "529": "free",  # for qualified expenses (S1.8.3)
     "daf": None,  # deducted when contributed; its money is given away
+    "crypto-exchange": "taxable",
+    "crypto-wallet": "taxable",
     # A sale's gain is taxable; metals and collectables at the collectables rate (S1.10.5).
     "precious-metals": "taxable",
     "collectables": "taxable",
@@ -96,7 +102,7 @@ TAX = {
 
 def investing(account_type: str) -> bool:
     """Holds instruments, so it has Holdings and Positions tabs."""
-    return GROUPS[account_type] in ("investing", "retirement", "education", "giving")
+    return GROUPS[account_type] in ("investing", "retirement", "education", "giving", "crypto")
 
 
 def reconcilable(account_type: str) -> bool:

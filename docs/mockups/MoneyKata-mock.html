@@ -1113,7 +1113,8 @@ function acctSettings(a) {
     <div class="list-item"><span class="grow">Count in my totals</span>${sw(true)}</div>
     <div class="toolbar mt"><span class="spacer"></span><button class="btn danger">Delete account…</button><button class="btn primary" data-act="toast" data-v="Saved">Save</button></div></div>
     <div class="card"><h3>Keeping it current</h3>
-    ${wallet ? `${field('Extended public key or addresses', `<textarea class="in" data-check="seed" rows="3">zpub6rFR7y4Q2AijBEqTUquhVz398htDFrtymD9xYYfG1m4wAcvPhXNfE3EfH1r1ADqtfSdVCToUG868RvUUkgDKf31mGDtKsAYz2oz2AGutZYs</textarea>`, 'Public data only. MoneyKata never accepts a private key or seed phrase.')}<div class="notice">${icon('lock')}<div>Read through your own node (Settings › Bitcoin) · 41 used addresses · gap limit 20 · last checked 12 min ago.</div></div>` : ''}
+    ${wallet ? `${field('Extended public keys or addresses', `<textarea class="in" data-check="seed" rows="3">zpub6rFR7y4Q2AijBEqTUquhVz398htDFrtymD9xYYfG1m4wAcvPhXNfE3EfH1r1ADqtfSdVCToUG868RvUUkgDKf31mGDtKsAYz2oz2AGutZYs</textarea>`, 'An xpub, ypub or zpub, or addresses, one a line. Public data only.')}${field('Gap limit', inp('20'), 'Addresses derived past the last one used. 20 suits most wallets.')}<div class="notice">${icon('lock')}<div>Read through your own node (Settings › Bitcoin) · 61 addresses watched, 41 used · last checked 12 min ago.</div></div>
+      <details class="mt"><summary class="small">Addresses</summary><div class="table-wrap"><table class="t"><thead><tr><th>Address</th><th>Chain</th><th class="num">Transactions</th><th></th></tr></thead><tbody>${[['bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu', 'receive 0', 3, true], ['bc1qnjg0jd8228aq7egyzacy8cys3knf9xvrerkf9g', 'receive 1', 2, true], ['bc1q8c6fshw2dlwun7ekn9qwf37cu2rn755upcp6el', 'change 0', 2, true]].map((r) => `<tr><td class="small" style="font-family:var(--mono)">${r[0]}</td><td class="small dim">${r[1]}</td><td class="num">${r[2]}</td><td>${r[3] ? '<span class="pill">used</span>' : ''}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
     ${exch ? `<p class="small dim">Kept current from the exchange’s CSV exports and statements. Reading it through its API comes later.</p>` : ''}
     ${!wallet && !exch ? `${field('Method', sel(['OFX / QFX import', 'Statement import (PDF or photo)', 'CSV import', 'Manual'], a.sync.startsWith('Statement') ? 'Statement import (PDF or photo)' : a.sync.includes('import') ? 'CSV import' : 'Manual'))}${field('Import mapping', sel(['Fidelity positions & history CSV', 'Schwab transactions CSV', 'Generic CSV…'], 'Fidelity positions & history CSV'), 'Saved column mapping for this institution’s CSV.')}<div class="notice">${icon('sync')}<div>Last import 2026-10-08 · 14 new, 212 already present.</div></div>` : ''}
     </div></div>`;
@@ -1577,7 +1578,7 @@ DIALOGS.acctForm = (d) => {
   const t = d.type || 'brokerage', wallet = t === 'crypto-wallet', loan = LOAN_TYPES.includes(t), phys = ['precious-metals', 'collectables', 'real-estate', 'vehicle', 'other-asset'].includes(t);
   const ph = { mortgage: ['Mortgage', 'Rocket Mortgage'], 'auto-loan': ['Car loan', 'Ally Auto'], '529': ["Emma's 529", 'my529 (Utah)'], daf: ['Giving fund', 'Fidelity Charitable'], 'precious-metals': ['Precious metals', 'Home safe'], 'real-estate': ['Home', '1428 Elm St'], vehicle: ['2023 Subaru Outback', ''] }[t] || [wallet ? 'Cold storage' : 'Individual Brokerage', wallet ? 'Bitcoin' : 'Fidelity'];
   let extra;
-  if (wallet) extra = `<p class="small dim" style="margin-top:0">Bitcoin. Other coins come later.</p>${field('Extended public key or addresses', '<textarea class="in" data-check="seed" rows="3" placeholder="xpub…, zpub…, or one address per line"></textarea>', 'Public data only. Try typing 12 words: the form refuses a seed phrase.')}`;
+  if (wallet) extra = `<p class="small dim" style="margin-top:0">Bitcoin. Other coins come later.</p>${field('Extended public keys or addresses', '<textarea class="in" data-check="seed" rows="3" placeholder="zpub6r…, or bc1q… one a line"></textarea>', 'Public data only. Try typing 12 words: the form clears a seed phrase.')}${field('Gap limit', inp('20'), 'Addresses derived past the last one used. 20 suits most wallets.')}`;
   else if (loan) extra = `<div class="row">${field('Original principal', inp('', '360,000'))}${field('Start date', inp('2023-03-01', '', 'date'))}</div>
     <div class="row">${field('Term (months)', inp('360'))}${field('Interest rate', inp('', '5.875%'))}</div>
     <div class="row">${field('Rate type', sel(['Fixed', 'Adjustable (ARM)'], 'Fixed'))}${field('Interest method', sel(['Monthly amortization', 'Simple interest, daily'], t === 'auto-loan' ? 'Simple interest, daily' : 'Monthly amortization'))}</div>
@@ -1817,7 +1818,8 @@ const GUIDES = {
   account: `<h1>Account</h1><p>One account: its balance over time, what it holds, its transactions and positions, its receipts, and who it’s shared with.</p><div class="shot">screenshot · account</div>
     <h2 id="h-name">Name</h2><p>How the account appears everywhere. Only you see it as named; people you share it with see the same name.</p>
     <h2 id="h-lot-method">Lot method</h2><p>Which lots a sale uses: <b>FIFO</b> (oldest first, the default), <b>LIFO</b>, <b>HIFO</b> (highest cost first, usually the smallest gain), <b>Specific identification</b> (you pick at each sale), or <b>Average cost</b> (mutual funds).</p>
-    <h2 id="h-extended-public-key-or-addresses">Extended public key or addresses</h2><p>An <code>xpub</code>/<code>ypub</code>/<code>zpub</code> or a list of addresses. MoneyKata reads balances through the explorer or your own node set in Settings › Bitcoin.</p><blockquote>Never enter a seed phrase or private key. The form refuses anything that looks like one, and MoneyKata never stores it.</blockquote>
+    <h2 ${hid('Extended public keys or addresses')}>Extended public keys or addresses</h2><p>An <code>xpub</code> (legacy, 1…), <code>ypub</code> (nested segwit, 3…) or <code>zpub</code> (native segwit, bc1q…), or addresses, one a line. MoneyKata derives a key’s receive and change addresses itself, and reads balances through the explorer or your own node set in Settings › Bitcoin.</p><blockquote>Never enter a seed phrase or private key. The form refuses anything that looks like one, and MoneyKata never stores it.</blockquote>
+    <h2 ${hid('Gap limit')}>Gap limit</h2><p>How many unused addresses past the last used one are watched on each chain. 20 suits most wallets; raise it for one that skipped addresses. <b>Addresses</b> lists those watched.</p>
     <h2 id="h-method">Method</h2><p>How the account is kept current: OFX or QFX downloads, statements (a PDF or a photo, read on this server), CSV exports, or typed by hand. No bank or exchange is connected.</p>
     <h2 id="h-keep-it-current-by">Keep it current by</h2><p>OFX or QFX downloads, statements, CSV exports, or typed by hand. You can change it later.</p>
     <h2>Reconcile</h2><p>Keeps the account in step with the institution. <b>Coverage</b> shows what your imports cover and flags gaps and overlaps. <b>Balance anchors</b> are balances the institution reported: a CSV’s balance column, an OFX file, a statement, or one you type. A mismatch shows the difference and what looks wrong in between.</p>
@@ -2310,11 +2312,12 @@ document.addEventListener('change', (e) => {
 document.addEventListener('input', (e) => {
   const el = e.target; if (el.dataset.check !== 'seed') return;
   const v = el.value.trim(), words = v.split(/\s+/).filter(Boolean);
-  const bad = (words.length >= 12 && words.every((w) => /^[a-z]+$/.test(w))) || /^[5KLc][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(v) || /^(0x)?[0-9a-fA-F]{64}$/.test(v);
+  const bad = (words.length >= 12 && words.every((w) => /^[a-z]+$/.test(w))) || /^[5KLc][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(v) || /^(0x)?[0-9a-fA-F]{64}$/.test(v) || /^[xyztuv]prv/.test(v);
+  if (bad) el.value = '';
   el.classList.toggle('bad', bad);
   let err = el.parentElement.querySelector('.err');
-  if (bad && !err) { err = document.createElement('div'); err.className = 'err'; err.textContent = 'This looks like a seed phrase or private key. MoneyKata never accepts one; enter an xpub or addresses instead. Nothing was saved.'; el.after(err); }
-  if (!bad && err) err.remove();
+  if (bad && !err) { err = document.createElement('div'); err.className = 'err'; err.textContent = 'That looks like a seed phrase or private key. MoneyKata never accepts one, and nothing was saved: enter an extended public key (xpub, ypub or zpub) or addresses instead.'; el.after(err); }
+  if (!bad && err && el.value) err.remove();
 });
 document.addEventListener('mousemove', chartHover);
 document.addEventListener('keydown', (e) => {

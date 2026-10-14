@@ -117,6 +117,8 @@ The prefixes of the tables that exist.
 | Txn    | Transaction      | One dated movement in an account.                                                                     |
 | User   | User             | A person who signs in here, or a user of a linked server (with `linkId`).                             |
 | Valtn  | ItemValuation    | A dated value of an item, with its source.                                                            |
+| WAddr  | WalletAddress    | An address a bitcoin wallet watches, typed or derived from its key; worked out again.                 |
+| WKey   | WalletKey        | An extended public key or an address a bitcoin wallet account holds, as entered.                      |
 | WashS  | WashSale         | A loss disallowed as a wash sale, moved to its replacement's basis; worked out again from the trades. |
 
 ### 3.2 Reserved
@@ -170,7 +172,8 @@ Records are never removed from the database: they are marked deleted. The except
    4. **work queues and counters**: receipt-reading jobs, sign-in and access-key attempt
       counters, the background tasks' last runs, and the live stream's state;
    5. **caches**, rebuilt from the records: thumbnails, computed series kept for speed, and
-      wash sales, worked out again from the trades whenever they change.
+      wash sales, worked out again from the trades whenever they change, and a bitcoin
+      wallet's addresses, derived again from its keys and its explorer or node.
 
    Activity entries and alerts are never deleted at all: Activity is kept as it was
    written, and alerts are resolved, then age out of the list (requirements S12.11).

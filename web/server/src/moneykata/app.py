@@ -150,6 +150,7 @@ def create_app(server: Server) -> FastAPI:
         taxpanels,
         transactions,
         users,
+        wallets,
     )
     from .ui import settings as settings_routes
 
@@ -166,6 +167,7 @@ def create_app(server: Server) -> FastAPI:
         portfolios,
         positions,
         options,
+        wallets,
         activity,
         alerts,
         budgets,

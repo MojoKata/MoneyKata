@@ -234,3 +234,28 @@ class WashSale:
     disallowed: Decimal
     heldFrom: dt.date
     createdAt: dt.datetime
+
+
+@dataclass(kw_only=True, eq=False)
+class WalletKey(Record):
+    id: str
+    accountId: str
+    kind: str
+    value: str
+    script: str
+    gapLimit: int = 20
+
+
+@dataclass(kw_only=True, eq=False)
+class WalletAddress:
+    id: str
+    accountId: str
+    keyId: str
+    address: str
+    chain: int | None
+    idx: int | None
+    createdAt: dt.datetime
+    used: bool = False
+    txCount: int = 0
+    balanceSats: int = 0
+    checkedAt: dt.datetime | None = None

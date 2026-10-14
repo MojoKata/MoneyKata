@@ -2666,6 +2666,45 @@
  */
 
 /**
+ * @typedef {Object} WalletAddressOut
+ * @property {string} address
+ * @property {string} keyId
+ * @property {(number | null)} chain
+ * @property {(number | null)} index
+ * @property {boolean} used
+ * @property {number} txCount
+ * @property {number} balanceSats
+ * @property {(string | null)} checkedAt
+ */
+
+/**
+ * @typedef {Object} WalletIn
+ * @property {string} text
+ * @property {number} [gapLimit]
+ */
+
+/**
+ * @typedef {Object} WalletKeyOut
+ * @property {string} id
+ * @property {string} kind
+ * @property {string} value
+ * @property {string} script
+ * @property {number} gapLimit
+ * @property {number} addresses
+ * @property {number} used
+ */
+
+/**
+ * @typedef {Object} WalletView
+ * @property {Array<WalletKeyOut>} keys
+ * @property {Array<WalletAddressOut>} addresses
+ * @property {number} watched
+ * @property {number} used
+ * @property {number} balanceSats
+ * @property {(string | null)} checkedAt
+ */
+
+/**
  * @typedef {Object} WashOut
  * @property {string} sold
  * @property {string} symbol

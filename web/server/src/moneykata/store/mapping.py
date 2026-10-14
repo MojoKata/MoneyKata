@@ -43,6 +43,7 @@ from .tables import (
     sharing,
     taxes,
     users,
+    wallets,
 )
 
 mapper_registry = registry()
@@ -75,6 +76,7 @@ def map_all() -> None:
         (acc.StatementLayout, accounts.StatementLayout),
         (acc.Loan, loans.Loan),
         (acc.OptionContract, options.OptionContract),
+        (acc.WalletKey, wallets.WalletKey),
         (acc.PayoffPlan, loans.PayoffPlan),
         (tx.TaxBook, taxes.TaxBook),
         (tx.Filing, taxes.Filing),
@@ -115,6 +117,7 @@ def map_all() -> None:
     mapper_registry.map_imperatively(rc.ReceiptLink, receipts.ReceiptLinks)
     mapper_registry.map_imperatively(ed.GiftPerson, people.GiftPersons)
     mapper_registry.map_imperatively(acc.WashSale, options.WashSale)
+    mapper_registry.map_imperatively(acc.WalletAddress, wallets.WalletAddress)
     mapper_registry.map_imperatively(tx.TaxBookFiler, taxes.TaxBookFilers)
     mapper_registry.map_imperatively(tx.TaxBookAccount, taxes.TaxBookAccounts)
     _versioned(pj.AssumptionSet, projections.AssumptionSet)
