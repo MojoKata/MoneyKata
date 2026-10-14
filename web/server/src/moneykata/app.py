@@ -185,6 +185,9 @@ def create_app(server: Server) -> FastAPI:
         dashboard,
     ):
         app.include_router(module.router)
+    from . import mcp
+
+    app.include_router(mcp.router)
     # Last: its catch-alls answer for paths no route above has.
     app.include_router(static.router(static.Static(server.version, server.config.dev)))
 

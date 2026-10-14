@@ -132,3 +132,13 @@
    4. A token works only at `/mcp`, never at `/ui/api`. It stops when it is revoked or
       expires, and when its user is made inactive. Each call is recorded in Activity under
       the token's name, and calls are limited to 60 a minute per token.
+   5. **The tools**: `list_accounts`, `get_account_holdings`, `list_transactions` (one
+      account or all, between dates, by payee, at most 500), `list_positions`,
+      `list_portfolios`, `get_portfolio` (value, holdings and returns), `list_budgets`,
+      `get_budget_month`, `list_upcoming_gifts`, `get_giving`, `list_tax_books` and
+      `get_tax_panels`. Each answers with what the matching screen shows. A token with chosen
+      items reads only those accounts and portfolios; the tools about the whole household
+      (budgets, gifts, giving, taxes) refuse it.
+   6. **The protocol**: JSON-RPC 2.0 over POST, answered as JSON (no server-sent stream, so
+      GET is refused); the token as a bearer token; a request whose Origin header names
+      another site is refused, so a web page can't use a token it has found.

@@ -83,6 +83,7 @@ TEXT = {
     "option.traded": "{actor} recorded an option trade in {subject}",
     "token.created": "{actor} made an access token, {name}",
     "token.revoked": "{actor} revoked the access token {name}",
+    "mcp.called": "{actor}'s access token {name} read {tool}",
     "wallet.changed": "{actor} changed the keys and addresses {subject} watches",
     "option.settled": "{actor} recorded an option's expiry, assignment or exercise in {subject}",
     "donation.recorded": "{actor} recorded a donation",
@@ -173,6 +174,7 @@ def render(a: Activity, names: dict[tuple[str, str], str]) -> str:
         "from": detail.get("from", ""),
         "to": detail.get("to", ""),
         "name": detail.get("name", ""),
+        "tool": detail.get("tool", "").replace("_", " "),
     }
     template = TEXT.get(a.kind, "{actor}: " + a.kind)
     return template.format(**values)
