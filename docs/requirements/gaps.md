@@ -51,3 +51,9 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** the interval at which each account's statements or exports are expected (monthly for a bank or Schwab brokerage account, quarterly for many 401(k) plans), how it is set or learned from the imports, and the alert threshold that follows from it.
 
 **Touches:** S1.3, S1.11, S12.11.
+
+## G11: Wash-sale basis carried into holdings
+
+**What is missing:** the replacement lot's adjusted basis (and its tacked-on holding period) in Holdings, unrealized gain and the later sale of that lot. Taxes computes the disallowed loss and shows the replacement lot with its adjusted basis; the ledger's lots keep their own cost.
+
+**Touches:** S2.2, S3.8, S8.3.

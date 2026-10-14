@@ -1330,6 +1330,56 @@
         "title": "BookRow",
         "type": "object"
       },
+      "BoxTotal": {
+        "additionalProperties": false,
+        "properties": {
+          "adjustment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Adjustment",
+            "type": "string"
+          },
+          "basis": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Basis",
+            "type": "string"
+          },
+          "box": {
+            "title": "Box",
+            "type": "string"
+          },
+          "gain": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Gain",
+            "type": "string"
+          },
+          "proceeds": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Proceeds",
+            "type": "string"
+          }
+        },
+        "required": [
+          "box",
+          "proceeds",
+          "basis",
+          "adjustment",
+          "gain"
+        ],
+        "title": "BoxTotal",
+        "type": "object"
+      },
       "BudgetChange": {
         "additionalProperties": false,
         "properties": {
@@ -2135,62 +2185,6 @@
         "title": "ContributionIn",
         "type": "object"
       },
-      "ContributionOut": {
-        "additionalProperties": false,
-        "properties": {
-          "amount": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Amount",
-            "type": "string"
-          },
-          "contributor": {
-            "title": "Contributor",
-            "type": "string"
-          },
-          "date": {
-            "format": "date",
-            "title": "Date",
-            "type": "string"
-          },
-          "fiveYear": {
-            "title": "Fiveyear",
-            "type": "boolean"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "relationship": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Relationship"
-          },
-          "transactionId": {
-            "title": "Transactionid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "transactionId",
-          "date",
-          "amount",
-          "contributor",
-          "name",
-          "relationship",
-          "fiveYear"
-        ],
-        "title": "ContributionOut",
-        "type": "object"
-      },
       "ContributionsView": {
         "additionalProperties": false,
         "properties": {
@@ -2200,7 +2194,7 @@
           },
           "rows": {
             "items": {
-              "$ref": "#/components/schemas/ContributionOut"
+              "$ref": "#/components/schemas/moneykata__ui__education__ContributionOut"
             },
             "title": "Rows",
             "type": "array"
@@ -2856,6 +2850,55 @@
         "title": "DonationOut",
         "type": "object"
       },
+      "DonationRow": {
+        "additionalProperties": false,
+        "properties": {
+          "acknowledged": {
+            "title": "Acknowledged",
+            "type": "boolean"
+          },
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "deductible": {
+            "title": "Deductible",
+            "type": "boolean"
+          },
+          "kindLabel": {
+            "title": "Kindlabel",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "needsAck": {
+            "title": "Needsack",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "date",
+          "name",
+          "kindLabel",
+          "amount",
+          "deductible",
+          "needsAck",
+          "acknowledged"
+        ],
+        "title": "DonationRow",
+        "type": "object"
+      },
       "Done": {
         "additionalProperties": false,
         "properties": {
@@ -2868,6 +2911,76 @@
           "changed"
         ],
         "title": "Done",
+        "type": "object"
+      },
+      "EducationOut": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "beneficiary": {
+            "title": "Beneficiary",
+            "type": "string"
+          },
+          "contributions": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Contributions",
+            "type": "array"
+          },
+          "distributions": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Distributions",
+            "type": "string"
+          },
+          "expenses": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Expenses",
+            "type": "string"
+          },
+          "notCovered": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Notcovered",
+            "type": "string"
+          },
+          "stateDeduction": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statededuction"
+          }
+        },
+        "required": [
+          "account",
+          "beneficiary",
+          "contributions",
+          "stateDeduction",
+          "distributions",
+          "expenses",
+          "notCovered"
+        ],
+        "title": "EducationOut",
         "type": "object"
       },
       "EmailChange": {
@@ -4168,6 +4281,43 @@
         "title": "GiftOut",
         "type": "object"
       },
+      "GiftTaxOut": {
+        "additionalProperties": false,
+        "properties": {
+          "exclusion": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Exclusion",
+            "type": "string"
+          },
+          "given": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Given",
+            "type": "string"
+          },
+          "giver": {
+            "title": "Giver",
+            "type": "string"
+          },
+          "person": {
+            "title": "Person",
+            "type": "string"
+          }
+        },
+        "required": [
+          "giver",
+          "person",
+          "given",
+          "exclusion"
+        ],
+        "title": "GiftTaxOut",
+        "type": "object"
+      },
       "GiftYearOut": {
         "additionalProperties": false,
         "properties": {
@@ -4225,6 +4375,53 @@
           "fromElection"
         ],
         "title": "GiftYearOut",
+        "type": "object"
+      },
+      "GivingOut": {
+        "additionalProperties": false,
+        "properties": {
+          "apart": {
+            "items": {
+              "$ref": "#/components/schemas/DonationRow"
+            },
+            "title": "Apart",
+            "type": "array"
+          },
+          "deductible": {
+            "items": {
+              "$ref": "#/components/schemas/DonationRow"
+            },
+            "title": "Deductible",
+            "type": "array"
+          },
+          "deductibleTotal": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Deductibletotal",
+            "type": "string"
+          },
+          "missingAcks": {
+            "title": "Missingacks",
+            "type": "integer"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "deductible",
+          "apart",
+          "deductibleTotal",
+          "missingAcks",
+          "notes"
+        ],
+        "title": "GivingOut",
         "type": "object"
       },
       "GivingView": {
@@ -5155,6 +5352,76 @@
         "title": "ImprovementOut",
         "type": "object"
       },
+      "IncomeOut": {
+        "additionalProperties": false,
+        "properties": {
+          "capitalGainDistributions": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Capitalgaindistributions",
+            "type": "string"
+          },
+          "dividendsByPayer": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Dividendsbypayer",
+            "type": "array"
+          },
+          "interest": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Interest",
+            "type": "array"
+          },
+          "interestTotal": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interesttotal",
+            "type": "string"
+          },
+          "ordinary": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Ordinary",
+            "type": "string"
+          },
+          "qualified": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Qualified",
+            "type": "string"
+          },
+          "returnOfCapital": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Returnofcapital",
+            "type": "string"
+          }
+        },
+        "required": [
+          "interest",
+          "interestTotal",
+          "ordinary",
+          "qualified",
+          "capitalGainDistributions",
+          "returnOfCapital",
+          "dividendsByPayer"
+        ],
+        "title": "IncomeOut",
+        "type": "object"
+      },
       "InstrumentOut": {
         "additionalProperties": false,
         "properties": {
@@ -5259,6 +5526,37 @@
           "household"
         ],
         "title": "InvitationInfo",
+        "type": "object"
+      },
+      "IssueOut": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "text",
+          "link"
+        ],
+        "title": "IssueOut",
         "type": "object"
       },
       "ItemDetail": {
@@ -6511,6 +6809,64 @@
         "title": "LinkOut",
         "type": "object"
       },
+      "LoanOut": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "form": {
+            "title": "Form",
+            "type": "string"
+          },
+          "interest": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interest",
+            "type": "string"
+          },
+          "pmi": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Pmi",
+            "type": "string"
+          },
+          "propertyTax": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Propertytax",
+            "type": "string"
+          },
+          "securedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Securedby"
+          }
+        },
+        "required": [
+          "account",
+          "form",
+          "interest",
+          "pmi",
+          "propertyTax",
+          "securedBy"
+        ],
+        "title": "LoanOut",
+        "type": "object"
+      },
       "LoanView": {
         "additionalProperties": false,
         "properties": {
@@ -6632,7 +6988,7 @@
           },
           "rows": {
             "items": {
-              "$ref": "#/components/schemas/RowOut"
+              "$ref": "#/components/schemas/moneykata__ui__loans__RowOut"
             },
             "title": "Rows",
             "type": "array"
@@ -8347,6 +8703,145 @@
         "title": "Paid",
         "type": "object"
       },
+      "Panels": {
+        "additionalProperties": false,
+        "properties": {
+          "covers": {
+            "title": "Covers",
+            "type": "string"
+          },
+          "deductions": {
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Deductions",
+            "type": "array"
+          },
+          "education": {
+            "items": {
+              "$ref": "#/components/schemas/EducationOut"
+            },
+            "title": "Education",
+            "type": "array"
+          },
+          "elections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Elections",
+            "type": "array"
+          },
+          "estimated": {
+            "items": {
+              "$ref": "#/components/schemas/Quarter"
+            },
+            "title": "Estimated",
+            "type": "array"
+          },
+          "giftTax": {
+            "items": {
+              "$ref": "#/components/schemas/GiftTaxOut"
+            },
+            "title": "Gifttax",
+            "type": "array"
+          },
+          "giving": {
+            "$ref": "#/components/schemas/GivingOut"
+          },
+          "income": {
+            "$ref": "#/components/schemas/IncomeOut"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/IssueOut"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "lastYearTax": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastyeartax"
+          },
+          "leftOut": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Leftout",
+            "type": "array"
+          },
+          "loans": {
+            "items": {
+              "$ref": "#/components/schemas/LoanOut"
+            },
+            "title": "Loans",
+            "type": "array"
+          },
+          "residences": {
+            "items": {
+              "$ref": "#/components/schemas/ResidenceOut"
+            },
+            "title": "Residences",
+            "type": "array"
+          },
+          "retirement": {
+            "$ref": "#/components/schemas/RetirementOut"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/moneykata__ui__taxpanels__RowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "scheduleD": {
+            "$ref": "#/components/schemas/ScheduleDOut"
+          },
+          "washes": {
+            "items": {
+              "$ref": "#/components/schemas/WashOut"
+            },
+            "title": "Washes",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "rows",
+          "washes",
+          "scheduleD",
+          "income",
+          "retirement",
+          "deductions",
+          "estimated",
+          "lastYearTax",
+          "giving",
+          "education",
+          "giftTax",
+          "elections",
+          "loans",
+          "residences",
+          "issues",
+          "leftOut",
+          "covers"
+        ],
+        "title": "Panels",
+        "type": "object"
+      },
       "Password": {
         "additionalProperties": false,
         "properties": {
@@ -8741,7 +9236,7 @@
           },
           "planRows": {
             "items": {
-              "$ref": "#/components/schemas/RowOut"
+              "$ref": "#/components/schemas/moneykata__ui__loans__RowOut"
             },
             "title": "Planrows",
             "type": "array"
@@ -8758,7 +9253,7 @@
           },
           "recastRows": {
             "items": {
-              "$ref": "#/components/schemas/RowOut"
+              "$ref": "#/components/schemas/moneykata__ui__loans__RowOut"
             },
             "title": "Recastrows",
             "type": "array"
@@ -10323,6 +10818,34 @@
         "title": "Purchase",
         "type": "object"
       },
+      "Quarter": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "quarter": {
+            "title": "Quarter",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "jurisdiction",
+          "quarter",
+          "amount"
+        ],
+        "title": "Quarter",
+        "type": "object"
+      },
       "ReadingQueue": {
         "additionalProperties": false,
         "properties": {
@@ -11166,6 +11689,89 @@
         "title": "ResetView",
         "type": "object"
       },
+      "ResidenceOut": {
+        "additionalProperties": false,
+        "properties": {
+          "gain": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Gain",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sold": {
+            "format": "date",
+            "title": "Sold",
+            "type": "string"
+          },
+          "yearsOwned": {
+            "title": "Yearsowned",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "sold",
+          "gain",
+          "yearsOwned"
+        ],
+        "title": "ResidenceOut",
+        "type": "object"
+      },
+      "RetirementOut": {
+        "additionalProperties": false,
+        "properties": {
+          "basis8606": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis8606"
+          },
+          "contributions": {
+            "items": {
+              "$ref": "#/components/schemas/moneykata__ui__taxpanels__ContributionOut"
+            },
+            "title": "Contributions",
+            "type": "array"
+          },
+          "distributions": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Distributions",
+            "type": "array"
+          },
+          "rmds": {
+            "items": {
+              "$ref": "#/components/schemas/RmdOut"
+            },
+            "title": "Rmds",
+            "type": "array"
+          }
+        },
+        "required": [
+          "contributions",
+          "distributions",
+          "rmds",
+          "basis8606"
+        ],
+        "title": "RetirementOut",
+        "type": "object"
+      },
       "ReturnRow": {
         "additionalProperties": false,
         "properties": {
@@ -11198,6 +11804,53 @@
           "periods"
         ],
         "title": "ReturnRow",
+        "type": "object"
+      },
+      "RmdOut": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "age": {
+            "title": "Age",
+            "type": "integer"
+          },
+          "balance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "due": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Due",
+            "type": "string"
+          },
+          "factor": {
+            "title": "Factor",
+            "type": "number"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "owner",
+          "age",
+          "balance",
+          "factor",
+          "due"
+        ],
+        "title": "RmdOut",
         "type": "object"
       },
       "RolloverOut": {
@@ -11256,89 +11909,6 @@
           "available"
         ],
         "title": "RolloverOut",
-        "type": "object"
-      },
-      "RowOut": {
-        "additionalProperties": false,
-        "properties": {
-          "balance": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Balance",
-            "type": "string"
-          },
-          "date": {
-            "format": "date",
-            "title": "Date",
-            "type": "string"
-          },
-          "escrow": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Escrow",
-            "type": "string"
-          },
-          "interest": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Interest",
-            "type": "string"
-          },
-          "overpayment": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Overpayment",
-            "type": "string"
-          },
-          "past": {
-            "title": "Past",
-            "type": "boolean"
-          },
-          "payment": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Payment",
-            "type": "string"
-          },
-          "pmi": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Pmi",
-            "type": "string"
-          },
-          "principal": {
-            "examples": [
-              "1234.50"
-            ],
-            "format": "money",
-            "title": "Principal",
-            "type": "string"
-          }
-        },
-        "required": [
-          "date",
-          "payment",
-          "principal",
-          "interest",
-          "escrow",
-          "pmi",
-          "balance",
-          "past",
-          "overpayment"
-        ],
-        "title": "RowOut",
         "type": "object"
       },
       "Sale": {
@@ -11533,6 +12103,77 @@
           "inputs"
         ],
         "title": "SavedPlanIn",
+        "type": "object"
+      },
+      "ScheduleDOut": {
+        "additionalProperties": false,
+        "properties": {
+          "boxes": {
+            "items": {
+              "$ref": "#/components/schemas/BoxTotal"
+            },
+            "title": "Boxes",
+            "type": "array"
+          },
+          "carryoverLong": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Carryoverlong",
+            "type": "string"
+          },
+          "carryoverShort": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Carryovershort",
+            "type": "string"
+          },
+          "collectables": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Collectables",
+            "type": "string"
+          },
+          "longTerm": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Longterm",
+            "type": "string"
+          },
+          "net": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Net",
+            "type": "string"
+          },
+          "shortTerm": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Shortterm",
+            "type": "string"
+          }
+        },
+        "required": [
+          "boxes",
+          "shortTerm",
+          "longTerm",
+          "collectables",
+          "carryoverShort",
+          "carryoverLong",
+          "net"
+        ],
+        "title": "ScheduleDOut",
         "type": "object"
       },
       "Securable": {
@@ -12707,6 +13348,44 @@
           }
         },
         "title": "TagIn",
+        "type": "object"
+      },
+      "TagOut": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "tag": {
+            "title": "Tag",
+            "type": "string"
+          },
+          "total": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Total",
+            "type": "string"
+          },
+          "withReceipts": {
+            "title": "Withreceipts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tag",
+          "label",
+          "total",
+          "count",
+          "withReceipts"
+        ],
+        "title": "TagOut",
         "type": "object"
       },
       "TaxChange": {
@@ -14719,6 +15398,85 @@
         "title": "Via",
         "type": "object"
       },
+      "WashOut": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "adjustedBasis": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustedbasis"
+          },
+          "disallowed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Disallowed",
+            "type": "string"
+          },
+          "loss": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Loss",
+            "type": "string"
+          },
+          "replacedOn": {
+            "format": "date",
+            "title": "Replacedon",
+            "type": "string"
+          },
+          "replacementAccount": {
+            "title": "Replacementaccount",
+            "type": "string"
+          },
+          "replacementQty": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Replacementqty",
+            "type": "string"
+          },
+          "sold": {
+            "format": "date",
+            "title": "Sold",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sold",
+          "symbol",
+          "account",
+          "loss",
+          "disallowed",
+          "replacedOn",
+          "replacementAccount",
+          "replacementQty",
+          "adjustedBasis"
+        ],
+        "title": "WashOut",
+        "type": "object"
+      },
       "WithdrawalYearOut": {
         "additionalProperties": false,
         "properties": {
@@ -14878,6 +15636,62 @@
           "value"
         ],
         "title": "Point",
+        "type": "object"
+      },
+      "moneykata__ui__education__ContributionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "contributor": {
+            "title": "Contributor",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "fiveYear": {
+            "title": "Fiveyear",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "date",
+          "amount",
+          "contributor",
+          "name",
+          "relationship",
+          "fiveYear"
+        ],
+        "title": "ContributionOut",
         "type": "object"
       },
       "moneykata__ui__education__DocumentIn": {
@@ -15447,6 +16261,89 @@
         "title": "Point",
         "type": "object"
       },
+      "moneykata__ui__loans__RowOut": {
+        "additionalProperties": false,
+        "properties": {
+          "balance": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Balance",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "escrow": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Escrow",
+            "type": "string"
+          },
+          "interest": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Interest",
+            "type": "string"
+          },
+          "overpayment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Overpayment",
+            "type": "string"
+          },
+          "past": {
+            "title": "Past",
+            "type": "boolean"
+          },
+          "payment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Payment",
+            "type": "string"
+          },
+          "pmi": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Pmi",
+            "type": "string"
+          },
+          "principal": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Principal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "payment",
+          "principal",
+          "interest",
+          "escrow",
+          "pmi",
+          "balance",
+          "past",
+          "overpayment"
+        ],
+        "title": "RowOut",
+        "type": "object"
+      },
       "moneykata__ui__loans__SplitOut": {
         "additionalProperties": false,
         "properties": {
@@ -15646,6 +16543,173 @@
           "form"
         ],
         "title": "DocumentIn",
+        "type": "object"
+      },
+      "moneykata__ui__taxpanels__ContributionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "contributed": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Contributed",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "over": {
+            "title": "Over",
+            "type": "boolean"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "kind",
+          "owner",
+          "contributed",
+          "limit",
+          "over",
+          "note"
+        ],
+        "title": "ContributionOut",
+        "type": "object"
+      },
+      "moneykata__ui__taxpanels__RowOut": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "title": "Account",
+            "type": "string"
+          },
+          "acquired": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquired"
+          },
+          "adjustment": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Adjustment",
+            "type": "string"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "box": {
+            "title": "Box",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "collectable": {
+            "title": "Collectable",
+            "type": "boolean"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "gain": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gain"
+          },
+          "longTerm": {
+            "title": "Longterm",
+            "type": "boolean"
+          },
+          "proceeds": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Proceeds",
+            "type": "string"
+          },
+          "sold": {
+            "format": "date",
+            "title": "Sold",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "acquired",
+          "sold",
+          "proceeds",
+          "basis",
+          "code",
+          "adjustment",
+          "gain",
+          "longTerm",
+          "box",
+          "account",
+          "collectable"
+        ],
+        "title": "RowOut",
         "type": "object"
       },
       "moneykata__ui__transactions__SplitOut": {
@@ -23562,6 +24626,112 @@
         ]
       }
     },
+    "/ui/api/tax-books/{book_id}/exports/8949.csv": {
+      "get": {
+        "operationId": "export_csv_ui_api_tax_books__book_id__exports_8949_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Csv",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/exports/moneykata.txf": {
+      "get": {
+        "operationId": "export_txf_ui_api_tax_books__book_id__exports_moneykata_txf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Txf",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/exports/summary.pdf": {
+      "get": {
+        "description": "A summary for a preparer: what each panel holds, with its sources.",
+        "operationId": "export_pdf_ui_api_tax_books__book_id__exports_summary_pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Pdf",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
     "/ui/api/tax-books/{book_id}/filings": {
       "post": {
         "operationId": "add_filing_ui_api_tax_books__book_id__filings_post",
@@ -23609,6 +24779,48 @@
           }
         },
         "summary": "Add Filing",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/panels": {
+      "get": {
+        "operationId": "get_panels_ui_api_tax_books__book_id__panels_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Panels"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Panels",
         "tags": [
           "taxes"
         ]

@@ -16,11 +16,14 @@ import { ShareDialog } from '../components/share.js';
 import { toast } from '../components/toast.js';
 import { ACCEPT, uploadAll } from '../components/receipt.js';
 import { book as bookPref } from '../store/prefs.js';
+import { Panel, PANEL_TABS, SummaryFigures } from '../components/taxpanels.js';
 
 export const TABS = /** @type {[string, string][]} */ ([
   ['summary', 'Summary'],
   ['filings', 'Filings'],
+  ...PANEL_TABS.filter(([k]) => k !== 'issues'),
   ['documents', 'Documents'],
+  ['issues', 'Issues'],
 ]);
 const PROGRESS = /** @type {[string, string][]} */ ([
   ['not started', 'Not started'],
@@ -120,6 +123,7 @@ function Book({ id, tab }) {
     ${tab === 'summary' ? html`<${Summary} b=${b} done=${done} />` : null}
     ${tab === 'filings' ? html`<${Filings} b=${b} done=${done} />` : null}
     ${tab === 'documents' ? html`<${Documents} b=${b} done=${done} />` : null}
+    ${PANEL_TABS.some(([k]) => k === tab) ? html`<${Panel} b=${b} tab=${tab} />` : null}
   `;
 }
 
@@ -131,7 +135,8 @@ function Summary({ b, done }) {
   const [adding, setAdding] = useState('');
   const missing = b.expected.filter((/** @type {any} */ e) => !e.document).length;
   return html`
-    <div class="grid g4">
+    <${SummaryFigures} b=${b} />
+    <div class="grid g4 mt">
       <div class="card kpi">
         <div class="label">Filers</div>
         <div style=${{ fontSize: '16px', fontWeight: 600, marginTop: '6px' }}>${b.filers.map((

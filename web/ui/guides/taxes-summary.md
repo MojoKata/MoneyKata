@@ -11,6 +11,10 @@ The book shown: one tax year, for you alone or for you and your spouse filing jo
 book** starts the next one; **Share** lets someone help, such as a preparer with an account here or
 a grown child.
 
+## Exports
+
+Form 8949 and Schedule D as CSV, a TXF file that TurboTax, H&R Block and others import, and a PDF summary for a preparer. Each says what it covers and what it doesn't.
+
 ## Accounts counted
 
 The filers' own accounts, each once even when they share them with each other. **Leave out** one

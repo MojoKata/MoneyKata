@@ -238,6 +238,15 @@
  */
 
 /**
+ * @typedef {Object} BoxTotal
+ * @property {string} box
+ * @property {string} proceeds
+ * @property {string} basis
+ * @property {string} adjustment
+ * @property {string} gain
+ */
+
+/**
  * @typedef {Object} BudgetChange
  * @property {(string | null)} [name]
  * @property {(Array<string> | null)} [accountIds]
@@ -361,19 +370,8 @@
  */
 
 /**
- * @typedef {Object} ContributionOut
- * @property {string} transactionId
- * @property {string} date
- * @property {string} amount
- * @property {string} contributor
- * @property {string} name
- * @property {(string | null)} relationship
- * @property {boolean} fiveYear
- */
-
-/**
  * @typedef {Object} ContributionsView
- * @property {Array<ContributionOut>} rows
+ * @property {Array<moneykata__ui__education__ContributionOut>} rows
  * @property {Array<GiftYearOut>} years
  * @property {boolean} canWrite
  */
@@ -465,8 +463,30 @@
  */
 
 /**
+ * @typedef {Object} DonationRow
+ * @property {string} date
+ * @property {string} name
+ * @property {string} kindLabel
+ * @property {string} amount
+ * @property {boolean} deductible
+ * @property {boolean} needsAck
+ * @property {boolean} acknowledged
+ */
+
+/**
  * @typedef {Object} Done
  * @property {number} changed
+ */
+
+/**
+ * @typedef {Object} EducationOut
+ * @property {string} account
+ * @property {string} beneficiary
+ * @property {Array<Amount>} contributions
+ * @property {(string | null)} stateDeduction
+ * @property {string} distributions
+ * @property {string} expenses
+ * @property {string} notCovered
  */
 
 /**
@@ -672,6 +692,14 @@
  */
 
 /**
+ * @typedef {Object} GiftTaxOut
+ * @property {string} giver
+ * @property {string} person
+ * @property {string} given
+ * @property {string} exclusion
+ */
+
+/**
  * @typedef {Object} GiftYearOut
  * @property {string} contributor
  * @property {string} name
@@ -680,6 +708,15 @@
  * @property {string} exclusion
  * @property {boolean} over
  * @property {(number | null)} fromElection
+ */
+
+/**
+ * @typedef {Object} GivingOut
+ * @property {Array<DonationRow>} deductible
+ * @property {Array<DonationRow>} apart
+ * @property {string} deductibleTotal
+ * @property {number} missingAcks
+ * @property {Array<string>} notes
  */
 
 /**
@@ -840,6 +877,17 @@
  */
 
 /**
+ * @typedef {Object} IncomeOut
+ * @property {Array<Amount>} interest
+ * @property {string} interestTotal
+ * @property {string} ordinary
+ * @property {string} qualified
+ * @property {string} capitalGainDistributions
+ * @property {string} returnOfCapital
+ * @property {Array<Amount>} dividendsByPayer
+ */
+
+/**
  * @typedef {Object} InstrumentOut
  * @property {string} id
  * @property {string} symbol
@@ -861,6 +909,13 @@
  * @property {string} username
  * @property {string} displayName
  * @property {string} household
+ */
+
+/**
+ * @typedef {Object} IssueOut
+ * @property {string} kind
+ * @property {string} text
+ * @property {(string | null)} link
  */
 
 /**
@@ -1024,6 +1079,16 @@
  */
 
 /**
+ * @typedef {Object} LoanOut
+ * @property {string} account
+ * @property {string} form
+ * @property {string} interest
+ * @property {string} pmi
+ * @property {string} propertyTax
+ * @property {(string | null)} securedBy
+ */
+
+/**
  * @typedef {Object} LoanView
  * @property {(TermsOut | null)} terms
  * @property {string} balance
@@ -1037,7 +1102,7 @@
  * @property {string} interestAhead
  * @property {string} principalThisYear
  * @property {string} overpaid
- * @property {Array<RowOut>} rows
+ * @property {Array<moneykata__ui__loans__RowOut>} rows
  * @property {(ServicerCheck | null)} servicer
  * @property {(Equity | null)} [equity]
  * @property {(Following | null)} [following]
@@ -1344,6 +1409,28 @@
  */
 
 /**
+ * @typedef {Object} Panels
+ * @property {number} year
+ * @property {Array<moneykata__ui__taxpanels__RowOut>} rows
+ * @property {Array<WashOut>} washes
+ * @property {ScheduleDOut} scheduleD
+ * @property {IncomeOut} income
+ * @property {RetirementOut} retirement
+ * @property {Array<TagOut>} deductions
+ * @property {Array<Quarter>} estimated
+ * @property {(string | null)} lastYearTax
+ * @property {GivingOut} giving
+ * @property {Array<EducationOut>} education
+ * @property {Array<GiftTaxOut>} giftTax
+ * @property {Array<string>} elections
+ * @property {Array<LoanOut>} loans
+ * @property {Array<ResidenceOut>} residences
+ * @property {Array<IssueOut>} issues
+ * @property {Array<string>} leftOut
+ * @property {string} covers
+ */
+
+/**
  * @typedef {Object} Password
  * @property {string} password
  */
@@ -1395,8 +1482,8 @@
  * @property {OutcomeOut} plan
  * @property {(OutcomeOut | null)} recast
  * @property {InvestedOut} invested
- * @property {Array<RowOut>} planRows
- * @property {Array<RowOut>} recastRows
+ * @property {Array<moneykata__ui__loans__RowOut>} planRows
+ * @property {Array<moneykata__ui__loans__RowOut>} recastRows
  * @property {Array<ResetView>} assumedRates
  */
 
@@ -1658,6 +1745,13 @@
  */
 
 /**
+ * @typedef {Object} Quarter
+ * @property {string} jurisdiction
+ * @property {number} quarter
+ * @property {string} amount
+ */
+
+/**
  * @typedef {Object} ReadingQueue
  * @property {number} waiting
  * @property {number} reading
@@ -1800,10 +1894,36 @@
  */
 
 /**
+ * @typedef {Object} ResidenceOut
+ * @property {string} name
+ * @property {string} sold
+ * @property {string} gain
+ * @property {number} yearsOwned
+ */
+
+/**
+ * @typedef {Object} RetirementOut
+ * @property {Array<moneykata__ui__taxpanels__ContributionOut>} contributions
+ * @property {Array<Amount>} distributions
+ * @property {Array<RmdOut>} rmds
+ * @property {(string | null)} basis8606
+ */
+
+/**
  * @typedef {Object} ReturnRow
  * @property {string} id
  * @property {string} name
  * @property {Object<string, (string | null)>} periods
+ */
+
+/**
+ * @typedef {Object} RmdOut
+ * @property {string} account
+ * @property {string} owner
+ * @property {number} age
+ * @property {string} balance
+ * @property {number} factor
+ * @property {string} due
  */
 
 /**
@@ -1813,19 +1933,6 @@
  * @property {string} used
  * @property {string} eligible
  * @property {string} available
- */
-
-/**
- * @typedef {Object} RowOut
- * @property {string} date
- * @property {string} payment
- * @property {string} principal
- * @property {string} interest
- * @property {string} escrow
- * @property {string} pmi
- * @property {string} balance
- * @property {boolean} past
- * @property {string} overpayment
  */
 
 /**
@@ -1867,6 +1974,17 @@
  * @typedef {Object} SavedPlanIn
  * @property {string} name
  * @property {moneykata__ui__loans__PlanIn} inputs
+ */
+
+/**
+ * @typedef {Object} ScheduleDOut
+ * @property {Array<BoxTotal>} boxes
+ * @property {string} shortTerm
+ * @property {string} longTerm
+ * @property {string} collectables
+ * @property {string} carryoverShort
+ * @property {string} carryoverLong
+ * @property {string} net
  */
 
 /**
@@ -2106,6 +2224,15 @@
  * @typedef {Object} TagIn
  * @property {string} [contributor]
  * @property {boolean} [fiveYear]
+ */
+
+/**
+ * @typedef {Object} TagOut
+ * @property {string} tag
+ * @property {string} label
+ * @property {string} total
+ * @property {number} count
+ * @property {number} withReceipts
  */
 
 /**
@@ -2405,6 +2532,19 @@
  */
 
 /**
+ * @typedef {Object} WashOut
+ * @property {string} sold
+ * @property {string} symbol
+ * @property {string} account
+ * @property {string} loss
+ * @property {string} disallowed
+ * @property {string} replacedOn
+ * @property {string} replacementAccount
+ * @property {string} replacementQty
+ * @property {(string | null)} adjustedBasis
+ */
+
+/**
  * @typedef {Object} WithdrawalYearOut
  * @property {number} year
  * @property {string} distributions
@@ -2436,6 +2576,17 @@
  * @typedef {Object} moneykata__ui__accounts__Point
  * @property {string} date
  * @property {string} value
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__education__ContributionOut
+ * @property {string} transactionId
+ * @property {string} date
+ * @property {string} amount
+ * @property {string} contributor
+ * @property {string} name
+ * @property {(string | null)} relationship
+ * @property {boolean} fiveYear
  */
 
 /**
@@ -2527,6 +2678,19 @@
  */
 
 /**
+ * @typedef {Object} moneykata__ui__loans__RowOut
+ * @property {string} date
+ * @property {string} payment
+ * @property {string} principal
+ * @property {string} interest
+ * @property {string} escrow
+ * @property {string} pmi
+ * @property {string} balance
+ * @property {boolean} past
+ * @property {string} overpayment
+ */
+
+/**
  * @typedef {Object} moneykata__ui__loans__SplitOut
  * @property {string} principal
  * @property {string} interest
@@ -2559,6 +2723,33 @@
  * @property {(string | null)} [filingId]
  * @property {(string | null)} [receiptId]
  * @property {(string | null)} [notes]
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__taxpanels__ContributionOut
+ * @property {string} account
+ * @property {string} kind
+ * @property {string} owner
+ * @property {string} contributed
+ * @property {(string | null)} limit
+ * @property {boolean} over
+ * @property {string} note
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__taxpanels__RowOut
+ * @property {string} description
+ * @property {(string | null)} acquired
+ * @property {string} sold
+ * @property {string} proceeds
+ * @property {(string | null)} basis
+ * @property {string} code
+ * @property {string} adjustment
+ * @property {(string | null)} gain
+ * @property {boolean} longTerm
+ * @property {string} box
+ * @property {string} account
+ * @property {boolean} collectable
  */
 
 /**

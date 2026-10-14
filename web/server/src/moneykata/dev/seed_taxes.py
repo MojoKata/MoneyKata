@@ -1,6 +1,7 @@
 """Dev mode's tax books (requirements S17.7): Alice and Bob's joint book for last year, its
 federal and state returns accepted with their documents and the figures they carry forward,
-and this year's book started from it."""
+and this year's book started from it; and a loss sale this year bought back in the Roth IRA
+within 30 days, a wash sale for the Capital gains panel."""
 
 import datetime as dt
 import json
@@ -10,6 +11,8 @@ from sqlalchemy import select
 from .. import clock, ids
 from ..store.entities.accounts import Account
 from ..store.entities.taxes import Filing, TaxBook, TaxBookFiler, TaxDocument
+from ..store.repos import ledger as repo
+from .seed_accounts import Book
 
 
 def seed_taxes(s, people: dict) -> None:
@@ -106,3 +109,21 @@ def seed_taxes(s, people: dict) -> None:
             dueDate=dt.date(year + 1, 4, 15),
         )
     )
+    # A loss sale bought back in the Roth IRA within 30 days.
+    if "Taxable brokerage" in accts and "Roth IRA" in accts:
+        b = Book(s, clock.today())
+        apple = repo.instrument(s, "AAPL", "Apple Inc.", "equity")
+        today = clock.today()
+        brk, roth = accts["Taxable brokerage"], accts["Roth IRA"]
+        b.txn(brk, today - dt.timedelta(days=101), "4000.00", "Deposit", kind="deposit")
+        b.trade(brk, today - dt.timedelta(days=100), "buy", apple, "15", "240")
+        b.trade(brk, today - dt.timedelta(days=40), "sell", apple, "15", "205")
+        b.txn(
+            roth,
+            today - dt.timedelta(days=26),
+            "2000.00",
+            "Contribution",
+            kind="deposit",
+            contributionYear=today.year,
+        )
+        b.trade(roth, today - dt.timedelta(days=25), "buy", apple, "8", "210")

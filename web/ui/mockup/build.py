@@ -275,6 +275,14 @@ class Recorder:
             "/ui/taxes/summary",
             "/ui/taxes/filings",
             "/ui/taxes/documents",
+            "/ui/taxes/gains",
+            "/ui/taxes/income",
+            "/ui/taxes/retirement",
+            "/ui/taxes/deductions",
+            "/ui/taxes/giving",
+            "/ui/taxes/education",
+            "/ui/taxes/property",
+            "/ui/taxes/issues",
         ]
         for x in self.api("/projections"):
             paths.append(f"/ui/projections/{x['id']}")

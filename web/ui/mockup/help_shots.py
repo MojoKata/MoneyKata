@@ -92,6 +92,19 @@ def routes(page) -> dict[str, str]:
         "taxes-summary": "/ui/taxes/summary",
         "taxes-filings": "/ui/taxes/filings",
         "taxes-documents": "/ui/taxes/documents",
+        **{
+            f"taxes-{k}": f"/ui/taxes/{k}"
+            for k in (
+                "gains",
+                "income",
+                "retirement",
+                "deductions",
+                "giving",
+                "education",
+                "property",
+                "issues",
+            )
+        },
         "portfolio-performance": f"/ui/portfolios/{port}/performance",
         "portfolio-holdings": f"/ui/portfolios/{port}/holdings",
     }
