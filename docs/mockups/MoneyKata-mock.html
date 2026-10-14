@@ -1193,15 +1193,21 @@ function positionsTable(compact) {
   </tbody><tfoot><tr><td colspan="${compact ? 6 : 7}">Realized ${state.year}</td><td class="num">${signed(rows.reduce((s, p) => s + p.gain, 0))}</td><td></td></tr></tfoot></table></div></div>`;
 }
 SCREENS.positions = () => {
-  const [, bar] = tabs('pos', ['Open', 'Closed'], 'Open');
+  const [cur, bar] = tabs('pos', ['Open', 'Closed', 'Gains'], 'Open');
   return `<div class="grid g4">
     <div class="card kpi"><div class="label">Unrealized gain</div><div class="value">${signed(56813.0, { cents: false })}</div><div class="delta dim">open positions</div></div>
     <div class="card kpi"><div class="label">Realized ${state.year}</div><div class="value">${signed(-1965.0, { cents: false })}</div><div class="delta dim">short ${signed(825)} · long ${signed(-2790)}</div></div>
     <div class="card kpi"><div class="label">Option premium ${state.year}</div><div class="value">${money(2337, { cents: false })}</div><div class="delta dim">collected, net of closes</div></div>
     <div class="card kpi"><div class="label">Expiring ≤ 7 days</div><div class="value">1</div><div class="delta"><span class="pill warn">MSFT 480 P · OTM</span></div></div></div>
   <div class="toolbar mt">${filterChips('pos', ['All', 'Stocks', 'Options', 'Crypto'], 'All')}<span class="spacer"></span><button class="btn primary" data-act="dlg" data-v="trade">${icon('plus')} Record trade</button></div>
-  ${bar}${positionsTable(false)}`;
+  ${bar}${cur === 'Gains' ? gainsTab() : positionsTable(false)}`;
 };
+function gainsTab() {
+  const rows = [['2026', 825, -2790], ['2025', 3410, 6120], ['2024', -620, 2210]];
+  const un = [['Individual Brokerage', 4120, 31870], ['Roth IRA', 0, 12410], ['Cold storage', 0, 8413]];
+  const tbl = (title, data) => `<div class="card" style="padding:4px 8px"><h3 style="padding:8px 8px 0">${title}</h3><div class="table-wrap"><table class="t"><thead><tr><th></th><th class="num">Short term</th><th class="num">Long term</th><th class="num">Total</th></tr></thead><tbody>${data.map((r) => `<tr><td>${r[0]}</td><td class="num">${signed(r[1])}</td><td class="num">${signed(r[2])}</td><td class="num"><b>${signed(r[1] + r[2])}</b></td></tr>`).join('')}</tbody></table></div></div>`;
+  return `<div class="toolbar">${filterChips('gby', ['Year', 'Month', 'Account', 'Instrument', 'Term'], 'Year')}</div><div class="grid g2">${tbl('Realized', rows)}${tbl('Unrealized, by account', un)}</div>`;
+}
 
 SCREENS.budgets = () => {
   const [cur, bar] = tabs('bud', ['This month', 'Cash flow', 'Trends', 'Recurring'], 'This month');

@@ -11,6 +11,7 @@ const Account = screen('account');
 const Transactions = screen('transactions');
 const Portfolios = screen('portfolios');
 const Portfolio = screen('portfolio');
+const Positions = screen('positions');
 const Activity = screen('activity');
 const Budgets = screen('budgets');
 const Receipts = screen('receipts');
@@ -35,6 +36,8 @@ export function Screens() {
       <${Route} path="/ui/portfolios" component=${Portfolios} />
       <${Route} path="/ui/portfolios/:id" component=${Portfolio} />
       <${Route} path="/ui/portfolios/:id/:tab" component=${Portfolio} />
+      <${Route} path="/ui/positions" component=${Positions} />
+      <${Route} path="/ui/positions/:tab" component=${Positions} />
       <${Route} path="/ui/budgets" component=${Budgets} />
       <${Route} path="/ui/budgets/:id/:tab" component=${Budgets} />
       <${Route} path="/ui/projections" component=${Projections} />

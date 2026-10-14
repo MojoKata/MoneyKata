@@ -2107,6 +2107,129 @@
         "title": "Close",
         "type": "object"
       },
+      "ClosedRow": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "closed": {
+            "format": "date",
+            "title": "Closed",
+            "type": "string"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "how": {
+            "title": "How",
+            "type": "string"
+          },
+          "instrumentClass": {
+            "title": "Instrumentclass",
+            "type": "string"
+          },
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "opened": {
+            "format": "date",
+            "title": "Opened",
+            "type": "string"
+          },
+          "proceeds": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Proceeds",
+            "type": "string"
+          },
+          "quantity": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "realized": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized"
+          },
+          "saleId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saleid"
+          },
+          "side": {
+            "title": "Side",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "term": {
+            "title": "Term",
+            "type": "string"
+          }
+        },
+        "required": [
+          "saleId",
+          "accountId",
+          "accountName",
+          "instrumentId",
+          "symbol",
+          "instrumentClass",
+          "side",
+          "quantity",
+          "opened",
+          "closed",
+          "how",
+          "proceeds",
+          "cost",
+          "realized",
+          "term"
+        ],
+        "title": "ClosedRow",
+        "type": "object"
+      },
       "Confirmation": {
         "additionalProperties": false,
         "properties": {
@@ -4001,6 +4124,94 @@
           "granted"
         ],
         "title": "FundOut",
+        "type": "object"
+      },
+      "GainGroup": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "longTerm": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Longterm",
+            "type": "string"
+          },
+          "shortTerm": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Shortterm",
+            "type": "string"
+          },
+          "total": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "shortTerm",
+          "longTerm",
+          "total"
+        ],
+        "title": "GainGroup",
+        "type": "object"
+      },
+      "GainsView": {
+        "additionalProperties": false,
+        "properties": {
+          "by": {
+            "title": "By",
+            "type": "string"
+          },
+          "realized": {
+            "items": {
+              "$ref": "#/components/schemas/GainGroup"
+            },
+            "title": "Realized",
+            "type": "array"
+          },
+          "unrealized": {
+            "items": {
+              "$ref": "#/components/schemas/GainGroup"
+            },
+            "title": "Unrealized",
+            "type": "array"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "by",
+          "year",
+          "realized",
+          "unrealized"
+        ],
+        "title": "GainsView",
         "type": "object"
       },
       "GiftIn": {
@@ -7056,6 +7267,56 @@
         "title": "Login",
         "type": "object"
       },
+      "LotOut": {
+        "additionalProperties": false,
+        "properties": {
+          "acquiredOn": {
+            "format": "date",
+            "title": "Acquiredon",
+            "type": "string"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "longTerm": {
+            "title": "Longterm",
+            "type": "boolean"
+          },
+          "quantity": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "acquiredOn",
+          "quantity",
+          "basis",
+          "days",
+          "longTerm"
+        ],
+        "title": "LotOut",
+        "type": "object"
+      },
       "LotRow": {
         "additionalProperties": false,
         "properties": {
@@ -8325,6 +8586,169 @@
           "next"
         ],
         "title": "OccasionOut",
+        "type": "object"
+      },
+      "OpenRow": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "averageCost": {
+            "anyOf": [
+              {
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagecost"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "instrumentClass": {
+            "title": "Instrumentclass",
+            "type": "string"
+          },
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "lots": {
+            "items": {
+              "$ref": "#/components/schemas/LotOut"
+            },
+            "title": "Lots",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "quantity": {
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "realized": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Realized",
+            "type": "string"
+          },
+          "side": {
+            "title": "Side",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "term": {
+            "title": "Term",
+            "type": "string"
+          },
+          "unrealized": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealized"
+          },
+          "unrealizedPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealizedpct"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "accountId",
+          "accountName",
+          "instrumentId",
+          "symbol",
+          "name",
+          "instrumentClass",
+          "side",
+          "quantity",
+          "cost",
+          "averageCost",
+          "value",
+          "unrealized",
+          "unrealizedPct",
+          "realized",
+          "term",
+          "days",
+          "lots"
+        ],
+        "title": "OpenRow",
         "type": "object"
       },
       "OrganisationIn": {
@@ -10235,6 +10659,35 @@
           "end"
         ],
         "title": "PortfolioSeries",
+        "type": "object"
+      },
+      "PositionsView": {
+        "additionalProperties": false,
+        "properties": {
+          "closed": {
+            "items": {
+              "$ref": "#/components/schemas/ClosedRow"
+            },
+            "title": "Closed",
+            "type": "array"
+          },
+          "open": {
+            "items": {
+              "$ref": "#/components/schemas/OpenRow"
+            },
+            "title": "Open",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/Summary"
+          }
+        },
+        "required": [
+          "summary",
+          "open",
+          "closed"
+        ],
+        "title": "PositionsView",
         "type": "object"
       },
       "PreviousKeyOut": {
@@ -13279,6 +13732,51 @@
           "payee"
         ],
         "title": "Suggestion",
+        "type": "object"
+      },
+      "Summary": {
+        "additionalProperties": false,
+        "properties": {
+          "realizedLong": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Realizedlong",
+            "type": "string"
+          },
+          "realizedShort": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Realizedshort",
+            "type": "string"
+          },
+          "realizedThisYear": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Realizedthisyear",
+            "type": "string"
+          },
+          "unrealized": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Unrealized",
+            "type": "string"
+          }
+        },
+        "required": [
+          "unrealized",
+          "realizedThisYear",
+          "realizedShort",
+          "realizedLong"
+        ],
+        "title": "Summary",
         "type": "object"
       },
       "Suspects": {
@@ -22107,6 +22605,109 @@
         "summary": "Portfolio Series",
         "tags": [
           "portfolios"
+        ]
+      }
+    },
+    "/ui/api/positions": {
+      "get": {
+        "operationId": "list_positions_ui_api_positions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "title": "Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Positions",
+        "tags": [
+          "positions"
+        ]
+      }
+    },
+    "/ui/api/positions/gains": {
+      "get": {
+        "description": "Realized gains grouped by year, month, account, instrument or term (S3.9), and\nunrealized gains now, by account or instrument.",
+        "operationId": "gains_ui_api_positions_gains_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "by",
+            "required": false,
+            "schema": {
+              "default": "year",
+              "title": "By",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GainsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gains",
+        "tags": [
+          "positions"
         ]
       }
     },

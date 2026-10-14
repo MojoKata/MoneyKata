@@ -39,6 +39,7 @@ export const NAV = [
   { href: '/ui/accounts', label: 'Accounts', icon: 'bank', match: /^\/ui\/accounts/ },
   { href: '/ui/transactions', label: 'Transactions', icon: 'tx', match: /^\/ui\/transactions/ },
   { href: '/ui/portfolios', label: 'Portfolios', icon: 'pie', match: /^\/ui\/portfolios/ },
+  { href: '/ui/positions', label: 'Positions', icon: 'candles', match: /^\/ui\/positions/ },
   { href: '/ui/budgets', label: 'Budgets', icon: 'target', match: /^\/ui\/budgets/ },
   { href: '/ui/projections', label: 'Projections', icon: 'trend', match: /^\/ui\/projections/ },
   { href: '/ui/gifts', label: 'Gifts', icon: 'gift', match: /^\/ui\/gifts/ },

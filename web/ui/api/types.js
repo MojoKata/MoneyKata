@@ -354,6 +354,25 @@
  */
 
 /**
+ * @typedef {Object} ClosedRow
+ * @property {(string | null)} saleId
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {string} instrumentId
+ * @property {string} symbol
+ * @property {string} instrumentClass
+ * @property {string} side
+ * @property {string} quantity
+ * @property {string} opened
+ * @property {string} closed
+ * @property {string} how
+ * @property {string} proceeds
+ * @property {(string | null)} cost
+ * @property {(string | null)} realized
+ * @property {string} term
+ */
+
+/**
  * @typedef {Object} Confirmation
  * @property {string} at
  * @property {string} fingerprint
@@ -652,6 +671,23 @@
  * @property {string} balance
  * @property {string} contributed
  * @property {string} granted
+ */
+
+/**
+ * @typedef {Object} GainGroup
+ * @property {string} key
+ * @property {string} label
+ * @property {string} shortTerm
+ * @property {string} longTerm
+ * @property {string} total
+ */
+
+/**
+ * @typedef {Object} GainsView
+ * @property {string} by
+ * @property {(number | null)} year
+ * @property {Array<GainGroup>} realized
+ * @property {Array<GainGroup>} unrealized
  */
 
 /**
@@ -1115,6 +1151,15 @@
  */
 
 /**
+ * @typedef {Object} LotOut
+ * @property {string} acquiredOn
+ * @property {string} quantity
+ * @property {(string | null)} basis
+ * @property {number} days
+ * @property {boolean} longTerm
+ */
+
+/**
  * @typedef {Object} LotRow
  * @property {(string | null)} lotId
  * @property {string} acquiredOn
@@ -1345,6 +1390,27 @@
  * @property {string} id
  * @property {string} label
  * @property {(string | null)} next
+ */
+
+/**
+ * @typedef {Object} OpenRow
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {string} instrumentId
+ * @property {string} symbol
+ * @property {(string | null)} name
+ * @property {string} instrumentClass
+ * @property {string} side
+ * @property {string} quantity
+ * @property {(string | null)} cost
+ * @property {(string | null)} averageCost
+ * @property {(string | null)} value
+ * @property {(string | null)} unrealized
+ * @property {(number | null)} unrealizedPct
+ * @property {string} realized
+ * @property {string} term
+ * @property {number} days
+ * @property {Array<LotOut>} lots
  */
 
 /**
@@ -1641,6 +1707,13 @@
  * @property {string} growth
  * @property {string} start
  * @property {string} end
+ */
+
+/**
+ * @typedef {Object} PositionsView
+ * @property {Summary} summary
+ * @property {Array<OpenRow>} open
+ * @property {Array<ClosedRow>} closed
  */
 
 /**
@@ -2210,6 +2283,14 @@
  * @property {string} date
  * @property {string} amount
  * @property {(string | null)} payee
+ */
+
+/**
+ * @typedef {Object} Summary
+ * @property {string} unrealized
+ * @property {string} realizedThisYear
+ * @property {string} realizedShort
+ * @property {string} realizedLong
  */
 
 /**

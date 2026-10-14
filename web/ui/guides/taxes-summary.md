@@ -13,7 +13,8 @@ a grown child.
 
 ## Exports
 
-Form 8949 and Schedule D as CSV, a TXF file that TurboTax, H&R Block and others import, and a PDF summary for a preparer. Each says what it covers and what it doesn't.
+Form 8949 and Schedule D as CSV, a TXF file that TurboTax, H&R Block and others import, and a PDF
+summary for a preparer. Each says what it covers and what it doesn't.
 
 ## Accounts counted
 
