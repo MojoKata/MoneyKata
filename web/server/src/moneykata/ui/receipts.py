@@ -9,7 +9,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
-from .. import activity, receipts, settings
+from .. import activity, exactjson, receipts, settings
 from ..errors import Problem, refuse
 from ..keys.files import FileError
 from ..receipts import reading
@@ -18,10 +18,10 @@ from ..store.entities.assets import Item
 from ..store.entities.education import QualifiedExpense
 from ..store.entities.receipts import Receipt
 from ..store.entities.users import User
-from .conventions import Model, Money, if_match, stale
+from .conventions import ExactRoute, Model, Money, if_match, stale
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["receipts"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["receipts"])
 
 
 class LinkOut(Model):
@@ -287,10 +287,10 @@ def change_receipt(
                 if f == "amount" and value is not None:
                     value = abs(Decimal(value))
                 setattr(r, f, value)
-        r.filled = json.dumps(sorted(filled))
+        r.filled = exactjson.dumps(sorted(filled))
         if "tags" in sent and body.tags is not None:
             tags = sorted({t.strip().lower() for t in body.tags if t.strip()})
-            r.tags = json.dumps(tags)
+            r.tags = exactjson.dumps(tags)
         r.updatedAt = dt.datetime.now(dt.UTC)
         s.flush()
         return detail(s, c.id, r, lvl)

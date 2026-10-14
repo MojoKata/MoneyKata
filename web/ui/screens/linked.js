@@ -19,6 +19,7 @@ import { errAt, Field, FormError } from '../components/fields.js';
 import { toast } from '../components/toast.js';
 import { TimeChart } from '../charts/chart.js';
 import { Panel, PANEL_TABS } from '../components/taxpanels.js';
+import { Dec, dec } from '../app/dec.js';
 
 const HUES = /** @type {Record<string, string>} */ ({
   teal: '#4fc6d6',
@@ -302,7 +303,7 @@ function Dashboard({ base, rows }) {
   // A newer MoneyKata on the other side may share kinds this one can't show yet (version skew).
   const unknown = rows.filter((r) => !KIND[r.kind]);
   rows = rows.filter((r) => KIND[r.kind]);
-  const total = accounts.reduce((t, r) => t + Number(r.row?.balance || 0), 0);
+  const total = Dec.sum(accounts.map((r) => dec(r.row?.balance)));
   return html`
     ${accounts.length
       ? html`

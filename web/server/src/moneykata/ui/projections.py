@@ -10,15 +10,15 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, ids, projections
+from .. import access, activity, clock, exactjson, ids, projections
 from ..errors import FieldError, Problem
 from ..projections import assumptions, bitcoin, taxtables
 from ..store.entities.projections import Projection, ShownProjection, TaxFigure
 from ..store.entities.users import User
-from .conventions import Model, if_match, stale
+from .conventions import ExactRoute, Loose, Model, Ratio, if_match, stale
 from .deps import Caller, admin, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["projections"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["projections"])
 GOALS = ("retirement", "savings", "education")
 
 
@@ -48,14 +48,14 @@ class ProjectionDetail(ProjectionRow):
 class NewProjection(Model):
     name: str
     goal: str
-    builtOn: dict
-    inputs: dict = Field(default_factory=dict)
+    builtOn: Loose
+    inputs: Loose = Field(default_factory=dict)
 
 
 class ProjectionChange(Model):
     name: str | None = None
-    builtOn: dict | None = None
-    inputs: dict | None = None
+    builtOn: Loose | None = None
+    inputs: Loose | None = None
     # An active projection's new inputs become its baseline only when asked (S6.7.4).
     rebaseline: bool = False
 
@@ -234,8 +234,8 @@ def create_projection(body: NewProjection, request: Request, c: Caller = Depends
             ownerId=c.id,
             name=body.name.strip(),
             goal=body.goal,
-            builtOn=json.dumps(body.builtOn),
-            inputs=json.dumps(body.inputs),
+            builtOn=exactjson.dumps(body.builtOn),
+            inputs=exactjson.dumps(body.inputs),
         )
         s.add(p)
         s.flush()
@@ -280,14 +280,14 @@ def change_projection(
             p.name = body.name.strip()
             fields.append("name")
         if body.builtOn is not None:
-            p.builtOn = json.dumps(body.builtOn)
+            p.builtOn = exactjson.dumps(body.builtOn)
             fields.append("builtOn")
         if body.inputs is not None:
-            p.inputs = json.dumps(body.inputs)
+            p.inputs = exactjson.dumps(body.inputs)
             fields.append("inputs")
         if p.active and body.rebaseline:
             s.flush()
-            p.baseline = json.dumps(projections.make_baseline(projections.compute(s, p, c.id)))
+            p.baseline = exactjson.dumps(projections.make_baseline(projections.compute(s, p, c.id)))
             p.baselineAt = clock.now()
             fields.append("baseline")
         p.updatedAt = clock.now()
@@ -323,7 +323,7 @@ def activate(projection_id: str, request: Request, c: Caller = Depends(caller)):
                 other.active, other.baseline, other.baselineAt = False, None, None
                 replaced = other.name
         p.active = True
-        p.baseline = json.dumps(projections.make_baseline(projections.compute(s, p, c.id)))
+        p.baseline = exactjson.dumps(projections.make_baseline(projections.compute(s, p, c.id)))
         p.baselineAt = clock.now()
         activity.record(
             s,
@@ -442,7 +442,7 @@ def get_assumptions(request: Request, c: Caller = Depends(caller)):
 
 
 @router.put("/assumptions", response_model=AssumptionsView)
-def put_assumptions(body: dict, request: Request, c: Caller = Depends(caller)):
+def put_assumptions(body: Loose, request: Request, c: Caller = Depends(caller)):
     problems = assumptions.check(body)
     if problems:
         errors = [FieldError(f, "assumption-invalid", m) for f, m in problems]
@@ -462,7 +462,7 @@ class ModelRow(Model):
 
 
 class ModelsView(Model):
-    price: float | None
+    price: Ratio | None
     rows: list[ModelRow]
     figuresYear: int
 
@@ -499,7 +499,7 @@ class TaxTables(Model):
 
 class TaxChange(Model):
     year: int
-    values: dict[str, Any]
+    values: Loose
 
 
 def _tables(s, year: int) -> TaxTables:
@@ -567,13 +567,13 @@ def put_tax_tables(body: TaxChange, request: Request, c: Caller = Depends(admin)
                         id=ids.new_id("TaxFg"),
                         year=body.year,
                         key=k,
-                        value=json.dumps(v),
+                        value=exactjson.dumps(v),
                         changedById=c.id,
                     )
                 )
                 changed.append(k)
             elif json.loads(r.value) != v:
-                r.value, r.changedById = json.dumps(v), c.id
+                r.value, r.changedById = exactjson.dumps(v), c.id
                 changed.append(k)
         if changed:
             activity.record(

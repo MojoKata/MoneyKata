@@ -14,6 +14,7 @@ import { toast } from './toast.js';
 import { ACCEPT, uploadAll } from './receipt.js';
 import { FanChart } from '../charts/chart.js';
 import { EducationAnswer } from '../screens/projections.js';
+import { num } from '../app/dec.js';
 
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,\s]/g, '') : '');
 const today = () => new Date().toISOString().slice(0, 10);
@@ -434,7 +435,7 @@ export function Withdrawals({ a }) {
                     <td class="num">
                       <${Amt} v=${y.expenses} />
                     </td>
-                    <td class="num">${Number(
+                    <td class="num">${num(
                         y.notCovered,
                       )
                       ? html`<span class="pill warn"><${Amt} v=${y.notCovered} /></span>`

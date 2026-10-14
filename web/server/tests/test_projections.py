@@ -1,6 +1,7 @@
 """Projections and assumptions (requirements S6.1–S6.9) and the tax tables (S16.11)."""
 
 import datetime as dt
+from decimal import Decimal
 
 import pytest
 from conftest import make_user, sign_in
@@ -64,7 +65,7 @@ def test_retiring_later_makes_the_money_more_likely_to_last(alice):
     tight = {"withdrawal": {"method": "fixed", "amount": 90000}, "income": []}
     early = retirement(alice, people=[{"name": "A", "birthYear": 1979, "retireAge": 55}], **tight)
     late = retirement(alice, people=[{"name": "A", "birthYear": 1979, "retireAge": 67}], **tight)
-    assert late["result"]["answer"]["chance"] > early["result"]["answer"]["chance"] + 0.2
+    assert late["result"]["answer"]["chance"] > early["result"]["answer"]["chance"] + Decimal("0.2")
 
 
 def test_a_savings_target_says_how_likely_and_what_would_do_it(alice):

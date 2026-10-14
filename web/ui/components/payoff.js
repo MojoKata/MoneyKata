@@ -12,6 +12,7 @@ import { errAt, Field, FormError, Input, Select, SwitchRow } from './fields.js';
 import { Icon } from './icon.js';
 import { toast } from './toast.js';
 import { TimeChart } from '../charts/chart.js';
+import { num as float } from '../app/dec.js';
 
 const MONTHS = /** @type {[string, string][]} */ ([
   'January',
@@ -68,14 +69,14 @@ function body(f) {
 /** A saved plan's inputs, back in the form. */
 /** @param {any} i */
 function form(i) {
-  const blank = (/** @type {string} */ s) => (Number(s) ? s : '');
+  const blank = (/** @type {any} */ s) => (float(s) ? String(s) : '');
   return {
     monthly: blank(i.monthly),
     monthlyFrom: i.monthlyFrom || '',
     monthlyUntil: i.monthlyUntil || '',
     yearly: blank(i.yearly),
     yearlyMonth: String(i.yearlyMonth),
-    lumps: i.lumps.map((/** @type {any} */ x) => ({ date: x.date, amount: x.amount })),
+    lumps: i.lumps.map((/** @type {any} */ x) => ({ date: x.date, amount: String(x.amount) })),
     biweekly: i.biweekly,
     roundTo: blank(i.roundTo),
     recast: i.recast,
@@ -85,7 +86,7 @@ function form(i) {
 }
 
 /** A yearly rate: "6.5%". */
-const rate = (/** @type {string | number} */ x) => `${Number(x)}%`;
+const rate = (/** @type {any} */ x) => `${String(x).replace(/\.0+$|(\.\d*?)0+$/, '$1')}%`;
 
 /** "2055-01-01" as "Jan 2055". */
 const month = (/** @type {string | null} */ iso) => (iso ? date(iso).replace(/ \d+,/, '') : '—');
@@ -318,7 +319,7 @@ function Results({ r, className, rows, showRows }) {
                 </td>
               </tr>
               <tr>
-                <td>Recast${Number(rc.fees)
+                <td>Recast${float(rc.fees)
                   ? html`<span class="small dim"> · <${Amt} v=${rc.fees} /> in fees</span>`
                   : null}</td>
                 <td class="num">
@@ -397,7 +398,7 @@ function PlanRows({ rows }) {
               <td class="num">
                 <${Amt} v=${x.interest} />
               </td>
-              <td class="num">${Number(x.overpayment)
+              <td class="num">${float(x.overpayment)
                 ? html`<${Amt} v=${x.overpayment} />`
                 : html`<span class="dim">—</span>`}</td>
               <td class="num">

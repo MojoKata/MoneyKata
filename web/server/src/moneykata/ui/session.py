@@ -13,17 +13,17 @@ from ..auth import users as accounts
 from ..errors import Problem, refuse
 from ..ratelimit import Window, too_many
 from ..store.entities.users import User
-from .conventions import Model
+from .conventions import ExactRoute, Loose, Model
 from .deps import Caller, caller_in_setup, caller_quiet, server, set_cookie
 from .stream import stream
 
-router = APIRouter(prefix="/ui/api", tags=["session"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["session"])
 _by_address = Window(30, 15 * 60)
 
 
 class Household(Model):
     name: str
-    avatar: dict
+    avatar: Loose
 
 
 class Me(Model):

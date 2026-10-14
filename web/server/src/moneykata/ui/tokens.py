@@ -11,10 +11,10 @@ from sqlalchemy import false, select
 from .. import access, activity, clock, tokens
 from ..errors import FieldError, Problem, refuse
 from ..store.entities.users import AccessToken
-from .conventions import Model
+from .conventions import ExactRoute, Model
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["tokens"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["tokens"])
 
 
 class TokenItem(Model):

@@ -13,10 +13,10 @@ from ..store.entities.accounts import Account
 from ..store.entities.core import Activity
 from ..store.entities.sharing import Portfolio
 from ..store.entities.users import Group, User
-from .conventions import Model, Page, Paging
+from .conventions import ExactRoute, Model, Page, Paging
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["activity"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["activity"])
 
 TEXT = {
     "signin": "{actor} signed in",

@@ -12,10 +12,10 @@ from sqlalchemy import select, text
 from .. import activity, clock, settings, timezones
 from ..errors import FieldError, Problem
 from ..store.entities.core import Setting
-from .conventions import Model
+from .conventions import ExactRoute, Loose, Model
 from .deps import Caller, admin, server
 
-router = APIRouter(prefix="/ui/api", tags=["settings"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["settings"])
 
 
 class SettingsView(Model):
@@ -43,7 +43,7 @@ def get_settings(request: Request, c: Caller = Depends(admin)):
 
 
 @router.patch("/settings", response_model=SettingsView)
-def change_settings(body: dict[str, Any], request: Request, c: Caller = Depends(admin)):
+def change_settings(body: Loose, request: Request, c: Caller = Depends(admin)):
     """Every key is checked before any is saved; a refusal names each field (R3.7)."""
     errors: list[FieldError] = []
     clean = {}

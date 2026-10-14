@@ -94,17 +94,30 @@
        exactly what was adopted and refuses a tarball changed afterwards; it does not judge a
        release.
 8. **API conventions** *(proposed, for review)*, for `/ui/api` and, where they apply, `/mcp`.
-   The OpenAPI document is generated from the routes (R3.9).
+   The OpenAPI document is generated from the routes (R3.9); `docs/api.md` says how to use
+   `/ui/api` and `/mcp`.
    1. **Resources and methods**: plural nouns (`/ui/api/accounts`, `/ui/api/accounts/{id}`).
       `GET` reads, `POST` creates, `PATCH` changes the fields it sends, `DELETE`
       soft-deletes (`schema.md` §4) and returns 204. An action that is not a change of
       fields is a `POST` to a verb under the resource (`/ui/api/links/{id}/pull`).
    2. **Names and values in JSON**: field names camelCase, as in the database (`schema.md`
-      §1). Ids are the prefixed strings of `schema.md` §2. Money is a decimal **string** in
-      dollars with two places (`"1234.50"`); quantities and prices are decimal strings to
-      their own scale (S14.3); floats are refused. Dates are `YYYY-MM-DD`; timestamps are
-      RFC 3339 in UTC (`2026-10-12T14:05:00Z`, S14.9). A field with no value is `null`, never
-      left out.
+      §1). Ids are the prefixed strings of `schema.md` §2. Dates are `YYYY-MM-DD`; timestamps
+      are RFC 3339 in UTC (`2026-10-12T14:05:00Z`, S14.9). A field with no value is `null`,
+      never left out.
+      1. **Numbers are exact JSON numbers.** Money (`1234.50`, two places), quantities and
+         prices (to their own scale, S14.3) and the ratios the server works out (a percentage,
+         a rate, years) are number literals written with their own digits and always a
+         decimal point, so `10` shares is `10.0`; a whole number with no decimal point (a
+         count, a year, a version) is an integer. The server never writes a binary float.
+      2. **Each is declared** in the OpenAPI document as `"type": "number"` with
+         `"format": "money"` or `"decimal"`, and the browser's types (S17.3) mark it as an
+         exact decimal.
+      3. **One edge on each side.** The server writes and reads JSON only through its exact
+         encoder (`moneykata/exactjson.py`): the API's responses, the live stream, MCP and
+         `/link`. The browser reads it only through `parseJson`, which makes every number with a
+         decimal point an exact decimal (S12.12).
+      4. **Requests** send amounts the same way, as exact numbers. A decimal string, as a form
+         field gives it, is accepted too; more places than a field allows is refused.
    3. **Errors** are `application/problem+json` (RFC 9457): `type`, `title`, `status`,
       `detail`, the error id of S13.7.8, and `errors`, a list of `{field, code, message}` so
       the UI shows each refusal at its field (R3.7). Codes are stable strings
@@ -128,6 +141,6 @@
       hours returns the first answer. Imports are idempotent by their content (S1.3).
    9. **Versioning**: `/ui/api` is served with the app and changes with it, so it carries no
       version; the OpenAPI document states the release. `/mcp` and `/link` are versioned in
-      their own protocol (`docs/link-protocol.md`, G7).
+      their own protocol (`docs/link-protocol.md`).
    10. **Visibility**: every read goes through the caller's shares (S10.3) and the soft-delete
        views (`schema.md` §4.2). A list never counts or hints at what the caller can't see.

@@ -16,6 +16,7 @@ import { errAt, Field, FormError, Input, Select, Switch } from '../components/fi
 import { toast } from '../components/toast.js';
 import { ShareDialog } from '../components/share.js';
 import { BarChart, FlowChart } from '../charts/chart.js';
+import { dec, num } from '../app/dec.js';
 
 const TABS = /** @type {[string, string][]} */ ([
   ['month', 'This month'],
@@ -109,7 +110,7 @@ function ThisMonth({ b, month, reloadList }) {
   if (!v) return html`<${Loading} lines=${6} />`;
   const spend = v.rows.filter((/** @type {any} */ r) => r.kind === 'expense');
   const income = v.rows.filter((/** @type {any} */ r) => r.kind === 'income');
-  const left = Number(v.plannedSpending) - Number(v.spent);
+  const left = dec(v.plannedSpending).sub(dec(v.spent));
   const edit = () =>
     openDialog(PlanDialog, { b, month, rows: v.rows }).then((x) => x && res.reload());
   return html`
@@ -129,8 +130,8 @@ function ThisMonth({ b, month, reloadList }) {
         <div class="delta dim">of ${money(v.plannedSpending, { cents: false })} planned</div>
       </div>
       <div class="card kpi">
-        <div class="label">${left < 0 ? 'Over plan' : 'Left to spend'}</div>
-        <div class="value amt">${money(String(Math.abs(left)), { cents: false })}</div>
+        <div class="label">${left.isNegative() ? 'Over plan' : 'Left to spend'}</div>
+        <div class="value amt">${money(left.abs(), { cents: false })}</div>
         <div class="delta dim">${v.daysLeft
           ? `${v.daysLeft} day${v.daysLeft === 1 ? '' : 's'} left in ${
             monthLabel(month).split(' ')[0]
@@ -180,7 +181,7 @@ function ThisMonth({ b, month, reloadList }) {
               <div class="budget-row">
                 <div>${r.label}</div>
                 <div class="bar"><i style=${{
-                  width: `${Math.min(1, Number(r.actual) / Math.max(1, Number(r.planned))) * 100}%`,
+                  width: `${Math.min(1, num(r.actual) / Math.max(1, num(r.planned))) * 100}%`,
                 }}></i></div>
                 <div class="num small amt">${money(r.actual)} <span class="dim">of ${money(
                   r.planned,
@@ -201,7 +202,7 @@ function ThisMonth({ b, month, reloadList }) {
 
 /** @param {{ r: any }} p */
 function BudgetRow({ r }) {
-  const p = Number(r.planned) > 0 ? Number(r.actual) / Number(r.planned) : 1;
+  const p = num(r.planned) > 0 ? num(r.actual) / num(r.planned) : 1;
   return html`
     <div class="budget-row">
       <div>${r.label}${r.cadence === 'year'
@@ -224,12 +225,12 @@ function BudgetRow({ r }) {
           ? html`
             <span class="pill bad">over</span>
           `
-          : null}${Number(
+          : null}${num(
             r.carried,
           )
-          ? html`<div class="dim">${Number(r.carried) > 0 ? '+' : '−'}${
+          ? html`<div class="dim">${dec(r.carried).gt(0) ? '+' : '−'}${
             money(
-              String(Math.abs(Number(r.carried))),
+              dec(r.carried).abs(),
               { cents: false },
             )
           } rolled over</div>`
@@ -328,11 +329,9 @@ function Recurring({ b }) {
                 : r.changed
                 ? html`<span class="pill warn">last one ${
                   Math.round(
-                    Math.abs(Number(r.lastAmount) / Number(r.usual) - 1) * 100,
+                    Math.abs(num(r.lastAmount) / num(r.usual) - 1) * 100,
                   )
-                }% ${
-                  Math.abs(Number(r.lastAmount)) > Math.abs(Number(r.usual)) ? 'higher' : 'lower'
-                }</span>`
+                }% ${dec(r.lastAmount).abs().gt(dec(r.usual).abs()) ? 'higher' : 'lower'}</span>`
                 : null}</td>
             </tr>
           `
@@ -392,7 +391,7 @@ function PlanDialog({ close, b, month, rows }) {
   const [lines, setLines] = useState(
     rows.map((r) => ({
       categoryId: r.categoryId,
-      amount: String(Number(r.planned) - Number(r.carried)),
+      amount: String(dec(r.planned).sub(dec(r.carried))),
       cadence: r.cadence,
       rollover: r.rollover,
     })),
@@ -402,7 +401,7 @@ function PlanDialog({ close, b, month, rows }) {
       month: month + '-01',
       lines: lines.filter((l) => l.categoryId).map((l) => ({
         ...l,
-        amount: Number(l.amount || 0).toFixed(2),
+        amount: String(l.amount || '0').trim(),
       })),
     });
     toast('Plan saved');

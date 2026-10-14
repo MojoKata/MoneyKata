@@ -27,6 +27,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 
 import httpx
 
+from moneykata import exactjson
+
 UI = Path(__file__).resolve().parents[1]
 ROOT = UI.parents[1]
 OUT = ROOT / "docs" / "mockups" / "MoneyKata-app.html"
@@ -197,7 +199,7 @@ class Recorder:
         if req.method == "POST" and COMPUTED.search(key_of(req.url)):
             r = route.fetch()
             self.answers.setdefault(
-                "POST " + key_of(req.url), {"status": r.status, "body": json.loads(r.text())}
+                "POST " + key_of(req.url), {"status": r.status, "body": exactjson.loads(r.text())}
             )
             route.fulfill(response=r)
             return
@@ -219,7 +221,7 @@ class Recorder:
         text = r.text().replace(self.data, SHOWN_DIR)
         self.answers["GET " + key_of(req.url)] = {
             "status": r.status,
-            "body": json.loads(text) if text else None,
+            "body": exactjson.loads(text) if text else None,
         }
         route.fulfill(response=r, body=text)
 
@@ -406,7 +408,9 @@ def lines(data: dict) -> str:
                 v2 = v[k2]
                 if k == "api":
                     rows = ",\n".join(
-                        f"{json.dumps(k3)}:{json.dumps(v2[k3], sort_keys=True, ensure_ascii=False)}"
+                        json.dumps(k3)
+                        + ":"
+                        + exactjson.dumps(v2[k3], sort_keys=True, ensure_ascii=False)
                         for k3 in sorted(v2)
                     )
                     inner.append(f"{json.dumps(k2)}:{{\n{rows}\n}}")

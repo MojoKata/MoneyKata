@@ -5,10 +5,11 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { useApi } from '../app/hooks.js';
-import { date, quantity } from '../app/format.js';
+import { date, money, quantity } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Chips, Empty, Failed, Loading } from './bits.js';
 import { Icon } from './icon.js';
+import { Dec, dec, num } from '../app/dec.js';
 
 export const PANEL_TABS = /** @type {[string, string][]} */ ([
   ['gains', 'Capital gains (8949)'],
@@ -62,7 +63,7 @@ export function SummaryFigures({ b }) {
         <div class="label">Net capital gain or loss</div>
         <div class="value">
           <${Amt}
-            v=${String(Number(d.shortTerm) + Number(d.longTerm))} signed cents=${false} />
+            v=${dec(d.shortTerm).add(dec(d.longTerm))} signed cents=${false} />
         </div>
         <div
           class="delta dim">short <${Amt} v=${d.shortTerm} signed cents=${false} /> · long <${Amt}
@@ -173,7 +174,7 @@ function Gains({ p }) {
                           class="pill warn">missing</span>
                       `}</td>
                       <td>${r.code || ''}</td>
-                      <td class="num">${Number(r.adjustment)
+                      <td class="num">${num(r.adjustment)
                         ? html`<${Amt} v=${r.adjustment} />`
                         : html`<span class="dim">—</span>`}</td>
                       <td class="num">${r.gain ? html`<${Amt} v=${r.gain} signed />` : '—'}</td>
@@ -194,13 +195,13 @@ function Gains({ p }) {
             signed /></div>
           <div class="list-item"><span class="grow dim">Long term</span><${Amt} v=${d.longTerm}
             signed /></div>
-          ${Number(d.collectables)
+          ${num(d.collectables)
             ? html`<div class="list-item"><span class="grow dim">Of it, collectables</span><${Amt}
               v=${d.collectables} signed /></div>`
             : null}
-          ${Number(d.carryoverShort) || Number(d.carryoverLong)
+          ${num(d.carryoverShort) || num(d.carryoverLong)
             ? html`<div class="list-item"><span class="grow dim">Loss carried from last year</span><${Amt}
-              v=${String(Number(d.carryoverShort) + Number(d.carryoverLong))} /></div>`
+              v=${dec(d.carryoverShort).add(dec(d.carryoverLong))} /></div>`
             : null}
         </div>
         <div class="card"><h3 data-help="wash-sales">Wash sales</h3>${p.washes.length
@@ -325,10 +326,7 @@ function Retirement({ p }) {
 
 /** @param {{ p: any }} p */
 function Deductions({ p }) {
-  const total = p.estimated.reduce(
-    (/** @type {number} */ t, /** @type {any} */ q) => t + Number(q.amount),
-    0,
-  );
+  const total = Dec.sum(p.estimated.map((/** @type {any} */ q) => dec(q.amount)));
   return html`
     <div class="grid g-main">
       <div class="card" style=${{ padding: '4px 8px' }}><h3 style=${{ padding: '8px 8px 0' }}>
@@ -372,7 +370,7 @@ function Deductions({ p }) {
         : html`<p class="small dim">None recorded in the filings.</p>`}
         ${p.lastYearTax
           ? html`<p class="small dim">Last year's total tax: <${Amt} v=${p.lastYearTax}
-            cents=${false} />; paid in ${p.year} so far: $${total.toLocaleString('en-US')}.</p>`
+            cents=${false} />; paid in ${p.year} so far: ${money(total, { cents: false })}.</p>`
           : null}</div>
     </div>
   `;
@@ -468,7 +466,7 @@ function Education({ p }) {
             <div class="list-item"><span class="grow dim">Qualified expenses</span><${Amt}
               v=${e.expenses} /></div>
             ${
-            Number(e.notCovered)
+            num(e.notCovered)
               ? html`<div class="list-item"><span class="grow dim">Not covered</span><span
                 class="pill warn"><${Amt} v=${e.notCovered} /></span></div>`
               : null
@@ -509,10 +507,10 @@ function Property({ p }) {
                         <div
               class="list-item"><span class="grow dim">Interest</span><${Amt} v=${l
                 .interest} /></div>
-                        ${Number(l.pmi)
+                        ${num(l.pmi)
                           ? html`<div class="list-item"><span class="grow dim">PMI</span><${Amt} v=${l.pmi} /></div>`
                           : null}
-                        ${Number(l.propertyTax)
+                        ${num(l.propertyTax)
                           ? html`<div class="list-item"><span class="grow dim">Property tax through escrow</span><${Amt}
                 v=${l.propertyTax} /></div>`
                           : null}

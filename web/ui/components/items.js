@@ -15,6 +15,7 @@ import { Icon } from './icon.js';
 import { toast } from './toast.js';
 import { ACCEPT, uploadAll } from './receipt.js';
 import { BY_TYPE } from '../account-types/index.js';
+import { dec, num } from '../app/dec.js';
 
 export const METALS = /** @type {[string, string][]} */ ([
   ['gold', 'Gold'],
@@ -131,7 +132,7 @@ export function Items({ a }) {
                   [
                     i.metal ? METAL[i.metal] : null,
                     i.category,
-                    Number(i.quantity) !== 1 ? `× ${quantity(i.quantity)}` : null,
+                    !dec(i.quantity).eq(1) ? `× ${quantity(i.quantity)}` : null,
                   ].filter(Boolean).join(' · ')
                 }</div></td>
               ${
@@ -522,7 +523,7 @@ function Side({ a, it, setIt, reload }) {
           it.spot
             ? html`<${Amt} v=${it.spot} /> spot on ${date(it.spotAsOf)}`
             : 'spot, once a price is in'
-        }${Number(it.sellPremium) ? ` · ${it.sellPremium}% when selling` : ''}</p>`
+        }${num(it.sellPremium) ? ` · ${it.sellPremium}% when selling` : ''}</p>`
         : null}
       <div class="list-item"><span class="grow dim">Cost basis</span><${Amt} v=${it.basis}
         cents=${false} /></div>
@@ -733,9 +734,9 @@ function SaleCard({ it, done }) {
       <h4 style=${{ margin: '14px 0 8px' }} data-help="sale">Sold</h4>
       <div class="list-item"><span class="grow dim">On</span>${date(s.soldOn)}</div>
       <div class="list-item"><span class="grow dim">Proceeds, less fees</span><${Amt}
-        v=${String(Number(s.proceeds) - Number(s.fees))} /></div>
+        v=${dec(s.proceeds).sub(dec(s.fees))} /></div>
       <div
-        class="list-item"><span class="grow dim">${Number(s.gain) < 0
+        class="list-item"><span class="grow dim">${dec(s.gain).isNegative()
           ? 'Loss'
           : 'Gain'}</span><${Amt} v=${s.gain} signed /></div>
       ${s.collectable

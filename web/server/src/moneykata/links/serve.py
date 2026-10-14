@@ -7,14 +7,13 @@ answer this server's API gives the person it names, kept by path. The receiving 
 these and never works anything out again (S11.3.1)."""
 
 import hashlib
-import json
 from collections import defaultdict
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 
 from sqlalchemy import delete, false, select
 
-from .. import clock
+from .. import clock, exactjson
 from ..errors import Problem
 from ..store.entities.links import Link, LinkSent
 from ..store.entities.sharing import Share
@@ -280,7 +279,7 @@ def allowed_file(srv, link_id: str, receipt_id: str) -> bool:
 
 def _hash(body) -> str:
     return hashlib.sha256(
-        json.dumps(body, sort_keys=True, separators=(",", ":"), default=str).encode()
+        exactjson.dumps(body, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
 

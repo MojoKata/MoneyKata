@@ -11,6 +11,7 @@ import { Chips, Empty, Failed, Loading, Tabs } from '../components/bits.js';
 import { openDialog } from '../components/dialog.js';
 import { Icon } from '../components/icon.js';
 import { Mark, OptionTrade, Settle } from '../components/optiontrade.js';
+import { Dec, dec, num } from '../app/dec.js';
 
 const TABS = /** @type {[string, string][]} */ ([
   ['open', 'Open'],
@@ -190,7 +191,7 @@ function Open({ rows, reload }) {
                                         ? html`<${Amt} v=${l.basis} />`
                                         : html`<span class="pill warn">no basis</span>`}</div>
                                   `
-                                )}${Number(r.realized)
+                                )}${num(r.realized)
                                   ? html`<div class="dim">Realized so far: <${Amt} v=${r.realized} signed /></div>`
                                   : null}${r.expiry
                                   ? html`
@@ -229,7 +230,7 @@ function Open({ rows, reload }) {
 /** @param {{ rows: any[] }} p */
 function Closed({ rows }) {
   if (!rows.length) return html`<${Empty}>Nothing closed yet.</${Empty}>`;
-  const total = rows.reduce((t, r) => t + Number(r.realized || 0), 0);
+  const total = Dec.sum(rows.map((r) => dec(r.realized)));
   return html`
     <div class="card" style=${{ padding: '4px 8px' }}>
       <div class="table-wrap">
@@ -262,9 +263,7 @@ function Closed({ rows }) {
                 <td class="num">${r.cost
                   ? html`<${Amt} v=${r.cost} />`
                   : html`<span class="pill warn">missing</span>`}</td>
-                <td class="num">${r.realized
-                  ? html`<${Amt} v=${r.realized} signed />`
-                  : '—'}${Number(
+                <td class="num">${r.realized ? html`<${Amt} v=${r.realized} signed />` : '—'}${num(
                     r.washDisallowed,
                   )
                   ? html`

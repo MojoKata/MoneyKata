@@ -12,10 +12,10 @@ from ..errors import Problem
 from ..store.entities.accounts import Account
 from ..store.entities.sharing import CountedAccount
 from ..store.entities.users import Group, User, UserGroup
-from .conventions import Model
+from .conventions import ExactRoute, Model
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["sharing"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["sharing"])
 Kind = Literal["account", "portfolio", "budget", "projection", "person", "giving-plan", "tax-book"]
 
 

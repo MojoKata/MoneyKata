@@ -14,10 +14,10 @@ from ..auth import sessions, twostep
 from ..auth import users as accounts
 from ..errors import refuse
 from ..store.entities.users import OneTimeToken, User
-from .conventions import Model, if_match, stale
+from .conventions import ExactRoute, Model, if_match, stale
 from .deps import Caller, caller, recent_auth, server, set_cookie
 
-router = APIRouter(prefix="/ui/api", tags=["profile"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["profile"])
 AVATAR = re.compile(r"^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")
 AVATAR_MAX = 256 * 1024
 

@@ -14,7 +14,7 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from sqlalchemy import delete, select
 
-from .. import clock
+from .. import clock, exactjson
 from ..store.entities.links import Link
 from . import copydb, sealed
 from .copy import folder, private_key
@@ -30,7 +30,7 @@ class ChangeError(Exception):
 
 def _canonical(change: dict) -> bytes:
     body = {k: v for k, v in change.items() if k != "signature"}
-    return json.dumps(body, sort_keys=True, separators=(",", ":"), default=str).encode()
+    return exactjson.dumps(body, sort_keys=True, separators=(",", ":")).encode()
 
 
 def sign(key: Ed25519PrivateKey, change: dict) -> dict:
@@ -71,7 +71,7 @@ def enqueue(srv, link_id: str, change: dict, local: dict | None = None) -> bool:
     # The source's signed change, whole, and what this side added: the random names its
     # receipts were written under.
     entry = {"change": change, "local": local or {}}
-    raw = json.dumps(entry, separators=(",", ":"), default=str).encode()
+    raw = exactjson.dumps(entry, separators=(",", ":")).encode()
     sealed.write(d / f"{name}.mks", sealed.seal(public, sealed.CHANGE, link_id, name, [raw]))
     have = waiting(srv.config.data_dir, link_id)
     if len(have) > MAX_CHANGES or sum(p.stat().st_size for p in have) > MAX_BYTES:
@@ -114,7 +114,7 @@ def apply(srv, link_id: str) -> int:
         for p in files:
             with open(p, "rb") as f:
                 raw = b"".join(sealed.open_sealed(priv, sealed.CHANGE, link_id, p.stem, f))
-            entry = json.loads(raw)
+            entry = exactjson.loads(raw)
             change, local = (
                 (entry["change"], entry.get("local") or {}) if "change" in entry else (entry, {})
             )
@@ -180,7 +180,7 @@ def _apply_one(conn, c: dict, names: dict[str, str]) -> list[str]:
                 "itemId": d["itemId"],
                 "path": d["path"],
                 "viewer": d["viewer"],
-                "body": json.dumps(d["body"], separators=(",", ":"), default=str),
+                "body": exactjson.dumps(d["body"], separators=(",", ":")),
             },
         )
     for fid in c.get("filesRemoved") or []:

@@ -1,13 +1,11 @@
 """The /link listener (requirements S11.1.3, S11.2): what a linked server calls. Everything but
 `hello` is signed by a key this server has a link with, and every answer is signed back."""
 
-import json
-
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import false, select
 
-from .. import clock
+from .. import clock, exactjson
 from ..store.entities.links import Link
 from . import PROTOCOL, SUPPORTED, keys, signing
 
@@ -22,7 +20,7 @@ def own(srv) -> tuple[object, str]:
 
 
 def answer(srv, data: dict, nonce: str, status: int = 200) -> Response:
-    body = json.dumps(data, separators=(",", ":"), default=str).encode()
+    body = exactjson.dumps(data, separators=(",", ":")).encode()
     k, _ = own(srv)
     headers = signing.sign_answer(k, status, body, nonce)
     return Response(body, status_code=status, media_type="application/json", headers=headers)
@@ -109,7 +107,7 @@ async def join(request: Request):
         return refusal(request, e)
     from .manage import answer_join
 
-    out = answer_join(srv, caller.public, json.loads(body or b"{}"))
+    out = answer_join(srv, caller.public, exactjson.loads(body or b"{}"))
     if "error" in out:
         code, message = out["error"]
         return refusal(request, signing.Refused(code, message))
@@ -127,7 +125,7 @@ async def exchange(request: Request):
     from .manage import answer_exchange
 
     out = answer_exchange(
-        srv, link, json.loads(body or b"{}"), request.headers.get("mk-link-version")
+        srv, link, exactjson.loads(body or b"{}"), request.headers.get("mk-link-version")
     )
     return answer(srv, out, caller.nonce)
 
@@ -157,7 +155,7 @@ async def deliver(request: Request):
     from .manage import answer_deliver
 
     try:
-        out = answer_deliver(srv, link, json.loads(body or b"{}"))
+        out = answer_deliver(srv, link, exactjson.loads(body or b"{}"))
     except ChangeError as e:
         return refusal(request, signing.Refused("change-refused", str(e)))
     return answer(srv, out, caller.nonce)
@@ -178,7 +176,7 @@ async def file(request: Request):
         link, caller, body = await verified(request, ("active",))
     except signing.Refused as e:
         return refusal(request, e)
-    rid = str(json.loads(body or b"{}").get("id") or "")
+    rid = str(exactjson.loads(body or b"{}").get("id") or "")
     if not allowed_file(srv, link.id, rid):
         return refusal(request, signing.Refused("not-shared", "That receipt isn't shared."))
     with srv.db.read() as s:

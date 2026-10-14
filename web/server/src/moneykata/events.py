@@ -7,11 +7,12 @@ Background tasks run in threads, so `publish` may be called from any thread.
 
 import asyncio
 import contextlib
-import json
 import logging
 import threading
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+
+from . import exactjson
 
 log = logging.getLogger("moneykata.events")
 
@@ -25,7 +26,9 @@ class Event:
     data: dict = field(default_factory=dict)
 
     def encode(self) -> bytes:
-        return f"event: {self.kind}\ndata: {json.dumps(self.data, sort_keys=True)}\n\n".encode()
+        return (
+            f"event: {self.kind}\ndata: {exactjson.dumps(self.data, sort_keys=True)}\n\n".encode()
+        )
 
 
 @dataclass(eq=False)

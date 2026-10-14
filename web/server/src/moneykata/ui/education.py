@@ -10,20 +10,20 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, education, ids, projections, receipts
+from .. import access, activity, clock, education, exactjson, ids, projections, receipts
 from ..errors import Problem, refuse
 from ..store.entities.accounts import Account, Transaction
 from ..store.entities.education import Contribution, EducationPlan, Person, QualifiedExpense
 from ..store.entities.projections import Projection
 from ..store.entities.users import User
-from .conventions import Model, Money
+from .conventions import ExactRoute, Model, Money
 from .deps import Caller, caller, server
 from .projections import ProjectionDetail
 from .projections import detail as projection_detail
 from .receipts import ReceiptRow
 from .receipts import row as receipt_row
 
-router = APIRouter(prefix="/ui/api", tags=["education"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["education"])
 
 
 # ---- The plan ----
@@ -492,8 +492,8 @@ def start_goal(account_id: str, request: Request, c: Caller = Depends(caller)):
             ownerId=c.id,
             name=f"{b.name.split(' ')[0]}'s college",
             goal="education",
-            builtOn=json.dumps({"kind": "accounts", "ids": built}),
-            inputs=json.dumps(
+            builtOn=exactjson.dumps({"kind": "accounts", "ids": built}),
+            inputs=exactjson.dumps(
                 {
                     "beneficiary": {"kind": b.kind, "id": b.id},
                     "startAge": 18,

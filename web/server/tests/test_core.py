@@ -2,12 +2,13 @@ import asyncio
 import datetime as dt
 import threading
 import time
+from decimal import Decimal
 
 import httpx
 import pytest
 from pydantic import ValidationError
 
-from moneykata import net
+from moneykata import exactjson, net
 from moneykata.events import Broker
 from moneykata.jobs import Jobs
 from moneykata.ratelimit import SignInGuard, Window
@@ -124,9 +125,11 @@ def test_money_fields_refuse_floats():
     class Body(Model):
         amount: Money
 
-    assert Body(amount="12.30").model_dump(mode="json") == {"amount": "12.30"}
+    # In JSON an amount is an exact number literal (S13.8.2); in Python, a Decimal.
+    assert exactjson.dumps(Body(amount="12.30").model_dump(mode="json")) == '{"amount": 12.30}'
+    assert Body(amount=Decimal("12.3")).model_dump() == {"amount": Decimal("12.3")}
     with pytest.raises(ValidationError):
-        Body(amount=12.3)
+        Body(amount=12.3)  # never through a float
     with pytest.raises(ValidationError):
         Body(amount="12.345")
     with pytest.raises(ValidationError):

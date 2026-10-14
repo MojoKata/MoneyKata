@@ -14,11 +14,11 @@ from ..links import keys, manage
 from ..links.client import LinkError
 from ..store.entities.links import Link
 from ..store.entities.users import User
-from .conventions import Model
+from .conventions import ExactRoute, Model
 from .deps import Caller, admin, server
 from .prices import apply_egress
 
-router = APIRouter(prefix="/ui/api", tags=["links"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["links"])
 
 
 class RemoteUser(Model):

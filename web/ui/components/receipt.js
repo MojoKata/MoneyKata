@@ -116,7 +116,7 @@ export function ReceiptDialog({ close, id }) {
   const save = useSubmit(async () => {
     await api.patch(`/receipts/${id}`, {
       date: f.date || null,
-      amount: f.amount ? Number(f.amount).toFixed(2) : null,
+      amount: f.amount ? String(f.amount).trim() : null,
       payee: f.payee || null,
       notes: f.notes || null,
       tags: f.tags.split(',').map((/** @type {string} */ t) => t.trim()).filter(Boolean),

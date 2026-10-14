@@ -291,7 +291,7 @@ def docs_in(srv, link_id):
     with o.engine.connect() as conn:
         items = {r.id: r for r in conn.execute(copydb.Item.select())}
         docs = {
-            (r.itemId, r.path, r.viewer): json.loads(r.body)
+            (r.itemId, r.path, r.viewer): json.loads(r.body, parse_float=str)
             for r in conn.execute(copydb.Doc.select())
         }
     return items, docs

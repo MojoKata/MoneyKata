@@ -251,7 +251,7 @@ def test_typed_prices_win_and_only_for_holders(server):
     r = alice.post(f"/ui/api/instruments/{inst_id}/prices", json={"date": day, "price": "300"})
     assert r.status_code == 201
     closes = alice.get(f"/ui/api/instruments/{inst_id}/prices").json()
-    assert closes[-1] == {"date": day, "close": "300", "source": "manual"}
+    assert closes[-1] == {"date": day, "close": "300.0", "source": "manual"}
     status = alice.get("/ui/api/prices/status").json()
     assert status["stale"] is False and status["running"] is False
     assert alice.post("/ui/api/prices/refresh").status_code in (202, 503)

@@ -16,10 +16,10 @@ from ..errors import FieldError, Problem
 from ..store.entities.accounts import Account, Category, Transaction
 from ..store.entities.budgets import Budget, BudgetAccount, BudgetLine
 from ..store.entities.users import User
-from .conventions import Model, Money, if_match, stale
+from .conventions import ExactRoute, Model, Money, if_match, stale
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["budgets"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["budgets"])
 
 
 class BudgetRow(Model):

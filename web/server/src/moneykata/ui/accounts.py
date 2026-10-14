@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, ids, valuation
+from .. import access, activity, clock, exactjson, ids, valuation
 from ..errors import FieldError, Problem, refuse
 from ..ledger import reconcile
 from ..ledger import types as atypes
@@ -20,11 +20,11 @@ from ..store.entities.accounts import Account, Anchor, Instrument, Reconciliatio
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
 from ..store.tables.accounts import ACCOUNT_TYPES, LOT_METHODS
-from .conventions import Model, Money, Quantity, if_match, stale
+from .conventions import ExactRoute, Model, Money, Quantity, if_match, stale
 from .deps import Caller, caller, server
 from .sharing import counted_for
 
-router = APIRouter(prefix="/ui/api", tags=["accounts"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["accounts"])
 KEPT_BY = ("manual", "file", "statement", "bitcoin")
 RANGES = {"1M": 31, "3M": 92, "1Y": 366, "5Y": 1827}
 
@@ -347,7 +347,7 @@ def create_account(body: NewAccount, request: Request, c: Caller = Depends(calle
             institution=(body.institution or "").strip() or None,
             mask=body.mask or None,
             notes=body.notes,
-            keptBy=json.dumps(body.keptBy),
+            keptBy=exactjson.dumps(body.keptBy),
             lotMethod=body.lotMethod,
             openingBalance=body.openingBalance,
             openingDate=body.openingDate,
@@ -422,7 +422,7 @@ def change_account(
                     setattr(a, f, value)
                     changed.append(f)
         if "keptBy" in sent and body.keptBy is not None:
-            a.keptBy = json.dumps(body.keptBy)
+            a.keptBy = exactjson.dumps(body.keptBy)
             changed.append("keptBy")
         if changed:
             kind = (

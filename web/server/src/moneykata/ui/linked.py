@@ -4,20 +4,20 @@ households share something with you, and unlocking and locking a household's cop
 import datetime as dt
 import json
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import false, select
 
-from .. import clock, settings
+from .. import clock, exactjson, settings
 from ..errors import Problem
 from ..links import copies
 from ..links.changes import waiting
 from ..links.copy import CopyError
 from ..store.entities.links import Link, LinkedItem
 from ..store.entities.users import User
-from .conventions import Model
+from .conventions import ExactRoute, Model
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["linked"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["linked"])
 
 
 PALETTE = ("teal", "violet", "amber", "rose", "green", "blue")
@@ -218,7 +218,7 @@ def items(link_id: str, request: Request, c: Caller = Depends(caller)):
     out = []
     with o.engine.connect() as conn:
         rows = {
-            r.itemId: json.loads(r.body)
+            r.itemId: exactjson.marked(exactjson.loads(r.body))
             for r in conn.execute(
                 select(copydb.Doc).where(copydb.Doc.c.path == "", copydb.Doc.c.viewer == c.id)
             )
@@ -255,7 +255,8 @@ def doc(link_id: str, path: str, request: Request, c: Caller = Depends(caller)):
         ).scalar()
     if body is None:
         raise Problem(404, "not-shared", "That isn't shared with you, or hasn't arrived yet.")
-    return json.loads(body)
+    # Kept as its source wrote it, exact numbers and all (S13.8.2).
+    return Response(content=body, media_type="application/json")
 
 
 class LinkedFile(Model):

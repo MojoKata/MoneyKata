@@ -3,13 +3,12 @@ filers and the accounts they count, filings with their estimated payments and th
 carry forward, and tax documents received and filed, against the documents expected."""
 
 import datetime as dt
-import json
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, ids, receipts
+from .. import access, activity, clock, exactjson, ids, receipts
 from ..errors import FieldError, Problem, refuse
 from ..store.entities.accounts import Account, Transaction
 from ..store.entities.taxes import (
@@ -22,10 +21,10 @@ from ..store.entities.taxes import (
 )
 from ..store.entities.users import User
 from ..taxes import books
-from .conventions import Model, Money
+from .conventions import ExactRoute, Model, Money
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["taxes"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["taxes"])
 
 RECEIVED_FORMS = (
     "W-2",
@@ -363,7 +362,11 @@ def _filing(s, f: Filing, docs: list[TaxDocument], today: dt.date) -> FilingOut:
             for p in pays
         ],
         carried=CarriedView(
-            **{k: v for k, v in json.loads(f.carried or "{}").items() if k in Carried.model_fields}
+            **{
+                k: v
+                for k, v in exactjson.loads(f.carried or "{}").items()
+                if k in Carried.model_fields
+            }
         ),
         documents=[_doc(s, d) for d in docs if d.filingId == f.id],
         version=f.version,
@@ -541,7 +544,7 @@ def _filing_values(s, c: Caller, b: TaxBook, body: FilingIn) -> dict:
         "resultKind": body.resultKind or None,
         "resultAmount": body.resultAmount,
         "resultTransactionId": body.resultTransactionId or None,
-        "carried": json.dumps(
+        "carried": exactjson.dumps(
             {k: str(v) for k, v in body.carried.model_dump().items() if v is not None}
         ),
     }

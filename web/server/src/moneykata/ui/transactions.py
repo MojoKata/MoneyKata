@@ -27,10 +27,10 @@ from ..store.entities.accounts import (
 from ..store.repos import ledger as repo
 from ..store.tables.accounts import TXN_KINDS
 from ..store.types import Cents
-from .conventions import Model, Money, Page, Paging, Quantity, if_match, stale
+from .conventions import ExactRoute, Model, Money, Page, Paging, Quantity, if_match, stale
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["transactions"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["transactions"])
 INSTRUMENT_KINDS = (
     "buy",
     "sell",

@@ -15,6 +15,7 @@ import { Icon } from '../components/icon.js';
 import { ShareDialog } from '../components/share.js';
 import { toast } from '../components/toast.js';
 import { ACCEPT, uploadAll } from '../components/receipt.js';
+import { dec, num } from '../app/dec.js';
 
 const TABS = /** @type {[string, string][]} */ ([
   ['upcoming', 'Upcoming'],
@@ -247,7 +248,7 @@ function Spending() {
   const v = /** @type {any} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!v) return html`<${Loading} />`;
-  const most = Math.max(1, ...v.byYear.map((/** @type {any} */ y) => Number(y.amount)));
+  const most = Math.max(1, ...v.byYear.map((/** @type {any} */ y) => num(y.amount)));
   return html`
     <div class="toolbar">
       <${Chips} label="Year" value=${year} onChange=${setYear}
@@ -265,7 +266,7 @@ function Spending() {
     <div class="grid g-main mt">
       <div class="card"><h3>By person, ${v.year}</h3>${v.byPerson.length
         ? v.byPerson.map((/** @type {any} */ p) => {
-          const share = p.budget ? Math.min(100, (Number(p.spent) / Number(p.budget)) * 100) : 0;
+          const share = p.budget ? Math.min(100, (num(p.spent) / num(p.budget)) * 100) : 0;
           return html`
             <div class="list-item">
               <div class="grow">${p.person.name}${p.budget
@@ -296,7 +297,7 @@ function Spending() {
             <div
               class="list-item"><span class="small" style=${{ width: '48px' }}>${y
                 .label}</span><div class="grow"><div class="bar"><i style=${{
-                width: `${(Number(y.amount) / most) * 100}%`,
+                width: `${(num(y.amount) / most) * 100}%`,
                 background: 'var(--hue-giving)',
               }}></i></div></div><span class="num small" style=${{ width: '72px' }}><${Amt}
                         v=${y.amount} cents=${false} /></span></div>
@@ -676,7 +677,7 @@ function GiftDialog({ close, gift, start }) {
                     setF({
                       ...f,
                       transactionId: x,
-                      cost: f.cost || (t ? String(-Number(t.amount)) : ''),
+                      cost: f.cost || (t ? String(dec(t.amount).neg()) : ''),
                     });
                   }} options=${[
                     ['', 'Typed, or not bought yet'],

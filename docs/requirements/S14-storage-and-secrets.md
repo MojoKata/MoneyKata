@@ -31,9 +31,9 @@
 2. **Receipts** are files beside it (S9.2), owned by the server's account, mode 0600 in a
    0700 directory.
 3. **Decimals**: money is stored as **integer cents**, and quantities and prices as **decimal text** validated to a fixed scale (18
-   places, enough for wei), through a small SQLAlchemy column type. JSON carries both as
-   strings. Python uses `decimal.Decimal` with a context of 34 digits and rounds `HALF_EVEN`
-   except where a tax rule says otherwise. Floats are refused at the API's edge.
+   places, enough for wei), through a small SQLAlchemy column type. JSON carries both as exact
+   numbers (S13.8.2). Python uses `decimal.Decimal` with a context of 34 digits and rounds
+   `HALF_EVEN` except where a tax rule says otherwise. No amount passes through a float.
 4. **Secrets** (price-source keys, the bitcoin node's credentials, the SMTP password, link
    private keys, two-step sign-in seeds) are encrypted each on its own with AES-256-GCM under a data
    key of their own, wrapped under a key derived from the master key, with associated data

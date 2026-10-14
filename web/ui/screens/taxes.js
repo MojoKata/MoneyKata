@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { date } from '../app/format.js';
+import { date, money } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -286,7 +286,7 @@ function Filings({ b, done }) {
                       ? html`<div class="small dim mt">Estimated payments: ${
                         f.payments.map((
                           /** @type {any} */ p,
-                        ) => `Q${p.quarter} $${Number(p.amount).toLocaleString('en-US')}`).join(
+                        ) => `Q${p.quarter} ${money(p.amount, { cents: false })}`).join(
                           ' · ',
                         )
                       }</div>`

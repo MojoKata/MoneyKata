@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, ids, settings
+from .. import access, activity, clock, exactjson, ids, settings
 from ..errors import FieldError, Problem, refuse
 from ..prices import SOURCES
 from ..prices import refresh as pricing
@@ -17,10 +17,10 @@ from ..store.entities.accounts import Instrument, Transaction
 from ..store.entities.prices import Price, PriceSource
 from ..store.entities.users import User
 from ..store.repos import secrets as secret_repo
-from .conventions import Model, Quantity, if_match, stale
+from .conventions import ExactRoute, Model, Quantity, if_match, stale
 from .deps import Caller, admin, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["prices"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["prices"])
 
 
 class PriceStatus(Model):
@@ -200,7 +200,7 @@ def add_source(body: NewSource, request: Request, c: Caller = Depends(admin)):
                 id=ids.new_id("Src"),
                 name=body.name,
                 enabled=not cls.needs_key,
-                preference=json.dumps(pref),
+                preference=exactjson.dumps(pref),
                 createdById=c.id,
             )
         )
@@ -262,7 +262,7 @@ def change_source(
             ]
             if errors:
                 raise Problem(422, errors[0].code, errors[0].message, errors)
-            src.preference = json.dumps({k: int(v) for k, v in body.preference.items()})
+            src.preference = exactjson.dumps({k: int(v) for k, v in body.preference.items()})
             fields.append("preference")
         if fields:
             activity.record(

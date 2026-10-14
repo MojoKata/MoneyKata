@@ -13,7 +13,6 @@ HTTP, for an AI assistant holding one of a user's access tokens.
 """
 
 import datetime as dt
-import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -21,7 +20,7 @@ from types import SimpleNamespace
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 
-from . import activity, clock, ratelimit, tokens
+from . import activity, clock, exactjson, ratelimit, tokens
 from .errors import Problem
 from .store.entities.users import AccessToken
 
@@ -344,7 +343,7 @@ def _call(srv, w: Who, params: dict) -> dict:
     except Problem as e:
         return _tool_error(e.detail)
     return {
-        "content": [{"type": "text", "text": json.dumps(out, default=str)}],
+        "content": [{"type": "text", "text": exactjson.dumps(out)}],
         "structuredContent": {"result": out},
         "isError": False,
     }
@@ -368,7 +367,7 @@ async def mcp_post(request: Request):
         raise Problem(403, "origin-refused", "MCP calls don't come from web pages.")
     w = _who(srv, request)
     try:
-        msg = json.loads(await request.body())
+        msg = exactjson.loads(await request.body())
     except ValueError:
         return JSONResponse(_error(None, -32700, "Not JSON."), status_code=400)
     if not isinstance(msg, dict) or msg.get("jsonrpc") != "2.0" or "method" not in msg:

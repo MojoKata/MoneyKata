@@ -12,12 +12,12 @@ from .. import access, activity, assets, clock, ids, loans, receipts, valuation
 from ..errors import FieldError, Problem, refuse
 from ..store.entities.accounts import Account, Loan
 from ..store.entities.assets import Improvement, Item, ItemValuation
-from .conventions import Model, Money, Quantity, if_match, stale
+from .conventions import ExactRoute, Model, Money, Quantity, Ratio, if_match, stale
 from .deps import Caller, caller, server
 from .receipts import ReceiptRow
 from .receipts import row as receipt_row
 
-router = APIRouter(prefix="/ui/api", tags=["items"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["items"])
 
 HOW = ("bought", "gift", "inherited")
 VALUATIONS = ("spot", "valuations", "depreciation")
@@ -95,7 +95,7 @@ class ItemRow(Model):
     basis: Money
     value: Money
     gain: Money
-    years: float  # how long it has been held
+    years: Ratio  # how long it has been held
     latest: ValuationOut | None
     stale: bool
     sale: Sale | None

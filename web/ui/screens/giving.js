@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { date, quantity } from '../app/format.js';
+import { date, money, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -16,6 +16,7 @@ import { ShareDialog } from '../components/share.js';
 import { toast } from '../components/toast.js';
 import { ACCEPT, uploadAll } from '../components/receipt.js';
 import { TimeChart } from '../charts/chart.js';
+import { dec, num } from '../app/dec.js';
 
 const TABS = /** @type {[string, string][]} */ ([
   ['overview', 'Overview'],
@@ -66,7 +67,7 @@ function Overview({ v, reload }) {
   const plan = v.plan;
   const editPlan = () => openDialog(PlanDialog, { v }).then((x) => x && reload());
   const record = () => openDialog(DonationDialog, {}).then((x) => x && reload());
-  const behind = Number(v.pace) - Number(v.given);
+  const behind = dec(v.pace).sub(dec(v.given));
   const months = v.byMonth.map((/** @type {string} */ x, /** @type {number} */ i) => [
     new Date(Date.UTC(v.year, i + 1, 0)).toISOString().slice(0, 10),
     x,
@@ -76,7 +77,7 @@ function Overview({ v, reload }) {
   const pace = months.map((/** @type {[string, string]} */ [d]) => {
     const start = Date.UTC(v.year, 0, 1);
     const days = (Date.parse(d) - start) / 86400000 + 1;
-    return [d, String(Math.round(Number(v.target) * days / 365))];
+    return [d, String(Math.round(num(v.target) * days / 365))];
   });
   if (!plan) {
     return html`<${Empty}>No giving plan for ${v.year} yet. Set a target, as a percentage of
@@ -84,12 +85,12 @@ function Overview({ v, reload }) {
       <div class="mt"><button type="button" class="btn primary" onClick=${editPlan}>Set a
         target</button></div></${Empty}>
       ${
-      Number(v.given)
+      num(v.given)
         ? html`<p class="small dim">Given so far in ${v.year}: <${Amt} v=${v.given} />.</p>`
         : null
     }`;
   }
-  const most = Math.max(1, ...v.byCause.map((/** @type {any} */ c) => Number(c.amount)));
+  const most = Math.max(1, ...v.byCause.map((/** @type {any} */ c) => num(c.amount)));
   return html`
     <div class="grid g4">
       <div class="card kpi" data-help="target">
@@ -98,7 +99,7 @@ function Overview({ v, reload }) {
           <${Amt} v=${v.target} cents=${false} />
         </div>
         <div class="delta dim">${plan.targetKind === 'percent'
-          ? html`${Number(plan.percent)}% of <${Amt} v=${v.income} cents=${false} /> ${
+          ? html`${String(plan.percent)}% of <${Amt} v=${v.income} cents=${false} /> ${
             {
               'take-home': 'take-home pay',
               gross: 'gross income',
@@ -129,7 +130,7 @@ function Overview({ v, reload }) {
           <${Amt} v=${v.given} cents=${false} />
         </div>
         <div class="bar" style=${{ marginTop: '8px' }}><i style=${{
-          width: `${Math.min(100, (Number(v.given) / Math.max(1, Number(v.target))) * 100)}%`,
+          width: `${Math.min(100, (num(v.given) / Math.max(1, num(v.target))) * 100)}%`,
         }}></i></div>
       </div>
       <div class="card kpi" data-help="pace">
@@ -137,10 +138,10 @@ function Overview({ v, reload }) {
         <div class="value">
           <${Amt} v=${v.pace} cents=${false} />
         </div>
-        <div class="delta">${behind > 0
+        <div class="delta">${behind.gt(0)
           ? html`<span class="down"><${Amt} v=${String(behind)} cents=${false} /> behind</span>`
           : html`<span class="up"><${Amt} v=${
-            String(-behind)
+            String(behind.neg())
           } cents=${false} /> ahead</span>`}</div>
       </div>
       <div class="card kpi" data-help="projected">
@@ -188,7 +189,7 @@ function Overview({ v, reload }) {
           ? v.byCause.map((/** @type {any} */ c) =>
             html`<div class="list-item"><div class="grow"><div class="small">${c.label}</div><div
               class="bar" style=${{ marginTop: '6px' }}><i style=${{
-              width: `${(Number(c.amount) / most) * 100}%`,
+              width: `${(num(c.amount) / most) * 100}%`,
               background: 'var(--hue-giving)',
             }}></i></div></div><span class="num small"><${Amt} v=${c.amount}
               cents=${false} /></span></div>`
@@ -419,7 +420,7 @@ function PlanDialog({ close, v }) {
   const p = v.plan;
   const [f, setF] = useState({
     targetKind: p?.targetKind || 'percent',
-    percent: p?.percent ? String(Number(p.percent)) : '10',
+    percent: p?.percent ? String(p.percent) : '10',
     amount: p?.amount || '',
     incomeBasis: p?.incomeBasis || 'take-home',
     income: p?.income || '',
@@ -524,7 +525,7 @@ function DonationDialog({ close, from }) {
       lots.push([
         `${l.lotId}|${h.price || ''}`,
         `${h.symbol} · ${quantity(l.quantity)} · bought ${date(l.acquiredOn)}${
-          l.basis ? ` · basis $${Number(l.basis).toLocaleString('en-US')}` : ''
+          l.basis ? ` · basis ${money(l.basis, { cents: false })}` : ''
         }${l.longTerm ? ' · held over a year' : ''}`,
       ]);
     }
@@ -617,8 +618,8 @@ function DonationDialog({ close, from }) {
                     setF({
                       ...f,
                       quantity: x,
-                      amount: price && Number(x)
-                        ? (Number(price) * Number(x)).toFixed(2)
+                      amount: price && /^\d+(\.\d+)?$/.test(x.trim()) && Number(x)
+                        ? String(dec(price).mul(x.trim()).round(2))
                         : f.amount,
                     })} inputmode="decimal" />
                 </${Field}>

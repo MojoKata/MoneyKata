@@ -65,7 +65,7 @@ def test_a_short_put_is_a_negative_lot_and_realizes_at_close(alice):
     v = alice.get("/ui/api/positions").json()
     row = v["open"][0]
     assert row["symbol"] == "MSFT 20NOV26 480 P" and row["side"] == "short"
-    assert row["quantity"] == "-2" and row["cost"] == "-1279.35"
+    assert row["quantity"] == "-2.0" and row["cost"] == "-1279.35"
     r = opt(alice, brk["id"], "buy-to-close", "2026-10-01", "2.10", contracts="2")
     assert r.status_code == 201 and r.json()["amount"] == "-420.65"
     v = alice.get("/ui/api/positions").json()
@@ -99,7 +99,7 @@ def test_a_long_call_closes_or_expires(alice):
         fees="0",
     )
     v = alice.get("/ui/api/positions").json()
-    assert v["open"][0]["quantity"] == "2"
+    assert v["open"][0]["quantity"] == "2.0"
     assert v["closed"][0]["realized"] == "200.00"
     too_many = opt(
         alice,
@@ -153,7 +153,7 @@ def test_a_short_put_assigned_folds_the_credit_into_the_stock_basis(alice):
     end, stock = r.json()
     assert end["kind"] == "assign" and stock["amount"] == "-48000.00"
     msft = _held(alice, brk["id"], "MSFT")
-    assert msft["quantity"] == "100" and msft["cost"] == "47360.00", "48,000 less the 640 credit"
+    assert msft["quantity"] == "100.0" and msft["cost"] == "47360.00", "48,000 less the 640 credit"
     assert _held(alice, brk["id"], "MSFT 20NOV26 480 P") is None
     assert (
         alice.post(
@@ -267,7 +267,7 @@ def test_each_option_trade_has_its_premium_pl_and_return(alice):
     assert r.status_code == 201, r.text
     rows = alice.get("/ui/api/positions/option-trades").json()
     put = next(x for x in rows if x["symbol"].endswith("480 P"))
-    assert put["side"] == "short" and put["contracts"] == "2"
+    assert put["side"] == "short" and put["contracts"] == "2.0"
     assert (put["opened"], put["closed"], put["how"]) == ("2026-09-01", "2026-10-01", "expired")
     assert put["premiumIn"] == "999.35" and put["premiumOut"] == "200.65"
     assert put["pl"] == "798.70"

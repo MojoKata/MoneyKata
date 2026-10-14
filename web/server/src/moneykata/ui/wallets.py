@@ -10,11 +10,11 @@ from .. import access, activity
 from ..bitcoin import keys as bk
 from ..bitcoin import wallet
 from ..errors import Problem, refuse
-from .conventions import Model
+from .conventions import ExactRoute, Model
 from .deps import Caller, caller, server
 from .prices import apply_egress
 
-router = APIRouter(prefix="/ui/api", tags=["wallets"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["wallets"])
 SHOWN = 10  # unused addresses shown a chain
 
 

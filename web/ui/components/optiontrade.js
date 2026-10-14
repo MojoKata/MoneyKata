@@ -9,6 +9,7 @@ import { Dialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, Seg, Select } from './fields.js';
 import { toast } from './toast.js';
+import { dec } from '../app/dec.js';
 
 export const ACTIONS = /** @type {[string, string][]} */ ([
   ['buy-to-open', 'Buy to open'],
@@ -143,7 +144,7 @@ export function Settle({ close, row }) {
   const [f, setF] = useState({
     how: row.inTheMoney === false ? 'expired' : short ? 'assign' : 'exercise',
     date: row.expiry || new Date().toISOString().slice(0, 10),
-    contracts: String(Math.abs(Number(row.quantity))),
+    contracts: String(dec(row.quantity).abs()).replace(/\.0+$/, ''),
   });
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const save = useSubmit(async () => {

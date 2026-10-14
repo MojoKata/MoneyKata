@@ -11,11 +11,11 @@ from ..errors import FieldError, Problem, refuse
 from ..ledger import types as atypes
 from ..store.entities.accounts import Instrument, Transaction
 from ..store.repos import ledger as repo
-from .conventions import Model, Money, Quantity
+from .conventions import ExactRoute, Model, Money, Quantity
 from .deps import Caller, caller, server
 from .transactions import TxnOut, shape
 
-router = APIRouter(prefix="/ui/api", tags=["options"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["options"])
 
 
 class OptionTrade(Model):

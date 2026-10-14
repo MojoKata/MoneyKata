@@ -60,7 +60,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 
 | Id | Gap | What is missing |
 |---|---|---|
-| **G7** | [API conventions and reference](gaps.md#g7-api-conventions-and-reference) | the conventions of S13.8 are proposed and await review; `docs/api.md` grows with the code, beside the generated OpenAPI, and documents the MCP tools |
+| **G7** | [API conventions and reference](gaps.md#g7-api-conventions-and-reference) | S13.8 beyond its numbers awaits review against the routes: `PUT`, lists answered whole, a child's `DELETE`, and routes that skip `If-Match` |
 | **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | brokerage statements, statements of several accounts, and learning column positions for layouts without sections or a running balance |
 | **G10** | [Statement intervals per account](gaps.md#g10-statement-intervals-per-account) | the interval each account's statements are expected at, how it is set or learned, and the alert threshold that follows |
 | **G12** | [Option prices and wash-sale edges](gaps.md#g12-option-prices-and-wash-sale-edges) | an option source tried with a live key, index and weekly tickers, wash sales through shorts, options and assignment, and capital at risk for spreads |
@@ -68,6 +68,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | **G14** | [Linked households beyond the first build](gaps.md#g14-linked-households-beyond-the-first-build) | the window's fuller screens, a separate /link listener port, links across two real networks, the linked window in the generated mockup, and a first snapshot's size |
 | **G15** | [What database pruning's yearly summaries hold](gaps.md#g15-what-database-prunings-yearly-summaries-hold) | what the yearly summaries left by database pruning hold beyond the averages, and which reports read them (S14.10.5) |
 | **G16** | [How each record decides it has ended](gaps.md#g16-how-each-record-decides-it-has-ended) | each kind of record's end, and what a record shows for one it names that was deleted or pruned, such as a gift to a deleted person |
+| **G17** | [Bitcoin amounts in sats](gaps.md#g17-bitcoin-amounts-in-sats) | bitcoin amounts as integer sats, stored and sent, with a sats or BTC preference in Profile |
 
 ## Also here
 

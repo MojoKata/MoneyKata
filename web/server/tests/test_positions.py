@@ -48,7 +48,7 @@ def test_open_and_closed_with_their_lots(alice):
     trade(alice, brk["id"], "2026-03-01", "sell", "4", "40", "AAPL")
     v = alice.get("/ui/api/positions").json()
     vti = next(r for r in v["open"] if r["symbol"] == "VTI")
-    assert vti["quantity"] == "15" and vti["term"] == "mixed" and len(vti["lots"]) == 2
+    assert vti["quantity"] == "15.0" and vti["term"] == "mixed" and len(vti["lots"]) == 2
     assert vti["cost"] == "2500.00" and vti["realized"] == "600.00"
     assert [x["longTerm"] for x in vti["lots"]] == [True, False]
     closed = {r["symbol"]: r for r in v["closed"]}

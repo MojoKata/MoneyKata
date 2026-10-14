@@ -11,10 +11,10 @@ from ..auth import signup, twostep
 from ..auth import users as accounts
 from ..errors import Problem
 from ..store.entities.users import Group, User
-from .conventions import Model, if_match, stale
+from .conventions import ExactRoute, Model, if_match, stale
 from .deps import Caller, admin, recent_auth, server
 
-router = APIRouter(prefix="/ui/api", tags=["users"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["users"])
 
 
 class UserRow(Model):

@@ -1,6 +1,10 @@
+import json
+from decimal import Decimal
+
 import pytest
 from fastapi.testclient import TestClient
 
+from moneykata import exactjson
 from moneykata.app import Server, create_app
 from moneykata.auth import passwords
 from moneykata.auth import users as accounts
@@ -62,8 +66,44 @@ def server(store, keyed_config):
     return srv
 
 
+class Exact(Decimal):
+    """A number with a decimal point as a test reads it: a Decimal that also equals the exact
+    text the server wrote, so `== "1234.50"` checks the digits and `== 7.5` the value."""
+
+    def __new__(cls, text):
+        d = super().__new__(cls, text)
+        d.text = text
+        return d
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.text == other
+        if isinstance(other, float):  # a test's float literal, by its shortest digits
+            return super().__eq__(Decimal(repr(other)))
+        return super().__eq__(other)
+
+    __hash__ = Decimal.__hash__
+
+    def __repr__(self):
+        return f"Exact({self.text})"
+
+
+class ExactClient(TestClient):
+    """The API's exact numbers (S13.8.2) as tests read them: `response.json()` gives a number
+    with a decimal point as an `Exact`. A request's json may hold Decimals, sent as exact number
+    literals."""
+
+    def request(self, method, url, *args, **kw):
+        if kw.get("json") is not None:
+            kw["content"] = exactjson.dumps(kw.pop("json")).encode()
+            kw["headers"] = {**(kw.get("headers") or {}), "Content-Type": "application/json"}
+        r = super().request(method, url, *args, **kw)
+        r.json = lambda **_: json.loads(r.content, parse_float=Exact) if r.content else None
+        return r
+
+
 def new_client(srv) -> TestClient:
-    return TestClient(create_app(srv), base_url=ORIGIN, headers={"Origin": ORIGIN})
+    return ExactClient(create_app(srv), base_url=ORIGIN, headers={"Origin": ORIGIN})
 
 
 @pytest.fixture

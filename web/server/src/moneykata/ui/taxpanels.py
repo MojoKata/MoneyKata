@@ -7,10 +7,10 @@ from fastapi import APIRouter, Depends, Request, Response
 
 from .. import clock
 from ..taxes import books, exports, panels
-from .conventions import Model, Money, Quantity
+from .conventions import ExactRoute, Model, Money, Quantity, Ratio
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["taxes"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["taxes"])
 
 
 class RowOut(Model):
@@ -89,7 +89,7 @@ class RmdOut(Model):
     owner: str
     age: int
     balance: Money
-    factor: float
+    factor: Ratio
     due: Money
 
 
@@ -162,7 +162,7 @@ class ResidenceOut(Model):
     name: str
     sold: dt.date
     gain: Money
-    yearsOwned: float
+    yearsOwned: Ratio
 
 
 class IssueOut(Model):

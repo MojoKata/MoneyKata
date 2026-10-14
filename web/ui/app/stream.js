@@ -4,6 +4,7 @@ import { signal } from '@preact/signals';
 import { version } from './config.js';
 import { api } from '../api/client.js';
 import { toast } from '../components/toast.js';
+import { parseJson } from './dec.js';
 
 /** A counter per kind of change; screens subscribe by reading it. */
 export const changes = signal(/** @type {Record<string, number>} */ ({}));
@@ -33,7 +34,7 @@ export function connect(ended) {
   if (source) return;
   source = new EventSource('/ui/api/events');
   source.addEventListener('hello', (e) => {
-    const data = JSON.parse(/** @type {MessageEvent} */ (e).data);
+    const data = parseJson(/** @type {MessageEvent} */ (e).data);
     if (data.version && data.version !== version) updated.value = true;
     badges.value = data.badges || {};
   });
@@ -54,14 +55,14 @@ export function connect(ended) {
   }
   // A new alert shows at once, with its count on the badge (S12.11.4).
   source.addEventListener('alert', (e) => {
-    const data = JSON.parse(/** @type {MessageEvent} */ (e).data);
+    const data = parseJson(/** @type {MessageEvent} */ (e).data);
     toast(`New alert: ${data.title}`);
   });
   for (const kind of ['alert', 'badges', 'signup']) {
     source.addEventListener(kind, refreshBadges);
   }
   source.addEventListener('session', (e) => {
-    const data = JSON.parse(/** @type {MessageEvent} */ (e).data);
+    const data = parseJson(/** @type {MessageEvent} */ (e).data);
     disconnect();
     onEnded(data.state);
   });

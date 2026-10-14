@@ -1,4 +1,5 @@
 import time
+from decimal import Decimal
 from pathlib import Path
 
 from conftest import make_user, sign_in
@@ -96,16 +97,24 @@ def test_transactions_filter_page_and_balance(server):
     nxt = c.get("/ui/api/transactions", params={"limit": 3, "after": page["next"]}).json()
     assert [t["payee"] for t in nxt["items"]] == ["Shop 5", "Shop 4", "Shop 3"]
     r = c.get("/ui/api/transactions", params={"min": "3", "max": "5"}).json()
-    assert sorted(t["amount"] for t in r["items"]) == ["-3.00", "-4.00", "-5.00"]
+    assert sorted(t["amount"] for t in r["items"]) == ["-5.00", "-4.00", "-3.00"]
     r = c.get("/ui/api/transactions", params={"payee": "refund"}).json()
     assert len(r["items"]) == 1
     r = c.get("/ui/api/transactions", params={"from": "2026-09-07", "sort": "amount"}).json()
     assert [t["amount"] for t in r["items"]] == ["-7.00", "50.00"]
     assert c.get(f"/ui/api/accounts/{a['id']}").json()["balance"] == "122.00"
+    # Money is an exact JSON number (S13.8.2): 12.5 is read as written, not through a float, and
+    # more than two places is refused.
     r = c.post(
-        "/ui/api/transactions", json={"accountId": a["id"], "date": "2026-09-01", "amount": 12.5}
+        "/ui/api/transactions",
+        json={"accountId": a["id"], "date": "2026-09-01", "amount": Decimal("12.5")},
     )
-    assert r.status_code == 422  # money is never a float
+    assert r.status_code == 201 and r.json()["amount"] == "12.50"
+    r = c.post(
+        "/ui/api/transactions",
+        json={"accountId": a["id"], "date": "2026-09-01", "amount": Decimal("12.505")},
+    )
+    assert r.status_code == 422
 
 
 def test_splits_tags_and_bulk_categorise(server):
@@ -196,7 +205,7 @@ def test_trades_make_lots_holdings_and_gains(server):
     add(c, a["id"], "2500.00", "2026-02-01", kind="sell", symbol="VTI", quantity="10", price="250")
     h = c.get(f"/ui/api/accounts/{a['id']}/holdings").json()
     vti = h["holdings"][0]
-    assert vti["symbol"] == "VTI" and vti["quantity"] == "10" and vti["costBasis"] == "3000.00"
+    assert vti["symbol"] == "VTI" and vti["quantity"] == "10.0" and vti["costBasis"] == "3000.00"
     assert vti["priceSource"] == "trade" and vti["value"] == "2500.00"
     assert h["cash"] == "8500.00" and h["total"] == "11000.00"
     checking = new_account(c, name="Bank", mask="2222")
@@ -323,7 +332,7 @@ def test_brokerage_ofx_makes_holdings(server):
     assert job["state"] == "done", job
     h = c.get(f"/ui/api/accounts/{a['id']}/holdings").json()
     vti = h["holdings"][0]
-    assert vti["symbol"] == "VTI" and vti["quantity"] == "15"
+    assert vti["symbol"] == "VTI" and vti["quantity"] == "15.0"
     assert vti["priceSource"] == "statement" and vti["value"] == "4500.00"
     assert h["cash"] == "2317.40"
 

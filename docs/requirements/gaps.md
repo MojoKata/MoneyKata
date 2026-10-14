@@ -6,7 +6,7 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 ## G7: API conventions and reference
 
-**What is missing:** the conventions of S13.8 are proposed and await review; `docs/api.md` grows with the code, beside the generated OpenAPI, and documents the MCP tools.
+**What is missing:** S13.8 beyond its numbers (S13.8.2) still awaits review, against what the routes do: `PUT` replacing what exists once per parent, short lists answered whole rather than paged, a child's `DELETE` answering with its parent, and the routes that change a record without checking its version (`If-Match`, S13.8.6).
 
 **Touches:** S10.9, S13, S17.5.
 
@@ -51,3 +51,9 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** the end of each kind of record beyond the few in `schema.md` §6.2, and what a record shows for one it names that has been deleted or pruned. A gift to a person who was deleted is still money spent, and stays with the year's spending, but who it was given to is open: kept as the person's name at the time, shown as a deleted person, or left blank. The same question arises wherever a record outlives what it names: a donation and its organisation, a transaction and its category or payee, a budget line and its category, a share and its user, a contribution and its 529 plan's beneficiary.
 
 **Touches:** S1, S5, S6, S7, S14.10, `schema.md` §4, §6.
+
+## G17: Bitcoin amounts in sats
+
+**What is missing:** bitcoin amounts as whole numbers of sats, the unit bitcoin itself counts in: stored and sent as integers (on-chain balances, transaction amounts, fees, a bitcoin lot's units), which JSON and the browser carry exactly as plain numbers, since every possible amount is below 2^53. A Profile preference shows them as **sats** (`12,345,678 sats`) or **BTC** (`0.12345678 BTC`), the conversion done only in formatting. Today they are decimal quantities like any other (S13.8.2).
+
+**Touches:** S1.6, S3, S12, S13.8.2, `schema.md`.

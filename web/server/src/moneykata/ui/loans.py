@@ -3,14 +3,13 @@ recorded or linked from a bank account and split by the schedule, and the servic
 against the computed one."""
 
 import datetime as dt
-import json
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import Field
 from sqlalchemy import false, or_, select
 
-from .. import access, activity, assets, clock, ids, loans
+from .. import access, activity, assets, clock, exactjson, ids, loans
 from ..errors import FieldError, Problem, refuse
 from ..loans import payoff
 from ..projections import assumptions
@@ -24,10 +23,10 @@ from ..store.entities.accounts import (
     Transaction,
 )
 from ..store.entities.assets import Item
-from .conventions import Model, Money, if_match, stale
+from .conventions import ExactRoute, Model, Money, Ratio, if_match, stale
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["loans"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["loans"])
 
 
 class Reset(Model):
@@ -357,10 +356,10 @@ def put_terms(account_id: str, body: TermsIn, request: Request, c: Caller = Depe
             "escrowInsurance": body.escrowInsurance,
             "pmi": body.pmi,
             "drawMonths": body.drawMonths,
-            "resets": json.dumps(
+            "resets": exactjson.dumps(
                 [{"date": r.date.isoformat(), "rate": str(r.rate)} for r in body.resets]
             ),
-            "recasts": json.dumps(
+            "recasts": exactjson.dumps(
                 [{"date": r.date.isoformat(), "fee": str(r.fee)} for r in body.recasts]
             ),
             "originalValue": body.originalValue,
@@ -608,7 +607,7 @@ class OutcomeOut(Model):
 
 class InvestedOut(Model):
     assetClass: str
-    rate: float
+    rate: Ratio
     contributed: Money
     value: Money
     gain: Money
@@ -751,7 +750,7 @@ def _plans(s, a: Account) -> list[PayoffPlan]:
 
 
 def _saved(s, c: Caller, a: Account, p: PayoffPlan) -> SavedPlan:
-    plan_in = PlanIn(**json.loads(p.inputs))
+    plan_in = PlanIn(**exactjson.loads(p.inputs))
     inputs = PlanView(**plan_in.model_dump())
     headline = ""
     if loans.loan_of(s, a) is not None:
@@ -782,7 +781,7 @@ def _following(s, a: Account, terms, rows, pi, today) -> Following | None:
     ).first()
     if p is None or p.followingSince is None:
         return None
-    inputs = PlanIn(**json.loads(p.inputs))
+    inputs = PlanIn(**exactjson.loads(p.inputs))
     expected = payoff.expected_extra(terms, _plan(inputs), p.followingSince, today, pi)
     actual = sum((r.overpayment for r in rows if r.past and r.date > p.followingSince), Decimal(0))
     return Following(
@@ -819,7 +818,7 @@ def save_plan(account_id: str, body: SavedPlanIn, request: Request, c: Caller = 
             id=ids.new_id("Pyoff"),
             accountId=a.id,
             name=name,
-            inputs=body.inputs.model_dump_json(),
+            inputs=exactjson.unmark(body.inputs.model_dump_json()),
             createdById=c.id,
         )
         s.add(p)
@@ -859,7 +858,7 @@ def change_plan(
         if p.version != version:
             raise stale(_saved(s, c, a, p))
         p.name = name
-        p.inputs = body.inputs.model_dump_json()
+        p.inputs = exactjson.unmark(body.inputs.model_dump_json())
         p.updatedAt = clock.now()
         s.flush()
         return _saved(s, c, a, p)

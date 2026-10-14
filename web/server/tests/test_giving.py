@@ -156,8 +156,8 @@ def test_shares_from_a_lot_without_a_gain(alice):
     )
     assert not d2["longTerm"] and d2["amount"] == "600.00"
     h = alice.get(f"/ui/api/accounts/{brk['id']}/holdings").json()["holdings"][0]
-    assert h["quantity"] == "14"
-    assert [x["quantity"] for x in h["lots"]] == ["6", "8"]
+    assert h["quantity"] == "14.0"
+    assert [x["quantity"] for x in h["lots"]] == ["6.0", "8.0"]
     too_many = alice.post(
         "/ui/api/giving/donations",
         json={

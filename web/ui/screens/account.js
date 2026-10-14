@@ -32,6 +32,7 @@ import { KEPT_BY, LOT_METHODS } from './new-account.js';
 import { TransactionDialog } from './transaction-dialog.js';
 import { Pager } from '../components/pager.js';
 import { pageSize } from '../store/prefs.js';
+import { dec } from '../app/dec.js';
 
 /** @param {{ id: string, tab?: string }} p */
 export default function Account({ id, tab }) {
@@ -674,7 +675,7 @@ function TickOff({ close, a }) {
     <${Dialog} title="Tick off against a statement" wide close=${close}
       onSubmit=${() => (rec ? finish.run().catch(() => {}) : start.run().catch(() => {}))}
       footer=${html`<button class="btn primary" disabled=${
-        start.busy || finish.busy || (rec && rec.difference !== '0.00')
+        start.busy || finish.busy || (rec && !dec(rec.difference).isZero())
       }>${rec ? 'Mark reconciled' : 'Start'}</button>`}>
       <div class="row">
         <${Field} label="Statement closing date" id="statement-date">

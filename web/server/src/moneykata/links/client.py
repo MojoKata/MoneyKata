@@ -3,7 +3,7 @@ the egress guard, and their signed answers checked."""
 
 import json
 
-from .. import net
+from .. import exactjson, net
 from . import PROTOCOL, keys, signing
 
 
@@ -35,7 +35,7 @@ def call(srv, address: str, peer_key: bytes, path: str, data: dict | None = None
     """A signed POST to the peer, its answer checked against the peer's key."""
     with srv.db.tx() as s:
         own = keys.private_key(s, srv.keys.secrets)
-    body = json.dumps(data or {}, separators=(",", ":"), default=str).encode()
+    body = exactjson.dumps(data or {}, separators=(",", ":")).encode()
     signed = signing.sign_request(own, "POST", path, body, keys.fingerprint(peer_key))
     headers = {
         **signed.headers,
@@ -55,7 +55,7 @@ def call(srv, address: str, peer_key: bytes, path: str, data: dict | None = None
         signing.verify_answer(peer_key, r.status_code, r.content, signed.nonce, r.headers)
     except signing.Refused as e:
         raise LinkError(e.code, e.message) from None
-    out = r.json() if r.content else {}
+    out = exactjson.loads(r.content) if r.content else {}
     if r.status_code >= 400:
         raise LinkError(
             out.get("code", "refused"), out.get("message", f"refused ({r.status_code})")

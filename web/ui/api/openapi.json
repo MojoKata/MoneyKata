@@ -98,19 +98,11 @@
           "openingBalance": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -143,20 +135,20 @@
           },
           "balance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Balance",
-            "type": "string"
+            "type": "number"
           },
           "change": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -265,10 +257,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -294,11 +286,11 @@
           },
           "openingWorkedOut": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Openingworkedout",
-            "type": "string"
+            "type": "number"
           },
           "ownerAvatar": {
             "anyOf": [
@@ -449,20 +441,20 @@
           },
           "balance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Balance",
-            "type": "string"
+            "type": "number"
           },
           "change": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -870,11 +862,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "label": {
             "title": "Label",
@@ -1420,19 +1412,19 @@
         "properties": {
           "adjustment": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Adjustment",
-            "type": "string"
+            "type": "number"
           },
           "basis": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Basis",
-            "type": "string"
+            "type": "number"
           },
           "box": {
             "title": "Box",
@@ -1440,19 +1432,19 @@
           },
           "gain": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Gain",
-            "type": "string"
+            "type": "number"
           },
           "proceeds": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Proceeds",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -1558,11 +1550,11 @@
           },
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -1601,19 +1593,11 @@
           "agi": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1624,19 +1608,11 @@
           "basis8606": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1647,19 +1623,11 @@
           "capitalLossLong": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1670,19 +1638,11 @@
           "capitalLossShort": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1693,19 +1653,11 @@
           "charitableCarryover": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1716,19 +1668,11 @@
           "overpaymentApplied": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1739,19 +1683,11 @@
           "totalTax": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1770,10 +1706,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1785,10 +1721,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1800,10 +1736,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1815,10 +1751,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1830,10 +1766,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1845,10 +1781,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1860,10 +1796,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -1880,11 +1816,11 @@
         "properties": {
           "income": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Income",
-            "type": "string"
+            "type": "number"
           },
           "month": {
             "format": "date",
@@ -1900,11 +1836,11 @@
           },
           "spending": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Spending",
-            "type": "string"
+            "type": "number"
           },
           "uses": {
             "items": {
@@ -2013,10 +1949,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -2028,10 +1964,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -2043,10 +1979,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -2092,11 +2028,11 @@
         "properties": {
           "computed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Computed",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -2105,11 +2041,11 @@
           },
           "difference": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Difference",
-            "type": "string"
+            "type": "number"
           },
           "ok": {
             "title": "Ok",
@@ -2117,11 +2053,11 @@
           },
           "reported": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Reported",
-            "type": "string"
+            "type": "number"
           },
           "source": {
             "title": "Source",
@@ -2168,11 +2104,11 @@
         "properties": {
           "close": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Close",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -2212,10 +2148,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -2242,28 +2178,28 @@
           },
           "proceeds": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Proceeds",
-            "type": "string"
+            "type": "number"
           },
           "quantity": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           },
           "realized": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -2296,11 +2232,11 @@
           },
           "washDisallowed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Washdisallowed",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -2367,20 +2303,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "contributor": {
             "default": "owner",
@@ -2663,11 +2591,11 @@
           },
           "cash": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Cash",
-            "type": "string"
+            "type": "number"
           },
           "cashAccounts": {
             "title": "Cashaccounts",
@@ -2685,20 +2613,20 @@
           },
           "investments": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Investments",
-            "type": "string"
+            "type": "number"
           },
           "investmentsDay": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -2720,11 +2648,11 @@
           },
           "netWorth": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Networth",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -2911,19 +2839,11 @@
           "amount": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -3020,19 +2940,11 @@
           "quantity": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -3068,20 +2980,20 @@
           },
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "basis": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -3192,10 +3104,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -3260,11 +3172,11 @@
           },
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -3334,36 +3246,36 @@
           },
           "distributions": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Distributions",
-            "type": "string"
+            "type": "number"
           },
           "expenses": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Expenses",
-            "type": "string"
+            "type": "number"
           },
           "notCovered": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Notcovered",
-            "type": "string"
+            "type": "number"
           },
           "stateDeduction": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -3484,11 +3396,11 @@
           },
           "equity": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Equity",
-            "type": "string"
+            "type": "number"
           },
           "itemId": {
             "title": "Itemid",
@@ -3500,19 +3412,19 @@
           },
           "ltv": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Ltv",
-            "type": "string"
+            "type": "number"
           },
           "owed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Owed",
-            "type": "string"
+            "type": "number"
           },
           "pmiEnds": {
             "anyOf": [
@@ -3540,11 +3452,11 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -3619,20 +3531,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -3679,11 +3583,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -3927,19 +3831,11 @@
           "resultAmount": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -4135,10 +4031,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -4229,19 +4125,19 @@
         "properties": {
           "exclusion": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Exclusion",
-            "type": "string"
+            "type": "number"
           },
           "given": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Given",
-            "type": "string"
+            "type": "number"
           },
           "person": {
             "$ref": "#/components/schemas/PersonRef"
@@ -4260,11 +4156,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "name": {
             "title": "Name",
@@ -4297,27 +4193,27 @@
         "properties": {
           "actual": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Actual",
-            "type": "string"
+            "type": "number"
           },
           "ahead": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Ahead",
-            "type": "string"
+            "type": "number"
           },
           "expected": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Expected",
-            "type": "string"
+            "type": "number"
           },
           "name": {
             "title": "Name",
@@ -4386,27 +4282,27 @@
           },
           "balance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Balance",
-            "type": "string"
+            "type": "number"
           },
           "contributed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Contributed",
-            "type": "string"
+            "type": "number"
           },
           "granted": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Granted",
-            "type": "string"
+            "type": "number"
           },
           "institution": {
             "anyOf": [
@@ -4448,27 +4344,27 @@
           },
           "longTerm": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Longterm",
-            "type": "string"
+            "type": "number"
           },
           "shortTerm": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Shortterm",
-            "type": "string"
+            "type": "number"
           },
           "total": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Total",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -4534,19 +4430,11 @@
           "cost": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -4664,10 +4552,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -4806,19 +4694,19 @@
         "properties": {
           "exclusion": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Exclusion",
-            "type": "string"
+            "type": "number"
           },
           "given": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Given",
-            "type": "string"
+            "type": "number"
           },
           "giver": {
             "title": "Giver",
@@ -4847,19 +4735,19 @@
           },
           "counted": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Counted",
-            "type": "string"
+            "type": "number"
           },
           "exclusion": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Exclusion",
-            "type": "string"
+            "type": "number"
           },
           "fromElection": {
             "anyOf": [
@@ -4916,11 +4804,11 @@
           },
           "deductibleTotal": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Deductibletotal",
-            "type": "string"
+            "type": "number"
           },
           "missingAcks": {
             "title": "Missingacks",
@@ -4964,10 +4852,10 @@
           "byMonth": {
             "items": {
               "examples": [
-                "1234.50"
+                1234.5
               ],
               "format": "money",
-              "type": "string"
+              "type": "number"
             },
             "title": "Bymonth",
             "type": "array"
@@ -4988,11 +4876,11 @@
           },
           "given": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Given",
-            "type": "string"
+            "type": "number"
           },
           "history": {
             "items": {
@@ -5003,11 +4891,11 @@
           },
           "income": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Income",
-            "type": "string"
+            "type": "number"
           },
           "missingAcks": {
             "title": "Missingacks",
@@ -5022,11 +4910,11 @@
           },
           "pace": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Pace",
-            "type": "string"
+            "type": "number"
           },
           "plan": {
             "anyOf": [
@@ -5040,27 +4928,27 @@
           },
           "pledged": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Pledged",
-            "type": "string"
+            "type": "number"
           },
           "projected": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Projected",
-            "type": "string"
+            "type": "number"
           },
           "target": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Target",
-            "type": "string"
+            "type": "number"
           },
           "year": {
             "title": "Year",
@@ -5207,21 +5095,21 @@
           "groups": {
             "additionalProperties": {
               "examples": [
-                "1234.50"
+                1234.5
               ],
               "format": "money",
-              "type": "string"
+              "type": "number"
             },
             "title": "Groups",
             "type": "object"
           },
           "total": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Total",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -5307,11 +5195,11 @@
           },
           "total": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Total",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -5343,10 +5231,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5358,10 +5246,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5399,10 +5287,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5435,11 +5323,11 @@
           },
           "quantity": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           },
           "symbol": {
             "title": "Symbol",
@@ -5449,10 +5337,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5492,10 +5380,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5507,10 +5395,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5540,7 +5428,11 @@
           "price": {
             "anyOf": [
               {
-                "type": "string"
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5572,8 +5464,12 @@
             "title": "Pricesource"
           },
           "quantity": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           },
           "stale": {
             "title": "Stale",
@@ -5587,10 +5483,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5601,7 +5497,11 @@
           "weight": {
             "anyOf": [
               {
-                "type": "string"
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
               },
               {
                 "type": "null"
@@ -5634,11 +5534,11 @@
         "properties": {
           "cash": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Cash",
-            "type": "string"
+            "type": "number"
           },
           "holdings": {
             "items": {
@@ -5657,11 +5557,11 @@
           },
           "total": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Total",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -5785,20 +5685,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -5823,11 +5715,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -5857,11 +5749,11 @@
         "properties": {
           "capitalGainDistributions": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Capitalgaindistributions",
-            "type": "string"
+            "type": "number"
           },
           "dividendsByPayer": {
             "items": {
@@ -5879,35 +5771,35 @@
           },
           "interestTotal": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Interesttotal",
-            "type": "string"
+            "type": "number"
           },
           "ordinary": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Ordinary",
-            "type": "string"
+            "type": "number"
           },
           "qualified": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Qualified",
-            "type": "string"
+            "type": "number"
           },
           "returnOfCapital": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Returnofcapital",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -6006,31 +5898,35 @@
           },
           "contributed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Contributed",
-            "type": "string"
+            "type": "number"
           },
           "gain": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Gain",
-            "type": "string"
+            "type": "number"
           },
           "rate": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
             "title": "Rate",
             "type": "number"
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -6145,11 +6041,11 @@
           },
           "basis": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Basis",
-            "type": "string"
+            "type": "number"
           },
           "canWrite": {
             "title": "Canwrite",
@@ -6170,10 +6066,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6194,20 +6090,20 @@
           },
           "costBasis": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Costbasis",
-            "type": "string"
+            "type": "number"
           },
           "depreciationRate": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6237,10 +6133,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6252,10 +6148,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6265,11 +6161,11 @@
           },
           "gain": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Gain",
-            "type": "string"
+            "type": "number"
           },
           "history": {
             "items": {
@@ -6282,10 +6178,10 @@
                 },
                 {
                   "examples": [
-                    "1234.50"
+                    1234.5
                   ],
                   "format": "money",
-                  "type": "string"
+                  "type": "number"
                 }
               ],
               "type": "array"
@@ -6308,10 +6204,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6396,10 +6292,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6409,11 +6305,11 @@
           },
           "quantity": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           },
           "sale": {
             "anyOf": [
@@ -6427,11 +6323,11 @@
           },
           "sellPremium": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Sellpremium",
-            "type": "string"
+            "type": "number"
           },
           "serial": {
             "anyOf": [
@@ -6448,10 +6344,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6479,10 +6375,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6503,11 +6399,11 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           },
           "version": {
             "title": "Version",
@@ -6525,6 +6421,10 @@
             "title": "Weightunit"
           },
           "years": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
             "title": "Years",
             "type": "number"
           }
@@ -6616,19 +6516,11 @@
           "closingCosts": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6648,37 +6540,21 @@
             "title": "Condition"
           },
           "costBasis": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Costbasis",
-            "type": "string"
+            "type": "number"
           },
           "depreciationRate": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6700,19 +6576,11 @@
           "insuredValue": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6790,38 +6658,22 @@
             "title": "Purity"
           },
           "quantity": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "1",
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           },
           "sellPremium": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "0",
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Sellpremium",
-            "type": "string"
+            "type": "number"
           },
           "serial": {
             "anyOf": [
@@ -6837,19 +6689,11 @@
           "unitWeight": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6900,11 +6744,11 @@
           },
           "basis": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Basis",
-            "type": "string"
+            "type": "number"
           },
           "category": {
             "anyOf": [
@@ -6921,10 +6765,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6936,10 +6780,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -6949,11 +6793,11 @@
           },
           "gain": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Gain",
-            "type": "string"
+            "type": "number"
           },
           "id": {
             "title": "Id",
@@ -6993,11 +6837,11 @@
           },
           "quantity": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           },
           "sale": {
             "anyOf": [
@@ -7019,17 +6863,21 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           },
           "version": {
             "title": "Version",
             "type": "integer"
           },
           "years": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
             "title": "Years",
             "type": "number"
           }
@@ -7064,11 +6912,11 @@
         "properties": {
           "basis": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Basis",
-            "type": "string"
+            "type": "number"
           },
           "canWrite": {
             "title": "Canwrite",
@@ -7076,11 +6924,11 @@
           },
           "gain": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Gain",
-            "type": "string"
+            "type": "number"
           },
           "items": {
             "items": {
@@ -7098,11 +6946,11 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -7140,6 +6988,10 @@
             "type": "string"
           },
           "progress": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
             "title": "Progress",
             "type": "number"
           },
@@ -7492,27 +7344,27 @@
           },
           "interest": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Interest",
-            "type": "string"
+            "type": "number"
           },
           "pmi": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Pmi",
-            "type": "string"
+            "type": "number"
           },
           "propertyTax": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Propertytax",
-            "type": "string"
+            "type": "number"
           },
           "securedBy": {
             "anyOf": [
@@ -7542,11 +7394,11 @@
         "properties": {
           "balance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Balance",
-            "type": "string"
+            "type": "number"
           },
           "canWrite": {
             "title": "Canwrite",
@@ -7574,19 +7426,19 @@
           },
           "interestAhead": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Interestahead",
-            "type": "string"
+            "type": "number"
           },
           "interestPaid": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Interestpaid",
-            "type": "string"
+            "type": "number"
           },
           "nextDate": {
             "anyOf": [
@@ -7614,19 +7466,19 @@
           },
           "overpaid": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Overpaid",
-            "type": "string"
+            "type": "number"
           },
           "payment": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Payment",
-            "type": "string"
+            "type": "number"
           },
           "payoffDate": {
             "anyOf": [
@@ -7642,19 +7494,19 @@
           },
           "principalThisYear": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Principalthisyear",
-            "type": "string"
+            "type": "number"
           },
           "rate": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Rate",
-            "type": "string"
+            "type": "number"
           },
           "rows": {
             "items": {
@@ -7685,11 +7537,11 @@
           },
           "total": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Total",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -7738,10 +7590,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -7759,11 +7611,11 @@
           },
           "quantity": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -7788,10 +7640,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -7820,11 +7672,11 @@
           },
           "quantity": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           },
           "standIn": {
             "title": "Standin",
@@ -7847,20 +7699,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -7880,11 +7724,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -7999,10 +7843,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -8012,19 +7856,19 @@
           },
           "cost": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Cost",
-            "type": "string"
+            "type": "number"
           },
           "gain": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Gain",
-            "type": "string"
+            "type": "number"
           },
           "metal": {
             "title": "Metal",
@@ -8032,20 +7876,20 @@
           },
           "ounces": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Ounces",
-            "type": "string"
+            "type": "number"
           },
           "spot": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -8067,11 +7911,11 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -8142,6 +7986,10 @@
           "price": {
             "anyOf": [
               {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
                 "type": "number"
               },
               {
@@ -8171,11 +8019,11 @@
         "properties": {
           "actual": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Actual",
-            "type": "string"
+            "type": "number"
           },
           "cadence": {
             "title": "Cadence",
@@ -8183,11 +8031,11 @@
           },
           "carried": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Carried",
-            "type": "string"
+            "type": "number"
           },
           "categoryId": {
             "title": "Categoryid",
@@ -8203,19 +8051,19 @@
           },
           "planned": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Planned",
-            "type": "string"
+            "type": "number"
           },
           "remaining": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Remaining",
-            "type": "string"
+            "type": "number"
           },
           "rollover": {
             "title": "Rollover",
@@ -8254,19 +8102,19 @@
           },
           "expectedIncome": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Expectedincome",
-            "type": "string"
+            "type": "number"
           },
           "income": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Income",
-            "type": "string"
+            "type": "number"
           },
           "month": {
             "format": "date",
@@ -8275,11 +8123,11 @@
           },
           "plannedSpending": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Plannedspending",
-            "type": "string"
+            "type": "number"
           },
           "rows": {
             "items": {
@@ -8290,11 +8138,11 @@
           },
           "spent": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Spent",
-            "type": "string"
+            "type": "number"
           },
           "uncategorised": {
             "title": "Uncategorised",
@@ -8414,19 +8262,11 @@
           "openingBalance": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -8462,20 +8302,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -8499,20 +8331,12 @@
         "additionalProperties": false,
         "properties": {
           "balance": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Balance",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -8719,20 +8543,12 @@
         "additionalProperties": false,
         "properties": {
           "statementBalance": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Statementbalance",
-            "type": "string"
+            "type": "number"
           },
           "statementDate": {
             "format": "date",
@@ -8885,19 +8701,11 @@
           "budget": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -8978,10 +8786,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9093,10 +8901,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9108,10 +8916,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9196,19 +9004,19 @@
           },
           "quantity": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           },
           "realized": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Realized",
-            "type": "string"
+            "type": "number"
           },
           "side": {
             "title": "Side",
@@ -9226,10 +9034,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9240,6 +9048,10 @@
           "unrealizedPct": {
             "anyOf": [
               {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
                 "type": "number"
               },
               {
@@ -9252,10 +9064,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9295,20 +9107,12 @@
             "type": "string"
           },
           "contracts": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Contracts",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -9321,21 +9125,13 @@
             "type": "string"
           },
           "fees": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "0",
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Fees",
-            "type": "string"
+            "type": "number"
           },
           "multiplier": {
             "default": 100,
@@ -9343,40 +9139,24 @@
             "type": "integer"
           },
           "premium": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Premium",
-            "type": "string"
+            "type": "number"
           },
           "right": {
             "title": "Right",
             "type": "string"
           },
           "strike": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Strike",
-            "type": "string"
+            "type": "number"
           },
           "underlying": {
             "title": "Underlying",
@@ -9409,11 +9189,11 @@
           },
           "capitalAtRisk": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Capitalatrisk",
-            "type": "string"
+            "type": "number"
           },
           "closed": {
             "anyOf": [
@@ -9429,11 +9209,11 @@
           },
           "contracts": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Contracts",
-            "type": "string"
+            "type": "number"
           },
           "how": {
             "anyOf": [
@@ -9459,10 +9239,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9472,23 +9252,27 @@
           },
           "premiumIn": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Premiumin",
-            "type": "string"
+            "type": "number"
           },
           "premiumOut": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Premiumout",
-            "type": "string"
+            "type": "number"
           },
           "returnPct": {
             "anyOf": [
               {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
                 "type": "number"
               },
               {
@@ -9509,10 +9293,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9585,19 +9369,11 @@
           "pledge": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9655,11 +9431,11 @@
           },
           "given": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Given",
-            "type": "string"
+            "type": "number"
           },
           "id": {
             "title": "Id",
@@ -9684,10 +9460,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -9733,27 +9509,27 @@
           },
           "fees": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Fees",
-            "type": "string"
+            "type": "number"
           },
           "interest": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Interest",
-            "type": "string"
+            "type": "number"
           },
           "interestSaved": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Interestsaved",
-            "type": "string"
+            "type": "number"
           },
           "months": {
             "title": "Months",
@@ -9765,27 +9541,27 @@
           },
           "paid": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Paid",
-            "type": "string"
+            "type": "number"
           },
           "payment": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Payment",
-            "type": "string"
+            "type": "number"
           },
           "paymentAfter": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Paymentafter",
-            "type": "string"
+            "type": "number"
           },
           "payoffDate": {
             "anyOf": [
@@ -9880,11 +9656,11 @@
           },
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -9976,10 +9752,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10093,20 +9869,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "dueDate": {
             "anyOf": [
@@ -10170,20 +9938,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -10193,19 +9953,11 @@
           "escrowInsurance": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10216,19 +9968,11 @@
           "escrowTax": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10239,19 +9983,11 @@
           "fees": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10273,19 +10009,11 @@
           "interest": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10296,19 +10024,11 @@
           "pmi": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10319,19 +10039,11 @@
           "principal": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10364,11 +10076,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "dueDate": {
             "anyOf": [
@@ -10575,19 +10287,11 @@
           "giftBudget": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10698,10 +10402,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10781,11 +10485,11 @@
           },
           "spent": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Spent",
-            "type": "string"
+            "type": "number"
           },
           "userId": {
             "anyOf": [
@@ -10863,10 +10567,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10879,11 +10583,11 @@
           },
           "spent": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Spent",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -10902,20 +10606,12 @@
             "type": "string"
           },
           "quantity": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Quantity",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -11048,20 +10744,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "cadence": {
             "default": "month",
@@ -11106,11 +10794,11 @@
           },
           "monthly": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Monthly",
-            "type": "string"
+            "type": "number"
           },
           "monthlyFrom": {
             "anyOf": [
@@ -11142,27 +10830,27 @@
           },
           "recastFee": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Recastfee",
-            "type": "string"
+            "type": "number"
           },
           "roundTo": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Roundto",
-            "type": "string"
+            "type": "number"
           },
           "yearly": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Yearly",
-            "type": "string"
+            "type": "number"
           },
           "yearlyMonth": {
             "title": "Yearlymonth",
@@ -11244,11 +10932,11 @@
         "properties": {
           "cash": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Cash",
-            "type": "string"
+            "type": "number"
           },
           "holdings": {
             "items": {
@@ -11259,11 +10947,11 @@
           },
           "total": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Total",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -11340,11 +11028,11 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           },
           "version": {
             "title": "Version",
@@ -11378,27 +11066,27 @@
           },
           "contributed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Contributed",
-            "type": "string"
+            "type": "number"
           },
           "end": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "End",
-            "type": "string"
+            "type": "number"
           },
           "growth": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Growth",
-            "type": "string"
+            "type": "number"
           },
           "irr": {
             "anyOf": [
@@ -11420,11 +11108,11 @@
           },
           "start": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Start",
-            "type": "string"
+            "type": "number"
           },
           "twr": {
             "anyOf": [
@@ -12012,11 +11700,11 @@
           },
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "category": {
             "anyOf": [
@@ -12066,11 +11754,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "jurisdiction": {
             "title": "Jurisdiction",
@@ -12140,21 +11828,13 @@
             "type": "string"
           },
           "fee": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "0",
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Fee",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -12173,11 +11853,11 @@
           },
           "fee": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Fee",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -12193,19 +11873,11 @@
           "amount": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -12272,10 +11944,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -12491,10 +12163,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -12724,19 +12396,19 @@
         "properties": {
           "cleared": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Cleared",
-            "type": "string"
+            "type": "number"
           },
           "difference": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Difference",
-            "type": "string"
+            "type": "number"
           },
           "finishedAt": {
             "anyOf": [
@@ -12756,11 +12428,11 @@
           },
           "statementBalance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Statementbalance",
-            "type": "string"
+            "type": "number"
           },
           "statementDate": {
             "format": "date",
@@ -12832,11 +12504,11 @@
           },
           "lastAmount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Lastamount",
-            "type": "string"
+            "type": "number"
           },
           "missed": {
             "title": "Missed",
@@ -12853,11 +12525,11 @@
           },
           "usual": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Usual",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -12921,20 +12593,12 @@
             "type": "string"
           },
           "rate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Rate",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -12954,11 +12618,11 @@
           },
           "rate": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Rate",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -12973,11 +12637,11 @@
         "properties": {
           "gain": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Gain",
-            "type": "string"
+            "type": "number"
           },
           "name": {
             "title": "Name",
@@ -12989,6 +12653,10 @@
             "type": "string"
           },
           "yearsOwned": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
             "title": "Yearsowned",
             "type": "number"
           }
@@ -13009,10 +12677,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -13098,21 +12766,25 @@
           },
           "balance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Balance",
-            "type": "string"
+            "type": "number"
           },
           "due": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Due",
-            "type": "string"
+            "type": "number"
           },
           "factor": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
             "title": "Factor",
             "type": "number"
           },
@@ -13137,27 +12809,27 @@
         "properties": {
           "available": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Available",
-            "type": "string"
+            "type": "number"
           },
           "eligible": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Eligible",
-            "type": "string"
+            "type": "number"
           },
           "limit": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Limit",
-            "type": "string"
+            "type": "number"
           },
           "possibleFrom": {
             "anyOf": [
@@ -13173,11 +12845,11 @@
           },
           "used": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Used",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -13203,27 +12875,27 @@
           },
           "fees": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Fees",
-            "type": "string"
+            "type": "number"
           },
           "gain": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Gain",
-            "type": "string"
+            "type": "number"
           },
           "proceeds": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Proceeds",
-            "type": "string"
+            "type": "number"
           },
           "soldOn": {
             "format": "date",
@@ -13246,37 +12918,21 @@
         "additionalProperties": false,
         "properties": {
           "fees": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "0",
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Fees",
-            "type": "string"
+            "type": "number"
           },
           "proceeds": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Proceeds",
-            "type": "string"
+            "type": "number"
           },
           "soldOn": {
             "format": "date",
@@ -13396,51 +13052,51 @@
           },
           "carryoverLong": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Carryoverlong",
-            "type": "string"
+            "type": "number"
           },
           "carryoverShort": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Carryovershort",
-            "type": "string"
+            "type": "number"
           },
           "collectables": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Collectables",
-            "type": "string"
+            "type": "number"
           },
           "longTerm": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Longterm",
-            "type": "string"
+            "type": "number"
           },
           "net": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Net",
-            "type": "string"
+            "type": "number"
           },
           "shortTerm": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Shortterm",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -13497,11 +13153,11 @@
           },
           "owed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Owed",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -13542,10 +13198,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -13555,11 +13211,11 @@
           },
           "contributions": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Contributions",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -13568,11 +13224,11 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -13589,11 +13245,11 @@
         "properties": {
           "computed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Computed",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -13602,19 +13258,19 @@
           },
           "difference": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Difference",
-            "type": "string"
+            "type": "number"
           },
           "servicer": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Servicer",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -13703,19 +13359,11 @@
           "contracts": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -13775,11 +13423,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "label": {
             "title": "Label",
@@ -14398,20 +14046,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "categoryId": {
             "anyOf": [
@@ -14451,36 +14091,20 @@
             "type": "boolean"
           },
           "closing": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Closing",
-            "type": "string"
+            "type": "number"
           },
           "opening": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Opening",
-            "type": "string"
+            "type": "number"
           },
           "periodEnd": {
             "format": "date",
@@ -14514,20 +14138,12 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -14581,11 +14197,11 @@
           },
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -14630,35 +14246,35 @@
           },
           "realizedLong": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Realizedlong",
-            "type": "string"
+            "type": "number"
           },
           "realizedShort": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Realizedshort",
-            "type": "string"
+            "type": "number"
           },
           "realizedThisYear": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Realizedthisyear",
-            "type": "string"
+            "type": "number"
           },
           "unrealized": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Unrealized",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -14775,11 +14391,11 @@
           },
           "total": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Total",
-            "type": "string"
+            "type": "number"
           },
           "withReceipts": {
             "title": "Withreceipts",
@@ -14910,19 +14526,11 @@
           "escrowInsurance": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -14933,19 +14541,11 @@
           "escrowTax": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -14961,19 +14561,11 @@
           "originalValue": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -14984,19 +14576,11 @@
           "payment": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15007,19 +14591,11 @@
           "pmi": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15028,36 +14604,20 @@
             "title": "Pmi"
           },
           "principal": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Principal",
-            "type": "string"
+            "type": "number"
           },
           "rate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Rate",
-            "type": "string"
+            "type": "number"
           },
           "recasts": {
             "items": {
@@ -15108,11 +14668,11 @@
         "properties": {
           "computedPayment": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Computedpayment",
-            "type": "string"
+            "type": "number"
           },
           "drawMonths": {
             "anyOf": [
@@ -15129,10 +14689,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15144,10 +14704,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15163,10 +14723,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15178,10 +14738,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15193,10 +14753,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15206,19 +14766,19 @@
           },
           "principal": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Principal",
-            "type": "string"
+            "type": "number"
           },
           "rate": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Rate",
-            "type": "string"
+            "type": "number"
           },
           "recasts": {
             "items": {
@@ -15476,11 +15036,11 @@
         "properties": {
           "actual": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Actual",
-            "type": "string"
+            "type": "number"
           },
           "month": {
             "format": "date",
@@ -15489,11 +15049,11 @@
           },
           "planned": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Planned",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -15615,19 +15175,11 @@
           "amount": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15682,19 +15234,11 @@
           "costBasis": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15728,19 +15272,11 @@
           "fees": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15784,19 +15320,11 @@
           "price": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15807,19 +15335,11 @@
           "quantity": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15867,20 +15387,12 @@
             "type": "string"
           },
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "categoryId": {
             "anyOf": [
@@ -15918,19 +15430,11 @@
           "costBasis": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -15957,19 +15461,11 @@
           "fees": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16025,19 +15521,11 @@
           "price": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16048,19 +15536,11 @@
           "quantity": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16071,19 +15551,11 @@
           "splitRatio": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16138,20 +15610,20 @@
           },
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "amountWas": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16216,10 +15688,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16291,10 +15763,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16306,10 +15778,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "12.5"
+                  12.5
                 ],
                 "format": "decimal",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16420,20 +15892,12 @@
             "type": "string"
           },
           "price": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Price",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -16470,11 +15934,11 @@
           },
           "spent": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Spent",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -16492,10 +15956,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -16540,11 +16004,11 @@
           },
           "planned": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Planned",
-            "type": "string"
+            "type": "number"
           },
           "turns": {
             "anyOf": [
@@ -16850,20 +16314,12 @@
             "type": "string"
           },
           "value": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -16902,11 +16358,11 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -17141,10 +16597,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -17154,19 +16610,19 @@
           },
           "disallowed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Disallowed",
-            "type": "string"
+            "type": "number"
           },
           "loss": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Loss",
-            "type": "string"
+            "type": "number"
           },
           "replacedOn": {
             "format": "date",
@@ -17179,11 +16635,11 @@
           },
           "replacementQty": {
             "examples": [
-              "12.5"
+              12.5
             ],
             "format": "decimal",
             "title": "Replacementqty",
-            "type": "string"
+            "type": "number"
           },
           "review": {
             "title": "Review",
@@ -17219,27 +16675,27 @@
         "properties": {
           "distributions": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Distributions",
-            "type": "string"
+            "type": "number"
           },
           "expenses": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Expenses",
-            "type": "string"
+            "type": "number"
           },
           "notCovered": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Notcovered",
-            "type": "string"
+            "type": "number"
           },
           "year": {
             "title": "Year",
@@ -17326,6 +16782,10 @@
           "percent": {
             "anyOf": [
               {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
                 "type": "number"
               },
               {
@@ -17378,11 +16838,11 @@
           },
           "value": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Value",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -17397,11 +16857,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "contributor": {
             "title": "Contributor",
@@ -17512,19 +16972,11 @@
           "stateDeduction": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -17555,11 +17007,11 @@
           },
           "contributedThisYear": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Contributedthisyear",
-            "type": "string"
+            "type": "number"
           },
           "openedOn": {
             "anyOf": [
@@ -17602,10 +17054,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -17661,19 +17113,11 @@
           "amount": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -17689,19 +17133,11 @@
           "income": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -17717,19 +17153,11 @@
           "percent": {
             "anyOf": [
               {
-                "anyOf": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ],
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -17761,10 +17189,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -17784,10 +17212,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -17811,10 +17239,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -18157,21 +17585,13 @@
             "type": "array"
           },
           "monthly": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "0",
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Monthly",
-            "type": "string"
+            "type": "number"
           },
           "monthlyFrom": {
             "anyOf": [
@@ -18203,55 +17623,31 @@
             "type": "boolean"
           },
           "recastFee": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "0",
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Recastfee",
-            "type": "string"
+            "type": "number"
           },
           "roundTo": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "0",
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Roundto",
-            "type": "string"
+            "type": "number"
           },
           "yearly": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
             "default": "0",
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Yearly",
-            "type": "string"
+            "type": "number"
           },
           "yearlyMonth": {
             "default": 12,
@@ -18267,11 +17663,11 @@
         "properties": {
           "balance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Balance",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -18291,11 +17687,11 @@
         "properties": {
           "balance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Balance",
-            "type": "string"
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -18304,27 +17700,27 @@
           },
           "escrow": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Escrow",
-            "type": "string"
+            "type": "number"
           },
           "interest": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Interest",
-            "type": "string"
+            "type": "number"
           },
           "overpayment": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Overpayment",
-            "type": "string"
+            "type": "number"
           },
           "past": {
             "title": "Past",
@@ -18332,27 +17728,27 @@
           },
           "payment": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Payment",
-            "type": "string"
+            "type": "number"
           },
           "pmi": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Pmi",
-            "type": "string"
+            "type": "number"
           },
           "principal": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Principal",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -18374,59 +17770,59 @@
         "properties": {
           "escrowInsurance": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Escrowinsurance",
-            "type": "string"
+            "type": "number"
           },
           "escrowTax": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Escrowtax",
-            "type": "string"
+            "type": "number"
           },
           "fees": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Fees",
-            "type": "string"
+            "type": "number"
           },
           "interest": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Interest",
-            "type": "string"
+            "type": "number"
           },
           "overpayment": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Overpayment",
-            "type": "string"
+            "type": "number"
           },
           "pmi": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Pmi",
-            "type": "string"
+            "type": "number"
           },
           "principal": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Principal",
-            "type": "string"
+            "type": "number"
           }
         },
         "required": [
@@ -18484,10 +17880,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -18672,11 +18068,11 @@
           },
           "contributed": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Contributed",
-            "type": "string"
+            "type": "number"
           },
           "kind": {
             "title": "Kind",
@@ -18686,10 +18082,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -18743,20 +18139,20 @@
           },
           "adjustment": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Adjustment",
-            "type": "string"
+            "type": "number"
           },
           "basis": {
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -18784,10 +18180,10 @@
             "anyOf": [
               {
                 "examples": [
-                  "1234.50"
+                  1234.5
                 ],
                 "format": "money",
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -18801,11 +18197,11 @@
           },
           "proceeds": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Proceeds",
-            "type": "string"
+            "type": "number"
           },
           "sold": {
             "format": "date",
@@ -18835,11 +18231,11 @@
         "properties": {
           "amount": {
             "examples": [
-              "1234.50"
+              1234.5
             ],
             "format": "money",
             "title": "Amount",
-            "type": "string"
+            "type": "number"
           },
           "categoryId": {
             "anyOf": [

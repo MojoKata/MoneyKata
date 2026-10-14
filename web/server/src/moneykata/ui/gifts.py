@@ -15,12 +15,12 @@ from ..gifts import holidays
 from ..store.entities.accounts import Account, Category, Transaction
 from ..store.entities.education import Gift, GiftPerson, Occasion, Person
 from ..store.entities.users import User
-from .conventions import Model, Money
+from .conventions import ExactRoute, Model, Money
 from .deps import Caller, caller, server
 from .receipts import ReceiptRow
 from .receipts import row as receipt_row
 
-router = APIRouter(prefix="/ui/api", tags=["gifts"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["gifts"])
 
 
 # ---- People and their occasions (S7.7) ----

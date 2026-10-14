@@ -19,7 +19,7 @@ function group(whole) {
 
 /**
  * Dollars with two places: "$1,234.50", "−$12.00" (a true minus sign).
- * @param {string | null | undefined} s
+ * @param {import('./dec.js').Dec | string | null | undefined} s
  * @param {{ sign?: boolean, cents?: boolean }} [opts]
  */
 export function money(s, opts = {}) {
@@ -35,24 +35,26 @@ export function money(s, opts = {}) {
   return opts.sign && !zero ? '+' + out : out;
 }
 
-/** @param {string | null | undefined} s */
+/** @param {import('./dec.js').Dec | string | null | undefined} s */
 export function isNegative(s) {
   return s != null && String(s).startsWith('-') && !/^-0*(\.0*)?$/.test(String(s));
 }
 
 /**
  * A quantity or price to its own scale, grouped: "1,234.5678".
- * @param {string | null | undefined} s
+ * @param {import('./dec.js').Dec | string | null | undefined} s
  */
 export function quantity(s) {
   if (s == null) return '—';
   const { neg, whole, frac } = parts(String(s));
-  return (neg ? '−' : '') + group(whole) + (frac ? '.' + frac : '');
+  // A whole quantity arrives as "10.0" (S13.8.2) and reads "10".
+  const f = /^0*$/.test(frac) ? '' : frac;
+  return (neg ? '−' : '') + group(whole) + (f ? '.' + f : '');
 }
 
 /**
  * A price: dollars with at least two places, more when it has them: "$424.10", "$0.0345".
- * @param {string | null | undefined} s
+ * @param {import('./dec.js').Dec | string | null | undefined} s
  */
 export function price(s) {
   if (s == null) return '—';
@@ -62,7 +64,7 @@ export function price(s) {
 
 /**
  * A percentage string ("5.12") as "+5.12%".
- * @param {string | null | undefined} s
+ * @param {import('./dec.js').Dec | string | null | undefined} s
  */
 export function pct(s) {
   if (s == null) return '—';

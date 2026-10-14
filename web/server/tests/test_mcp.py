@@ -119,3 +119,13 @@ def test_calls_are_limited_to_60_a_minute_per_token(server, alice, agent, monkey
     r = rpc(agent, secret, "ping")
     assert r.status_code == 429 and r.headers["retry-after"]
     assert rpc(agent, token(alice, name="Another"), "ping").status_code == 200
+
+
+def test_every_tool_is_in_the_api_reference():
+    """docs/api.md lists each MCP tool (G7): a new tool without its row fails here."""
+    from moneykata import paths
+    from moneykata.mcp import TOOLS
+
+    text = (paths.ROOT / "docs" / "api.md").read_text()
+    missing = [name for name in TOOLS if f"| `{name}`" not in text]
+    assert missing == []

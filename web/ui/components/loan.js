@@ -13,6 +13,7 @@ import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, Select } from './fields.js';
 import { Icon } from './icon.js';
 import { toast } from './toast.js';
+import { dec, num } from '../app/dec.js';
 
 export const METHODS = /** @type {[string, string][]} */ ([
   ['amortized', 'Monthly amortization'],
@@ -211,13 +212,13 @@ export function LoanSummary({ a, reload }) {
           name="plus" /> Record a payment</button>`
       : null}</h3>
       <div class="list-item"><span class="grow dim">Owed</span><${Amt} v=${v.balance} /></div>
-      <div class="list-item"><span class="grow dim">Rate</span>${Number(v.rate).toFixed(3)}% ${t
+      <div class="list-item"><span class="grow dim">Rate</span>${dec(v.rate).round(3)}% ${t
           .resets.length
         ? 'adjustable'
         : 'fixed'}<span class="small dim">${'\u00a0'}· ${METHODS.find(([k]) => k === t.method)?.[1]
         .toLowerCase()}</span></div>
       <div class="list-item"><span class="grow dim">Payment</span><span><${Amt} v=${v
-        .payment} />${Number(v.total) > Number(v.payment)
+        .payment} />${dec(v.total).gt(dec(v.payment))
         ? html`<span class="small dim"> · <${Amt} v=${v.total} /> with escrow</span>`
         : null}</span></div>
       <div class="list-item"><span class="grow dim">Next due</span>${v.nextDate
@@ -234,7 +235,7 @@ export function LoanSummary({ a, reload }) {
         .interestAhead} cents=${false} /></div>
       <div class="list-item"><span class="grow dim">Principal this year</span><${Amt} v=${v
         .principalThisYear} /></div>
-      ${Number(v.overpaid)
+      ${num(v.overpaid)
         ? html`<div class="list-item"><span class="grow dim">Overpaid</span><${Amt} v=${v.overpaid} /></div>`
         : null}
       ${v.following
@@ -242,13 +243,11 @@ export function LoanSummary({ a, reload }) {
           <div
             class="list-item"><span class="grow dim">Following</span><span>${v.following
               .name}<span class=${'small ' +
-              (Number(v.following.ahead) < 0 ? 'down' : 'up')}> · ${Number(
+              (dec(v.following.ahead).isNegative() ? 'down' : 'up')}> · ${dec(
                 v.following.ahead,
-              ) < 0
+              ).isNegative()
               ? 'behind'
-              : 'ahead'} by <${Amt} v=${String(
-                Math.abs(Number(v.following.ahead)),
-              )} /></span></span></div>
+              : 'ahead'} by <${Amt} v=${dec(v.following.ahead).abs()} /></span></span></div>
         `
         : null}
       ${v.equity
@@ -256,7 +255,7 @@ export function LoanSummary({ a, reload }) {
           <div
             class="list-item"><span class="grow dim">Equity in ${v.equity
               .itemName}</span><span><${Amt} v=${v.equity.equity} cents=${false} /><span
-                    class="small dim"> · LTV ${Number(v.equity.ltv)}%</span></span></div>
+                    class="small dim"> · LTV ${String(v.equity.ltv)}%</span></span></div>
                     ${v.equity.pmiRequest || v.equity.pmiEnds
                       ? html`
                         <div
@@ -274,7 +273,7 @@ export function LoanSummary({ a, reload }) {
         : null}
       <div class="list-item"><span class="grow dim">Servicer's balance</span>${s
         ? html`<span><${Amt} v=${s.servicer} /> on ${date(s.date)} ${
-          Number(s.difference) === 0
+          dec(s.difference).isZero()
             ? html`<span class="pill ok"><${Icon} name="check" /> matches</span>`
             : html`<span class="pill warn">off by <${Amt} v=${s.difference} signed /></span>`
         }</span>`
@@ -327,7 +326,7 @@ export function Schedule({ a }) {
   if (!v.terms) {
     return html`<${Empty}>No terms yet. Set them in Settings to compute the schedule.</${Empty}>`;
   }
-  const escrow = v.rows.some((/** @type {any} */ r) => Number(r.escrow) || Number(r.pmi));
+  const escrow = v.rows.some((/** @type {any} */ r) => num(r.escrow) || num(r.pmi));
   const firstAhead = v.rows.findIndex((/** @type {any} */ r) => !r.past);
   const from = Math.max(0, (firstAhead < 0 ? v.rows.length : firstAhead) - 3);
   const shown = all ? v.rows : v.rows.slice(from, from + 15);
@@ -356,12 +355,12 @@ export function Schedule({ a }) {
               escrow
                 ? html`
                   <td class="num">
-                    <${Amt} v=${String(Number(r.escrow) + Number(r.pmi))} />
+                    <${Amt} v=${dec(r.escrow).add(dec(r.pmi))} />
                   </td>
                 `
                 : null
             }<td class="num">${
-              Number(r.overpayment)
+              num(r.overpayment)
                 ? html`<${Amt} v=${r.overpayment} />`
                 : html`<span class="dim">—</span>`
             }</td><td class="num"><${Amt} v=${r.balance} /></td></tr>`
@@ -409,7 +408,7 @@ export function PaymentDialog({ close, a, v }) {
       date: f.date,
       amount: clean(f.amount),
     });
-    setSplit({ ...s, principal: String(Number(s.principal) + Number(s.overpayment)) });
+    setSplit({ ...s, principal: String(dec(s.principal).add(dec(s.overpayment))) });
   });
   const save = useSubmit(async () => {
     /** @type {any} */

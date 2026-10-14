@@ -10,7 +10,7 @@ import json
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from .. import clock, ids
+from .. import clock, exactjson, ids
 from ..keys import phrase
 from ..links import changes, keys
 from ..links.copy import public_of
@@ -114,7 +114,7 @@ def _seal(server, link_id: str, change: dict) -> None:
 
     d = folder(server.config.data_dir, link_id) / "inbox"
     d.mkdir(parents=True, exist_ok=True)
-    raw = json.dumps(change, separators=(",", ":"), default=str).encode()
+    raw = exactjson.dumps(change, separators=(",", ":")).encode()
     public = keys.unb64(public_of(DEV_COPY_KEY))
     sealed.write(
         d / "0000000001.mks", sealed.seal(public, sealed.CHANGE, link_id, "0000000001", [raw])

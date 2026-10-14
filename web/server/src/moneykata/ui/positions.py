@@ -13,10 +13,10 @@ from .. import access, clock, options, valuation
 from ..ledger import types as atypes
 from ..store.entities.accounts import Instrument, Transaction
 from ..store.repos import ledger as repo
-from .conventions import Model, Money, Quantity
+from .conventions import ExactRoute, Model, Money, Quantity, Ratio
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["positions"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["positions"])
 ZERO = Decimal(0)
 KINDS = {
     "stocks": ("equity", "etf", "mutual-fund", "bond", "money-market", "other"),
@@ -47,7 +47,7 @@ class OpenRow(Model):
     value: Money | None
     priceSource: str | None  # close, manual, intrinsic, statement, trade
     unrealized: Money | None
-    unrealizedPct: float | None
+    unrealizedPct: Ratio | None
     realized: Money  # all its closes so far
     term: str  # short, long or mixed
     days: int  # since the oldest open lot
@@ -348,7 +348,7 @@ class OptionTradeRow(Model):
     value: Money | None  # what is still open is worth now
     pl: Money | None  # in less out, plus what is open
     capitalAtRisk: Money
-    returnPct: float | None
+    returnPct: Ratio | None
 
 
 OPTION_KINDS = ("buy-to-open", "sell-to-open", "buy-to-close", "sell-to-close")

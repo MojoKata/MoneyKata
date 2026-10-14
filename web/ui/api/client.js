@@ -1,6 +1,8 @@
 // The browser's side of /ui/api (requirements S13.8): JSON in and out, problem+json errors with
 // each refusal at its field, If-Match versions, and Idempotency-Key on creates.
 
+import { parseJson } from '../app/dec.js';
+
 /** A refusal from the server, with the field each part of it belongs to. */
 export class ApiError extends Error {
   /**
@@ -84,7 +86,7 @@ async function call(method, path, opts = {}) {
     return null;
   }
   const text = await r.text();
-  const data = text ? JSON.parse(text) : null;
+  const data = text ? parseJson(text) : null;
   if (!r.ok) {
     const err = new ApiError(r.status, data);
     if (r.status === 401 && !path.startsWith('/session')) onSignedOut(err.code);

@@ -13,11 +13,11 @@ from ..ledger import types as atypes
 from ..prices import refresh as pricing
 from ..store.entities.accounts import Lot, Split, Transaction
 from ..store.repos import ledger as repo
-from .conventions import Model, Money
+from .conventions import ExactRoute, Model, Money
 from .deps import Caller, caller, server
 from .sharing import counted_for
 
-router = APIRouter(prefix="/ui/api", tags=["dashboard"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["dashboard"])
 
 
 class Change(Model):

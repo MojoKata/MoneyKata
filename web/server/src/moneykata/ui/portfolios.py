@@ -18,11 +18,11 @@ from ..store.entities.accounts import Account
 from ..store.entities.sharing import Portfolio, PortfolioAccount
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
-from .conventions import Model, Money, if_match, stale
+from .conventions import ExactRoute, Model, Money, Quantity, Ratio, if_match, stale
 from .deps import Caller, caller, server
 from .sharing import counted_for
 
-router = APIRouter(prefix="/ui/api", tags=["portfolios"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["portfolios"])
 ALL = "all"
 BENCHMARKS = ("VT", "SPY", "60-40")
 
@@ -315,15 +315,15 @@ class HoldingTotal(Model):
     symbol: str
     name: str | None
     instrumentClass: str
-    quantity: str
-    price: str | None
+    quantity: Quantity
+    price: Quantity | None
     priceAsOf: dt.date | None
     priceSource: str | None
     stale: bool
     value: Money | None
     costBasis: Money | None
     gain: Money | None
-    weight: str | None
+    weight: Ratio | None
     accounts: list[str]
 
 
@@ -419,7 +419,6 @@ def portfolio_returns(portfolio_id: str, request: Request, c: Caller = Depends(c
 @router.get("/portfolios/{portfolio_id}/holdings", response_model=PortfolioHoldings)
 def portfolio_holdings(portfolio_id: str, request: Request, c: Caller = Depends(caller)):
     """What the portfolio's visible accounts hold, added up by instrument."""
-    from ..money import quantity_str
     from ..store.entities.accounts import Instrument
 
     with server(request).db.read() as s:
@@ -468,15 +467,15 @@ def portfolio_holdings(portfolio_id: str, request: Request, c: Caller = Depends(
                     symbol=inst.symbol,
                     name=inst.name,
                     instrumentClass=inst.instrumentClass,
-                    quantity=quantity_str(h["qty"]),
-                    price=quantity_str(price.price) if price else None,
+                    quantity=h["qty"],
+                    price=price.price if price else None,
                     priceAsOf=price.asOf if price else None,
                     priceSource=price.source if price else None,
                     stale=bool(price and price.stale),
                     value=value,
                     costBasis=basis,
                     gain=value - basis if value is not None and basis is not None else None,
-                    weight=str((value / total * 100).quantize(Decimal("0.1")))
+                    weight=(value / total * 100).quantize(Decimal("0.1"))
                     if value is not None and total
                     else None,
                     accounts=sorted(set(h["accounts"])),

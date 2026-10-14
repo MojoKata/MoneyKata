@@ -10,16 +10,16 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import Field
 from sqlalchemy import select
 
-from .. import access, activity, clock, giving, ids, receipts
+from .. import access, activity, clock, exactjson, giving, ids, receipts
 from ..errors import FieldError, Problem, refuse
 from ..store.entities.accounts import Category, Instrument, Lot, LotPick, Transaction
 from ..store.entities.giving import Donation, GivingPlan, Organisation
 from ..store.entities.receipts import ReceiptLink
 from ..store.repos import ledger as repo
-from .conventions import Model, Money, Quantity
+from .conventions import ExactRoute, Model, Money, Quantity, Ratio
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["giving"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["giving"])
 
 
 # ---- The plan (S7.9.1, S7.9.2) ----
@@ -56,7 +56,7 @@ class Share(Model):
 
 class YearPct(Model):
     year: int
-    percent: float | None
+    percent: Ratio | None
 
 
 class FundOut(Model):
@@ -279,7 +279,7 @@ def _org_values(body: OrganisationIn) -> dict:
         "name": body.name.strip(),
         "ein": (body.ein or "").strip() or None,
         "deductible": body.deductible,
-        "causes": json.dumps(sorted({x.strip() for x in body.causes if x.strip()})),
+        "causes": exactjson.dumps(sorted({x.strip() for x in body.causes if x.strip()})),
         "pledge": body.pledge or None,
         "pledgeEvery": body.pledgeEvery if body.pledge else None,
         "notes": body.notes or None,

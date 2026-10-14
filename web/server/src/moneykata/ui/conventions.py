@@ -1,5 +1,5 @@
-"""The API conventions of requirements S13.8, as pieces the routes share: money and quantities
-as strings, cursor paging, versions with If-Match, and Idempotency-Key."""
+"""The API conventions of requirements S13.8, as pieces the routes share: money, quantities
+and ratios as exact JSON numbers, cursor paging, versions with If-Match, and Idempotency-Key."""
 
 import base64
 import json
@@ -8,41 +8,108 @@ import time
 from decimal import Decimal
 from typing import Annotated, Any
 
-from fastapi import Query, Request
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer
+from fastapi import Query, Request, Response
+from fastapi.routing import APIRoute
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    PlainSerializer,
+    WithJsonSchema,
+)
 
-from .. import money
+from .. import exactjson, money
 from ..errors import Problem, refuse
 
 
 def _money_in(v: Any) -> Decimal:
-    if isinstance(v, Decimal):
-        return v
-    if not isinstance(v, str):
-        raise ValueError('amounts are strings in dollars, such as "1234.50"')
+    if isinstance(v, float):
+        raise ValueError("amounts are exact: send the number as written, never through a float")
     return money.parse(v, places=2)
 
 
 def _quantity_in(v: Any) -> Decimal:
-    if isinstance(v, Decimal):
-        return v
-    if not isinstance(v, str):
-        raise ValueError('quantities and prices are decimal strings, such as "12.5"')
+    if isinstance(v, float):
+        raise ValueError("quantities are exact: send the number as written, never through a float")
     return money.parse(v, places=money.QUANTITY_PLACES)
 
 
+def _money_out(d: Decimal) -> str:
+    return exactjson.mark(money.money_str(d) or "0")
+
+
+def _quantity_out(d: Decimal) -> str:
+    return exactjson.mark(exactjson.text(Decimal(money.quantity_str(d) or "0")))
+
+
+# Exact numbers in JSON (S13.8.2): read from a number (or a decimal string, as a form field
+# gives it), written as a number literal with its own digits, never a float. In Python they
+# are Decimals; `when_used="json"` leaves `model_dump()` giving Decimals.
 Money = Annotated[
     Decimal,
     BeforeValidator(_money_in),
-    PlainSerializer(lambda d: money.money_str(d), return_type=str),
-    Field(json_schema_extra={"type": "string", "format": "money", "examples": ["1234.50"]}),
+    PlainSerializer(_money_out, return_type=str, when_used="json"),
+    WithJsonSchema({"type": "number", "format": "money", "examples": [1234.5]}),
 ]
 Quantity = Annotated[
     Decimal,
     BeforeValidator(_quantity_in),
-    PlainSerializer(lambda d: money.quantity_str(d), return_type=str),
-    Field(json_schema_extra={"type": "string", "format": "decimal", "examples": ["12.5"]}),
+    PlainSerializer(_quantity_out, return_type=str, when_used="json"),
+    WithJsonSchema({"type": "number", "format": "decimal", "examples": [12.5]}),
 ]
+
+
+def _ratio_in(v: Any) -> Decimal:
+    if isinstance(v, float):  # worked out by the server, so by its shortest digits
+        return Decimal(repr(v))
+    return money.parse(v)
+
+
+def _ratio_out(d: Decimal) -> str:
+    return exactjson.mark(exactjson.text(d.normalize() if d == d.to_integral_value() else d))
+
+
+# A share or rate the server works out for display (a percentage, a factor, years): an exact
+# number like the rest, never a binary float.
+Ratio = Annotated[
+    Decimal,
+    BeforeValidator(_ratio_in),
+    PlainSerializer(_ratio_out, return_type=str, when_used="json"),
+    WithJsonSchema({"type": "number", "format": "decimal", "examples": [12.5]}),
+]
+# Free-form data a request carries (a projection's inputs, the assumptions, settings), for code
+# that works in floats: its numbers arrive as floats, as plain JSON would give them.
+Loose = Annotated[dict, BeforeValidator(exactjson.plain)]
+
+
+class ExactRequest(Request):
+    """A request whose JSON body keeps its numbers exact: `1234.50` arrives as a Decimal."""
+
+    async def json(self) -> Any:
+        if not hasattr(self, "_json"):
+            body = await self.body()
+            self._json = exactjson.loads(body) if body else None
+        return self._json
+
+
+class ExactRoute(APIRoute):
+    """Every API route (S13.8.2): exact numbers in the request body, and the marks on exact
+    numbers taken off the response, whichever way FastAPI wrote it."""
+
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+
+        async def exact(request: Request) -> Response:
+            response = await handler(ExactRequest(request.scope, request.receive))
+            kind = response.headers.get("content-type", "")
+            if "json" in kind and hasattr(response, "body") and response.body:
+                body = exactjson.unmark_bytes(bytes(response.body))
+                if len(body) != len(response.body):
+                    response.body = body
+                    response.headers["content-length"] = str(len(body))
+            return response
+
+        return exact
 
 
 class Model(BaseModel):
@@ -80,7 +147,7 @@ class Paging:
 
 
 def encode_cursor(values: list | tuple) -> str:
-    raw = json.dumps(list(values), default=str, separators=(",", ":")).encode()
+    raw = exactjson.dumps(list(values), default=str, separators=(",", ":")).encode()
     return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 

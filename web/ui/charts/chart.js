@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { date, money, short } from '../app/format.js';
 import { theme } from '../store/prefs.js';
+import { num } from '../app/dec.js';
 
 /** @type {Promise<typeof import('echarts')> | null} */
 let loading = null;
@@ -38,7 +39,7 @@ export function TimeChart({ label, series, tall }) {
       if (!live || !box.current) return;
       chart = ec.init(box.current, null, { renderer: 'svg' });
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const values = series.flatMap((s) => s.points.map(([, v]) => Number(v)));
+      const values = series.flatMap((s) => s.points.map(([, v]) => num(v)));
       const flat = values.every((v) => v === values[0]);
       // The step between the ticks ECharts chose, read once it has laid the axis out.
       const step = () => {
@@ -80,7 +81,7 @@ export function TimeChart({ label, series, tall }) {
           // the total (net worth: assets less liabilities).
           stackStrategy: s.stack ? 'all' : undefined,
           showSymbol: false,
-          data: s.points.map(([d, v]) => [d, Number(v)]),
+          data: s.points.map(([d, v]) => [d, num(v)]),
           lineStyle: {
             color: token(s.color) || s.color,
             width: s.dash ? 1.5 : 2,
@@ -276,7 +277,7 @@ export function BarChart({ label, periods, series }) {
  */
 export function FlowChart({ label, sources, uses }) {
   const colors = ['--c1', '--c2', '--c3', '--c4', '--c5', '--c6', '--c7', '--c8'];
-  const total = sources.reduce((a, s) => a + Number(s.amount), 0);
+  const total = sources.reduce((a, s) => a + num(s.amount), 0);
   return html`
     <${Chart} label=${label} head=${['', 'Amount']}
       rows=${[
@@ -314,11 +315,11 @@ export function FlowChart({ label, sources, uses }) {
           ],
           // Every source into one Income node, which spreads into the uses in proportion.
           links: [
-            ...sources.map((s) => ({ source: s.name, target: 'Income', value: Number(s.amount) })),
+            ...sources.map((s) => ({ source: s.name, target: 'Income', value: num(s.amount) })),
             ...uses.map((u) => ({
               source: 'Income',
               target: u.name,
-              value: Math.min(Number(u.amount), total || Number(u.amount)),
+              value: Math.min(num(u.amount), total || num(u.amount)),
             })),
           ],
         }],

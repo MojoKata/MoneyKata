@@ -3,8 +3,17 @@
 // were recorded, and a stream that never sends. Nothing leaves the page. It then loads the app
 // from the modules the page carries.
 (() => {
+  // A number with a decimal point stays as its literal (S13.8.2), so each answer is served with
+  // the exact digits the server wrote.
   const data = JSON.parse(
     /** @type {HTMLElement} */ (document.getElementById('mk-data')).textContent || '{}',
+    /** @type {any} */ (
+      /** @param {string} _k @param {unknown} v @param {{ source?: string }} [ctx] */
+      (_k, v, ctx) =>
+        typeof v === 'number' && ctx?.source && /[.eE]/.test(ctx.source)
+          ? /** @type {any} */ (JSON).rawJSON(ctx.source)
+          : v
+    ),
   );
 
   // The day the answers were recorded, so "3 days ago" and the date fields agree with them.

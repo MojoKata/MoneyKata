@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy import false, select
 
-from .. import access, clock, ids, receipts, settings
+from .. import access, clock, exactjson, ids, receipts, settings
 from ..errors import Problem, refuse
 from ..importers import csvfile, ofx, statements
 from ..importers.parsed import ParsedFile, ReadError, Row
@@ -30,10 +30,10 @@ from ..store.entities.accounts import (
 )
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
-from .conventions import Model, Money
+from .conventions import ExactRoute, Loose, Model, Money, Ratio
 from .deps import Caller, caller, server
 
-router = APIRouter(prefix="/ui/api", tags=["imports"])
+router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["imports"])
 _pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="mk-import")
 HELD_MINUTES = 30
 
@@ -61,7 +61,7 @@ class JobOut(Model):
     id: str
     kind: str
     state: str
-    progress: float
+    progress: Ratio
     result: dict | None
     error: dict | None
 
@@ -80,7 +80,7 @@ class ImportRow(Model):
 
 
 class MappingIn(Model):
-    mapping: dict
+    mapping: Loose
     save: bool = True
 
 
@@ -205,7 +205,7 @@ def _save_mapping(s, account: Account, mapping: dict) -> None:
             ImportMapping.deleted == false(),
         )
     ).first()
-    text = json.dumps(mapping, sort_keys=True)
+    text = exactjson.dumps(mapping, sort_keys=True)
     if row is None:
         s.add(
             ImportMapping(
@@ -495,7 +495,7 @@ def _learn(s, account: Account, st, kept: list[StatementRowIn]) -> None:
         return
     row = _layout(s, account.ownerId, key)
     learned = statements.learn(json.loads(row.layout) if row else None, st, rows)
-    text = json.dumps(learned, sort_keys=True)
+    text = exactjson.dumps(learned, sort_keys=True)
     if row is None:
         s.add(
             StatementLayout(
