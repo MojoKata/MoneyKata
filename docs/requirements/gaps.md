@@ -28,21 +28,13 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S1, S5, S6, S7, S14.10, `schema.md` §4, §6.
 
-## G18: External connectors
-
-**Needed for the first release** (S17.9).
-
-**What is missing:** small programs, each short enough for a person to read in full and trust, that hold an institution's credentials or personal access token outside MoneyKata, fetch what the institution offers (OFX, CSV, PDF statements), and post it to MoneyKata's import, so an account stays current without downloading and uploading by hand. To specify: where a connector runs (on the host, beside the server, or on a person's own machine) and how it keeps its credentials; the access token it posts with, limited to importing into the accounts it names, since today's tokens only read (S10.9); how its imports are checked and recorded (Activity, an alert when one fails); and the first connectors, for the average cases (a Schwab brokerage account, a UMB bank account).
-
-**Touches:** S1.3, S10.9, S13.7, S17.9.
-
 ## G19: Other option price sources
 
 **For later consideration.** CBOE's delayed quotes (S4.5) aren't an official API and could change or close. The alternatives, each to be tried before it is relied on:
 
-- **Schwab Trader API** (official, free with a Schwab account): real-time chains and marks; its sign-in token lasts seven days, so it belongs in an external connector (G18), not the server.
+- **Schwab Trader API** (official, free with a Schwab account): real-time chains and marks; its sign-in token lasts seven days, so it belongs in a driver of the MoneyKata Connector (S18), not the server.
 - **MarketData.app** (official, a free key with a daily request limit): chains and end-of-day quotes.
 - **Massive** (formerly Polygon.io), Basic plan: shipped as the fallback (S4.3) but not yet tried with a live key: its limits, its history for expired contracts.
 - **Tradier** (official, free with an account): delayed chains.
 
-**Touches:** S4.3, S4.5, G18.
+**Touches:** S4.3, S4.5, S18.

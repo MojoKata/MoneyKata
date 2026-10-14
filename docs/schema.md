@@ -131,6 +131,8 @@ designed yet. A row moves to §3.1 when its table is.
 
 | Prefix | Table         | Description                                                                       |
 |--------|---------------|-----------------------------------------------------------------------------------|
+| Cnctr  | Connector     | The MoneyKata Connector paired with this server: its public keys (S18.4).        |
+| Conn   | Connection    | One sign-in at one institution, kept by the connector, owned by a user (S18.6).   |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
 
 ## 4. Soft deletes

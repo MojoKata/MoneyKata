@@ -280,8 +280,8 @@
          copy through decryption, and what an older or newer peer does.
       9. **The mockup** generated from the app for these screens, and the Docker image, with
          two servers linked.
-   6. **The first release** follows the milestones, and needs besides: the external connectors
-      (G18), bitcoin wallets tried against live nodes (Fulcrum, electrs, Bitcoin Core 27
+   6. **The first release** follows the milestones, and needs besides: the MoneyKata Connector
+      (S18), bitcoin wallets tried against live nodes (Fulcrum, electrs, Bitcoin Core 27
       and later, a self-hosted mempool), which the build has no node to try against, and
       links tried across two real networks (an overlay such as Tailscale, and a forwarded
       port), not only two servers on one host.

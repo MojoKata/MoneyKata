@@ -99,7 +99,9 @@
          4. **Order of the signs**: a running balance, then an explicit sign, then a learned
             column, then the section heading, then the words.
    4. **bitcoin watch** (self-custody wallets): balances and transactions read by address or
-      xpub (S1.6).
+      xpub (S1.6);
+   5. **the MoneyKata Connector**: files fetched from the institution by the connector's
+      driver for a Connection the owner set up, and imported as an upload would be (S18).
 
    No bank-aggregation service is used: the user brings the files ([rejected ideas](rejected-ideas.md)).
 4. **Retirement accounts** also carry: the **contribution year** of each contribution (a

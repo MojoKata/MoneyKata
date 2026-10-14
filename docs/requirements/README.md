@@ -10,7 +10,7 @@ portfolios with each other, read-only or read/write, and share read-only with pe
 
 **How the requirements are organised.** This file holds what applies everywhere: the
 decisions (R1), the terminology (R2) and the design principles (R3). Each subject has its own
-section file, S1 to S17, listed below. A reference names a part by its id and number:
+section file, S1 to S18, listed below. A reference names a part by its id and number:
 `R1.16` is item 16 of the decisions here, `S9.8.7` item 8.7 of the receipts section, `G8` a
 gap and `Q8` an open question.
 
@@ -53,6 +53,7 @@ opens the dialogs.
 | **S15** | [Encryption and the master key](S15-encryption-and-master-key.md) | The master key and its recovery phrase, the data key, rotation and recovery, for the admin who runs the server |
 | **S16** | [Settings (admins)](S16-settings.md) | Every section of the Settings screen |
 | **S17** | [Implementation](S17-implementation.md) | The stack, the repository layout, checks, dev mode, the Docker image and the milestones |
+| **S18** | [MoneyKata Connector](S18-connector.md) | The second service that holds institutions' credentials, fetches with its drivers and pushes into MoneyKata's import |
 
 ## Gaps
 
@@ -64,8 +65,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | **G12** | [Adjusted contracts and capital at risk](gaps.md#g12-adjusted-contracts-and-capital-at-risk) | option contracts adjusted after a split, and capital at risk for spreads and covered calls |
 | **G15** | [What database pruning's yearly summaries hold](gaps.md#g15-what-database-prunings-yearly-summaries-hold) | what the yearly summaries left by database pruning hold beyond the averages, and which reports read them (S14.10.5) |
 | **G16** | [How each record decides it has ended](gaps.md#g16-how-each-record-decides-it-has-ended) | each kind of record's end, and what a record shows for one it names that was deleted or pruned, such as a gift to a deleted person |
-| **G18** | [External connectors](gaps.md#g18-external-connectors) | **needed for the first release**: small, auditable programs that hold an institution's credentials, fetch its files and post them to MoneyKata's import |
-| **G19** | [Other option price sources](gaps.md#g19-other-option-price-sources) | for later: Schwab Trader API through a connector, MarketData.app, Massive with a live key, Tradier |
+| **G19** | [Other option price sources](gaps.md#g19-other-option-price-sources) | for later: Schwab Trader API through a connector driver, MarketData.app, Massive with a live key, Tradier |
 
 ## Also here
 
@@ -226,6 +226,14 @@ recommendations waiting for a decision.
     its own for a security: the UI says holding or instrument, and keeps *asset* for
     *physical asset* (term 17). *Trade* as an entity: a trade is a pair of
     transactions on a position.
+21. **MoneyKata Connector (the connector):** the second service that holds institutions'
+    credentials in a vault MoneyKata can't open, fetches with its drivers, and pushes what they
+    fetch into MoneyKata's import (S18). It is **paired** with one MoneyKata server.
+22. **Driver:** the part of the connector for one institution or method (Schwab, OFX Direct
+    Connect, a watched folder).
+23. **Connection:** one sign-in at one institution, kept by the connector and owned by the
+    user whose sign-in it is; an account's sync names a Connection and the institution
+    account it is (S18.6).
 
 # R3. Design principles
 

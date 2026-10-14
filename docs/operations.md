@@ -183,3 +183,23 @@ and exit code 78. The compose file restarts it three times at most, then leaves 
   `moneykata.toml` lists it, until backup pruning has removed every backup made before the
   rotation: Settings › Key storage says when.
 - **Re-encrypt the data** (S15.7.2): Settings › Key storage › **Re-encrypt**.
+
+## 8. The MoneyKata Connector
+
+The connector (S18) keeps accounts current from their institutions, holding their credentials
+where MoneyKata can't. It is the `connector` service in `compose.yaml`.
+
+1. **Install it once**: `docker compose run --rm connector init`. It prints **12 words**: save
+   them in the household's password manager. They open the connector's vault, and nothing
+   else can.
+2. **Start it**: `docker compose up -d`. It starts **locked**, and MoneyKata alerts admins
+   until it is unlocked.
+3. **Unlock it after every start** (a restart, an update, the host's reboot):
+   `docker compose exec connector moneykata-connector unlock`, then type the 12 words.
+4. **Pair it**: in MoneyKata, Settings › Connector › Pair shows a code; run
+   `docker compose exec connector moneykata-connector pair <code>` and compare the
+   fingerprints both sides show.
+5. **On another machine** instead (a laptop): run the same image there with its own
+   `connector-data` volume, reaching MoneyKata's address; nothing else changes.
+6. **Lost words**: `moneykata-connector reset` makes a new vault and new words; every
+   Connection's credentials are entered again.

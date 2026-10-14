@@ -2,7 +2,7 @@
 
 One screen with a section list on the left, **General first** and selected when Settings
 opens. Each section has its own help guide. In the order below, except Storage (17), which
-follows Backups:
+follows Backups, and Connector (18), which follows Linked servers:
 
 1. **General**: server name (shown to linked servers), the **household name and avatar** (an
    image, or initials; shown at the top of the sidebar here, and sent to linked servers,
@@ -52,3 +52,6 @@ follows Backups:
     time zone).
 17. **Storage** (S14.10): the size of the database and of the receipts directory, what could
     be pruned against the rest, the prunable data by the year it ended, and **Prune…**.
+18. **Connector** (S18): pairing with the MoneyKata Connector (**Pair**, the connector's
+    fingerprint, **Unpair**), whether it is locked, its last report, and every Connection's
+    state, owner and accounts, never their credentials.
