@@ -69,8 +69,13 @@ def hello(request: Request):
     """Unsigned: the protocol this server speaks and its key's fingerprint, so a joining server
     can check it against the link code before sending anything."""
     srv = request.app.state.server
-    _, fp = own(srv)
-    return {"protocol": PROTOCOL, "version": srv.version, "fingerprint": fp}
+    k, fp = own(srv)
+    return {
+        "protocol": PROTOCOL,
+        "version": srv.version,
+        "fingerprint": fp,
+        "key": keys.b64(keys.raw_public(k.public_key())),
+    }
 
 
 @router.post("/ping")
@@ -87,3 +92,54 @@ async def ping(request: Request):
     return answer(
         srv, {"protocol": PROTOCOL, "version": srv.version, "state": link.state}, caller.nonce
     )
+
+
+@router.post("/join")
+async def join(request: Request):
+    """A server answering an invitation: signed by its own key, which the code vouches for."""
+    srv = request.app.state.server
+    body = await request.body()
+    try:
+        _, fp = own(srv)
+        path = request.url.path
+        caller = signing.verify_request(
+            request.headers, request.method, path, body, fp, srv.link_nonces
+        )
+    except signing.Refused as e:
+        return refusal(request, e)
+    from .manage import answer_join
+
+    out = answer_join(srv, caller.public, json.loads(body or b"{}"))
+    if "error" in out:
+        code, message = out["error"]
+        return refusal(request, signing.Refused(code, message))
+    return answer(srv, {**out, "state": "requested", "version": srv.version}, caller.nonce)
+
+
+@router.post("/exchange")
+async def exchange(request: Request):
+    """Each side's directory for the other's: users and household (S11.3)."""
+    srv = request.app.state.server
+    try:
+        link, caller, body = await verified(request, ("active", "pending"))
+    except signing.Refused as e:
+        return refusal(request, e)
+    from .manage import answer_exchange
+
+    out = answer_exchange(
+        srv, link, json.loads(body or b"{}"), request.headers.get("mk-link-version")
+    )
+    return answer(srv, out, caller.nonce)
+
+
+@router.post("/end")
+async def end(request: Request):
+    srv = request.app.state.server
+    try:
+        link, caller, _ = await verified(request, ("requested", "pending", "active", "paused"))
+    except signing.Refused as e:
+        return refusal(request, e)
+    from .manage import answer_end
+
+    answer_end(srv, link)
+    return answer(srv, {"state": "ended"}, caller.nonce)

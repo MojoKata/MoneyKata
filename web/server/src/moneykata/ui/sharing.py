@@ -84,7 +84,7 @@ def view(s, owner: User, kind: str, item_id: str) -> ShareView:
         members.setdefault(m.groupId, []).append(m.userId)
     users = s.scalars(
         select(User)
-        .where(User.deleted == false(), User.active, User.id != owner.id)
+        .where(User.deleted == false(), User.active, User.id != owner.id, User.linkId.is_(None))
         .order_by(User.displayName)
     ).all()
     out_users = []

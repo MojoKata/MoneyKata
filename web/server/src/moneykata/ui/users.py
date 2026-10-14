@@ -102,7 +102,7 @@ def group_row(s, g: Group) -> GroupRow:
 
 def _user(s, user_id: str) -> User:
     u = s.get(User, user_id)
-    if u is None or u.deleted:
+    if u is None or u.deleted or u.linkId is not None:
         raise Problem(404, "not-found", "Not found")
     return u
 
@@ -118,7 +118,9 @@ def _group(s, group_id: str) -> Group:
 def list_users(request: Request, c: Caller = Depends(admin)):
     with server(request).db.read() as s:
         users = s.scalars(
-            select(User).where(User.deleted == false()).order_by(User.displayName)
+            select(User)
+            .where(User.deleted == false(), User.linkId.is_(None))
+            .order_by(User.displayName)
         ).all()
         return [user_row(s, u) for u in users]
 

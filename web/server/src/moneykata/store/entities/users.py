@@ -25,6 +25,8 @@ class User(Record):
     twoStepAt: dt.datetime | None = None
     totpLastStep: int | None = None
     alertSummaryAt: dt.datetime | None = None
+    linkId: str | None = None
+    remoteId: str | None = None
 
 
 @dataclass(kw_only=True, eq=False)

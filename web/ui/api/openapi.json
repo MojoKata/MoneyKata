@@ -5840,6 +5840,24 @@
         "title": "InvestedOut",
         "type": "object"
       },
+      "Invitation": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "link": {
+            "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+          }
+        },
+        "required": [
+          "code",
+          "link"
+        ],
+        "title": "Invitation",
+        "type": "object"
+      },
       "InvitationInfo": {
         "additionalProperties": false,
         "properties": {
@@ -6950,6 +6968,20 @@
         "title": "JobOut",
         "type": "object"
       },
+      "JoinIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "JoinIn",
+        "type": "object"
+      },
       "KeyStorage": {
         "additionalProperties": false,
         "properties": {
@@ -7072,77 +7104,38 @@
         "title": "LastYear",
         "type": "object"
       },
-      "LinkOut": {
+      "LinksView": {
         "additionalProperties": false,
-        "description": "A transaction it supports, or (a statement) the account it is kept on.",
         "properties": {
-          "accountId": {
-            "title": "Accountid",
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "fingerprint": {
+            "title": "Fingerprint",
             "type": "string"
           },
-          "accountName": {
-            "title": "Accountname",
-            "type": "string"
-          },
-          "amount": {
-            "anyOf": [
-              {
-                "examples": [
-                  "1234.50"
-                ],
-                "format": "money",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Amount"
-          },
-          "date": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date"
-          },
-          "payee": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Payee"
-          },
-          "transactionId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Transactionid"
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+            },
+            "title": "Links",
+            "type": "array"
           }
         },
         "required": [
-          "transactionId",
-          "accountId",
-          "accountName",
-          "date",
-          "amount",
-          "payee"
+          "fingerprint",
+          "address",
+          "links"
         ],
-        "title": "LinkOut",
+        "title": "LinksView",
         "type": "object"
       },
       "LoanOut": {
@@ -11986,7 +11979,7 @@
           },
           "links": {
             "items": {
-              "$ref": "#/components/schemas/LinkOut"
+              "$ref": "#/components/schemas/moneykata__ui__receipts__LinkOut"
             },
             "title": "Links",
             "type": "array"
@@ -12205,7 +12198,7 @@
           },
           "links": {
             "items": {
-              "$ref": "#/components/schemas/LinkOut"
+              "$ref": "#/components/schemas/moneykata__ui__receipts__LinkOut"
             },
             "title": "Links",
             "type": "array"
@@ -12540,6 +12533,42 @@
           "changed"
         ],
         "title": "RecurringRow",
+        "type": "object"
+      },
+      "RemoteUser": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "email"
+        ],
+        "title": "RemoteUser",
         "type": "object"
       },
       "Reset": {
@@ -17449,6 +17478,181 @@
         "title": "DocumentIn",
         "type": "object"
       },
+      "moneykata__ui__links__LinkOut": {
+        "additionalProperties": false,
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "codeExpiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codeexpiresat"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "endedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endedat"
+          },
+          "failingSince": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failingsince"
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "householdAvatar": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Householdavatar"
+          },
+          "householdName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Householdname"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lasterror"
+          },
+          "lastOkAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastokat"
+          },
+          "peerName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peername"
+          },
+          "peerVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peerversion"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/RemoteUser"
+            },
+            "title": "Users",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "role",
+          "peerName",
+          "householdName",
+          "householdAvatar",
+          "address",
+          "fingerprint",
+          "peerVersion",
+          "codeExpiresAt",
+          "lastOkAt",
+          "lastError",
+          "failingSince",
+          "createdAt",
+          "endedAt",
+          "users"
+        ],
+        "title": "LinkOut",
+        "type": "object"
+      },
       "moneykata__ui__loans__PlanIn": {
         "additionalProperties": false,
         "properties": {
@@ -17779,6 +17983,79 @@
           "setBy"
         ],
         "title": "SecretSet",
+        "type": "object"
+      },
+      "moneykata__ui__receipts__LinkOut": {
+        "additionalProperties": false,
+        "description": "A transaction it supports, or (a statement) the account it is kept on.",
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "transactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
+          }
+        },
+        "required": [
+          "transactionId",
+          "accountId",
+          "accountName",
+          "date",
+          "amount",
+          "payee"
+        ],
+        "title": "LinkOut",
         "type": "object"
       },
       "moneykata__ui__settings__SecretSet": {
@@ -25758,6 +26035,301 @@
         "summary": "Key Test",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/links": {
+      "get": {
+        "operationId": "list_links_ui_api_settings_links_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinksView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Links",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/invitations": {
+      "post": {
+        "operationId": "invite_ui_api_settings_links_invitations_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invitation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Invite",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/join": {
+      "post": {
+        "operationId": "join_ui_api_settings_links_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Join",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/{link_id}/approve": {
+      "post": {
+        "operationId": "approve_ui_api_settings_links__link_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/{link_id}/end": {
+      "post": {
+        "description": "End a link, or reject a request, or withdraw an invitation.",
+        "operationId": "end_ui_api_settings_links__link_id__end_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "End",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/{link_id}/pause": {
+      "post": {
+        "operationId": "pause_ui_api_settings_links__link_id__pause_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pause",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/{link_id}/pull": {
+      "post": {
+        "description": "An exchange now rather than at the next hour (S11.7).",
+        "operationId": "pull_now_ui_api_settings_links__link_id__pull_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pull Now",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/{link_id}/resume": {
+      "post": {
+        "operationId": "resume_ui_api_settings_links__link_id__resume_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resume",
+        "tags": [
+          "links"
         ]
       }
     },

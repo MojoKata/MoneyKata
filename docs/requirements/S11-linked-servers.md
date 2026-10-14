@@ -5,11 +5,13 @@ other: a parent and an adult child, partners who keep separate servers, or a cli
 preparer.
 
 1. **A link joins two servers**, made by admins on both sides:
-   1. Admin A creates an **invitation** on server A: a one-time **link code** (valid 24 hours)
-      that holds A's address and the fingerprint of A's link key.
-   2. Admin B enters the code on server B, which connects to A, checks the fingerprint, and
-      sends B's own address and key. A's admin sees the request with B's fingerprint and
-      approves it.
+   1. Admin A creates an **invitation** on server A: a one-time **link code** (valid 24 hours,
+      `mkl1.…`) that holds A's link address, the fingerprint of A's link key and a one-time
+      secret, of which A keeps only a hash. **Withdraw** ends an invitation sooner.
+   2. Admin B enters the code on server B, which connects to A, checks A's key against the
+      fingerprint, and sends B's own address and key, signed with it. A's admin sees the
+      request with B's fingerprint, compares it with B's admin, and approves or rejects it.
+      B's link waits for the approval, which reaches it at once or at its next exchange.
    3. Each server then holds the other's **Ed25519 public key**. Every call between them is
       signed with the sender's key over the method, path, body hash, a timestamp and a
       nonce. The receiver refuses a bad signature, a timestamp more than 60 seconds off, and a
@@ -23,7 +25,10 @@ preparer.
       the recommended setup and needs no open port;
    3. *(not now)* a relay. MoneyKata does not run one ([out of scope](out-of-scope.md)).
 
-   A link works when **either** side can reach the other: the side that can't be reached pulls.
+   A link works when **either** side can reach the other: each exchange carries both
+   directions, so whichever side can reach the other makes it. Each server's **link address**
+   is set in Settings › Linked servers (its public URL when not set), and the link listener
+   answers under `/link/`.
 3. **What a link carries**: only what a user on one server has shared with named people on
    the other (S10.3.3), always **read**, never write. The shares travel with the data, and
    the receiving server shows each item only to the people it names. The receiving admin

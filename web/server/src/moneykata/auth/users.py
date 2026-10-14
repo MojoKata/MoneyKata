@@ -92,6 +92,7 @@ def admin_ids(s: Db) -> list[str]:
                 UserGroup.deleted == false(),
                 User.active,
                 User.deleted == false(),
+                User.linkId.is_(None),
             )
         )
     )
@@ -103,7 +104,9 @@ def by_login(s: Db, login: str) -> User | None:
     if not login:
         return None
     col = User.email if "@" in login else User.username
-    return s.scalars(select(User).where(func.lower(col) == login, User.deleted == false())).first()
+    return s.scalars(
+        select(User).where(func.lower(col) == login, User.deleted == false(), User.linkId.is_(None))
+    ).first()
 
 
 def invited(s: Db, user_id: str) -> bool:
@@ -191,7 +194,9 @@ def _email_problems(s: Db, email: str, user_id: str | None) -> list[FieldError]:
     if not EMAIL.match(email) or len(email) > 254:
         return [FieldError("email", "email-invalid", "Enter an email address.")]
     other = s.scalars(
-        select(User).where(func.lower(User.email) == email, User.deleted == false())
+        select(User).where(
+            func.lower(User.email) == email, User.deleted == false(), User.linkId.is_(None)
+        )
     ).first()
     if other is not None and other.id != user_id:
         return [FieldError("email", "email-taken", "Another user has this email address.")]
@@ -687,7 +692,10 @@ def update_group(
 def set_members(s: Db, by: User, g: Group, member_ids: list[str], record: bool = True) -> None:
     wanted = set(member_ids)
     users = {
-        u.id: u for u in s.scalars(select(User).where(User.id.in_(wanted), User.deleted == false()))
+        u.id: u
+        for u in s.scalars(
+            select(User).where(User.id.in_(wanted), User.deleted == false(), User.linkId.is_(None))
+        )
     }
     if set(users) != wanted:
         raise refuse("memberIds", "user-unknown", "Choose existing users.")

@@ -103,7 +103,7 @@ def profile(s, u: User) -> Profile:
     ).first()
     others = s.scalars(
         select(User)
-        .where(User.deleted == false(), User.active, User.id != u.id)
+        .where(User.deleted == false(), User.active, User.id != u.id, User.linkId.is_(None))
         .order_by(User.displayName)
     ).all()
     return Profile(
@@ -182,7 +182,7 @@ def change_profile(
         if "spouseId" in sent:
             if body.spouseId is not None:
                 other = s.get(User, body.spouseId)
-                if other is None or other.deleted or other.id == u.id:
+                if other is None or other.deleted or other.id == u.id or other.linkId:
                     raise refuse("spouseId", "user-unknown", "Choose a user of this server.")
             u.spouseId = body.spouseId
             fields.append("spouseId")

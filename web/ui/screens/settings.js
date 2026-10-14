@@ -13,6 +13,7 @@ import { Dialog, openDialog } from '../components/dialog.js';
 import { errAt, Field, FormError, Input, Select, Switch, SwitchRow } from '../components/fields.js';
 import { toast } from '../components/toast.js';
 import { loadSession } from '../store/session.js';
+import { LinksSection } from '../components/links.js';
 
 const SECTIONS = /** @type {[string, string][]} */ ([
   ['general', 'General'],
@@ -22,6 +23,7 @@ const SECTIONS = /** @type {[string, string][]} */ ([
   ['passwords', 'Passwords'],
   ['prices', 'Prices'],
   ['bitcoin', 'Bitcoin'],
+  ['links', 'Linked servers'],
   ['imports', 'Imports'],
   ['receipts', 'Receipts'],
   ['tax-tables', 'Tax tables'],
@@ -55,6 +57,8 @@ export default function Settings({ section }) {
         ? html`<${EmailSection} />`
         : current === 'bitcoin'
         ? html`<${BitcoinSection} />`
+        : current === 'links'
+        ? html`<${LinksSection} />`
         : current === 'tax-tables'
         ? html`<${TaxTables} />`
         : html`<${Plain} section=${current} />`}</div>

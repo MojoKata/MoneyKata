@@ -123,3 +123,109 @@ def test_an_unreachable_peer_says_so(pair):
     with pytest.raises(client.LinkError) as e:
         client.call(a, url_b, public(b), "/link/v1/ping")
     assert e.value.code == "unreachable"
+
+
+# ---------- invitations, approval and the directory (S11.1, S11.3, S11.6)
+
+from conftest import make_user  # noqa: E402
+from linkpair import admin_of, linked  # noqa: E402
+
+
+@pytest.fixture
+def admins(pair):
+    a, b, (url_a, url_b), wire = pair
+    ca, cb = admin_of(a, url_a), admin_of(b, url_b)
+    yield a, b, ca, cb, wire
+    ca.close()
+    cb.close()
+
+
+def links_of(c):
+    return c.get("/ui/api/settings/links").json()
+
+
+def test_an_invitation_is_joined_approved_and_each_side_sees_the_others_users(admins):
+    a, b, ca, cb, _ = admins
+    make_user(a, "alice")
+    make_user(b, "carol")
+    inv = ca.post("/ui/api/settings/links/invitations")
+    assert inv.status_code == 201, inv.text
+    code = inv.json()["code"]
+    assert code.startswith("mkl1.") and inv.json()["link"]["state"] == "invited"
+    joined = cb.post("/ui/api/settings/links/join", json={"code": code})
+    assert joined.status_code == 201, joined.text
+    assert joined.json()["state"] == "pending"
+    assert joined.json()["fingerprint"] == links_of(ca)["fingerprint"]
+    req = links_of(ca)["links"][0]
+    assert req["state"] == "requested" and req["fingerprint"] == links_of(cb)["fingerprint"]
+    assert {u["username"] for u in req["users"]} == {"admin", "carol"}
+    again = cb.post("/ui/api/settings/links/join", json={"code": code})
+    assert again.status_code == 422 and again.json()["code"] in ("code-used", "already-linked")
+    r = ca.post(f"/ui/api/settings/links/{req['id']}/approve")
+    assert r.status_code == 200 and r.json()["state"] == "active"
+    b_side = links_of(cb)["links"][0]
+    assert b_side["state"] == "active", "told at once by the approval's exchange"
+    assert {u["username"] for u in b_side["users"]} == {"admin", "alice"}
+    assert b_side["householdName"]
+    # Remote users never sign in, and stay out of Users and Groups.
+    assert all(u["username"] != "carol" for u in ca.get("/ui/api/users").json())
+
+
+def test_the_directory_follows_the_peers_users(admins):
+    _a, b, ca, cb, _ = admins
+    a_id, b_id = linked(ca, cb)
+    make_user(b, "dave")
+    assert ca.post(f"/ui/api/settings/links/{a_id}/pull").status_code == 200
+    names = {u["username"] for u in links_of(ca)["links"][0]["users"]}
+    assert "dave" in names
+    from moneykata.store.entities.users import User
+
+    with b.db.tx() as s:
+        s.query(User).filter(User.username == "dave").one().active = False
+    ca.post(f"/ui/api/settings/links/{a_id}/pull")
+    assert "dave" not in {u["username"] for u in links_of(ca)["links"][0]["users"]}
+    with b.db.tx() as s:
+        s.query(User).filter(User.username == "dave").one().active = True
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    assert "dave" in {u["username"] for u in links_of(ca)["links"][0]["users"]}, (
+        "an exchange from either side updates both"
+    )
+
+
+def test_a_code_for_another_key_or_a_damaged_code_is_refused(admins):
+    _a, _b, ca, cb, _ = admins
+    code = ca.post("/ui/api/settings/links/invitations").json()["code"]
+    from moneykata.links import manage
+
+    c = manage.decode_code(code)
+    forged = manage.encode_code(c["a"], "0" * 64, c["c"])
+    r = cb.post("/ui/api/settings/links/join", json={"code": forged})
+    assert r.status_code == 422 and r.json()["code"] == "fingerprint-mismatch"
+    r = cb.post("/ui/api/settings/links/join", json={"code": "hello"})
+    assert r.json()["code"] == "code-invalid"
+
+
+def test_pausing_stops_exchanges_and_ending_reaches_the_other_side(admins):
+    _a, _b, ca, cb, wire = admins
+    a_id, b_id = linked(ca, cb)
+    assert ca.post(f"/ui/api/settings/links/{a_id}/pause").json()["state"] == "paused"
+    out = cb.post(f"/ui/api/settings/links/{b_id}/pull").json()
+    assert out["lastError"] and "paused" in out["lastError"]
+    assert ca.post(f"/ui/api/settings/links/{a_id}/resume").json()["state"] == "active"
+    assert cb.post(f"/ui/api/settings/links/{b_id}/pull").json()["lastError"] is None
+    wire.down.add("b.test")
+    ended = ca.post(f"/ui/api/settings/links/{a_id}/end").json()
+    assert ended["state"] == "ended" and ended["users"] == []
+    wire.down.clear()
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    b_side = links_of(cb)["links"][0]
+    assert b_side["state"] == "ended" and b_side["users"] == [], "learnt at its next call"
+
+
+def test_an_unreachable_peer_is_recorded_on_the_link(admins):
+    _a, _b, ca, cb, wire = admins
+    a_id, _ = linked(ca, cb)
+    wire.down.add("b.test")
+    out = ca.post(f"/ui/api/settings/links/{a_id}/pull").json()
+    assert out["state"] == "active" and "didn't answer" in out["lastError"]
+    assert out["failingSince"]

@@ -70,3 +70,39 @@ class Wire:
 
 def with_config(srv: Server, **kw) -> None:
     srv.config = dataclasses.replace(srv.config, **kw)
+
+
+def admin_of(srv: Server, base: str) -> TestClient:
+    """An admin signed in on that server's own UI (its setup step done)."""
+    from moneykata import settings
+
+    with srv.db.tx() as s:
+        settings.put(s, "publicUrl", base, None)
+    c = TestClient(create_app(srv), base_url=base, headers={"Origin": base})
+    r = c.post("/ui/api/session", json={"login": "admin", "password": "moneykata-setup"})
+    assert r.status_code == 200, r.text
+    r = c.post(
+        "/ui/api/session/setup",
+        json={
+            "password": "a long admin passphrase",
+            "email": f"admin@{urlsplit(base).hostname}",
+            "displayName": f"Admin {urlsplit(base).hostname[0].upper()}",
+        },
+    )
+    assert r.status_code == 200, r.text
+    return c
+
+
+def linked(a_admin: TestClient, b_admin: TestClient) -> tuple[str, str]:
+    """A link made the way admins make it: invited on A, joined on B, approved on A."""
+    code = a_admin.post("/ui/api/settings/links/invitations").json()["code"]
+    b_link = b_admin.post("/ui/api/settings/links/join", json={"code": code})
+    assert b_link.status_code == 201, b_link.text
+    a_link = next(
+        x
+        for x in a_admin.get("/ui/api/settings/links").json()["links"]
+        if x["state"] == "requested"
+    )
+    r = a_admin.post(f"/ui/api/settings/links/{a_link['id']}/approve")
+    assert r.status_code == 200, r.text
+    return a_link["id"], b_link.json()["id"]

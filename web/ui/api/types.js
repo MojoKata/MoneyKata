@@ -967,6 +967,12 @@
  */
 
 /**
+ * @typedef {Object} Invitation
+ * @property {string} code
+ * @property {moneykata__ui__links__LinkOut} link
+ */
+
+/**
  * @typedef {Object} InvitationInfo
  * @property {string} username
  * @property {string} displayName
@@ -1101,6 +1107,11 @@
  */
 
 /**
+ * @typedef {Object} JoinIn
+ * @property {string} code
+ */
+
+/**
  * @typedef {Object} KeyStorage
  * @property {string} keyFile
  * @property {string} fingerprint
@@ -1130,14 +1141,10 @@
  */
 
 /**
- * A transaction it supports, or (a statement) the account it is kept on.
- * @typedef {Object} LinkOut
- * @property {(string | null)} transactionId
- * @property {string} accountId
- * @property {string} accountName
- * @property {(string | null)} date
- * @property {(string | null)} amount
- * @property {(string | null)} payee
+ * @typedef {Object} LinksView
+ * @property {string} fingerprint
+ * @property {(string | null)} address
+ * @property {Array<moneykata__ui__links__LinkOut>} links
  */
 
 /**
@@ -1940,7 +1947,7 @@
  * @property {(string | null)} payee
  * @property {(string | null)} notes
  * @property {Array<string>} tags
- * @property {Array<LinkOut>} links
+ * @property {Array<moneykata__ui__receipts__LinkOut>} links
  * @property {boolean} hasThumbnail
  * @property {string} readStatus
  * @property {(string | null)} readError
@@ -1969,7 +1976,7 @@
  * @property {(string | null)} payee
  * @property {(string | null)} notes
  * @property {Array<string>} tags
- * @property {Array<LinkOut>} links
+ * @property {Array<moneykata__ui__receipts__LinkOut>} links
  * @property {boolean} hasThumbnail
  * @property {string} readStatus
  * @property {(string | null)} readError
@@ -2023,6 +2030,14 @@
  * @property {number} count
  * @property {boolean} missed
  * @property {boolean} changed
+ */
+
+/**
+ * @typedef {Object} RemoteUser
+ * @property {string} id
+ * @property {string} username
+ * @property {string} displayName
+ * @property {(string | null)} email
  */
 
 /**
@@ -2894,6 +2909,26 @@
  */
 
 /**
+ * @typedef {Object} moneykata__ui__links__LinkOut
+ * @property {string} id
+ * @property {string} state
+ * @property {string} role
+ * @property {(string | null)} peerName
+ * @property {(string | null)} householdName
+ * @property {(Object<string, unknown> | null)} householdAvatar
+ * @property {(string | null)} address
+ * @property {(string | null)} fingerprint
+ * @property {(string | null)} peerVersion
+ * @property {(string | null)} codeExpiresAt
+ * @property {(string | null)} lastOkAt
+ * @property {(string | null)} lastError
+ * @property {(string | null)} failingSince
+ * @property {string} createdAt
+ * @property {(string | null)} endedAt
+ * @property {Array<RemoteUser>} users
+ */
+
+/**
  * @typedef {Object} moneykata__ui__loans__PlanIn
  * @property {(number | string)} [monthly]
  * @property {(string | null)} [monthlyFrom]
@@ -2942,6 +2977,17 @@
  * @typedef {Object} moneykata__ui__prices__SecretSet
  * @property {string} setAt
  * @property {(string | null)} setBy
+ */
+
+/**
+ * A transaction it supports, or (a statement) the account it is kept on.
+ * @typedef {Object} moneykata__ui__receipts__LinkOut
+ * @property {(string | null)} transactionId
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {(string | null)} date
+ * @property {(string | null)} amount
+ * @property {(string | null)} payee
  */
 
 /**

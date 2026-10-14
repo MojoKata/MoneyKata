@@ -16,6 +16,7 @@ def test_build_registers_every_background_task(keyed_config):
             "alert-summaries",
             "options",
             "bitcoin",
+            "links",
         }
         assert server.tasks.run_now("prices")
     finally:

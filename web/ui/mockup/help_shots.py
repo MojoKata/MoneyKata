@@ -24,6 +24,7 @@ SETTINGS = (
     "passwords",
     "prices",
     "bitcoin",
+    "links",
     "imports",
     "receipts",
     "tax-tables",

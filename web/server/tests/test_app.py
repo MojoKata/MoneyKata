@@ -30,6 +30,7 @@ SETTINGS_SECTIONS = (
     "passwords",
     "prices",
     "bitcoin",
+    "links",
     "imports",
     "receipts",
     "tax-tables",
@@ -320,6 +321,7 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/users", "New user", "dialog-new-user"),
         ("/ui/users", "New group", "dialog-group"),
         ("/ui/settings/prices", "Add a source", "dialog-add-source"),
+        ("/ui/settings/links", "Enter a link code", "dialog-link-join"),
     ):
         open_dialog(page, path, button, guide)
         close_dialog(page)
@@ -441,6 +443,16 @@ def test_every_dialog_has_its_guide(page):
     wait_guide(page, "dialog-token-shown")
     check_guide(page, ".dialog", "a token shown once")
     assert "mkt_" in page.inner_text(".dialog")
+    close_dialog(page)
+    # An invitation, once this server has a link address.
+    visit(page, "/ui/settings/links")
+    page.fill(".content #f-link-address", page.url.split("/ui/")[0])
+    page.get_by_role("button", name="Save", exact=True).click()
+    page.wait_for_selector("text=Saved")
+    open_dialog(page, "/ui/settings/links", "Invite a server", "dialog-link-invite")
+    page.wait_for_selector(".dialog code")
+    check_guide(page, ".dialog", "an invitation's code")
+    assert "mkl1." in page.inner_text(".dialog")
     close_dialog(page)
     # Settings › Bitcoin with each kind of node's fields.
     visit(page, "/ui/settings/bitcoin")

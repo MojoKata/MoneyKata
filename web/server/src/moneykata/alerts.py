@@ -301,7 +301,9 @@ def occasions(s: Session, server) -> Iterable[Cause]:
     from . import gifts
 
     today = clock.today()
-    for u in s.scalars(select(User).where(User.active, User.deleted == false())):
+    for u in s.scalars(
+        select(User).where(User.active, User.deleted == false(), User.linkId.is_(None))
+    ):
         for up in gifts.upcoming(s, u.id, today):
             if not up.inLead or any(g.status in gifts.SPENT for g in up.gifts):
                 continue
@@ -336,7 +338,9 @@ def recipients(s: Session, alert: Alert) -> list[User]:
 
     wanted = [alert.userId] if alert.userId else admin_ids(s)
     return [
-        u for u in (s.get(User, i) for i in wanted) if u is not None and u.active and not u.deleted
+        u
+        for u in (s.get(User, i) for i in wanted)
+        if u is not None and u.active and not u.deleted and u.linkId is None
     ]
 
 
@@ -520,6 +524,7 @@ def daily_summaries(server) -> int:
             select(User).where(
                 User.deleted == false(),
                 User.active,
+                User.linkId.is_(None),
                 User.alertEmails == "daily",
                 User.email.is_not(None),
             )

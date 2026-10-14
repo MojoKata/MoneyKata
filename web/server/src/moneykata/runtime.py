@@ -126,6 +126,14 @@ def register_tasks(server: Server) -> None:
 
     server.tasks.register("bitcoin", bitcoin, Every(3600), last.get("bitcoin"))
 
+    def links(ctx: TaskContext) -> None:
+        """An exchange with each linked server (S11.4): hourly."""
+        from .links import manage
+
+        manage.exchange_all(server, ctx)
+
+    server.tasks.register("links", links, Every(3600), last.get("links"))
+
     from . import alerts
 
     server.tasks.register(

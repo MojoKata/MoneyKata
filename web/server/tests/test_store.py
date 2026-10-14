@@ -375,8 +375,14 @@ def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
             "'2026-10-01 00:00:00', '2030-01-01 00:00:00')"
         )
         conn.commit()
+        # As migrate.upgrade does: a rebuilt table others refer to (0023 User) is dropped and
+        # made again with foreign keys off, then checked.
+        raw = conn.connection.dbapi_connection
+        raw.execute("PRAGMA foreign_keys = OFF")
         command.upgrade(migrate.alembic_config(conn), "head")
         conn.commit()
+        assert raw.execute("PRAGMA foreign_key_check").fetchall() == []
+        raw.execute("PRAGMA foreign_keys = ON")
         assert conn.exec_driver_sql('SELECT purpose FROM "OneTimeToken"').scalars().all() == [
             "invitation"
         ]
@@ -394,6 +400,7 @@ def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
             "Item",
             "Loan",
             "Transaction",
+            "User",
         )
         migrated = {
             name: conn.exec_driver_sql(
@@ -403,7 +410,8 @@ def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
         }
     engine.dispose()
     fresh = make_engine(tmp_path / "fresh.db", None)
-    metadata.create_all(fresh, tables=[metadata.tables[n] for n in ("User", "Group", *rebuilt)])
+    wanted = dict.fromkeys(("User", "Group", "Link", *rebuilt))
+    metadata.create_all(fresh, tables=[metadata.tables[n] for n in wanted])
     with fresh.connect() as conn:
         made = {
             name: conn.exec_driver_sql(
