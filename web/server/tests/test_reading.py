@@ -190,7 +190,9 @@ def test_reading_fills_empty_fields_never_typed_ones(server):
     assert set(got["filled"]) == {"amount", "date"}
     assert got["suggested"]["total"]["confidence"] >= 90
     # The text is searchable.
-    assert [x["id"] for x in c.get("/ui/api/receipts", params={"q": "latte"}).json()] == [rid]
+    assert [x["id"] for x in c.get("/ui/api/receipts", params={"q": "latte"}).json()["items"]] == [
+        rid
+    ]
     # Read again: still only empty or suggested fields.
     assert c.post(f"/ui/api/receipts/{rid}/read").json()["readStatus"] == "waiting"
     assert json.loads(json.dumps(got["filled"])) == ["amount", "date"]

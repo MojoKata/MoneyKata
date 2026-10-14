@@ -4,7 +4,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { date, money } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Empty, Failed, Loading } from './bits.js';
@@ -74,7 +74,7 @@ export const PLAN_FIELDS = [
  * @param {{ f: any, set: (k: string) => (v: any) => void, e: any }} p
  */
 export function PlanFields({ f, set, e }) {
-  const people = useApi('/people');
+  const people = useList('/people');
   const list = (/** @type {any[]} */ (people.data) || []).filter((p) => p.level === 'owner');
   return html`
     <div class="row">
@@ -139,7 +139,7 @@ function PlanEditor({ a, v, reload }) {
   const [f, setF] = useState(planForm(v));
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const save = useSubmit(async () => {
-    await api.put(`/accounts/${a.id}/plan529`, await planBody(f));
+    await api.put(`/accounts/${a.id}/plan529`, await planBody(f), v.version);
     toast('Plan saved');
     reload();
   });
@@ -312,8 +312,8 @@ export function Contributions({ a }) {
 
 /** @param {{ a: any, done: () => void }} p */
 function AddContribution({ a, done }) {
-  const people = useApi('/people');
-  const accounts = useApi('/accounts');
+  const people = useList('/people');
+  const accounts = useList('/accounts');
   const [f, setF] = useState({
     date: today(),
     amount: '',
@@ -386,9 +386,13 @@ function AddContribution({ a, done }) {
 /** Who an existing deposit came from. */
 /** @param {{ a: any, c: any, done: () => void }} p */
 function Retag({ a, c, done }) {
-  const people = useApi('/people');
+  const people = useList('/people');
   const save = useSubmit(async (/** @type {string} */ who) => {
-    await api.put(`/contributions/${c.transactionId}`, { contributor: who, fiveYear: c.fiveYear });
+    await api.put(
+      `/contributions/${c.transactionId}`,
+      { contributor: who, fiveYear: c.fiveYear },
+      c.version,
+    );
     toast('Saved');
     done();
   });
@@ -523,7 +527,7 @@ function Expense({ x, canWrite, done }) {
     done();
   };
   const remove = useSubmit(async () => {
-    await api.del(`/expenses/${x.id}`);
+    await api.del(`/expenses/${x.id}`, x.version);
     toast('Expense removed');
     done();
   });

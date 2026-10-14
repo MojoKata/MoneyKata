@@ -12,7 +12,7 @@ from sqlalchemy import select, text
 from .. import activity, clock, settings, timezones
 from ..errors import FieldError, Problem
 from ..store.entities.core import Setting
-from .conventions import ExactRoute, Loose, Model
+from .conventions import ExactRoute, Loose, Model, check_version, if_match, version_of
 from .deps import Caller, admin, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["settings"])
@@ -23,6 +23,7 @@ class SettingsView(Model):
     sections: dict[str, list[str]]
     serverZone: str
     versions: dict[str, int]
+    version: int  # all of them together: a change is made against it (S13.8.6)
 
 
 def view(s) -> SettingsView:
@@ -32,7 +33,11 @@ def view(s) -> SettingsView:
         sections.setdefault(d.section, []).append(k)
     versions = {r.key: r.version for r in s.scalars(select(Setting))}
     return SettingsView(
-        values=values, sections=sections, serverZone=timezones.host_zone(), versions=versions
+        values=values,
+        sections=sections,
+        serverZone=timezones.host_zone(),
+        versions=versions,
+        version=version_of(s, Setting),
     )
 
 
@@ -43,7 +48,9 @@ def get_settings(request: Request, c: Caller = Depends(admin)):
 
 
 @router.patch("/settings", response_model=SettingsView)
-def change_settings(body: Loose, request: Request, c: Caller = Depends(admin)):
+def change_settings(
+    body: Loose, request: Request, c: Caller = Depends(admin), version: int = Depends(if_match)
+):
     """Every key is checked before any is saved; a refusal names each field (R3.7)."""
     errors: list[FieldError] = []
     clean = {}
@@ -56,6 +63,7 @@ def change_settings(body: Loose, request: Request, c: Caller = Depends(admin)):
         raise Problem(422, errors[0].code, errors[0].message, errors)
     srv = server(request)
     with srv.db.tx() as s:
+        check_version(version_of(s, Setting), version, lambda: view(s))
         # Sign-up sends links by email: it needs SMTP and the public URL (S10.1.4).
         after = {
             k: clean.get(k, settings.get(s, k)) for k in ("signupEnabled", "smtpHost", "publicUrl")

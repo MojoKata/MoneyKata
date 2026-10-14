@@ -100,7 +100,7 @@ function WalletForm({ a, v, reload }) {
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) =>
     setF((o) => ({ ...o, [k]: x }));
   const save = useSubmit(async () => {
-    await api.put(`/accounts/${a.id}/wallet`, walletBody(f));
+    await api.put(`/accounts/${a.id}/wallet`, walletBody(f), v.version);
     toast('Saved');
     reload();
   });

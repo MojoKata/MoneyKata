@@ -12,8 +12,9 @@
    3. Shared components: one popup menu (closes on choosing, Escape, or a click or focus
       outside), dialogs that trap focus and return it, styled tooltips that also show on
       keyboard focus and reach screen readers, and a **pager** for long lists (Transactions,
-      Activity): a page size of 100, 500 or 1000 kept per browser, and rows that arrive while
-      reading counted on an orange **+N new** pill instead of shifting the page. Every
+      Activity): a page size of 100, 500 or 1000 kept per browser, the rows shown out of the
+      list's total ("1–500 of 2,624") with a jump to its pages (S13.8.5), and rows that arrive
+      while reading counted on an orange **+N new** pill instead of shifting the page. Every
       password field (a password, an API key, the SMTP or node password) carries an **eye**
       button at its right end that shows what was typed and hides it again (the eye struck
       through while shown), labelled for screen readers.

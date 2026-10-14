@@ -45,7 +45,7 @@ export function ShareDialog({ close, kind, id, name }) {
       groups,
       receipts,
       shareAccountsToo: too,
-    });
+    }, view?.version ?? 0);
     if (too && out.alsoShared) {
       setView(out.view);
       toast(`${out.alsoShared} account${out.alsoShared === 1 ? '' : 's'} shared at read`);

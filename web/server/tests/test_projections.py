@@ -128,7 +128,7 @@ def test_one_active_plan_per_subject_and_its_baseline(alice):
     assert alice.post(f"/ui/api/projections/{b['id']}/activate").json() == {
         "replaced": "Retire at 62"
     }
-    rows = {p["id"]: p for p in alice.get("/ui/api/projections").json()}
+    rows = {p["id"]: p for p in alice.get("/ui/api/projections").json()["items"]}
     assert rows[b["id"]]["active"] and not rows[a["id"]]["active"]
     got = alice.get(f"/ui/api/projections/{b['id']}").json()
     assert got["tracking"]["status"] == "untracked", "a typed amount has nothing to track"
@@ -164,7 +164,7 @@ def test_tracking_against_the_band_and_the_alert_when_behind(server, alice):
     assert alice2.get(f"/ui/api/projections/{pid}").json()["tracking"]["status"] == "behind"
     opened = alerts.evaluate(server)
     assert [a.kind for a in opened] == ["projection-behind"]
-    plans = alice2.get("/ui/api/dashboard/plans").json()
+    plans = alice2.get("/ui/api/dashboard/plans").json()["items"]
     assert plans[0]["status"] == "behind" and plans[0]["actual"]
 
 

@@ -54,10 +54,10 @@ def wanted() -> set[str]:
 
 
 def routes(page) -> dict[str, str]:
-    accounts = page.evaluate("async () => (await (await fetch('/ui/api/accounts')).json())")
-    ports = page.evaluate("async () => (await (await fetch('/ui/api/portfolios')).json())")
+    accounts = page.evaluate("async () => (await (await fetch('/ui/api/accounts')).json()).items")
+    ports = page.evaluate("async () => (await (await fetch('/ui/api/portfolios')).json()).items")
     by_type = {a["type"]: a["id"] for a in accounts}
-    budget = page.evaluate("async () => (await (await fetch('/ui/api/budgets')).json())")[0]["id"]
+    budget = page.evaluate("async () => (await (await fetch('/ui/api/budgets')).json()).items")[0]["id"]
     checking, brokerage, port = by_type["checking"], by_type["brokerage"], ports[0]["id"]
     out = {
         "dashboard": "/ui/",

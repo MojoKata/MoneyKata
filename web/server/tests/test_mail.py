@@ -196,7 +196,7 @@ def test_sign_up_confirm_and_approve(admin_client, server, smtp):
     assert sign_up(server).status_code == 202
     path, token = outbox_link(server)
     assert path.endswith("/ui/signup/confirm")
-    assert admin_client.get("/ui/api/signup-requests").json() == [], "not until confirmed"
+    assert admin_client.get("/ui/api/signup-requests").json()["items"] == [], "not until confirmed"
     with new_client(server) as c:
         r = c.post("/ui/api/signup/confirm", json={"token": token})
         assert r.status_code == 200 and r.json()["displayName"] == "Erin Shaw"
@@ -204,14 +204,14 @@ def test_sign_up_confirm_and_approve(admin_client, server, smtp):
         # Not a user yet.
         r = c.post("/ui/api/session", json={"login": "erin", "password": PW})
         assert r.status_code == 401
-    rows = admin_client.get("/ui/api/signup-requests").json()
+    rows = admin_client.get("/ui/api/signup-requests").json()["items"]
     assert [r["username"] for r in rows] == ["erin"]
-    groups = admin_client.get("/ui/api/groups").json()
+    groups = admin_client.get("/ui/api/groups").json()["items"]
     r = admin_client.post(
         f"/ui/api/signup-requests/{rows[0]['id']}/approve", json={"groupIds": [groups[0]["id"]]}
     )
     assert r.status_code == 200 and r.json()["groupIds"] == [groups[0]["id"]]
-    assert admin_client.get("/ui/api/signup-requests").json() == []
+    assert admin_client.get("/ui/api/signup-requests").json()["items"] == []
     with new_client(server) as c:
         r = c.post("/ui/api/session", json={"login": "erin@shaw.family", "password": PW})
         assert r.status_code == 200
@@ -231,7 +231,7 @@ def test_sign_up_rejected(admin_client, server, smtp):
     _, token = outbox_link(server)
     with new_client(server) as c:
         c.post("/ui/api/signup/confirm", json={"token": token})
-    rid = admin_client.get("/ui/api/signup-requests").json()[0]["id"]
+    rid = admin_client.get("/ui/api/signup-requests").json()["items"][0]["id"]
     assert admin_client.post(f"/ui/api/signup-requests/{rid}/reject").status_code == 204
     assert admin_client.post(f"/ui/api/signup-requests/{rid}/approve", json={}).status_code == 404
     assert "signup.rejected" in kinds(server)

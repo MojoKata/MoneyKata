@@ -6,7 +6,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { ago, date, initials, quantity } from '../app/format.js';
 import { session } from '../store/session.js';
 import { collapsed, helpOpen, privacy } from '../store/prefs.js';
@@ -74,9 +74,9 @@ export default function LinkedWindow() {
 function Frame({ id, st, reload, sub, subId, tab }) {
   const h = st.household;
   const me = session.value.user;
-  const items = useApi(h.locked ? '' : `/linked/${id}/items`);
+  const items = useList(h.locked ? '' : `/linked/${id}/items`);
   const rows = /** @type {any[]} */ (items.data) || [];
-  const files = useApi(h.locked ? '' : `/linked/${id}/files`);
+  const files = useList(h.locked ? '' : `/linked/${id}/files`);
   useEffect(() => {
     document.title = `${h.name || h.serverName} · MoneyKata`;
     document.body.classList.toggle('privacy', privacy.value);
@@ -579,7 +579,7 @@ function Portfolio({ pid }) {
   useGuide('linked-portfolios');
   const p = useApi(`/portfolios/${pid}`);
   const h = useApi(`/portfolios/${pid}/holdings`);
-  const r = useApi(`/portfolios/${pid}/returns`);
+  const r = useList(`/portfolios/${pid}/returns`);
   const pf = /** @type {any} */ (p.data);
   const hold = /** @type {any} */ (h.data);
   const ret = /** @type {any[]} */ (r.data);
@@ -764,7 +764,7 @@ function Gifts({ rows }) {
 
 /** @param {{ person: any }} p */
 function PersonGifts({ person }) {
-  const res = useApi('/gifts', { person: person.id });
+  const res = useList('/gifts', { person: person.id });
   const g = /** @type {any[]} */ (res.data);
   return html`<div class="card mt"><h3>${person.name}</h3>${
     res.error
@@ -788,7 +788,7 @@ function PersonGifts({ person }) {
 /** @param {{ id: string }} p */
 function Receipts({ id }) {
   useGuide('linked-receipts');
-  const res = useApi(`/linked/${id}/files`);
+  const res = useList(`/linked/${id}/files`);
   const v = /** @type {any[]} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!v) return html`<${Loading} lines=${4} />`;

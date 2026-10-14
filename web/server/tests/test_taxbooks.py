@@ -48,7 +48,7 @@ def test_a_joint_book_counts_a_filer_once_they_accept(server, couple):
     assert b["label"] == "2026 · Alice & Bob (joint)" and not b["filers"][1]["accepted"]
     d = alice.get(f"/ui/api/tax-books/{b['id']}").json()
     assert [a["name"] for a in d["accounts"]] == ["Alice's brokerage"]
-    pending = bob.get("/ui/api/tax-books").json()
+    pending = bob.get("/ui/api/tax-books").json()["items"]
     assert pending[0]["level"] == "pending"
     assert bob.get(f"/ui/api/tax-books/{b['id']}").status_code == 404
     assert bob.post(f"/ui/api/tax-books/{b['id']}/accept").json()["level"] == "owner"
@@ -86,9 +86,9 @@ def test_filings_due_dates_overdue_and_results(couple):
     assert f["dueDate"] == "2026-04-15" and f["overdue"]
     dash = alice.get("/ui/api/dashboard").json()["attention"]
     assert any(a["text"] == "Federal return for 2025 is past its due date" for a in dash)
-    bad = alice.put(f"/ui/api/filings/{f['id']}", json={"form": "Form 1040", "progress": "filed"})
+    bad = alice.patch(f"/ui/api/filings/{f['id']}", json={"form": "Form 1040", "progress": "filed"})
     assert bad.json()["errors"][0]["field"] == "filedOn"
-    r = alice.put(
+    r = alice.patch(
         f"/ui/api/filings/{f['id']}",
         json={
             "form": "Form 1040",

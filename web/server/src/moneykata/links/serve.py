@@ -41,7 +41,18 @@ def _req(srv):
 def _dump(x):
     if isinstance(x, list):
         return [_dump(i) for i in x]
+    if isinstance(x, dict):
+        return {k: _dump(v) for k, v in x.items()}
     return x.model_dump(mode="json") if hasattr(x, "model_dump") else x
+
+
+def _document(x):
+    """A route's answer as the linked window reads it: a list as every list answers, a page
+    (S13.8.5), since the route was called directly rather than through its paging."""
+    from ..ui.conventions import everything
+
+    out = _dump(x)
+    return everything().page(out) if isinstance(out, list) else out
 
 
 def shared_items(srv, link_id: str) -> tuple[dict[str, Item], dict[str, User]]:
@@ -106,7 +117,7 @@ def _paths(srv, it: Item) -> list[tuple[str, callable]]:
                 lambda c: txns.list_transactions(
                     r,
                     c,
-                    Paging(limit=500, after=None),
+                    Paging(offset=0, limit=500),
                     [i],
                     None,
                     None,
@@ -201,7 +212,7 @@ def work_out(srv, link_id: str) -> tuple[dict[str, Item], dict[tuple[str, str, s
                 docs[(it.id, "", viewer)] = rows[it.kind][it.id]
             for path, fn in _paths(srv, it):
                 try:
-                    docs[(it.id, path, viewer)] = _dump(fn(c))
+                    docs[(it.id, path, viewer)] = _document(fn(c))
                 except Problem:
                     continue  # this person can't read this part: it isn't sent
     for it in items.values():

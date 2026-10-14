@@ -78,7 +78,7 @@ def test_a_person_with_occasions_and_their_next_date(alice):
 
 def test_upcoming_with_the_reminder_on_the_dashboard_and_as_an_alert(server, alice):
     emma = person(alice, birthMonth=10, birthDay=20, birthYear=2018)
-    up = alice.get("/ui/api/gifts/upcoming").json()
+    up = alice.get("/ui/api/gifts/upcoming").json()["items"]
     assert [(u["person"]["name"], u["label"], u["days"], u["inLead"]) for u in up] == [
         ("Emma Griffin", "Birthday", 9, True)
     ]
@@ -89,8 +89,11 @@ def test_upcoming_with_the_reminder_on_the_dashboard_and_as_an_alert(server, ali
     assert [a.kind for a in opened] == ["occasion"]
     # An idea isn't enough; something bought clears the reminder.
     g = gift(alice, people=[emma["id"]], occasion="birthday", occasionYear=2026)
-    assert alice.get("/ui/api/gifts/upcoming").json()[0]["missing"] == "1 idea, nothing bought"
-    alice.put(
+    assert (
+        alice.get("/ui/api/gifts/upcoming").json()["items"][0]["missing"]
+        == "1 idea, nothing bought"
+    )
+    alice.patch(
         f"/ui/api/gifts/{g['id']}",
         json={
             "people": [emma["id"]],
@@ -101,7 +104,7 @@ def test_upcoming_with_the_reminder_on_the_dashboard_and_as_an_alert(server, ali
             "cost": "35",
         },
     )
-    assert alice.get("/ui/api/gifts/upcoming").json()[0]["planned"] == "35.00"
+    assert alice.get("/ui/api/gifts/upcoming").json()["items"][0]["planned"] == "35.00"
     alerts.evaluate(server)
     with server.db.read() as s:
         from moneykata.store.entities.alerts import Alert
@@ -122,9 +125,9 @@ def test_a_gift_for_a_linked_user_is_never_shown_to_them(server, alice):
     for p in (emma,):
         r = alice.put(f"/ui/api/shares/person/{p['id']}", json={"users": {bob_id: "write"}})
         assert r.status_code == 200, r.text
-    seen = {g["description"] for g in bob.get("/ui/api/gifts").json()}
+    seen = {g["description"] for g in bob.get("/ui/api/gifts").json()["items"]}
     assert seen == {"Paints"}, "the surprise stays one"
-    assert {g["description"] for g in alice.get("/ui/api/gifts").json()} == {
+    assert {g["description"] for g in alice.get("/ui/api/gifts").json()["items"]} == {
         "Paints",
         "A watch",
         "A board game",
@@ -132,7 +135,7 @@ def test_a_gift_for_a_linked_user_is_never_shown_to_them(server, alice):
     # Bob can plan Emma's gifts with Alice.
     r = bob.post("/ui/api/gifts", json={"people": [emma["id"]], "description": "Horse book"})
     assert r.status_code == 201
-    names = [p["name"] for p in bob.get("/ui/api/people").json()]
+    names = [p["name"] for p in bob.get("/ui/api/people").json()["items"]]
     assert names == ["Emma Griffin"]
 
 
@@ -152,7 +155,7 @@ def test_a_linked_purchase_is_categorised_and_spending_is_summed(alice):
     assert g["paid"]["payee"] == "Michaels"
     items = alice.get("/ui/api/transactions", params={"account": card["id"]}).json()["items"]
     txn = next(x for x in items if x["id"] == t["id"])
-    cats = {c["id"]: c["name"] for c in alice.get("/ui/api/categories").json()}
+    cats = {c["id"]: c["name"] for c in alice.get("/ui/api/categories").json()["items"]}
     assert cats[txn["categoryId"]] == "Gifts"
     sp = alice.get("/ui/api/gifts/spending?year=2026").json()
     assert sp["byPerson"][0]["spent"] == "35.00" and sp["byPerson"][0]["budget"] == "600.00"
@@ -194,5 +197,5 @@ def test_received_gifts_and_thank_yous(alice):
     gran = person(alice, name="Margaret Griffin")
     g = gift(alice, people=[gran["id"]], description="Scarf", status="received", thankYou=True)
     assert g["status"] == "received" and g["thankYou"]
-    ideas = alice.get("/ui/api/gifts?status=received").json()
+    ideas = alice.get("/ui/api/gifts?status=received").json()["items"]
     assert [x["description"] for x in ideas] == ["Scarf"]

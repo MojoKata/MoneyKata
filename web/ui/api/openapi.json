@@ -935,6 +935,11 @@
             "additionalProperties": true,
             "title": "Figures",
             "type": "object"
+          },
+          "version": {
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -1346,6 +1351,10 @@
             "title": "Received",
             "type": "array"
           },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
           "year": {
             "title": "Year",
             "type": "integer"
@@ -1357,6 +1366,7 @@
           "filers",
           "level",
           "label",
+          "version",
           "accounts",
           "leftOut",
           "addable",
@@ -1392,6 +1402,10 @@
             "title": "Level",
             "type": "string"
           },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
           "year": {
             "title": "Year",
             "type": "integer"
@@ -1402,7 +1416,8 @@
           "year",
           "filers",
           "level",
-          "label"
+          "label",
+          "version"
         ],
         "title": "BookRow",
         "type": "object"
@@ -2669,6 +2684,154 @@
         "title": "Dashboard",
         "type": "object"
       },
+      "Deleted_BookDetail_": {
+        "properties": {
+          "deleted": {
+            "$ref": "#/components/schemas/Gone"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "Deleted[BookDetail]",
+        "type": "object"
+      },
+      "Deleted_ItemDetail_": {
+        "properties": {
+          "deleted": {
+            "$ref": "#/components/schemas/Gone"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "Deleted[ItemDetail]",
+        "type": "object"
+      },
+      "Deleted_NoneType_": {
+        "properties": {
+          "deleted": {
+            "$ref": "#/components/schemas/Gone"
+          },
+          "parent": {
+            "title": "Parent",
+            "type": "null"
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "Deleted[NoneType]",
+        "type": "object"
+      },
+      "Deleted_Profile_": {
+        "properties": {
+          "deleted": {
+            "$ref": "#/components/schemas/Gone"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "Deleted[Profile]",
+        "type": "object"
+      },
+      "Deleted_ReceiptDetail_": {
+        "properties": {
+          "deleted": {
+            "$ref": "#/components/schemas/Gone"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "Deleted[ReceiptDetail]",
+        "type": "object"
+      },
+      "Deleted_UserRow_": {
+        "properties": {
+          "deleted": {
+            "$ref": "#/components/schemas/Gone"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "Deleted[UserRow]",
+        "type": "object"
+      },
+      "Deleted_WithdrawalsView_": {
+        "properties": {
+          "deleted": {
+            "$ref": "#/components/schemas/Gone"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WithdrawalsView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "Deleted[WithdrawalsView]",
+        "type": "object"
+      },
       "DocumentOut": {
         "additionalProperties": false,
         "properties": {
@@ -2760,6 +2923,10 @@
               }
             ],
             "title": "Receiptid"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -2772,7 +2939,8 @@
           "filingId",
           "receiptId",
           "fileName",
-          "notes"
+          "notes",
+          "version"
         ],
         "title": "DocumentOut",
         "type": "object"
@@ -3136,6 +3304,17 @@
               }
             ],
             "title": "Transactionid"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
           }
         },
         "required": [
@@ -3158,7 +3337,8 @@
           "longTerm",
           "granted",
           "notes",
-          "canWrite"
+          "canWrite",
+          "version"
         ],
         "title": "DonationOut",
         "type": "object"
@@ -3624,6 +3804,10 @@
             "title": "Kindlabel",
             "type": "string"
           },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
           "year": {
             "title": "Year",
             "type": "integer"
@@ -3637,7 +3821,8 @@
           "kindLabel",
           "description",
           "amount",
-          "documents"
+          "documents",
+          "version"
         ],
         "title": "ExpenseOut",
         "type": "object"
@@ -5012,6 +5197,43 @@
         "title": "GoalView",
         "type": "object"
       },
+      "Gone": {
+        "description": "What a DELETE took away (S13.8.1): its id (for a pair, its two keys joined by a slash),\nwhen, and the version it had.",
+        "properties": {
+          "deletedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deletedat"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "Gone",
+        "type": "object"
+      },
       "GroupChange": {
         "additionalProperties": false,
         "properties": {
@@ -5733,13 +5955,18 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
           "id",
           "date",
           "description",
-          "amount"
+          "amount",
+          "version"
         ],
         "title": "ImprovementOut",
         "type": "object"
@@ -7542,6 +7769,11 @@
             "format": "money",
             "title": "Total",
             "type": "number"
+          },
+          "version": {
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -8154,6 +8386,10 @@
             },
             "title": "Unplanned",
             "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -8166,7 +8402,8 @@
           "plannedSpending",
           "uncategorised",
           "daysLeft",
-          "canWrite"
+          "canWrite",
+          "version"
         ],
         "title": "MonthView",
         "type": "object"
@@ -9591,6 +9828,37 @@
         "title": "OutcomeOut",
         "type": "object"
       },
+      "Page_AccountRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AccountRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[AccountRow]",
+        "type": "object"
+      },
       "Page_ActivityItem_": {
         "properties": {
           "items": {
@@ -9600,23 +9868,925 @@
             "title": "Items",
             "type": "array"
           },
-          "next": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next"
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
           "items",
-          "next"
+          "total",
+          "offset",
+          "limit"
         ],
         "title": "Page[ActivityItem]",
+        "type": "object"
+      },
+      "Page_BookRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BookRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[BookRow]",
+        "type": "object"
+      },
+      "Page_BudgetRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[BudgetRow]",
+        "type": "object"
+      },
+      "Page_Candidate_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[Candidate]",
+        "type": "object"
+      },
+      "Page_CategoryOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[CategoryOut]",
+        "type": "object"
+      },
+      "Page_Close_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Close"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[Close]",
+        "type": "object"
+      },
+      "Page_DonationOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DonationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[DonationOut]",
+        "type": "object"
+      },
+      "Page_GiftOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GiftOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[GiftOut]",
+        "type": "object"
+      },
+      "Page_GroupRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GroupRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[GroupRow]",
+        "type": "object"
+      },
+      "Page_HolidayOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HolidayOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[HolidayOut]",
+        "type": "object"
+      },
+      "Page_Household_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/moneykata__ui__linked__Household"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[Household]",
+        "type": "object"
+      },
+      "Page_ImportRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ImportRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[ImportRow]",
+        "type": "object"
+      },
+      "Page_InstrumentOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InstrumentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[InstrumentOut]",
+        "type": "object"
+      },
+      "Page_LinkedFile_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedFile"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[LinkedFile]",
+        "type": "object"
+      },
+      "Page_LinkedRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[LinkedRow]",
+        "type": "object"
+      },
+      "Page_OptionTradeRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OptionTradeRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[OptionTradeRow]",
+        "type": "object"
+      },
+      "Page_OrganisationOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrganisationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[OrganisationOut]",
+        "type": "object"
+      },
+      "Page_PersonOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PersonOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[PersonOut]",
+        "type": "object"
+      },
+      "Page_Plan_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Plan-Output"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[Plan]",
+        "type": "object"
+      },
+      "Page_PortfolioRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[PortfolioRow]",
+        "type": "object"
+      },
+      "Page_ProjectionRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectionRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[ProjectionRow]",
+        "type": "object"
+      },
+      "Page_Purchase_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Purchase"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[Purchase]",
+        "type": "object"
+      },
+      "Page_ReceiptRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[ReceiptRow]",
+        "type": "object"
+      },
+      "Page_RecurringRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecurringRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[RecurringRow]",
+        "type": "object"
+      },
+      "Page_ReturnRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReturnRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[ReturnRow]",
+        "type": "object"
+      },
+      "Page_SavedPlan_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SavedPlan"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[SavedPlan]",
+        "type": "object"
+      },
+      "Page_Securable_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Securable"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[Securable]",
+        "type": "object"
+      },
+      "Page_SignupRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SignupRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[SignupRow]",
+        "type": "object"
+      },
+      "Page_TokenOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TokenOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[TokenOut]",
+        "type": "object"
+      },
+      "Page_TrendPoint_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPoint"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[TrendPoint]",
         "type": "object"
       },
       "Page_TxnOut_": {
@@ -9628,23 +10798,88 @@
             "title": "Items",
             "type": "array"
           },
-          "next": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next"
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
           "items",
-          "next"
+          "total",
+          "offset",
+          "limit"
         ],
         "title": "Page[TxnOut]",
+        "type": "object"
+      },
+      "Page_UpcomingOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UpcomingOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[UpcomingOut]",
+        "type": "object"
+      },
+      "Page_UserRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UserRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[UserRow]",
         "type": "object"
       },
       "Paid": {
@@ -13336,6 +14571,10 @@
             "title": "Values",
             "type": "object"
           },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
           "versions": {
             "additionalProperties": {
               "type": "integer"
@@ -13348,7 +14587,8 @@
           "values",
           "sections",
           "serverZone",
-          "versions"
+          "versions",
+          "version"
         ],
         "title": "SettingsView",
         "type": "object"
@@ -13526,6 +14766,11 @@
             },
             "title": "Users",
             "type": "array"
+          },
+          "version": {
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -14489,6 +15734,10 @@
             "title": "Rows",
             "type": "array"
           },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
           "year": {
             "title": "Year",
             "type": "integer"
@@ -14504,7 +15753,8 @@
         "required": [
           "year",
           "years",
-          "rows"
+          "rows",
+          "version"
         ],
         "title": "TaxTables",
         "type": "object"
@@ -14976,6 +16226,10 @@
           "scope": {
             "title": "Scope",
             "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -14986,7 +16240,8 @@
           "createdAt",
           "expiresAt",
           "lastUsedAt",
-          "expired"
+          "expired",
+          "version"
         ],
         "title": "TokenOut",
         "type": "object"
@@ -16363,6 +17618,10 @@
             "format": "money",
             "title": "Value",
             "type": "number"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -16370,7 +17629,8 @@
           "date",
           "value",
           "source",
-          "note"
+          "note",
+          "version"
         ],
         "title": "ValuationOut",
         "type": "object"
@@ -16570,6 +17830,10 @@
             "title": "Used",
             "type": "integer"
           },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
           "watched": {
             "title": "Watched",
             "type": "integer"
@@ -16581,7 +17845,8 @@
           "watched",
           "used",
           "balanceSats",
-          "checkedAt"
+          "checkedAt",
+          "version"
         ],
         "title": "WalletView",
         "type": "object"
@@ -16894,6 +18159,11 @@
           "transactionId": {
             "title": "Transactionid",
             "type": "string"
+          },
+          "version": {
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -17064,6 +18334,11 @@
               }
             ],
             "title": "Statededuction"
+          },
+          "version": {
+            "default": 0,
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -18283,20 +19558,51 @@
     "/ui/api/accounts": {
       "get": {
         "operationId": "list_accounts_ui_api_accounts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AccountRow"
-                  },
-                  "title": "Response List Accounts Ui Api Accounts Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_AccountRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Accounts",
@@ -18360,7 +19666,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -18901,6 +20214,29 @@
               "title": "Account Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -18908,11 +20244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ImportRow"
-                  },
-                  "title": "Response List Imports Ui Api Accounts  Account Id  Imports Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_ImportRow_"
                 }
               }
             },
@@ -19183,6 +20515,29 @@
               "title": "Account Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -19190,11 +20545,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Candidate"
-                  },
-                  "title": "Response Candidates Ui Api Accounts  Account Id  Loan Candidates Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_Candidate_"
                 }
               }
             },
@@ -19335,6 +20686,29 @@
               "title": "Account Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -19342,11 +20716,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SavedPlan"
-                  },
-                  "title": "Response List Plans Ui Api Accounts  Account Id  Loan Plans Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_SavedPlan_"
                 }
               }
             },
@@ -19443,7 +20813,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -19462,8 +20839,8 @@
           "loans"
         ]
       },
-      "put": {
-        "operationId": "change_plan_ui_api_accounts__account_id__loan_plans__plan_id__put",
+      "patch": {
+        "operationId": "change_plan_ui_api_accounts__account_id__loan_plans__plan_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -19524,7 +20901,7 @@
     },
     "/ui/api/accounts/{account_id}/loan/plans/{plan_id}/following": {
       "put": {
-        "description": "Marks the plan being followed, tracked from today; the one followed before stops.",
+        "description": "Marks the plan being followed, tracked from today; the one followed before stops. Made\nagainst the plan's version.",
         "operationId": "follow_plan_ui_api_accounts__account_id__loan_plans__plan_id__following_put",
         "parameters": [
           {
@@ -20211,31 +21588,25 @@
           },
           {
             "in": "query",
-            "name": "limit",
+            "name": "offset",
             "required": false,
             "schema": {
-              "default": 100,
-              "maximum": 1000,
-              "minimum": 1,
-              "title": "Limit",
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           },
           {
             "in": "query",
-            "name": "after",
+            "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 512,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "After"
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
             }
           }
         ],
@@ -20495,20 +21866,51 @@
     "/ui/api/budgets": {
       "get": {
         "operationId": "list_budgets_ui_api_budgets_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/BudgetRow"
-                  },
-                  "title": "Response List Budgets Ui Api Budgets Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_BudgetRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Budgets",
@@ -20571,7 +21973,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -20759,7 +22168,7 @@
     },
     "/ui/api/budgets/{budget_id}/plan": {
       "put": {
-        "description": "From the month given on, the plan is what the body lists; earlier months keep theirs.",
+        "description": "From the month given on, the plan is what the body lists; earlier months keep theirs.\nThe plan belongs to the budget, so it is made against the budget's version.",
         "operationId": "set_plan_ui_api_budgets__budget_id__plan_put",
         "parameters": [
           {
@@ -20823,6 +22232,29 @@
               "title": "Budget Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -20830,11 +22262,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/RecurringRow"
-                  },
-                  "title": "Response Budget Recurring Ui Api Budgets  Budget Id  Recurring Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_RecurringRow_"
                 }
               }
             },
@@ -20913,6 +22341,29 @@
               "title": "Months",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -20920,11 +22371,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TrendPoint"
-                  },
-                  "title": "Response Budget Trends Ui Api Budgets  Budget Id  Trends Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_TrendPoint_"
                 }
               }
             },
@@ -20950,20 +22397,51 @@
     "/ui/api/categories": {
       "get": {
         "operationId": "list_categories_ui_api_categories_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/CategoryOut"
-                  },
-                  "title": "Response List Categories Ui Api Categories Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_CategoryOut_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Categories",
@@ -21088,20 +22566,51 @@
     "/ui/api/dashboard/plans": {
       "get": {
         "operationId": "plans_ui_api_dashboard_plans_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Plan-Output"
-                  },
-                  "title": "Response Plans Ui Api Dashboard Plans Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_Plan_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Plans",
@@ -21226,7 +22735,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WithdrawalsView"
+                  "$ref": "#/components/schemas/Deleted_WithdrawalsView_"
                 }
               }
             },
@@ -21320,7 +22829,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BookDetail"
+                  "$ref": "#/components/schemas/Deleted_BookDetail_"
                 }
               }
             },
@@ -21342,8 +22851,8 @@
           "taxes"
         ]
       },
-      "put": {
-        "operationId": "change_filing_ui_api_filings__filing_id__put",
+      "patch": {
+        "operationId": "change_filing_ui_api_filings__filing_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -21428,6 +22937,29 @@
               ],
               "title": "Person"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -21435,11 +22967,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/GiftOut"
-                  },
-                  "title": "Response List Gifts Ui Api Gifts Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_GiftOut_"
                 }
               }
             },
@@ -21505,20 +23033,51 @@
       "get": {
         "description": "Recent spending, to link a gift's cost to its transaction: the last 90 days.",
         "operationId": "purchases_ui_api_gifts_purchases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Purchase"
-                  },
-                  "title": "Response Purchases Ui Api Gifts Purchases Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_Purchase_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Purchases",
@@ -21579,20 +23138,51 @@
     "/ui/api/gifts/upcoming": {
       "get": {
         "operationId": "list_upcoming_ui_api_gifts_upcoming_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/UpcomingOut"
-                  },
-                  "title": "Response List Upcoming Ui Api Gifts Upcoming Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_UpcomingOut_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Upcoming",
@@ -21616,7 +23206,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -21635,8 +23232,8 @@
           "gifts"
         ]
       },
-      "put": {
-        "operationId": "change_gift_ui_api_gifts__gift_id__put",
+      "patch": {
+        "operationId": "change_gift_ui_api_gifts__gift_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -21806,6 +23403,29 @@
               ],
               "title": "Year"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -21813,11 +23433,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/DonationOut"
-                  },
-                  "title": "Response List Donations Ui Api Giving Donations Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_DonationOut_"
                 }
               }
             },
@@ -21895,7 +23511,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -22022,20 +23645,51 @@
     "/ui/api/giving/organisations": {
       "get": {
         "operationId": "list_organisations_ui_api_giving_organisations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/OrganisationOut"
-                  },
-                  "title": "Response List Organisations Ui Api Giving Organisations Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_OrganisationOut_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Organisations",
@@ -22098,7 +23752,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -22117,8 +23778,8 @@
           "giving"
         ]
       },
-      "put": {
-        "operationId": "change_organisation_ui_api_giving_organisations__org_id__put",
+      "patch": {
+        "operationId": "change_organisation_ui_api_giving_organisations__org_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -22212,20 +23873,51 @@
     "/ui/api/groups": {
       "get": {
         "operationId": "list_groups_ui_api_groups_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/GroupRow"
-                  },
-                  "title": "Response List Groups Ui Api Groups Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_GroupRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Groups",
@@ -22328,20 +24020,51 @@
     "/ui/api/holidays": {
       "get": {
         "operationId": "list_holidays_ui_api_holidays_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/HolidayOut"
-                  },
-                  "title": "Response List Holidays Ui Api Holidays Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_HolidayOut_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Holidays",
@@ -22469,6 +24192,29 @@
               "title": "Q",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -22476,11 +24222,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/InstrumentOut"
-                  },
-                  "title": "Response Search Instruments Ui Api Instruments Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_InstrumentOut_"
                 }
               }
             },
@@ -22549,6 +24291,29 @@
               ],
               "title": "To"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -22556,11 +24321,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Close"
-                  },
-                  "title": "Response Closes Ui Api Instruments  Instrument Id  Prices Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_Close_"
                 }
               }
             },
@@ -22718,20 +24479,51 @@
       "get": {
         "description": "Items a loan can be secured by: unsold property, vehicles and other assets the caller\ncan see (S1.9.5).",
         "operationId": "securable_ui_api_items_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Securable"
-                  },
-                  "title": "Response Securable Ui Api Items Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_Securable_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Securable",
@@ -22755,7 +24547,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -22814,8 +24613,8 @@
           "items"
         ]
       },
-      "put": {
-        "operationId": "change_item_ui_api_items__item_id__put",
+      "patch": {
+        "operationId": "change_item_ui_api_items__item_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -22920,6 +24719,7 @@
     },
     "/ui/api/items/{item_id}/documents/{receipt_id}": {
       "delete": {
+        "description": "A receipt's link to the item: a pair with no version of its own (S13.8.6).",
         "operationId": "detach_document_ui_api_items__item_id__documents__receipt_id__delete",
         "parameters": [
           {
@@ -22946,7 +24746,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemDetail"
+                  "$ref": "#/components/schemas/Deleted_ItemDetail_"
                 }
               }
             },
@@ -23049,7 +24849,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemDetail"
+                  "$ref": "#/components/schemas/Deleted_ItemDetail_"
                 }
               }
             },
@@ -23091,7 +24891,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemDetail"
+                  "$ref": "#/components/schemas/Deleted_ItemDetail_"
                 }
               }
             },
@@ -23114,7 +24914,7 @@
         ]
       },
       "put": {
-        "description": "Records the sale: the gain or loss is realized, and the item leaves the account's value\nfrom that day (S1.10.5).",
+        "description": "Records the sale: the gain or loss is realized, and the item leaves the account's value\nfrom that day (S1.10.5). The sale is part of the item, so it is made against its version.",
         "operationId": "sell_ui_api_items__item_id__sale_put",
         "parameters": [
           {
@@ -23245,7 +25045,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemDetail"
+                  "$ref": "#/components/schemas/Deleted_ItemDetail_"
                 }
               }
             },
@@ -23314,20 +25114,51 @@
       "get": {
         "description": "The households that share something with you (S12.10.1); none share nothing.",
         "operationId": "households_ui_api_linked_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/moneykata__ui__linked__Household"
-                  },
-                  "title": "Response Households Ui Api Linked Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_Household_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Households",
@@ -23494,6 +25325,29 @@
               "title": "Link Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -23501,11 +25355,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/LinkedFile"
-                  },
-                  "title": "Response Files Ui Api Linked  Link Id  Files Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_LinkedFile_"
                 }
               }
             },
@@ -23591,6 +25441,29 @@
               "title": "Link Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -23598,11 +25471,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/LinkedRow"
-                  },
-                  "title": "Response Items Ui Api Linked  Link Id  Items Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_LinkedRow_"
                 }
               }
             },
@@ -23799,20 +25668,51 @@
       "get": {
         "description": "The caller's people and those shared with them.",
         "operationId": "list_people_ui_api_people_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PersonOut"
-                  },
-                  "title": "Response List People Ui Api People Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_PersonOut_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List People",
@@ -23875,7 +25775,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -23894,8 +25801,8 @@
           "gifts"
         ]
       },
-      "put": {
-        "operationId": "change_person_ui_api_people__person_id__put",
+      "patch": {
+        "operationId": "change_person_ui_api_people__person_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -23948,20 +25855,51 @@
     "/ui/api/portfolios": {
       "get": {
         "operationId": "list_portfolios_ui_api_portfolios_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PortfolioRow"
-                  },
-                  "title": "Response List Portfolios Ui Api Portfolios Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_PortfolioRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Portfolios",
@@ -24024,7 +25962,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -24190,6 +26135,29 @@
               "title": "Portfolio Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -24197,11 +26165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ReturnRow"
-                  },
-                  "title": "Response Portfolio Returns Ui Api Portfolios  Portfolio Id  Returns Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_ReturnRow_"
                 }
               }
             },
@@ -24396,20 +26360,51 @@
       "get": {
         "description": "Each option trade (S3.9): from the first contract opened to the last one closed, with the\npremium in and out, its P/L and its return on the capital at risk. A long option risks its\npremium; a short one the strike on every contract's shares, cash for a put and the shares\nfor a call.",
         "operationId": "option_trades_ui_api_positions_option_trades_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/OptionTradeRow"
-                  },
-                  "title": "Response Option Trades Ui Api Positions Option Trades Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_OptionTradeRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Option Trades",
@@ -24493,7 +26488,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -24741,20 +26743,51 @@
     "/ui/api/profile/tokens": {
       "get": {
         "operationId": "list_tokens_ui_api_profile_tokens_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/TokenOut"
-                  },
-                  "title": "Response List Tokens Ui Api Profile Tokens Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_TokenOut_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Tokens",
@@ -24817,7 +26850,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -24839,9 +26879,17 @@
     },
     "/ui/api/profile/two-step": {
       "delete": {
+        "description": "Two-step sign-in off: it belongs to the user, so it is made against their version.",
         "operationId": "two_step_off_ui_api_profile_two_step_delete",
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_Profile_"
+                }
+              }
+            },
             "description": "Successful Response"
           }
         },
@@ -24937,20 +26985,51 @@
     "/ui/api/projections": {
       "get": {
         "operationId": "list_projections_ui_api_projections_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ProjectionRow"
-                  },
-                  "title": "Response List Projections Ui Api Projections Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_ProjectionRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Projections",
@@ -25014,7 +27093,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -25324,6 +27410,29 @@
               ],
               "title": "Q"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -25331,11 +27440,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ReceiptRow"
-                  },
-                  "title": "Response List Receipts Ui Api Receipts Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_ReceiptRow_"
                 }
               }
             },
@@ -25416,7 +27521,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -25617,6 +27729,7 @@
     },
     "/ui/api/receipts/{receipt_id}/links/{transaction_id}": {
       "delete": {
+        "description": "A receipt's link to a transaction: a pair with no version of its own (S13.8.6).",
         "operationId": "detach_ui_api_receipts__receipt_id__links__transaction_id__delete",
         "parameters": [
           {
@@ -25643,7 +27756,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReceiptDetail"
+                  "$ref": "#/components/schemas/Deleted_ReceiptDetail_"
                 }
               }
             },
@@ -27093,20 +29206,51 @@
       "get": {
         "description": "Requests whose email is confirmed, waiting for an admin (S10.1.4).",
         "operationId": "signup_requests_ui_api_signup_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SignupRow"
-                  },
-                  "title": "Response Signup Requests Ui Api Signup Requests Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_SignupRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Signup Requests",
@@ -27246,20 +29390,51 @@
     "/ui/api/tax-books": {
       "get": {
         "operationId": "list_books_ui_api_tax_books_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/BookRow"
-                  },
-                  "title": "Response List Books Ui Api Tax Books Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_BookRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Books",
@@ -27323,7 +29498,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -27759,7 +29941,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BookDetail"
+                  "$ref": "#/components/schemas/Deleted_BookDetail_"
                 }
               }
             },
@@ -27781,8 +29963,8 @@
           "taxes"
         ]
       },
-      "put": {
-        "operationId": "change_document_ui_api_tax_documents__doc_id__put",
+      "patch": {
+        "operationId": "change_document_ui_api_tax_documents__doc_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -28019,31 +30201,25 @@
           },
           {
             "in": "query",
-            "name": "limit",
+            "name": "offset",
             "required": false,
             "schema": {
-              "default": 100,
-              "maximum": 1000,
-              "minimum": 1,
-              "title": "Limit",
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           },
           {
             "in": "query",
-            "name": "after",
+            "name": "limit",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 512,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "After"
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
             }
           }
         ],
@@ -28212,6 +30388,29 @@
               "title": "Transaction Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -28219,11 +30418,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ReceiptRow"
-                  },
-                  "title": "Response Transaction Receipts Ui Api Transactions  Transaction Id  Receipts Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_ReceiptRow_"
                 }
               }
             },
@@ -28271,7 +30466,14 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -28450,20 +30652,51 @@
     "/ui/api/users": {
       "get": {
         "operationId": "list_users_ui_api_users_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/UserRow"
-                  },
-                  "title": "Response List Users Ui Api Users Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/Page_UserRow_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List Users",
@@ -28600,7 +30833,7 @@
     },
     "/ui/api/users/{user_id}/two-step": {
       "delete": {
-        "description": "An admin's reset, the last resort when the app and the recovery codes are lost\n(S10.1.6): two-step is off, and the user's sessions end.",
+        "description": "An admin's reset, the last resort when the app and the recovery codes are lost\n(S10.1.6): two-step is off, and the user's sessions end. Made against the user's version.",
         "operationId": "reset_two_step_ui_api_users__user_id__two_step_delete",
         "parameters": [
           {
@@ -28618,7 +30851,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserRow"
+                  "$ref": "#/components/schemas/Deleted_UserRow_"
                 }
               }
             },

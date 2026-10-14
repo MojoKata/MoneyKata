@@ -76,7 +76,7 @@ function Plain({ section }) {
   }, [v]);
   const save = useSubmit(async (/** @type {string[]} */ keys) => {
     const body = Object.fromEntries(keys.map((k) => [k, f[k]]));
-    await api.patch('/settings', body);
+    await api.patch('/settings', body, v.version);
     toast('Saved');
     res.reload();
     if (keys.includes('householdName') || keys.includes('householdAvatar')) loadSession();
@@ -310,13 +310,19 @@ function Plain({ section }) {
 
 function Prices() {
   const res = useApi('/price-sources', {}, ['prices']);
+  const all = useApi('/settings');
   const v = /** @type {any} */ (res.data);
   const [time, setTime] = useState('');
   useEffect(() => {
     if (v) setTime(v.refreshTime);
   }, [v]);
   const saveTime = useSubmit(async () => {
-    await api.patch('/settings', { priceRefreshTime: time });
+    await api.patch(
+      '/settings',
+      { priceRefreshTime: time },
+      /** @type {any} */ (all.data)?.version,
+    );
+    all.reload();
     toast('Saved');
   });
   if (res.error) return html`<${Failed} error=${res.error} />`;
@@ -515,7 +521,7 @@ function TaxTables() {
     const values = Object.fromEntries(
       v.rows.map((/** @type {any} */ r) => [r.key, parse(r, f[r.key])]),
     );
-    await api.put('/settings/tax-tables', { year: v.year, values });
+    await api.put('/settings/tax-tables', { year: v.year, values }, v.version);
     toast('Saved');
     res.reload();
   });
@@ -633,7 +639,8 @@ function EmailSection() {
     }
   }, [values]);
   const save = useSubmit(async () => {
-    await api.patch('/settings', f);
+    await api.patch('/settings', f, /** @type {any} */ (s.data)?.version);
+    s.reload();
     if (password) await api.put('/settings/email/password', { password });
     setPassword('');
     toast('Saved');
@@ -760,7 +767,8 @@ function BitcoinSection() {
       bitcoinNodePort: f.port,
       bitcoinNodeTls: f.tls,
       bitcoinRpcUser: f.rpcUser || null,
-    });
+    }, /** @type {any} */ (s.data)?.version);
+    s.reload();
     if (password) await api.put('/settings/bitcoin/password', { password });
     setPassword('');
     toast('Saved');
@@ -877,7 +885,8 @@ function Backups() {
     if (values) setF({ backupTime: values.backupTime, backupCopies: values.backupCopies });
   }, [values]);
   const save = useSubmit(async () => {
-    await api.patch('/settings', f);
+    await api.patch('/settings', f, /** @type {any} */ (s.data)?.version);
+    s.reload();
     toast('Saved');
     res.reload();
   });

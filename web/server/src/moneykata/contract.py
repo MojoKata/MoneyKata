@@ -52,7 +52,7 @@ def openapi_json(doc: dict | None = None) -> str:
 
 def _js_type(schema: dict) -> str:
     if "$ref" in schema:
-        return schema["$ref"].rsplit("/", 1)[-1]
+        return _ident(schema["$ref"].rsplit("/", 1)[-1])
     if "const" in schema:
         return json.dumps(schema["const"])
     if "enum" in schema:

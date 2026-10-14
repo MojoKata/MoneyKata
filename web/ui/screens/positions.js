@@ -2,7 +2,7 @@
 // holding period, and gains by year, month, account, instrument or term.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
-import { useApi } from '../app/hooks.js';
+import { useApi, useList } from '../app/hooks.js';
 import { date, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
@@ -292,7 +292,7 @@ function Closed({ rows }) {
 }
 
 function Trades() {
-  const res = useApi('/positions/option-trades', {}, ['import', 'prices']);
+  const res = useList('/positions/option-trades', {}, ['import', 'prices']);
   const rows = /** @type {any[]} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!rows) return html`<${Loading} lines=${4} />`;

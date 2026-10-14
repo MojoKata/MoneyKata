@@ -22,7 +22,7 @@ def frozen():
 
 
 def cats(c) -> dict[str, str]:
-    return {x["path"]: x["id"] for x in c.get("/ui/api/categories").json()}
+    return {x["path"]: x["id"] for x in c.get("/ui/api/categories").json()["items"]}
 
 
 def setup_budget(server):
@@ -186,7 +186,7 @@ def test_a_household_budget_is_shared_with_a_group(server, frozen, admin_client)
             "name": "Household",
             "memberIds": [
                 u["id"]
-                for u in admin_client.get("/ui/api/users").json()
+                for u in admin_client.get("/ui/api/users").json()["items"]
                 if u["username"] in ("alice", "bob")
             ],
         },
@@ -196,7 +196,7 @@ def test_a_household_budget_is_shared_with_a_group(server, frozen, admin_client)
         json={"users": {}, "groups": {groups["id"]: "write"}},
     )
     assert r.status_code == 200, r.text
-    assert [x["name"] for x in bob.get("/ui/api/budgets").json()] == ["Household"]
+    assert [x["name"] for x in bob.get("/ui/api/budgets").json()["items"]] == ["Household"]
     # Write: the plan, not the accounts or the budget itself.
     plan(bob, b, "2026-10-01", [{"categoryId": cat["Food"], "amount": "400.00"}])
     r = bob.patch(
@@ -222,7 +222,7 @@ def test_cash_flow_and_trends(server, frozen):
     t = c.get(
         f"/ui/api/budgets/{b['id']}/trends",
         params={"month": "2026-10", "category": cat["Food"], "months": 3},
-    ).json()
+    ).json()["items"]
     assert [(p["month"], p["planned"], p["actual"]) for p in t] == [
         ("2026-08-01", "500.00", "0.00"),
         ("2026-09-01", "500.00", "0.00"),

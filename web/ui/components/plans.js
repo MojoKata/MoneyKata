@@ -1,7 +1,7 @@
 // The projections built on one portfolio or one account (requirements S6.8.2): shown on its
 // own page, beside the Projections screen.
 import { html } from '../app/html.js';
-import { useApi } from '../app/hooks.js';
+import { useList } from '../app/hooks.js';
 
 const TONE =
   /** @type {Record<string, string>} */ ({ 'on track': 'ok', ahead: 'ok', behind: 'warn' });
@@ -10,7 +10,7 @@ const TONE =
  * @param {{ kind: 'portfolio' | 'account', id: string, all?: boolean }} p  all: scenarios too
  */
 export function PlansFor({ kind, id, all = false }) {
-  const res = useApi('/projections', {}, ['share']);
+  const res = useList('/projections', {}, ['share']);
   const rows = (/** @type {any[]} */ (res.data) || []).filter((r) =>
     (all || r.active) &&
     (kind === 'portfolio'

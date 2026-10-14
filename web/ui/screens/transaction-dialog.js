@@ -2,7 +2,7 @@
 // for an investing account, trades with their instrument, quantity, price and fees; for a
 // retirement account, the contribution year and who contributed.
 import { useState } from 'preact/hooks';
-import { useApi } from '../app/hooks.js';
+import { useList } from '../app/hooks.js';
 import { ACCEPT, uploadAll } from '../components/receipt.js';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
@@ -344,7 +344,7 @@ export function TransactionDialog({ close, txn, accounts, accountId }) {
  * @param {{ txn: any, canWrite: boolean }} p
  */
 function TxnReceipts({ txn, canWrite }) {
-  const res = useApi(`/transactions/${txn.id}/receipts`);
+  const res = useList(`/transactions/${txn.id}/receipts`);
   const rows = /** @type {any[]} */ (res.data) || [];
   const add = async (/** @type {FileList} */ files) => {
     for (const r of await uploadAll(files)) {

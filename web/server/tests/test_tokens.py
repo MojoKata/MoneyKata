@@ -25,7 +25,7 @@ def test_a_token_is_shown_once_and_kept_as_a_hash(server, alice):
     assert made["token"]["scope"] == "all"
     left = dt.datetime.fromisoformat(made["token"]["expiresAt"]) - clock.now()
     assert dt.timedelta(days=89) < left <= dt.timedelta(days=90), "90 days by default"
-    listed = alice.get("/ui/api/profile/tokens").json()
+    listed = alice.get("/ui/api/profile/tokens").json()["items"]
     assert [t["name"] for t in listed] == ["Claude on my laptop"]
     assert secret.split(".")[1] not in str(listed)
     with server.db.read() as s:
@@ -67,8 +67,8 @@ def test_a_token_dies_when_revoked_expired_or_its_user_is_inactive(server, alice
         return alice.post("/ui/api/profile/tokens", json={"name": "t", "days": 30}).json()
 
     one = make()
-    assert alice.delete(f"/ui/api/profile/tokens/{one['token']['id']}").status_code == 204
-    assert alice.get("/ui/api/profile/tokens").json() == []
+    assert alice.delete(f"/ui/api/profile/tokens/{one['token']['id']}").status_code == 200
+    assert alice.get("/ui/api/profile/tokens").json()["items"] == []
     two = make()
     with server.db.read() as s:
         assert tokens.find(s, one["secret"]) is None
@@ -79,7 +79,7 @@ def test_a_token_dies_when_revoked_expired_or_its_user_is_inactive(server, alice
         s.get(AccessToken, two["token"]["id"]).expiresAt = clock.now() - dt.timedelta(seconds=1)
     with server.db.read() as s:
         assert tokens.find(s, two["secret"]) is None
-    assert alice.get("/ui/api/profile/tokens").json()[0]["expired"] is True
+    assert alice.get("/ui/api/profile/tokens").json()["items"][0]["expired"] is True
     three = make()
     from moneykata.store.entities.users import User
 
@@ -94,4 +94,4 @@ def test_someone_elses_token_cant_be_revoked(server, alice):
     make_user(server, "bob")
     bob = sign_in(server, "bob")
     assert bob.delete(f"/ui/api/profile/tokens/{t['id']}").status_code == 404
-    assert bob.get("/ui/api/profile/tokens").json() == []
+    assert bob.get("/ui/api/profile/tokens").json()["items"] == []

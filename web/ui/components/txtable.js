@@ -4,7 +4,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi } from '../app/hooks.js';
+import { useList } from '../app/hooks.js';
 import { date, price, quantity } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Icon } from './icon.js';
@@ -14,7 +14,7 @@ import { TransactionDialog } from '../screens/transaction-dialog.js';
 
 /** @returns {{ list: any[], byId: Record<string, any> }} */
 export function useCategories() {
-  const r = useApi('/categories');
+  const r = useList('/categories');
   const list = /** @type {any[]} */ (r.data) || [];
   return { list, byId: Object.fromEntries(list.map((c) => [c.id, c])) };
 }

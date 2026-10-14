@@ -61,8 +61,8 @@ def test_every_screen_opens(browser, user):
     assert PAGE.exists(), "run web/dev.sh mockup"
     ctx, page = open_as(browser, user)
     nav = page.eval_on_selector_all(".side nav a", "(as) => as.map((a) => a.getAttribute('href'))")
-    accounts = page.evaluate("async () => (await (await fetch('/ui/api/accounts')).json())")
-    ports = page.evaluate("async () => (await (await fetch('/ui/api/portfolios')).json())")
+    accounts = page.evaluate("async () => (await (await fetch('/ui/api/accounts')).json()).items")
+    ports = page.evaluate("async () => (await (await fetch('/ui/api/portfolios')).json()).items")
     for path in [*nav, "/ui/profile"]:
         show(page, path)
     for a in accounts:

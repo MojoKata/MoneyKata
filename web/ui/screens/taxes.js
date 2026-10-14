@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { date, money } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
@@ -55,7 +55,7 @@ export default function Taxes({ tab }) {
   const current = TABS.some(([k]) => k === tab) ? /** @type {string} */ (tab) : 'summary';
   useTitle('Taxes');
   useGuide('taxes-' + current);
-  const list = useApi('/tax-books', {}, ['share']);
+  const list = useList('/tax-books', {}, ['share']);
   const rows = /** @type {any[]} */ (list.data);
   if (list.error) return html`<${Failed} error=${list.error} />`;
   if (!rows) return html`<${Loading} />`;
@@ -516,15 +516,15 @@ function FilingDialog({ close, b, f: filing }) {
       ),
     };
     const out = filing
-      ? await api.put(`/filings/${filing.id}`, body)
+      ? await api.patch(`/filings/${filing.id}`, body, filing.version)
       : await api.post(`/tax-books/${b.id}/filings`, body);
     toast('Filing saved');
     close(out);
   });
   const remove = useSubmit(async () => {
-    const out = await api.del(`/filings/${filing.id}`);
+    const out = await api.del(`/filings/${filing.id}`, filing.version);
     toast('Filing deleted');
-    close(out);
+    close(out.parent);
   });
   const e = save.error;
   const pay = (/** @type {number} */ i, /** @type {string} */ k) => (/** @type {string} */ x) =>

@@ -212,7 +212,8 @@ def test_documents_are_receipts_kept_with_the_item(alice):
     links = alice.get(f"/ui/api/receipts/{rid}").json()["links"]
     assert links[0]["payee"] == "Watch"
     r = alice.delete(f"/ui/api/items/{watch['id']}/documents/{rid}")
-    assert r.json()["documents"] == []
+    assert r.json()["deleted"]["id"] == f"{rid}/{watch['id']}"
+    assert r.json()["parent"]["documents"] == []
 
 
 def test_others_read_but_cannot_change_items(server, alice):

@@ -123,14 +123,14 @@ def test_payments_through_the_api(server, frozen):
     assert c.get(f"/ui/api/accounts/{bank['id']}").json()["balance"] == "7801.35"
     # A bank transaction that looks like the payment is offered, and linked.
     t = add(c, bank["id"], "-2198.65", "2026-10-01", payee="ROCKET MORTGAGE")
-    cands = c.get(f"/ui/api/accounts/{loan['id']}/loan/candidates").json()
+    cands = c.get(f"/ui/api/accounts/{loan['id']}/loan/candidates").json()["items"]
     assert [x["transactionId"] for x in cands] == [t["id"]]
     r = c.post(
         f"/ui/api/accounts/{loan['id']}/loan/payments",
         json={"date": "2026-10-01", "amount": "2198.65", "transactionId": t["id"]},
     )
     assert r.status_code == 201
-    assert c.get(f"/ui/api/accounts/{loan['id']}/loan/candidates").json() == []
+    assert c.get(f"/ui/api/accounts/{loan['id']}/loan/candidates").json()["items"] == []
     # A split typed from the servicer's statement must add up.
     r = c.post(
         f"/ui/api/accounts/{loan['id']}/loan/payments",
@@ -253,6 +253,8 @@ def test_the_planner_and_plans_through_the_api(server, frozen):
         f"/ui/api/accounts/{loan['id']}/loan/plans/{other['id']}/following",
         json={"following": True},
     )
-    rows = {p["name"]: p for p in c.get(f"/ui/api/accounts/{loan['id']}/loan/plans").json()}
+    rows = {
+        p["name"]: p for p in c.get(f"/ui/api/accounts/{loan['id']}/loan/plans").json()["items"]
+    }
     assert rows["Biweekly"]["following"] and not rows["Extra $300"]["following"]
-    assert c.delete(f"/ui/api/accounts/{loan['id']}/loan/plans/{other['id']}").status_code == 204
+    assert c.delete(f"/ui/api/accounts/{loan['id']}/loan/plans/{other['id']}").status_code == 200

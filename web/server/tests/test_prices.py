@@ -228,7 +228,7 @@ def test_price_sources_in_settings(admin_client, server):
     r = admin_client.delete(
         f"/ui/api/price-sources/{src['id']}", headers={"If-Match": str(row["version"])}
     )
-    assert r.status_code == 204
+    assert r.status_code == 200
     from moneykata.store.repos import secrets as secret_repo
 
     with server.db.read() as s:
@@ -250,7 +250,7 @@ def test_typed_prices_win_and_only_for_holders(server):
     )
     r = alice.post(f"/ui/api/instruments/{inst_id}/prices", json={"date": day, "price": "300"})
     assert r.status_code == 201
-    closes = alice.get(f"/ui/api/instruments/{inst_id}/prices").json()
+    closes = alice.get(f"/ui/api/instruments/{inst_id}/prices").json()["items"]
     assert closes[-1] == {"date": day, "close": "300.0", "source": "manual"}
     status = alice.get("/ui/api/prices/status").json()
     assert status["stale"] is False and status["running"] is False

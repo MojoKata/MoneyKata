@@ -4,14 +4,14 @@ import { useEffect, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi } from '../app/hooks.js';
+import { useApi, useList } from '../app/hooks.js';
 import { changes } from '../app/stream.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Empty, Failed, Loading } from '../components/bits.js';
 import { Icon } from '../components/icon.js';
 import { openDialog } from '../components/dialog.js';
-import { Pager } from '../components/pager.js';
+import { offsetOf, Pager } from '../components/pager.js';
 import { TxTable, useCategories } from '../components/txtable.js';
 import { pageSize } from '../store/prefs.js';
 import { ImportDialog } from './import.js';
@@ -25,12 +25,11 @@ export default function Transactions() {
   const { query } = useLocation();
   const [f, setF] = useState({ ...EMPTY, category: query.category || '' });
   const [typing, setTyping] = useState(f.payee);
-  const [after, setAfter] = useState(/** @type {(string | null)[]} */ ([null]));
+  const [page, setPage] = useState(1);
   const [since, setSince] = useState(() => new Date().toISOString());
   const [newer, setNewer] = useState(0);
   const cats = useCategories();
-  const accounts = useApi('/accounts', {}, ['share']);
-  const page = after.length;
+  const accounts = useList('/accounts', {}, ['share']);
   const params = {
     account: f.account ? [f.account] : undefined,
     category: f.category || undefined,
@@ -41,7 +40,7 @@ export default function Transactions() {
     payee: f.payee || undefined,
     tag: f.tag || undefined,
     limit: pageSize.value,
-    after: after[page - 1] ?? undefined,
+    offset: offsetOf(page, newer),
   };
   const res = useApi('/transactions', params, []);
   const d = /** @type {any} */ (res.data);
@@ -58,12 +57,12 @@ export default function Transactions() {
 
   const set = (/** @type {string} */ k) => (/** @type {string} */ v) => {
     setF({ ...f, [k]: v });
-    setAfter([null]);
+    setPage(1);
   };
   const fresh = () => {
     setSince(new Date().toISOString());
     setNewer(0);
-    setAfter([null]);
+    setPage(1);
     res.reload();
   };
   const field = (/** @type {string} */ id) => ({ id: 'f-' + id });
@@ -124,7 +123,7 @@ export default function Transactions() {
       <button type="button" class="btn sm" onClick=${() => {
         setF(EMPTY);
         setTyping('');
-        setAfter([null]);
+        setPage(1);
       }}>Clear the filters</button>
     </details>
     ${f.category === 'none' && d?.items.length
@@ -146,9 +145,8 @@ export default function Transactions() {
       }</${Empty}>`}
     ${d
       ? html`
-        <${Pager} label="tx" shown=${d.items.length} page=${page} hasNext=${!!d.next} newer=${newer}
-          onNewer=${fresh} onPage=${(/** @type {number} */ n) =>
-            setAfter(n === 1 ? [null] : n > page ? [...after, d.next] : after.slice(0, n))} />
+        <${Pager} label="tx" shown=${d.items.length} page=${page} total=${d.total} newer=${newer}
+          onNewer=${fresh} onPage=${setPage} />
       `
       : null}
   `;

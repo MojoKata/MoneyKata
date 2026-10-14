@@ -103,10 +103,10 @@ def test_attach_suggest_and_share_through_the_transaction(server, alice):
     )
     assert r.status_code == 200, r.text
     assert [m["transactionId"] for m in r.json()["matches"]] == [t["id"], tipped["id"]]
-    assert alice.get("/ui/api/receipts", params={"show": "inbox"}).json()[0]["id"] == rid
+    assert alice.get("/ui/api/receipts", params={"show": "inbox"}).json()["items"][0]["id"] == rid
     r = alice.post(f"/ui/api/receipts/{rid}/links", json={"transactionId": t["id"]})
     assert r.status_code == 200 and r.json()["links"][0]["transactionId"] == t["id"]
-    assert alice.get("/ui/api/receipts", params={"show": "inbox"}).json() == []
+    assert alice.get("/ui/api/receipts", params={"show": "inbox"}).json()["items"] == []
     page = alice.get("/ui/api/transactions", params={"account": acct["id"]}).json()
     assert {x["id"]: x["receipts"] for x in page["items"]}[t["id"]] == 1
     # Bob sees it once the account is shared with him, and not before.
@@ -128,7 +128,7 @@ def test_attach_suggest_and_share_through_the_transaction(server, alice):
     r = alice.delete(f"/ui/api/receipts/{rid}")
     assert r.status_code == 409 and r.json()["code"] == "receipt-linked"
     alice.delete(f"/ui/api/receipts/{rid}/links/{t['id']}")
-    assert alice.delete(f"/ui/api/receipts/{rid}").status_code == 204
+    assert alice.delete(f"/ui/api/receipts/{rid}").status_code == 200
     assert alice.get(f"/ui/api/receipts/{rid}").status_code == 404
     assert list(server.config.receipts_dir.glob("*.mkr")), "the file stays while a row names it"
 

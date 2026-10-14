@@ -69,6 +69,8 @@ def _req(srv):
 def _dump(x):
     if isinstance(x, list):
         return [_dump(i) for i in x]
+    if isinstance(x, dict):
+        return {k: _dump(v) for k, v in x.items()}
     return x.model_dump(mode="json") if hasattr(x, "model_dump") else x
 
 
@@ -138,7 +140,7 @@ def _transactions(srv, w, args):
     page = transactions.list_transactions(
         _req(srv),
         w.caller,
-        Paging(limit=int(args.get("limit") or 100), after=None),
+        Paging(offset=0, limit=int(args.get("limit") or 100)),
         account=wanted,
         category=None,
         start=_date(args.get("from")),

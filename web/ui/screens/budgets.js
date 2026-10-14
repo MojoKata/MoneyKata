@@ -5,7 +5,7 @@ import { signal } from '@preact/signals';
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { date, money } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
@@ -44,7 +44,7 @@ export default function Budgets({ id, tab }) {
   useTitle('Budgets');
   const current = TABS.some(([k]) => k === tab) ? /** @type {string} */ (tab) : 'month';
   useGuide('budgets-' + current);
-  const list = useApi('/budgets', {}, ['share']);
+  const list = useList('/budgets', {}, ['share']);
   const budgets = /** @type {any[]} */ (list.data);
   if (list.error) return html`<${Failed} error=${list.error} />`;
   if (!budgets) return html`<${Loading} lines=${6} />`;
@@ -112,7 +112,9 @@ function ThisMonth({ b, month, reloadList }) {
   const income = v.rows.filter((/** @type {any} */ r) => r.kind === 'income');
   const left = dec(v.plannedSpending).sub(dec(v.spent));
   const edit = () =>
-    openDialog(PlanDialog, { b, month, rows: v.rows }).then((x) => x && res.reload());
+    openDialog(PlanDialog, { b, month, rows: v.rows, version: v.version }).then((x) =>
+      x && res.reload()
+    );
   return html`
     <div class="grid g3">
       <div class="card kpi">
@@ -261,9 +263,9 @@ function CashFlow({ b, month }) {
 
 /** @param {{ b: any, month: string }} p */
 function Trends({ b, month }) {
-  const cats = useApi('/categories');
+  const cats = useList('/categories');
   const [category, setCategory] = useState('');
-  const res = useApi(`/budgets/${b.id}/trends`, { month, category: category || undefined });
+  const res = useList(`/budgets/${b.id}/trends`, { month, category: category || undefined });
   const t = /** @type {any[]} */ (res.data);
   const options = /** @type {[string, string][]} */ ([
     ['', 'All spending'],
@@ -297,7 +299,7 @@ function Trends({ b, month }) {
 
 /** @param {{ b: any }} p */
 function Recurring({ b }) {
-  const res = useApi(`/budgets/${b.id}/recurring`, {}, ['import']);
+  const res = useList(`/budgets/${b.id}/recurring`, {}, ['import']);
   const rows = /** @type {any[]} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!rows) return html`<${Loading} lines=${6} />`;
@@ -344,7 +346,7 @@ function Recurring({ b }) {
 /** A new budget: its name and the accounts it covers. @param {{ close: (v?: any) => void }} p */
 function BudgetDialog({ close }) {
   useDialogGuide('dialog-budget');
-  const accounts = useApi('/accounts');
+  const accounts = useList('/accounts');
   const [name, setName] = useState('');
   const [ids, setIds] = useState(/** @type {Set<string>} */ (new Set()));
   const save = useSubmit(async () => {
@@ -383,11 +385,11 @@ function BudgetDialog({ close }) {
 /**
  * The plan from the month shown on: a line per category, monthly or yearly, rolling over or
  * not. Earlier months keep the plan they had.
- * @param {{ close: (v?: any) => void, b: any, month: string, rows: any[] }} p
+ * @param {{ close: (v?: any) => void, b: any, month: string, rows: any[], version: number }} p
  */
-function PlanDialog({ close, b, month, rows }) {
+function PlanDialog({ close, b, month, rows, version }) {
   useDialogGuide('dialog-plan');
-  const cats = useApi('/categories');
+  const cats = useList('/categories');
   const [lines, setLines] = useState(
     rows.map((r) => ({
       categoryId: r.categoryId,
@@ -403,7 +405,7 @@ function PlanDialog({ close, b, month, rows }) {
         ...l,
         amount: String(l.amount || '0').trim(),
       })),
-    });
+    }, version);
     toast('Plan saved');
     close(true);
   });

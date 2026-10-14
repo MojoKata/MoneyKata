@@ -140,7 +140,7 @@ export function ReceiptDialog({ close, id }) {
     res.reload();
   });
   const remove = useSubmit(async () => {
-    await api.del(`/receipts/${id}`);
+    await api.del(`/receipts/${id}`, r.version);
     toast('Receipt deleted');
     close(true);
   });

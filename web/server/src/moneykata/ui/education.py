@@ -16,7 +16,7 @@ from ..store.entities.accounts import Account, Transaction
 from ..store.entities.education import Contribution, EducationPlan, Person, QualifiedExpense
 from ..store.entities.projections import Projection
 from ..store.entities.users import User
-from .conventions import ExactRoute, Model, Money
+from .conventions import Deleted, ExactRoute, Model, Money, check, gone, if_match
 from .deps import Caller, caller, server
 from .projections import ProjectionDetail
 from .projections import detail as projection_detail
@@ -64,6 +64,7 @@ class PlanOut(Model):
     contributedThisYear: Money
     rollover: RolloverOut
     canWrite: bool
+    version: int = 0  # the plan's: 0 until it is set (S13.8.6)
 
 
 def _account(s, c: Caller, account_id: str, need: str = "read") -> tuple[Account, str]:
@@ -93,6 +94,7 @@ def plan_view(s, a: Account, lvl: str) -> PlanOut:
         contributedThisYear=sum((x.amount for x in rows if x.date.year == today.year), Decimal(0)),
         rollover=RolloverOut(**r.__dict__),
         canWrite=lvl in ("owner", "write"),
+        version=plan.version if plan else 0,
     )
 
 
@@ -117,13 +119,20 @@ def get_plan(account_id: str, request: Request, c: Caller = Depends(caller)):
 
 
 @router.put("/accounts/{account_id}/plan529", response_model=PlanOut)
-def put_plan(account_id: str, body: PlanIn, request: Request, c: Caller = Depends(caller)):
+def put_plan(
+    account_id: str,
+    body: PlanIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     if body.stateDeduction is not None and body.stateDeduction < 0:
         raise refuse("stateDeduction", "amount-invalid", "Zero or more.")
     if body.openedOn is not None and body.openedOn > clock.today():
         raise refuse("openedOn", "date-ahead", "Not after today.")
     with server(request).db.tx() as s:
         a, lvl = _account(s, c, account_id, "write")
+        check(education.plan_of(s, a), version, lambda: plan_view(s, a, lvl))
         values = {
             "planState": (body.planState or "").strip() or None,
             "planName": (body.planName or "").strip() or None,
@@ -162,6 +171,7 @@ class ContributionOut(Model):
     name: str
     relationship: str | None
     fiveYear: bool
+    version: int = 0  # its tag's: 0 until it is tagged (S13.8.6)
 
 
 class GiftYearOut(Model):
@@ -206,21 +216,37 @@ def _contributor(s, c: Caller, key: str, owner_id: str) -> tuple[str | None, str
     raise refuse("contributor", "contributor-invalid", "The owner, a user or a person.")
 
 
+def _tag_of(s, txn_id: str) -> Contribution | None:
+    return s.scalars(
+        select(Contribution).where(
+            Contribution.transactionId == txn_id, Contribution.deleted == false()
+        )
+    ).first()
+
+
 def contributions_view(s, a: Account, lvl: str) -> ContributionsView:
     rows = education.contributions(s, a)
+    tags = {
+        t.transactionId: t.version
+        for t in s.scalars(
+            select(Contribution).where(
+                Contribution.transactionId.in_([r.transactionId for r in rows]),
+                Contribution.deleted == false(),
+            )
+        )
+    }
     return ContributionsView(
-        rows=[ContributionOut(**r.__dict__) for r in reversed(rows)],
+        rows=[
+            ContributionOut(**r.__dict__, version=tags.get(r.transactionId, 0))
+            for r in reversed(rows)
+        ],
         years=[GiftYearOut(**g.__dict__) for g in education.gift_years(s, rows)],
         canWrite=lvl in ("owner", "write"),
     )
 
 
 def _tag(s, txn_id: str, from_user, from_person, five: bool) -> None:
-    row = s.scalars(
-        select(Contribution).where(
-            Contribution.transactionId == txn_id, Contribution.deleted == false()
-        )
-    ).first()
+    row = _tag_of(s, txn_id)
     if row is None:
         s.add(
             Contribution(
@@ -296,7 +322,11 @@ def add_contribution(
 
 @router.put("/contributions/{transaction_id}", response_model=ContributionsView)
 def tag_contribution(
-    transaction_id: str, body: TagIn, request: Request, c: Caller = Depends(caller)
+    transaction_id: str,
+    body: TagIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
 ):
     """Who an existing deposit (an imported one) came from, and whether it is a five-year
     election."""
@@ -305,6 +335,7 @@ def tag_contribution(
         if t is None or t.deleted or t.amount <= 0:
             raise Problem(404, "not-found", "No such contribution.")
         a, lvl = _account(s, c, t.accountId, "write")
+        check(_tag_of(s, t.id), version, lambda: contributions_view(s, a, lvl))
         from_user, from_person = _contributor(s, c, body.contributor, a.ownerId)
         _tag(s, t.id, from_user, from_person, body.fiveYear)
         s.flush()
@@ -331,6 +362,7 @@ class ExpenseOut(Model):
     description: str | None
     amount: Money
     documents: list[ReceiptRow]
+    version: int
 
 
 class WithdrawalYearOut(Model):
@@ -367,6 +399,7 @@ def withdrawals_view(s, c: Caller, a: Account, lvl: str) -> WithdrawalsView:
                     receipt_row(s, r, receipts.level(s, c.id, r) or "read")
                     for r in receipts.of_item(s, e.id, "expense")
                 ],
+                version=e.version,
             )
             for e in education.expenses(s, a)
         ],
@@ -413,13 +446,16 @@ def _expense(s, c: Caller, expense_id: str) -> tuple[QualifiedExpense, Account, 
     return e, a, lvl
 
 
-@router.delete("/expenses/{expense_id}", response_model=WithdrawalsView)
-def delete_expense(expense_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/expenses/{expense_id}", response_model=Deleted[WithdrawalsView])
+def delete_expense(
+    expense_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
         e, a, lvl = _expense(s, c, expense_id)
+        check(e, version, lambda: withdrawals_view(s, c, a, lvl))
         e.mark_deleted(c.id)
         s.flush()
-        return withdrawals_view(s, c, a, lvl)
+        return Deleted[WithdrawalsView](deleted=gone(e), parent=withdrawals_view(s, c, a, lvl))
 
 
 @router.post("/expenses/{expense_id}/documents", response_model=WithdrawalsView)

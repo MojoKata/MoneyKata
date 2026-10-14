@@ -150,6 +150,7 @@
  * @property {Object<string, unknown>} figures
  * @property {Array<Array<unknown>>} classes
  * @property {Array<Array<unknown>>} bitcoinModels
+ * @property {number} [version]
  */
 
 /**
@@ -235,6 +236,7 @@
  * @property {Array<Filer>} filers
  * @property {string} level
  * @property {string} label
+ * @property {number} version
  * @property {Array<AccountRef>} accounts
  * @property {Array<AccountRef>} leftOut
  * @property {Array<AccountRef>} addable
@@ -253,6 +255,7 @@
  * @property {Array<Filer>} filers
  * @property {string} level
  * @property {string} label
+ * @property {number} version
  */
 
 /**
@@ -469,6 +472,48 @@
  */
 
 /**
+ * @typedef {Object} Deleted_BookDetail_
+ * @property {Gone} deleted
+ * @property {(BookDetail | null)} [parent]
+ */
+
+/**
+ * @typedef {Object} Deleted_ItemDetail_
+ * @property {Gone} deleted
+ * @property {(ItemDetail | null)} [parent]
+ */
+
+/**
+ * @typedef {Object} Deleted_NoneType_
+ * @property {Gone} deleted
+ * @property {null} [parent]
+ */
+
+/**
+ * @typedef {Object} Deleted_Profile_
+ * @property {Gone} deleted
+ * @property {(Profile | null)} [parent]
+ */
+
+/**
+ * @typedef {Object} Deleted_ReceiptDetail_
+ * @property {Gone} deleted
+ * @property {(ReceiptDetail | null)} [parent]
+ */
+
+/**
+ * @typedef {Object} Deleted_UserRow_
+ * @property {Gone} deleted
+ * @property {(UserRow | null)} [parent]
+ */
+
+/**
+ * @typedef {Object} Deleted_WithdrawalsView_
+ * @property {Gone} deleted
+ * @property {(WithdrawalsView | null)} [parent]
+ */
+
+/**
  * @typedef {Object} DocumentOut
  * @property {string} id
  * @property {string} direction
@@ -480,6 +525,7 @@
  * @property {(string | null)} receiptId
  * @property {(string | null)} fileName
  * @property {(string | null)} notes
+ * @property {number} version
  */
 
 /**
@@ -529,6 +575,7 @@
  * @property {(boolean | null)} granted
  * @property {(string | null)} notes
  * @property {boolean} canWrite
+ * @property {(number | null)} version
  */
 
 /**
@@ -619,6 +666,7 @@
  * @property {(string | null)} description
  * @property {import('../app/dec.js').Dec} amount
  * @property {Array<ReceiptRow>} documents
+ * @property {number} version
  */
 
 /**
@@ -840,6 +888,15 @@
  */
 
 /**
+ * What a DELETE took away (S13.8.1): its id (for a pair, its two keys joined by a slash),
+ * when, and the version it had.
+ * @typedef {Object} Gone
+ * @property {string} id
+ * @property {(string | null)} [deletedAt]
+ * @property {(number | null)} [version]
+ */
+
+/**
  * @typedef {Object} GroupChange
  * @property {(string | null)} [name]
  * @property {(boolean | null)} [active]
@@ -961,6 +1018,7 @@
  * @property {string} date
  * @property {string} description
  * @property {import('../app/dec.js').Dec} amount
+ * @property {number} version
  */
 
 /**
@@ -1241,6 +1299,7 @@
  * @property {(Equity | null)} [equity]
  * @property {(Following | null)} [following]
  * @property {boolean} canWrite
+ * @property {number} [version]
  */
 
 /**
@@ -1353,6 +1412,7 @@
  * @property {number} uncategorised
  * @property {number} daysLeft
  * @property {boolean} canWrite
+ * @property {number} version
  */
 
 /**
@@ -1597,15 +1657,275 @@
  */
 
 /**
+ * @typedef {Object} Page_AccountRow_
+ * @property {Array<AccountRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
  * @typedef {Object} Page_ActivityItem_
  * @property {Array<ActivityItem>} items
- * @property {(string | null)} next
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_BookRow_
+ * @property {Array<BookRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_BudgetRow_
+ * @property {Array<BudgetRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_Candidate_
+ * @property {Array<Candidate>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_CategoryOut_
+ * @property {Array<CategoryOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_Close_
+ * @property {Array<Close>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_DonationOut_
+ * @property {Array<DonationOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_GiftOut_
+ * @property {Array<GiftOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_GroupRow_
+ * @property {Array<GroupRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_HolidayOut_
+ * @property {Array<HolidayOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_Household_
+ * @property {Array<moneykata__ui__linked__Household>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_ImportRow_
+ * @property {Array<ImportRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_InstrumentOut_
+ * @property {Array<InstrumentOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_LinkedFile_
+ * @property {Array<LinkedFile>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_LinkedRow_
+ * @property {Array<LinkedRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_OptionTradeRow_
+ * @property {Array<OptionTradeRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_OrganisationOut_
+ * @property {Array<OrganisationOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_PersonOut_
+ * @property {Array<PersonOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_Plan_
+ * @property {Array<Plan_Output>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_PortfolioRow_
+ * @property {Array<PortfolioRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_ProjectionRow_
+ * @property {Array<ProjectionRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_Purchase_
+ * @property {Array<Purchase>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_ReceiptRow_
+ * @property {Array<ReceiptRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_RecurringRow_
+ * @property {Array<RecurringRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_ReturnRow_
+ * @property {Array<ReturnRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_SavedPlan_
+ * @property {Array<SavedPlan>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_Securable_
+ * @property {Array<Securable>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_SignupRow_
+ * @property {Array<SignupRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_TokenOut_
+ * @property {Array<TokenOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_TrendPoint_
+ * @property {Array<TrendPoint>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
  */
 
 /**
  * @typedef {Object} Page_TxnOut_
  * @property {Array<TxnOut>} items
- * @property {(string | null)} next
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_UpcomingOut_
+ * @property {Array<UpcomingOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_UserRow_
+ * @property {Array<UserRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
  */
 
 /**
@@ -2263,6 +2583,7 @@
  * @property {Object<string, Array<string>>} sections
  * @property {string} serverZone
  * @property {Object<string, number>} versions
+ * @property {number} version
  */
 
 /**
@@ -2303,6 +2624,7 @@
  * @property {Array<LinkedPeople>} links
  * @property {Object<string, Array<string>>} hidden
  * @property {Array<AccountName>} accounts
+ * @property {number} [version]
  */
 
 /**
@@ -2506,6 +2828,7 @@
  * @property {number} year
  * @property {Array<number>} years
  * @property {Array<TaxRow>} rows
+ * @property {number} version
  */
 
 /**
@@ -2585,6 +2908,7 @@
  * @property {string} expiresAt
  * @property {(string | null)} lastUsedAt
  * @property {boolean} expired
+ * @property {number} version
  */
 
 /**
@@ -2806,6 +3130,7 @@
  * @property {import('../app/dec.js').Dec} value
  * @property {string} source
  * @property {(string | null)} note
+ * @property {number} version
  */
 
 /**
@@ -2852,6 +3177,7 @@
  * @property {number} used
  * @property {number} balanceSats
  * @property {(string | null)} checkedAt
+ * @property {number} version
  */
 
 /**
@@ -2916,6 +3242,7 @@
  * @property {string} name
  * @property {(string | null)} relationship
  * @property {boolean} fiveYear
+ * @property {number} [version]
  */
 
 /**
@@ -2942,6 +3269,7 @@
  * @property {import('../app/dec.js').Dec} contributedThisYear
  * @property {RolloverOut} rollover
  * @property {boolean} canWrite
+ * @property {number} [version]
  */
 
 /**

@@ -20,7 +20,7 @@ from ..store.entities.accounts import Account, Anchor, Instrument, Reconciliatio
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
 from ..store.tables.accounts import ACCOUNT_TYPES, LOT_METHODS
-from .conventions import ExactRoute, Model, Money, Quantity, if_match, stale
+from .conventions import Deleted, ExactRoute, Model, Money, Quantity, check, gone, if_match, stale
 from .deps import Caller, caller, server
 from .sharing import counted_for
 
@@ -443,15 +443,14 @@ def change_account(
         return row(s, a, level, context(s, c.id, [a.id]), detail=True)
 
 
-@router.delete("/accounts/{account_id}", status_code=204)
+@router.delete("/accounts/{account_id}", response_model=Deleted[None])
 def delete_account(
     account_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
 ):
     """Soft-deleted with everything that belongs to it (schema.md §4); only by its owner."""
     with server(request).db.tx() as s:
         a, _ = access.account(s, c.id, account_id, "owner")
-        if a.version != version:
-            raise stale({"id": a.id, "version": a.version})
+        check(a, version, {"id": a.id, "version": a.version})
         a.mark_deleted(c.id)
         activity.record(
             s,
@@ -461,7 +460,8 @@ def delete_account(
             subject_id=a.id,
             owner=a.ownerId,
         )
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(a))
 
 
 @router.get("/accounts/{account_id}/series", response_model=Series)

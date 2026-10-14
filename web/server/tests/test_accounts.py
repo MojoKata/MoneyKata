@@ -62,7 +62,7 @@ def test_accounts_are_checked_and_their_owners_own(server):
     assert a["group"] == "banking" and a["level"] == "owner" and a["balance"] == "1000.00"
     assert a["reconcilable"] and not a["investing"]
     assert bob.get(f"/ui/api/accounts/{a['id']}").status_code == 404
-    assert bob.get("/ui/api/accounts").json() == []
+    assert bob.get("/ui/api/accounts").json()["items"] == []
     r = alice.patch(
         f"/ui/api/accounts/{a['id']}",
         json={"name": "Joint checking"},
@@ -77,9 +77,9 @@ def test_accounts_are_checked_and_their_owners_own(server):
     assert r.status_code == 412
     v = r.json()["current"]["version"]
     assert (
-        alice.delete(f"/ui/api/accounts/{a['id']}", headers={"If-Match": str(v)}).status_code == 204
+        alice.delete(f"/ui/api/accounts/{a['id']}", headers={"If-Match": str(v)}).status_code == 200
     )
-    assert alice.get("/ui/api/accounts").json() == []
+    assert alice.get("/ui/api/accounts").json()["items"] == []
 
 
 # ---------- transactions ----------
@@ -94,7 +94,8 @@ def test_transactions_filter_page_and_balance(server):
     add(c, a["id"], "50.00", "2026-09-08", payee="Refund", kind="deposit")
     page = c.get("/ui/api/transactions", params={"limit": 3}).json()
     assert [t["payee"] for t in page["items"]] == ["Refund", "Shop 7", "Shop 6"]
-    nxt = c.get("/ui/api/transactions", params={"limit": 3, "after": page["next"]}).json()
+    assert (page["total"], page["offset"], page["limit"]) == (8, 0, 3)
+    nxt = c.get("/ui/api/transactions", params={"limit": 3, "offset": 3}).json()
     assert [t["payee"] for t in nxt["items"]] == ["Shop 5", "Shop 4", "Shop 3"]
     r = c.get("/ui/api/transactions", params={"min": "3", "max": "5"}).json()
     assert sorted(t["amount"] for t in r["items"]) == ["-5.00", "-4.00", "-3.00"]
@@ -121,7 +122,7 @@ def test_splits_tags_and_bulk_categorise(server):
     make_user(server, "alice")
     c = sign_in(server, "alice")
     a = new_account(c)
-    cats = {x["path"]: x["id"] for x in c.get("/ui/api/categories").json()}
+    cats = {x["path"]: x["id"] for x in c.get("/ui/api/categories").json()["items"]}
     groceries, dining = cats["Food › Groceries"], cats["Food › Dining out"]
     r = c.post(
         "/ui/api/transactions",
@@ -293,7 +294,7 @@ def test_ofx_import_is_idempotent_and_reconciles(server):
     view = c.get(f"/ui/api/accounts/{a['id']}/reconcile").json()
     assert view["periods"][0]["start"] == "2026-09-01"
     assert view["checks"][-1]["ok"] is True  # the stand-in opening fits the reported balance
-    imports = c.get(f"/ui/api/accounts/{a['id']}/imports").json()
+    imports = c.get(f"/ui/api/accounts/{a['id']}/imports").json()["items"]
     assert len(imports) == 3 and imports[0]["userName"] == "Alice"
 
 

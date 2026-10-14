@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { date } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Empty, Failed, Loading } from './bits.js';
@@ -94,7 +94,7 @@ const month = (/** @type {string | null} */ iso) => (iso ? date(iso).replace(/ \
 /** @param {{ a: any }} p */
 export function Payoff({ a }) {
   const loan = useApi(`/accounts/${a.id}/loan`);
-  const plans = useApi(`/accounts/${a.id}/loan/plans`);
+  const plans = useList(`/accounts/${a.id}/loan/plans`);
   const v = /** @type {any} */ (loan.data);
   const saved = /** @type {any[] | null} */ (plans.data);
   if (loan.error || plans.error) return html`<${Failed} error=${loan.error || plans.error} />`;
@@ -430,12 +430,12 @@ function Saved({ a, canWrite, f, plans, reload, load }) {
   const follow = useSubmit(async (/** @type {any} */ p) => {
     await api.put(`/accounts/${a.id}/loan/plans/${p.id}/following`, {
       following: !p.following,
-    });
+    }, p.version);
     toast(p.following ? 'No longer following it' : 'Following it from today');
     reload();
   });
   const remove = useSubmit(async (/** @type {any} */ p) => {
-    await api.del(`/accounts/${a.id}/loan/plans/${p.id}`);
+    await api.del(`/accounts/${a.id}/loan/plans/${p.id}`, p.version);
     toast(`${p.name} deleted`);
     reload();
   });

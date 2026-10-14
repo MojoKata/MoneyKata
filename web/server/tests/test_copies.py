@@ -48,8 +48,8 @@ def setup(server, admin_client):
 
 def test_an_admin_makes_the_words_and_a_named_person_unlocks_with_them(server, setup):
     link_id, admin, alice, bob = setup
-    assert alice.get("/ui/api/linked").json()[0]["items"] == 1
-    assert bob.get("/ui/api/linked").json() == [], "bob is named by nothing"
+    assert alice.get("/ui/api/linked").json()["items"][0]["items"] == 1
+    assert bob.get("/ui/api/linked").json()["items"] == [], "bob is named by nothing"
     st = alice.get(f"/ui/api/linked/{link_id}").json()
     assert st["hasKey"] is False and st["household"]["locked"]
     r = admin.post(f"/ui/api/settings/links/{link_id}/copy-key")

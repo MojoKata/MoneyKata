@@ -4,7 +4,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { date } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Empty, Failed, Loading } from './bits.js';
@@ -162,7 +162,7 @@ export function TermsFields({ f, set, e, type }) {
  * @param {{ f: any, set: (k: string) => (v: any) => void, e: any, type: string }} p
  */
 function SecuredBy({ f, set, e, type }) {
-  const res = useApi('/items');
+  const res = useList('/items');
   const items = /** @type {any[]} */ (res.data) || [];
   return html`
     <div class="row">
@@ -291,7 +291,7 @@ export function LoanSummary({ a, reload }) {
 /** Bank transactions that look like this loan's payment, to link with one click. */
 /** @param {{ a: any, again: () => void }} p */
 function Candidates({ a, again }) {
-  const res = useApi(`/accounts/${a.id}/loan/candidates`, {}, ['import']);
+  const res = useList(`/accounts/${a.id}/loan/candidates`, {}, ['import']);
   const rows = /** @type {any[]} */ (res.data) || [];
   const link = useSubmit(async (/** @type {any} */ c) => {
     await api.post(`/accounts/${a.id}/loan/payments`, {
@@ -390,7 +390,7 @@ const PARTS = /** @type {[string, string][]} */ ([
 /** @param {{ close: (v?: any) => void, a: any, v: any }} p */
 export function PaymentDialog({ close, a, v }) {
   useDialogGuide('dialog-loan-payment');
-  const accounts = useApi('/accounts');
+  const accounts = useList('/accounts');
   const banks = (/** @type {any[]} */ (accounts.data) || []).filter((x) =>
     x.group === 'banking' && x.active && ['owner', 'write'].includes(x.level)
   );
@@ -524,7 +524,7 @@ function TermsEditor({ a, v, reload }) {
   const [f, setF] = useState(termsForm(v.terms, a.type));
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const save = useSubmit(async () => {
-    await api.put(`/accounts/${a.id}/loan`, termsBody(f));
+    await api.put(`/accounts/${a.id}/loan`, termsBody(f), v.version);
     toast('Terms saved; the schedule is recomputed');
     reload();
   });

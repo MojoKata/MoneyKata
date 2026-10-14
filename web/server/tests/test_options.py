@@ -265,7 +265,7 @@ def test_each_option_trade_has_its_premium_pl_and_return(alice):
         json={"how": "expired", "date": "2026-10-01"},
     )
     assert r.status_code == 201, r.text
-    rows = alice.get("/ui/api/positions/option-trades").json()
+    rows = alice.get("/ui/api/positions/option-trades").json()["items"]
     put = next(x for x in rows if x["symbol"].endswith("480 P"))
     assert put["side"] == "short" and put["contracts"] == "2.0"
     assert (put["opened"], put["closed"], put["how"]) == ("2026-09-01", "2026-10-01", "expired")

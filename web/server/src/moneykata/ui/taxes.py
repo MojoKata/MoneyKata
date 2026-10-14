@@ -4,7 +4,7 @@ carry forward, and tax documents received and filed, against the documents expec
 
 import datetime as dt
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from pydantic import Field
 from sqlalchemy import false, select
 
@@ -21,7 +21,7 @@ from ..store.entities.taxes import (
 )
 from ..store.entities.users import User
 from ..taxes import books
-from .conventions import ExactRoute, Model, Money
+from .conventions import Deleted, ExactRoute, Model, Money, check, gone, if_match
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["taxes"])
@@ -71,6 +71,7 @@ class BookRow(Model):
     filers: list[Filer]
     level: str  # owner, write, read; pending for a filer yet to accept
     label: str
+    version: int
 
 
 def _filers(s, b: TaxBook) -> list[Filer]:
@@ -86,7 +87,7 @@ def _row(s, b: TaxBook, lvl: str) -> BookRow:
     fs = _filers(s, b)
     who = " & ".join(f.name.split(" ")[0] for f in fs)
     label = f"{b.year} · {who}" + (" (joint)" if len(fs) > 1 else "")
-    return BookRow(id=b.id, year=b.year, filers=fs, level=lvl, label=label)
+    return BookRow(id=b.id, year=b.year, filers=fs, level=lvl, label=label, version=b.version)
 
 
 @router.get("/tax-books", response_model=list[BookRow])
@@ -162,12 +163,16 @@ def accept(book_id: str, request: Request, c: Caller = Depends(caller)):
         return _row(s, b, "owner")
 
 
-@router.delete("/tax-books/{book_id}", status_code=204)
-def delete_book(book_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/tax-books/{book_id}", response_model=Deleted[None])
+def delete_book(
+    book_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
-        b, _ = books.get(s, c.id, book_id, "owner")
+        b, lvl = books.get(s, c.id, book_id, "owner")
+        check(b, version, lambda: _row(s, b, lvl))
         b.mark_deleted(c.id)
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(b))
 
 
 # ---- A book in full ----
@@ -231,6 +236,7 @@ class DocumentOut(Model):
     receiptId: str | None
     fileName: str | None
     notes: str | None
+    version: int
 
 
 class FilingOut(Model):
@@ -307,6 +313,7 @@ def _doc(s, d: TaxDocument) -> DocumentOut:
         receiptId=d.receiptId,
         fileName=r.fileName if r is not None and not r.deleted else None,
         notes=d.notes,
+        version=d.version,
     )
 
 
@@ -588,10 +595,17 @@ def _own_filing(s, c: Caller, filing_id: str) -> tuple[Filing, TaxBook, str]:
     return f, b, lvl
 
 
-@router.put("/filings/{filing_id}", response_model=BookDetail)
-def change_filing(filing_id: str, body: FilingIn, request: Request, c: Caller = Depends(caller)):
+@router.patch("/filings/{filing_id}", response_model=BookDetail)
+def change_filing(
+    filing_id: str,
+    body: FilingIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     with server(request).db.tx() as s:
         f, b, lvl = _own_filing(s, c, filing_id)
+        check(f, version, lambda: detail(s, c, b, lvl))
         if body.amendsId == f.id:
             raise refuse("amendsId", "amends-itself", "A filing can't amend itself.")
         for k, v in _filing_values(s, c, b, body).items():
@@ -602,13 +616,16 @@ def change_filing(filing_id: str, body: FilingIn, request: Request, c: Caller = 
         return detail(s, c, b, lvl)
 
 
-@router.delete("/filings/{filing_id}", response_model=BookDetail)
-def delete_filing(filing_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/filings/{filing_id}", response_model=Deleted[BookDetail])
+def delete_filing(
+    filing_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
         f, b, lvl = _own_filing(s, c, filing_id)
+        check(f, version, lambda: detail(s, c, b, lvl))
         f.mark_deleted(c.id)
         s.flush()
-        return detail(s, c, b, lvl)
+        return Deleted[BookDetail](deleted=gone(f), parent=detail(s, c, b, lvl))
 
 
 # ---- Tax documents (S8.16) ----
@@ -670,10 +687,17 @@ def _own_doc(s, c: Caller, doc_id: str) -> tuple[TaxDocument, TaxBook, str]:
     return d, b, lvl
 
 
-@router.put("/tax-documents/{doc_id}", response_model=BookDetail)
-def change_document(doc_id: str, body: DocumentIn, request: Request, c: Caller = Depends(caller)):
+@router.patch("/tax-documents/{doc_id}", response_model=BookDetail)
+def change_document(
+    doc_id: str,
+    body: DocumentIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     with server(request).db.tx() as s:
         d, b, lvl = _own_doc(s, c, doc_id)
+        check(d, version, lambda: detail(s, c, b, lvl))
         for k, v in _doc_values(s, c, b, body).items():
             setattr(d, k, v)
         d.updatedAt = clock.now()
@@ -681,13 +705,16 @@ def change_document(doc_id: str, body: DocumentIn, request: Request, c: Caller =
         return detail(s, c, b, lvl)
 
 
-@router.delete("/tax-documents/{doc_id}", response_model=BookDetail)
-def delete_document(doc_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/tax-documents/{doc_id}", response_model=Deleted[BookDetail])
+def delete_document(
+    doc_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
         d, b, lvl = _own_doc(s, c, doc_id)
+        check(d, version, lambda: detail(s, c, b, lvl))
         d.mark_deleted(c.id)
         s.flush()
-        return detail(s, c, b, lvl)
+        return Deleted[BookDetail](deleted=gone(d), parent=detail(s, c, b, lvl))
 
 
 class Forms(Model):

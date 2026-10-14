@@ -4,14 +4,14 @@ made with a name, what they can read and an expiry, shown once, and revoked."""
 import datetime as dt
 import json
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from pydantic import Field
 from sqlalchemy import false, select
 
 from .. import access, activity, clock, tokens
 from ..errors import FieldError, Problem, refuse
 from ..store.entities.users import AccessToken
-from .conventions import ExactRoute, Model
+from .conventions import Deleted, ExactRoute, Model, check, gone, if_match
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["tokens"])
@@ -35,6 +35,7 @@ class TokenOut(Model):
     expiresAt: dt.datetime
     lastUsedAt: dt.datetime | None
     expired: bool
+    version: int
 
 
 class NewToken(Model):
@@ -69,6 +70,7 @@ def _out(t: AccessToken, names: dict) -> TokenOut:
         expiresAt=t.expiresAt,
         lastUsedAt=t.lastUsedAt,
         expired=t.expiresAt <= clock.now(),
+        version=t.version,
     )
 
 
@@ -110,12 +112,16 @@ def make_token(body: NewToken, request: Request, c: Caller = Depends(caller)):
         return TokenMade(token=_out(t, names), secret=secret)
 
 
-@router.delete("/profile/tokens/{token_id}", status_code=204)
-def revoke_token(token_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/profile/tokens/{token_id}", response_model=Deleted[None])
+def revoke_token(
+    token_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
         t = s.get(AccessToken, token_id)
         if t is None or t.deleted or t.userId != c.id:
             raise Problem(404, "not-found", "No such token.")
+        check(t, version, {"id": t.id, "version": t.version})
         t.mark_deleted(c.id)
         activity.record(s, "token.revoked", actor=c.id, owner=c.id, detail={"name": t.name})
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(t))

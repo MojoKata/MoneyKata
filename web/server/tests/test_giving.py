@@ -76,14 +76,14 @@ def test_giving_transactions_count_and_acknowledgements_are_flagged(alice):
         payee="Red Cross",
         categoryId=_cat(alice, "Giving"),
     )
-    rows = alice.get("/ui/api/giving/donations").json()
+    rows = alice.get("/ui/api/giving/donations").json()["items"]
     assert [(d["name"], d["amount"], d["needsAck"], d["id"]) for d in rows] == [
         ("Red Cross", "300.00", True, None)
     ]
     v = alice.get("/ui/api/giving").json()
     assert v["income"] == "9000.00" and v["target"] == "900.00" and v["missingAcks"] == 1
     # Recorded, then acknowledged.
-    red = alice.get("/ui/api/giving/organisations").json()[0]
+    red = alice.get("/ui/api/giving/organisations").json()["items"][0]
     d = donate(
         alice,
         date="2026-03-01",
@@ -100,11 +100,11 @@ def test_giving_transactions_count_and_acknowledgements_are_flagged(alice):
     )
     assert r.json()["acknowledged"]
     assert alice.get("/ui/api/giving").json()["missingAcks"] == 0
-    assert len(alice.get("/ui/api/giving/donations").json()) == 1, "counted once"
+    assert len(alice.get("/ui/api/giving/donations").json()["items"]) == 1, "counted once"
 
 
 def _cat(c, name):
-    return next(x["id"] for x in c.get("/ui/api/categories").json() if x["name"] == name)
+    return next(x["id"] for x in c.get("/ui/api/categories").json()["items"] if x["name"] == name)
 
 
 def test_shares_from_a_lot_without_a_gain(alice):

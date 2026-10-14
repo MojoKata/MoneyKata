@@ -55,7 +55,7 @@ def test_people_are_their_owners_alone(server, alice):
     alice.post("/ui/api/people", json={"name": "Emma", "birthYear": 2018})
     make_user(server, "bob")
     bob = sign_in(server, "bob")
-    assert bob.get("/ui/api/people").json() == []
+    assert bob.get("/ui/api/people").json()["items"] == []
     bad = alice.post("/ui/api/people", json={"name": " ", "birthMonth": 13})
     assert {e["field"] for e in bad.json()["errors"]} >= {"name", "birthMonth"}
 

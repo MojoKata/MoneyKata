@@ -24,10 +24,10 @@ def test_read_and_write_shares(server):
     add(c["alice"], a["id"], "-10.00", payee="Shop")
     assert c["bob"].get(f"/ui/api/accounts/{a['id']}").status_code == 404
     share(c["alice"], "account", a["id"], users={u["bob"].id: "read"})
-    seen = c["bob"].get("/ui/api/accounts").json()
+    seen = c["bob"].get("/ui/api/accounts").json()["items"]
     assert len(seen) == 1 and seen[0]["level"] == "read" and seen[0]["ownerName"] == "Alice"
     assert seen[0]["counted"] is False  # Count in my totals is off by default (S10.7)
-    assert c["alice"].get("/ui/api/accounts").json()[0]["sharedWith"] == 1
+    assert c["alice"].get("/ui/api/accounts").json()["items"][0]["sharedWith"] == 1
     assert len(c["bob"].get("/ui/api/transactions").json()["items"]) == 1
     r = c["bob"].post(
         "/ui/api/transactions", json={"accountId": a["id"], "date": "2026-09-02", "amount": "-1.00"}
@@ -60,13 +60,15 @@ def test_groups_via_and_the_higher_level(server, admin_client):
     carol = next(x for x in view["users"] if x["id"] == u["carol"].id)
     assert bob["level"] == "write" and bob["via"][0]["groupName"] == "Household"
     assert carol["level"] == "none" and carol["via"][0]["level"] == "read"
-    assert c["carol"].get("/ui/api/accounts").json()[0]["level"] == "read"
-    assert c["bob"].get("/ui/api/accounts").json()[0]["level"] == "write"
+    assert c["carol"].get("/ui/api/accounts").json()["items"][0]["level"] == "read"
+    assert c["bob"].get("/ui/api/accounts").json()["items"][0]["level"] == "write"
     r = admin_client.patch(
         f"/ui/api/groups/{g['id']}", json={"active": False}, headers={"If-Match": str(g["version"])}
     )
     assert r.status_code == 200
-    assert c["carol"].get("/ui/api/accounts").json() == []  # an inactive group gives nothing
+    assert (
+        c["carol"].get("/ui/api/accounts").json()["items"] == []
+    )  # an inactive group gives nothing
 
 
 def test_removing_a_share_ends_access_and_drops_their_tags(server):
@@ -90,7 +92,9 @@ def test_removing_a_share_ends_access_and_drops_their_tags(server):
 def test_inactive_users_cant_be_added(server, admin_client):
     u, c = setup(server)
     a = new_account(c["alice"])
-    row = next(x for x in admin_client.get("/ui/api/users").json() if x["username"] == "carol")
+    row = next(
+        x for x in admin_client.get("/ui/api/users").json()["items"] if x["username"] == "carol"
+    )
     admin_client.patch(
         f"/ui/api/users/{row['id']}",
         json={"active": False},
@@ -107,7 +111,7 @@ def test_count_in_my_totals_and_all_my_accounts(server):
     mine = new_account(c["bob"], name="Bob's", openingBalance="10.00", openingDate="2026-01-01")
     hers = new_account(c["alice"], openingBalance="1000.00", openingDate="2026-01-01")
     share(c["alice"], "account", hers["id"], users={u["bob"].id: "read"})
-    everything = c["bob"].get("/ui/api/portfolios").json()[0]
+    everything = c["bob"].get("/ui/api/portfolios").json()["items"][0]
     assert everything["implicit"] and everything["accountIds"] == [mine["id"]]
     assert everything["value"] == "10.00"
     assert (
@@ -170,7 +174,7 @@ def test_activity_goes_to_the_people_concerned_without_amounts(server, admin_cli
     private = new_account(c["alice"], name="Secret savings", type="savings", mask="0001")
     t = add(c["alice"], a["id"], "-1234.56", payee="Shop")
     add(c["alice"], private["id"], "-9.99", payee="Hidden")
-    cats = {x["path"]: x["id"] for x in c["alice"].get("/ui/api/categories").json()}
+    cats = {x["path"]: x["id"] for x in c["alice"].get("/ui/api/categories").json()["items"]}
     c["alice"].post(
         "/ui/api/transactions/categorise",
         json={"ids": [t["id"]], "categoryId": cats["Food › Groceries"]},

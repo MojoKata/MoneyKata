@@ -235,18 +235,11 @@ def list_activity(
             q = q.where(Activity.subjectKind == "account", Activity.subjectId == account)
         if person:
             q = q.where(Activity.actorId == person)
-        if paging.after:
-            at, last_id = paging.after
-            at = dt.datetime.fromisoformat(at)
-            q = q.where(or_(Activity.at < at, and_(Activity.at == at, Activity.id < last_id)))
-        rows = s.scalars(
-            q.order_by(Activity.at.desc(), Activity.id.desc()).limit(paging.limit + 1)
-        ).all()
-        page, nxt = paging.page(list(rows), lambda a: [a.at.isoformat(), a.id])
+        page, total = paging.query(s, q.order_by(Activity.at.desc(), Activity.id.desc()))
         names = _names(s, page)
         users = {u.id: u for u in s.scalars(select(User))}
-        return Page[ActivityItem](
-            items=[
+        return paging.wrap(
+            [
                 ActivityItem(
                     id=a.id,
                     at=a.at,
@@ -261,7 +254,7 @@ def list_activity(
                 )
                 for a in page
             ],
-            next=nxt,
+            total,
         )
 
 

@@ -6,7 +6,7 @@ shared; a gift for a person linked to the viewer is never shown to them."""
 import datetime as dt
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import false, select
 
 from .. import access, activity, clock, gifts, ids, receipts
@@ -15,7 +15,7 @@ from ..gifts import holidays
 from ..store.entities.accounts import Account, Category, Transaction
 from ..store.entities.education import Gift, GiftPerson, Occasion, Person
 from ..store.entities.users import User
-from .conventions import ExactRoute, Model, Money
+from .conventions import Deleted, ExactRoute, Model, Money, check, gone, if_match
 from .deps import Caller, caller, server
 from .receipts import ReceiptRow
 from .receipts import row as receipt_row
@@ -277,10 +277,17 @@ def add_person(body: PersonIn, request: Request, c: Caller = Depends(caller)):
         return _one(s, c, p.id)
 
 
-@router.put("/people/{person_id}", response_model=PersonOut)
-def change_person(person_id: str, body: PersonIn, request: Request, c: Caller = Depends(caller)):
+@router.patch("/people/{person_id}", response_model=PersonOut)
+def change_person(
+    person_id: str,
+    body: PersonIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     with server(request).db.tx() as s:
         p, _ = gifts.person(s, c.id, person_id, "write")
+        check(p, version, lambda: _one(s, c, p.id))
         for k, v in _check_person(s, body).items():
             setattr(p, k, v)
         p.updatedAt = clock.now()
@@ -290,12 +297,16 @@ def change_person(person_id: str, body: PersonIn, request: Request, c: Caller = 
         return _one(s, c, p.id)
 
 
-@router.delete("/people/{person_id}", status_code=204)
-def delete_person(person_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/people/{person_id}", response_model=Deleted[None])
+def delete_person(
+    person_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
         p, _ = gifts.person(s, c.id, person_id, "owner")
+        check(p, version, lambda: _one(s, c, p.id))
         p.mark_deleted(c.id)
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(p))
 
 
 # ---- Gifts (S7.8) ----
@@ -505,10 +516,17 @@ def _editable(s, c: Caller, gift_id: str) -> Gift:
     return g
 
 
-@router.put("/gifts/{gift_id}", response_model=GiftOut)
-def change_gift(gift_id: str, body: GiftIn, request: Request, c: Caller = Depends(caller)):
+@router.patch("/gifts/{gift_id}", response_model=GiftOut)
+def change_gift(
+    gift_id: str,
+    body: GiftIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     with server(request).db.tx() as s:
         g = _editable(s, c, gift_id)
+        check(g, version, lambda: _gift_for(s, c, g.id))
         for k, v in _check_gift(s, c, body).items():
             setattr(g, k, v)
         g.updatedAt = clock.now()
@@ -518,11 +536,16 @@ def change_gift(gift_id: str, body: GiftIn, request: Request, c: Caller = Depend
         return _gift_for(s, c, g.id)
 
 
-@router.delete("/gifts/{gift_id}", status_code=204)
-def delete_gift(gift_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/gifts/{gift_id}", response_model=Deleted[None])
+def delete_gift(
+    gift_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
-        _editable(s, c, gift_id).mark_deleted(c.id)
-    return Response(status_code=204)
+        g = _editable(s, c, gift_id)
+        check(g, version, lambda: _gift_for(s, c, g.id))
+        g.mark_deleted(c.id)
+        s.flush()
+        return Deleted[None](deleted=gone(g))
 
 
 class DocumentIn(Model):

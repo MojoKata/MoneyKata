@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { date, money } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
@@ -47,7 +47,7 @@ const dollars = (v) => money(String(Math.round(num(v))), { cents: false });
 export default function Projections({ id }) {
   useTitle('Projections');
   useGuide('projections');
-  const list = useApi('/projections', {}, ['share']);
+  const list = useList('/projections', {}, ['share']);
   const rows = /** @type {any[]} */ (list.data);
   if (list.error) return html`<${Failed} error=${list.error} />`;
   if (!rows) return html`<${Loading} lines=${6} />`;
@@ -439,7 +439,7 @@ function Inputs({ x, reload }) {
  *   setF: (f: any) => void, e: any }} p
  */
 function EducationInputs({ f, set, setF, e }) {
-  const people = useApi('/people');
+  const people = useList('/people');
   const list = /** @type {any[]} */ (people.data) || [];
   const who = f.beneficiary ? `${f.beneficiary.kind}:${f.beneficiary.id}` : '';
   return html`
@@ -488,8 +488,8 @@ function EducationInputs({ f, set, setF, e }) {
  * @param {{ value: any, onChange: (v: any) => void, error?: string | null }} p
  */
 function BuiltOn({ value, onChange, error }) {
-  const ports = useApi('/portfolios');
-  const accts = useApi('/accounts');
+  const ports = useList('/portfolios');
+  const accts = useList('/accounts');
   const options = /** @type {[string, string][]} */ ([
     ...(/** @type {any[]} */ (ports.data) || []).filter((p) => !p.implicit).map((p) => [
       `portfolio:${p.id}`,
@@ -549,7 +549,7 @@ function Rebaseline({ close, name }) {
 /** @param {{ close: (v?: any) => void, p: any }} props */
 function MakeActive({ close, p }) {
   useDialogGuide('dialog-make-active');
-  const list = useApi('/projections');
+  const list = useList('/projections');
   const go = useSubmit(async () => {
     await api.post(`/projections/${p.id}/activate`);
     close(true);
@@ -580,7 +580,7 @@ function NewProjection({ close }) {
   const [name, setName] = useState('');
   const [built, setBuilt] = useState(/** @type {any} */ ({ kind: 'typed', amount: 100000 }));
   const [who, setWho] = useState('me');
-  const people = useApi('/people');
+  const people = useList('/people');
   const [child, setChild] = useState('');
   const save = useSubmit(async () => {
     const p = /** @type {any} */ (me.data);

@@ -295,9 +295,9 @@ class Recorder:
             "/ui/taxes/property",
             "/ui/taxes/issues",
         ]
-        for x in self.api("/projections"):
+        for x in self.api("/projections")["items"]:
             paths.append(f"/ui/projections/{x['id']}")
-        for b in self.api("/budgets"):
+        for b in self.api("/budgets")["items"]:
             paths += [
                 f"/ui/budgets/{b['id']}/{t}" for t in ("month", "cash-flow", "trends", "recurring")
             ]
@@ -306,7 +306,7 @@ class Recorder:
             paths += ["/ui/users"] + [f"/ui/settings/{s}" for s in SETTINGS]
         for p in paths:
             self.visit(p)
-        for a in self.api("/accounts"):
+        for a in self.api("/accounts")["items"]:
             self.visit(f"/ui/accounts/{a['id']}")
             tabs = self.page.eval_on_selector_all(
                 ".content .tabs a", "(links) => links.map((l) => l.getAttribute('href'))"
@@ -318,7 +318,7 @@ class Recorder:
                 self.dialog(f"/ui/accounts/{a['id']}/reconcile", "Tick off against a statement")
                 self.dialog(f"/ui/accounts/{a['id']}", "Record a payment")
             self.dialog("/ui/accounts", f"Share {a['name']}")
-        for p in self.api("/portfolios"):
+        for p in self.api("/portfolios")["items"]:
             for tab in ("performance", "holdings", "projections"):
                 self.visit(f"/ui/portfolios/{p['id']}/{tab}")
         for path, button, _ in DIALOGS:

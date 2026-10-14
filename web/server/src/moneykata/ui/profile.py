@@ -9,12 +9,12 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from sqlalchemy import false, select
 
-from .. import activity, settings, timezones
+from .. import activity, clock, settings, timezones
 from ..auth import sessions, twostep
 from ..auth import users as accounts
 from ..errors import refuse
 from ..store.entities.users import OneTimeToken, User
-from .conventions import ExactRoute, Model, if_match, stale
+from .conventions import Deleted, ExactRoute, Gone, Model, check, if_match, stale
 from .deps import Caller, caller, recent_auth, server, set_cookie
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["profile"])
@@ -258,14 +258,20 @@ def two_step_codes(request: Request, c: Caller = Depends(caller)):
         return RecoveryCodes(codes=twostep.new_recovery_codes(s, s.get(User, c.id)))
 
 
-@router.delete("/profile/two-step", status_code=204)
-def two_step_off(request: Request, c: Caller = Depends(caller)):
+@router.delete("/profile/two-step", response_model=Deleted[Profile])
+def two_step_off(request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)):
+    """Two-step sign-in off: it belongs to the user, so it is made against their version."""
     recent_auth(c)
     srv = server(request)
     with srv.db.tx() as s:
         u = s.get(User, c.id)
+        check(u, version, lambda: profile(s, u))
         twostep.turn_off(s, srv.services, u, u)
-    return Response(status_code=204)
+        u.updatedAt = clock.now()
+        s.flush()
+        return Deleted[Profile](
+            deleted=Gone(id=f"{u.id}/two-step", deletedAt=clock.now()), parent=profile(s, u)
+        )
 
 
 @router.get("/timezones", response_model=Zones)

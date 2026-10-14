@@ -2,7 +2,7 @@
 // All my accounts first.
 import { useLocation } from 'preact-iso';
 import { html } from '../app/html.js';
-import { useApi } from '../app/hooks.js';
+import { useList } from '../app/hooks.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -15,7 +15,7 @@ export default function Portfolios() {
   useTitle('Portfolios');
   useGuide('portfolios');
   const { route } = useLocation();
-  const res = useApi('/portfolios', {}, ['share', 'prices', 'import']);
+  const res = useList('/portfolios', {}, ['share', 'prices', 'import']);
   const list = /** @type {any[] | null} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!list) return html`<${Loading} lines=${4} />`;

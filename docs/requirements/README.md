@@ -60,7 +60,6 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 
 | Id | Gap | What is missing |
 |---|---|---|
-| **G7** | [API conventions and reference](gaps.md#g7-api-conventions-and-reference) | S13.8 beyond its numbers awaits review against the routes: `PUT`, lists answered whole, a child's `DELETE`, and routes that skip `If-Match` |
 | **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | brokerage statements, statements of several accounts, and learning column positions for layouts without sections or a running balance |
 | **G10** | [Statement intervals per account](gaps.md#g10-statement-intervals-per-account) | the interval each account's statements are expected at, how it is set or learned, and the alert threshold that follows |
 | **G12** | [Option prices and wash-sale edges](gaps.md#g12-option-prices-and-wash-sale-edges) | an option source tried with a live key, index and weekly tickers, wash sales through shorts, options and assignment, and capital at risk for spreads |

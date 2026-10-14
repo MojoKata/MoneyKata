@@ -6,7 +6,7 @@ import datetime as dt
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from pydantic import Field
 from sqlalchemy import false, select
 
@@ -18,7 +18,18 @@ from ..store.entities.accounts import Account
 from ..store.entities.sharing import Portfolio, PortfolioAccount
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
-from .conventions import ExactRoute, Model, Money, Quantity, Ratio, if_match, stale
+from .conventions import (
+    Deleted,
+    ExactRoute,
+    Model,
+    Money,
+    Quantity,
+    Ratio,
+    check,
+    gone,
+    if_match,
+    stale,
+)
 from .deps import Caller, caller, server
 from .sharing import counted_for
 
@@ -260,7 +271,7 @@ def change_portfolio(
         return shape(s, c.user, p, lvl)
 
 
-@router.delete("/portfolios/{portfolio_id}", status_code=204)
+@router.delete("/portfolios/{portfolio_id}", response_model=Deleted[None])
 def delete_portfolio(
     portfolio_id: str,
     request: Request,
@@ -269,8 +280,7 @@ def delete_portfolio(
 ):
     with server(request).db.tx() as s:
         p, _ = access.portfolio(s, c.id, portfolio_id, "owner")
-        if p.version != version:
-            raise stale({"id": p.id, "version": p.version})
+        check(p, version, {"id": p.id, "version": p.version})
         p.mark_deleted(c.id)
         activity.record(
             s,
@@ -280,7 +290,8 @@ def delete_portfolio(
             subject_id=p.id,
             owner=p.ownerId,
         )
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(p))
 
 
 # ---------- performance and holdings (S5.2) ----------

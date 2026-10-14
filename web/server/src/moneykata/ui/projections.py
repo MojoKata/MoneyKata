@@ -15,7 +15,18 @@ from ..errors import FieldError, Problem
 from ..projections import assumptions, bitcoin, taxtables
 from ..store.entities.projections import Projection, ShownProjection, TaxFigure
 from ..store.entities.users import User
-from .conventions import ExactRoute, Loose, Model, Ratio, if_match, stale
+from .conventions import (
+    Deleted,
+    ExactRoute,
+    Loose,
+    Model,
+    Ratio,
+    check,
+    check_version,
+    gone,
+    if_match,
+    version_of,
+)
 from .deps import Caller, admin, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["projections"])
@@ -272,8 +283,7 @@ def change_projection(
 ):
     with server(request).db.tx() as s:
         p, lvl = _get(s, c.id, projection_id, "write")
-        if p.version != version:
-            raise stale(detail(s, c.id, p, lvl))
+        check(p, version, lambda: detail(s, c.id, p, lvl))
         _raise(_check(s, p.ownerId, body.name, None, body.builtOn, body.inputs))
         fields = []
         if body.name is not None and body.name.strip() != p.name:
@@ -344,10 +354,16 @@ def deactivate(projection_id: str, request: Request, c: Caller = Depends(caller)
     return Response(status_code=204)
 
 
-@router.delete("/projections/{projection_id}", status_code=204)
-def delete_projection(projection_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/projections/{projection_id}", response_model=Deleted[None])
+def delete_projection(
+    projection_id: str,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     with server(request).db.tx() as s:
-        p, _ = _get(s, c.id, projection_id, "owner")
+        p, lvl = _get(s, c.id, projection_id, "owner")
+        check(p, version, lambda: detail(s, c.id, p, lvl))
         p.mark_deleted(c.id)
         activity.record(
             s,
@@ -357,7 +373,8 @@ def delete_projection(projection_id: str, request: Request, c: Caller = Depends(
             subject_id=p.id,
             owner=c.id,
         )
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(p))
 
 
 @router.put("/projections/{projection_id}/shown", response_model=Shown)
@@ -429,25 +446,31 @@ class AssumptionsView(Model):
     figures: dict
     classes: list[tuple[str, str]]
     bitcoinModels: list[tuple[str, str]]
+    version: int = 0  # the user's own figures: 0 while they keep the shipped ones
 
 
 @router.get("/assumptions", response_model=AssumptionsView)
 def get_assumptions(request: Request, c: Caller = Depends(caller)):
     with server(request).db.read() as s:
+        row = assumptions.row_of(s, c.id)
         return AssumptionsView(
             figures=assumptions.load(s, c.id),
             classes=[(k, label) for k, label, _, _ in assumptions.CLASSES],
             bitcoinModels=assumptions.BITCOIN_MODELS,
+            version=row.version if row else 0,
         )
 
 
 @router.put("/assumptions", response_model=AssumptionsView)
-def put_assumptions(body: Loose, request: Request, c: Caller = Depends(caller)):
+def put_assumptions(
+    body: Loose, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     problems = assumptions.check(body)
     if problems:
         errors = [FieldError(f, "assumption-invalid", m) for f, m in problems]
         raise Problem(422, "assumption-invalid", errors[0].message, errors)
     with server(request).db.tx() as s:
+        check(assumptions.row_of(s, c.id), version, lambda: {"version": 0})
         assumptions.save(s, c.id, body)
         activity.record(s, "profile.assumptions", actor=c.id, owner=c.id)
         s.flush()
@@ -495,6 +518,7 @@ class TaxTables(Model):
     year: int
     years: list[int]
     rows: list[TaxRow]
+    version: int  # the year's corrections together (S13.8.6)
 
 
 class TaxChange(Model):
@@ -507,6 +531,7 @@ def _tables(s, year: int) -> TaxTables:
     changed = taxtables.corrected(s, year)
     shipped = taxtables.SHIPPED.get(year, {})
     return TaxTables(
+        version=version_of(s, TaxFigure, TaxFigure.year == year),
         year=year,
         years=taxtables.years(),
         rows=[
@@ -533,7 +558,9 @@ def get_tax_tables(request: Request, c: Caller = Depends(admin), year: int | Non
 
 
 @router.put("/settings/tax-tables", response_model=TaxTables)
-def put_tax_tables(body: TaxChange, request: Request, c: Caller = Depends(admin)):
+def put_tax_tables(
+    body: TaxChange, request: Request, c: Caller = Depends(admin), version: int = Depends(if_match)
+):
     """A correction to a shipped figure; the shipped value again removes it."""
     if body.year not in taxtables.SHIPPED:
         raise Problem(404, "year-unknown", "That year's tables don't ship with this release.")
@@ -546,6 +573,11 @@ def put_tax_tables(body: TaxChange, request: Request, c: Caller = Depends(admin)
             errors.append(FieldError(k, "figure-invalid", f"Must be {e}."))
     _raise(errors)
     with server(request).db.tx() as s:
+        check_version(
+            version_of(s, TaxFigure, TaxFigure.year == body.year),
+            version,
+            lambda: _tables(s, body.year),
+        )
         rows = {
             r.key: r
             for r in s.scalars(

@@ -3,7 +3,7 @@
 // marks (S10.6). New account and Import start here.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
-import { useApi } from '../app/hooks.js';
+import { useList } from '../app/hooks.js';
 import { ago } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
@@ -49,7 +49,7 @@ export default function Accounts() {
   useTitle('Accounts');
   useGuide('accounts');
   const [filter, setFilter] = useState('all');
-  const res = useApi('/accounts', {}, ['import', 'share', 'prices']);
+  const res = useList('/accounts', {}, ['import', 'share', 'prices']);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   const all = /** @type {any[] | null} */ (res.data);
   if (!all) return html`<${Loading} lines=${6} />`;
@@ -158,7 +158,7 @@ export default function Accounts() {
 
 /** What other households share with you, each in a window of its own (S12.10.1). */
 function LinkedHouseholds() {
-  const res = useApi('/linked', {}, ['share', 'links']);
+  const res = useList('/linked', {}, ['share', 'links']);
   const rows = /** @type {any[]} */ (res.data) || [];
   if (!rows.length) return null;
   return html`<section class="card mt" data-help="linked-households"><h3>Linked households</h3>

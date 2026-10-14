@@ -11,7 +11,7 @@ import { Items, ItemsSummary } from '../components/items.js';
 import { WalletCard } from '../components/wallet.js';
 import { Contributions, Goal, PlanCard, PlanFacts, Withdrawals } from '../components/edu.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { ago, date, price, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
@@ -30,14 +30,14 @@ import { ShareMarks } from './accounts.js';
 import { ImportDialog } from './import.js';
 import { KEPT_BY, LOT_METHODS } from './new-account.js';
 import { TransactionDialog } from './transaction-dialog.js';
-import { Pager } from '../components/pager.js';
+import { offsetOf, Pager } from '../components/pager.js';
 import { pageSize } from '../store/prefs.js';
 import { dec } from '../app/dec.js';
 
 /** @param {{ id: string, tab?: string }} p */
 export default function Account({ id, tab }) {
   const res = useApi(`/accounts/${id}`, {}, ['import', 'share', 'prices']);
-  const accounts = useApi('/accounts', {}, ['share']);
+  const accounts = useList('/accounts', {}, ['share']);
   const a = /** @type {any} */ (res.data);
   const type = a ? BY_TYPE[a.type] : null;
   const tabs = !a ? [] : /** @type {[string, string][]} */ ([
@@ -303,12 +303,11 @@ function Holdings({ a }) {
 
 /** @param {{ a: any, all: any[] }} p */
 function Transactions({ a, all }) {
-  const [after, setAfter] = useState(/** @type {(string | null)[]} */ ([null]));
-  const page = after.length;
+  const [page, setPage] = useState(1);
   const res = useApi('/transactions', {
     account: a.id,
     limit: pageSize.value,
-    after: after[page - 1],
+    offset: offsetOf(page),
   }, ['import']);
   const d = /** @type {any} */ (res.data);
   return html`<div class="toolbar"><span class="spacer"></span>
@@ -335,9 +334,8 @@ function Transactions({ a, all }) {
       : d.items.length
       ? html`
         <${TxTable} rows=${d.items} showAccount=${false} onChanged=${res.reload} accounts=${all} />
-        <${Pager} label="account-tx" shown=${d.items.length} page=${page} hasNext=${!!d.next}
-          onPage=${(/** @type {number} */ n) =>
-            setAfter(n === 1 ? [null] : n > page ? [...after, d.next] : after.slice(0, n))} />
+        <${Pager} label="account-tx" shown=${d.items.length} page=${page} total=${d.total}
+          onPage=${setPage} />
       `
       : html`<${Empty}>No transactions yet.</${Empty}>`
   }`;

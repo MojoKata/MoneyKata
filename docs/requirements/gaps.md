@@ -4,12 +4,6 @@ Areas the requirements name but don't yet specify. Each has a lasting id: a gap 
 closed is removed, its text goes into the section it belongs to, and its id is never used
 again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
-## G7: API conventions and reference
-
-**What is missing:** S13.8 beyond its numbers (S13.8.2) still awaits review, against what the routes do: `PUT` replacing what exists once per parent, short lists answered whole rather than paged, a child's `DELETE` answering with its parent, and the routes that change a record without checking its version (`If-Match`, S13.8.6).
-
-**Touches:** S10.9, S13, S17.5.
-
 ## G8: Statement import beyond bank and card statements
 
 **What is missing:** brokerage statements (a Schwab brokerage statement's positions, trades and income, which OFX and CSV cover today), statements of several accounts in one file, and learning column positions rather than section headings for layouts without sections or a running balance.

@@ -111,7 +111,8 @@ export function Frame({ children, onSignOut }) {
   const t = title.value;
   const themeNow = THEMES[theme.value] || THEMES.dark;
   // The households that share something with you (S12.10.1): none, and the avatar opens nothing.
-  const linked = /** @type {any[] | null} */ (useApiLite('/linked', ['share', 'links']));
+  const linked =
+    /** @type {any[] | null} */ (useApiLite('/linked', ['share', 'links'])?.items ?? null);
 
   useEffect(() => {
     document.body.classList.toggle('privacy', privacy.value);

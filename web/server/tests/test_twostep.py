@@ -173,7 +173,7 @@ def test_changing_two_step_needs_the_password_within_ten_minutes(server, frozen)
         r = getattr(c, method)(path)
         assert r.status_code == 403 and r.json()["code"] == "reauth-required", path
     assert c.post("/ui/api/session/reauth", json={"password": PW}).status_code == 204
-    assert c.delete("/ui/api/profile/two-step").status_code == 204
+    assert c.delete("/ui/api/profile/two-step").status_code == 200
     assert c.get("/ui/api/profile").json()["twoStep"] == {
         "on": False,
         "since": None,
@@ -188,10 +188,10 @@ def test_an_admins_reset_turns_it_off_and_ends_the_users_sessions(server, admin_
     alice = make_user(server, "alice")
     c = sign_in(server, "alice")
     turn_on(c)
-    rows = {u["username"]: u for u in admin_client.get("/ui/api/users").json()}
+    rows = {u["username"]: u for u in admin_client.get("/ui/api/users").json()["items"]}
     assert rows["alice"]["twoStep"] is True
     r = admin_client.delete(f"/ui/api/users/{alice.id}/two-step")
-    assert r.status_code == 200 and r.json()["twoStep"] is False
+    assert r.status_code == 200 and r.json()["parent"]["twoStep"] is False
     assert c.get("/ui/api/session").status_code == 401
     with server.db.read() as s:
         assert s.scalars(select(Session).where(Session.userId == alice.id)).first() is None

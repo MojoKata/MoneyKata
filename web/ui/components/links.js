@@ -41,7 +41,12 @@ export function LinksSection() {
     if (values) setAddress(values.linkAddress || '');
   }, [values]);
   const saveAddress = useSubmit(async () => {
-    await api.patch('/settings', { linkAddress: address || null });
+    await api.patch(
+      '/settings',
+      { linkAddress: address || null },
+      /** @type {any} */ (s.data)?.version,
+    );
+    s.reload();
     toast('Saved');
     res.reload();
     s.reload();
@@ -63,7 +68,12 @@ export function LinksSection() {
     return out;
   });
   const release = useSubmit(async (/** @type {string} */ v) => {
-    await api.patch('/settings', { linkReleaseMinutes: Number(v) });
+    await api.patch(
+      '/settings',
+      { linkReleaseMinutes: Number(v) },
+      /** @type {any} */ (s.data)?.version,
+    );
+    s.reload();
     toast('Saved');
     s.reload();
   });

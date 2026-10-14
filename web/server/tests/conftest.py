@@ -97,6 +97,20 @@ class ExactClient(TestClient):
         if kw.get("json") is not None:
             kw["content"] = exactjson.dumps(kw.pop("json")).encode()
             kw["headers"] = {**(kw.get("headers") or {}), "Content-Type": "application/json"}
+        headers = {k.lower() for k in (kw.get("headers") or {})}
+        if method.upper() in ("PATCH", "PUT", "DELETE") and "if-match" not in headers:
+            # A test that isn't about versions (S13.8.6) makes its change against whatever
+            # version the record has: 0 first, which creates what doesn't exist yet, and if
+            # that is stale, the version the 412 names. A test about versions sends its own.
+            kw["headers"] = {**(kw.get("headers") or {}), "If-Match": '"0"'}
+            r = self._send(method, url, *args, **kw)
+            if r.status_code == 412 and "version" in (r.json() or {}):
+                kw["headers"]["If-Match"] = f'"{r.json()["version"]}"'
+                r = self._send(method, url, *args, **kw)
+            return r
+        return self._send(method, url, *args, **kw)
+
+    def _send(self, method, url, *args, **kw):
         r = super().request(method, url, *args, **kw)
         r.json = lambda **_: json.loads(r.content, parse_float=Exact) if r.content else None
         return r

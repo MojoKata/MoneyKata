@@ -3,27 +3,26 @@
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi } from '../app/hooks.js';
+import { useApi, useList } from '../app/hooks.js';
 import { changes } from '../app/stream.js';
 import { moment } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Avatar, Empty, Failed, Loading } from '../components/bits.js';
-import { Pager } from '../components/pager.js';
+import { offsetOf, Pager } from '../components/pager.js';
 import { pageSize } from '../store/prefs.js';
 
 export default function Activity() {
   useTitle('Activity');
   useGuide('activity');
   const [account, setAccount] = useState('');
-  const [after, setAfter] = useState(/** @type {(string | null)[]} */ ([null]));
+  const [page, setPage] = useState(1);
   const [newer, setNewer] = useState(0);
-  const accounts = useApi('/accounts');
-  const page = after.length;
+  const accounts = useList('/accounts');
   const res = useApi('/activity', {
     account: account || undefined,
     limit: pageSize.value,
-    after: after[page - 1] ?? undefined,
+    offset: offsetOf(page, newer),
   });
   const d = /** @type {any} */ (res.data);
   const first = d?.items?.[0]?.id;
@@ -37,7 +36,7 @@ export default function Activity() {
       <select class="in" id="f-account" style=${{ maxWidth: '240px' }} value=${account}
         onChange=${(/** @type {any} */ e) => {
           setAccount(e.currentTarget.value);
-          setAfter([null]);
+          setPage(1);
         }}><option value="">Everything</option>
         ${(/** @type {any[]} */ (accounts.data) || []).map((a) =>
           html`<option value=${a.id}>${a.name}</option>`
@@ -81,14 +80,13 @@ export default function Activity() {
       : html`<${Empty}>Nothing yet.</${Empty}>`}
     ${d
       ? html`
-        <${Pager} label="activity" shown=${d.items.length} page=${page} hasNext=${!!d.next}
+        <${Pager} label="activity" shown=${d.items.length} page=${page} total=${d.total}
           newer=${newer}
           onNewer=${() => {
             setNewer(0);
-            setAfter([null]);
+            setPage(1);
             res.reload();
-          }} onPage=${(/** @type {number} */ n) =>
-            setAfter(n === 1 ? [null] : n > page ? [...after, d.next] : after.slice(0, n))} />
+          }} onPage=${setPage} />
       `
       : null}
   `;

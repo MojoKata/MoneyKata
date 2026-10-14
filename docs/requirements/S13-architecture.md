@@ -93,13 +93,21 @@
        browser loads is reviewed before the commit. The hash kept in `manifest.json` records
        exactly what was adopted and refuses a tarball changed afterwards; it does not judge a
        release.
-8. **API conventions** *(proposed, for review)*, for `/ui/api` and, where they apply, `/mcp`.
+8. **API conventions**, for `/ui/api` and, where they apply, `/mcp`.
    The OpenAPI document is generated from the routes (R3.9); `docs/api.md` says how to use
    `/ui/api` and `/mcp`.
    1. **Resources and methods**: plural nouns (`/ui/api/accounts`, `/ui/api/accounts/{id}`).
-      `GET` reads, `POST` creates, `PATCH` changes the fields it sends, `DELETE`
-      soft-deletes (`schema.md` §4) and returns 204. An action that is not a change of
-      fields is a `POST` to a verb under the resource (`/ui/api/links/{id}/pull`).
+      `GET` reads, `POST` creates, `PATCH` changes the fields it sends. `PUT` replaces
+      something that exists once for its parent (a loan's terms, a budget's plan, a
+      wallet's keys, an item's sale), creating it when it doesn't exist yet. An action that is
+      not a change of fields is a `POST` to a verb under the resource
+      (`/ui/api/links/{id}/pull`).
+      1. **`DELETE`** soft-deletes (`schema.md` §4) and answers 200 with
+         `{deleted, parent}`: `deleted` is what went (its id, or a pair's two keys joined by
+         a slash, its `deletedAt` and its version), and `parent` is what it belonged to as it
+         now stands (an item, when one of its valuations goes), or `null` for a record that
+         belongs to nothing. A client may ignore `parent`. Signing out (`DELETE
+         /ui/api/session`) answers 204.
    2. **Names and values in JSON**: field names camelCase, as in the database (`schema.md`
       §1). Ids are the prefixed strings of `schema.md` §2. Dates are `YYYY-MM-DD`; timestamps
       are RFC 3339 in UTC (`2026-10-12T14:05:00Z`, S14.9). A field with no value is `null`,
@@ -123,17 +131,35 @@
       the UI shows each refusal at its field (R3.7). Codes are stable strings
       (`key-too-short`, `share-not-allowed`), listed in the OpenAPI document.
    4. **Status codes**: 200, 201 with `Location`, 202 for work that continues (S13.8.7),
-      204, 400 for a malformed request, 401 when not signed in, 403 when not allowed, 404 for
-      what doesn't exist *or* isn't visible to the caller (never revealing which), 409 for a
-      conflict, 412 for a stale version, 413, 415, 422 for a valid request that breaks a rule,
-      429, and 503 while the server is starting or a linked copy is locked.
-   5. **Paging**: by cursor. `?limit=` (100 by default; 500 and 1000 allowed, S12.1.3) and
-      `?after=<cursor>`; the response has `items` and `next` (a cursor, or `null`). Sorting
-      with `?sort=field` or `-field` on the fields each list declares; filters as named query
-      parameters.
-   6. **Concurrency**: each record has a `version` that changes with every save. `PATCH` and
-      `DELETE` send it in `If-Match`; a stale one gets 412 with the current record, so the UI
-      can show what changed.
+      204 for signing out and changes that answer nothing, 400 for a malformed request, 401
+      when not signed in, 403 when not allowed, 404 for what doesn't exist *or* isn't visible
+      to the caller (never revealing which), 409 for a conflict, 412 for a stale version, 413,
+      415, 422 for a valid request that breaks a rule, 428 for a change sent without its
+      version, 429, and 503 while the server is starting or a linked copy is locked.
+   5. **Lists**: every list takes `?offset=` (0 by default) and `?limit=` (500 by default, at
+      most 1000; the app's pages are 100, 500 or 1000 rows, S12.1.3) and answers
+      `{items, total, offset, limit}`: the page's rows, how many the caller can see in all
+      (so a pager shows "1–500 of 2,624" and jumps to a page), and where the page starts.
+      Sorting with `?sort=field` or `-field` on the fields each list declares; filters as
+      named query parameters. A list a screen never pages (a household's accounts) is read
+      the same way, its `items` taken whole. Rows that arrive while someone reads a long list
+      are counted on its "+N new" pill and added to the offset of later pages, so the pages
+      don't shift (S12.1.3).
+   6. **Versions**: each record has a `version` that goes up with every save. Every `PATCH`,
+      `PUT` and `DELETE` of a record with a version sends the version it was made against in
+      `If-Match`:
+      1. without it, the change is refused with 428 `version-required`;
+      2. with a stale one, it is refused with 412 `stale-version`, carrying the record as it is
+         now (`current`) and its `version`, so the screen shows what changed and the person
+         can make the change again on top;
+      3. with the current one, it is applied and the version goes up.
+
+      A `PUT` that creates what doesn't exist yet sends `0`. What is made of many records
+      replaced together (the settings, a year's tax tables, a wallet's keys, an item's shares)
+      has one version, the sum of theirs, which goes up with any change to them. Pairs that
+      only link two records (a receipt and a transaction, an account counted in someone's
+      totals) and secrets, which are replaced outright, have no version. A test walks every
+      route and fails when a change skips its version or a `DELETE` answers another shape.
    7. **Long work** (an import, a statement read, a projection run, a reset copy) answers
       202 with a job resource (`/ui/api/jobs/{id}`: state, progress, result), and the live
       stream announces its end (S12.6).

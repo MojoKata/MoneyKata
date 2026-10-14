@@ -5,7 +5,7 @@ against the computed one."""
 import datetime as dt
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from pydantic import Field
 from sqlalchemy import false, or_, select
 
@@ -23,7 +23,7 @@ from ..store.entities.accounts import (
     Transaction,
 )
 from ..store.entities.assets import Item
-from .conventions import ExactRoute, Model, Money, Ratio, if_match, stale
+from .conventions import Deleted, ExactRoute, Model, Money, Ratio, check, gone, if_match
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["loans"])
@@ -146,6 +146,7 @@ class LoanView(Model):
     equity: Equity | None = None
     following: Following | None = None
     canWrite: bool
+    version: int = 0  # the loan's terms: 0 until they are set (S13.8.6)
 
 
 class PaymentIn(Model):
@@ -248,6 +249,7 @@ def view(s, a: Account, level: str) -> LoanView:
             difference=-anchor.balance - computed,
         )
     return LoanView(
+        version=row.version,
         terms=_terms_out(row),
         balance=sm.balance,
         rate=sm.rate,
@@ -332,7 +334,13 @@ def get_loan(account_id: str, request: Request, c: Caller = Depends(caller)):
 
 
 @router.put("/accounts/{account_id}/loan", response_model=LoanView)
-def put_terms(account_id: str, body: TermsIn, request: Request, c: Caller = Depends(caller)):
+def put_terms(
+    account_id: str,
+    body: TermsIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     """The terms, set when the loan is made and corrected later (an ARM's resets, a recast)."""
     errors = _check(body)
     if errors:
@@ -345,6 +353,7 @@ def put_terms(account_id: str, body: TermsIn, request: Request, c: Caller = Depe
                 raise refuse("securedById", "not-found", "No such property or vehicle.")
             access.account(s, c.id, it.accountId, "read")
         row = loans.loan_of(s, a)
+        check(row, version, lambda: view(s, a, lvl))
         values = {
             "principal": body.principal,
             "startDate": body.startDate,
@@ -842,7 +851,7 @@ def _get_plan(s, c: Caller, account_id: str, plan_id: str) -> tuple[Account, Pay
     return a, p
 
 
-@router.put("/accounts/{account_id}/loan/plans/{plan_id}", response_model=SavedPlan)
+@router.patch("/accounts/{account_id}/loan/plans/{plan_id}", response_model=SavedPlan)
 def change_plan(
     account_id: str,
     plan_id: str,
@@ -855,8 +864,7 @@ def change_plan(
     _check_plan(body.inputs)
     with server(request).db.tx() as s:
         a, p = _get_plan(s, c, account_id, plan_id)
-        if p.version != version:
-            raise stale(_saved(s, c, a, p))
+        check(p, version, lambda: _saved(s, c, a, p))
         p.name = name
         p.inputs = exactjson.unmark(body.inputs.model_dump_json())
         p.updatedAt = clock.now()
@@ -864,12 +872,20 @@ def change_plan(
         return _saved(s, c, a, p)
 
 
-@router.delete("/accounts/{account_id}/loan/plans/{plan_id}", status_code=204)
-def delete_plan(account_id: str, plan_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/accounts/{account_id}/loan/plans/{plan_id}", response_model=Deleted[None])
+def delete_plan(
+    account_id: str,
+    plan_id: str,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     with server(request).db.tx() as s:
-        _, p = _get_plan(s, c, account_id, plan_id)
+        a, p = _get_plan(s, c, account_id, plan_id)
+        check(p, version, lambda: _saved(s, c, a, p))
         p.mark_deleted(c.id)
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(p))
 
 
 class FollowIn(Model):
@@ -878,11 +894,18 @@ class FollowIn(Model):
 
 @router.put("/accounts/{account_id}/loan/plans/{plan_id}/following", response_model=SavedPlan)
 def follow_plan(
-    account_id: str, plan_id: str, body: FollowIn, request: Request, c: Caller = Depends(caller)
+    account_id: str,
+    plan_id: str,
+    body: FollowIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
 ):
-    """Marks the plan being followed, tracked from today; the one followed before stops."""
+    """Marks the plan being followed, tracked from today; the one followed before stops. Made
+    against the plan's version."""
     with server(request).db.tx() as s:
         a, p = _get_plan(s, c, account_id, plan_id)
+        check(p, version, lambda: _saved(s, c, a, p))
         for other in _plans(s, a):
             if other.following and other.id != p.id:
                 other.following, other.followingSince = False, None

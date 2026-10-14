@@ -90,7 +90,7 @@ def test_portfolio_series_returns_and_holdings(server):
     s = c.get(f"/ui/api/portfolios/{p['id']}/series", params={"range": "1Y"}).json()
     assert s["end"] == "1000.00" and s["contributed"] == "1000.00" and s["growth"] == "0.00"
     assert s["benchmark"] == "VT"
-    rows = c.get(f"/ui/api/portfolios/{p['id']}/returns").json()
+    rows = c.get(f"/ui/api/portfolios/{p['id']}/returns").json()["items"]
     assert rows[-1]["name"] == "Mine" and set(rows[-1]["periods"]) == {
         "1M",
         "3M",

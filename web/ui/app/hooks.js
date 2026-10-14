@@ -43,6 +43,19 @@ export function useApi(path, params = {}, reloadOn = []) {
 }
 
 /**
+ * A list (S13.8.5): `useApi` whose `data` is the page's rows, with `page` the whole answer
+ * (`total`, `offset`, `limit`) for a pager. A list that never needs paging reads `data`.
+ * @param {string | null} path
+ * @param {Record<string, any>} [params]
+ * @param {string[]} [reloadOn]
+ */
+export function useList(path, params = {}, reloadOn = []) {
+  const r = useApi(path, params, reloadOn);
+  const page = /** @type {any} */ (r.data);
+  return { ...r, data: page ? /** @type {any[]} */ (page.items) : null, page };
+}
+
+/**
  * A form's submission: busy while it runs, the server's refusal kept for the fields.
  * @param {(...args: any[]) => Promise<any>} fn
  */

@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useList, useSubmit } from '../app/hooks.js';
 import { money } from '../app/format.js';
 import { Dialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
@@ -22,7 +22,7 @@ const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,\s]/g, '')
 /** @param {{ close: (v?: any) => void, accountId?: string, start?: any }} p */
 export function OptionTrade({ close, accountId, start }) {
   useDialogGuide('dialog-option-trade');
-  const accounts = useApi('/accounts');
+  const accounts = useList('/accounts');
   const list = (/** @type {any[]} */ (accounts.data) || []).filter((a) =>
     a.investing && a.active && ['owner', 'write'].includes(a.level)
   );

@@ -17,7 +17,7 @@ from ..store.entities.accounts import Instrument, Transaction
 from ..store.entities.prices import Price, PriceSource
 from ..store.entities.users import User
 from ..store.repos import secrets as secret_repo
-from .conventions import ExactRoute, Model, Quantity, if_match, stale
+from .conventions import Deleted, ExactRoute, Model, Quantity, check, gone, if_match, stale
 from .deps import Caller, admin, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["prices"])
@@ -278,7 +278,7 @@ def change_source(
     return view
 
 
-@router.delete("/price-sources/{source_id}", status_code=204)
+@router.delete("/price-sources/{source_id}", response_model=Deleted[None])
 def remove_source(
     source_id: str, request: Request, c: Caller = Depends(admin), version: int = Depends(if_match)
 ):
@@ -287,15 +287,16 @@ def remove_source(
         src = s.get(PriceSource, source_id)
         if src is None or src.deleted:
             raise Problem(404, "not-found", "Not found")
-        if src.version != version:
-            raise stale({"id": src.id, "version": src.version})
+        check(src, version, {"id": src.id, "version": src.version})
         secret_repo.remove(s, "PriceSource", src.id, "apiKey")
         src.mark_deleted(c.id)
         activity.record(
             s, "prices.source-removed", actor=c.id, for_admins=True, detail={"source": src.name}
         )
+        s.flush()
+        out = Deleted[None](deleted=gone(src))
     apply_egress(srv)
-    return Response(status_code=204)
+    return out
 
 
 def _held_writable(s, user_id: str, instrument_id: str) -> bool:

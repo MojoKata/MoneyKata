@@ -1,14 +1,17 @@
 """The API conventions of requirements S13.8, as pieces the routes share: money, quantities
-and ratios as exact JSON numbers, cursor paging, versions with If-Match, and Idempotency-Key."""
+and ratios as exact JSON numbers, offset paging, versions with If-Match, and Idempotency-Key."""
 
-import base64
+import datetime as dt
+import functools
+import inspect
 import json
 import threading
 import time
+import typing
 from decimal import Decimal
 from typing import Annotated, Any
 
-from fastapi import Query, Request, Response
+from fastapi import Depends, Query, Request, Response
 from fastapi.routing import APIRoute
 from pydantic import (
     BaseModel,
@@ -19,7 +22,7 @@ from pydantic import (
 )
 
 from .. import exactjson, money
-from ..errors import Problem, refuse
+from ..errors import Problem
 
 
 class Sent(Decimal):
@@ -101,9 +104,33 @@ class ExactRequest(Request):
         return self._json
 
 
+def _paged(fn):
+    """A list route as every list answers (S13.8.5): `?offset=` and `?limit=`, and a Page. The
+    function itself still returns the whole list, for code that calls it directly."""
+    sig = inspect.signature(fn)
+    extra = inspect.Parameter(
+        "paging", inspect.Parameter.KEYWORD_ONLY, default=Depends(Paging), annotation=Paging
+    )
+
+    @functools.wraps(fn)
+    def paged(*args, paging: Paging, **kw):
+        return paging.page(fn(*args, **kw))
+
+    paged.__signature__ = sig.replace(parameters=[*sig.parameters.values(), extra])  # type: ignore[attr-defined]
+    return paged
+
+
 class ExactRoute(APIRoute):
-    """Every API route (S13.8.2): exact numbers in the request body, and the marks on exact
-    numbers taken off the response, whichever way FastAPI wrote it."""
+    """Every API route (S13.8): exact numbers in the request body and the response (S13.8.2),
+    and every route declared to answer a list paged by offset and limit (S13.8.5)."""
+
+    def __init__(self, path: str, endpoint, **kw):
+        model = kw.get("response_model")
+        if typing.get_origin(model) is list and set(kw.get("methods") or ["GET"]) == {"GET"}:
+            (item,) = typing.get_args(model)
+            kw["response_model"] = Page[item]
+            endpoint = _paged(endpoint)
+        super().__init__(path, endpoint, **kw)
 
     def get_route_handler(self):
         handler = super().get_route_handler()
@@ -128,51 +155,54 @@ class Model(BaseModel):
 
 
 class Page[T](BaseModel):
+    """A list (S13.8.5): this page's rows, how many the caller can see in all, and where the
+    page starts."""
+
     items: list[T]
-    next: str | None
+    total: int
+    offset: int
+    limit: int
 
 
-DEFAULT_LIMIT = 100
+DEFAULT_LIMIT = 500
 MAX_LIMIT = 1000
 
 
 class Paging:
-    """?limit= and ?after=: a cursor names the last row seen by its sort key and id."""
+    """?offset= and ?limit= on every list (S13.8.5)."""
 
     def __init__(
         self,
+        offset: int = Query(0, ge=0),
         limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
-        after: str | None = Query(None, max_length=512),
     ):
+        self.offset = offset
         self.limit = limit
-        self.after = decode_cursor(after) if after else None
 
-    def page(self, rows: list, key) -> tuple[list, str | None]:
-        """Rows fetched with limit + 1: the extra one says there is a next page."""
-        more = len(rows) > self.limit
-        rows = rows[: self.limit]
-        nxt = encode_cursor(key(rows[-1])) if more and rows else None
-        return rows, nxt
+    def page(self, rows: list) -> dict:
+        """A page of rows already in hand, in their order."""
+        return self.wrap(list(rows[self.offset : self.offset + self.limit]), len(rows))
+
+    def wrap(self, items: list, total: int) -> dict:
+        return {"items": items, "total": total, "offset": self.offset, "limit": self.limit}
+
+    def query(self, s, q) -> tuple[list, int]:
+        """A page of a SELECT, in its order, with how many rows it has in all."""
+        from sqlalchemy import func, select
+
+        total = s.scalar(select(func.count()).select_from(q.order_by(None).subquery())) or 0
+        rows = s.scalars(q.offset(self.offset).limit(self.limit)).all()
+        return list(rows), total
 
 
-def encode_cursor(values: list | tuple) -> str:
-    raw = exactjson.dumps(list(values), default=str, separators=(",", ":")).encode()
-    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
-
-
-def decode_cursor(text: str) -> list:
-    try:
-        raw = base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
-        values = json.loads(raw)
-    except (ValueError, json.JSONDecodeError):
-        raise refuse("after", "bad-cursor", "This page link is not valid.", 400) from None
-    if not isinstance(values, list):
-        raise refuse("after", "bad-cursor", "This page link is not valid.", 400)
-    return values
+def everything() -> Paging:
+    """A whole list, for code that calls a list route itself (MCP, a linked server)."""
+    return Paging(offset=0, limit=MAX_LIMIT)
 
 
 def if_match(request: Request) -> int:
-    """The version a PATCH or DELETE was made against (S13.8.6)."""
+    """The version a PATCH, PUT or DELETE was made against (S13.8.6): required, refused with 428
+    when missing. A PUT that creates what doesn't exist yet sends 0."""
     value = request.headers.get("if-match", "").strip().strip('"').removeprefix("W/").strip('"')
     if not value.isdigit():
         raise Problem(
@@ -181,11 +211,62 @@ def if_match(request: Request) -> int:
     return int(value)
 
 
-def stale(current: Any) -> Problem:
-    """412 with the record as it is now, so the UI can show what changed."""
+def check(record: Any, version: int, current: Any) -> None:
+    """The version a change was made against must be the record's own (S13.8.6); `current` (or
+    a function giving it) is what a stale request is answered with. A PUT that creates sends 0,
+    which matches only when the record doesn't exist yet."""
+    have = 0 if record is None else record.version
+    if have != version:
+        raise stale(current() if callable(current) else current, have)
+
+
+def version_of(s, entity, *where) -> int:
+    """The version of something made of many records replaced together (the settings, a
+    year's tax tables, a wallet's keys, an item's shares): the sum of their versions, deleted
+    ones included, so it goes up with every change to any of them (S13.8.6)."""
+    from sqlalchemy import func, select
+
+    return int(s.scalar(select(func.coalesce(func.sum(entity.version), 0)).where(*where)) or 0)
+
+
+def check_version(have: int, version: int, current: Any) -> None:
+    """`check` for something whose version is worked out (`version_of`)."""
+    if have != version:
+        raise stale(current() if callable(current) else current, have)
+
+
+def stale(current: Any, version: int | None = None) -> Problem:
+    """412 with the record as it is now, so the UI can show what changed, and its version, to
+    make the change again against."""
     body = current.model_dump(mode="json") if isinstance(current, BaseModel) else current
-    return Problem(
-        412, "stale-version", "Someone changed this since you loaded it.", extra={"current": body}
+    if version is None and isinstance(body, dict):
+        version = body.get("version")
+    extra = {"current": body} if version is None else {"current": body, "version": version}
+    return Problem(412, "stale-version", "Someone changed this since you loaded it.", extra=extra)
+
+
+class Gone(BaseModel):
+    """What a DELETE took away (S13.8.1): its id (for a pair, its two keys joined by a slash),
+    when, and the version it had."""
+
+    id: str
+    deletedAt: dt.datetime | None = None
+    version: int | None = None
+
+
+class Deleted[P](BaseModel):
+    """Every DELETE's answer (S13.8.1): what went, and what it belonged to as it now stands,
+    or null for a record that belonged to nothing."""
+
+    deleted: Gone
+    parent: P | None = None
+
+
+def gone(record: Any, id_: str | None = None) -> Gone:
+    return Gone(
+        id=id_ or record.id,
+        deletedAt=getattr(record, "deletedAt", None),
+        version=getattr(record, "version", None),
     )
 
 

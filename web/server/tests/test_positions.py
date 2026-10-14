@@ -101,6 +101,6 @@ def test_a_wash_sale_moves_the_loss_into_the_replacement_lot(server, alice):
     r = alice.delete(
         f"/ui/api/transactions/{buy['id']}", headers={"If-Match": f'"{buy["version"]}"'}
     )
-    assert r.status_code == 204
+    assert r.status_code == 200
     sale = next(r for r in alice.get("/ui/api/positions").json()["closed"] if r["symbol"] == "AAPL")
     assert sale["realized"] == "-500.00"

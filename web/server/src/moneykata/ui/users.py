@@ -7,11 +7,12 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from sqlalchemy import false, select
 
+from .. import clock
 from ..auth import signup, twostep
 from ..auth import users as accounts
 from ..errors import Problem
 from ..store.entities.users import Group, User
-from .conventions import ExactRoute, Model, if_match, stale
+from .conventions import Deleted, ExactRoute, Gone, Model, check, if_match, stale
 from .deps import Caller, admin, recent_auth, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["users"])
@@ -172,19 +173,26 @@ def resend(user_id: str, request: Request, c: Caller = Depends(admin)):
     return Response(status_code=204)
 
 
-@router.delete("/users/{user_id}/two-step", response_model=UserRow)
-def reset_two_step(user_id: str, request: Request, c: Caller = Depends(admin)):
+@router.delete("/users/{user_id}/two-step", response_model=Deleted[UserRow])
+def reset_two_step(
+    user_id: str, request: Request, c: Caller = Depends(admin), version: int = Depends(if_match)
+):
     """An admin's reset, the last resort when the app and the recovery codes are lost
-    (S10.1.6): two-step is off, and the user's sessions end."""
+    (S10.1.6): two-step is off, and the user's sessions end. Made against the user's version."""
     recent_auth(c)
     srv = server(request)
     with srv.db.tx() as s:
         u = _user(s, user_id)
+        check(u, version, lambda: user_row(s, u))
         twostep.turn_off(s, srv.services, u, c.user)
-        row = user_row(s, u)
+        u.updatedAt = clock.now()
+        s.flush()
+        out = Deleted[UserRow](
+            deleted=Gone(id=f"{u.id}/two-step", deletedAt=clock.now()), parent=user_row(s, u)
+        )
     if u.id != c.id:
         srv.events.end_user(u.id, "signed-out")
-    return row
+    return out
 
 
 class SignupRow(Model):

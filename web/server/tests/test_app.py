@@ -185,13 +185,13 @@ def pace(page) -> None:
 
 def account_ids(page) -> dict[str, str]:
     return page.evaluate("""async () => Object.fromEntries(
-        (await (await fetch('/ui/api/accounts')).json())
+        (await (await fetch('/ui/api/accounts')).json()).items
         .map((a) => [a.type, a.id]))""")
 
 
 def test_every_screen_and_tab_has_its_guide(page):
     ids = account_ids(page)
-    ports = page.evaluate("""async () => (await (await fetch('/ui/api/portfolios')).json())
+    ports = page.evaluate("""async () => (await (await fetch('/ui/api/portfolios')).json()).items
         .map((p) => p.id)""")
     paths = [
         "/ui/",
@@ -245,9 +245,9 @@ def test_every_screen_and_tab_has_its_guide(page):
         paths.append(f"/ui/accounts/{ids['crypto-wallet']}/{tab}")
     for p in ports:
         paths += [f"/ui/portfolios/{p}/{t}" for t in ("performance", "holdings", "projections")]
-    budgets = page.evaluate("""async () => (await (await fetch('/ui/api/budgets')).json())
+    budgets = page.evaluate("""async () => (await (await fetch('/ui/api/budgets')).json()).items
         .map((b) => b.id)""")
-    for x in page.evaluate("""async () => (await (await fetch('/ui/api/projections')).json())
+    for x in page.evaluate("""async () => (await (await fetch('/ui/api/projections')).json()).items
         .map((p) => p.id)"""):
         paths.append(f"/ui/projections/{x}")
     for b in budgets:
@@ -265,7 +265,7 @@ def test_a_linked_households_window_opens_with_its_words(page):
     each of its screens with its guide."""
     from moneykata.dev.seed_links import words
 
-    homes = page.evaluate("async () => (await (await fetch('/ui/api/linked')).json())")
+    homes = page.evaluate("async () => (await (await fetch('/ui/api/linked')).json()).items")
     assert [h["name"] for h in homes] == ["Margaret & Tom"]
     link = homes[0]["linkId"]
     visit(page, f"/ui/linked/{link}/")
@@ -276,7 +276,7 @@ def test_a_linked_households_window_opens_with_its_words(page):
     page.get_by_role("button", name="Open").click()
     page.wait_for_selector(".peer-strip")
     items = page.evaluate(
-        f"async () => (await (await fetch('/ui/api/linked/{link}/items')).json())"
+        f"async () => (await (await fetch('/ui/api/linked/{link}/items')).json()).items"
     )
     kinds = {i["kind"]: i["id"] for i in items}
     assert set(kinds) == {"account", "portfolio", "budget"}

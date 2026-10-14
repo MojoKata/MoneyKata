@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { date } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
@@ -61,7 +61,7 @@ export default function Gifts({ tab }) {
 }
 
 function Upcoming() {
-  const res = useApi('/gifts/upcoming');
+  const res = useList('/gifts/upcoming');
   const rows = /** @type {any[]} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!rows) return html`<${Loading} />`;
@@ -123,7 +123,7 @@ function Upcoming() {
 }
 
 function People() {
-  const res = useApi('/people', {}, ['share']);
+  const res = useList('/people', {}, ['share']);
   const rows = /** @type {any[]} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!rows) return html`<${Loading} />`;
@@ -182,7 +182,7 @@ function People() {
 
 function GiftList() {
   const [status, setStatus] = useState('');
-  const res = useApi('/gifts', { status: status || undefined });
+  const res = useList('/gifts', { status: status || undefined });
   const rows = /** @type {any[]} */ (res.data);
   const open = (/** @type {any} */ g) => openDialog(GiftDialog, { gift: g }).then(res.reload);
   return html`
@@ -349,7 +349,7 @@ function parseDay(s) {
 /** @param {{ close: (v?: any) => void, p: any }} p */
 function PersonDialog({ close, p }) {
   useDialogGuide('dialog-person');
-  const hols = useApi('/holidays');
+  const hols = useList('/holidays');
   const me = useApi('/profile');
   const [f, setF] = useState(personForm(p));
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
@@ -381,7 +381,9 @@ function PersonDialog({ close, p }) {
         }),
       ],
     };
-    const out = p ? await api.put(`/people/${p.id}`, body) : await api.post('/people', body);
+    const out = p
+      ? await api.patch(`/people/${p.id}`, body, p.version)
+      : await api.post('/people', body);
     toast(p ? 'Saved' : `${out.name} added`);
     close(out);
   });
@@ -523,7 +525,7 @@ function PersonDialog({ close, p }) {
 /** What was given a person in past years, so it isn't given twice. */
 /** @param {{ p: any }} p */
 function History({ p }) {
-  const res = useApi('/gifts', { person: p.id, status: 'given' });
+  const res = useList('/gifts', { person: p.id, status: 'given' });
   const rows = /** @type {any[]} */ (res.data) || [];
   if (!rows.length) return null;
   return html`<h4 style=${{ margin: '14px 0 8px' }} data-help="given-before">Given before</h4>
@@ -561,8 +563,8 @@ function giftForm(g, start) {
 /** @param {{ close: (v?: any) => void, gift?: any, start?: any }} p */
 function GiftDialog({ close, gift, start }) {
   useDialogGuide('dialog-gift');
-  const people = useApi('/people');
-  const buys = useApi('/gifts/purchases');
+  const people = useList('/people');
+  const buys = useList('/gifts/purchases');
   const [f, setF] = useState(giftForm(gift, start));
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const list = /** @type {any[]} */ (people.data) || [];
@@ -604,12 +606,14 @@ function GiftDialog({ close, gift, start }) {
       cash: f.cash,
       thankYou: f.thankYou,
     };
-    const out = gift ? await api.put(`/gifts/${gift.id}`, body) : await api.post('/gifts', body);
+    const out = gift
+      ? await api.patch(`/gifts/${gift.id}`, body, gift.version)
+      : await api.post('/gifts', body);
     toast('Gift saved');
     close(out);
   });
   const remove = useSubmit(async () => {
-    await api.del(`/gifts/${gift.id}`);
+    await api.del(`/gifts/${gift.id}`, gift.version);
     toast('Gift deleted');
     close(true);
   });

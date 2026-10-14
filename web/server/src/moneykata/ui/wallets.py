@@ -10,7 +10,8 @@ from .. import access, activity
 from ..bitcoin import keys as bk
 from ..bitcoin import wallet
 from ..errors import Problem, refuse
-from .conventions import ExactRoute, Model
+from ..store.entities.accounts import WalletKey
+from .conventions import ExactRoute, Model, check_version, if_match, version_of
 from .deps import Caller, caller, server
 from .prices import apply_egress
 
@@ -46,6 +47,7 @@ class WalletView(Model):
     used: int
     balanceSats: int
     checkedAt: dt.datetime | None
+    version: int  # its keys together: replacing them is made against it (S13.8.6)
 
 
 class WalletIn(Model):
@@ -71,6 +73,7 @@ def _view(s, account_id: str) -> WalletView:
             last = max((r.idx for r in on if r.used and r.idx is not None), default=-1)
             shown += [r for r in on if r.used or r.chain is None or (r.idx or 0) <= last + SHOWN]
     return WalletView(
+        version=version_of(s, WalletKey, WalletKey.accountId == account_id),
         keys=[
             WalletKeyOut(
                 id=k.id,
@@ -111,7 +114,13 @@ def get_wallet(account_id: str, request: Request, c: Caller = Depends(caller)):
 
 
 @router.put("/accounts/{account_id}/wallet", response_model=WalletView)
-def put_wallet(account_id: str, body: WalletIn, request: Request, c: Caller = Depends(caller)):
+def put_wallet(
+    account_id: str,
+    body: WalletIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     """The wallet's keys and addresses, replaced whole."""
     what = bk.secret_kind(body.text)
     if what:
@@ -124,6 +133,9 @@ def put_wallet(account_id: str, body: WalletIn, request: Request, c: Caller = De
         raise refuse("gapLimit", "gap-invalid", "From 1 to 200 unused addresses: 20 is usual.")
     with server(request).db.tx() as s:
         a, _ = _wallet_account(s, c, account_id, "write")
+        check_version(
+            version_of(s, WalletKey, WalletKey.accountId == a.id), version, lambda: _view(s, a.id)
+        )
         wallet.replace(s, a.id, entries, body.gapLimit, c.id)
         activity.record(
             s,

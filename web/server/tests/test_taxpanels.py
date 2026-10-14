@@ -144,7 +144,7 @@ def test_income_retirement_and_an_rmd(alice):
 
 def test_deductions_loans_and_issues(alice):
     card = new_account(alice, name="Card", type="credit-card")
-    cats = {x["name"]: x["id"] for x in alice.get("/ui/api/categories").json()}
+    cats = {x["name"]: x["id"] for x in alice.get("/ui/api/categories").json()["items"]}
     add(alice, card["id"], "-240.00", "2026-04-02", payee="Clinic", categoryId=cats["Doctor"])
     home = new_account(alice, name="Mortgage", type="mortgage")
     alice.put(

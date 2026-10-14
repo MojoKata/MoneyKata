@@ -10,9 +10,9 @@ from sqlalchemy import false, select
 from .. import access, clock, sharing
 from ..errors import Problem
 from ..store.entities.accounts import Account
-from ..store.entities.sharing import CountedAccount
+from ..store.entities.sharing import CountedAccount, Share
 from ..store.entities.users import Group, User, UserGroup
-from .conventions import ExactRoute, Model
+from .conventions import ExactRoute, Model, check_version, if_match, version_of
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["sharing"])
@@ -63,6 +63,7 @@ class ShareView(Model):
     links: list[LinkedPeople]
     hidden: dict[str, list[str]]
     accounts: list[AccountName]
+    version: int = 0  # its shares together: saving them is made against it (S13.8.6)
 
 
 class ShareSave(Model):
@@ -123,6 +124,7 @@ def view(s, owner: User, kind: str, item_id: str) -> ShareView:
             for a in sharing.portfolio_accounts(s, item_id)
         ]
     return ShareView(
+        version=version_of(s, Share, Share.kind == kind, Share.itemId == item_id),
         kind=kind,
         itemId=item_id,
         itemName=obj.name,
@@ -199,12 +201,22 @@ def get_shares(kind: Kind, item_id: str, request: Request, c: Caller = Depends(c
 
 @router.put("/shares/{kind}/{item_id}", response_model=Saved)
 def save_shares(
-    kind: Kind, item_id: str, body: ShareSave, request: Request, c: Caller = Depends(caller)
+    kind: Kind,
+    item_id: str,
+    body: ShareSave,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
 ):
     """Save: the dialog's grants replace the item's (S10.4)."""
     srv = server(request)
     with srv.db.tx() as s:
         _owner_only(s, c, kind, item_id)
+        check_version(
+            version_of(s, Share, Share.kind == kind, Share.itemId == item_id),
+            version,
+            lambda: view(s, c.user, kind, item_id),
+        )
         change = sharing.save(
             s,
             c.user,

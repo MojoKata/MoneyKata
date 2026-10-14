@@ -41,12 +41,17 @@ def defaults() -> dict:
     }
 
 
-def load(s: Session, user_id: str) -> dict:
-    row = s.scalars(
+def row_of(s: Session, user_id: str) -> AssumptionSet | None:
+    """The user's own figures, or None while they keep the shipped ones."""
+    return s.scalars(
         select(AssumptionSet).where(
             AssumptionSet.ownerId == user_id, AssumptionSet.deleted == false()
         )
     ).first()
+
+
+def load(s: Session, user_id: str) -> dict:
+    row = row_of(s, user_id)
     out = defaults()
     if row is not None:
         saved = json.loads(row.figures)
@@ -60,11 +65,7 @@ def load(s: Session, user_id: str) -> dict:
 
 
 def save(s: Session, user_id: str, figures: dict) -> None:
-    row = s.scalars(
-        select(AssumptionSet).where(
-            AssumptionSet.ownerId == user_id, AssumptionSet.deleted == false()
-        )
-    ).first()
+    row = row_of(s, user_id)
     text = json.dumps(figures, sort_keys=True)
     if row is None:
         s.add(AssumptionSet(id=ids.new_id("Asmpt"), ownerId=user_id, figures=text))

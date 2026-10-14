@@ -261,7 +261,7 @@ function TwoStep({ p, reload }) {
     reload();
   };
   const turnOff = async () => {
-    await api.del('/profile/two-step');
+    await api.del('/profile/two-step', p.version);
     toast('Two-step sign-in is off');
     reload();
   };
@@ -377,7 +377,7 @@ function Assumptions() {
     if (v) setF(structuredClone(v.figures));
   }, [v]);
   const save = useSubmit(async () => {
-    await api.put('/assumptions', f);
+    await api.put('/assumptions', f, v.version);
     toast('Saved · projections recompute when opened');
     res.reload();
   });

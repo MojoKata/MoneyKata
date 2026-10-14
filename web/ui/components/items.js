@@ -323,7 +323,7 @@ function ItemEditor({ a, it, close, reload }) {
   const save = useSubmit(async () => {
     const body = itemBody(f);
     const out = cur
-      ? await api.put(`/items/${cur.id}`, body, cur.version)
+      ? await api.patch(`/items/${cur.id}`, body, cur.version)
       : await api.post(`/accounts/${a.id}/items`, body, { idempotent: true });
     toast(cur ? 'Saved' : `${out.name} added`);
     if (cur) {
@@ -559,9 +559,11 @@ function Valuations({ it, done }) {
     setF({ ...f, value: '' });
     done(out, 'Valuation added');
   });
-  const remove = useSubmit(async (/** @type {string} */ vid) =>
-    done(await api.del(`/items/${it.id}/valuations/${vid}`), 'Valuation removed')
-  );
+  const remove = useSubmit(async (/** @type {string} */ vid) => {
+    const was = it.valuations.find((/** @type {any} */ x) => x.id === vid);
+    const out = await api.del(`/items/${it.id}/valuations/${vid}`, was?.version);
+    done(out.parent, 'Valuation removed');
+  });
   return html`
     <h4 style=${{ margin: '14px 0 8px' }} data-help="valuations">Valuations</h4>
     ${it.valuations.length
@@ -621,9 +623,11 @@ function Improvements({ it, done }) {
     setF({ ...f, description: '', amount: '' });
     done(out, 'Improvement added to the basis');
   });
-  const remove = useSubmit(async (/** @type {string} */ mid) =>
-    done(await api.del(`/items/${it.id}/improvements/${mid}`), 'Improvement removed')
-  );
+  const remove = useSubmit(async (/** @type {string} */ mid) => {
+    const was = it.improvements.find((/** @type {any} */ x) => x.id === mid);
+    const out = await api.del(`/items/${it.id}/improvements/${mid}`, was?.version);
+    done(out.parent, 'Improvement removed');
+  });
   return html`
     <h4 style=${{ margin: '14px 0 8px' }} data-help="improvements">Improvements</h4>
     ${it.improvements.map((/** @type {any} */ m) =>
@@ -681,7 +685,7 @@ function Documents({ it, done }) {
     if (out) done(out, 'Kept with the item');
   };
   const remove = useSubmit(async (/** @type {string} */ rid) =>
-    done(await api.del(`/items/${it.id}/documents/${rid}`), 'Removed from the item')
+    done((await api.del(`/items/${it.id}/documents/${rid}`)).parent, 'Removed from the item')
   );
   return html`
     <h4 style=${{ margin: '14px 0 8px' }} data-help="photos-and-documents">Photos and documents</h4>
@@ -723,11 +727,13 @@ function SaleCard({ it, done }) {
       soldOn: f.soldOn,
       proceeds: clean(f.proceeds),
       fees: clean(f.fees) || '0',
-    });
+    }, it.version);
     setOpen(false);
     done(out, 'Sale recorded');
   });
-  const undo = useSubmit(async () => done(await api.del(`/items/${it.id}/sale`), 'Sale undone'));
+  const undo = useSubmit(async () =>
+    done((await api.del(`/items/${it.id}/sale`, it.version)).parent, 'Sale undone')
+  );
   const s = it.sale;
   if (s) {
     return html`

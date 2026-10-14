@@ -2,7 +2,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useList, useSubmit } from '../app/hooks.js';
 import { Dialog } from '../components/dialog.js';
 import { useDialogGuide } from '../components/help.js';
 import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
@@ -17,7 +17,7 @@ export const BENCHMARKS = /** @type {[string, string][]} */ ([
 /** @param {{ close: (v?: any) => void, portfolio?: any }} p */
 export function PortfolioDialog({ close, portfolio }) {
   useDialogGuide('dialog-portfolio');
-  const accounts = useApi('/accounts');
+  const accounts = useList('/accounts');
   const [name, setName] = useState(portfolio?.name || '');
   const [benchmark, setBenchmark] = useState(portfolio?.benchmark || 'VT');
   const [ids, setIds] = useState(/** @type {Set<string>} */ (new Set(portfolio?.accountIds || [])));

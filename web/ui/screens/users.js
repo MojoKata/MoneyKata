@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useList, useSubmit } from '../app/hooks.js';
 import { ago, date } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
@@ -16,9 +16,9 @@ import { toast } from '../components/toast.js';
 export default function Users() {
   useTitle('Users and Groups');
   useGuide('users');
-  const users = useApi('/users');
-  const groups = useApi('/groups');
-  const requests = useApi('/signup-requests', {}, ['signup']);
+  const users = useList('/users');
+  const groups = useList('/groups');
+  const requests = useList('/signup-requests', {}, ['signup']);
   const [show, setShow] = useState('active');
   const [busy, setBusy] = useState('');
   const u = /** @type {any[]} */ (users.data);
@@ -277,7 +277,7 @@ function EditUser({ close, user, groups }) {
       // The last resort when the app and the recovery codes are lost (S10.1.6).
       if (needPassword) await api.post('/session/reauth', { password });
       try {
-        close(await api.del(`/users/${user.id}/two-step`));
+        close((await api.del(`/users/${user.id}/two-step`, user.version)).parent);
       } catch (e) {
         if (/** @type {any} */ (e).code === 'reauth-required') {
           setNeed(true);

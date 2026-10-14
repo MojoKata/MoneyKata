@@ -5,14 +5,25 @@ as receipts; selling an item; and precious metals summarised by metal."""
 import datetime as dt
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import false, select
 
 from .. import access, activity, assets, clock, ids, loans, receipts, valuation
 from ..errors import FieldError, Problem, refuse
 from ..store.entities.accounts import Account, Loan
 from ..store.entities.assets import Improvement, Item, ItemValuation
-from .conventions import ExactRoute, Model, Money, Quantity, Ratio, if_match, stale
+from .conventions import (
+    Deleted,
+    ExactRoute,
+    Gone,
+    Model,
+    Money,
+    Quantity,
+    Ratio,
+    check,
+    gone,
+    if_match,
+)
 from .deps import Caller, caller, server
 from .receipts import ReceiptRow
 from .receipts import row as receipt_row
@@ -57,6 +68,7 @@ class ValuationOut(Model):
     value: Money
     source: str
     note: str | None
+    version: int
 
 
 class ImprovementOut(Model):
@@ -64,6 +76,7 @@ class ImprovementOut(Model):
     date: dt.date
     description: str
     amount: Money
+    version: int
 
 
 class SecuredLoan(Model):
@@ -206,7 +219,9 @@ def _secured(s, item_ids: list[str], day: dt.date) -> dict[str, list[SecuredLoan
 
 
 def _valuation_out(v: ItemValuation) -> ValuationOut:
-    return ValuationOut(id=v.id, date=v.date, value=v.value, source=v.source, note=v.note)
+    return ValuationOut(
+        id=v.id, date=v.date, value=v.value, source=v.source, note=v.note, version=v.version
+    )
 
 
 def _sale(a: Account, it: Item, d: assets.Detail) -> Sale | None:
@@ -324,7 +339,13 @@ def detail(s, c: Caller, it: Item, a: Account, lvl: str) -> ItemDetail:
         spotAsOf=sp.asOf if sp else None,
         valuations=[_valuation_out(v) for v in reversed(d.valuations)],
         improvements=[
-            ImprovementOut(id=m.id, date=m.date, description=m.description, amount=m.amount)
+            ImprovementOut(
+                id=m.id,
+                date=m.date,
+                description=m.description,
+                amount=m.amount,
+                version=m.version,
+            )
             for m in reversed(d.improvements)
         ],
         documents=[
@@ -442,7 +463,7 @@ def get_item(item_id: str, request: Request, c: Caller = Depends(caller)):
         return detail(s, c, it, a, lvl)
 
 
-@router.put("/items/{item_id}", response_model=ItemDetail)
+@router.patch("/items/{item_id}", response_model=ItemDetail)
 def change_item(
     item_id: str,
     body: ItemIn,
@@ -452,8 +473,7 @@ def change_item(
 ):
     with server(request).db.tx() as s:
         it, a, lvl = _item(s, c, item_id, "write")
-        if it.version != version:
-            raise stale(detail(s, c, it, a, lvl))
+        check(it, version, lambda: detail(s, c, it, a, lvl))
         for k, v in _values(body, a.type).items():
             setattr(it, k, v)
         if it.metal:
@@ -464,13 +484,17 @@ def change_item(
         return detail(s, c, it, a, lvl)
 
 
-@router.delete("/items/{item_id}", status_code=204)
-def delete_item(item_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/items/{item_id}", response_model=Deleted[None])
+def delete_item(
+    item_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
-        it, a, _ = _item(s, c, item_id, "write")
+        it, a, lvl = _item(s, c, item_id, "write")
+        check(it, version, lambda: detail(s, c, it, a, lvl))
         it.mark_deleted(c.id)
         _record(s, "item.deleted", c, a)
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(it))
 
 
 @router.post("/items/{item_id}/valuations", response_model=ItemDetail, status_code=201)
@@ -498,18 +522,23 @@ def add_valuation(item_id: str, body: ValuationIn, request: Request, c: Caller =
         return detail(s, c, it, a, lvl)
 
 
-@router.delete("/items/{item_id}/valuations/{valuation_id}", response_model=ItemDetail)
+@router.delete("/items/{item_id}/valuations/{valuation_id}", response_model=Deleted[ItemDetail])
 def delete_valuation(
-    item_id: str, valuation_id: str, request: Request, c: Caller = Depends(caller)
+    item_id: str,
+    valuation_id: str,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
 ):
     with server(request).db.tx() as s:
         it, a, lvl = _item(s, c, item_id, "write")
         v = s.get(ItemValuation, valuation_id)
         if v is None or v.deleted or v.itemId != it.id:
             raise Problem(404, "not-found", "No such valuation.")
+        check(v, version, lambda: detail(s, c, it, a, lvl))
         v.mark_deleted(c.id)
         s.flush()
-        return detail(s, c, it, a, lvl)
+        return Deleted[ItemDetail](deleted=gone(v), parent=detail(s, c, it, a, lvl))
 
 
 @router.post("/items/{item_id}/improvements", response_model=ItemDetail, status_code=201)
@@ -536,28 +565,40 @@ def add_improvement(
         return detail(s, c, it, a, lvl)
 
 
-@router.delete("/items/{item_id}/improvements/{improvement_id}", response_model=ItemDetail)
+@router.delete("/items/{item_id}/improvements/{improvement_id}", response_model=Deleted[ItemDetail])
 def delete_improvement(
-    item_id: str, improvement_id: str, request: Request, c: Caller = Depends(caller)
+    item_id: str,
+    improvement_id: str,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
 ):
     with server(request).db.tx() as s:
         it, a, lvl = _item(s, c, item_id, "write")
         m = s.get(Improvement, improvement_id)
         if m is None or m.deleted or m.itemId != it.id:
             raise Problem(404, "not-found", "No such improvement.")
+        check(m, version, lambda: detail(s, c, it, a, lvl))
         m.mark_deleted(c.id)
         s.flush()
-        return detail(s, c, it, a, lvl)
+        return Deleted[ItemDetail](deleted=gone(m), parent=detail(s, c, it, a, lvl))
 
 
 @router.put("/items/{item_id}/sale", response_model=ItemDetail)
-def sell(item_id: str, body: SaleIn, request: Request, c: Caller = Depends(caller)):
+def sell(
+    item_id: str,
+    body: SaleIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     """Records the sale: the gain or loss is realized, and the item leaves the account's value
-    from that day (S1.10.5)."""
+    from that day (S1.10.5). The sale is part of the item, so it is made against its version."""
     if body.proceeds < 0 or body.fees < 0:
         raise refuse("proceeds" if body.proceeds < 0 else "fees", "amount-invalid", "Zero or more.")
     with server(request).db.tx() as s:
         it, a, lvl = _item(s, c, item_id, "write")
+        check(it, version, lambda: detail(s, c, it, a, lvl))
         if body.soldOn < it.acquiredOn:
             raise refuse("soldOn", "sold-before-bought", "On or after the day it was acquired.")
         if body.soldOn > clock.today():
@@ -569,14 +610,19 @@ def sell(item_id: str, body: SaleIn, request: Request, c: Caller = Depends(calle
         return detail(s, c, it, a, lvl)
 
 
-@router.delete("/items/{item_id}/sale", response_model=ItemDetail)
-def unsell(item_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/items/{item_id}/sale", response_model=Deleted[ItemDetail])
+def unsell(
+    item_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
         it, a, lvl = _item(s, c, item_id, "write")
+        check(it, version, lambda: detail(s, c, it, a, lvl))
         it.soldOn = it.proceeds = it.saleFees = None
         it.updatedAt = clock.now()
         s.flush()
-        return detail(s, c, it, a, lvl)
+        return Deleted[ItemDetail](
+            deleted=Gone(id=f"{it.id}/sale", deletedAt=clock.now()), parent=detail(s, c, it, a, lvl)
+        )
 
 
 @router.post("/items/{item_id}/documents", response_model=ItemDetail)
@@ -590,14 +636,18 @@ def attach_document(item_id: str, body: DocumentIn, request: Request, c: Caller 
         return detail(s, c, it, a, lvl)
 
 
-@router.delete("/items/{item_id}/documents/{receipt_id}", response_model=ItemDetail)
+@router.delete("/items/{item_id}/documents/{receipt_id}", response_model=Deleted[ItemDetail])
 def detach_document(item_id: str, receipt_id: str, request: Request, c: Caller = Depends(caller)):
+    """A receipt's link to the item: a pair with no version of its own (S13.8.6)."""
     with server(request).db.tx() as s:
         it, a, lvl = _item(s, c, item_id, "write")
         r, _ = receipts.get(s, c.id, receipt_id)
         receipts.detach_item(s, c.id, r, it)
         s.flush()
-        return detail(s, c, it, a, lvl)
+        return Deleted[ItemDetail](
+            deleted=Gone(id=f"{r.id}/{it.id}", deletedAt=clock.now()),
+            parent=detail(s, c, it, a, lvl),
+        )
 
 
 class Securable(Model):

@@ -9,7 +9,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
-from .. import activity, exactjson, receipts, settings
+from .. import activity, clock, exactjson, receipts, settings
 from ..errors import Problem, refuse
 from ..keys.files import FileError
 from ..receipts import reading
@@ -18,7 +18,7 @@ from ..store.entities.assets import Item
 from ..store.entities.education import QualifiedExpense
 from ..store.entities.receipts import Receipt
 from ..store.entities.users import User
-from .conventions import ExactRoute, Model, Money, if_match, stale
+from .conventions import Deleted, ExactRoute, Gone, Model, Money, check, gone, if_match, stale
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["receipts"])
@@ -312,13 +312,17 @@ def read_again(receipt_id: str, request: Request, c: Caller = Depends(caller)):
     return out
 
 
-@router.delete("/receipts/{receipt_id}", status_code=204)
-def delete_receipt(receipt_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/receipts/{receipt_id}", response_model=Deleted[None])
+def delete_receipt(
+    receipt_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
-        r, _ = receipts.get(s, c.id, receipt_id, "owner")
+        r, lvl = receipts.get(s, c.id, receipt_id, "owner")
+        check(r, version, lambda: detail(s, c.id, r, lvl))
         receipts.delete(s, c.id, r)
         activity.record(s, "receipt.deleted", actor=c.id, owner=c.id)
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(r))
 
 
 @router.post("/receipts/{receipt_id}/links", response_model=ReceiptDetail)
@@ -343,8 +347,11 @@ def attach(receipt_id: str, body: Attach, request: Request, c: Caller = Depends(
     return out
 
 
-@router.delete("/receipts/{receipt_id}/links/{transaction_id}", response_model=ReceiptDetail)
+@router.delete(
+    "/receipts/{receipt_id}/links/{transaction_id}", response_model=Deleted[ReceiptDetail]
+)
 def detach(receipt_id: str, transaction_id: str, request: Request, c: Caller = Depends(caller)):
+    """A receipt's link to a transaction: a pair with no version of its own (S13.8.6)."""
     with server(request).db.tx() as s:
         r, _ = receipts.get(s, c.id, receipt_id)
         receipts.detach(s, c.id, r, transaction_id)
@@ -353,7 +360,10 @@ def detach(receipt_id: str, transaction_id: str, request: Request, c: Caller = D
         if lvl is None:
             # Detached from the only thing that let the caller see it.
             raise Problem(404, "not-found", "Not found")
-        return detail(s, c.id, r, lvl)
+        return Deleted[ReceiptDetail](
+            deleted=Gone(id=f"{r.id}/{transaction_id}", deletedAt=clock.now()),
+            parent=detail(s, c.id, r, lvl),
+        )
 
 
 def _disposition(name: str) -> str:

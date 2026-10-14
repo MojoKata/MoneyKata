@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useList, useSubmit } from '../app/hooks.js';
 import { ago, date } from '../app/format.js';
 import { Dialog, openDialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
@@ -15,11 +15,11 @@ import { toast } from './toast.js';
 const endpoint = () => `${location.origin}/mcp`;
 
 export function AccessTokens() {
-  const res = useApi('/profile/tokens');
+  const res = useList('/profile/tokens');
   const rows = /** @type {any[]} */ (res.data);
   const [armed, setArmed] = useState(/** @type {string | null} */ (null));
   const revoke = useSubmit(async (/** @type {any} */ t) => {
-    await api.del(`/profile/tokens/${t.id}`);
+    await api.del(`/profile/tokens/${t.id}`, t.version);
     toast(`${t.name}: revoked`);
     setArmed(null);
     res.reload();
@@ -68,8 +68,8 @@ export function AccessTokens() {
 /** @param {{ close: (v?: any) => void }} p */
 function NewToken({ close }) {
   useDialogGuide('dialog-new-token');
-  const accounts = useApi('/accounts');
-  const portfolios = useApi('/portfolios');
+  const accounts = useList('/accounts');
+  const portfolios = useList('/portfolios');
   const [f, setF] = useState({ name: '', scope: 'all', days: '90' });
   const [picked, setPicked] = useState(/** @type {Record<string, boolean>} */ ({}));
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });

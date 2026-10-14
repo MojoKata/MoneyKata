@@ -5,9 +5,9 @@ import datetime as dt
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from pydantic import Field
-from sqlalchemy import and_, false, func, or_, select, type_coerce
+from sqlalchemy import false, func, or_, select, type_coerce
 from sqlalchemy.orm import Session
 
 from .. import access, activity, clock, ids, washes
@@ -27,7 +27,18 @@ from ..store.entities.accounts import (
 from ..store.repos import ledger as repo
 from ..store.tables.accounts import TXN_KINDS
 from ..store.types import Cents
-from .conventions import ExactRoute, Model, Money, Page, Paging, Quantity, if_match, stale
+from .conventions import (
+    Deleted,
+    ExactRoute,
+    Model,
+    Money,
+    Page,
+    Paging,
+    Quantity,
+    gone,
+    if_match,
+    stale,
+)
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["transactions"])
@@ -313,7 +324,7 @@ def list_transactions(
         visible = {a.id: lvl for a, lvl in access.visible_accounts(s, c.id)}
         wanted = [a for a in account if a in visible] if account else list(visible)
         if account and not wanted:
-            return Page[TxnOut](items=[], next=None)
+            return paging.wrap([], 0)
         q = select(Transaction).where(
             Transaction.accountId.in_(wanted), Transaction.deleted == false()
         )
@@ -375,19 +386,9 @@ def list_transactions(
         col = {"date": Transaction.date, "amount": Transaction.amount, "payee": Transaction.payee}[
             field
         ]
-        if paging.after:
-            last_value, last_id = paging.after
-            if field == "amount":
-                last_value = Decimal(last_value)
-            elif field == "date":
-                last_value = dt.date.fromisoformat(last_value)
-            cmp = (col < last_value) if desc else (col > last_value)
-            tie = (Transaction.id < last_id) if desc else (Transaction.id > last_id)
-            q = q.where(or_(cmp, and_(col == last_value, tie)))
         order = [col.desc(), Transaction.id.desc()] if desc else [col.asc(), Transaction.id]
-        rows = s.scalars(q.order_by(*order).limit(paging.limit + 1)).all()
-        page, nxt = paging.page(list(rows), lambda t: [str(getattr(t, field)), t.id])
-        return Page[TxnOut](items=shape(s, c.id, page, visible), next=nxt)
+        rows, total = paging.query(s, q.order_by(*order))
+        return paging.wrap(shape(s, c.id, rows, visible), total)
 
 
 class Newer(Model):
@@ -704,7 +705,7 @@ def change_transaction(
         return shape(s, c.id, [t], {a.id: level})[0]
 
 
-@router.delete("/transactions/{txn_id}", status_code=204)
+@router.delete("/transactions/{txn_id}", response_model=Deleted[None])
 def delete_transaction(
     txn_id: str,
     request: Request,
@@ -728,7 +729,8 @@ def delete_transaction(
             owner=a.ownerId,
             detail={"count": 1},
         )
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(t))
 
 
 @router.post("/transactions/categorise", response_model=Done)

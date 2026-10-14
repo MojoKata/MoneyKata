@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
-import { useApi, useSubmit } from '../app/hooks.js';
+import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { date, money, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
@@ -219,7 +219,7 @@ function Overview({ v, reload }) {
 
 /** @param {{ year: string, reload: () => void }} p */
 function Donations({ year, reload }) {
-  const res = useApi('/giving/donations', { year }, ['import']);
+  const res = useList('/giving/donations', { year }, ['import']);
   const rows = /** @type {any[]} */ (res.data);
   const again = () => {
     res.reload();
@@ -291,7 +291,7 @@ function Donations({ year, reload }) {
 }
 
 function Organisations() {
-  const res = useApi('/giving/organisations');
+  const res = useList('/giving/organisations');
   const rows = /** @type {any[]} */ (res.data);
   const open = (/** @type {any} */ o) =>
     openDialog(OrganisationDialog, { o }).then((x) => x && res.reload());
@@ -351,7 +351,7 @@ function Organisations() {
 
 /** @param {{ v: any, year: string }} p */
 function Fund({ v, year }) {
-  const res = useApi('/giving/donations', { year });
+  const res = useList('/giving/donations', { year });
   const grants = (/** @type {any[]} */ (res.data) || []).filter((d) => d.kind === 'daf-grant');
   if (!v.funds.length) {
     return html`<${Empty}>No donor-advised fund. Add one as an account of type
@@ -436,7 +436,7 @@ function PlanDialog({ close, v }) {
       incomeBasis: f.incomeBasis,
       income: f.incomeBasis === 'take-home' ? null : clean(f.income),
       dafCounted: f.dafCounted,
-    });
+    }, p?.version ?? 0);
     toast('Giving plan saved');
     close(true);
   });
@@ -494,8 +494,8 @@ function PlanDialog({ close, v }) {
 /** @param {{ close: (v?: any) => void, from?: any }} p */
 function DonationDialog({ close, from }) {
   useDialogGuide('dialog-donation');
-  const orgs = useApi('/giving/organisations');
-  const accounts = useApi('/accounts');
+  const orgs = useList('/giving/organisations');
+  const accounts = useList('/accounts');
   const [f, setF] = useState({
     kind: 'cash',
     organisationId: '',
@@ -677,12 +677,12 @@ function DonationView({ close, d }) {
     close(true);
   };
   const flip = useSubmit(async (/** @type {any} */ change) => {
-    await api.patch(`/giving/donations/${d.id}`, change);
+    await api.patch(`/giving/donations/${d.id}`, change, d.version);
     toast('Saved');
     close(true);
   });
   const remove = useSubmit(async () => {
-    await api.del(`/giving/donations/${d.id}`);
+    await api.del(`/giving/donations/${d.id}`, d.version);
     toast('Donation deleted');
     close(true);
   });
@@ -757,7 +757,7 @@ function OrganisationDialog({ close, o }) {
       notes: f.notes || null,
     };
     const out = o
-      ? await api.put(`/giving/organisations/${o.id}`, body)
+      ? await api.patch(`/giving/organisations/${o.id}`, body, o.version)
       : await api.post('/giving/organisations', body);
     toast('Saved');
     close(out);

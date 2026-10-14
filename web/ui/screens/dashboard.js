@@ -2,7 +2,7 @@
 // composition by account group, the accounts by group, and what needs attention.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
-import { useApi } from '../app/hooks.js';
+import { useApi, useList } from '../app/hooks.js';
 import { ago } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
@@ -126,7 +126,7 @@ const TONE =
  * balance against the baseline's median.
  */
 function Plans() {
-  const res = useApi('/dashboard/plans', {}, ['import', 'prices', 'share']);
+  const res = useList('/dashboard/plans', {}, ['import', 'prices', 'share']);
   const rows = /** @type {any[]} */ (res.data);
   if (!rows || !rows.length) return null;
   return html`

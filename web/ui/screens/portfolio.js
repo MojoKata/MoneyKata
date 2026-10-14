@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { PlansFor } from '../components/plans.js';
-import { useApi } from '../app/hooks.js';
+import { useApi, useList } from '../app/hooks.js';
 import { date, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
@@ -71,7 +71,7 @@ function Performance({ p }) {
     'prices',
     'import',
   ]);
-  const returns = useApi(`/portfolios/${p.id}/returns`, {}, ['prices', 'import']);
+  const returns = useList(`/portfolios/${p.id}/returns`, {}, ['prices', 'import']);
   const s = /** @type {any} */ (series.data);
   const rows = /** @type {any[]} */ (returns.data);
   const bench = BENCHMARKS.find(([k]) => k === p.benchmark)?.[1] || p.benchmark;

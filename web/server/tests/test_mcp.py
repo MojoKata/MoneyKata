@@ -78,7 +78,7 @@ def test_tools_read_what_the_user_can_see_and_record_each_call(server, alice, ag
     feed = alice.get("/ui/api/activity").json()
     texts = [e["text"] for e in (feed["items"] if isinstance(feed, dict) else feed)]
     assert any("access token Claude read list accounts" in x for x in texts), texts[:5]
-    listed = alice.get("/ui/api/profile/tokens").json()[0]
+    listed = alice.get("/ui/api/profile/tokens").json()["items"][0]
     assert listed["lastUsedAt"]
 
 
@@ -106,7 +106,7 @@ def test_the_endpoint_refuses_without_a_live_token_or_from_a_web_page(server, al
     # A token is never a way into the app's own API.
     r = agent.get("/ui/api/accounts", headers={"Authorization": f"Bearer {secret}"})
     assert r.status_code == 401
-    tid = alice.get("/ui/api/profile/tokens").json()[0]["id"]
+    tid = alice.get("/ui/api/profile/tokens").json()["items"][0]["id"]
     alice.delete(f"/ui/api/profile/tokens/{tid}")
     assert rpc(agent, secret, "ping").status_code == 401
 
@@ -122,7 +122,7 @@ def test_calls_are_limited_to_60_a_minute_per_token(server, alice, agent, monkey
 
 
 def test_every_tool_is_in_the_api_reference():
-    """docs/api.md lists each MCP tool (G7): a new tool without its row fails here."""
+    """docs/api.md lists each MCP tool (S10.9): a new tool without its row fails here."""
     from moneykata import paths
     from moneykata.mcp import TOOLS
 

@@ -178,7 +178,7 @@ def test_an_invitation_is_joined_approved_and_each_side_sees_the_others_users(ad
     assert {u["username"] for u in b_side["users"]} == {"admin", "alice"}
     assert b_side["householdName"]
     # Remote users never sign in, and stay out of Users and Groups.
-    assert all(u["username"] != "carol" for u in ca.get("/ui/api/users").json())
+    assert all(u["username"] != "carol" for u in ca.get("/ui/api/users").json()["items"])
 
 
 def test_the_directory_follows_the_peers_users(admins):
@@ -317,9 +317,9 @@ def test_a_shared_account_reaches_the_people_it_names_as_its_screens_show_it(adm
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
     carol = sign_in(b, "carol")
     dave = sign_in(b, "dave")
-    homes = carol.get("/ui/api/linked").json()
+    homes = carol.get("/ui/api/linked").json()["items"]
     assert len(homes) == 1 and homes[0]["items"] == 1 and homes[0]["name"]
-    assert dave.get("/ui/api/linked").json() == [], "dave is named by nothing"
+    assert dave.get("/ui/api/linked").json()["items"] == [], "dave is named by nothing"
     words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
     cb.post(f"/ui/api/settings/links/{b_id}/pull")  # the new copy asks for everything
     st = carol.get(f"/ui/api/linked/{b_id}").json()
@@ -336,14 +336,14 @@ def test_a_shared_account_reaches_the_people_it_names_as_its_screens_show_it(adm
     assert [t["payee"] for t in txns["items"]] == ["Pension"]
     assert (acct["id"], "", carol_id) in docs, "its row in the accounts list"
     # The window reads them through the API, only for the people they name.
-    rows = carol.get(f"/ui/api/linked/{b_id}/items").json()
+    rows = carol.get(f"/ui/api/linked/{b_id}/items").json()["items"]
     assert [(r["kind"], r["name"]) for r in rows] == [("account", "Mom's checking")]
     assert rows[0]["row"]["balance"] == "1200.00"
     got = carol.get(f"/ui/api/linked/{b_id}/doc", params={"path": f"/accounts/{acct['id']}"})
     assert got.status_code == 200 and got.json()["balance"] == "1200.00"
     assert carol.get(f"/ui/api/linked/{b_id}/doc", params={"path": "/accounts"}).status_code == 404
     assert dave.get(f"/ui/api/linked/{b_id}/items").status_code == 404
-    homes = carol.get("/ui/api/linked").json()
+    homes = carol.get("/ui/api/linked").json()["items"]
     assert homes[0]["colour"] == "teal" and not homes[0]["locked"]
     r = carol.put(f"/ui/api/linked/{b_id}/colour", json={"colour": "amber"})
     assert r.json()["household"]["colour"] == "amber"
@@ -368,7 +368,7 @@ def test_a_shared_account_reaches_the_people_it_names_as_its_screens_show_it(adm
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
     items, docs = docs_in(b, b_id)
     assert items == {} and docs == {}
-    assert carol.get("/ui/api/linked").json() == []
+    assert carol.get("/ui/api/linked").json()["items"] == []
     # The link ended: the copy goes.
     ca.post(f"/ui/api/settings/links/{a_id}/end")
     assert not lcopy.folder(b.config.data_dir, b_id).exists()
@@ -418,13 +418,13 @@ def test_receipts_cross_only_when_included_and_open_through_decryption(admins):
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
     carol = sign_in(b, "carol")
     carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
-    assert carol.get(f"/ui/api/linked/{b_id}/files").json() == [], "not included: not sent"
+    assert carol.get(f"/ui/api/linked/{b_id}/files").json()["items"] == [], "not included: not sent"
     alice.put(
         f"/ui/api/shares/account/{acct['id']}",
         json={"users": {carol_here["id"]: "read"}, "receipts": {a_id: True}},
     )
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
-    files = carol.get(f"/ui/api/linked/{b_id}/files").json()
+    files = carol.get(f"/ui/api/linked/{b_id}/files").json()["items"]
     assert len(files) == 1 and files[0]["meta"]["transactionId"] == t["id"]
     sealed_dir = lcopy.folder(b.config.data_dir, b_id) / "receipts"
     on_disk = list(sealed_dir.glob("*.mkr"))
@@ -437,7 +437,7 @@ def test_receipts_cross_only_when_included_and_open_through_decryption(admins):
         json={"users": {carol_here["id"]: "read"}, "receipts": {a_id: False}},
     )
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
-    assert carol.get(f"/ui/api/linked/{b_id}/files").json() == []
+    assert carol.get(f"/ui/api/linked/{b_id}/files").json()["items"] == []
     assert list(sealed_dir.glob("*.mkr")) == []
 
 

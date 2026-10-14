@@ -13,7 +13,7 @@ from moneykata.events import Broker
 from moneykata.jobs import Jobs
 from moneykata.ratelimit import SignInGuard, Window
 from moneykata.tasks import Daily, Every, ProviderLimits, TaskError, Tasks
-from moneykata.ui.conventions import Model, Money, Paging, decode_cursor, encode_cursor
+from moneykata.ui.conventions import Model, Money, Paging
 from moneykata.ui.stream import stream
 
 UTC = dt.UTC
@@ -136,14 +136,15 @@ def test_money_fields_refuse_floats():
         Body(amount="1", extra=1)
 
 
-def test_cursors_round_trip():
-    c = encode_cursor(["2026-10-01", "Txn_x"])
-    assert decode_cursor(c) == ["2026-10-01", "Txn_x"]
-    p = Paging(limit=2, after=None)
-    rows, nxt = p.page([1, 2, 3], key=lambda r: [r])
-    assert rows == [1, 2] and decode_cursor(nxt) == [2]
-    rows, nxt = p.page([1, 2], key=lambda r: [r])
-    assert nxt is None
+def test_paging_takes_an_offset_and_counts_the_whole():
+    p = Paging(offset=2, limit=2)
+    assert p.page([1, 2, 3, 4, 5]) == {"items": [3, 4], "total": 5, "offset": 2, "limit": 2}
+    assert Paging(offset=10, limit=2).page([1, 2]) == {
+        "items": [],
+        "total": 2,
+        "offset": 10,
+        "limit": 2,
+    }
 
 
 def test_stream_delivers_from_threads_and_ends_on_close():

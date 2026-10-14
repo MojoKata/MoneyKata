@@ -6,7 +6,7 @@ import datetime as dt
 import json
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from pydantic import Field
 from sqlalchemy import select
 
@@ -16,7 +16,7 @@ from ..store.entities.accounts import Category, Instrument, Lot, LotPick, Transa
 from ..store.entities.giving import Donation, GivingPlan, Organisation
 from ..store.entities.receipts import ReceiptLink
 from ..store.repos import ledger as repo
-from .conventions import ExactRoute, Model, Money, Quantity, Ratio
+from .conventions import Deleted, ExactRoute, Model, Money, Quantity, Ratio, check, gone, if_match
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["giving"])
@@ -182,7 +182,9 @@ def get_giving(request: Request, year: int | None = None, c: Caller = Depends(ca
 
 
 @router.put("/giving/plan", response_model=PlanOut)
-def put_plan(body: PlanIn, request: Request, c: Caller = Depends(caller)):
+def put_plan(
+    body: PlanIn, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     e = []
     if body.targetKind not in ("percent", "amount"):
         e.append(FieldError("targetKind", "target-invalid", "A percentage or an amount."))
@@ -202,6 +204,7 @@ def put_plan(body: PlanIn, request: Request, c: Caller = Depends(caller)):
         p, lvl = giving.plan_for(s, c.id, body.year)
         if p is not None and access.RANK[lvl] < access.RANK["write"]:
             raise Problem(403, "read-only", "This plan is shared with you to read.")
+        check(p, version, lambda: _plan_out(s, p, lvl) if p is not None else {"version": 0})
         values = body.model_dump()
         if p is None:
             p = GivingPlan(id=ids.new_id("GvPln"), ownerId=c.id, **values)
@@ -309,13 +312,18 @@ def _own_org(s, c: Caller, org_id: str) -> Organisation:
     return o
 
 
-@router.put("/giving/organisations/{org_id}", response_model=OrganisationOut)
+@router.patch("/giving/organisations/{org_id}", response_model=OrganisationOut)
 def change_organisation(
-    org_id: str, body: OrganisationIn, request: Request, c: Caller = Depends(caller)
+    org_id: str,
+    body: OrganisationIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
 ):
     values = _org_values(body)
     with server(request).db.tx() as s:
         o = _own_org(s, c, org_id)
+        check(o, version, lambda: next(x for x in _orgs_view(s, c) if x.id == o.id))
         for k, v in values.items():
             setattr(o, k, v)
         o.updatedAt = clock.now()
@@ -323,11 +331,16 @@ def change_organisation(
         return next(x for x in _orgs_view(s, c) if x.id == o.id)
 
 
-@router.delete("/giving/organisations/{org_id}", status_code=204)
-def delete_organisation(org_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/giving/organisations/{org_id}", response_model=Deleted[None])
+def delete_organisation(
+    org_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
-        _own_org(s, c, org_id).mark_deleted(c.id)
-    return Response(status_code=204)
+        o = _own_org(s, c, org_id)
+        check(o, version, lambda: next(x for x in _orgs_view(s, c) if x.id == o.id))
+        o.mark_deleted(c.id)
+        s.flush()
+        return Deleted[None](deleted=gone(o))
 
 
 # ---- Donations (S7.9.3, S8.9) ----
@@ -370,6 +383,7 @@ class DonationOut(Model):
     granted: bool | None
     notes: str | None
     canWrite: bool
+    version: int | None  # None for a gift that is only a categorised transaction
 
 
 def _donation_out(s, c: Caller, plan, g: giving.Gift) -> DonationOut:
@@ -396,6 +410,7 @@ def _donation_out(s, c: Caller, plan, g: giving.Gift) -> DonationOut:
         granted=d.granted if d else None,
         notes=d.notes if d else None,
         canWrite=(d.ownerId == c.id) if d else True,
+        version=d.version if d else None,
     )
 
 
@@ -609,11 +624,16 @@ class DonationChange(Model):
 
 @router.patch("/giving/donations/{donation_id}", response_model=DonationOut)
 def change_donation(
-    donation_id: str, body: DonationChange, request: Request, c: Caller = Depends(caller)
+    donation_id: str,
+    body: DonationChange,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
 ):
     """What changes after the fact: the acknowledgement arriving, a grant paid, notes."""
     with server(request).db.tx() as s:
         d = _own(s, c, donation_id)
+        check(d, version, lambda: _out(s, c, d))
         if body.acknowledged is not None:
             d.acknowledged = body.acknowledged
         if body.granted is not None and d.kind == "daf-grant":
@@ -635,12 +655,20 @@ def _org_of(s, c: Caller, org_id: str, year: int) -> Organisation:
     return o
 
 
-@router.delete("/giving/donations/{donation_id}", status_code=204)
-def delete_donation(donation_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/giving/donations/{donation_id}", response_model=Deleted[None])
+def delete_donation(
+    donation_id: str,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
     """Deletes the record; the transactions it made stay, to be changed or deleted there."""
     with server(request).db.tx() as s:
-        _own(s, c, donation_id).mark_deleted(c.id)
-    return Response(status_code=204)
+        d = _own(s, c, donation_id)
+        check(d, version, lambda: _out(s, c, d))
+        d.mark_deleted(c.id)
+        s.flush()
+        return Deleted[None](deleted=gone(d))
 
 
 class DocumentIn(Model):

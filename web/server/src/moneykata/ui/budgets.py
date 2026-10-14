@@ -6,7 +6,7 @@ import datetime as dt
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from pydantic import Field
 from sqlalchemy import false, select
 
@@ -16,7 +16,7 @@ from ..errors import FieldError, Problem
 from ..store.entities.accounts import Account, Category, Transaction
 from ..store.entities.budgets import Budget, BudgetAccount, BudgetLine
 from ..store.entities.users import User
-from .conventions import ExactRoute, Model, Money, if_match, stale
+from .conventions import Deleted, ExactRoute, Model, Money, check, gone, if_match, stale
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["budgets"])
@@ -87,6 +87,7 @@ class MonthView(Model):
     uncategorised: int
     daysLeft: int
     canWrite: bool
+    version: int  # the budget's: a change to the plan is made against it (S13.8.6)
 
 
 class Flow(Model):
@@ -252,15 +253,19 @@ def change_budget(
         return shape(s, b, lvl)
 
 
-@router.delete("/budgets/{budget_id}", status_code=204)
-def delete_budget(budget_id: str, request: Request, c: Caller = Depends(caller)):
+@router.delete("/budgets/{budget_id}", response_model=Deleted[None])
+def delete_budget(
+    budget_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
     with server(request).db.tx() as s:
-        b, _ = access.budget(s, c.id, budget_id, "owner")
+        b, lvl = access.budget(s, c.id, budget_id, "owner")
+        check(b, version, lambda: shape(s, b, lvl))
         b.mark_deleted(c.id)
         activity.record(
             s, "budget.deleted", actor=c.id, subject_kind="budget", subject_id=b.id, owner=c.id
         )
-    return Response(status_code=204)
+        s.flush()
+        return Deleted[None](deleted=gone(b))
 
 
 @router.get("/budgets/{budget_id}/month", response_model=MonthView)
@@ -281,15 +286,24 @@ def budget_month(
             uncategorised=m.uncategorised,
             daysLeft=m.daysLeft,
             canWrite=lvl in ("owner", "write"),
+            version=b.version,
         )
 
 
 @router.put("/budgets/{budget_id}/plan", response_model=MonthView)
-def set_plan(budget_id: str, body: Plan, request: Request, c: Caller = Depends(caller)):
-    """From the month given on, the plan is what the body lists; earlier months keep theirs."""
+def set_plan(
+    budget_id: str,
+    body: Plan,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
+    """From the month given on, the plan is what the body lists; earlier months keep theirs.
+    The plan belongs to the budget, so it is made against the budget's version."""
     month = budgets.month_of(body.month)
     with server(request).db.tx() as s:
-        b, _ = access.budget(s, c.id, budget_id, "write")
+        b, lvl = access.budget(s, c.id, budget_id, "write")
+        check(b, version, lambda: shape(s, b, lvl))
         cats = {x.id: x for x in s.scalars(select(Category).where(Category.deleted == false()))}
         errors = []
         seen = set()

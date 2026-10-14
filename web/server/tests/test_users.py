@@ -144,7 +144,7 @@ def test_a_change_of_privilege_gives_a_new_token(server, admin_client):
     before = c.cookies.get("mk_session")
     with server.db.read() as s:
         admins = accounts.admins_group(s)
-    groups = admin_client.get("/ui/api/groups").json()
+    groups = admin_client.get("/ui/api/groups").json()["items"]
     version = next(g for g in groups if g["id"] == admins.id)["version"]
     members = next(g for g in groups if g["id"] == admins.id)["memberIds"]
     r = admin_client.patch(
@@ -199,7 +199,7 @@ def test_invite_join_and_sign_in(admin_client, server):
         assert eve.get("/ui/api/profile").status_code == 200
         r = eve.post("/ui/api/invitations/accept", json={"token": token, "password": PW})
         assert r.status_code == 404
-    uid = admin_client.get("/ui/api/users").json()
+    uid = admin_client.get("/ui/api/users").json()["items"]
     eve_row = next(u for u in uid if u["username"] == "eve")
     assert eve_row["invited"] is False
     r = admin_client.post(f"/ui/api/users/{eve_row['id']}/invitation")
@@ -301,7 +301,7 @@ def test_email_change_needs_recent_password_and_a_confirmed_link(server):
 def test_deactivation_ends_sessions_and_reactivation_can_be_asked(admin_client, server):
     ivy = make_user(server, "ivy")
     c = sign_in(server, "ivy")
-    row = next(u for u in admin_client.get("/ui/api/users").json() if u["id"] == ivy.id)
+    row = next(u for u in admin_client.get("/ui/api/users").json()["items"] if u["id"] == ivy.id)
     r = admin_client.patch(
         f"/ui/api/users/{ivy.id}", json={"active": False}, headers={"If-Match": str(row["version"])}
     )
@@ -315,7 +315,7 @@ def test_deactivation_ends_sessions_and_reactivation_can_be_asked(admin_client, 
         body = {"login": "ivy", "password": PW}
         assert again.post("/ui/api/reactivation-requests", json=body).status_code == 202
         assert again.post("/ui/api/reactivation-requests", json=body).status_code == 429
-    row = next(u for u in admin_client.get("/ui/api/users").json() if u["id"] == ivy.id)
+    row = next(u for u in admin_client.get("/ui/api/users").json()["items"] if u["id"] == ivy.id)
     assert row["reactivationAskedAt"] is not None
 
 
@@ -323,14 +323,14 @@ def test_the_last_admin_stays(admin_client, server):
     with server.db.read() as s:
         admin = s.scalars(select(User).where(User.username == "admin")).one()
         admins = accounts.admins_group(s)
-    row = next(u for u in admin_client.get("/ui/api/users").json() if u["id"] == admin.id)
+    row = next(u for u in admin_client.get("/ui/api/users").json()["items"] if u["id"] == admin.id)
     r = admin_client.patch(
         f"/ui/api/users/{admin.id}",
         json={"active": False},
         headers={"If-Match": str(row["version"])},
     )
     assert r.status_code == 409 and r.json()["code"] == "last-admin"
-    g = next(g for g in admin_client.get("/ui/api/groups").json() if g["id"] == admins.id)
+    g = next(g for g in admin_client.get("/ui/api/groups").json()["items"] if g["id"] == admins.id)
     r = admin_client.patch(
         f"/ui/api/groups/{admins.id}",
         json={"memberIds": []},
@@ -362,7 +362,7 @@ def test_groups(admin_client, server):
         f"/ui/api/groups/{g['id']}", json={"name": "Stale"}, headers={"If-Match": str(g["version"])}
     )
     assert r.status_code == 412 and r.json()["current"]["name"] == "Family"
-    rows = {u["username"]: u for u in admin_client.get("/ui/api/users").json()}
+    rows = {u["username"]: u for u in admin_client.get("/ui/api/users").json()["items"]}
     assert rows["ben"]["groupIds"] == [g["id"]]
 
 
@@ -383,7 +383,8 @@ def test_profile_changes_are_checked_and_versioned(server):
     assert r.json()["zone"] == "America/Denver" and r.json()["version"] == p["version"] + 1
     r = c.patch("/ui/api/profile", json={"theme": "dark"}, headers={"If-Match": str(p["version"])})
     assert r.status_code == 412
-    assert c.patch("/ui/api/profile", json={"theme": "dark"}).status_code == 428
+    no_version = {"If-Match": ""}
+    assert c.patch("/ui/api/profile", json={"theme": "dark"}, headers=no_version).status_code == 428
     v = r.json()["current"]["version"]
     for bad in (
         {"timeZone": "Mars/Base"},

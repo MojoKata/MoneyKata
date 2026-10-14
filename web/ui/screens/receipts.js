@@ -2,7 +2,7 @@
 // nothing yet, search, and a grid of thumbnails that open each receipt.
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
-import { useApi } from '../app/hooks.js';
+import { useList } from '../app/hooks.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Chips, Empty, Failed, Loading } from '../components/bits.js';
@@ -17,7 +17,7 @@ export default function Receipts() {
   const [q, setQ] = useState('');
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
-  const res = useApi('/receipts', { show, q: q || undefined }, ['receipt']);
+  const res = useList('/receipts', { show, q: q || undefined }, ['receipt']);
   const rows = /** @type {any[]} */ (res.data);
   const send = async (/** @type {FileList | File[]} */ files) => {
     if (!files.length) return;
