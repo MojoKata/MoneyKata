@@ -200,6 +200,10 @@ def test_every_screen_and_tab_has_its_guide(page):
         "/ui/alerts",
         "/ui/receipts",
         "/ui/projections",
+        "/ui/gifts/upcoming",
+        "/ui/gifts/people",
+        "/ui/gifts/gifts",
+        "/ui/gifts/spending",
         "/ui/users",
         "/ui/profile",
     ]
@@ -279,6 +283,8 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/budgets", "Edit plan", "dialog-plan"),
         ("/ui/receipts", "Receipt Blue Bottle Coffee", "dialog-receipt"),
         ("/ui/projections", "New projection", "dialog-new-projection"),
+        ("/ui/gifts/people", "Add a person", "dialog-person"),
+        ("/ui/gifts/gifts", "Add a gift", "dialog-gift"),
         ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
         ("/ui/users", "New user", "dialog-new-user"),
         ("/ui/users", "New group", "dialog-group"),
@@ -330,6 +336,17 @@ def test_every_dialog_has_its_guide(page):
         check_guide(page, ".dialog", f"a {t} item")
         close_dialog(page)
     open_dialog(page, f"/ui/accounts/{ids['collectables']}/items", "Add an item", "dialog-item")
+    close_dialog(page)
+    # A person with their dates, and a gift with its purchase.
+    visit(page, "/ui/gifts/people")
+    page.get_by_role("row", name=re.compile("Bob Griffin")).click()
+    wait_guide(page, "dialog-person")
+    check_guide(page, ".dialog", "a person with dates")
+    close_dialog(page)
+    visit(page, "/ui/gifts/gifts")
+    page.get_by_role("row", name=re.compile("Riding lessons")).click()
+    wait_guide(page, "dialog-gift")
+    check_guide(page, ".dialog", "a planned gift")
     close_dialog(page)
     # A 529's form, with a person added in it.
     open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")

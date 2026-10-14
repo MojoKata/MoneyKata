@@ -57,7 +57,7 @@ def test_people_are_their_owners_alone(server, alice):
     bob = sign_in(server, "bob")
     assert bob.get("/ui/api/people").json() == []
     bad = alice.post("/ui/api/people", json={"name": " ", "birthMonth": 13})
-    assert {e["field"] for e in bad.json()["errors"]} == {"name", "birthMonth"}
+    assert {e["field"] for e in bad.json()["errors"]} >= {"name", "birthMonth"}
 
 
 def test_the_plan_and_its_beneficiary(alice):

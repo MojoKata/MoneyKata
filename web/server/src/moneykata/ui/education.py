@@ -1,17 +1,17 @@
-"""529 plans (requirements S1.8) and the people they are for (S7.7): the plan and its
-beneficiary, contributions and who made them against the annual gift exclusion, withdrawals
-against qualified expenses with their receipts, the Roth IRA rollover, and the Goal tab's
-education projection (S6.2.2)."""
+"""529 plans (requirements S1.8): the plan and its beneficiary (a person, S7.7, or a user),
+contributions and who made them against the annual gift exclusion, withdrawals against
+qualified expenses with their receipts, the Roth IRA rollover, and the Goal tab's education
+projection (S6.2.2)."""
 
 import datetime as dt
 import json
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import false, select
 
 from .. import access, activity, clock, education, ids, projections, receipts
-from ..errors import FieldError, Problem, refuse
+from ..errors import Problem, refuse
 from ..store.entities.accounts import Account, Transaction
 from ..store.entities.education import Contribution, EducationPlan, Person, QualifiedExpense
 from ..store.entities.projections import Projection
@@ -24,95 +24,6 @@ from .receipts import ReceiptRow
 from .receipts import row as receipt_row
 
 router = APIRouter(prefix="/ui/api", tags=["education"])
-
-
-# ---- People (S7.7): the list Gifts builds on ----
-
-
-class PersonIn(Model):
-    name: str
-    relationship: str | None = None
-    userId: str | None = None
-    birthMonth: int | None = None
-    birthDay: int | None = None
-    birthYear: int | None = None
-
-
-class PersonOut(Model):
-    id: str
-    name: str
-    relationship: str | None
-    userId: str | None
-    birthMonth: int | None
-    birthDay: int | None
-    birthYear: int | None
-    version: int
-
-
-def person_out(p: Person) -> PersonOut:
-    return PersonOut(
-        id=p.id,
-        name=p.name,
-        relationship=p.relationship,
-        userId=p.userId,
-        birthMonth=p.birthMonth,
-        birthDay=p.birthDay,
-        birthYear=p.birthYear,
-        version=p.version,
-    )
-
-
-def check_person(body: PersonIn) -> dict:
-    e = []
-    name = body.name.strip()
-    if not name or len(name) > 80:
-        e.append(FieldError("name", "name-invalid", "A name, up to 80 characters."))
-    if body.birthMonth is not None and not 1 <= body.birthMonth <= 12:
-        e.append(FieldError("birthMonth", "month-invalid", "A month, 1 to 12."))
-    if body.birthDay is not None and not 1 <= body.birthDay <= 31:
-        e.append(FieldError("birthDay", "day-invalid", "A day, 1 to 31."))
-    year = clock.today().year
-    if body.birthYear is not None and not year - 120 <= body.birthYear <= year:
-        e.append(FieldError("birthYear", "year-invalid", "A year of birth."))
-    if e:
-        raise Problem(422, e[0].code, e[0].message, e)
-    return {
-        "name": name,
-        "relationship": (body.relationship or "").strip() or None,
-        "userId": body.userId or None,
-        "birthMonth": body.birthMonth,
-        "birthDay": body.birthDay,
-        "birthYear": body.birthYear,
-    }
-
-
-def people_of(s, user_id: str) -> list[Person]:
-    return list(
-        s.scalars(
-            select(Person)
-            .where(Person.ownerId == user_id, Person.deleted == false())
-            .order_by(Person.name)
-        )
-    )
-
-
-@router.get("/people", response_model=list[PersonOut])
-def list_people(request: Request, c: Caller = Depends(caller)):
-    """The caller's own list of people: nobody else's."""
-    with server(request).db.read() as s:
-        return [person_out(p) for p in people_of(s, c.id)]
-
-
-@router.post("/people", response_model=PersonOut, status_code=201)
-def add_person(body: PersonIn, request: Request, c: Caller = Depends(caller)):
-    values = check_person(body)
-    with server(request).db.tx() as s:
-        if values["userId"] and s.get(User, values["userId"]) is None:
-            raise refuse("userId", "user-unknown", "No such user.")
-        p = Person(id=ids.new_id("Persn"), ownerId=c.id, **values)
-        s.add(p)
-        s.flush()
-        return person_out(p)
 
 
 # ---- The plan ----
@@ -607,13 +518,3 @@ def start_goal(account_id: str, request: Request, c: Caller = Depends(caller)):
             projection=projection_detail(s, c.id, p, "owner"),
             others=0,
         )
-
-
-@router.delete("/people/{person_id}", status_code=204)
-def delete_person(person_id: str, request: Request, c: Caller = Depends(caller)):
-    with server(request).db.tx() as s:
-        p = s.get(Person, person_id)
-        if p is None or p.deleted or p.ownerId != c.id:
-            raise Problem(404, "not-found", "Not found")
-        p.mark_deleted(c.id)
-    return Response(status_code=204)

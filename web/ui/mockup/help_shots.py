@@ -81,6 +81,10 @@ def routes(page) -> dict[str, str]:
         "account-contributions": f"/ui/accounts/{by_type['529']}/contributions",
         "account-withdrawals": f"/ui/accounts/{by_type['529']}/withdrawals",
         "account-goal": f"/ui/accounts/{by_type['529']}/goal",
+        "gifts-upcoming": "/ui/gifts/upcoming",
+        "gifts-people": "/ui/gifts/people",
+        "gifts-gifts": "/ui/gifts/gifts",
+        "gifts-spending": "/ui/gifts/spending",
         "portfolio-performance": f"/ui/portfolios/{port}/performance",
         "portfolio-holdings": f"/ui/portfolios/{port}/holdings",
     }

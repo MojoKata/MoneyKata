@@ -127,6 +127,12 @@
  */
 
 /**
+ * @typedef {Object} Amount
+ * @property {string} label
+ * @property {string} amount
+ */
+
+/**
  * @typedef {Object} Approval
  * @property {Array<string>} [groupIds]
  */
@@ -398,6 +404,13 @@
  */
 
 /**
+ * @typedef {Object} Flag
+ * @property {PersonRef} person
+ * @property {string} given
+ * @property {string} exclusion
+ */
+
+/**
  * @typedef {Object} Flow
  * @property {string} name
  * @property {string} amount
@@ -416,6 +429,43 @@
  * @property {string} expected
  * @property {string} actual
  * @property {string} ahead
+ */
+
+/**
+ * @typedef {Object} GiftIn
+ * @property {Array<string>} people
+ * @property {(string | null)} [occasion]
+ * @property {(number | null)} [occasionYear]
+ * @property {string} description
+ * @property {string} [status]
+ * @property {((number | string) | null)} [cost]
+ * @property {(string | null)} [transactionId]
+ * @property {(string | null)} [store]
+ * @property {(string | null)} [link]
+ * @property {(string | null)} [notes]
+ * @property {boolean} [cash]
+ * @property {boolean} [thankYou]
+ */
+
+/**
+ * @typedef {Object} GiftOut
+ * @property {string} id
+ * @property {Array<PersonRef>} people
+ * @property {(string | null)} occasion
+ * @property {string} occasionLabel
+ * @property {(number | null)} occasionYear
+ * @property {string} description
+ * @property {string} status
+ * @property {(string | null)} cost
+ * @property {(Paid | null)} paid
+ * @property {(string | null)} store
+ * @property {(string | null)} link
+ * @property {(string | null)} notes
+ * @property {boolean} cash
+ * @property {boolean} thankYou
+ * @property {Array<ReceiptRow>} documents
+ * @property {boolean} canWrite
+ * @property {number} version
  */
 
 /**
@@ -522,6 +572,13 @@
  * @property {string} total
  * @property {Array<HoldingRow>} holdings
  * @property {Array<Object<string, unknown>>} problems
+ */
+
+/**
+ * @typedef {Object} HolidayOut
+ * @property {string} key
+ * @property {string} label
+ * @property {(string | null)} date
  */
 
 /**
@@ -956,6 +1013,40 @@
  */
 
 /**
+ * @typedef {Object} NextDate
+ * @property {string} key
+ * @property {string} label
+ * @property {string} date
+ * @property {number} days
+ * @property {(number | null)} turns
+ */
+
+/**
+ * @typedef {Object} OccasionIn
+ * @property {string} kind
+ * @property {(string | null)} [name]
+ * @property {(string | null)} [holiday]
+ * @property {(number | null)} [month]
+ * @property {(number | null)} [day]
+ * @property {(number | null)} [year]
+ * @property {((number | string) | null)} [budget]
+ */
+
+/**
+ * @typedef {Object} OccasionOut
+ * @property {string} kind
+ * @property {(string | null)} [name]
+ * @property {(string | null)} [holiday]
+ * @property {(number | null)} [month]
+ * @property {(number | null)} [day]
+ * @property {(number | null)} [year]
+ * @property {(string | null)} [budget]
+ * @property {string} id
+ * @property {string} label
+ * @property {(string | null)} next
+ */
+
+/**
  * @typedef {Object} OutcomeOut
  * @property {(string | null)} payoffDate
  * @property {number} months
@@ -979,6 +1070,15 @@
  * @typedef {Object} Page_TxnOut_
  * @property {Array<TxnOut>} items
  * @property {(string | null)} next
+ */
+
+/**
+ * @typedef {Object} Paid
+ * @property {string} transactionId
+ * @property {string} date
+ * @property {string} amount
+ * @property {(string | null)} payee
+ * @property {string} accountName
  */
 
 /**
@@ -1038,6 +1138,10 @@
  * @property {(number | null)} [birthMonth]
  * @property {(number | null)} [birthDay]
  * @property {(number | null)} [birthYear]
+ * @property {((number | string) | null)} [giftBudget]
+ * @property {number} [leadDays]
+ * @property {(string | null)} [notes]
+ * @property {(Array<OccasionIn> | null)} [occasions]
  */
 
 /**
@@ -1046,10 +1150,33 @@
  * @property {string} name
  * @property {(string | null)} relationship
  * @property {(string | null)} userId
+ * @property {(string | null)} userName
  * @property {(number | null)} birthMonth
  * @property {(number | null)} birthDay
  * @property {(number | null)} birthYear
+ * @property {(string | null)} giftBudget
+ * @property {number} leadDays
+ * @property {(string | null)} notes
+ * @property {Array<OccasionOut>} occasions
+ * @property {(NextDate | null)} next
+ * @property {string} spent
+ * @property {(string | null)} lastGift
+ * @property {string} level
+ * @property {string} ownerName
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} PersonRef
+ * @property {string} id
+ * @property {string} name
+ */
+
+/**
+ * @typedef {Object} PersonSpend
+ * @property {PersonRef} person
+ * @property {string} spent
+ * @property {(string | null)} budget
  */
 
 /**
@@ -1247,6 +1374,16 @@
  * @property {boolean} shown
  * @property {number} sharedWith
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} Purchase
+ * @property {string} transactionId
+ * @property {string} date
+ * @property {string} amount
+ * @property {(string | null)} payee
+ * @property {string} accountName
+ * @property {(string | null)} category
  */
 
 /**
@@ -1631,6 +1768,15 @@
  */
 
 /**
+ * @typedef {Object} SpendingOut
+ * @property {number} year
+ * @property {Array<PersonSpend>} byPerson
+ * @property {Array<Amount>} byOccasion
+ * @property {Array<Amount>} byYear
+ * @property {Array<Flag>} flagged
+ */
+
+/**
  * @typedef {Object} SplitIn
  * @property {(string | null)} [categoryId]
  * @property {(number | string)} amount
@@ -1896,6 +2042,21 @@
  * @property {string} categoryId
  * @property {string} label
  * @property {string} spent
+ */
+
+/**
+ * @typedef {Object} UpcomingOut
+ * @property {PersonRef} person
+ * @property {string} key
+ * @property {string} label
+ * @property {string} date
+ * @property {number} days
+ * @property {(number | null)} turns
+ * @property {boolean} inLead
+ * @property {(string | null)} budget
+ * @property {string} planned
+ * @property {string} missing
+ * @property {Array<GiftOut>} gifts
  */
 
 /**

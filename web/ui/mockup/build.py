@@ -63,6 +63,8 @@ DIALOGS = (
     ("/ui/budgets", "Edit plan", "dialog-plan"),
     ("/ui/receipts", "Receipt Blue Bottle Coffee", "dialog-receipt"),
     ("/ui/projections", "New projection", "dialog-new-projection"),
+    ("/ui/gifts/people", "Add a person", "dialog-person"),
+    ("/ui/gifts/gifts", "Add a gift", "dialog-gift"),
     ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
     ("/ui/users", "New user", "dialog-new-user"),
     ("/ui/users", "New group", "dialog-group"),
@@ -258,6 +260,10 @@ class Recorder:
             "/ui/alerts",
             "/ui/receipts",
             "/ui/projections",
+            "/ui/gifts/upcoming",
+            "/ui/gifts/people",
+            "/ui/gifts/gifts",
+            "/ui/gifts/spending",
         ]
         for x in self.api("/projections"):
             paths.append(f"/ui/projections/{x['id']}")

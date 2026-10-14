@@ -2,7 +2,7 @@
 
 from sqlalchemy import func, select
 
-from .. import activity, clock, ids
+from .. import activity, clock, ids, sharing
 from ..store.entities.accounts import Account, Import, Transaction
 from ..store.entities.sharing import CountedAccount, Portfolio, PortfolioAccount, Share
 from ..store.entities.users import Group
@@ -84,7 +84,7 @@ def _history(s) -> None:
             owner=p.ownerId,
         )
     for sh in s.scalars(select(Share)):
-        owner = (s.get(Account, sh.itemId) or s.get(Portfolio, sh.itemId)).ownerId
+        owner = sharing.item(s, sh.kind, sh.itemId).ownerId
         activity.record(
             s,
             "share.given",

@@ -71,6 +71,8 @@ def map_all() -> None:
         (acc.Loan, loans.Loan),
         (acc.PayoffPlan, loans.PayoffPlan),
         (ed.Person, people.Person),
+        (ed.Occasion, people.Occasion),
+        (ed.Gift, people.Gift),
         (ed.EducationPlan, education.EducationPlan),
         (ed.Contribution, education.Contribution),
         (ed.QualifiedExpense, education.QualifiedExpense),
@@ -98,6 +100,7 @@ def map_all() -> None:
     mapper_registry.map_imperatively(bd.BudgetAccount, budgets.BudgetAccounts)
     _versioned(rc.Receipt, receipts.Receipt)
     mapper_registry.map_imperatively(rc.ReceiptLink, receipts.ReceiptLinks)
+    mapper_registry.map_imperatively(ed.GiftPerson, people.GiftPersons)
     _versioned(pj.AssumptionSet, projections.AssumptionSet)
     _versioned(pj.Projection, projections.Projection)
     _versioned(pj.TaxFigure, projections.TaxFigure)

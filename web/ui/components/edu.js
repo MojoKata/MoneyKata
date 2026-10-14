@@ -74,7 +74,7 @@ export const PLAN_FIELDS = [
  */
 export function PlanFields({ f, set, e }) {
   const people = useApi('/people');
-  const list = /** @type {any[]} */ (people.data) || [];
+  const list = (/** @type {any[]} */ (people.data) || []).filter((p) => p.level === 'owner');
   return html`
     <div class="row">
       <${Field} label="Plan state" id="plan-state" error=${errAt(e, 'planState')}>

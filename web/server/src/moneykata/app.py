@@ -54,12 +54,20 @@ class Server:
         counts: dict[str, int] = {}
         if self.store is None:
             return counts
-        from . import alerts
+        from . import alerts, clock, gifts
         from .auth import signup
 
         with self.db.read() as s:
             unseen = alerts.unseen(s, caller.id, caller.admin)
             waiting = len(signup.waiting(s)) if caller.admin else 0
+            # Occasions inside their reminder time with nothing bought yet (S7.7.3).
+            due = sum(
+                1
+                for u in gifts.upcoming(s, caller.id, clock.today())
+                if u.inLead and not any(g.status in gifts.SPENT for g in u.gifts)
+            )
+        if due:
+            counts["gifts"] = due
         if unseen:
             counts["alerts"] = unseen
         if waiting:
@@ -124,6 +132,7 @@ def create_app(server: Server) -> FastAPI:
         budgets,
         dashboard,
         education,
+        gifts,
         imports,
         items,
         loans,
@@ -158,6 +167,7 @@ def create_app(server: Server) -> FastAPI:
         loans,
         items,
         education,
+        gifts,
         dashboard,
     ):
         app.include_router(module.router)

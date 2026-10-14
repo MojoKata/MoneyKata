@@ -188,6 +188,20 @@ def _attention(
                     link=f"/ui/accounts/{a.id}/reconcile",
                 )
             )
+    # Occasions inside their reminder time with nothing bought yet (S7.7.3).
+    from .. import alerts as alerting
+    from .. import gifts
+
+    for up in gifts.upcoming(s, c.id, today):
+        if up.inLead and not any(g.status in gifts.SPENT for g in up.gifts):
+            out.append(
+                Attention(
+                    kind="occasion",
+                    count=1,
+                    text=f"{alerting.occasion_title(up)}, {gifts.what_is_missing(up)}",
+                    link="/ui/gifts",
+                )
+            )
     status = pricing.status(s, dev)
     if status["stale"]:
         out.append(

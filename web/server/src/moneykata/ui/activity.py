@@ -79,6 +79,7 @@ TEXT = {
     "receipt.deleted": "{actor} deleted a receipt",
     "loan.payment": "{actor} recorded a payment on {subject}",
     "loan.plan-saved": "{actor} saved a payoff plan for {subject}",
+    "gift.saved": "{actor} saved a gift",
     "529.contribution": "{actor} recorded a contribution to {subject}",
     "item.added": "{actor} added an item to {subject}",
     "item.changed": "{actor} changed an item in {subject}",

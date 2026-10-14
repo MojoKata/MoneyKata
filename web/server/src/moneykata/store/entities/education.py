@@ -51,3 +51,43 @@ class QualifiedExpense(Record):
     amount: Decimal
     description: str | None = None
     transactionId: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class Occasion(Record):
+    id: str
+    personId: str
+    kind: str
+    name: str | None = None
+    holiday: str | None = None
+    month: int | None = None
+    day: int | None = None
+    year: int | None = None
+    budget: Decimal | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class Gift(Record):
+    id: str
+    ownerId: str
+    description: str
+    occasion: str | None = None
+    occasionYear: int | None = None
+    status: str = "idea"
+    cost: Decimal | None = None
+    transactionId: str | None = None
+    store: str | None = None
+    link: str | None = None
+    notes: str | None = None
+    cash: bool = False
+    thankYou: bool = False
+
+
+@dataclass(kw_only=True, eq=False)
+class GiftPerson:
+    giftId: str
+    personId: str
+    createdAt: dt.datetime
+    deleted: bool = False
+    deletedAt: dt.datetime | None = None
+    deletedById: str | None = None

@@ -836,6 +836,29 @@
         "title": "AlertRow",
         "type": "object"
       },
+      "Amount": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "amount"
+        ],
+        "title": "Amount",
+        "type": "object"
+      },
       "Approval": {
         "additionalProperties": false,
         "properties": {
@@ -2180,6 +2203,37 @@
         "title": "ExpenseOut",
         "type": "object"
       },
+      "Flag": {
+        "additionalProperties": false,
+        "properties": {
+          "exclusion": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Exclusion",
+            "type": "string"
+          },
+          "given": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Given",
+            "type": "string"
+          },
+          "person": {
+            "$ref": "#/components/schemas/PersonRef"
+          }
+        },
+        "required": [
+          "person",
+          "given",
+          "exclusion"
+        ],
+        "title": "Flag",
+        "type": "object"
+      },
       "Flow": {
         "additionalProperties": false,
         "properties": {
@@ -2267,6 +2321,284 @@
           "ahead"
         ],
         "title": "Following",
+        "type": "object"
+      },
+      "GiftIn": {
+        "additionalProperties": false,
+        "properties": {
+          "cash": {
+            "default": false,
+            "title": "Cash",
+            "type": "boolean"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occasion"
+          },
+          "occasionYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occasionyear"
+          },
+          "people": {
+            "items": {
+              "type": "string"
+            },
+            "title": "People",
+            "type": "array"
+          },
+          "status": {
+            "default": "idea",
+            "title": "Status",
+            "type": "string"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "thankYou": {
+            "default": false,
+            "title": "Thankyou",
+            "type": "boolean"
+          },
+          "transactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
+          }
+        },
+        "required": [
+          "people",
+          "description"
+        ],
+        "title": "GiftIn",
+        "type": "object"
+      },
+      "GiftOut": {
+        "additionalProperties": false,
+        "properties": {
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "cash": {
+            "title": "Cash",
+            "type": "boolean"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptRow"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occasion"
+          },
+          "occasionLabel": {
+            "title": "Occasionlabel",
+            "type": "string"
+          },
+          "occasionYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occasionyear"
+          },
+          "paid": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Paid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/PersonRef"
+            },
+            "title": "People",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "thankYou": {
+            "title": "Thankyou",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "people",
+          "occasion",
+          "occasionLabel",
+          "occasionYear",
+          "description",
+          "status",
+          "cost",
+          "paid",
+          "store",
+          "link",
+          "notes",
+          "cash",
+          "thankYou",
+          "documents",
+          "canWrite",
+          "version"
+        ],
+        "title": "GiftOut",
         "type": "object"
       },
       "GiftYearOut": {
@@ -2911,6 +3243,38 @@
           "problems"
         ],
         "title": "Holdings",
+        "type": "object"
+      },
+      "HolidayOut": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "date"
+        ],
+        "title": "HolidayOut",
         "type": "object"
       },
       "Household": {
@@ -5604,6 +5968,247 @@
         "title": "Newer",
         "type": "object"
       },
+      "NextDate": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turns"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "date",
+          "days",
+          "turns"
+        ],
+        "title": "NextDate",
+        "type": "object"
+      },
+      "OccasionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "holiday": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holiday"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "OccasionIn",
+        "type": "object"
+      },
+      "OccasionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "holiday": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holiday"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "label",
+          "next"
+        ],
+        "title": "OccasionOut",
+        "type": "object"
+      },
       "OutcomeOut": {
         "additionalProperties": false,
         "properties": {
@@ -5752,6 +6357,52 @@
           "next"
         ],
         "title": "Page[TxnOut]",
+        "type": "object"
+      },
+      "Paid": {
+        "additionalProperties": false,
+        "properties": {
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "date",
+          "amount",
+          "payee",
+          "accountName"
+        ],
+        "title": "Paid",
         "type": "object"
       },
       "Password": {
@@ -6119,9 +6770,62 @@
             ],
             "title": "Birthyear"
           },
+          "giftBudget": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Giftbudget"
+          },
+          "leadDays": {
+            "default": 14,
+            "title": "Leaddays",
+            "type": "integer"
+          },
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occasions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OccasionIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occasions"
           },
           "relationship": {
             "anyOf": [
@@ -6188,12 +6892,78 @@
             ],
             "title": "Birthyear"
           },
+          "giftBudget": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Giftbudget"
+          },
           "id": {
             "title": "Id",
             "type": "string"
           },
+          "lastGift": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastgift"
+          },
+          "leadDays": {
+            "title": "Leaddays",
+            "type": "integer"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
           "name": {
             "title": "Name",
+            "type": "string"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextDate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occasions": {
+            "items": {
+              "$ref": "#/components/schemas/OccasionOut"
+            },
+            "title": "Occasions",
+            "type": "array"
+          },
+          "ownerName": {
+            "title": "Ownername",
             "type": "string"
           },
           "relationship": {
@@ -6207,6 +6977,14 @@
             ],
             "title": "Relationship"
           },
+          "spent": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Spent",
+            "type": "string"
+          },
           "userId": {
             "anyOf": [
               {
@@ -6218,6 +6996,17 @@
             ],
             "title": "Userid"
           },
+          "userName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
           "version": {
             "title": "Version",
             "type": "integer"
@@ -6228,12 +7017,79 @@
           "name",
           "relationship",
           "userId",
+          "userName",
           "birthMonth",
           "birthDay",
           "birthYear",
+          "giftBudget",
+          "leadDays",
+          "notes",
+          "occasions",
+          "next",
+          "spent",
+          "lastGift",
+          "level",
+          "ownerName",
           "version"
         ],
         "title": "PersonOut",
+        "type": "object"
+      },
+      "PersonRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "PersonRef",
+        "type": "object"
+      },
+      "PersonSpend": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "person": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "spent": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Spent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "person",
+          "spent",
+          "budget"
+        ],
+        "title": "PersonSpend",
         "type": "object"
       },
       "PickIn": {
@@ -7405,6 +8261,64 @@
           "version"
         ],
         "title": "ProjectionRow",
+        "type": "object"
+      },
+      "Purchase": {
+        "additionalProperties": false,
+        "properties": {
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "transactionId": {
+            "title": "Transactionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transactionId",
+          "date",
+          "amount",
+          "payee",
+          "accountName",
+          "category"
+        ],
+        "title": "Purchase",
         "type": "object"
       },
       "ReadingQueue": {
@@ -9431,6 +10345,52 @@
         "title": "SourcesView",
         "type": "object"
       },
+      "SpendingOut": {
+        "additionalProperties": false,
+        "properties": {
+          "byOccasion": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Byoccasion",
+            "type": "array"
+          },
+          "byPerson": {
+            "items": {
+              "$ref": "#/components/schemas/PersonSpend"
+            },
+            "title": "Byperson",
+            "type": "array"
+          },
+          "byYear": {
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            },
+            "title": "Byyear",
+            "type": "array"
+          },
+          "flagged": {
+            "items": {
+              "$ref": "#/components/schemas/Flag"
+            },
+            "title": "Flagged",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "byPerson",
+          "byOccasion",
+          "byYear",
+          "flagged"
+        ],
+        "title": "SpendingOut",
+        "type": "object"
+      },
       "SplitIn": {
         "additionalProperties": false,
         "properties": {
@@ -11274,6 +12234,95 @@
           "spent"
         ],
         "title": "Unplanned",
+        "type": "object"
+      },
+      "UpcomingOut": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "gifts": {
+            "items": {
+              "$ref": "#/components/schemas/GiftOut"
+            },
+            "title": "Gifts",
+            "type": "array"
+          },
+          "inLead": {
+            "title": "Inlead",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "missing": {
+            "title": "Missing",
+            "type": "string"
+          },
+          "person": {
+            "$ref": "#/components/schemas/PersonRef"
+          },
+          "planned": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Planned",
+            "type": "string"
+          },
+          "turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turns"
+          }
+        },
+        "required": [
+          "person",
+          "key",
+          "label",
+          "date",
+          "days",
+          "turns",
+          "inLead",
+          "budget",
+          "planned",
+          "missing",
+          "gifts"
+        ],
+        "title": "UpcomingOut",
         "type": "object"
       },
       "UserChange": {
@@ -14952,6 +16001,351 @@
         ]
       }
     },
+    "/ui/api/gifts": {
+      "get": {
+        "operationId": "list_gifts_ui_api_gifts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "person",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Person"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GiftOut"
+                  },
+                  "title": "Response List Gifts Ui Api Gifts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Gifts",
+        "tags": [
+          "gifts"
+        ]
+      },
+      "post": {
+        "operationId": "add_gift_ui_api_gifts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GiftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GiftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Gift",
+        "tags": [
+          "gifts"
+        ]
+      }
+    },
+    "/ui/api/gifts/purchases": {
+      "get": {
+        "description": "Recent spending, to link a gift's cost to its transaction: the last 90 days.",
+        "operationId": "purchases_ui_api_gifts_purchases_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Purchase"
+                  },
+                  "title": "Response Purchases Ui Api Gifts Purchases Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Purchases",
+        "tags": [
+          "gifts"
+        ]
+      }
+    },
+    "/ui/api/gifts/spending": {
+      "get": {
+        "operationId": "get_spending_ui_api_gifts_spending_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpendingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Spending",
+        "tags": [
+          "gifts"
+        ]
+      }
+    },
+    "/ui/api/gifts/upcoming": {
+      "get": {
+        "operationId": "list_upcoming_ui_api_gifts_upcoming_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UpcomingOut"
+                  },
+                  "title": "Response List Upcoming Ui Api Gifts Upcoming Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Upcoming",
+        "tags": [
+          "gifts"
+        ]
+      }
+    },
+    "/ui/api/gifts/{gift_id}": {
+      "delete": {
+        "operationId": "delete_gift_ui_api_gifts__gift_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gift_id",
+            "required": true,
+            "schema": {
+              "title": "Gift Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Gift",
+        "tags": [
+          "gifts"
+        ]
+      },
+      "put": {
+        "operationId": "change_gift_ui_api_gifts__gift_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gift_id",
+            "required": true,
+            "schema": {
+              "title": "Gift Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GiftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GiftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Gift",
+        "tags": [
+          "gifts"
+        ]
+      }
+    },
+    "/ui/api/gifts/{gift_id}/documents": {
+      "post": {
+        "operationId": "attach_receipt_ui_api_gifts__gift_id__documents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "gift_id",
+            "required": true,
+            "schema": {
+              "title": "Gift Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GiftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Attach Receipt",
+        "tags": [
+          "gifts"
+        ]
+      }
+    },
     "/ui/api/groups": {
       "get": {
         "operationId": "list_groups_ui_api_groups_get",
@@ -15065,6 +16459,31 @@
         "summary": "Change Group",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/ui/api/holidays": {
+      "get": {
+        "operationId": "list_holidays_ui_api_holidays_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HolidayOut"
+                  },
+                  "title": "Response List Holidays Ui Api Holidays Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Holidays",
+        "tags": [
+          "gifts"
         ]
       }
     },
@@ -16104,7 +17523,7 @@
     },
     "/ui/api/people": {
       "get": {
-        "description": "The caller's own list of people: nobody else's.",
+        "description": "The caller's people and those shared with them.",
         "operationId": "list_people_ui_api_people_get",
         "responses": {
           "200": {
@@ -16124,7 +17543,7 @@
         },
         "summary": "List People",
         "tags": [
-          "education"
+          "gifts"
         ]
       },
       "post": {
@@ -16163,7 +17582,7 @@
         },
         "summary": "Add Person",
         "tags": [
-          "education"
+          "gifts"
         ]
       }
     },
@@ -16198,7 +17617,57 @@
         },
         "summary": "Delete Person",
         "tags": [
-          "education"
+          "gifts"
+        ]
+      },
+      "put": {
+        "operationId": "change_person_ui_api_people__person_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Person",
+        "tags": [
+          "gifts"
         ]
       }
     },
@@ -18437,7 +19906,8 @@
                 "account",
                 "portfolio",
                 "budget",
-                "projection"
+                "projection",
+                "person"
               ],
               "title": "Kind",
               "type": "string"
@@ -18493,7 +19963,8 @@
                 "account",
                 "portfolio",
                 "budget",
-                "projection"
+                "projection",
+                "person"
               ],
               "title": "Kind",
               "type": "string"

@@ -81,6 +81,7 @@ The prefixes of the tables that exist.
 | Cat    | Category         | A budget category given to bank transactions.                                                |
 | Cntrb  | Contribution     | Who a deposit into a 529 came from, and whether it is a five-year election.                  |
 | EdPln  | EducationPlan    | A 529 account's plan: its state, name, beneficiary and opening date.                         |
+| Gift   | Gift             | A gift to or from a person for an occasion, from idea to given.                              |
 | Group  | Group            | A named set of users that shares are granted to.                                             |
 | Hold   | Holding          | What an account holds of one instrument at a point in time.                                  |
 | Imprt  | Import           | One file imported into an account, with the dates it covers.                                 |
@@ -91,6 +92,7 @@ The prefixes of the tables that exist.
 | Lot    | Lot              | One acquisition of an instrument, and what remains open.                                     |
 | Lyout  | StatementLayout  | What statement import learned of an institution's layout: section signs, lines to skip.      |
 | Map    | ImportMapping    | A saved column mapping for one institution's CSV files.                                      |
+| Occsn  | Occasion         | A dated occasion for a person: an anniversary, a holiday, a custom date.                     |
 | Persn  | Person           | Someone in a user's life who need not be a user of the server.                               |
 | Portf  | Portfolio        | A named set of accounts, or parts of them, charted as one.                                   |
 | Prjct  | Projection       | How money will grow toward a goal; an active one is tracked against its baseline.            |
@@ -117,9 +119,7 @@ designed yet. A row moves to §3.1 when its table is.
 |--------|---------------|-----------------------------------------------------------------------------------|
 | Dnatn  | Donation      | One charitable gift to an organisation, or a donor-advised fund grant.            |
 | Filng  | Filing        | One return in a tax book (federal, state or local), with its progress and result. |
-| Gift   | Gift          | A gift to or from a person for an occasion, from idea to given.                   |
 | Link   | Link          | A link with another MoneyKata server.                                             |
-| Occsn  | Occasion      | A dated occasion for a person: a birthday, an anniversary, a holiday.             |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
 | TaxBk  | TaxBook       | One user's, or a married couple's, tax records for one tax year.                  |
 | Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |

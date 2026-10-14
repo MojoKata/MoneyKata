@@ -1676,6 +1676,7 @@ DIALOGS.gift = (d) => {
     ${field('Description', inp(x && x.id === 'emma' ? 'Watercolour set' : '', 'What it is'))}
     <div class="field"><label>Status</label><div class="seg">${['Idea', 'Planned', 'Bought', 'Given', 'Received'].map((l) => `<button class="${l === 'Planned' ? 'on' : ''}" data-act="seg">${l}</button>`).join('')}</div></div>
     <div class="row">${field('Cost', inp(x && x.id === 'emma' ? '35.00' : ''))}${field('Paid with', sel(['Not bought yet', 'Blue Cash Preferred · Oct 9 · Michaels −$35.00', 'Type the amount'], 'Not bought yet'), 'Link the transaction, or split one purchase across gifts.')}</div>
+    <div class="list-item"><span class="grow">Given in money<div class="small dim">Cash or a cheque: counted against the annual gift exclusion.</div></span>${sw(false)}</div>
     ${field('Where bought', inp('', 'shop or link'))}${field('Notes', '<textarea class="in" rows="2"></textarea>')}
     <div class="toolbar"><button class="btn sm" data-act="dlg" data-v="upload">${icon('clip')} Attach receipt</button></div>`, ok: 'Save' };
 };
@@ -1879,7 +1880,7 @@ const GUIDES = {
     <h2 id="h-for">For</h2><p>Who the gift is for.</p>
     <h2 id="h-description">Description</h2><p>What it is.</p>
     <h2 id="h-cost">Cost</h2><p>What it cost, or will. Linked to its transaction when bought.</p>
-    <h2 id="h-where-bought">Where bought</h2><p>A shop or a link.</p>`,
+    <h2 id="h-where-bought">Where bought</h2><p>A shop or a link.</p><h2>Given in money</h2><p>A gift of cash or a cheque. Money given to one person in a year, with your 529 contributions for them, above the annual gift exclusion is flagged for Form 709.</p>`,
   giving: `<h1>Giving</h1><p>Charitable donations against a target you set as a percentage of income, by organisation, cause and type, with the acknowledgements the tax rules need.</p>
     <h2 ${hid('Percent of income')}>Percent of income</h2><p>The target as a share of the income basis below. 10% when you first set one.</p>
     <h2 ${hid('Income basis')}>Income basis</h2><p><b>Gross income</b> as typed from a W-2, <b>income transactions</b> (take-home pay), or an <b>AGI estimate</b>.</p>

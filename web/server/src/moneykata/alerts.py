@@ -228,6 +228,39 @@ def projections_behind(s: Session, server) -> Iterable[Cause]:
             )
 
 
+@check
+def occasions(s: Session, server) -> Iterable[Cause]:
+    """An occasion inside its reminder time with nothing bought for it yet (S7.7.3)."""
+    from . import gifts
+
+    today = clock.today()
+    for u in s.scalars(select(User).where(User.active, User.deleted == false())):
+        for up in gifts.upcoming(s, u.id, today):
+            if not up.inLead or any(g.status in gifts.SPENT for g in up.gifts):
+                continue
+            yield Cause(
+                key=f"occasion:{u.id}:{up.person.id}:{up.date.key}:{up.date.date.isoformat()}",
+                kind="occasion",
+                title=occasion_title(up),
+                about=gifts.what_is_missing(up),
+                user_id=u.id,
+                link="/ui/gifts",
+                fix="Plan a gift",
+                icon="gift",
+            )
+
+
+def occasion_title(up) -> str:
+    """'Emma's birthday in 9 days'; a holiday or a named date keeps its capitals."""
+    when = "today" if up.days == 0 else "tomorrow" if up.days == 1 else f"in {up.days} days"
+    plain = up.date.kind in ("birthday", "anniversary") and up.date.label in (
+        "Birthday",
+        "Anniversary",
+    )
+    label = up.date.label.lower() if plain else up.date.label
+    return f"{up.person.name}'s {label} {when}"
+
+
 # ---------- running the checks ----------
 
 
