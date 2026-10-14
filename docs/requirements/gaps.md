@@ -6,7 +6,7 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 ## G8: Statement import beyond bank and card statements
 
-**What is missing:** brokerage statements (a Schwab brokerage statement's positions, trades and income, which OFX and CSV cover today), statements of several accounts in one file, and learning column positions rather than section headings for layouts without sections or a running balance.
+**What is missing:** reading a brokerage statement's lines: its positions at the period's end (to check holdings against, as balance anchors check cash, S1.11), its cash activity (contributions, dividends, interest, fees) and its trades. Until then a brokerage statement is kept without reading (S1.3.3.6), and OFX and CSV carry a Schwab brokerage account's activity.
 
 **Touches:** S1.3.
 
@@ -51,3 +51,11 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** bitcoin amounts as whole numbers of sats, the unit bitcoin itself counts in: stored and sent as integers (on-chain balances, transaction amounts, fees, a bitcoin lot's units), which JSON and the browser carry exactly as plain numbers, since every possible amount is below 2^53. A Profile preference shows them as **sats** (`12,345,678 sats`) or **BTC** (`0.12345678 BTC`), the conversion done only in formatting. Today they are decimal quantities like any other (S13.8.2).
 
 **Touches:** S1.6, S3, S12, S13.8.2, `schema.md`.
+
+## G18: External connectors
+
+**Needed for the first release** (S17.9).
+
+**What is missing:** small programs, each short enough for a person to read in full and trust, that hold an institution's credentials or personal access token outside MoneyKata, fetch what the institution offers (OFX, CSV, PDF statements), and post it to MoneyKata's import, so an account stays current without downloading and uploading by hand. To specify: where a connector runs (on the host, beside the server, or on a person's own machine) and how it keeps its credentials; the access token it posts with, limited to importing into the accounts it names, since today's tokens only read (S10.9); how its imports are checked and recorded (Activity, an alert when one fails); and the first connectors, for the average cases (a Schwab brokerage account, a UMB bank account).
+
+**Touches:** S1.3, S10.9, S13.7, S17.9.

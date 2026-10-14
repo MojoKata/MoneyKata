@@ -60,7 +60,44 @@
          balance on the last day (S1.11).
       4. **What is learned per institution** (per owner): the sign of each section heading the
          person kept, and the first words of lines they left out, which are skipped next
-         time. Brokerage statements and statements of several accounts are G8.
+         time.
+      5. **Several accounts in one statement** (a Schwab combined statement, a UMB statement
+         with checking and savings): the statement is split where each account's part
+         begins, at a header naming the account (*Account Number*, *Account ending*, an
+         account's name followed by its number), and each part is read as a statement of its
+         own. A part goes to the account whose last four digits (S1.1) its header shows, and
+         to one the person chooses when none or several match; a part for an account
+         MoneyKata doesn't hold can be left out. The parts are checked one after another in
+         the same dialog, each against its own opening and closing balances, and nothing is
+         saved until each part is saved or left out. The PDF is kept on each account it
+         filled, once.
+      6. **Kept without reading**: any statement can be kept on its account as it is, for the
+         record, without its lines being read: a brokerage statement (reading one is G8), a
+         statement whose layout isn't read, or one the person only wants archived. MoneyKata
+         reads its period and institution where it can, for the person to check, and keeps
+         the PDF on the account as a receipt (S9) named by its period, as a read statement
+         is kept. An account kept current from OFX or CSV is archived this way, its
+         statements kept beside the imports that carry its activity.
+      7. **Learned column positions** *(after the first release, S17.9)*, for layouts with
+         no section headings and no running balance, where the sign of an amount comes from
+         the column it is in (separate *Debits* and *Credits* columns):
+         1. **Finding the columns**: on each page, the words of the lines that start with a
+            date are grouped by where they sit across the page (their left and right edges
+            in the PDF's text layer, or in the OCR's boxes), and the amounts fall into a few
+            bands.
+         2. **Naming them**: the check dialog shows the bands above the lines, each with a
+            choice: *Date*, *Description*, *Debit* (money out), *Credit* (money in),
+            *Amount* (signed), *Balance*, or *Ignore*. MoneyKata proposes names from the
+            column headings it finds (*Withdrawals*, *Deposits*, *Debits*, *Credits*,
+            *Balance*) and from the totals (debits and credits each adding up to a total the
+            statement prints); the person corrects them, and each line's sign follows from
+            the column its amount is in.
+         3. **Learning them**: the named bands are kept with what is learned per institution
+            (S1.3.3.4), as positions relative to the page's width, so the next statement
+            from that institution is read by column with no naming, and a band that has
+            moved (a new layout) is asked about again.
+         4. **Order of the signs**: a running balance, then an explicit sign, then a learned
+            column, then the section heading, then the words.
    4. **bitcoin watch** (self-custody wallets): balances and transactions read by address or
       xpub (S1.6).
 

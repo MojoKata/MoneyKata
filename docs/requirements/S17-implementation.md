@@ -280,3 +280,6 @@
          copy through decryption, and what an older or newer peer does.
       9. **The mockup** generated from the app for these screens, and the Docker image, with
          two servers linked.
+   6. **The first release** follows the milestones, and needs besides: the external connectors
+      (G18).
+   7. **After the first release**: learned column positions for statements (S1.3.3.7).
