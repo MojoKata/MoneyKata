@@ -591,9 +591,11 @@ export function Goal({ a }) {
     <div class="grid g-main">
       <div class="card">
         <h3>${ans.name}'s college fund<span class="spacer"></span><span
-        class=${'pill ' + (ans.funded >= 100 ? 'ok' : 'warn')}>${Math.round(
-          ans
-            .funded,
+        class=${'pill ' + (num(ans.funded) >= 100 ? 'ok' : 'warn')}>${Math.round(
+          num(
+            ans
+              .funded,
+          ),
         )}% funded</span></h3>
         <${FanChart} label=${`${x.name}: projected balance by year`} years=${r.years}
           p=${r.percentiles} marks=${[[ans.firstYear, 'school starts']]} />
@@ -623,5 +625,5 @@ export function Goal({ a }) {
 
 /** @param {number} v */
 function money0(v) {
-  return money(String(Math.round(v)), { cents: false });
+  return money(String(Math.round(num(v))), { cents: false });
 }

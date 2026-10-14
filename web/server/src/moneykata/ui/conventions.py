@@ -22,15 +22,24 @@ from .. import exactjson, money
 from ..errors import Problem, refuse
 
 
+class Sent(Decimal):
+    """A number as a request sent it, so its places are checked; a Decimal the server worked
+    out (an average, say) is rounded when it is written instead."""
+
+
 def _money_in(v: Any) -> Decimal:
     if isinstance(v, float):
         raise ValueError("amounts are exact: send the number as written, never through a float")
+    if type(v) is Decimal:
+        return v
     return money.parse(v, places=2)
 
 
 def _quantity_in(v: Any) -> Decimal:
     if isinstance(v, float):
         raise ValueError("quantities are exact: send the number as written, never through a float")
+    if type(v) is Decimal:
+        return v
     return money.parse(v, places=money.QUANTITY_PLACES)
 
 
@@ -88,7 +97,7 @@ class ExactRequest(Request):
     async def json(self) -> Any:
         if not hasattr(self, "_json"):
             body = await self.body()
-            self._json = exactjson.loads(body) if body else None
+            self._json = json.loads(body, parse_float=Sent) if body else None
         return self._json
 
 

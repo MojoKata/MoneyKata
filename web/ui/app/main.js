@@ -1,9 +1,10 @@
 // The browser app's entry point: the session decides between sign-in, the default admin's
 // setup step, and the frame with its screens.
-import { render } from 'preact';
+import { options, render } from 'preact';
 import { useEffect } from 'preact/hooks';
 import { lazy, LocationProvider, Route, Router, useLocation } from 'preact-iso';
 import { html } from './html.js';
+import { Dec } from './dec.js';
 import { api, readLinked, whenSignedOut } from '../api/client.js';
 import { applyTheme, helpOpen, theme } from '../store/prefs.js';
 import { ended, loadSession, session } from '../store/session.js';
@@ -14,6 +15,19 @@ import { DialogHost } from '../components/dialog.js';
 import { MenuHost } from '../components/menu.js';
 import { Toasts } from '../components/toast.js';
 import { installTooltips, TooltipHost } from '../components/tooltip.js';
+
+// An exact number placed straight in a page shows its digits as they are (S12.12): Preact
+// renders text and elements, so a Dec child becomes its text.
+const before = options.vnode;
+options.vnode = (vnode) => {
+  const props = /** @type {any} */ (vnode.props);
+  const kids = props?.children;
+  if (kids instanceof Dec) props.children = String(kids);
+  else if (Array.isArray(kids) && kids.some((k) => k instanceof Dec)) {
+    props.children = kids.map((k) => (k instanceof Dec ? String(k) : k));
+  }
+  before?.(vnode);
+};
 
 // A linked household's window (S12.10) is a page of its own: everything it reads comes from
 // that household's copy.

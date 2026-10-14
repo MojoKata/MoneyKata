@@ -65,7 +65,7 @@ export default function Accounts() {
   const labels = /** @type {Record<string, string>} */ (GROUP_LABELS);
   const sum = (/** @type {any[]} */ xs) => {
     let cents = 0n;
-    for (const a of xs) cents += BigInt(a.balance.replace('.', ''));
+    for (const a of xs) cents += BigInt(String(a.balance).replace('.', ''));
     const neg = cents < 0n;
     const s = (neg ? -cents : cents).toString().padStart(3, '0');
     return (neg ? '-' : '') + s.slice(0, -2) + '.' + s.slice(-2);

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { date, money, short } from '../app/format.js';
 import { theme } from '../store/prefs.js';
-import { num } from '../app/dec.js';
+import { floats, num } from '../app/dec.js';
 
 /** @type {Promise<typeof import('echarts')> | null} */
 let loading = null;
@@ -24,7 +24,8 @@ function token(name) {
  * @param {{ label: string, series: { name: string, color: string, points: [string, string][],
  *   dash?: boolean, area?: boolean, stack?: string }[], tall?: boolean }} p
  */
-export function TimeChart({ label, series, tall }) {
+export function TimeChart({ label, series: given, tall }) {
+  const series = floats(given);
   const box = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [table, setTable] = useState(false);
   const themeNow = theme.value;
@@ -233,7 +234,8 @@ function Chart({ label, option, head, rows, legend, deps }) {
  * @param {{ label: string, periods: string[], series: { name: string, color: string,
  *   values: string[] }[] }} p
  */
-export function BarChart({ label, periods, series }) {
+export function BarChart({ label, periods, series: given }) {
+  const series = floats(given);
   return html`
     <${Chart} label=${label} legend=${series.map((s) => [s.name, s.color])}
       head=${['', ...series.map((s) => s.name)]}
@@ -263,7 +265,7 @@ export function BarChart({ label, periods, series }) {
           name: s.name,
           type: 'bar',
           barMaxWidth: 18,
-          data: s.values.map(Number),
+          data: s.values.map(num),
           itemStyle: { color: t(s.color) || s.color, borderRadius: [3, 3, 0, 0] },
         })),
       })} />
@@ -275,7 +277,8 @@ export function BarChart({ label, periods, series }) {
  * @param {{ label: string, sources: { name: string, amount: string }[],
  *   uses: { name: string, amount: string }[] }} p
  */
-export function FlowChart({ label, sources, uses }) {
+export function FlowChart({ label, sources: s0, uses: u0 }) {
+  const sources = floats(s0), uses = floats(u0);
   const colors = ['--c1', '--c2', '--c3', '--c4', '--c5', '--c6', '--c7', '--c8'];
   const total = sources.reduce((a, s) => a + num(s.amount), 0);
   return html`
@@ -333,7 +336,8 @@ export function FlowChart({ label, sources, uses }) {
  * @param {{ label: string, years: number[], p: Record<string, number[]>,
  *   paths?: Record<string, number[]> | null, marks?: [number, string][] }} p
  */
-export function FanChart({ label, years, p, paths, marks = [] }) {
+export function FanChart({ label, years, p: p0, paths: paths0, marks = [] }) {
+  const p = floats(p0), paths = floats(paths0);
   const lines = paths && Object.keys(paths).length ? paths : null;
   const fmt = (/** @type {number} */ v) => money(String(Math.round(v)), { cents: false });
   return html`
@@ -439,7 +443,8 @@ export function FanChart({ label, years, p, paths, marks = [] }) {
  * The bitcoin models side by side on a log scale (S6.3.1.1).
  * @param {{ rows: { model: string, path: [number, number][] }[], names: Record<string, string> }} p
  */
-export function ModelsChart({ rows, names }) {
+export function ModelsChart({ rows: given, names }) {
+  const rows = floats(given);
   const colors = ['--c1', '--c5', '--c4', '--c3', '--c2'];
   const years = rows[0]?.path.map(([y]) => String(y)) || [];
   const fmt = (/** @type {number} */ v) =>

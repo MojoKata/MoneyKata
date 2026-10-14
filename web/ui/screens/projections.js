@@ -15,6 +15,7 @@ import { errAt, Field, FormError, Input, Seg, Select } from '../components/field
 import { toast } from '../components/toast.js';
 import { ShareDialog } from '../components/share.js';
 import { FanChart, TimeChart } from '../charts/chart.js';
+import { num } from '../app/dec.js';
 
 const GOAL = /** @type {Record<string, [string, string]>} */ ({
   retirement: ['Retirement', 'retire'],
@@ -38,9 +39,9 @@ const TONE = /** @type {Record<string, string>} */ ({
 });
 
 /** @param {number} x */
-const pct = (x) => `${Math.round(x * 100)}%`;
+const pct = (x) => `${Math.round(num(x) * 100)}%`;
 /** @param {number} v */
-const dollars = (v) => money(String(Math.round(v)), { cents: false });
+const dollars = (v) => money(String(Math.round(num(v))), { cents: false });
 
 /** @param {{ id?: string }} p */
 export default function Projections({ id }) {
@@ -122,7 +123,7 @@ function Detail({ id, reloadList }) {
       ? [[a.firstYear, 'school starts']]
       : []);
   const classes = Object.entries(r.weights).map(([k, w]) =>
-    `${r.assumptions.classes[k] ? labelOf(k) : k} ${Math.round(/** @type {number} */ (w) * 100)}%`
+    `${r.assumptions.classes[k] ? labelOf(k) : k} ${Math.round(num(w) * 100)}%`
   ).join(', ');
   return html`
     <div class="toolbar mt">
@@ -195,7 +196,7 @@ function Detail({ id, reloadList }) {
             <div class="card kpi">
               <div class="label">Chance the money lasts to ${a
                 .horizonAge}</div>
-              <div class=${'value ' + (a.chance >= 0.9 ? 'up' : '')}>${pct(a.chance)}</div>
+              <div class=${'value ' + (num(a.chance) >= 0.9 ? 'up' : '')}>${pct(a.chance)}</div>
               <div class="delta dim">median at retirement (${a.retireYear}) ${dollars(
                 a.atRetirement,
               )}</div>
@@ -206,7 +207,7 @@ function Detail({ id, reloadList }) {
           : html`
             <div class="card kpi">
               <div class="label">Chance of ${dollars(a.target)} by ${date(a.date)}</div>
-              <div class=${'value ' + (a.chance >= 0.9 ? 'up' : '')}>${pct(a.chance)}</div>
+              <div class=${'value ' + (num(a.chance) >= 0.9 ? 'up' : '')}>${pct(a.chance)}</div>
               <div
                 class="delta dim">saving ${dollars(a.monthly)} a month; ${dollars(
                   a.neededMonthly,
@@ -227,7 +228,7 @@ function Detail({ id, reloadList }) {
  * years will cost. */
 /** @param {{ a: any }} p */
 export function EducationAnswer({ a }) {
-  const funded = Math.round(a.funded);
+  const funded = Math.round(num(a.funded));
   return html`
     <div class="card kpi">
       <div class="label">Funded for ${a.name}'s ${a.years} years of school</div>

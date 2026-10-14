@@ -215,7 +215,7 @@ function Holdings({ p }) {
                   ? html`<${Amt} v=${x.costBasis} />`
                   : html`<span class="pill warn">missing</span>`}</td>
                 <td class="num">${x.gain != null ? html`<${Amt} v=${x.gain} signed />` : '—'}</td>
-                <td class="num">${x.weight ? x.weight + '%' : '—'}</td>
+                <td class="num">${x.weight != null ? `${x.weight}%` : '—'}</td>
               </tr>
             `
           )}</tbody>

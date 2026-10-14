@@ -12,6 +12,7 @@ import { Icon } from '../components/icon.js';
 import { RANGES, TimeChart } from '../charts/chart.js';
 import { openDialog } from '../components/dialog.js';
 import { NewAccount } from './new-account.js';
+import { num } from '../app/dec.js';
 
 const GROUP_COLORS = /** @type {Record<string, string>} */ ({
   banking: '--hue-banking',
@@ -157,13 +158,13 @@ function Spark({ actual, baseline, behind }) {
   if (pts.length < 2) return null;
   const t = (/** @type {string} */ d) => new Date(d).getTime();
   const xs = pts.map(([d]) => t(d));
-  const ys = pts.map(([, v]) => v);
+  const ys = pts.map(([, v]) => num(v));
   const [x0, x1] = [Math.min(...xs), Math.max(...xs)];
   const [y0, y1] = [Math.min(...ys), Math.max(...ys)];
   const line = (/** @type {[string, number][]} */ list) =>
     list.map(([d, v]) =>
       `${((t(d) - x0) / (x1 - x0 || 1) * 100).toFixed(1)},${
-        (28 - (v - y0) / (y1 - y0 || 1) * 26).toFixed(1)
+        (28 - (num(v) - y0) / (y1 - y0 || 1) * 26).toFixed(1)
       }`
     ).join(' ');
   return html`

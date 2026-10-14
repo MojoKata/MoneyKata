@@ -200,7 +200,7 @@ function Overview({ v, reload }) {
             <div
               class="list-item"><span class="small" style=${{ width: '48px' }}>${h
                 .year}</span><div class="grow"><div class="bar"><i style=${{
-                width: `${Math.min(100, (h.percent || 0) * 5)}%`,
+                width: `${Math.min(100, num(h.percent) * 5)}%`,
                 background: 'var(--hue-giving)',
               }}></i></div></div><span class="num small" style=${{ width: '52px' }}>${h.percent ==
                   null

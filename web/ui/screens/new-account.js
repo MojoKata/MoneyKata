@@ -77,7 +77,7 @@ function AccountForm({ type, close, back }) {
       mask: f.mask || null,
       keptBy: [f.keptBy],
       lotMethod: f.lotMethod,
-      openingBalance: f.openingBalance ? f.openingBalance.replace(/[$,\s]/g, '') : null,
+      openingBalance: f.openingBalance ? String(f.openingBalance).replace(/[$,\s]/g, '') : null,
       openingDate: f.openingDate || null,
     };
     if (t.loan || t.physical) {

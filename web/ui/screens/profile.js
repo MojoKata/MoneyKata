@@ -14,6 +14,7 @@ import { useDialogGuide, useGuide } from '../components/help.js';
 import { applyTheme, theme } from '../store/prefs.js';
 import { loadSession } from '../store/session.js';
 import { AccessTokens } from '../components/tokens.js';
+import { num } from '../app/dec.js';
 
 export default function Profile() {
   useTitle('Profile');
@@ -474,7 +475,7 @@ function BitcoinModels({ close }) {
   useDialogGuide('dialog-bitcoin-models');
   const res = useApi('/bitcoin-models');
   const v = /** @type {any} */ (res.data);
-  const fmt = (/** @type {number} */ n) =>
+  const fmt = (/** @type {any} */ x, n = num(x)) =>
     n >= 1e9
       ? `$${(n / 1e9).toFixed(1)}B`
       : n >= 1e6

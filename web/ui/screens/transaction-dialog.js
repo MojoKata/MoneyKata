@@ -38,7 +38,7 @@ const TRADE_KINDS = /** @type {[string, string][]} */ ([
 const TRADE = ['buy', 'sell', 'reinvest', 'transfer-in', 'transfer-out'];
 
 /** @param {string} s */
-const clean = (s) => s.replace(/[$,\s]/g, '').replace('−', '-');
+const clean = (s) => String(s).replace(/[$,\s]/g, '').replace('−', '-');
 
 /**
  * @param {{ close: (v?: any) => void, txn?: any, accounts: any[], accountId?: string }} p

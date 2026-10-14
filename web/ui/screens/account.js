@@ -825,7 +825,7 @@ function Settings({ a, reload }) {
       mask: f.mask || null,
       lotMethod: f.lotMethod,
       keptBy: [f.keptBy],
-      openingBalance: f.openingBalance ? f.openingBalance.replace(/[$,\s]/g, '') : null,
+      openingBalance: f.openingBalance ? String(f.openingBalance).replace(/[$,\s]/g, '') : null,
       openingDate: f.openingDate || null,
       active: f.active,
       countInNetWorth: f.countInNetWorth,

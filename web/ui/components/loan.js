@@ -23,7 +23,9 @@ export const METHODS = /** @type {[string, string][]} */ ([
 /** "2055-01-01" as "Jan 2055". */
 const month = (/** @type {string} */ iso) => date(iso).replace(/ \d+,/, '');
 
-const clean = (/** @type {string} */ s) => (s ? s.replace(/[$,%\s]/g, '').replace('−', '-') : '');
+const clean = (
+  /** @type {any} */ s,
+) => (s ? String(s).replace(/[$,%\s]/g, '').replace('−', '-') : '');
 const orNull = (/** @type {string} */ s) => (clean(s) === '' ? null : clean(s));
 
 /**

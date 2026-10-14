@@ -215,3 +215,16 @@ export function num(x) {
 export function dec(x) {
   return x == null || x === '' ? new Dec(0n, 0) : Dec.of(x);
 }
+
+/**
+ * Data for a chart, which only draws: every Dec inside it, however deep, as a float.
+ * @template T @param {T} x @returns {any}
+ */
+export function floats(x) {
+  if (x instanceof Dec) return x.toNumber();
+  if (Array.isArray(x)) return x.map(floats);
+  if (x && typeof x === 'object') {
+    return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, floats(v)]));
+  }
+  return x;
+}
