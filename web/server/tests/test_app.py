@@ -29,6 +29,7 @@ SETTINGS_SECTIONS = (
     "signup",
     "passwords",
     "prices",
+    "bitcoin",
     "imports",
     "receipts",
     "tax-tables",
@@ -429,6 +430,11 @@ def test_every_dialog_has_its_guide(page):
     page.wait_for_selector(".dialog #f-new-name")
     check_guide(page, ".dialog", "the 529 form")
     close_dialog(page)
+    # Settings › Bitcoin with each kind of node's fields.
+    visit(page, "/ui/settings/bitcoin")
+    for node in ("esplora", "electrum", "core"):
+        page.select_option(".content #f-explorer-or-node", node)
+        check_guide(page, ".content", f"Settings › Bitcoin ({node})")
     # A wallet's form, which clears a seed phrase at once.
     open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")
     page.get_by_role("button", name=re.compile("^Self-custody wallet")).click()

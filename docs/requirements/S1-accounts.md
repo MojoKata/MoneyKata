@@ -92,6 +92,24 @@
          descriptor wallet. An own node keeps the household's addresses private, and is
          recommended. Its address is named by the admin, so the egress guard (S13.5) lets
          MoneyKata reach it on the LAN; its credentials are a secret (S14.4).
+      3. **How each is read.** Esplora: each address's transactions over HTTPS, with every
+         input's previous output, so each transaction's effect on the wallet is known. An
+         Electrum server: each address's history by its script hash over TCP (TLS by default,
+         its own certificate accepted), and the raw transactions, read by MoneyKata. Bitcoin
+         Core over JSON-RPC: a watch-only descriptor wallet for each wallet account
+         (`moneykata-<account id>`), its keys imported as descriptors over the addresses
+         derived, rescanned from the start the first time, then its transactions listed. Only
+         public keys and addresses are ever sent.
+      4. **When**: every hour, and at once with the wallet's **Check now**. **Test** in
+         Settings › Bitcoin asks the saved explorer or node for the chain's height. A failure
+         lasting past the alert threshold alerts admins and each wallet's owner (S12.11); its
+         message never names an address or an amount.
+      5. **What is recorded**: each confirmed transaction once, by its txid. Bitcoin received
+         is a **transfer in** of BTC without a basis, to be entered (Taxes lists it as
+         missing); bitcoin sent is a **transfer out**, its network fee included and noted. A
+         transfer out that was a sale or a payment is changed to one by its owner.
+         Unconfirmed transactions wait. The first coins held start a price refresh, so the
+         wallet is valued at once.
    3. The form **refuses anything that looks like a private key or seed phrase** (WIF, 64
       hex digits, 12 or 24 BIP-39 words, an extended private key such as an xprv), says why,
       and never stores or logs it. The browser clears it from the form as it is typed, before

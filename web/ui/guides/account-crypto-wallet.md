@@ -26,3 +26,11 @@ wallets.
 
 How many addresses are watched and how many have been used, and when the explorer or node in
 Settings › Bitcoin last checked them. **Addresses** lists them: receive and change, by index.
+
+## Check now
+
+Reads the wallet from the explorer or node in Settings › Bitcoin now, rather than at the next
+hourly check. Each confirmed transaction is recorded once: bitcoin received as a transfer in
+(enter its cost basis from the Transactions tab, or Taxes shows it as missing), and bitcoin sent
+as a transfer out, its network fee included. A transfer out that was a sale or a payment can be
+changed to one.

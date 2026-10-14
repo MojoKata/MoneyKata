@@ -83,7 +83,7 @@ def change_settings(body: dict[str, Any], request: Request, c: Caller = Depends(
             )
         s.flush()
         out = view(s)
-    if "smtpHost" in changed:
+    if "smtpHost" in changed or any(k.startswith("bitcoin") for k in changed):
         from .prices import apply_egress
 
         apply_egress(srv)
@@ -165,6 +165,104 @@ def email_password(body: EmailPassword, request: Request, c: Caller = Depends(ad
         )
         s.flush()
         return _email_view(srv, s)
+
+
+# ---------- Bitcoin (S16.7, S1.6.2) ----------
+
+
+class BitcoinView(Model):
+    password: SecretSet | None  # Bitcoin Core's RPC password
+    wallets: int
+    lastRun: dt.datetime | None
+    lastError: str | None
+
+
+class BitcoinPassword(Model):
+    password: str | None
+
+
+class BitcoinTest(Model):
+    answer: str
+
+
+def _bitcoin_view(s) -> BitcoinView:
+    from sqlalchemy import false, func, select
+
+    from ..bitcoin.sync import PASSWORD
+    from ..store.entities.accounts import Account
+    from ..store.entities.core import TaskRun
+    from ..store.entities.users import User
+    from ..store.repos import secrets as secret_repo
+
+    info = secret_repo.info(s, *PASSWORD)
+    by = s.get(User, info.setById) if info and info.setById else None
+    run = s.get(TaskRun, "bitcoin")
+    return BitcoinView(
+        password=SecretSet(setAt=info.setAt, setBy=by.displayName if by else None)
+        if info
+        else None,
+        wallets=s.scalar(
+            select(func.count())
+            .select_from(Account)
+            .where(Account.type == "crypto-wallet", Account.deleted == false())
+        ),
+        lastRun=run.finishedAt if run else None,
+        lastError=run.error if run else None,
+    )
+
+
+@router.get("/settings/bitcoin", response_model=BitcoinView)
+def bitcoin_status(request: Request, c: Caller = Depends(admin)):
+    with server(request).db.read() as s:
+        return _bitcoin_view(s)
+
+
+@router.put("/settings/bitcoin/password", response_model=BitcoinView)
+def bitcoin_password(body: BitcoinPassword, request: Request, c: Caller = Depends(admin)):
+    """Bitcoin Core's RPC password is a secret (S14.4): set or removed, never read back."""
+    from ..bitcoin.sync import PASSWORD
+    from ..store.repos import secrets as secret_repo
+
+    srv = server(request)
+    with srv.db.tx() as s:
+        if body.password:
+            secret_repo.put(s, srv.keys.secrets, *PASSWORD, body.password, c.id)
+        else:
+            secret_repo.remove(s, *PASSWORD)
+        activity.record(
+            s,
+            "settings.changed",
+            actor=c.id,
+            for_admins=True,
+            detail={"fields": ["bitcoinPassword"]},
+        )
+        s.flush()
+        return _bitcoin_view(s)
+
+
+@router.post("/settings/bitcoin/test", response_model=BitcoinTest)
+def bitcoin_test(request: Request, c: Caller = Depends(admin)):
+    """Ask the saved explorer or node for the chain's height, and say what failed."""
+    from ..bitcoin import sync
+    from ..bitcoin.sources import SourceError
+
+    srv = server(request)
+    with srv.db.read() as s:
+        cfg = sync.config(s, srv.keys.secrets)
+        src = sync.source(srv, s)
+    hosts, named = cfg.hosts()
+    if hosts and not srv.config.stubs:
+        # The host is allowed for this test even before a wallet needs it.
+        current_hosts, current_named = srv.guard.snapshot()
+        srv.guard.allow(current_hosts | set(hosts), current_named | set(named))
+    from .prices import apply_egress
+
+    try:
+        return BitcoinTest(answer=src.test())
+    except SourceError as e:
+        raise Problem(502, "source-failed", str(e)) from None
+    finally:
+        apply_egress(srv)
 
 
 @router.post("/settings/email/test", response_model=TestEmail)

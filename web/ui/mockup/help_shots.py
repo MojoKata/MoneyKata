@@ -23,6 +23,7 @@ SETTINGS = (
     "signup",
     "passwords",
     "prices",
+    "bitcoin",
     "imports",
     "receipts",
     "tax-tables",

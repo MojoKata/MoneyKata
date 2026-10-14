@@ -118,6 +118,14 @@ def register_tasks(server: Server) -> None:
 
     server.tasks.register("options", expire_options, Every(3600), last.get("options"))
 
+    def bitcoin(ctx: TaskContext) -> None:
+        """Self-custody wallets read from the explorer or node (S1.6.2)."""
+        from .bitcoin import sync
+
+        sync.sync_all(server, ctx)
+
+    server.tasks.register("bitcoin", bitcoin, Every(3600), last.get("bitcoin"))
+
     from . import alerts
 
     server.tasks.register(

@@ -1,0 +1,49 @@
+# Bitcoin
+
+Where self-custody wallets' balances and history come from: a public explorer, or the
+household's own node. Admins only.
+
+![Bitcoin settings](shots/settings-bitcoin.webp)
+
+## Explorer or node
+
+**Public: mempool.space** or **Blockstream**: nothing to set up, but the explorer sees which
+addresses are asked about. **Own node**, which keeps them private: a **mempool or Esplora**
+instance, an **Electrum server** (Fulcrum or electrs), or **Bitcoin Core**, where MoneyKata keeps a
+watch-only descriptor wallet for each wallet account. Only public keys and addresses are ever sent.
+
+## Esplora address {#esplora-url}
+
+Your own instance's API: `http://umbrel.local:3006/api`, for example.
+
+## Node address {#node-host}
+
+The node's host name or address on your network. Naming it here lets MoneyKata reach it there,
+past the guard that otherwise keeps it off local addresses.
+
+## Node port {#node-port}
+
+50002 for an Electrum server with TLS (50001 without); 8332 for Bitcoin Core.
+
+## TLS
+
+An Electrum server's TLS, usually on. Its certificate is usually one it made itself, so it is
+accepted as it is.
+
+## RPC user {#rpc-user}
+
+Bitcoin Core's `rpcuser`, or the user of an `rpcauth` line.
+
+## Node password {#node-password}
+
+Its password. Stored encrypted, never shown again: type a new one to replace it.
+
+## Last checked {#checked}
+
+How many wallets there are and when they were last read. Wallets are read every hour, and each
+wallet's **Check now** reads it at once. A failure lasting longer than Settings › Alerts allows
+alerts admins and each wallet's owner.
+
+## Test
+
+Asks the saved explorer or node for the chain's height, and says what failed. Save first.

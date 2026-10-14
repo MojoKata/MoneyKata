@@ -225,7 +225,7 @@
       5. **Bitcoin wallets** (S1.6.1, S1.6.3): addresses and extended public keys, the
          addresses derived from them with a gap limit, and the form that refuses keys and
          seed phrases.
-      6. **Bitcoin sources** (S1.6.2, G9): Settings › Bitcoin with a public explorer or the
+      6. **Bitcoin sources** (S1.6.2): Settings › Bitcoin with a public explorer or the
          household's own node (Esplora, an Electrum server, Bitcoin Core), and the wallets'
          balances and history kept current from it.
       7. **Access tokens** (S10.9.1): Profile › Access tokens, their scope and expiry, shown

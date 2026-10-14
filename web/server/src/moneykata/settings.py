@@ -185,6 +185,13 @@ _d("passwordMinLength", "passwords", 12, _int(8, 128))
 # Prices (S16.6): the sources themselves are records of their own
 _d("priceRefreshTime", "prices", "18:00", _time)
 _d("priceRefreshZone", "prices", "America/New_York", _zone)
+# Bitcoin (S16.7, S1.6.2): where self-custody wallets are read; a node's password is a secret
+_d("bitcoinSource", "bitcoin", "esplora", _choice("esplora", "electrum", "core"))
+_d("bitcoinEsploraUrl", "bitcoin", "https://mempool.space/api", _url)
+_d("bitcoinNodeHost", "bitcoin", None, _host)
+_d("bitcoinNodePort", "bitcoin", 50002, _int(1, 65535))
+_d("bitcoinNodeTls", "bitcoin", True, _bool)
+_d("bitcoinRpcUser", "bitcoin", None, _optional_text(200))
 # Imports (S16.8)
 _d("importMaxMb", "imports", 25, _int(1, 200))
 # Statements (PDFs and photos) read on the server, in the receipt reader's worker (S1.3.3)

@@ -20,8 +20,9 @@ opens. Each section has its own help guide. In this order:
 6. **Prices** (S4.2.3): the enabled sources with their classes, keys, order, last run and
    error; **Add a source**; and the time of the daily refresh (6:00 PM Eastern by default).
 7. **Bitcoin** (S1.6): the explorer or node for self-custody wallets: a public Esplora
-   (mempool.space by default) or the household's own node, with its address, credentials and
-   a **Test** button.
+   (mempool.space by default, or Blockstream) or the household's own node (its own mempool or
+   Esplora by its address; an Electrum server by host, port and TLS; Bitcoin Core by host,
+   port, RPC user and password), with when the wallets were last read and a **Test** button.
 8. **Imports** (S1.3): the file types and size accepted for statement import, and whether
    statements are read on the server (in the receipt reader's worker, S9.8).
 9. **Linked servers** (S11.7): the links, and each linked copy's state: changes waiting, its

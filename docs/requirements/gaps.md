@@ -40,12 +40,6 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S1.3.
 
-## G9: Bitcoin node integration
-
-**What is missing:** the details of each node kind (Esplora, Electrum server, Bitcoin Core watch-only descriptors), xpub gap limits, and testing a node.
-
-**Touches:** S1.6.
-
 ## G10: Statement intervals per account
 
 **What is missing:** the interval at which each account's statements or exports are expected (monthly for a bank or Schwab brokerage account, quarterly for many 401(k) plans), how it is set or learned from the imports, and the alert threshold that follows from it.
@@ -57,3 +51,9 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** an option price source tried against a live Massive key (the Basic plan's limits, its history for expired contracts, and how an adjusted contract after a split is named); index and weekly options' tickers; wash sales across a short sale, a loss on an option itself, and a replacement bought through an option assigned or exercised; and capital at risk for spreads and covered calls, which wait on strategies (S3.5).
 
 **Touches:** S3.5, S3.8, S3.9, S4.5.
+
+## G13: Bitcoin wallets beyond the common case
+
+**What is missing:** tried against live nodes (Fulcrum, electrs, Bitcoin Core 27 and later, a self-hosted mempool); pinning an Electrum server's certificate rather than accepting the one it presents; taproot (`tr()`) and multisig wallets from their descriptors; matching a transfer out of a wallet with the transfer in at an exchange or another wallet (S1.7) so the basis carries over; the network fee as a disposal of its own for taxes; and a reorganised chain removing a transaction already recorded.
+
+**Touches:** S1.6, S1.7, S8.

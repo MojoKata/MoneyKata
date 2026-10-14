@@ -66,9 +66,9 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | **G6** | [Operations](gaps.md#g6-operations) | `docs/operations.md`: upgrades and migrations in the Docker image, health checks, logs, monitoring, restore drills |
 | **G7** | [API conventions and reference](gaps.md#g7-api-conventions-and-reference) | the conventions of S13.8 are proposed and await review; `docs/api.md` grows with the code, beside the generated OpenAPI, and documents the MCP tools |
 | **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | brokerage statements, statements of several accounts, and learning column positions for layouts without sections or a running balance |
-| **G9** | [Bitcoin node integration](gaps.md#g9-bitcoin-node-integration) | the details of each node kind (Esplora, Electrum server, Bitcoin Core watch-only descriptors), xpub gap limits, and testing a node |
 | **G10** | [Statement intervals per account](gaps.md#g10-statement-intervals-per-account) | the interval each account's statements are expected at, how it is set or learned, and the alert threshold that follows |
 | **G12** | [Option prices and wash-sale edges](gaps.md#g12-option-prices-and-wash-sale-edges) | an option source tried with a live key, index and weekly tickers, wash sales through shorts, options and assignment, and capital at risk for spreads |
+| **G13** | [Bitcoin wallets beyond the common case](gaps.md#g13-bitcoin-wallets-beyond-the-common-case) | live nodes, Electrum certificate pinning, taproot and multisig wallets, transfers matched across wallets and exchanges, the network fee for taxes, reorganisations |
 
 ## Also here
 

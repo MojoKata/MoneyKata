@@ -223,7 +223,9 @@ def _check(body: NewAccount | AccountChange) -> list[FieldError]:
         )
     if body.keptBy is not None and (not body.keptBy or any(k not in KEPT_BY for k in body.keptBy)):
         errors.append(
-            FieldError("keptBy", "kept-by-invalid", "Manual, file import, statement import or bitcoin.")
+            FieldError(
+                "keptBy", "kept-by-invalid", "Manual, file import, statement import or bitcoin."
+            )
         )
     if body.notes and len(body.notes) > 20000:
         errors.append(FieldError("notes", "notes-too-long", "Notes are up to 20,000 characters."))

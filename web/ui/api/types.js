@@ -201,6 +201,24 @@
  */
 
 /**
+ * @typedef {Object} BitcoinPassword
+ * @property {(string | null)} password
+ */
+
+/**
+ * @typedef {Object} BitcoinTest
+ * @property {string} answer
+ */
+
+/**
+ * @typedef {Object} BitcoinView
+ * @property {(moneykata__ui__settings__SecretSet | null)} password
+ * @property {number} wallets
+ * @property {(string | null)} lastRun
+ * @property {(string | null)} lastError
+ */
+
+/**
  * @typedef {Object} Body_upload_ui_api_accounts__account_id__imports_post
  * @property {string} file
  */
@@ -2352,6 +2370,12 @@
  * @property {Array<string>} changed
  * @property {Array<Array<string>>} gaps
  * @property {(string | null)} firstParting
+ */
+
+/**
+ * @typedef {Object} SyncOut
+ * @property {number} recorded
+ * @property {WalletView} wallet
  */
 
 /**

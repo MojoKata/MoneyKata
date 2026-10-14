@@ -104,6 +104,15 @@ function WalletForm({ a, v, reload }) {
     toast('Saved');
     reload();
   });
+  const check = useSubmit(async () => {
+    const r = await api.post(`/accounts/${a.id}/wallet/sync`);
+    toast(
+      r.recorded
+        ? `${r.recorded} transaction${r.recorded === 1 ? '' : 's'} recorded`
+        : 'Checked: nothing new',
+    );
+    reload();
+  });
   const e = save.error;
   return html`
     <form class="card" onSubmit=${(/** @type {Event} */ ev) => {
@@ -164,9 +173,15 @@ function WalletForm({ a, v, reload }) {
         `
         : null}
       <${FormError} error=${e} shown=${WALLET_FIELDS} />
+      <${FormError} error=${check.error} />
       ${owner
-        ? html`<div class="toolbar mt"><span class="spacer"></span><button class="btn primary"
-          disabled=${save.busy}>Save</button></div>`
+        ? html`
+          <div
+            class="toolbar mt"><button type="button" class="btn" disabled=${check.busy ||
+              !v.keys.length} onClick=${() => check.run().catch(() => {})}>Check now</button>
+                    <span class="spacer"></span><button class="btn primary"
+                    disabled=${save.busy}>Save</button></div>
+        `
         : null}
     </form>
   `;

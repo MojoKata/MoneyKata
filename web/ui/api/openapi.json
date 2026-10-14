@@ -1161,6 +1161,91 @@
         "title": "BeneficiaryRef",
         "type": "object"
       },
+      "BitcoinPassword": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "BitcoinPassword",
+        "type": "object"
+      },
+      "BitcoinTest": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "answer"
+        ],
+        "title": "BitcoinTest",
+        "type": "object"
+      },
+      "BitcoinView": {
+        "additionalProperties": false,
+        "properties": {
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lasterror"
+          },
+          "lastRun": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrun"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/moneykata__ui__settings__SecretSet"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wallets": {
+            "title": "Wallets",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "password",
+          "wallets",
+          "lastRun",
+          "lastError"
+        ],
+        "title": "BitcoinView",
+        "type": "object"
+      },
       "Body_upload_ui_api_accounts__account_id__imports_post": {
         "properties": {
           "file": {
@@ -14222,6 +14307,24 @@
         "title": "Suspects",
         "type": "object"
       },
+      "SyncOut": {
+        "additionalProperties": false,
+        "properties": {
+          "recorded": {
+            "title": "Recorded",
+            "type": "integer"
+          },
+          "wallet": {
+            "$ref": "#/components/schemas/WalletView"
+          }
+        },
+        "required": [
+          "recorded",
+          "wallet"
+        ],
+        "title": "SyncOut",
+        "type": "object"
+      },
       "TagIn": {
         "additionalProperties": false,
         "properties": {
@@ -19650,6 +19753,49 @@
           }
         },
         "summary": "Put Wallet",
+        "tags": [
+          "wallets"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/wallet/sync": {
+      "post": {
+        "description": "Read the wallet from the explorer or node now (S1.6.2).",
+        "operationId": "sync_wallet_ui_api_accounts__account_id__wallet_sync_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Wallet",
         "tags": [
           "wallets"
         ]
@@ -25123,6 +25269,91 @@
           }
         },
         "summary": "Backup Now",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/bitcoin": {
+      "get": {
+        "operationId": "bitcoin_status_ui_api_settings_bitcoin_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BitcoinView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Bitcoin Status",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/bitcoin/password": {
+      "put": {
+        "description": "Bitcoin Core's RPC password is a secret (S14.4): set or removed, never read back.",
+        "operationId": "bitcoin_password_ui_api_settings_bitcoin_password_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BitcoinPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BitcoinView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Bitcoin Password",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/bitcoin/test": {
+      "post": {
+        "description": "Ask the saved explorer or node for the chain's height, and say what failed.",
+        "operationId": "bitcoin_test_ui_api_settings_bitcoin_test_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BitcoinTest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Bitcoin Test",
         "tags": [
           "settings"
         ]

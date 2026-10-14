@@ -91,6 +91,43 @@ def price_sources(s: Session, server) -> Iterable[Cause]:
 
 
 @check
+def bitcoin_source(s: Session, server) -> Iterable[Cause]:
+    """The bitcoin explorer or node failing for longer than Settings › Alerts allows: admins,
+    and each wallet's owner (S1.6.2, S16.16)."""
+    from sqlalchemy import func
+
+    from .store.entities.accounts import Account, WalletAddress
+    from .store.entities.core import TaskRun
+
+    run = s.get(TaskRun, "bitcoin")
+    if run is None or not run.error:
+        return
+    last_ok = s.scalar(select(func.max(WalletAddress.checkedAt)))
+    since = last_ok or run.startedAt
+    now = clock.now()
+    owners = set(
+        s.scalars(
+            select(Account.ownerId).where(
+                Account.type == "crypto-wallet", Account.deleted == false()
+            )
+        )
+    )
+    for who in [None, *sorted(owners)]:
+        yield Cause(
+            key="bitcoin" + (f":{who}" if who else ""),
+            kind="source-failing",
+            title=f"Bitcoin wallets not checked for {_ago(now - since)}",
+            about=f"explorer or node · {run.error}",
+            user_id=who,
+            link="/ui/settings/bitcoin" if who is None else "/ui/accounts",
+            fix="Bitcoin settings" if who is None else "Your accounts",
+            icon="sync",
+            since=since,
+            delay=dt.timedelta(hours=settings.get(s, "alertSourceHours")),
+        )
+
+
+@check
 def backups(s: Session, server) -> Iterable[Cause]:
     from .store.entities.core import TaskRun
 

@@ -140,3 +140,223 @@ def test_only_a_wallet_holds_keys(alice):
     w = new_account(alice, name="Cold storage", type="crypto-wallet")
     r = alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB[:-1] + "a"})
     assert r.json()["code"] == "key-invalid"
+
+
+# ---------- reading wallets from an explorer or node (S1.6.2)
+
+import dataclasses  # noqa: E402
+import datetime as dt  # noqa: E402
+
+from moneykata.bitcoin import sources, sync  # noqa: E402
+
+FIRST = "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu"  # receive 0
+SECOND = "bc1qnjg0jd8228aq7egyzacy8cys3knf9xvrerkf9g"  # receive 1
+CHANGE = "bc1q8c6fshw2dlwun7ekn9qwf37cu2rn755upcp6el"  # change 0
+T1 = dt.datetime(2026, 3, 2, 15, tzinfo=dt.UTC)
+T2 = dt.datetime(2026, 6, 9, 15, tzinfo=dt.UTC)
+
+
+class Fake:
+    """An explorer that knows a few transactions: 0.5 BTC in at receive 0; then 0.2 sent from
+    it, the change at change 0; and 0.1 in at receive 19, past the first gap."""
+
+    def __init__(self, far: str):
+        self.far = far
+        self.asked: list[list[str]] = []
+
+    def test(self):
+        return "Fake answered: block 1"
+
+    def history(self, addresses):
+        self.asked.append(addresses)
+        out = []
+        if FIRST in addresses:
+            out.append(sources.Tx("a" * 64, T1, 50_000_000, 0, {FIRST}))
+            out.append(
+                sources.Tx("b" * 64, T2, -20_001_000, 1_000, {FIRST, CHANGE}),
+            )
+        if self.far in addresses:
+            out.append(sources.Tx("c" * 64, T2, 10_000_000, 0, {self.far}))
+        out.append(sources.Tx("d" * 64, None, 5_000, 0, {FIRST}))  # unconfirmed
+        return out
+
+
+def test_a_sync_records_each_transaction_once_and_extends_the_gap(server, alice, monkeypatch):
+    w = new_account(alice, name="Cold storage", type="crypto-wallet")
+    alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB})
+    far = keys.extended(ZPUB).address(0, 19)
+    fake = Fake(far)
+    monkeypatch.setattr(sync, "source", lambda srv, s: fake)
+    r = alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync")
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert out["recorded"] == 3, "two received, one sent; the unconfirmed one waits"
+    v = out["wallet"]
+    assert v["used"] == 3
+    assert v["watched"] == 40 + 20 + 1, "receive 19 used: 20 more past it; change 0: one more"
+    items = alice.get("/ui/api/transactions", params={"account": w["id"]}).json()["items"]
+    got = sorted((t["kind"], t["quantity"], t["date"]) for t in items)
+    assert got == [
+        ("transfer-in", "0.1", "2026-06-09"),
+        ("transfer-in", "0.5", "2026-03-02"),
+        ("transfer-out", "0.20001", "2026-06-09"),
+    ]
+    assert alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync").json()["recorded"] == 0
+    held = next(
+        p for p in alice.get("/ui/api/positions").json()["open"] if p["accountId"] == w["id"]
+    )
+    assert held["symbol"] == "BTC" and held["quantity"] == "0.39999"
+    assert held["cost"] is None, "coins received carry no basis until it is entered"
+
+
+def test_a_failing_source_says_what_to_fix_without_naming_an_address(server, alice, monkeypatch):
+    w = new_account(alice, name="Cold storage", type="crypto-wallet")
+    alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB})
+
+    class Down:
+        def history(self, addresses):
+            raise sources.SourceError("https://mempool.space/api didn't answer (ConnectTimeout).")
+
+    monkeypatch.setattr(sync, "source", lambda srv, s: Down())
+    r = alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync")
+    assert r.status_code == 502 and r.json()["code"] == "source-failed"
+    assert FIRST not in r.text
+    with pytest.raises(sources.SourceError):
+        sync.sync_all(server)
+
+
+def test_the_stub_source_gives_dev_wallets_a_history(server, alice):
+    server.config = dataclasses.replace(server.config, stubs=True)
+    w = new_account(alice, name="Cold storage", type="crypto-wallet")
+    alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB})
+    sync.sync_all(server)
+    v = alice.get(f"/ui/api/accounts/{w['id']}/wallet").json()
+    assert v["used"] > 0 and v["checkedAt"]
+    first = sync_count(server, w["id"])
+    sync.sync_all(server)
+    assert sync_count(server, w["id"]) == first > 0
+
+
+def sync_count(server, account_id):
+    from sqlalchemy import func, select
+
+    from moneykata.store.entities.accounts import Transaction
+
+    with server.db.read() as s:
+        return s.scalar(
+            select(func.count())
+            .select_from(Transaction)
+            .where(Transaction.accountId == account_id, Transaction.fitId.like("btc:%"))
+        )
+
+
+def test_esplora_transactions_are_netted_over_the_wallets_addresses():
+    t = sources._esplora_tx(
+        {
+            "txid": "e" * 64,
+            "fee": 1_000,
+            "status": {"confirmed": True, "block_time": 1_780_000_000},
+            "vin": [{"prevout": {"scriptpubkey_address": FIRST, "value": 50_000_000}}],
+            "vout": [
+                {"scriptpubkey_address": "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy", "value": 20_000_000},
+                {"scriptpubkey_address": CHANGE, "value": 29_999_000},
+            ],
+        },
+        {FIRST, CHANGE},
+    )
+    assert (t.net, t.fee, t.addresses) == (-20_001_000, 1_000, {FIRST, CHANGE})
+    assert t.confirmedAt == dt.datetime.fromtimestamp(1_780_000_000, dt.UTC)
+
+
+def _raw(ins, outs, segwit=False) -> bytes:
+    b = (2).to_bytes(4, "little") + (b"\x00\x01" if segwit else b"")
+    b += bytes([len(ins)])
+    for txid, idx in ins:
+        b += bytes.fromhex(txid)[::-1] + idx.to_bytes(4, "little") + b"\x00" + b"\xff" * 4
+    b += bytes([len(outs)])
+    for script, value in outs:
+        b += value.to_bytes(8, "little") + bytes([len(script)]) + script
+    if segwit:
+        b += b"\x00" * len(ins)
+    return b + b"\x00" * 4
+
+
+def test_an_electrum_servers_history_is_read_from_raw_transactions(monkeypatch):
+    first, change = keys.script_of(FIRST), keys.script_of(CHANGE)
+    other = keys.script_of("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy")
+    fund = _raw([("11" * 32, 0)], [(first, 50_000_000)], segwit=True)
+    spend = _raw([("ab" * 32, 0)], [(other, 20_000_000), (change, 29_999_000)], segwit=True)
+    header = bytes(68) + (1_780_000_000).to_bytes(4, "little") + bytes(8)
+    hist = {
+        first: [
+            {"tx_hash": "ab" * 32, "height": 900_000},
+            {"tx_hash": "cd" * 32, "height": 900_100},
+        ],
+        change: [{"tx_hash": "cd" * 32, "height": 900_100}],
+    }
+    import hashlib
+
+    by_hash = {hashlib.sha256(s).digest()[::-1].hex(): v for s, v in hist.items()}
+
+    def call(self, method, *params):
+        if method == "blockchain.scripthash.get_history":
+            return by_hash.get(params[0], [])
+        if method == "blockchain.block.header":
+            return header.hex()
+        if method == "blockchain.transaction.get":
+            return {
+                "ab" * 32: fund,
+                "cd" * 32: spend,
+                "11" * 32: _raw([("22" * 32, 0)], [(other, 1)]),
+            }[params[0]].hex()
+        raise AssertionError(method)
+
+    monkeypatch.setattr(sources.Electrum, "call", call)
+    e = sources.Electrum(sources.Config(kind="electrum", host="node.lan"), guard=None)
+    got = {t.txid: (t.net, t.fee) for t in e.history([FIRST, SECOND, CHANGE])}
+    assert got == {"ab" * 32: (50_000_000, 0), "cd" * 32: (-20_001_000, 1_000)}
+
+
+def test_core_gets_the_keys_as_watch_only_descriptors():
+    from moneykata.store.entities.accounts import WalletKey
+
+    k = WalletKey(id="WKey_x", accountId="a", kind="xpub", value=ZPUB, script="p2wpkh")
+    (recv, top), (chg, _) = sources.descriptors(k, 24)
+    assert recv.startswith("wpkh(xpub6") and recv.endswith("/0/*)") and top == 24
+    assert chg.endswith("/1/*)")
+    y = WalletKey(id="WKey_y", accountId="a", kind="xpub", value=YPUB, script="p2sh-p2wpkh")
+    assert sources.descriptors(y, 3)[0][0].startswith("sh(wpkh(xpub")
+    a = WalletKey(id="WKey_z", accountId="a", kind="address", value=FIRST, script="p2wpkh")
+    assert sources.descriptors(a, None) == [(f"addr({FIRST})", None)]
+
+
+def test_a_named_node_is_reachable_and_a_public_explorer_is_not_named():
+    assert sources.Config().hosts() == (["mempool.space"], [])
+    own = sources.Config(esploraUrl="http://192.168.1.20:3006/api")
+    assert own.hosts() == (["192.168.1.20"], ["192.168.1.20"])
+    node = sources.Config(kind="electrum", host="umbrel.local")
+    assert node.hosts() == (["umbrel.local"], ["umbrel.local"])
+
+
+def test_settings_bitcoin_keeps_the_password_secret_and_tests_the_source(server, admin_client):
+    c = admin_client
+    r = c.patch(
+        "/ui/api/settings",
+        json={"bitcoinSource": "core", "bitcoinNodeHost": "192.168.1.20", "bitcoinNodePort": 8332},
+    )
+    assert r.status_code == 200, r.text
+    v = c.put("/ui/api/settings/bitcoin/password", json={"password": "rpc-pass-1"}).json()
+    assert v["password"]["setBy"] and "rpc-pass-1" not in str(v)
+    with server.db.read() as s:
+        cfg = sync.config(s, server.keys.secrets)
+    assert (cfg.kind, cfg.host, cfg.port, cfg.password) == (
+        "core",
+        "192.168.1.20",
+        8332,
+        "rpc-pass-1",
+    )
+    bad = c.patch("/ui/api/settings", json={"bitcoinSource": "infura"})
+    assert bad.status_code == 422
+    server.config = dataclasses.replace(server.config, stubs=True)
+    r = c.post("/ui/api/settings/bitcoin/test")
+    assert r.status_code == 200 and "answered" in r.json()["answer"]

@@ -337,3 +337,31 @@ def parse(text: str) -> list[Entry]:
         else:
             out.append(Entry("address", tok, address_script(tok)))
     return out
+
+
+def script_of(address: str) -> bytes:
+    """An address's scriptPubKey: what an Electrum server indexes it by."""
+    seg = segwit_decode(address)
+    if seg is not None:
+        version, prog = seg
+        return bytes([0x50 + version if version else 0, len(prog)]) + prog
+    raw = b58check_decode(address)
+    if raw is None or len(raw) != 21:
+        raise Refused("address-invalid", "Not a bitcoin address.")
+    if raw[0] == 0:
+        return b"\x76\xa9\x14" + raw[1:] + b"\x88\xac"
+    return b"\xa9\x14" + raw[1:] + b"\x87"
+
+
+def address_of_script(script: bytes) -> str | None:
+    if len(script) == 25 and script[:3] == b"\x76\xa9\x14" and script[23:] == b"\x88\xac":
+        return b58check_encode(b"\x00" + script[3:23])
+    if len(script) == 23 and script[:2] == b"\xa9\x14" and script[22:] == b"\x87":
+        return b58check_encode(b"\x05" + script[2:22])
+    if (
+        len(script) >= 4
+        and (script[0] == 0 or 0x51 <= script[0] <= 0x60)
+        and script[1] == len(script) - 2
+    ):
+        return segwit_encode(script[0] - 0x50 if script[0] else 0, script[2:])
+    return None

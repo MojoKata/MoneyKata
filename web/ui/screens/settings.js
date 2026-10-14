@@ -21,6 +21,7 @@ const SECTIONS = /** @type {[string, string][]} */ ([
   ['signup', 'Sign-up'],
   ['passwords', 'Passwords'],
   ['prices', 'Prices'],
+  ['bitcoin', 'Bitcoin'],
   ['imports', 'Imports'],
   ['receipts', 'Receipts'],
   ['tax-tables', 'Tax tables'],
@@ -52,6 +53,8 @@ export default function Settings({ section }) {
         ? html`<${Keys} />`
         : current === 'email'
         ? html`<${EmailSection} />`
+        : current === 'bitcoin'
+        ? html`<${BitcoinSection} />`
         : current === 'tax-tables'
         ? html`<${TaxTables} />`
         : html`<${Plain} section=${current} />`}</div>
@@ -697,6 +700,165 @@ function EmailSection() {
         !values.smtpHost} onClick=${() => test.run().catch(() => {})}>Send a test email</button>
         <span class="spacer"></span>
         <button class="btn primary" disabled=${save.busy}>Save</button></div>
+    </form>
+  `;
+}
+
+const MEMPOOL = 'https://mempool.space/api';
+const BLOCKSTREAM = 'https://blockstream.info/api';
+const NODES = /** @type {[string, string][]} */ ([
+  ['mempool', 'Public: mempool.space (Esplora)'],
+  ['blockstream', 'Public: Blockstream (Esplora)'],
+  ['esplora', 'Own node: mempool or Esplora'],
+  ['electrum', 'Own node: Electrum server (Fulcrum, electrs)'],
+  ['core', 'Own node: Bitcoin Core (RPC, watch-only descriptors)'],
+]);
+
+/** Settings › Bitcoin (S16.7, S1.6.2): where self-custody wallets are read. */
+function BitcoinSection() {
+  const res = useApi('/settings/bitcoin', {}, ['task']);
+  const s = useApi('/settings');
+  const v = /** @type {any} */ (res.data);
+  const values = /** @type {any} */ (s.data)?.values;
+  const [f, setF] = useState(/** @type {any} */ (null));
+  const [password, setPassword] = useState('');
+  useEffect(() => {
+    if (values) {
+      const url = values.bitcoinEsploraUrl || MEMPOOL;
+      setF({
+        node: values.bitcoinSource !== 'esplora'
+          ? values.bitcoinSource
+          : url === MEMPOOL
+          ? 'mempool'
+          : url === BLOCKSTREAM
+          ? 'blockstream'
+          : 'esplora',
+        url: url === MEMPOOL || url === BLOCKSTREAM ? '' : url,
+        host: values.bitcoinNodeHost || '',
+        port: values.bitcoinNodePort,
+        tls: values.bitcoinNodeTls,
+        rpcUser: values.bitcoinRpcUser || '',
+      });
+    }
+  }, [values]);
+  const save = useSubmit(async () => {
+    const esplora = ['mempool', 'blockstream', 'esplora'].includes(f.node);
+    await api.patch('/settings', {
+      bitcoinSource: esplora ? 'esplora' : f.node,
+      bitcoinEsploraUrl: f.node === 'mempool'
+        ? MEMPOOL
+        : f.node === 'blockstream'
+        ? BLOCKSTREAM
+        : f.node === 'esplora'
+        ? f.url
+        : values.bitcoinEsploraUrl,
+      bitcoinNodeHost: f.host || null,
+      bitcoinNodePort: f.port,
+      bitcoinNodeTls: f.tls,
+      bitcoinRpcUser: f.rpcUser || null,
+    });
+    if (password) await api.put('/settings/bitcoin/password', { password });
+    setPassword('');
+    toast('Saved');
+    res.reload();
+    s.reload();
+  });
+  const test = useSubmit(async () => {
+    const r = await api.post('/settings/bitcoin/test');
+    toast(r.answer);
+  });
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!v || !f) return html`<${Loading} />`;
+  const set = (/** @type {string} */ k, num = false) => (/** @type {any} */ x) =>
+    setF({ ...f, [k]: num ? (x === '' ? '' : Number(x)) : x });
+  const pick = (/** @type {string} */ node) =>
+    setF({
+      ...f,
+      node,
+      port: node === 'core' ? 8332 : node === 'electrum' ? 50002 : f.port,
+      tls: node === 'core' ? false : node === 'electrum' ? true : f.tls,
+    });
+  const e = save.error;
+  const own = ['electrum', 'core'].includes(f.node);
+  return html`
+    <form class="card content-narrow" onSubmit=${(/** @type {Event} */ ev) => {
+      ev.preventDefault();
+      save.run().catch(() => {});
+    }}>
+      <h3>Bitcoin</h3>
+      <p class="small dim" style=${{ marginTop: '-6px' }}>Where self-custody wallets' balances and
+        history come from. Your own node keeps your addresses private.</p>
+      <${Field} label="Explorer or node" error=${errAt(e, 'bitcoinSource')}>
+        <${Select} value=${f.node} onChange=${pick} options=${NODES} />
+      </${Field}>
+      ${f.node === 'esplora'
+        ? html`
+          <${Field} label="Esplora address" id="esplora-url" error=${errAt(
+            e,
+            'bitcoinEsploraUrl',
+          )}
+            hint="Its API, such as http://umbrel.local:3006/api.">
+            <${Input} value=${f.url} onInput=${set(
+              'url',
+            )} placeholder="http://192.168.1.20:3006/api" />
+            </${Field}>
+        `
+        : null}
+      ${own
+        ? html`
+          <div class="row">
+            <${Field} label="Node address" id="node-host" error=${errAt(e, 'bitcoinNodeHost')}
+              hint="Allowed through the egress guard because it is named here.">
+              <${Input} value=${f.host} onInput=${set('host')} placeholder="192.168.1.20" />
+              </${Field}>
+              <${Field} label="Node port" id="node-port" error=${errAt(e, 'bitcoinNodePort')}>
+                <${Input} value=${f.port} onInput=${set('port', true)} inputmode="numeric" />
+                </${Field}>
+                </div>
+                <${SwitchRow} label="TLS" hint=${f.node === 'electrum'
+                  ? 'Usually on, port 50002; off on port 50001.'
+                  : 'On when Core is behind a TLS proxy.'} on=${f.tls} onChange=${set('tls')} />
+        `
+        : null}
+      ${f.node === 'core'
+        ? html`
+          <div class="row">
+            <${Field} label="RPC user" id="rpc-user" error=${errAt(e, 'bitcoinRpcUser')}>
+              <${Input} value=${f.rpcUser} onInput=${set('rpcUser')} autocomplete="off" />
+              </${Field}>
+              <${Field} label="Node password" id="node-password" error=${errAt(e, 'password')}
+                hint=${v.password
+                  ? `Set ${date(v.password.setAt)}${
+                    v.password.setBy ? ' by ' + v.password.setBy : ''
+                  }. Type a new one to replace it.`
+                  : 'Not set.'}>
+                <${Input} type="password" value=${password} onInput=${setPassword}
+                  autocomplete="new-password" placeholder=${v.password ? '••••••••' : ''} />
+                </${Field}>
+                </div>
+        `
+        : null}
+      <div class=${'notice small' + (v.lastError ? ' bad' : '')} role="status" data-help="checked">
+        <${Icon} name=${v.lastError ? 'alert' : 'sync'} /><div>${v.wallets} wallet${v.wallets ===
+            1
+          ? ''
+          : 's'} · ${v.lastRun
+          ? html`last checked ${ago(v.lastRun)}${v.lastError ? html`: ${v.lastError}` : ''}`
+          : 'not checked yet'}. Checked every hour.</div></div>
+      <${FormError} error=${e} shown=${[
+        'bitcoinSource',
+        'bitcoinEsploraUrl',
+        'bitcoinNodeHost',
+        'bitcoinNodePort',
+        'bitcoinRpcUser',
+        'password',
+      ]} />
+      <${FormError} error=${test.error} />
+      <div class="toolbar mt"><button type="button" class="btn" disabled=${test
+        .busy} onClick=${() => test.run().catch(() => {})}>Test</button><span class="spacer"></span>
+        <button class="btn primary" disabled=${save.busy}>Save</button></div>
+      <p class="small dim">Test asks the saved explorer or node for the chain's height: save
+        first. Other coins and chains come later.</p>
     </form>
   `;
 }

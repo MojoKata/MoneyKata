@@ -139,11 +139,17 @@ def _view(s, dev: bool) -> SourcesView:
 
 
 def apply_egress(srv) -> None:
-    """Only the hosts of enabled sources and the SMTP server may be reached (S13.5). The SMTP
-    host is one an admin named, so it may be on this machine or the LAN."""
+    """Only the hosts of enabled sources, the SMTP server and the bitcoin explorer or node may
+    be reached (S13.5). The SMTP host and a node are ones an admin named, so they may be on this
+    machine or the LAN."""
+    from ..bitcoin import sync as bitcoin
+
     with srv.db.read() as s:
         smtp = [h] if (h := settings.get(s, "smtpHost")) else []
-        srv.guard.allow(pricing.hosts(s, srv.config.dev) + smtp, allowed_by_name=smtp)
+        btc, btc_named = bitcoin.hosts(s)
+        srv.guard.allow(
+            pricing.hosts(s, srv.config.dev) + smtp + btc, allowed_by_name=smtp + btc_named
+        )
 
 
 @router.get("/prices/status", response_model=PriceStatus)

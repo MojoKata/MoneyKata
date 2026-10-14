@@ -9,9 +9,10 @@ from fastapi import APIRouter, Depends, Request
 from .. import access, activity
 from ..bitcoin import keys as bk
 from ..bitcoin import wallet
-from ..errors import refuse
+from ..errors import Problem, refuse
 from .conventions import Model
 from .deps import Caller, caller, server
+from .prices import apply_egress
 
 router = APIRouter(prefix="/ui/api", tags=["wallets"])
 SHOWN = 10  # unused addresses shown a chain
@@ -132,4 +133,28 @@ def put_wallet(account_id: str, body: WalletIn, request: Request, c: Caller = De
             subject_id=a.id,
             owner=a.ownerId,
         )
-        return _view(s, a.id)
+        out = _view(s, a.id)
+    apply_egress(server(request))
+    return out
+
+
+class SyncOut(Model):
+    recorded: int  # transactions added
+    wallet: WalletView
+
+
+@router.post("/accounts/{account_id}/wallet/sync", response_model=SyncOut)
+def sync_wallet(account_id: str, request: Request, c: Caller = Depends(caller)):
+    """Read the wallet from the explorer or node now (S1.6.2)."""
+    from ..bitcoin import sync
+    from ..bitcoin.sources import SourceError
+
+    srv = server(request)
+    with srv.db.read() as s:
+        a, _ = _wallet_account(s, c, account_id, "write")
+    try:
+        made = sync.sync_account(srv, a.id)
+    except SourceError as e:
+        raise Problem(502, "source-failed", str(e)) from None
+    with srv.db.read() as s:
+        return SyncOut(recorded=made, wallet=_view(s, a.id))

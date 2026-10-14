@@ -64,6 +64,10 @@ class Guard:
             self._hosts = {h.lower().rstrip(".") for h in hosts}
             self._named = {h.lower().rstrip(".") for h in allowed_by_name}
 
+    def snapshot(self) -> tuple[set[str], set[str]]:
+        with self._lock:
+            return set(self._hosts), set(self._named)
+
     def check(self, host: str, port: int) -> None:
         host = host.lower().rstrip(".")
         with self._lock:
