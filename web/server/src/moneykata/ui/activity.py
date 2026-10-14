@@ -91,6 +91,11 @@ TEXT = {
     "link.resumed": "{actor} resumed a link",
     "link.ended": "{actor} ended a link",
     "link.ended-by-peer": "A linked server ended its link with this one",
+    "link.copy-key-made": "{actor} created a linked copy's access key",
+    "link.copy-unlocked": "{actor} unlocked a linked copy",
+    "link.copy-unlock-failed": "{actor} gave wrong words for a linked copy",
+    "link.copy-locked": "{actor} locked a linked copy ({why})",
+    "link.copy-reset": "{actor} reset a linked copy",
     "mcp.called": "{actor}'s access token {name} read {tool}",
     "wallet.changed": "{actor} changed the keys and addresses {subject} watches",
     "option.settled": "{actor} recorded an option's expiry, assignment or exercise in {subject}",
@@ -183,6 +188,7 @@ def render(a: Activity, names: dict[tuple[str, str], str]) -> str:
         "to": detail.get("to", ""),
         "name": detail.get("name", ""),
         "tool": detail.get("tool", "").replace("_", " "),
+        "why": detail.get("why", ""),
     }
     template = TEXT.get(a.kind, "{actor}: " + a.kind)
     return template.format(**values)

@@ -208,4 +208,5 @@ preparer.
        people they name and the household that keeps the words.
    11. **The engine**: SQLCipher through the `sqlcipher3` wheel, which bundles SQLCipher,
        opened as a second SQLAlchemy engine for each unlocked copy. Each copy keeps its own
-       Alembic history (S14.1), which is applied when it is unlocked.
+       numbered history of schema revisions (as Alembic does for the main database, S14.1),
+       applied in order when it is unlocked.

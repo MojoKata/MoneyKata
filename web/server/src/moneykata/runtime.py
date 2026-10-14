@@ -138,6 +138,14 @@ def register_tasks(server: Server) -> None:
 
     server.tasks.register("links", links, Every(3600), last.get("links"))
 
+    def lock_copies(ctx: TaskContext) -> None:
+        """Lock each linked copy that has gone unused past its time (S11.9.4.2)."""
+        from .links import copies as linked
+
+        linked.sweep(server)
+
+    server.tasks.register("linked-copies", lock_copies, Every(60), last.get("linked-copies"))
+
     from . import alerts
 
     server.tasks.register(

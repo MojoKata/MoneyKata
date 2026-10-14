@@ -25,3 +25,19 @@ class Link(Record):
     peerVersion: str | None = None
     peerProtocol: int | None = None
     endedAt: dt.datetime | None = None
+    copyPublicKey: str | None = None
+    copyKeyAt: dt.datetime | None = None
+    copyKeyById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class LinkedItem:
+    id: str
+    linkId: str
+    remoteId: str
+    kind: str
+    ownerName: str
+    sharedAt: dt.datetime
+    createdAt: dt.datetime
+    viewers: str = "[]"
+    includeReceipts: bool = False

@@ -11,6 +11,7 @@ from .auth.users import Services
 from .config import Config
 from .events import STREAM_SECONDS, Broker
 from .jobs import Jobs
+from .links.copy import Copies
 from .links.signing import Nonces
 from .mail import Mailer
 from .store.maintenance import Store
@@ -42,6 +43,8 @@ class Server:
     sign_in: ratelimit.SignInGuard = field(default_factory=ratelimit.SignInGuard)
     # Nonces of linked servers' calls, so none is accepted twice (S11.1.3).
     link_nonces: Nonces = field(default_factory=Nonces)
+    # The unlocked linked copies, in memory only (S11.9.3).
+    copies: Copies = field(default_factory=Copies)
 
     def __post_init__(self) -> None:
         self.jobs = Jobs(
@@ -139,6 +142,7 @@ def create_app(server: Server) -> FastAPI:
         giving,
         imports,
         items,
+        linked,
         links,
         loans,
         options,
@@ -166,6 +170,7 @@ def create_app(server: Server) -> FastAPI:
         tokens,
         settings_routes,
         links,
+        linked,
         accounts,
         transactions,
         imports,

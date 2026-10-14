@@ -415,6 +415,29 @@
  */
 
 /**
+ * The link's copy (S11.7): its access key, size, and whether it is unlocked.
+ * @typedef {Object} CopyOut
+ * @property {(string | null)} keyMadeAt
+ * @property {(string | null)} keyMadeBy
+ * @property {number} sizeBytes
+ * @property {number} receipts
+ * @property {number} items
+ * @property {boolean} unlocked
+ * @property {(string | null)} unlockedBy
+ * @property {(string | null)} unlockedAt
+ * @property {(number | null)} locksInSeconds
+ */
+
+/**
+ * @typedef {Object} CopyState
+ * @property {moneykata__ui__linked__Household} household
+ * @property {boolean} hasKey
+ * @property {(string | null)} unlockedBy
+ * @property {(string | null)} unlockedAt
+ * @property {(number | null)} locksInSeconds
+ */
+
+/**
  * @typedef {Object} CountIn
  * @property {(boolean | null)} counted
  */
@@ -901,12 +924,6 @@
  * @property {string} key
  * @property {string} label
  * @property {(string | null)} date
- */
-
-/**
- * @typedef {Object} Household
- * @property {string} name
- * @property {Object<string, unknown>} avatar
  */
 
 /**
@@ -2195,7 +2212,7 @@
 /**
  * @typedef {Object} SessionInfo
  * @property {Me} user
- * @property {Household} household
+ * @property {moneykata__ui__session__Household} household
  * @property {string} version
  * @property {boolean} dev
  * @property {string} serverName
@@ -2665,6 +2682,11 @@
  */
 
 /**
+ * @typedef {Object} Unlock
+ * @property {string} words
+ */
+
+/**
  * @typedef {Object} Unplanned
  * @property {string} categoryId
  * @property {string} label
@@ -2824,6 +2846,11 @@
  */
 
 /**
+ * @typedef {Object} Words
+ * @property {Array<string>} words
+ */
+
+/**
  * @typedef {Object} YearPct
  * @property {number} year
  * @property {(number | null)} percent
@@ -2920,6 +2947,17 @@
  */
 
 /**
+ * @typedef {Object} moneykata__ui__linked__Household
+ * @property {string} linkId
+ * @property {(string | null)} serverName
+ * @property {(string | null)} name
+ * @property {(Object<string, unknown> | null)} avatar
+ * @property {number} items
+ * @property {(string | null)} syncedAt
+ * @property {boolean} locked
+ */
+
+/**
  * @typedef {Object} moneykata__ui__links__LinkOut
  * @property {string} id
  * @property {string} state
@@ -2937,6 +2975,7 @@
  * @property {string} createdAt
  * @property {(string | null)} endedAt
  * @property {Array<RemoteUser>} users
+ * @property {(CopyOut | null)} [linkedCopy]
  */
 
 /**
@@ -2999,6 +3038,12 @@
  * @property {(string | null)} date
  * @property {(string | null)} amount
  * @property {(string | null)} payee
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__session__Household
+ * @property {string} name
+ * @property {Object<string, unknown>} avatar
  */
 
 /**

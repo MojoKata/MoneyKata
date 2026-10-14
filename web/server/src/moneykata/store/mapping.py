@@ -131,6 +131,7 @@ def map_all() -> None:
     mapper_registry.map_imperatively(sh.CountedAccount, sharing.CountedAccounts)
     _versioned(Setting, core.Setting)
     _versioned(lk.Link, links.Link)
+    mapper_registry.map_imperatively(lk.LinkedItem, links.LinkedItem)
     mapper_registry.map_imperatively(Secret, core.Secret)
     mapper_registry.map_imperatively(TaskRun, core.TaskRun)
     mapper_registry.map_imperatively(Activity, activity.Activity)

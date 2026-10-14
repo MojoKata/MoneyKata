@@ -7,6 +7,7 @@ import json
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import false, select
 
+from .. import settings
 from ..errors import Problem, refuse
 from ..links import keys, manage
 from ..links.client import LinkError
@@ -26,6 +27,20 @@ class RemoteUser(Model):
     email: str | None
 
 
+class CopyOut(Model):
+    """The link's copy (S11.7): its access key, size, and whether it is unlocked."""
+
+    keyMadeAt: dt.datetime | None
+    keyMadeBy: str | None
+    sizeBytes: int
+    receipts: int
+    items: int
+    unlocked: bool
+    unlockedBy: str | None
+    unlockedAt: dt.datetime | None
+    locksInSeconds: int | None
+
+
 class LinkOut(Model):
     id: str
     state: str  # invited, requested, pending, active, paused, ended
@@ -43,6 +58,7 @@ class LinkOut(Model):
     createdAt: dt.datetime
     endedAt: dt.datetime | None
     users: list[RemoteUser]
+    linkedCopy: CopyOut | None = None
 
 
 class LinksView(Model):
@@ -60,7 +76,35 @@ class JoinIn(Model):
     code: str
 
 
-def _out(s, link: Link) -> LinkOut:
+def _copy(s, srv, link: Link) -> CopyOut | None:
+    if link.state not in ("active", "paused"):
+        return None
+    from sqlalchemy import func
+
+    from ..links import copies
+    from ..store.entities.links import LinkedItem
+
+    size, receipts = copies.size(srv, link.id)
+    o = srv.copies.get(link.id, for_person=False)
+    by = s.get(User, link.copyKeyById) if link.copyKeyById else None
+    who = s.get(User, o.by) if o else None
+    left = srv.copies.locks_in(link.id, settings.get(s, "linkReleaseMinutes"))
+    return CopyOut(
+        keyMadeAt=link.copyKeyAt,
+        keyMadeBy=by.displayName if by else None,
+        sizeBytes=size,
+        receipts=receipts,
+        items=s.scalar(
+            select(func.count()).select_from(LinkedItem).where(LinkedItem.linkId == link.id)
+        ),
+        unlocked=o is not None,
+        unlockedBy=who.displayName if who else None,
+        unlockedAt=o.at if o else None,
+        locksInSeconds=int(left) if left is not None else None,
+    )
+
+
+def _out(s, link: Link, srv=None) -> LinkOut:
     users = s.scalars(
         select(User)
         .where(User.linkId == link.id, User.deleted == false())
@@ -88,6 +132,7 @@ def _out(s, link: Link) -> LinkOut:
             RemoteUser(id=u.id, username=u.username, displayName=u.displayName, email=u.email)
             for u in users
         ],
+        linkedCopy=_copy(s, srv, link) if srv is not None else None,
     )
 
 
@@ -107,7 +152,7 @@ def list_links(request: Request, c: Caller = Depends(admin)):
         return LinksView(
             fingerprint=keys.short(fp),
             address=manage.own_address(s),
-            links=[_out(s, r) for r in rows],
+            links=[_out(s, r, srv) for r in rows],
         )
 
 
@@ -119,7 +164,7 @@ def invite(request: Request, c: Caller = Depends(admin)):
     except LinkError as e:
         raise _problem(e) from None
     with srv.db.read() as s:
-        return Invitation(code=code, link=_out(s, s.get(Link, link.id)))
+        return Invitation(code=code, link=_out(s, s.get(Link, link.id), srv))
 
 
 @router.post("/settings/links/join", response_model=LinkOut, status_code=201)
@@ -142,7 +187,7 @@ def join(body: JoinIn, request: Request, c: Caller = Depends(admin)):
     finally:
         apply_egress(srv)
     with srv.db.read() as s:
-        return _out(s, s.get(Link, link.id))
+        return _out(s, s.get(Link, link.id), srv)
 
 
 LOCAL = ("not-found", "state-invalid", "not-requested")
@@ -162,7 +207,7 @@ def _act(request: Request, c: Caller, link_id: str, fn) -> LinkOut:
         link = s.get(Link, link_id)
         if link is None or link.deleted:
             raise Problem(404, "not-found", "No such link.")
-        return _out(s, link)
+        return _out(s, link, srv)
 
 
 @router.post("/settings/links/{link_id}/approve", response_model=LinkOut)
@@ -190,3 +235,38 @@ def end(link_id: str, request: Request, c: Caller = Depends(admin)):
 def pull_now(link_id: str, request: Request, c: Caller = Depends(admin)):
     """An exchange now rather than at the next hour (S11.7)."""
     return _act(request, c, link_id, lambda srv: manage.exchange(srv, link_id))
+
+
+class Words(Model):
+    words: list[str]  # shown once
+
+
+def _copy_problem(e) -> Problem:
+    status = 404 if e.code == "not-found" else 409 if e.code == "key-exists" else 422
+    return Problem(status, e.code, e.message)
+
+
+@router.post("/settings/links/{link_id}/copy-key", response_model=Words)
+def make_copy_key(link_id: str, request: Request, c: Caller = Depends(admin)):
+    """Create the access key (S11.9.2.1): 12 words, shown once."""
+    from ..links import copies
+    from ..links.copy import CopyError
+
+    try:
+        return Words(words=copies.make_key(server(request), link_id, c.id))
+    except CopyError as e:
+        raise _copy_problem(e) from None
+
+
+@router.post("/settings/links/{link_id}/lock", response_model=LinkOut)
+def lock_copy(link_id: str, request: Request, c: Caller = Depends(admin)):
+    from ..links import copies
+
+    return _act(request, c, link_id, lambda srv: copies.lock(srv, link_id, c.id, True))
+
+
+@router.post("/settings/links/{link_id}/reset-copy", response_model=LinkOut)
+def reset_copy(link_id: str, request: Request, c: Caller = Depends(admin)):
+    from ..links import copies
+
+    return _act(request, c, link_id, lambda srv: copies.reset(srv, link_id, c.id))

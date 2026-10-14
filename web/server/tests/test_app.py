@@ -444,6 +444,11 @@ def test_every_dialog_has_its_guide(page):
     check_guide(page, ".dialog", "a token shown once")
     assert "mkt_" in page.inner_text(".dialog")
     close_dialog(page)
+    # A linked copy's access key, shown once.
+    open_dialog(page, "/ui/settings/links", "Create the access key", "dialog-copy-key")
+    page.wait_for_selector(".dialog .words")
+    check_guide(page, ".dialog", "a linked copy's access key")
+    close_dialog(page)
     # Sharing with a linked server's people, and its Include receipts.
     open_dialog(page, "/ui/accounts", "Share Everyday checking", "dialog-share")
     page.get_by_role("radiogroup", name="Access for Margaret Griffin").get_by_role(

@@ -1,9 +1,9 @@
 """Linked servers (requirements S11.1, S11.7): each link with another MoneyKata server."""
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Text
+from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Index, Integer, Text, text
 
 from ..types import UtcTimestamp
-from ._base import record, unique_live
+from ._base import exception, record, unique_live
 
 # A link with another server (S11.1). On the inviting side it starts as an invitation (its
 # code kept as a hash), becomes a request when the other side answers, and is active once an
@@ -30,9 +30,32 @@ Link = record(
     Column("peerVersion", Text),
     Column("peerProtocol", Integer),
     Column("endedAt", UtcTimestamp),
+    # The linked copy's access key (S11.9.2): its public key only, and who made it when. The
+    # copy key itself is never stored.
+    Column("copyPublicKey", Text),
+    Column("copyKeyAt", UtcTimestamp),
+    Column("copyKeyById", Text, ForeignKey("User.id")),
     CheckConstraint(
         "state IN ('invited', 'requested', 'pending', 'active', 'paused', 'ended')", name="state"
     ),
     CheckConstraint("role IN ('inviter', 'joiner')", name="role"),
 )
 unique_live(Link, "peerKey")
+
+# What a link brings in, as the main database knows it while the copy is locked (S11.9.1): each
+# shared item's id there, kind, owner's display name, when it was shared and the people here it
+# names, never its name or figures. Replaced at each pull: a cache (schema.md §4.4.5).
+LinkedItem = exception(
+    "LinkedItem",
+    "cache: replaced from each pull of the link (§4.4.5)",
+    Column("linkId", Text, ForeignKey("Link.id", ondelete="CASCADE"), nullable=False),
+    Column("remoteId", Text, nullable=False),
+    Column("kind", Text, nullable=False),
+    Column("ownerName", Text, nullable=False),
+    Column("sharedAt", UtcTimestamp, nullable=False),
+    Column("viewers", Text, nullable=False, server_default=text("'[]'")),  # local user ids
+    Column("includeReceipts", Boolean, nullable=False, server_default=text("0")),
+    Column("createdAt", UtcTimestamp, nullable=False),
+    prefix="LItem",
+)
+Index("ux_LinkedItem_link_remote", LinkedItem.c.linkId, LinkedItem.c.remoteId, unique=True)

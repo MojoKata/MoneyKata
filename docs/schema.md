@@ -92,6 +92,7 @@ The prefixes of the tables that exist.
 | Imprv  | Improvement      | An improvement to a property, added to its cost basis.                                                |
 | Instr  | Instrument       | A thing with a price: a stock, fund, coin, option contract or currency.                               |
 | Item   | Item             | A physical asset: metals, a collectable, a property or a vehicle, with how it is valued.              |
+| LItem  | LinkedItem       | An item a link brings in, as the main database knows it: kind, owner and who it names.                |
 | Link   | Link             | A link with another MoneyKata server: its state, address and key.                                     |
 | Loan   | Loan             | A loan account's terms: principal, rate, term, escrow, PMI, resets and recasts.                       |
 | Lot    | Lot              | One acquisition of an instrument, and what remains open.                                              |
@@ -173,7 +174,8 @@ Records are never removed from the database: they are marked deleted. The except
       counters, the background tasks' last runs, and the live stream's state;
    5. **caches**, rebuilt from the records: thumbnails, computed series kept for speed, and
       wash sales, worked out again from the trades whenever they change, and a bitcoin
-      wallet's addresses, derived again from its keys and its explorer or node.
+      wallet's addresses, derived again from its keys and its explorer or node, and what a
+      link brings in, replaced from each pull.
 
    Activity entries and alerts are never deleted at all: Activity is kept as it was
    written, and alerts are resolved, then age out of the list (requirements S12.11).

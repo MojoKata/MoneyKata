@@ -2432,6 +2432,153 @@
         "title": "ContributionsView",
         "type": "object"
       },
+      "CopyOut": {
+        "additionalProperties": false,
+        "description": "The link's copy (S11.7): its access key, size, and whether it is unlocked.",
+        "properties": {
+          "items": {
+            "title": "Items",
+            "type": "integer"
+          },
+          "keyMadeAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keymadeat"
+          },
+          "keyMadeBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keymadeby"
+          },
+          "locksInSeconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locksinseconds"
+          },
+          "receipts": {
+            "title": "Receipts",
+            "type": "integer"
+          },
+          "sizeBytes": {
+            "title": "Sizebytes",
+            "type": "integer"
+          },
+          "unlocked": {
+            "title": "Unlocked",
+            "type": "boolean"
+          },
+          "unlockedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlockedat"
+          },
+          "unlockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlockedby"
+          }
+        },
+        "required": [
+          "keyMadeAt",
+          "keyMadeBy",
+          "sizeBytes",
+          "receipts",
+          "items",
+          "unlocked",
+          "unlockedBy",
+          "unlockedAt",
+          "locksInSeconds"
+        ],
+        "title": "CopyOut",
+        "type": "object"
+      },
+      "CopyState": {
+        "additionalProperties": false,
+        "properties": {
+          "hasKey": {
+            "title": "Haskey",
+            "type": "boolean"
+          },
+          "household": {
+            "$ref": "#/components/schemas/moneykata__ui__linked__Household"
+          },
+          "locksInSeconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locksinseconds"
+          },
+          "unlockedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlockedat"
+          },
+          "unlockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlockedby"
+          }
+        },
+        "required": [
+          "household",
+          "hasKey",
+          "unlockedBy",
+          "unlockedAt",
+          "locksInSeconds"
+        ],
+        "title": "CopyState",
+        "type": "object"
+      },
       "CountIn": {
         "additionalProperties": false,
         "properties": {
@@ -5519,26 +5666,6 @@
           "date"
         ],
         "title": "HolidayOut",
-        "type": "object"
-      },
-      "Household": {
-        "additionalProperties": false,
-        "properties": {
-          "avatar": {
-            "additionalProperties": true,
-            "title": "Avatar",
-            "type": "object"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "avatar"
-        ],
-        "title": "Household",
         "type": "object"
       },
       "ImportRow": {
@@ -13337,7 +13464,7 @@
             "type": "boolean"
           },
           "household": {
-            "$ref": "#/components/schemas/Household"
+            "$ref": "#/components/schemas/moneykata__ui__session__Household"
           },
           "serverName": {
             "title": "Servername",
@@ -16146,6 +16273,20 @@
         "title": "TypedPrice",
         "type": "object"
       },
+      "Unlock": {
+        "additionalProperties": false,
+        "properties": {
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "words"
+        ],
+        "title": "Unlock",
+        "type": "object"
+      },
       "Unplanned": {
         "additionalProperties": false,
         "properties": {
@@ -16992,6 +17133,23 @@
         "title": "WithdrawalsView",
         "type": "object"
       },
+      "Words": {
+        "additionalProperties": false,
+        "properties": {
+          "words": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Words",
+            "type": "array"
+          }
+        },
+        "required": [
+          "words"
+        ],
+        "title": "Words",
+        "type": "object"
+      },
       "YearPct": {
         "additionalProperties": false,
         "properties": {
@@ -17537,6 +17695,80 @@
         "title": "DocumentIn",
         "type": "object"
       },
+      "moneykata__ui__linked__Household": {
+        "additionalProperties": false,
+        "properties": {
+          "avatar": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar"
+          },
+          "items": {
+            "title": "Items",
+            "type": "integer"
+          },
+          "linkId": {
+            "title": "Linkid",
+            "type": "string"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "serverName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servername"
+          },
+          "syncedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syncedat"
+          }
+        },
+        "required": [
+          "linkId",
+          "serverName",
+          "name",
+          "avatar",
+          "items",
+          "syncedAt",
+          "locked"
+        ],
+        "title": "Household",
+        "type": "object"
+      },
       "moneykata__ui__links__LinkOut": {
         "additionalProperties": false,
         "properties": {
@@ -17652,6 +17884,16 @@
               }
             ],
             "title": "Lastokat"
+          },
+          "linkedCopy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CopyOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "peerName": {
             "anyOf": [
@@ -18115,6 +18357,26 @@
           "payee"
         ],
         "title": "LinkOut",
+        "type": "object"
+      },
+      "moneykata__ui__session__Household": {
+        "additionalProperties": false,
+        "properties": {
+          "avatar": {
+            "additionalProperties": true,
+            "title": "Avatar",
+            "type": "object"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "avatar"
+        ],
+        "title": "Household",
         "type": "object"
       },
       "moneykata__ui__settings__SecretSet": {
@@ -23470,6 +23732,170 @@
         ]
       }
     },
+    "/ui/api/linked": {
+      "get": {
+        "description": "The households that share something with you (S12.10.1); none share nothing.",
+        "operationId": "households_ui_api_linked_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/moneykata__ui__linked__Household"
+                  },
+                  "title": "Response Households Ui Api Linked Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Households",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
+    "/ui/api/linked/{link_id}": {
+      "get": {
+        "operationId": "copy_state_ui_api_linked__link_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopyState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Copy State",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
+    "/ui/api/linked/{link_id}/lock": {
+      "post": {
+        "description": "Lock now (S11.9.4.3): anyone the copy shares with.",
+        "operationId": "lock_ui_api_linked__link_id__lock_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopyState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lock",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
+    "/ui/api/linked/{link_id}/unlock": {
+      "post": {
+        "description": "The 12 words (S11.9.3.1): checked here, held in memory; nothing reaches the browser.",
+        "operationId": "unlock_ui_api_linked__link_id__unlock_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Unlock"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopyState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unlock",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
     "/ui/api/password-reset": {
       "post": {
         "description": "The answer is the same whether or not the user exists (S10.1.5).",
@@ -26222,6 +26648,49 @@
         ]
       }
     },
+    "/ui/api/settings/links/{link_id}/copy-key": {
+      "post": {
+        "description": "Create the access key (S11.9.2.1): 12 words, shown once.",
+        "operationId": "make_copy_key_ui_api_settings_links__link_id__copy_key_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Words"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Make Copy Key",
+        "tags": [
+          "links"
+        ]
+      }
+    },
     "/ui/api/settings/links/{link_id}/end": {
       "post": {
         "description": "End a link, or reject a request, or withdraw an invitation.",
@@ -26260,6 +26729,48 @@
           }
         },
         "summary": "End",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/{link_id}/lock": {
+      "post": {
+        "operationId": "lock_copy_ui_api_settings_links__link_id__lock_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lock Copy",
         "tags": [
           "links"
         ]
@@ -26345,6 +26856,48 @@
           }
         },
         "summary": "Pull Now",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/{link_id}/reset-copy": {
+      "post": {
+        "operationId": "reset_copy_ui_api_settings_links__link_id__reset_copy_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Copy",
         "tags": [
           "links"
         ]

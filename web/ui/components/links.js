@@ -8,7 +8,7 @@ import { useApi, useSubmit } from '../app/hooks.js';
 import { ago, date } from '../app/format.js';
 import { Dialog, openDialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
-import { errAt, Field, FormError, Input } from './fields.js';
+import { errAt, Field, FormError, Input, Select } from './fields.js';
 import { Failed, Loading } from './bits.js';
 import { Icon } from './icon.js';
 import { toast } from './toast.js';
@@ -47,6 +47,17 @@ export function LinksSection() {
     res.reload();
   });
   const [armed, setArmed] = useState(/** @type {string | null} */ (null));
+  const copyAct = useSubmit(async (/** @type {string} */ id, /** @type {string} */ what) => {
+    const out = await api.post(`/settings/links/${id}/${what}`);
+    toast(what === 'lock' ? 'Locked' : 'Copy reset: make its new access key');
+    res.reload();
+    return out;
+  });
+  const release = useSubmit(async (/** @type {string} */ v) => {
+    await api.patch('/settings', { linkReleaseMinutes: Number(v) });
+    toast('Saved');
+    s.reload();
+  });
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!v || !values) return html`<${Loading} />`;
   const live = v.links.filter((/** @type {any} */ l) => l.state !== 'ended');
@@ -109,7 +120,7 @@ export function LinksSection() {
                           'Invitation'}</b>${l.householdName &&
                             l.peerName
                           ? html`
-                            <span class="small dim">${l.householdName}</span>
+                            <div class="small">${l.householdName}</div>
                           `
                           : null}<div class="small dim">${l.address || ''}${l.fingerprint
                           ? html`
@@ -129,41 +140,50 @@ export function LinksSection() {
                       : l.state === 'requested'
                       ? 'Compare the fingerprint with them before approving.'
                       : ago(l.lastOkAt)}</td>
-                    <td class="num" style=${{ whiteSpace: 'nowrap' }}>${l.state === 'requested'
-                      ? html`
-                        <button class="btn sm" onClick=${() =>
-                          act.run(l.id, 'end')}>Reject</button> <button class="btn sm primary"
-                          onClick=${() => act.run(l.id, 'approve')}>Approve</button>
-                      `
-                      : html`${
-                        ['active', 'pending'].includes(l.state)
-                          ? html`
-                            <button class="btn sm" disabled=${act.busy} onClick=${() =>
-                              act.run(l.id, 'pull')}>Pull now</button>
-                          `
-                          : null
-                      }${
-                        l.state === 'active'
-                          ? html`
-                            <button class="btn sm" onClick=${() =>
-                              act.run(l.id, 'pause')}>Pause</button>
-                          `
-                          : l.state === 'paused'
-                          ? html`
-                            <button class="btn sm" onClick=${() =>
-                              act.run(l.id, 'resume')}>Resume</button>
-                          `
-                          : null
-                      }<button class="btn sm danger" onClick=${() =>
-                        armed === l.id ? act.run(l.id, 'end').then(() => setArmed(null)) : setArmed(
-                          l.id,
-                        )}>${
-                        armed === l.id
-                          ? 'Click again to end'
-                          : l.state === 'invited'
-                          ? 'Withdraw'
-                          : 'End link'
-                      }</button>`}</td>
+                    <td class="num">
+                      <div style=${{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '4px',
+                        justifyContent: 'flex-end',
+                      }}>${l.state === 'requested'
+                        ? html`
+                          <button class="btn sm" onClick=${() =>
+                            act.run(l.id, 'end')}>Reject</button> <button class="btn sm primary"
+                            onClick=${() => act.run(l.id, 'approve')}>Approve</button>
+                        `
+                        : html`${
+                          ['active', 'pending'].includes(l.state)
+                            ? html`
+                              <button class="btn sm" disabled=${act.busy} onClick=${() =>
+                                act.run(l.id, 'pull')}>Pull now</button>
+                            `
+                            : null
+                        }${
+                          l.state === 'active'
+                            ? html`
+                              <button class="btn sm" onClick=${() =>
+                                act.run(l.id, 'pause')}>Pause</button>
+                            `
+                            : l.state === 'paused'
+                            ? html`
+                              <button class="btn sm" onClick=${() =>
+                                act.run(l.id, 'resume')}>Resume</button>
+                            `
+                            : null
+                        }<button class="btn sm danger" onClick=${() =>
+                          armed === l.id
+                            ? act.run(l.id, 'end').then(() => setArmed(null))
+                            : setArmed(
+                              l.id,
+                            )}>${
+                          armed === l.id
+                            ? 'Click again to end'
+                            : l.state === 'invited'
+                            ? 'Withdraw'
+                            : 'End link'
+                        }</button>`}</div>
+                    </td>
                   </tr>
                 `
               )}</tbody>
@@ -180,6 +200,7 @@ export function LinksSection() {
         : null}
       <${FormError} error=${act.error} />
     </div>
+    ${copies(live, values, res.reload, copyAct, release, armed, setArmed)}
     <div class="card mt">
       <h3 data-help="linked-users">Users on linked servers</h3>
       <p class="small dim" style=${{ marginTop: '-6px' }}>Each linked server's active users,
@@ -266,5 +287,144 @@ function JoinLink({ close }) {
         approves it.</p>
         <${FormError} error=${save.error} shown=${['code']} />
         </${Dialog}>
+  `;
+}
+
+/** @param {number} n */
+const size = (n) =>
+  n >= 1048576 ? `${(n / 1048576).toFixed(n >= 10485760 ? 0 : 1)} MB` : `${Math.ceil(n / 1024)} KB`;
+
+/**
+ * The Linked copies card (S11.7, S11.9): each copy's access key, size and lock, Create the
+ * access key, Lock now and Reset copy, and how long an unused copy stays unlocked.
+ * @param {any[]} live @param {any} values @param {() => void} reload @param {any} act
+ * @param {any} release @param {string | null} armed @param {(v: string | null) => void} setArmed
+ */
+function copies(live, values, reload, act, release, armed, setArmed) {
+  const rows = live.filter((l) => l.linkedCopy);
+  return html`
+    <div class="card mt">
+      <h3 data-help="linked-copies">Linked copies</h3>
+      <p class="small dim" style=${{ marginTop: '-6px' }}>Each link's copy is encrypted under its
+        own <b>access key</b>: 12 words made here once and kept in the household's password
+        manager. The first person its shares name who opens it enters the words; it then stays
+        unlocked for everyone it shares with until it goes unused. This server's master key
+        can't open it.</p>
+      ${rows.length
+        ? html`
+          <div class="table-wrap">
+            <table class="t">
+              <caption class="sr-only">Linked copies</caption>
+              <thead>
+                <tr>
+                  <th>Link</th>
+                  <th>Copy</th>
+                  <th>Access key</th>
+                  <th>State</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>${rows.map((l) => {
+                const c = l.linkedCopy;
+                const reset = armed === 'reset-' + l.id;
+                return html`
+                  <tr>
+                    <td><b>${l.peerName}</b><div class="small dim">${c.items} item${c.items === 1
+                      ? ''
+                      : 's'} shared</div></td>
+                    <td class="small">${size(c.sizeBytes)}${c.receipts
+                      ? ` · ${c.receipts} receipt${c.receipts === 1 ? '' : 's'}`
+                      : ''}</td>
+                    <td class="small">${c.keyMadeAt
+                      ? html`${date(c.keyMadeAt)}<div class="dim">by ${
+                        c.keyMadeBy || 'an admin'
+                      }</div>`
+                      : html`<span class="pill warn">not made</span>`}</td>
+                    <td class="small">${c.unlocked
+                      ? html`<span class="pill info">unlocked</span><div class="dim">by ${c.unlockedBy} · locks in ${
+                        Math.ceil((c.locksInSeconds || 0) / 60)
+                      } min
+                  unused</div>`
+                      : html`<span class="pill"><${Icon} name="lock" /> locked</span>`}</td>
+                    <td class="num" style=${{ whiteSpace: 'nowrap' }}>${!c.keyMadeAt
+                      ? html`<button class="btn sm primary" onClick=${() =>
+                        openDialog(CopyKey, { link: l }).then(
+                          reload,
+                        )}>Create the access key</button>`
+                      : html`${
+                        c.unlocked
+                          ? html`
+                            <button class="btn sm" onClick=${() =>
+                              act.run(l.id, 'lock').catch(() => {})}>Lock now</button>
+                          `
+                          : null
+                      }<button class="btn sm danger" onClick=${() =>
+                        reset
+                          ? act.run(l.id, 'reset-copy').then(() => setArmed(null), () => {})
+                          : setArmed('reset-' + l.id)}>${
+                        reset ? 'Click again to reset' : 'Reset copy'
+                      }</button>`}</td>
+                  </tr>
+                `;
+              })}</tbody>
+            </table>
+          </div>
+        `
+        : html`<p class="small dim">None yet: a copy is kept once a link is active.</p>`}
+      <${Field} label="Release linked keys after" id="link-release"
+        hint="An unlocked copy's key is dropped from memory after this long without anyone viewing it.">
+        <${Select} value=${String(values.linkReleaseMinutes)} onChange=${(
+          /** @type {string} */ v,
+        ) => release.run(v).catch(() => {})} options=${[
+          ['15', '15 minutes unused'],
+          ['60', '1 hour unused'],
+          ['240', '4 hours unused'],
+        ]} />
+      </${Field}>
+      <${FormError} error=${act.error || release.error} />
+    </div>
+  `;
+}
+
+/** Create the access key (S11.9.2.1): the 12 words, shown once. */
+/** @param {{ close: (v?: any) => void, link: any }} p */
+function CopyKey({ close, link }) {
+  useDialogGuide('dialog-copy-key');
+  const [words, setWords] = useState(/** @type {string[] | null} */ (null));
+  const [saved, setSaved] = useState(false);
+  const make = useSubmit(async () => {
+    setWords((await api.post(`/settings/links/${link.id}/copy-key`)).words);
+  });
+  useEffect(() => {
+    make.run().catch(() => {});
+  }, []);
+  return html`
+    <${Dialog} title=${`Access key for ${link.peerName}`} close=${close}
+      onSubmit=${() => saved && close(true)} note="They are shown once."
+      footer=${html`
+        <button type="button" class="btn" disabled=${!words} onClick=${() =>
+          navigator.clipboard?.writeText((words || []).join(' ')).then(() =>
+            toast('Copied')
+          )}>Copy</button>
+        <button class="btn primary" disabled=${!saved}>Done, words saved</button>
+      `}>
+      <div class="notice" style=${{ marginBottom: '12px' }}><${Icon} name="link" /><div>
+        <b>${link.peerName}</b>'s copy is kept encrypted under these 12 words. <b>They are
+          shown once.</b></div></div>
+      ${make.error
+        ? html`<${FormError} error=${make.error} />`
+        : words
+        ? html`<div class="words" data-help="words">${
+          words.map((w, i) => html`<div class="word"><span>${i + 1}</span><b>${w}</b></div>`)
+        }</div>`
+        : html`<${Loading} lines=${3} />`}
+      <p class="small dim">Save them in the household's password manager, where the people its
+        shares name can reach them. Whoever opens it first enters them. The words open only what
+        is shared with each person. If they are lost, <b>Reset copy</b> makes new ones.</p>
+      <label class="list-item" style=${{ cursor: 'pointer' }}><input type="checkbox"
+        id="f-words-saved" checked=${saved} onChange=${(/** @type {any} */ e) =>
+          setSaved(e.currentTarget.checked)} /> <span class="grow">I have saved the 12
+          words</span></label>
+    </${Dialog}>
   `;
 }
