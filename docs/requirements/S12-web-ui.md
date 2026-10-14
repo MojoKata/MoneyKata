@@ -117,8 +117,9 @@
    1. **`docs/mockups/MoneyKata-mock.html`**, hand-written: the design reference for every
       screen. A change to what users see updates it in the same change.
    2. **`docs/mockups/MoneyKata-app.html`**, generated: `web/ui/mockup/build.py` inlines the
-      app and an in-page fake backend, for the screens built so far, and `web/check` fails
-      while it is out of date.
+      app and an in-page fake backend, for the screens built so far, the linked household
+      window among them (recorded from a seeded peer with its copy unlocked), and `web/check`
+      fails while it is out of date.
 
    When the generated file covers every screen, it replaces the hand-written one and takes
    its name. `docs/mockups/check.py` opens every screen, tab, Settings section and dialog of
@@ -145,9 +146,12 @@
           colour is never the only sign;
        3. a **header strip**: *griffin-parents · read only · synced 41 min ago · unlocked by
           Alice at 14:05 · Lock now*;
-       4. the screens for the kinds shared with you: Dashboard (only what is shared with
-          you), Accounts, Portfolios, Positions, Transactions, Projections, Budgets, Gifts,
-          Giving, Taxes and Receipts. The navigation lists only the kinds you have something from. There is
+       4. the screens for the kinds shared with you, **every screen and tab of each**, as
+          its owner sees them but read only: Dashboard (only what is shared with you),
+          Accounts, Portfolios, Positions, Transactions, Projections (with their charts),
+          Budgets (with cash flow and recurring payments), Gifts, Giving (with its months and
+          organisations), Taxes and Receipts. The source sends what each screen needs
+          (S11.3.1). The navigation lists only the kinds you have something from. There is
           no Settings, Profile, Watchlist, import, sharing or editing;
        5. the user tile shows you, the local user, *viewing griffin-parents*.
     4. **Locked**: the window shows only the household's name and avatar and the request for
@@ -199,3 +203,9 @@
     accident: arithmetic or a comparison with plain numbers throws, so a mistake fails loudly.
     What is only drawn (a chart's point, a bar's width) asks for a float by name. Sent back in a
     request, it is written as an exact number.
+13. **Durations** are typed in one grammar wherever a length of time is asked for (pausing a
+    link, S11.7.2): one or more parts, each a whole number and a unit, `w` (weeks), `d` (days),
+    `h` (hours) or `m` (minutes), largest first, each unit at most once, with or without
+    spaces between them: `1d`, `90m`, `2w 3d 4h`, `2w3d`. It is read by one helper on each side
+    (`app/duration.js`, `moneykata/duration.py`), which refuses anything else and says why, and
+    shown back the same way, so `2w 3d 4h` reads as typed.

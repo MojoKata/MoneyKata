@@ -20,6 +20,24 @@ listening on port 37373. It needs four things from the host:
 `install/proxy/` has Caddy, nginx and haproxy examples. `install/compose.tls.yaml` runs its
 own HTTPS with a self-signed certificate, for trying it on a local network.
 
+### 1.1 Exposing only `/link/`
+
+A linked server (S11) reaches this one at its own address under `/link/`; there is no
+separate port. To let a linked household in without exposing the app, have the reverse proxy
+pass only that path from the outside, for example with Caddy:
+
+```
+money.example.org {
+    @link path /link/*
+    handle @link {
+        reverse_proxy moneykata:37373
+    }
+    respond 404
+}
+```
+
+The app itself (`/ui`) stays reachable only on the household's own network or overlay.
+
 ## 2. Installing
 
 1. **Get the image.** There is no registry: build it on any amd64 machine and carry it over.

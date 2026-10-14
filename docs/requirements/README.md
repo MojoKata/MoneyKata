@@ -62,7 +62,6 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 |---|---|---|
 | **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | reading a brokerage statement's positions, cash activity and trades; until then it is kept without reading |
 | **G12** | [Adjusted contracts and capital at risk](gaps.md#g12-adjusted-contracts-and-capital-at-risk) | option contracts adjusted after a split, and capital at risk for spreads and covered calls |
-| **G14** | [Linked households beyond the first build](gaps.md#g14-linked-households-beyond-the-first-build) | the window's fuller screens, a separate /link listener port, links across two real networks, the linked window in the generated mockup, and a first snapshot's size |
 | **G15** | [What database pruning's yearly summaries hold](gaps.md#g15-what-database-prunings-yearly-summaries-hold) | what the yearly summaries left by database pruning hold beyond the averages, and which reports read them (S14.10.5) |
 | **G16** | [How each record decides it has ended](gaps.md#g16-how-each-record-decides-it-has-ended) | each kind of record's end, and what a record shows for one it names that was deleted or pruned, such as a gift to a deleted person |
 | **G18** | [External connectors](gaps.md#g18-external-connectors) | **needed for the first release**: small, auditable programs that hold an institution's credentials, fetch its files and post them to MoneyKata's import |

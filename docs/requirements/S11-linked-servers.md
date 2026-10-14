@@ -17,8 +17,9 @@ preparer.
       nonce. The receiver refuses a bad signature, a timestamp more than 60 seconds off, and a
       nonce it has seen. No shared secret ever crosses. The protocol is specified in
       `docs/link-protocol.md`.
-2. **Reachability**: links are HTTPS between the servers' **link addresses**, a separate
-   listener or path (`/link`) that admins can expose apart from `/ui`. Two LANs need one of:
+2. **Reachability**: links are HTTPS between the servers' **link addresses**: the path
+   `/link/` on the server's own address, with no port or address of its own, which a reverse
+   proxy can expose apart from `/ui` (`docs/operations.md` shows how). Two LANs need one of:
    1. one side reachable from the other (a forwarded port or a reverse proxy). That side
       **serves** and the other **pulls**;
    2. both on one overlay network, such as **Tailscale**, **WireGuard** or ZeroTier. This is
@@ -52,7 +53,9 @@ preparer.
    schedule (hourly by default, and on demand). The snapshot holds each shared item as
    S11.3.1 says (for an account: balances, holdings, positions, transactions and series),
    and receipts and documents when the share includes them.
-   It is versioned, and only changes travel. Each change is **signed by the source's link
+   It is versioned, and only changes travel. A **first full snapshot**, or a large change,
+   travels **oldest to newest**, so the copy fills from its earliest records and is usable,
+   up to a date, while the rest arrives. Each change is **signed by the source's link
    key**, so the receiver can check it again when it applies it later. The receiver keeps
    its last copy in the link's encrypted **linked copy** (S11.9) and shows its age (*as of
    2 hours ago*). Pulls run whether or not anyone has unlocked the copy. When the source is
@@ -72,8 +75,14 @@ preparer.
 6. **Ending a link**: either admin ends it on their own side. The other side learns at its
    next call and deletes its copies. Ending a link deletes nothing on the source.
 7. **Settings › Linked servers** lists each link: the peer's name and address, its
-   fingerprint, state (active, unreachable since…, ended), the last pull, and what flows each
-   way, with *Pull now*, *Pause* and *End link*. For the linked copy it shows the changes
+   fingerprint, state (active, paused until…, unreachable since…, ended), the last pull, and
+   what flows each way, with *Pull now*, *Pause* and *End link*.
+   1. **Progress**: while a pull is under way, how far it has come both in time and in
+      quantity: *Up to July 2022 (47 MB of 2 GB)*, the date being the newest record applied so
+      far and the sizes what has arrived of what the source said it would send.
+   2. **Pause** stops pulling, and answering the peer's pulls, for a **duration** the admin
+      types (S12.13), `1d` by default, after which the link resumes on its own; *Resume now*
+      ends it early. A paused link shows when it resumes, and isn't alerted as unreachable. For the linked copy it shows the changes
    waiting to be applied, when its access key was made and by whom, and whether it is
    unlocked (by whom, and when it will lock), with *Create the access key* (S11.9.2), *Lock
    now* and *Reset copy* (S11.9.8). The section also sets **Release linked keys after**

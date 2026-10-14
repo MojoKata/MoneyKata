@@ -16,12 +16,6 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S3.5, S3.8, S3.9, S4.5.
 
-## G14: Linked households beyond the first build
-
-**What is missing:** the window's fuller screens (Positions, a projection's charts, a giving plan's months and organisations, a budget's cash flow and recurring payments), which each need their documents added to what the source sends; a separate listener port for `/link` (it is served under the public address's `/link/` path, for a reverse proxy to expose apart); links tried across two real networks (an overlay such as Tailscale, and a forwarded port), not only two servers on one host; the linked window in the generated mockup; and how much a large household's first full snapshot weighs.
-
-**Touches:** S11.2, S11.3.1, S12.9, S12.10.
-
 ## G15: What database pruning's yearly summaries hold
 
 **What is missing:** what the yearly summaries left by database pruning (S14.10.5) hold beyond income and spending by category, gifts, donations and contributions per owner and year: totals by payee, income by holding, a closed account's yearly balances; and which reports and charts read them for the pruned years.
