@@ -143,3 +143,21 @@ async def end(request: Request):
 
     answer_end(srv, link)
     return answer(srv, {"state": "ended"}, caller.nonce)
+
+
+@router.post("/deliver")
+async def deliver(request: Request):
+    """The caller's change for this server, after an exchange it made (S11.4)."""
+    srv = request.app.state.server
+    try:
+        link, caller, body = await verified(request, ("active",))
+    except signing.Refused as e:
+        return refusal(request, e)
+    from .changes import ChangeError
+    from .manage import answer_deliver
+
+    try:
+        out = answer_deliver(srv, link, json.loads(body or b"{}"))
+    except ChangeError as e:
+        return refusal(request, signing.Refused("change-refused", str(e)))
+    return answer(srv, out, caller.nonce)

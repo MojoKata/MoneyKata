@@ -120,6 +120,6 @@
       hours returns the first answer. Imports are idempotent by their content (S1.3).
    9. **Versioning**: `/ui/api` is served with the app and changes with it, so it carries no
       version; the OpenAPI document states the release. `/mcp` and `/link` are versioned in
-      their own protocol (G1, G7).
+      their own protocol (`docs/link-protocol.md`, G7).
    10. **Visibility**: every read goes through the caller's shares (S10.3) and the soft-delete
        views (`schema.md` §4.2). A list never counts or hints at what the caller can't see.

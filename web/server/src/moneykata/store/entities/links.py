@@ -31,6 +31,8 @@ class Link(Record):
     pulledAt: dt.datetime | None = None
     inboxAsOf: dt.datetime | None = None
     needsFull: bool = False
+    sentSeq: int = 0
+    gotSeq: int = 0
 
 
 @dataclass(kw_only=True, eq=False)
@@ -44,3 +46,12 @@ class LinkedItem:
     createdAt: dt.datetime
     viewers: str = "[]"
     includeReceipts: bool = False
+
+
+@dataclass(kw_only=True, eq=False)
+class LinkSent:
+    linkId: str
+    itemId: str
+    path: str
+    viewer: str
+    hash: str

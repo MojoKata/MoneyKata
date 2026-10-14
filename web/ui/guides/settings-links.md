@@ -48,6 +48,13 @@ How long an unlocked copy's key stays in memory with nobody viewing it: 15 minut
 default) or 4 hours. Background work, such as a pull, doesn't count as viewing. A restart locks
 every copy.
 
+## Shared from a linked server {#incoming}
+
+What each linked server shares with people here, as an admin sees it: only its kind, its owner's
+name, when it was shared and the people here it names. Its name and figures stay inside the
+encrypted copy, for those people. The owner there decides who sees what; an admin here can't
+change it, and nothing shared from there can be shared on.
+
 ## Users on linked servers {#linked-users}
 
 Each linked server's active users, sent at every exchange and updated in place: a new user is

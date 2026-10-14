@@ -5,6 +5,7 @@ import datetime as dt
 import json
 
 from fastapi import APIRouter, Depends, Request
+from pydantic import Field
 from sqlalchemy import false, select
 
 from .. import settings
@@ -42,6 +43,17 @@ class CopyOut(Model):
     locksInSeconds: int | None
 
 
+class Incoming(Model):
+    """A share from the linked server, as an admin here sees it (S11.3): its kind, owner, date
+    and who it names, never its name or figures."""
+
+    kind: str
+    ownerName: str
+    sharedAt: dt.datetime
+    names: list[str]
+    includeReceipts: bool
+
+
 class LinkOut(Model):
     id: str
     state: str  # invited, requested, pending, active, paused, ended
@@ -60,6 +72,7 @@ class LinkOut(Model):
     endedAt: dt.datetime | None
     users: list[RemoteUser]
     linkedCopy: CopyOut | None = None
+    incoming: list[Incoming] = Field(default_factory=list)
 
 
 class LinksView(Model):
@@ -107,6 +120,27 @@ def _copy(s, srv, link: Link) -> CopyOut | None:
     )
 
 
+def _incoming(s, link: Link) -> list[Incoming]:
+    from ..store.entities.links import LinkedItem
+
+    out = []
+    for it in s.scalars(
+        select(LinkedItem).where(LinkedItem.linkId == link.id).order_by(LinkedItem.sharedAt)
+    ):
+        ids_ = json.loads(it.viewers or "[]")
+        names = [u.displayName for u in s.scalars(select(User).where(User.id.in_(ids_)))]
+        out.append(
+            Incoming(
+                kind=it.kind,
+                ownerName=it.ownerName,
+                sharedAt=it.sharedAt,
+                names=sorted(names),
+                includeReceipts=it.includeReceipts,
+            )
+        )
+    return out
+
+
 def _out(s, link: Link, srv=None) -> LinkOut:
     users = s.scalars(
         select(User)
@@ -136,6 +170,7 @@ def _out(s, link: Link, srv=None) -> LinkOut:
             for u in users
         ],
         linkedCopy=_copy(s, srv, link) if srv is not None else None,
+        incoming=_incoming(s, link),
     )
 
 

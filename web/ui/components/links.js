@@ -13,6 +13,15 @@ import { Failed, Loading } from './bits.js';
 import { Icon } from './icon.js';
 import { toast } from './toast.js';
 
+const KIND = /** @type {Record<string, string>} */ ({
+  account: 'An account',
+  portfolio: 'A portfolio',
+  budget: 'A budget',
+  person: "A person's gifts",
+  'giving-plan': 'A giving plan',
+  'tax-book': 'A tax book',
+  projection: 'A projection',
+});
 const STATE = /** @type {Record<string, [string, string]>} */ ({
   invited: ['invitation', ''],
   requested: ['wants to link', 'info'],
@@ -201,6 +210,25 @@ export function LinksSection() {
       <${FormError} error=${act.error} />
     </div>
     ${copies(live, values, res.reload, copyAct, release, armed, setArmed)}
+    ${live.filter((/** @type {any} */ l) => l.incoming.length).map((/** @type {any} */ l) =>
+      html`<div class="card mt"><h3 data-help="incoming">Shared from ${l.peerName}</h3>
+        <p class="small dim" style=${{ marginTop: '-6px' }}>The owner there chooses who here sees
+          each share. Names and amounts stay inside the encrypted copy.</p>
+        ${
+        l.incoming.map((/** @type {any} */ x) =>
+          html`<div class="list-item"><div class="grow"><b>${KIND[x.kind] || 'An item'}</b>
+            <span class="small dim">shared by ${x.ownerName} on ${date(x.sharedAt)}${
+            x
+                .includeReceipts
+              ? ', with its receipts'
+              : ''
+          }</span></div><span class="small">with ${
+            x.names.join(', ') ||
+            'no one here'
+          }</span></div>`
+        )
+      }</div>`
+    )}
     <div class="card mt">
       <h3 data-help="linked-users">Users on linked servers</h3>
       <p class="small dim" style=${{ marginTop: '-6px' }}>Each linked server's active users,

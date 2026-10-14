@@ -40,6 +40,7 @@ def make_key(srv, link_id: str, by: str) -> list[str]:
     with srv.db.tx() as s:
         link = _link(s, link_id)
         link.copyPublicKey, link.copyKeyAt, link.copyKeyById = public, clock.now(), by
+        link.needsFull = True  # pulls into the copy begin now, with everything
         activity.record(s, "link.copy-key-made", actor=by, for_admins=True)
     return words
 
@@ -91,6 +92,7 @@ def reset(srv, link_id: str, by: str) -> None:
     with srv.db.tx() as s:
         link = _link(s, link_id)
         link.copyPublicKey = link.copyKeyAt = link.copyKeyById = None
+        link.needsFull = True
         activity.record(s, "link.copy-reset", actor=by, for_admins=True)
 
 

@@ -970,6 +970,17 @@
  */
 
 /**
+ * A share from the linked server, as an admin here sees it (S11.3): its kind, owner, date
+ * and who it names, never its name or figures.
+ * @typedef {Object} Incoming
+ * @property {string} kind
+ * @property {string} ownerName
+ * @property {string} sharedAt
+ * @property {Array<string>} names
+ * @property {boolean} includeReceipts
+ */
+
+/**
  * @typedef {Object} InstrumentOut
  * @property {string} id
  * @property {string} symbol
@@ -2979,6 +2990,7 @@
  * @property {(string | null)} endedAt
  * @property {Array<RemoteUser>} users
  * @property {(CopyOut | null)} [linkedCopy]
+ * @property {Array<Incoming>} [incoming]
  */
 
 /**

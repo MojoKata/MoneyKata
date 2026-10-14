@@ -91,6 +91,8 @@ TEXT = {
     "link.resumed": "{actor} resumed a link",
     "link.ended": "{actor} ended a link",
     "link.ended-by-peer": "A linked server ended its link with this one",
+    "link.pulled": "A linked server sent {count} changed items",
+    "link.served": "This server sent a linked server {count} changed items",
     "link.copy-key-made": "{actor} created a linked copy's access key",
     "link.copy-unlocked": "{actor} unlocked a linked copy",
     "link.copy-unlock-failed": "{actor} gave wrong words for a linked copy",

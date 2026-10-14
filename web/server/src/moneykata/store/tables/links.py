@@ -1,6 +1,16 @@
 """Linked servers (requirements S11.1, S11.7): each link with another MoneyKata server."""
 
-from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Index, Integer, Text, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Index,
+    Integer,
+    PrimaryKeyConstraint,
+    Text,
+    text,
+)
 
 from ..types import UtcTimestamp
 from ._base import exception, record, unique_live
@@ -40,6 +50,9 @@ Link = record(
     Column("pulledAt", UtcTimestamp),
     Column("inboxAsOf", UtcTimestamp),
     Column("needsFull", Boolean, nullable=False, server_default=text("0")),
+    # The last change this side sent the peer, and the last one it took from the peer.
+    Column("sentSeq", Integer, nullable=False, server_default=text("0")),
+    Column("gotSeq", Integer, nullable=False, server_default=text("0")),
     CheckConstraint(
         "state IN ('invited', 'requested', 'pending', 'active', 'paused', 'ended')", name="state"
     ),
@@ -64,3 +77,17 @@ LinkedItem = exception(
     prefix="LItem",
 )
 Index("ux_LinkedItem_link_remote", LinkedItem.c.linkId, LinkedItem.c.remoteId, unique=True)
+
+# What this server last sent a peer of each shared item (S11.4): a hash for each document, so
+# only changes travel. Worked out again in full when the peer asks for everything: a cache
+# (schema.md §4.4.5).
+LinkSent = exception(
+    "LinkSent",
+    "cache: what was last sent a peer, worked out again when it asks for everything (§4.4.5)",
+    Column("linkId", Text, ForeignKey("Link.id", ondelete="CASCADE"), nullable=False),
+    Column("itemId", Text, nullable=False),
+    Column("path", Text, nullable=False),  # the item's own row is "", its documents their path
+    Column("viewer", Text, nullable=False),  # the peer's user id
+    Column("hash", Text, nullable=False),
+    PrimaryKeyConstraint("linkId", "itemId", "path", "viewer"),
+)

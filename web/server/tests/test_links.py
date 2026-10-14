@@ -266,3 +266,107 @@ def test_an_item_is_shared_read_only_with_a_linked_servers_people(admins):
 
     with a.db.read() as s:
         assert s.query(Share).filter(Share.deleted.is_(False)).count() == 0
+
+
+# ---------- pulls (S11.3.1, S11.4, S11.9.5)
+
+from test_accounts import add  # noqa: E402
+
+from moneykata.links import copy as lcopy  # noqa: E402
+from moneykata.links import copydb  # noqa: E402
+
+
+def docs_in(srv, link_id):
+    o = srv.copies.get(link_id)
+    with o.engine.connect() as conn:
+        items = {r.id: r for r in conn.execute(copydb.Item.select())}
+        docs = {
+            (r.itemId, r.path, r.viewer): json.loads(r.body)
+            for r in conn.execute(copydb.Doc.select())
+        }
+    return items, docs
+
+
+import json  # noqa: E402
+
+
+def test_a_shared_account_reaches_the_people_it_names_as_its_screens_show_it(admins):
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    make_user(b, "dave")
+    a_id, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post(
+        "/ui/api/accounts", json={"name": "Mom's checking", "type": "checking"}
+    ).json()
+    add(alice, acct["id"], amount="1200.00", payee="Pension")
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}})
+    # Before B has an access key, it learns only who the item names, not what it is.
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    carol = sign_in(b, "carol")
+    dave = sign_in(b, "dave")
+    homes = carol.get("/ui/api/linked").json()
+    assert len(homes) == 1 and homes[0]["items"] == 1 and homes[0]["name"]
+    assert dave.get("/ui/api/linked").json() == [], "dave is named by nothing"
+    words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")  # the new copy asks for everything
+    st = carol.get(f"/ui/api/linked/{b_id}").json()
+    assert st["waiting"] == 1 and st["household"]["locked"]
+    r = carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
+    assert r.status_code == 200, r.text
+    items, docs = docs_in(b, b_id)
+    carol_id = carol.get("/ui/api/session").json()["user"]["id"]
+    assert items[acct["id"]].name == "Mom's checking"
+    assert json.loads(items[acct["id"]].viewers) == [carol_id]
+    detail = docs[(acct["id"], f"/accounts/{acct['id']}", carol_id)]
+    assert detail["balance"] == "1200.00"
+    txns = docs[(acct["id"], f"/transactions?account={acct['id']}", carol_id)]
+    assert [t["payee"] for t in txns["items"]] == ["Pension"]
+    assert (acct["id"], "", carol_id) in docs, "its row in the accounts list"
+    # Only what changed travels.
+    add(alice, acct["id"], amount="-40.00", payee="Pharmacy")
+    ca.post(f"/ui/api/settings/links/{a_id}/pull")  # either side can make the exchange
+    items, docs = docs_in(b, b_id)
+    assert docs[(acct["id"], f"/accounts/{acct['id']}", carol_id)]["balance"] == "1160.00"
+    nothing = a  # the next exchange with nothing new sends no change
+    from moneykata.store.entities.links import Link
+
+    with nothing.db.read() as s:
+        seq = s.get(Link, a_id).sentSeq
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    with a.db.read() as s:
+        assert s.get(Link, a_id).sentSeq == seq
+    # A share removed: the item goes.
+    alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "none"}})
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    items, docs = docs_in(b, b_id)
+    assert items == {} and docs == {}
+    assert carol.get("/ui/api/linked").json() == []
+    # The link ended: the copy goes.
+    ca.post(f"/ui/api/settings/links/{a_id}/end")
+    assert not lcopy.folder(b.config.data_dir, b_id).exists()
+
+
+def test_a_reset_copy_is_pulled_again_in_full(admins):
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    _a_id, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post("/ui/api/accounts", json={"name": "IRA", "type": "ira"}).json()
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}})
+    cb.post(f"/ui/api/settings/links/{b_id}/copy-key")
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    cb.post(f"/ui/api/settings/links/{b_id}/reset-copy")
+    words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    carol = sign_in(b, "carol")
+    assert (
+        carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)}).status_code
+        == 200
+    )
+    items, _ = docs_in(b, b_id)
+    assert set(items) == {acct["id"]}

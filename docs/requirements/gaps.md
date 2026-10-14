@@ -4,12 +4,6 @@ Areas the requirements name but don't yet specify. Each has a lasting id: a gap 
 closed is removed, its text goes into the section it belongs to, and its id is never used
 again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
-## G1: Link protocol and version skew
-
-**What is missing:** `docs/link-protocol.md`: the messages, their signing, and what two linked servers on different MoneyKata versions do.
-
-**Touches:** S11.
-
 ## G2: Web security in one place
 
 **What is missing:** the policies of S13.7 are proposed and await review.

@@ -5908,6 +5908,45 @@
         "title": "IncomeOut",
         "type": "object"
       },
+      "Incoming": {
+        "additionalProperties": false,
+        "description": "A share from the linked server, as an admin here sees it (S11.3): its kind, owner, date\nand who it names, never its name or figures.",
+        "properties": {
+          "includeReceipts": {
+            "title": "Includereceipts",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Names",
+            "type": "array"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "sharedAt": {
+            "format": "date-time",
+            "title": "Sharedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ownerName",
+          "sharedAt",
+          "names",
+          "includeReceipts"
+        ],
+        "title": "Incoming",
+        "type": "object"
+      },
       "InstrumentOut": {
         "additionalProperties": false,
         "properties": {
@@ -17884,6 +17923,13 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "incoming": {
+            "items": {
+              "$ref": "#/components/schemas/Incoming"
+            },
+            "title": "Incoming",
+            "type": "array"
           },
           "lastError": {
             "anyOf": [

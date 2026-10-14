@@ -32,6 +32,8 @@ HSTS = (b"strict-transport-security", b"max-age=31536000")
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 JSON_LIMIT = 1024 * 1024
+# A linked server's change (S11.4) may carry an item's transactions: the ceiling of an answer.
+LINK_LIMIT = 20 * 1024 * 1024
 
 
 def _send_problem(status: int, code: str, detail: str, headers=()):
@@ -171,7 +173,13 @@ class BodyLimit:
             return
         headers = {k.lower(): v.decode("latin-1") for k, v in scope["headers"]}
         ctype = headers.get(b"content-type", "")
-        limit = self.upload_limit() if ctype.startswith("multipart/") else JSON_LIMIT
+        limit = (
+            self.upload_limit()
+            if ctype.startswith("multipart/")
+            else LINK_LIMIT
+            if scope["path"].startswith("/link/")
+            else JSON_LIMIT
+        )
         too_large = _send_problem(
             413, "too-large", f"The request is larger than {limit // (1024 * 1024)} MB."
         )

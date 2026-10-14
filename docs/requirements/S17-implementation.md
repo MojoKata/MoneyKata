@@ -234,7 +234,7 @@
          the user's shares, limited and recorded in Activity.
       9. **The mockup** generated from the app for these screens, and the Docker image.
    5. **Milestone 5**, in nine parts:
-      1. **Link keys and the protocol** (S11.1.3, G1): each server's Ed25519 link key,
+      1. **Link keys and the protocol** (S11.1.3): each server's Ed25519 link key,
          signed calls with their timestamp and nonce checks, the `/link` listener, the
          `Link` record, and `docs/link-protocol.md` with how versions differ.
       2. **Invitations** (S11.1, S11.6, S11.7): the link code, the request and its

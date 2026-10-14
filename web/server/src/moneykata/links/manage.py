@@ -274,6 +274,10 @@ def set_state(srv, link_id: str, by: str, state: str) -> Link:
         kind = {"paused": "link.paused", "active": "link.resumed", "ended": "link.ended"}[state]
         activity.record(s, kind, actor=by, for_admins=True)
         address, peer = link.address, link.peerKey
+    if state == "ended":
+        from . import receive
+
+        receive.forget(srv, link_id)
     if state == "ended" and was in ("requested", "pending", "active", "paused") and peer:
         with contextlib.suppress(LinkError):  # else the other side learns at its next call
             client.call(srv, address, keys.unb64(peer), "/link/v1/end")
@@ -281,13 +285,17 @@ def set_state(srv, link_id: str, by: str, state: str) -> Link:
 
 
 def exchange(srv, link_id: str) -> None:
-    """One exchange with the peer: each side's directory for the other's (S11.3). Whichever
-    side can reach the other makes it; a refusal saying the link ended there ends it here."""
+    """One exchange with the peer (S11.2–S11.4), made by whichever side can reach the other:
+    each side's directory for the other's, the peer's change for this side in its answer, and
+    then this side's change for the peer. A refusal saying the link ended there ends it here."""
+    from . import receive, serve
+
     with srv.db.read() as s:
         link = _get(s, link_id)
         if link.state not in ("active", "pending"):
             return
-        address, peer, mine = link.address, keys.unb64(link.peerKey), directory(s)
+        address, peer = link.address, keys.unb64(link.peerKey)
+        mine = {**directory(s), "have": link.gotSeq, "wantFull": link.needsFull}
     try:
         out = client.call(srv, address, peer, "/link/v1/exchange", mine)
     except LinkError as e:
@@ -300,9 +308,14 @@ def exchange(srv, link_id: str) -> None:
                     link.state, link.endedAt = "ended", clock.now()
                     end_users(s, link)
                     activity.record(s, "link.ended-by-peer", actor=None, for_admins=True)
-                return
-            link.lastError = e.message
-            link.failingSince = link.failingSince or clock.now()
+                ended = True
+            else:
+                link.lastError = e.message
+                link.failingSince = link.failingSince or clock.now()
+                ended = False
+        if ended:
+            receive.forget(srv, link_id)
+            return
         raise
     with srv.db.tx() as s:
         link = _get(s, link_id)
@@ -311,9 +324,31 @@ def exchange(srv, link_id: str) -> None:
         link.lastOkAt, link.lastError, link.failingSince = clock.now(), None, None
         link.peerVersion = out.get("version") or link.peerVersion
         apply_directory(s, link, out)
+        active = link.state == "active"
+    if not active:
+        return
+    if out.get("change"):
+        receive.take(srv, link_id, out["change"])
+    mine = serve.change_for(srv, link_id, int(out.get("have") or 0), bool(out.get("wantFull")))
+    if mine is not None:
+        client.call(srv, address, peer, "/link/v1/deliver", {"change": mine})
+        _served(srv, mine)
+
+
+def _served(srv, change: dict) -> None:
+    with srv.db.tx() as s:
+        activity.record(
+            s,
+            "link.served",
+            actor=None,
+            for_admins=True,
+            detail={"count": len(change.get("items") or []) + len(change.get("removed") or [])},
+        )
 
 
 def answer_exchange(srv, link: Link, body: dict, version: str | None) -> dict:
+    from . import serve
+
     with srv.db.tx() as s:
         row = _get(s, link.id)
         if row.state == "pending":
@@ -321,16 +356,43 @@ def answer_exchange(srv, link: Link, body: dict, version: str | None) -> dict:
         row.lastOkAt, row.lastError, row.failingSince = clock.now(), None, None
         row.peerVersion = version or row.peerVersion
         apply_directory(s, row, body)
-        return {**directory(s), "state": row.state, "version": srv.version}
+        out = {
+            **directory(s),
+            "state": row.state,
+            "version": srv.version,
+            "have": row.gotSeq,
+            "wantFull": row.needsFull,
+        }
+        active = row.state == "active"
+    if active:
+        change = serve.change_for(
+            srv, link.id, int(body.get("have") or 0), bool(body.get("wantFull"))
+        )
+        if change is not None:
+            out["change"] = change
+            _served(srv, change)
+    return out
+
+
+def answer_deliver(srv, link: Link, body: dict) -> dict:
+    from . import receive
+
+    if body.get("change"):
+        receive.take(srv, link.id, body["change"])
+    with srv.db.read() as s:
+        return {"have": _get(s, link.id).gotSeq}
 
 
 def answer_end(srv, link: Link) -> None:
+    from . import receive
+
     with srv.db.tx() as s:
         row = _get(s, link.id)
         if row.state != "ended":
             row.state, row.endedAt = "ended", clock.now()
             end_users(s, row)
             activity.record(s, "link.ended-by-peer", actor=None, for_admins=True)
+    receive.forget(srv, link.id)
 
 
 def exchange_all(srv, ctx=None) -> None:

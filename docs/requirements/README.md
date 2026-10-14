@@ -60,7 +60,6 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 
 | Id | Gap | What is missing |
 |---|---|---|
-| **G1** | [Link protocol and version skew](gaps.md#g1-link-protocol-and-version-skew) | `docs/link-protocol.md`: the messages, their signing, and what two linked servers on different MoneyKata versions do |
 | **G2** | [Web security in one place](gaps.md#g2-web-security-in-one-place) | the policies of S13.7 are proposed and await review |
 | **G5** | [Data sunset](gaps.md#g5-data-sunset) | how data older than the seven-year audit period is retired: what goes, what is summarised, who decides, and how it is confirmed (S14.10) |
 | **G6** | [Operations](gaps.md#g6-operations) | `docs/operations.md`: upgrades and migrations in the Docker image, health checks, logs, monitoring, restore drills |
