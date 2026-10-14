@@ -9,6 +9,7 @@ from . import (  # noqa: F401 - each adds its tables
     core,
     education,
     giving,
+    links,
     loans,
     options,
     people,

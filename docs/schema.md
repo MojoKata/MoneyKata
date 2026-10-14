@@ -92,6 +92,7 @@ The prefixes of the tables that exist.
 | Imprv  | Improvement      | An improvement to a property, added to its cost basis.                                                |
 | Instr  | Instrument       | A thing with a price: a stock, fund, coin, option contract or currency.                               |
 | Item   | Item             | A physical asset: metals, a collectable, a property or a vehicle, with how it is valued.              |
+| Link   | Link             | A link with another MoneyKata server: its state, address and key.                                     |
 | Loan   | Loan             | A loan account's terms: principal, rate, term, escrow, PMI, resets and recasts.                       |
 | Lot    | Lot              | One acquisition of an instrument, and what remains open.                                              |
 | Lyout  | StatementLayout  | What statement import learned of an institution's layout: section signs, lines to skip.               |
@@ -129,7 +130,6 @@ designed yet. A row moves to §3.1 when its table is.
 
 | Prefix | Table         | Description                                                                       |
 |--------|---------------|-----------------------------------------------------------------------------------|
-| Link   | Link          | A link with another MoneyKata server.                                             |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
 
 ## 4. Soft deletes

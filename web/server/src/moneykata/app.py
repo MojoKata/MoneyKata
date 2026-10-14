@@ -11,6 +11,7 @@ from .auth.users import Services
 from .config import Config
 from .events import STREAM_SECONDS, Broker
 from .jobs import Jobs
+from .links.signing import Nonces
 from .mail import Mailer
 from .store.maintenance import Store
 from .tasks import Tasks
@@ -39,6 +40,8 @@ class Server:
     api_limit: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(600, 60))
     upload_rate: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(60, 3600))
     sign_in: ratelimit.SignInGuard = field(default_factory=ratelimit.SignInGuard)
+    # Nonces of linked servers' calls, so none is accepted twice (S11.1.3).
+    link_nonces: Nonces = field(default_factory=Nonces)
 
     def __post_init__(self) -> None:
         self.jobs = Jobs(
@@ -186,8 +189,10 @@ def create_app(server: Server) -> FastAPI:
     ):
         app.include_router(module.router)
     from . import mcp
+    from .links import routes as link_routes
 
     app.include_router(mcp.router)
+    app.include_router(link_routes.router)
     # Last: its catch-alls answer for paths no route above has.
     app.include_router(static.router(static.Static(server.version, server.config.dev)))
 

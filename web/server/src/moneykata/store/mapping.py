@@ -9,6 +9,7 @@ from .entities import assets as asx
 from .entities import budgets as bd
 from .entities import education as ed
 from .entities import giving as gv
+from .entities import links as lk
 from .entities import prices as pr
 from .entities import projections as pj
 from .entities import receipts as rc
@@ -35,6 +36,7 @@ from .tables import (
     core,
     education,
     giving,
+    links,
     loans,
     options,
     people,
@@ -128,6 +130,7 @@ def map_all() -> None:
     mapper_registry.map_imperatively(pj.ShownProjection, projections.ShownProjections)
     mapper_registry.map_imperatively(sh.CountedAccount, sharing.CountedAccounts)
     _versioned(Setting, core.Setting)
+    _versioned(lk.Link, links.Link)
     mapper_registry.map_imperatively(Secret, core.Secret)
     mapper_registry.map_imperatively(TaskRun, core.TaskRun)
     mapper_registry.map_imperatively(Activity, activity.Activity)
