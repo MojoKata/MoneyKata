@@ -67,7 +67,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | **G12** | [Option prices and wash-sale edges](gaps.md#g12-option-prices-and-wash-sale-edges) | an option source tried with a live key, index and weekly tickers, wash sales through shorts, options and assignment, and capital at risk for spreads |
 | **G13** | [Bitcoin wallets beyond the common case](gaps.md#g13-bitcoin-wallets-beyond-the-common-case) | live nodes, Electrum certificate pinning, taproot and multisig wallets, transfers matched across wallets and exchanges, the network fee for taxes, reorganisations |
 | **G14** | [Linked households beyond the first build](gaps.md#g14-linked-households-beyond-the-first-build) | the window's fuller screens, a separate /link listener port, links across two real networks, the linked window in the generated mockup, and a first snapshot's size |
-| **G15** | [What a prune's yearly summaries hold](gaps.md#g15-what-a-prunes-yearly-summaries-hold) | what the yearly summaries left by a prune hold beyond the averages, and which reports read them (S14.10.5) |
+| **G15** | [What database pruning's yearly summaries hold](gaps.md#g15-what-database-prunings-yearly-summaries-hold) | what the yearly summaries left by database pruning hold beyond the averages, and which reports read them (S14.10.5) |
 | **G16** | [How each record decides it has ended](gaps.md#g16-how-each-record-decides-it-has-ended) | each kind of record's end, and what a record shows for one it names that was deleted or pruned, such as a gift to a deleted person |
 
 ## Also here

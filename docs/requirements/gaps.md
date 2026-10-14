@@ -46,9 +46,9 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S11.2, S11.3.1, S12.9, S12.10.
 
-## G15: What a prune's yearly summaries hold
+## G15: What database pruning's yearly summaries hold
 
-**What is missing:** what the yearly summaries left by a prune (S14.10.5) hold beyond income and spending by category, gifts, donations and contributions per owner and year: totals by payee, income by holding, a closed account's yearly balances; and which reports and charts read them for the pruned years.
+**What is missing:** what the yearly summaries left by database pruning (S14.10.5) hold beyond income and spending by category, gifts, donations and contributions per owner and year: totals by payee, income by holding, a closed account's yearly balances; and which reports and charts read them for the pruned years.
 
 **Touches:** S5, S7, S14.10.
 

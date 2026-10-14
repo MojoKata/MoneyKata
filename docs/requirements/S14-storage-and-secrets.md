@@ -46,8 +46,8 @@
    restored and rotated.
 6. **Backups**: daily and verified, of the database **and the receipts directory**, to a
    directory set on the host; the time of day and the number of copies kept are Settings. The
-   server makes and verifies (`PRAGMA integrity_check`) the copies itself, and discards the
-   oldest beyond the number kept. They are
+   server makes and verifies (`PRAGMA integrity_check`) the copies itself, and prunes the
+   oldest beyond the number kept (**backup pruning**). They are
    encrypted as the data is, and open with the master key's recovery phrase (S15.6). A
    restore is documented, and tested by a check. Linked copies (`links/`) are left out: they
    can't be checked without their access keys, and they are pulled again from their sources
@@ -73,15 +73,17 @@
       (S12.11.5).
 10. **Retention and pruning**: nothing is removed for at least **seven years**, the audit
     period: not records, soft-deleted records (`schema.md` §4), Activity, receipts or
-    statements. Backups are discarded on their own, shorter schedule (S14.6), and price
+    statements. Backups are pruned on their own, shorter schedule (S14.6), and price
     history is kept for ever (S4.6).
     1. **When a record ended**: every record has an `endedAt`, the moment it stopped being
        needed for anything ongoing, or none while it still is: a lot ends when its last share
        is sold, and the purchase that opened it ends no earlier (`schema.md` §6). A record
-       that ended more than seven years ago can be **pruned**: removed, with its receipts and
-       statement files.
-    2. **Nothing is pruned on its own.** An admin watches the size of the data and prunes by
-       hand, in **Settings › Storage** (S16.17).
+       that ended more than seven years ago can be removed, with its receipts and statement
+       files: **database pruning**. What it removes stays in the backups made before it
+       until backup pruning (S14.6) removes them, so a restore can bring it back until then;
+       after that it is gone.
+    2. **The database is never pruned on its own.** An admin watches the size of the data and
+       prunes it by hand, in **Settings › Storage** (S16.17).
     3. **Settings › Storage** shows the size of the database and of the receipts directory;
        a **pie** of what could be pruned against the rest, each split into database and
        receipts; and a **bar for each year** past the seven-year line, by the year its
@@ -93,8 +95,8 @@
     4. **Prune…** asks for the cutoff year, from the years shown, and previews what goes:
        the count of each kind of record and the space freed. It then makes a verified backup
        (S14.6), asks the admin to type the year to confirm, prunes, compacts the database so
-       the file shrinks, and records the prune in Activity with its counts.
-    5. **What a prune leaves**: a balance anchor (S1.11.2, its source `pruned`) at the
+       the file shrinks, and records the database pruning in Activity with its counts.
+    5. **What database pruning leaves**: a balance anchor (S1.11.2, its source `pruned`) at the
        cutoff for each account that lost transactions, so every later balance is unchanged; and **yearly summaries**
        (income and spending by category, gifts, donations and contributions, per owner and
        year), so reports and charts still show the pruned years, without their detail (G15).
