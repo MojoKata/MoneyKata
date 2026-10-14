@@ -237,8 +237,8 @@
     2. **Balance anchors**: a balance the institution reported, on a date, from (in order of
        preference) a CSV's **running-balance column** (every row is then an anchor), an
        OFX file's ledger balance, a statement's closing balance (S1.3.3), or a balance the
-       user **types** from the institution's site. When an account has had no anchor for 45
-       days, it asks for one.
+       user **types** from the institution's site. When an account's next statement or
+       import is overdue (S1.11.7), it asks for one.
     3. **The check**: at each anchor, MoneyKata's balance for that day is compared with the
        anchor. A match stays quiet. A **mismatch** shows the difference, the window between
        the last matching anchor and this one, and what is suspect inside it: likely
@@ -253,3 +253,18 @@
     6. **Ticking off** (optional, for accounts kept by hand): pick a statement's closing date
        and balance, tick transactions as cleared until the difference is zero, and the period
        is marked **reconciled**. Editing a transaction inside a reconciled period asks first.
+    7. **Statements expected**: each account kept from files or statements has the interval
+       its institution issues them at, set in the account's settings:
+       1. **Monthly, quarterly, yearly or none.** The default follows the account's type:
+          monthly for banking, cards, brokerage, IRAs, HSAs and loans; quarterly for 401(k),
+          403(b), 457(b) and 529 plans; none for accounts kept by hand, watched wallets and
+          physical assets.
+       2. **Learned**: once an account has three statements or imports, MoneyKata works out
+          the interval they arrive at and, where it differs from the one set, proposes it in
+          the account's settings (*Statements seem to arrive quarterly*); the owner accepts or
+          dismisses it, and a dismissed proposal isn't made again for that interval.
+       3. **Overdue**: a statement is overdue once the interval has passed since the last one
+          ended, plus a grace period (15 days for monthly, 30 for quarterly, 60 for yearly),
+          so a monthly statement ending Aug 31 is overdue from Oct 15. The alert (S12.11) names
+          the statement missing (*the September statement*), and clears when one covering it
+          arrives. An interval of none never alerts.

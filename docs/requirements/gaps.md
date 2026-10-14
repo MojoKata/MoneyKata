@@ -10,12 +10,6 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S1.3.
 
-## G10: Statement intervals per account
-
-**What is missing:** the interval at which each account's statements or exports are expected (monthly for a bank or Schwab brokerage account, quarterly for many 401(k) plans), how it is set or learned from the imports, and the alert threshold that follows from it.
-
-**Touches:** S1.3, S1.11, S12.11.
-
 ## G12: Option prices and wash-sale edges
 
 **What is missing:** an option price source tried against a live Massive key (the Basic plan's limits, its history for expired contracts, and how an adjusted contract after a split is named); index and weekly options' tickers; wash sales across a short sale, a loss on an option itself, and a replacement bought through an option assigned or exercised; and capital at risk for spreads and covered calls, which wait on strategies (S3.5).

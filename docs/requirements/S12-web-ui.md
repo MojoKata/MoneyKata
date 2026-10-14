@@ -166,10 +166,9 @@
           confirmed with `keys verify`, or after the key was made. An admin's alert about someone else's
           account names its owner and source, never the account's name or figures (S10.2);
        2. **for an account's owner**: their wallet's explorer or node failing for longer
-          than the threshold, and an account whose latest statement or import is older than
-          its expected interval (a month and a half for a monthly statement; every account
-          kept from files uses it until an account has an interval of its own, G10), and a
-          reconciliation mismatch left open for 7 days (S1.11);
+          than the threshold, an account whose next statement or import is overdue for its
+          interval (S1.11.7), naming the statement missing, and a reconciliation mismatch
+          left open for 7 days (S1.11);
        3. **for each user**: an occasion entering its lead time (S7.7.3), an option
           expiring within a week, a pledge due (S7.9), an active projection falling
           behind (S6.7.5), and budget alerts when they come (S7.6).
