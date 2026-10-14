@@ -144,6 +144,7 @@ def create_app(server: Server) -> FastAPI:
         receipts,
         session,
         sharing,
+        taxes,
         transactions,
         users,
     )
@@ -170,6 +171,7 @@ def create_app(server: Server) -> FastAPI:
         education,
         gifts,
         giving,
+        taxes,
         dashboard,
     ):
         app.include_router(module.router)

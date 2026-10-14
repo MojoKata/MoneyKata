@@ -1,0 +1,78 @@
+# A filing
+
+One return: its progress, dates, result, estimated payments, documents, and what it carries forward.
+
+## Jurisdiction
+
+Federal, a state, or a locality.
+
+## State {#place}
+
+Which state or locality.
+
+## Form
+
+The form filed: Form 1040, a state's form.
+
+## Amends
+
+For an amended return: the filing it amends.
+
+## Filing status
+
+As filed. MoneyKata never chooses it.
+
+## Prepared by
+
+Yourself, tax software, or a preparer.
+
+## Sent by
+
+E-file or paper.
+
+## Progress
+
+Not started, in progress, filed, accepted or rejected.
+
+## Due date
+
+The federal date comes from Settings › Tax tables; type a state's or a locality's.
+
+## Extension filed {#extension-filed-on}
+
+The day an extension was filed.
+
+## Extended to {#extended-due}
+
+The new due date.
+
+## Date filed {#filed-on}
+
+The day it was filed.
+
+## Confirmation number {#confirmation}
+
+The e-file submission ID or the mailing receipt.
+
+## Result {#result-kind}
+
+A refund, an amount owed, or nothing due.
+
+## Amount {#result-amount}
+
+The refund or the amount owed.
+
+## Paid or received in {#result-transaction}
+
+The transaction that paid it or received it.
+
+## Estimated payments
+
+Each quarter's estimated payment for this jurisdiction: its due date, amount and the day it was
+paid. Last year's total tax shows beside them.
+
+## Carried forward to next year {#carried-forward}
+
+Figures typed from the return as filed, which next year needs: AGI (to sign next year's e-filed
+return), total tax, the overpayment applied, capital-loss carryovers, the Form 8606 basis, and
+charitable carryovers.

@@ -1,0 +1,108 @@
+"""Dev mode's tax books (requirements S17.7): Alice and Bob's joint book for last year, its
+federal and state returns accepted with their documents and the figures they carry forward,
+and this year's book started from it."""
+
+import datetime as dt
+import json
+
+from sqlalchemy import select
+
+from .. import clock, ids
+from ..store.entities.accounts import Account
+from ..store.entities.taxes import Filing, TaxBook, TaxBookFiler, TaxDocument
+
+
+def seed_taxes(s, people: dict) -> None:
+    alice, bob = people["alice"], people["bob"]
+    year = clock.today().year
+    now = clock.now()
+    accts = {a.name: a for a in s.scalars(select(Account))}
+
+    def book(y):
+        b = TaxBook(id=ids.new_id("TaxBk"), ownerId=alice.id, year=y)
+        s.add(b)
+        s.flush()
+        for u in (alice, bob):
+            s.add(TaxBookFiler(bookId=b.id, userId=u.id, createdAt=now, acceptedAt=now))
+        return b
+
+    last, this = book(year - 1), book(year)
+    federal = Filing(
+        id=ids.new_id("Filng"),
+        bookId=last.id,
+        jurisdiction="federal",
+        form="Form 1040",
+        filingStatus="Married filing jointly",
+        preparedBy="Alice, with tax software",
+        sentBy="e-file",
+        progress="accepted",
+        dueDate=dt.date(year, 4, 15),
+        filedOn=dt.date(year, 3, 2),
+        confirmation="Submission ID 00412-7731",
+        resultKind="refund",
+        resultAmount=1240,
+        carried=json.dumps(
+            {
+                "agi": "214380",
+                "totalTax": "31920",
+                "overpaymentApplied": "0",
+                "capitalLossLong": "2100",
+                "basis8606": "6500",
+            }
+        ),
+    )
+    state = Filing(
+        id=ids.new_id("Filng"),
+        bookId=last.id,
+        jurisdiction="state",
+        place="Illinois",
+        form="IL-1040",
+        filingStatus="Married filing jointly",
+        sentBy="e-file",
+        progress="accepted",
+        dueDate=dt.date(year, 4, 15),
+        filedOn=dt.date(year, 3, 2),
+        resultKind="owed",
+        resultAmount=310,
+    )
+    s.add_all([federal, state])
+    s.flush()
+
+    def doc(b, form, issuer, account=None, direction="received", filing=None, notes=None):
+        s.add(
+            TaxDocument(
+                id=ids.new_id("TxDoc"),
+                bookId=b.id,
+                direction=direction,
+                form=form,
+                issuer=issuer,
+                accountId=accts[account].id if account and account in accts else None,
+                filingId=filing.id if filing else None,
+                notes=notes,
+            )
+        )
+
+    doc(last, "W-2", "Acme Corp")
+    doc(last, "W-2", "Northwind")
+    doc(last, "1099 (composite)", "Example Brokerage", "Taxable brokerage")
+    doc(last, "1098", "Example Home Loans", "Mortgage")
+    doc(last, "Return as filed", "IRS", direction="filed", filing=federal)
+    doc(
+        last,
+        "E-file acknowledgement",
+        "IRS",
+        direction="filed",
+        filing=federal,
+        notes="Accepted the next day.",
+    )
+    doc(this, "W-2", "Acme Corp")
+    s.add(
+        Filing(
+            id=ids.new_id("Filng"),
+            bookId=this.id,
+            jurisdiction="federal",
+            form="Form 1040",
+            filingStatus="Married filing jointly",
+            dueDate=dt.date(year + 1, 4, 15),
+        )
+    )

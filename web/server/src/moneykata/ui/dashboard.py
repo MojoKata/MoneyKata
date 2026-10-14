@@ -202,6 +202,23 @@ def _attention(
                     link="/ui/gifts",
                 )
             )
+    # A filing past its due date, not filed, with no extension still running (S8.15).
+    from ..taxes import books as taxbooks
+
+    for b, lvl in taxbooks.visible(s, c.id):
+        if lvl not in ("owner", "write"):
+            continue
+        for f in taxbooks.filings(s, b):
+            if taxbooks.overdue(f, today):
+                where = "Federal" if f.jurisdiction == "federal" else (f.place or "A")
+                out.append(
+                    Attention(
+                        kind="filing-overdue",
+                        count=1,
+                        text=f"{where} return for {b.year} is past its due date",
+                        link="/ui/taxes/filings",
+                    )
+                )
     status = pricing.status(s, dev)
     if status["stale"]:
         out.append(

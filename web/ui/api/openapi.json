@@ -411,6 +411,35 @@
         "title": "AccountName",
         "type": "object"
       },
+      "AccountRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "ownerName"
+        ],
+        "title": "AccountRef",
+        "type": "object"
+      },
       "AccountRow": {
         "additionalProperties": false,
         "properties": {
@@ -1160,6 +1189,147 @@
         "title": "Body_upload_ui_api_receipts_post",
         "type": "object"
       },
+      "BookDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/AccountRef"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "addable": {
+            "items": {
+              "$ref": "#/components/schemas/AccountRef"
+            },
+            "title": "Addable",
+            "type": "array"
+          },
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "expected": {
+            "items": {
+              "$ref": "#/components/schemas/ExpectedOut"
+            },
+            "title": "Expected",
+            "type": "array"
+          },
+          "federalDue": {
+            "format": "date",
+            "title": "Federaldue",
+            "type": "string"
+          },
+          "filers": {
+            "items": {
+              "$ref": "#/components/schemas/Filer"
+            },
+            "title": "Filers",
+            "type": "array"
+          },
+          "filings": {
+            "items": {
+              "$ref": "#/components/schemas/FilingOut"
+            },
+            "title": "Filings",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "lastYear": {
+            "items": {
+              "$ref": "#/components/schemas/LastYear"
+            },
+            "title": "Lastyear",
+            "type": "array"
+          },
+          "leftOut": {
+            "items": {
+              "$ref": "#/components/schemas/AccountRef"
+            },
+            "title": "Leftout",
+            "type": "array"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "received": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentOut"
+            },
+            "title": "Received",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "year",
+          "filers",
+          "level",
+          "label",
+          "accounts",
+          "leftOut",
+          "addable",
+          "filings",
+          "expected",
+          "received",
+          "lastYear",
+          "federalDue",
+          "canWrite"
+        ],
+        "title": "BookDetail",
+        "type": "object"
+      },
+      "BookRow": {
+        "additionalProperties": false,
+        "properties": {
+          "filers": {
+            "items": {
+              "$ref": "#/components/schemas/Filer"
+            },
+            "title": "Filers",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "year",
+          "filers",
+          "level",
+          "label"
+        ],
+        "title": "BookRow",
+        "type": "object"
+      },
       "BudgetChange": {
         "additionalProperties": false,
         "properties": {
@@ -1288,6 +1458,286 @@
           "payee"
         ],
         "title": "Candidate",
+        "type": "object"
+      },
+      "Carried": {
+        "additionalProperties": false,
+        "properties": {
+          "agi": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agi"
+          },
+          "basis8606": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis8606"
+          },
+          "capitalLossLong": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitallosslong"
+          },
+          "capitalLossShort": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitallossshort"
+          },
+          "charitableCarryover": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charitablecarryover"
+          },
+          "overpaymentApplied": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overpaymentapplied"
+          },
+          "totalTax": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totaltax"
+          }
+        },
+        "title": "Carried",
+        "type": "object"
+      },
+      "CarriedView": {
+        "additionalProperties": false,
+        "properties": {
+          "agi": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agi"
+          },
+          "basis8606": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis8606"
+          },
+          "capitalLossLong": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitallosslong"
+          },
+          "capitalLossShort": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitallossshort"
+          },
+          "charitableCarryover": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charitablecarryover"
+          },
+          "overpaymentApplied": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overpaymentapplied"
+          },
+          "totalTax": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totaltax"
+          }
+        },
+        "title": "CarriedView",
         "type": "object"
       },
       "CashFlow": {
@@ -1771,6 +2221,27 @@
         "title": "ContributionsView",
         "type": "object"
       },
+      "CountIn": {
+        "additionalProperties": false,
+        "properties": {
+          "counted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Counted"
+          }
+        },
+        "required": [
+          "counted"
+        ],
+        "title": "CountIn",
+        "type": "object"
+      },
       "Counted": {
         "additionalProperties": false,
         "properties": {
@@ -1875,18 +2346,112 @@
         "title": "Dashboard",
         "type": "object"
       },
-      "DocumentIn": {
+      "DocumentOut": {
         "additionalProperties": false,
         "properties": {
-          "receiptId": {
-            "title": "Receiptid",
+          "accountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountid"
+          },
+          "accountName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountname"
+          },
+          "direction": {
+            "title": "Direction",
             "type": "string"
+          },
+          "fileName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
+          "filingId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filingid"
+          },
+          "form": {
+            "title": "Form",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "receiptId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receiptid"
           }
         },
         "required": [
-          "receiptId"
+          "id",
+          "direction",
+          "form",
+          "issuer",
+          "accountId",
+          "accountName",
+          "filingId",
+          "receiptId",
+          "fileName",
+          "notes"
         ],
-        "title": "DocumentIn",
+        "title": "DocumentOut",
         "type": "object"
       },
       "DonationChange": {
@@ -2482,6 +3047,60 @@
         "title": "Equity",
         "type": "object"
       },
+      "ExpectedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountid"
+          },
+          "document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "form": {
+            "title": "Form",
+            "type": "string"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form",
+          "issuer",
+          "accountId",
+          "why",
+          "document"
+        ],
+        "title": "ExpectedOut",
+        "type": "object"
+      },
       "ExpenseIn": {
         "additionalProperties": false,
         "properties": {
@@ -2605,6 +3224,461 @@
         "title": "ExpenseOut",
         "type": "object"
       },
+      "Filer": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "accepted"
+        ],
+        "title": "Filer",
+        "type": "object"
+      },
+      "FilingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amendsId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amendsid"
+          },
+          "carried": {
+            "$ref": "#/components/schemas/Carried"
+          },
+          "confirmation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation"
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duedate"
+          },
+          "extendedDue": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extendeddue"
+          },
+          "extensionFiledOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extensionfiledon"
+          },
+          "filedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filedon"
+          },
+          "filingStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filingstatus"
+          },
+          "form": {
+            "default": "Form 1040",
+            "title": "Form",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "default": "federal",
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/Payment"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place"
+          },
+          "preparedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preparedby"
+          },
+          "progress": {
+            "default": "not started",
+            "title": "Progress",
+            "type": "string"
+          },
+          "resultAmount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultamount"
+          },
+          "resultKind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultkind"
+          },
+          "resultTransactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resulttransactionid"
+          },
+          "sentBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentby"
+          }
+        },
+        "title": "FilingIn",
+        "type": "object"
+      },
+      "FilingOut": {
+        "additionalProperties": false,
+        "properties": {
+          "amendsId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amendsid"
+          },
+          "carried": {
+            "$ref": "#/components/schemas/CarriedView"
+          },
+          "confirmation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentOut"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duedate"
+          },
+          "extendedDue": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extendeddue"
+          },
+          "extensionFiledOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extensionfiledon"
+          },
+          "filedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filedon"
+          },
+          "filingStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filingstatus"
+          },
+          "form": {
+            "title": "Form",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "jurisdiction": {
+            "title": "Jurisdiction",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentView"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place"
+          },
+          "preparedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preparedby"
+          },
+          "progress": {
+            "title": "Progress",
+            "type": "string"
+          },
+          "resultAmount": {
+            "anyOf": [
+              {
+                "examples": [
+                  "1234.50"
+                ],
+                "format": "money",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultamount"
+          },
+          "resultKind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultkind"
+          },
+          "resultPaid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultpaid"
+          },
+          "resultTransactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resulttransactionid"
+          },
+          "sentBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentby"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "jurisdiction",
+          "place",
+          "form",
+          "label",
+          "amendsId",
+          "filingStatus",
+          "preparedBy",
+          "sentBy",
+          "progress",
+          "dueDate",
+          "extensionFiledOn",
+          "extendedDue",
+          "filedOn",
+          "confirmation",
+          "resultKind",
+          "resultAmount",
+          "resultTransactionId",
+          "resultPaid",
+          "overdue",
+          "payments",
+          "carried",
+          "documents",
+          "version"
+        ],
+        "title": "FilingOut",
+        "type": "object"
+      },
       "Flag": {
         "additionalProperties": false,
         "properties": {
@@ -2723,6 +3797,39 @@
           "ahead"
         ],
         "title": "Following",
+        "type": "object"
+      },
+      "Forms": {
+        "additionalProperties": false,
+        "properties": {
+          "filed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Filed",
+            "type": "array"
+          },
+          "received": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Received",
+            "type": "array"
+          },
+          "statuses": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Statuses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "received",
+          "filed",
+          "statuses"
+        ],
+        "title": "Forms",
         "type": "object"
       },
       "FundOut": {
@@ -5313,6 +6420,24 @@
         "title": "KeyTest",
         "type": "object"
       },
+      "LastYear": {
+        "additionalProperties": false,
+        "properties": {
+          "figures": {
+            "$ref": "#/components/schemas/CarriedView"
+          },
+          "filing": {
+            "title": "Filing",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filing",
+          "figures"
+        ],
+        "title": "LastYear",
+        "type": "object"
+      },
       "LinkOut": {
         "additionalProperties": false,
         "description": "A transaction it supports, or (a statement) the account it is kept on.",
@@ -6337,6 +7462,33 @@
         "title": "NewAnchor",
         "type": "object"
       },
+      "NewBook": {
+        "additionalProperties": false,
+        "properties": {
+          "filers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Filers",
+            "type": "array"
+          },
+          "fromLastYear": {
+            "default": true,
+            "title": "Fromlastyear",
+            "type": "boolean"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "filers"
+        ],
+        "title": "NewBook",
+        "type": "object"
+      },
       "NewBudget": {
         "additionalProperties": false,
         "properties": {
@@ -7228,6 +8380,83 @@
         "title": "PasswordChange",
         "type": "object"
       },
+      "Payment": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duedate"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "paidOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paidon"
+          },
+          "quarter": {
+            "title": "Quarter",
+            "type": "integer"
+          },
+          "transactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
+          }
+        },
+        "required": [
+          "quarter",
+          "amount"
+        ],
+        "title": "Payment",
+        "type": "object"
+      },
       "PaymentIn": {
         "additionalProperties": false,
         "properties": {
@@ -7418,6 +8647,80 @@
           "amount"
         ],
         "title": "PaymentIn",
+        "type": "object"
+      },
+      "PaymentView": {
+        "additionalProperties": false,
+        "description": "A payment as shown; its own model, so the contract has one schema each way.",
+        "properties": {
+          "amount": {
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "string"
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duedate"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "paidOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paidon"
+          },
+          "quarter": {
+            "title": "Quarter",
+            "type": "integer"
+          },
+          "transactionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
+          }
+        },
+        "required": [
+          "id",
+          "quarter",
+          "dueDate",
+          "amount",
+          "paidOn",
+          "transactionId"
+        ],
+        "title": "PaymentView",
         "type": "object"
       },
       "PayoffOut": {
@@ -13577,6 +14880,20 @@
         "title": "Point",
         "type": "object"
       },
+      "moneykata__ui__education__DocumentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "receiptId": {
+            "title": "Receiptid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receiptId"
+        ],
+        "title": "DocumentIn",
+        "type": "object"
+      },
       "moneykata__ui__education__PlanIn": {
         "additionalProperties": false,
         "properties": {
@@ -13740,6 +15057,34 @@
           "canWrite"
         ],
         "title": "PlanOut",
+        "type": "object"
+      },
+      "moneykata__ui__gifts__DocumentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "receiptId": {
+            "title": "Receiptid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receiptId"
+        ],
+        "title": "DocumentIn",
+        "type": "object"
+      },
+      "moneykata__ui__giving__DocumentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "receiptId": {
+            "title": "Receiptid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receiptId"
+        ],
+        "title": "DocumentIn",
         "type": "object"
       },
       "moneykata__ui__giving__PlanIn": {
@@ -13936,6 +15281,20 @@
           "version"
         ],
         "title": "PlanOut",
+        "type": "object"
+      },
+      "moneykata__ui__items__DocumentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "receiptId": {
+            "title": "Receiptid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receiptId"
+        ],
+        "title": "DocumentIn",
         "type": "object"
       },
       "moneykata__ui__loans__PlanIn": {
@@ -14213,6 +15572,80 @@
           "setBy"
         ],
         "title": "SecretSet",
+        "type": "object"
+      },
+      "moneykata__ui__taxes__DocumentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountid"
+          },
+          "direction": {
+            "default": "received",
+            "title": "Direction",
+            "type": "string"
+          },
+          "filingId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filingid"
+          },
+          "form": {
+            "title": "Form",
+            "type": "string"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "receiptId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receiptid"
+          }
+        },
+        "required": [
+          "form"
+        ],
+        "title": "DocumentIn",
         "type": "object"
       },
       "moneykata__ui__transactions__SplitOut": {
@@ -17002,7 +18435,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DocumentIn"
+                "$ref": "#/components/schemas/moneykata__ui__education__DocumentIn"
               }
             }
           },
@@ -17033,6 +18466,98 @@
         "summary": "Attach Receipt",
         "tags": [
           "education"
+        ]
+      }
+    },
+    "/ui/api/filings/{filing_id}": {
+      "delete": {
+        "operationId": "delete_filing_ui_api_filings__filing_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "filing_id",
+            "required": true,
+            "schema": {
+              "title": "Filing Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Filing",
+        "tags": [
+          "taxes"
+        ]
+      },
+      "put": {
+        "operationId": "change_filing_ui_api_filings__filing_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "filing_id",
+            "required": true,
+            "schema": {
+              "title": "Filing Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FilingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Filing",
+        "tags": [
+          "taxes"
         ]
       }
     },
@@ -17347,7 +18872,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DocumentIn"
+                "$ref": "#/components/schemas/moneykata__ui__gifts__DocumentIn"
               }
             }
           },
@@ -17628,7 +19153,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DocumentIn"
+                "$ref": "#/components/schemas/moneykata__ui__giving__DocumentIn"
               }
             }
           },
@@ -18527,7 +20052,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DocumentIn"
+                "$ref": "#/components/schemas/moneykata__ui__items__DocumentIn"
               }
             }
           },
@@ -21414,7 +22939,8 @@
                 "budget",
                 "projection",
                 "person",
-                "giving-plan"
+                "giving-plan",
+                "tax-book"
               ],
               "title": "Kind",
               "type": "string"
@@ -21472,7 +22998,8 @@
                 "budget",
                 "projection",
                 "person",
-                "giving-plan"
+                "giving-plan",
+                "tax-book"
               ],
               "title": "Kind",
               "type": "string"
@@ -21735,6 +23262,468 @@
         "summary": "Signup Confirm",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/ui/api/tax-books": {
+      "get": {
+        "operationId": "list_books_ui_api_tax_books_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BookRow"
+                  },
+                  "title": "Response List Books Ui Api Tax Books Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Books",
+        "tags": [
+          "taxes"
+        ]
+      },
+      "post": {
+        "description": "A book for a year and its filers: the caller, alone or with their spouse. With\n*from last year*, it copies last year's accounts left out or added (S8.14.4).",
+        "operationId": "create_book_ui_api_tax_books_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewBook"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Book",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}": {
+      "delete": {
+        "operationId": "delete_book_ui_api_tax_books__book_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Book",
+        "tags": [
+          "taxes"
+        ]
+      },
+      "get": {
+        "operationId": "get_book_ui_api_tax_books__book_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Book",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/accept": {
+      "post": {
+        "description": "A filer named by someone else accepts; then the book counts their accounts.",
+        "operationId": "accept_ui_api_tax_books__book_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/accounts/{account_id}": {
+      "put": {
+        "description": "Add an account the caller can see (a custodial account in a child's name), or leave\none of the filers' own out (S8.14.2).",
+        "operationId": "count_account_ui_api_tax_books__book_id__accounts__account_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Count Account",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/documents": {
+      "post": {
+        "operationId": "add_document_ui_api_tax_books__book_id__documents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/moneykata__ui__taxes__DocumentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Document",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/filings": {
+      "post": {
+        "operationId": "add_filing_ui_api_tax_books__book_id__filings_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FilingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Filing",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-documents/{doc_id}": {
+      "delete": {
+        "operationId": "delete_document_ui_api_tax_documents__doc_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Document",
+        "tags": [
+          "taxes"
+        ]
+      },
+      "put": {
+        "operationId": "change_document_ui_api_tax_documents__doc_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/moneykata__ui__taxes__DocumentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Document",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-forms": {
+      "get": {
+        "operationId": "forms_ui_api_tax_forms_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forms"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Forms",
+        "tags": [
+          "taxes"
         ]
       }
     },

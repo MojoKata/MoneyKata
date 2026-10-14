@@ -43,6 +43,7 @@ export const NAV = [
   { href: '/ui/projections', label: 'Projections', icon: 'trend', match: /^\/ui\/projections/ },
   { href: '/ui/gifts', label: 'Gifts', icon: 'gift', match: /^\/ui\/gifts/ },
   { href: '/ui/giving', label: 'Giving', icon: 'heart', match: /^\/ui\/giving/ },
+  { href: '/ui/taxes', label: 'Taxes', icon: 'tax', match: /^\/ui\/taxes/ },
   { href: '/ui/receipts', label: 'Receipts', icon: 'receipt', match: /^\/ui\/receipts/ },
   { href: '/ui/activity', label: 'Activity', icon: 'pulse', match: /^\/ui\/activity/ },
   { href: '/ui/alerts', label: 'Alerts', icon: 'bell', match: /^\/ui\/alerts/ },

@@ -1,5 +1,6 @@
 // What the browser remembers about how the page looks (requirements S17.3.7): theme, sidebar,
-// help pane, page size and privacy mode. Nothing else is kept in the browser.
+// help pane, page size, privacy mode and the tax book in view. Nothing else is kept in the
+// browser.
 import { effect, signal } from '@preact/signals';
 
 /**
@@ -33,6 +34,8 @@ export const helpOpen = stored('help-open', true);
 export const helpWidth = stored('help-width', 360);
 export const pageSize = stored('page-size', 100);
 export const privacy = stored('privacy', false);
+/** The tax book the Taxes screen shows, by id. */
+export const book = stored('tax-book', /** @type {string | null} */ (null));
 
 /** Apply the theme to the page; "system" follows prefers-color-scheme. */
 export function applyTheme() {

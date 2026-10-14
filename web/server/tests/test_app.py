@@ -208,6 +208,9 @@ def test_every_screen_and_tab_has_its_guide(page):
         "/ui/giving/donations",
         "/ui/giving/organisations",
         "/ui/giving/fund",
+        "/ui/taxes/summary",
+        "/ui/taxes/filings",
+        "/ui/taxes/documents",
         "/ui/users",
         "/ui/profile",
     ]
@@ -293,6 +296,9 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/gifts/gifts", "Add a gift", "dialog-gift"),
         ("/ui/giving/donations", "Record a donation", "dialog-donation"),
         ("/ui/giving/organisations", "Add an organisation", "dialog-organisation"),
+        ("/ui/taxes/summary", "New tax book", "dialog-tax-book"),
+        ("/ui/taxes/filings", "Add a filing", "dialog-filing"),
+        ("/ui/taxes/documents", "Add a document", "dialog-tax-document"),
         ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
         ("/ui/users", "New user", "dialog-new-user"),
         ("/ui/users", "New group", "dialog-group"),
@@ -377,6 +383,15 @@ def test_every_dialog_has_its_guide(page):
     page.get_by_role("row", name=re.compile("Goodwill")).click()
     wait_guide(page, "dialog-organisation")
     check_guide(page, ".dialog", "an organisation")
+    close_dialog(page)
+    # A filed return, with its payments and carried figures; a filed document.
+    visit(page, "/ui/taxes/filings")
+    page.get_by_role("button", name="Edit").first.click()
+    wait_guide(page, "dialog-filing")
+    page.get_by_role("button", name="Add a payment").click()
+    check_guide(page, ".dialog", "a filing")
+    close_dialog(page)
+    open_dialog(page, "/ui/taxes/documents", "Add a filed document", "dialog-tax-document")
     close_dialog(page)
     # A 529's form, with a person added in it.
     open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")

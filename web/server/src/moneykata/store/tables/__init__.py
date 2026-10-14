@@ -15,6 +15,7 @@ from . import (  # noqa: F401 - each adds its tables
     projections,
     receipts,
     sharing,
+    taxes,
     users,
 )
 from ._base import metadata

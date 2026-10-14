@@ -24,6 +24,7 @@ def item(s: Session, kind: str, item_id: str):
     from .store.entities.education import Person
     from .store.entities.giving import GivingPlan
     from .store.entities.projections import Projection
+    from .store.entities.taxes import TaxBook
 
     cls = {
         "account": Account,
@@ -32,6 +33,7 @@ def item(s: Session, kind: str, item_id: str):
         "projection": Projection,
         "person": Person,
         "giving-plan": GivingPlan,
+        "tax-book": TaxBook,
     }.get(kind)
     if cls is None:
         raise Problem(404, "not-found", "Not found")

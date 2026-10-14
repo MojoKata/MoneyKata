@@ -82,6 +82,8 @@ The prefixes of the tables that exist.
 | Cntrb  | Contribution     | Who a deposit into a 529 came from, and whether it is a five-year election.                  |
 | Dnatn  | Donation         | One charitable gift to an organisation, into a donor-advised fund, or a grant from one.      |
 | EdPln  | EducationPlan    | A 529 account's plan: its state, name, beneficiary and opening date.                         |
+| EstPy  | EstimatedPayment | A filing's estimated tax payment for a quarter, matched to its transaction.                  |
+| Filng  | Filing           | One return in a tax book (federal, state or local), with its progress and result.            |
 | Gift   | Gift             | A gift to or from a person for an occasion, from idea to given.                              |
 | Group  | Group            | A named set of users that shares are granted to.                                             |
 | GvPln  | GivingPlan       | A user's giving target for a year: a percentage of income, or an amount.                     |
@@ -108,7 +110,9 @@ The prefixes of the tables that exist.
 | Share  | Share            | A grant of an account or portfolio to a user, group or linked server.                        |
 | Split  | Split            | A part of a transaction's amount given its own category.                                     |
 | Src    | PriceSource      | A source of daily prices: its name, whether it is on, and its order per class.               |
+| TaxBk  | TaxBook          | One user's, or a married couple's, tax records for one tax year.                             |
 | TaxFg  | TaxFigure        | An admin's correction of a shipped tax-table figure for one year.                            |
+| TxDoc  | TaxDocument      | A tax document received (W-2, 1099) or filed (a return, a notice), with its file.            |
 | Txn    | Transaction      | One dated movement in an account.                                                            |
 | User   | User             | A person who signs in here, or a user of a linked server (with `linkId`).                    |
 | Valtn  | ItemValuation    | A dated value of an item, with its source.                                                   |
@@ -120,12 +124,9 @@ designed yet. A row moves to §3.1 when its table is.
 
 | Prefix | Table         | Description                                                                       |
 |--------|---------------|-----------------------------------------------------------------------------------|
-| Filng  | Filing        | One return in a tax book (federal, state or local), with its progress and result. |
 | Link   | Link          | A link with another MoneyKata server.                                             |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
-| TaxBk  | TaxBook       | One user's, or a married couple's, tax records for one tax year.                  |
 | Token  | AccessToken   | A user's read-only token for the MCP endpoint, stored as a hash.                  |
-| TxDoc  | TaxDocument   | A tax document received (W-2, 1099) or filed (a return, a notice), with its file. |
 
 ## 4. Soft deletes
 

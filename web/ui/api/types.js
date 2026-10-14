@@ -58,6 +58,14 @@
  */
 
 /**
+ * @typedef {Object} AccountRef
+ * @property {string} id
+ * @property {string} name
+ * @property {string} type
+ * @property {string} ownerName
+ */
+
+/**
  * @typedef {Object} AccountRow
  * @property {string} id
  * @property {string} name
@@ -203,6 +211,33 @@
  */
 
 /**
+ * @typedef {Object} BookDetail
+ * @property {string} id
+ * @property {number} year
+ * @property {Array<Filer>} filers
+ * @property {string} level
+ * @property {string} label
+ * @property {Array<AccountRef>} accounts
+ * @property {Array<AccountRef>} leftOut
+ * @property {Array<AccountRef>} addable
+ * @property {Array<FilingOut>} filings
+ * @property {Array<ExpectedOut>} expected
+ * @property {Array<DocumentOut>} received
+ * @property {Array<LastYear>} lastYear
+ * @property {string} federalDue
+ * @property {boolean} canWrite
+ */
+
+/**
+ * @typedef {Object} BookRow
+ * @property {string} id
+ * @property {number} year
+ * @property {Array<Filer>} filers
+ * @property {string} level
+ * @property {string} label
+ */
+
+/**
  * @typedef {Object} BudgetChange
  * @property {(string | null)} [name]
  * @property {(Array<string> | null)} [accountIds]
@@ -227,6 +262,28 @@
  * @property {string} date
  * @property {string} amount
  * @property {(string | null)} payee
+ */
+
+/**
+ * @typedef {Object} Carried
+ * @property {((number | string) | null)} [agi]
+ * @property {((number | string) | null)} [totalTax]
+ * @property {((number | string) | null)} [overpaymentApplied]
+ * @property {((number | string) | null)} [capitalLossShort]
+ * @property {((number | string) | null)} [capitalLossLong]
+ * @property {((number | string) | null)} [basis8606]
+ * @property {((number | string) | null)} [charitableCarryover]
+ */
+
+/**
+ * @typedef {Object} CarriedView
+ * @property {(string | null)} [agi]
+ * @property {(string | null)} [totalTax]
+ * @property {(string | null)} [overpaymentApplied]
+ * @property {(string | null)} [capitalLossShort]
+ * @property {(string | null)} [capitalLossLong]
+ * @property {(string | null)} [basis8606]
+ * @property {(string | null)} [charitableCarryover]
  */
 
 /**
@@ -322,6 +379,11 @@
  */
 
 /**
+ * @typedef {Object} CountIn
+ * @property {(boolean | null)} counted
+ */
+
+/**
  * @typedef {Object} Counted
  * @property {boolean} counted
  */
@@ -340,8 +402,17 @@
  */
 
 /**
- * @typedef {Object} DocumentIn
- * @property {string} receiptId
+ * @typedef {Object} DocumentOut
+ * @property {string} id
+ * @property {string} direction
+ * @property {string} form
+ * @property {(string | null)} issuer
+ * @property {(string | null)} accountId
+ * @property {(string | null)} accountName
+ * @property {(string | null)} filingId
+ * @property {(string | null)} receiptId
+ * @property {(string | null)} fileName
+ * @property {(string | null)} notes
  */
 
 /**
@@ -432,6 +503,15 @@
  */
 
 /**
+ * @typedef {Object} ExpectedOut
+ * @property {string} form
+ * @property {(string | null)} issuer
+ * @property {(string | null)} accountId
+ * @property {string} why
+ * @property {(DocumentOut | null)} document
+ */
+
+/**
  * @typedef {Object} ExpenseIn
  * @property {string} date
  * @property {(number | null)} [year]
@@ -450,6 +530,63 @@
  * @property {(string | null)} description
  * @property {string} amount
  * @property {Array<ReceiptRow>} documents
+ */
+
+/**
+ * @typedef {Object} Filer
+ * @property {string} id
+ * @property {string} name
+ * @property {boolean} accepted
+ */
+
+/**
+ * @typedef {Object} FilingIn
+ * @property {string} [jurisdiction]
+ * @property {(string | null)} [place]
+ * @property {string} [form]
+ * @property {(string | null)} [amendsId]
+ * @property {(string | null)} [filingStatus]
+ * @property {(string | null)} [preparedBy]
+ * @property {(string | null)} [sentBy]
+ * @property {string} [progress]
+ * @property {(string | null)} [dueDate]
+ * @property {(string | null)} [extensionFiledOn]
+ * @property {(string | null)} [extendedDue]
+ * @property {(string | null)} [filedOn]
+ * @property {(string | null)} [confirmation]
+ * @property {(string | null)} [resultKind]
+ * @property {((number | string) | null)} [resultAmount]
+ * @property {(string | null)} [resultTransactionId]
+ * @property {Array<Payment>} [payments]
+ * @property {Carried} [carried]
+ */
+
+/**
+ * @typedef {Object} FilingOut
+ * @property {string} id
+ * @property {string} jurisdiction
+ * @property {(string | null)} place
+ * @property {string} form
+ * @property {string} label
+ * @property {(string | null)} amendsId
+ * @property {(string | null)} filingStatus
+ * @property {(string | null)} preparedBy
+ * @property {(string | null)} sentBy
+ * @property {string} progress
+ * @property {(string | null)} dueDate
+ * @property {(string | null)} extensionFiledOn
+ * @property {(string | null)} extendedDue
+ * @property {(string | null)} filedOn
+ * @property {(string | null)} confirmation
+ * @property {(string | null)} resultKind
+ * @property {(string | null)} resultAmount
+ * @property {(string | null)} resultTransactionId
+ * @property {(string | null)} resultPaid
+ * @property {boolean} overdue
+ * @property {Array<PaymentView>} payments
+ * @property {CarriedView} carried
+ * @property {Array<DocumentOut>} documents
+ * @property {number} version
  */
 
 /**
@@ -478,6 +615,13 @@
  * @property {string} expected
  * @property {string} actual
  * @property {string} ahead
+ */
+
+/**
+ * @typedef {Object} Forms
+ * @property {Array<string>} received
+ * @property {Array<string>} filed
+ * @property {Array<string>} statuses
  */
 
 /**
@@ -863,6 +1007,12 @@
  */
 
 /**
+ * @typedef {Object} LastYear
+ * @property {string} filing
+ * @property {CarriedView} figures
+ */
+
+/**
  * A transaction it supports, or (a statement) the account it is kept on.
  * @typedef {Object} LinkOut
  * @property {(string | null)} transactionId
@@ -1032,6 +1182,13 @@
  */
 
 /**
+ * @typedef {Object} NewBook
+ * @property {number} year
+ * @property {Array<string>} filers
+ * @property {boolean} [fromLastYear]
+ */
+
+/**
  * @typedef {Object} NewBudget
  * @property {string} name
  * @property {Array<string>} [accountIds]
@@ -1198,6 +1355,16 @@
  */
 
 /**
+ * @typedef {Object} Payment
+ * @property {(string | null)} [id]
+ * @property {number} quarter
+ * @property {(string | null)} [dueDate]
+ * @property {(number | string)} amount
+ * @property {(string | null)} [paidOn]
+ * @property {(string | null)} [transactionId]
+ */
+
+/**
  * @typedef {Object} PaymentIn
  * @property {string} date
  * @property {(number | string)} amount
@@ -1209,6 +1376,17 @@
  * @property {((number | string) | null)} [escrowInsurance]
  * @property {((number | string) | null)} [pmi]
  * @property {((number | string) | null)} [fees]
+ */
+
+/**
+ * A payment as shown; its own model, so the contract has one schema each way.
+ * @typedef {Object} PaymentView
+ * @property {(string | null)} id
+ * @property {number} quarter
+ * @property {(string | null)} dueDate
+ * @property {string} amount
+ * @property {(string | null)} paidOn
+ * @property {(string | null)} transactionId
  */
 
 /**
@@ -2261,6 +2439,11 @@
  */
 
 /**
+ * @typedef {Object} moneykata__ui__education__DocumentIn
+ * @property {string} receiptId
+ */
+
+/**
  * @typedef {Object} moneykata__ui__education__PlanIn
  * @property {(string | null)} [planState]
  * @property {(string | null)} [planName]
@@ -2279,6 +2462,16 @@
  * @property {string} contributedThisYear
  * @property {RolloverOut} rollover
  * @property {boolean} canWrite
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__gifts__DocumentIn
+ * @property {string} receiptId
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__giving__DocumentIn
+ * @property {string} receiptId
  */
 
 /**
@@ -2305,6 +2498,11 @@
  * @property {string} level
  * @property {string} ownerName
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__items__DocumentIn
+ * @property {string} receiptId
  */
 
 /**
@@ -2350,6 +2548,17 @@
  * @typedef {Object} moneykata__ui__settings__SecretSet
  * @property {string} setAt
  * @property {(string | null)} setBy
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__taxes__DocumentIn
+ * @property {string} [direction]
+ * @property {string} form
+ * @property {(string | null)} [issuer]
+ * @property {(string | null)} [accountId]
+ * @property {(string | null)} [filingId]
+ * @property {(string | null)} [receiptId]
+ * @property {(string | null)} [notes]
  */
 
 /**

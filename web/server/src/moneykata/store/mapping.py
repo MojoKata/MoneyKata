@@ -13,6 +13,7 @@ from .entities import prices as pr
 from .entities import projections as pj
 from .entities import receipts as rc
 from .entities import sharing as sh
+from .entities import taxes as tx
 from .entities.alerts import Alert, AlertState
 from .entities.core import Activity, Secret, Setting, TaskRun
 from .entities.users import (
@@ -39,6 +40,7 @@ from .tables import (
     projections,
     receipts,
     sharing,
+    taxes,
     users,
 )
 
@@ -72,6 +74,10 @@ def map_all() -> None:
         (acc.StatementLayout, accounts.StatementLayout),
         (acc.Loan, loans.Loan),
         (acc.PayoffPlan, loans.PayoffPlan),
+        (tx.TaxBook, taxes.TaxBook),
+        (tx.Filing, taxes.Filing),
+        (tx.EstimatedPayment, taxes.EstimatedPayment),
+        (tx.TaxDocument, taxes.TaxDocument),
         (gv.GivingPlan, giving.GivingPlan),
         (gv.Organisation, giving.Organisation),
         (gv.Donation, giving.Donation),
@@ -106,6 +112,8 @@ def map_all() -> None:
     _versioned(rc.Receipt, receipts.Receipt)
     mapper_registry.map_imperatively(rc.ReceiptLink, receipts.ReceiptLinks)
     mapper_registry.map_imperatively(ed.GiftPerson, people.GiftPersons)
+    mapper_registry.map_imperatively(tx.TaxBookFiler, taxes.TaxBookFilers)
+    mapper_registry.map_imperatively(tx.TaxBookAccount, taxes.TaxBookAccounts)
     _versioned(pj.AssumptionSet, projections.AssumptionSet)
     _versioned(pj.Projection, projections.Projection)
     _versioned(pj.TaxFigure, projections.TaxFigure)
