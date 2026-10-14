@@ -74,13 +74,18 @@ def sign_request(
     )
 
 
-def sign_answer(key: Ed25519PrivateKey, status: int, body: bytes, nonce: str, now=None) -> dict:
+def sign_answer(
+    key: Ed25519PrivateKey, status: int, body: bytes, nonce: str, now=None, digest=None
+) -> dict:
+    """`digest` signs a body streamed later, by its SHA-256, rather than bytes in hand."""
     t = str(int(now if now is not None else time.time()))
-    msg = _lines("MK-LINK-1-ANSWER", status, body_hash(body), t, nonce)
+    msg = _lines("MK-LINK-1-ANSWER", status, digest or body_hash(body), t, nonce)
     return {"MK-Link-Time": t, "MK-Link-Signature": b64(key.sign(msg))}
 
 
-def verify_answer(public: bytes, status: int, body: bytes, nonce: str, headers, now=None) -> None:
+def verify_answer(
+    public: bytes, status: int, body: bytes, nonce: str, headers, now=None, digest=None
+) -> None:
     try:
         t = int(headers["MK-Link-Time"])
         sig = unb64(headers["MK-Link-Signature"])
@@ -90,7 +95,7 @@ def verify_answer(public: bytes, status: int, body: bytes, nonce: str, headers, 
         raise Refused("clock-skew", "The linked server's clock is more than a minute off.")
     try:
         Ed25519PublicKey.from_public_bytes(public).verify(
-            sig, _lines("MK-LINK-1-ANSWER", status, body_hash(body), t, nonce)
+            sig, _lines("MK-LINK-1-ANSWER", status, digest or body_hash(body), t, nonce)
         )
     except InvalidSignature:
         raise Refused("bad-signature", "The answer isn't signed by the linked server.") from None

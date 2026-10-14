@@ -205,7 +205,77 @@ def work_out(srv, link_id: str) -> tuple[dict[str, Item], dict[tuple[str, str, s
                     docs[(it.id, path, viewer)] = _dump(fn(c))
                 except Problem:
                     continue  # this person can't read this part: it isn't sent
+    for it in items.values():
+        if it.kind == "account" and it.includeReceipts:
+            for f in receipt_files(srv, it.id):
+                docs[(it.id, f"file:{f['id']}", "")] = f
     return items, docs
+
+
+def receipt_files(srv, account_id: str) -> list[dict]:
+    """An account's receipts as they cross (S11.5.1): their dates, amounts, payees and the text
+    read from them, with the length and hash of the file, which is fetched on its own."""
+    import base64
+
+    from sqlalchemy import or_
+
+    from ..store.entities.accounts import Transaction
+    from ..store.entities.receipts import Receipt, ReceiptLink
+
+    with srv.db.read() as s:
+        txns = list(
+            s.scalars(
+                select(Transaction.id).where(
+                    Transaction.accountId == account_id, Transaction.deleted == false()
+                )
+            )
+        )
+        links = s.scalars(
+            select(ReceiptLink).where(
+                ReceiptLink.deleted == false(),
+                or_(
+                    (ReceiptLink.kind == "transaction") & ReceiptLink.itemId.in_(txns),
+                    (ReceiptLink.kind == "account") & (ReceiptLink.itemId == account_id),
+                ),
+            )
+        ).all()
+        out = {}
+        for ln in links:
+            r = s.get(Receipt, ln.receiptId)
+            if r is None or r.deleted or r.id in out:
+                continue
+            out[r.id] = {
+                "id": r.id,
+                "itemId": account_id,
+                "contentType": r.mediaType,
+                "length": r.size,
+                "sha256": r.sha256,
+                "thumbnail": (
+                    "data:image/jpeg;base64," + base64.b64encode(r.thumbnail).decode()
+                    if r.thumbnail
+                    else None
+                ),
+                "meta": {
+                    "date": r.date.isoformat() if r.date else None,
+                    "amount": str(r.amount) if r.amount is not None else None,
+                    "payee": r.payee,
+                    "text": r.text,
+                    "transactionId": ln.itemId if ln.kind == "transaction" else None,
+                },
+            }
+        return list(out.values())
+
+
+def allowed_file(srv, link_id: str, receipt_id: str) -> bool:
+    """Whether this link's people may have this receipt: one of an account shared with them
+    with Include receipts ticked."""
+    items, _ = shared_items(srv, link_id)
+    return any(
+        it.kind == "account"
+        and it.includeReceipts
+        and any(f["id"] == receipt_id for f in receipt_files(srv, it.id))
+        for it in items.values()
+    )
 
 
 def _hash(body) -> str:
@@ -231,13 +301,18 @@ def change_for(srv, link_id: str, have: int, full: bool) -> dict | None:
         hashes = {k: _hash(v) for k, v in docs.items()}
         sent_items = {k[0] for k in sent}
         change: dict = {"asOf": clock.now().isoformat(), "full": full}
-        changed_docs = [k for k, h in hashes.items() if sent.get(k) != h]
-        gone_docs = [k for k in sent if k not in hashes and k[0] in items]
+        changed_all = [k for k, h in hashes.items() if sent.get(k) != h]
+        gone_all = [k for k in sent if k not in hashes and k[0] in items]
+        is_file = lambda k: k[1].startswith("file:")  # noqa: E731
+        changed_docs = [k for k in changed_all if not is_file(k)]
+        gone_docs = [k for k in gone_all if not is_file(k)]
+        changed_files = [k for k in changed_all if is_file(k)]
+        gone_files = [k for k in gone_all if is_file(k)]
         gone_items = sorted(sent_items - set(items))
-        touched = {k[0] for k in changed_docs} | {k[0] for k in gone_docs}
+        touched = {k[0] for k in changed_all} | {k[0] for k in gone_all}
         new_items = [i for i in items if i not in sent_items]
         item_rows = [items[i] for i in sorted(set(new_items) | touched) if i in items]
-        if not full and not changed_docs and not gone_docs and not gone_items and not item_rows:
+        if not full and not changed_all and not gone_all and not gone_items and not item_rows:
             return None
         change["items"] = [
             {
@@ -256,7 +331,10 @@ def change_for(srv, link_id: str, have: int, full: bool) -> dict | None:
         change["docs"] = [
             {"itemId": k[0], "path": k[1], "viewer": k[2], "body": docs[k]}
             for k in (docs if full else changed_docs)
+            if not is_file(k)
         ]
+        change["files"] = [docs[k] for k in (docs if full else changed_files) if is_file(k)]
+        change["filesRemoved"] = [k[1][5:] for k in gone_files]
         change["docsRemoved"] = [{"itemId": k[0], "path": k[1], "viewer": k[2]} for k in gone_docs]
         link.sentSeq += 1
         change["seq"] = link.sentSeq

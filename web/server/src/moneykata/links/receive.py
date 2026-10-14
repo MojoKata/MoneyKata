@@ -27,6 +27,7 @@ def take(srv, link_id: str, change: dict) -> None:
         with srv.db.tx() as s:
             s.get(Link, link_id).needsFull = True
         return
+    names = fetch_files(srv, link_id, change)
     with srv.db.tx() as s:
         link = s.get(Link, link_id)
         local = set(s.scalars(select(User.id).where(User.linkId.is_(None))))
@@ -71,7 +72,7 @@ def take(srv, link_id: str, change: dict) -> None:
             for_admins=True,
             detail={"count": len(change.get("items") or []) + len(change.get("removed") or [])},
         )
-    changes.enqueue(srv, link_id, change)
+    changes.enqueue(srv, link_id, change, {"fileNames": names})
 
 
 def forget(srv, link_id: str) -> None:
@@ -87,3 +88,40 @@ def forget(srv, link_id: str) -> None:
         link = s.get(Link, link_id)
         if link is not None:
             link.copyPublicKey = link.copyKeyAt = link.copyKeyById = None
+
+
+def fetch_files(srv, link_id: str, change: dict) -> dict[str, str]:
+    """The receipts a change names, streamed from the source and sealed straight into the copy
+    under random names as they arrive (S11.9.5.2, S11.9.6), each checked against the source's
+    signature and the hash the change carries. Nothing is fetched for a copy without its
+    access key: it asks for everything once it has one."""
+    import secrets
+
+    from . import client, sealed
+    from .copy import folder
+
+    files = change.get("files") or []
+    with srv.db.read() as s:
+        link = s.get(Link, link_id)
+        public = unb64(link.copyPublicKey) if link.copyPublicKey else None
+        address, peer = link.address, unb64(link.peerKey)
+    if not files or public is None:
+        return {}
+    d = folder(srv.config.data_dir, link_id) / "receipts"
+    d.mkdir(parents=True, exist_ok=True)
+    names: dict[str, str] = {}
+    for f in files:
+        name = secrets.token_hex(12) + ".mkr"
+        digest: list[str] = []
+        stream = client.iter_file(srv, address, peer, f["id"], digest)
+        try:
+            sealed.write(d / name, sealed.seal(public, sealed.RECEIPT, link_id, f["id"], stream))
+        except BaseException:
+            (d / name).unlink(missing_ok=True)
+            (d / (name + ".tmp")).unlink(missing_ok=True)
+            raise
+        if not digest or digest[0] != f.get("sha256"):
+            (d / name).unlink(missing_ok=True)
+            raise changes.ChangeError(f"receipt {f['id']} doesn't match its hash")
+        names[f["id"]] = name
+    return names

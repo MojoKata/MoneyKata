@@ -385,3 +385,65 @@ def test_a_reset_copy_is_pulled_again_in_full(admins):
     )
     items, _ = docs_in(b, b_id)
     assert set(items) == {acct["id"]}
+
+
+def test_receipts_cross_only_when_included_and_open_through_decryption(admins):
+    from test_receipts import png
+
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    a_id, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post("/ui/api/accounts", json={"name": "Checking", "type": "checking"}).json()
+    t = add(alice, acct["id"], amount="-12.50", payee="Blue Bottle")
+    image = png()
+    rid = alice.post(
+        "/ui/api/receipts", files={"file": ("r.png", image, "application/octet-stream")}
+    ).json()["id"]
+    alice.post(f"/ui/api/receipts/{rid}/links", json={"transactionId": t["id"]})
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
+    alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}})
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    carol = sign_in(b, "carol")
+    carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
+    assert carol.get(f"/ui/api/linked/{b_id}/files").json() == [], "not included: not sent"
+    alice.put(
+        f"/ui/api/shares/account/{acct['id']}",
+        json={"users": {carol_here["id"]: "read"}, "receipts": {a_id: True}},
+    )
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    files = carol.get(f"/ui/api/linked/{b_id}/files").json()
+    assert len(files) == 1 and files[0]["meta"]["transactionId"] == t["id"]
+    sealed_dir = lcopy.folder(b.config.data_dir, b_id) / "receipts"
+    on_disk = list(sealed_dir.glob("*.mkr"))
+    assert len(on_disk) == 1 and image[:64] not in on_disk[0].read_bytes()
+    got = carol.get(f"/ui/api/linked/{b_id}/files/{files[0]['id']}")
+    assert got.status_code == 200 and got.content == image
+    # Not included any more: the receipt and its sealed file go.
+    alice.put(
+        f"/ui/api/shares/account/{acct['id']}",
+        json={"users": {carol_here["id"]: "read"}, "receipts": {a_id: False}},
+    )
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    assert carol.get(f"/ui/api/linked/{b_id}/files").json() == []
+    assert list(sealed_dir.glob("*.mkr")) == []
+
+
+def test_a_share_waiting_for_its_access_key_alerts_the_admins(admins):
+    from moneykata import alerts
+
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    _a_id, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post("/ui/api/accounts", json={"name": "Checking", "type": "checking"}).json()
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}})
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    kinds = {x.kind for x in alerts.evaluate(b)}
+    assert "link-key-waiting" in kinds
+    cb.post(f"/ui/api/settings/links/{b_id}/copy-key")
+    assert "link-key-waiting" not in {x.kind for x in alerts.evaluate(b) if not x.resolvedAt}

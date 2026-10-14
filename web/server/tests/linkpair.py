@@ -58,6 +58,12 @@ class Wire:
             def post(self, url, **kw):
                 return self._go("POST", url, **kw)
 
+            def stream(self, method, url, **kw):
+                host = urlsplit(url).hostname
+                if host in wire.down or host not in wire.apps:
+                    raise httpx.ConnectError("unreachable")
+                return wire.apps[host].stream(method, url, **kw)
+
         return C()
 
     def install(self, monkeypatch):

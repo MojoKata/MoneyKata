@@ -55,7 +55,7 @@ def waiting(data_dir, link_id: str) -> list:
     return sorted(d.glob("*.mks")) if d.exists() else []
 
 
-def enqueue(srv, link_id: str, change: dict) -> bool:
+def enqueue(srv, link_id: str, change: dict, local: dict | None = None) -> bool:
     """Seal a signed change into the inbox; apply it at once if the copy is unlocked. Returns
     False when the inbox overflowed and was discarded: the next pull asks for everything."""
     with srv.db.read() as s:
@@ -68,7 +68,10 @@ def enqueue(srv, link_id: str, change: dict) -> bool:
     have = waiting(srv.config.data_dir, link_id)
     seq = int(have[-1].stem) + 1 if have else 1
     name = f"{seq:010d}"
-    raw = json.dumps(change, separators=(",", ":"), default=str).encode()
+    # The source's signed change, whole, and what this side added: the random names its
+    # receipts were written under.
+    entry = {"change": change, "local": local or {}}
+    raw = json.dumps(entry, separators=(",", ":"), default=str).encode()
     sealed.write(d / f"{name}.mks", sealed.seal(public, sealed.CHANGE, link_id, name, [raw]))
     have = waiting(srv.config.data_dir, link_id)
     if len(have) > MAX_CHANGES or sum(p.stat().st_size for p in have) > MAX_BYTES:
@@ -111,16 +114,21 @@ def apply(srv, link_id: str) -> int:
         for p in files:
             with open(p, "rb") as f:
                 raw = b"".join(sealed.open_sealed(priv, sealed.CHANGE, link_id, p.stem, f))
-            change = json.loads(raw)
+            entry = json.loads(raw)
+            change, local = (
+                (entry["change"], entry.get("local") or {}) if "change" in entry else (entry, {})
+            )
             verify(peer, change)
-            changes.append(change)
+            changes.append((change, local))
     except (sealed.SealError, ChangeError, ValueError) as e:
         with srv.db.tx() as s:
             s.get(Link, link_id).lastError = f"A pulled change can't be applied: {e}"
         raise ChangeError(str(e)) from None
+    receipts_dir = folder(srv.config.data_dir, link_id) / "receipts"
     with o.engine.begin() as conn:
-        for change in changes:
-            _apply_one(conn, change)
+        for change, local in changes:
+            for name in _apply_one(conn, change, local.get("fileNames") or {}):
+                (receipts_dir / name).unlink(missing_ok=True)
             conn.execute(
                 copydb.Applied.insert().prefix_with("OR REPLACE"),
                 {"seq": int(change.get("seq") or 0), "appliedAt": clock.now().isoformat()},
@@ -132,8 +140,11 @@ def apply(srv, link_id: str) -> int:
     return len(changes)
 
 
-def _apply_one(conn, c: dict) -> None:
+def _apply_one(conn, c: dict, names: dict[str, str]) -> list[str]:
+    """Apply one change; returns the sealed files it leaves unnamed, to delete."""
+    gone: list[str] = []
     if c.get("full"):
+        gone += list(conn.execute(select(copydb.File.c.fileName)).scalars())
         for t in (copydb.Doc, copydb.File, copydb.Item):
             conn.execute(delete(t))
     for item_id in c.get("removed") or []:
@@ -173,14 +184,24 @@ def _apply_one(conn, c: dict) -> None:
             },
         )
     for fid in c.get("filesRemoved") or []:
+        gone += list(
+            conn.execute(select(copydb.File.c.fileName).where(copydb.File.c.id == fid)).scalars()
+        )
         conn.execute(delete(copydb.File).where(copydb.File.c.id == fid))
     for f in c.get("files") or []:
+        if f["id"] not in names:
+            continue  # not fetched (the copy had no key yet): it comes with everything later
+        gone += list(
+            conn.execute(
+                select(copydb.File.c.fileName).where(copydb.File.c.id == f["id"])
+            ).scalars()
+        )
         conn.execute(
             copydb.File.insert().prefix_with("OR REPLACE"),
             {
                 "id": f["id"],
                 "itemId": f["itemId"],
-                "fileName": f["fileName"],
+                "fileName": names[f["id"]],
                 "contentType": f.get("contentType") or "application/octet-stream",
                 "length": int(f.get("length") or 0),
                 "sha256": f["sha256"],
@@ -188,6 +209,7 @@ def _apply_one(conn, c: dict) -> None:
                 "meta": json.dumps(f.get("meta") or {}),
             },
         )
+    return [g for g in gone if g not in names.values()]
 
 
 def orphans(srv, link_id: str) -> int:

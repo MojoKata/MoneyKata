@@ -39,6 +39,7 @@ const SCREENS = /** @type {[string, string, string, string[]][]} */ ([
   ['gifts', 'Gifts', 'gift', ['person']],
   ['giving', 'Giving', 'heart', ['giving-plan']],
   ['taxes', 'Taxes', 'tax', ['tax-book']],
+  ['receipts', 'Receipts', 'receipt', ['receipts']],
 ]);
 
 export default function LinkedWindow() {
@@ -74,6 +75,7 @@ function Frame({ id, st, reload, sub, subId, tab }) {
   const me = session.value.user;
   const items = useApi(h.locked ? '' : `/linked/${id}/items`);
   const rows = /** @type {any[]} */ (items.data) || [];
+  const files = useApi(h.locked ? '' : `/linked/${id}/files`);
   useEffect(() => {
     document.title = `${h.name || h.serverName} · MoneyKata`;
     document.body.classList.toggle('privacy', privacy.value);
@@ -83,6 +85,7 @@ function Frame({ id, st, reload, sub, subId, tab }) {
     if (items.error?.status === 423) reload();
   }, [items.error]);
   const kinds = new Set(rows.map((r) => r.kind));
+  if (/** @type {any[]} */ (files.data)?.length) kinds.add('receipts');
   const nav = SCREENS.filter(([, , , k]) => k.some((x) => kinds.has(x)));
   const base = `/ui/linked/${id}`;
   const lock = useSubmit(async () => {
@@ -287,6 +290,7 @@ function Screen({ id, rows, sub, subId, tab }) {
   if (sub === 'projections') return html`<${Projections} rows=${of('projection')} />`;
   if (sub === 'giving') return html`<${Giving} rows=${of('giving-plan')} />`;
   if (sub === 'gifts') return html`<${Gifts} rows=${of('person')} />`;
+  if (sub === 'receipts') return html`<${Receipts} id=${id} />`;
   return html`<${Dashboard} base=${base} rows=${rows} />`;
 }
 
@@ -295,6 +299,9 @@ function Dashboard({ base, rows }) {
   useGuide('linked-dashboard');
   if (!rows.length) return html`<${Empty}>Nothing is shared with you yet.</${Empty}>`;
   const accounts = rows.filter((r) => r.kind === 'account');
+  // A newer MoneyKata on the other side may share kinds this one can't show yet (version skew).
+  const unknown = rows.filter((r) => !KIND[r.kind]);
+  rows = rows.filter((r) => KIND[r.kind]);
   const total = accounts.reduce((t, r) => t + Number(r.row?.balance || 0), 0);
   return html`
     ${accounts.length
@@ -311,6 +318,14 @@ function Dashboard({ base, rows }) {
                   their last sync</div>
           </div>
         </div>
+      `
+      : null}
+    ${unknown.length
+      ? html`
+        <p
+          class="notice mt">${unknown.length} more item${unknown.length === 1
+            ? ' is'
+            : 's are'} shared with you by a newer MoneyKata, which this one can't show yet.</p>
       `
       : null}
     <div class="card mt"><h3>Shared with you</h3>${rows.map((r) =>
@@ -766,5 +781,35 @@ function PersonGifts({ person }) {
         `
       )
       : html`<p class="small dim">No gifts.</p>`
+  }</div>`;
+}
+
+/** @param {{ id: string }} p */
+function Receipts({ id }) {
+  useGuide('linked-receipts');
+  const res = useApi(`/linked/${id}/files`);
+  const v = /** @type {any[]} */ (res.data);
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!v) return html`<${Loading} lines=${4} />`;
+  if (!v.length) return html`<${Empty}>No receipts came with what is shared with you.</${Empty}>`;
+  return html`<div class="card">${
+    v.map((f) =>
+      html`
+        <a class="list-item" href=${`/ui/api/linked/${id}/files/${f.id}`} target="_blank"
+          rel="noopener" style=${{ color: 'inherit' }}>${f.thumbnail
+            ? html`<img src=${f.thumbnail} alt="" style=${{
+              width: '40px',
+              height: '40px',
+              objectFit: 'cover',
+              borderRadius: '6px',
+            }} />`
+            : html`<${Icon} name="receipt" />`}<span class="grow">${f.meta.payee || 'A receipt'}<div
+                class="small dim">${f.meta.date
+                  ? date(f.meta.date)
+                  : ''}</div></span>${f.meta.amount
+                  ? html`<${Amt} v=${f.meta.amount} />`
+                  : null}</a>
+      `
+    )
   }</div>`;
 }

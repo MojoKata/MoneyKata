@@ -1177,6 +1177,16 @@
  */
 
 /**
+ * @typedef {Object} LinkedFile
+ * @property {string} id
+ * @property {string} itemId
+ * @property {string} contentType
+ * @property {number} length
+ * @property {(string | null)} thumbnail
+ * @property {Object<string, unknown>} meta
+ */
+
+/**
  * @typedef {Object} LinkedPeople
  * @property {string} linkId
  * @property {string} serverName

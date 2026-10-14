@@ -7307,6 +7307,53 @@
         "title": "LastYear",
         "type": "object"
       },
+      "LinkedFile": {
+        "additionalProperties": false,
+        "properties": {
+          "contentType": {
+            "title": "Contenttype",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "itemId": {
+            "title": "Itemid",
+            "type": "string"
+          },
+          "length": {
+            "title": "Length",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "thumbnail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail"
+          }
+        },
+        "required": [
+          "id",
+          "itemId",
+          "contentType",
+          "length",
+          "thumbnail",
+          "meta"
+        ],
+        "title": "LinkedFile",
+        "type": "object"
+      },
       "LinkedPeople": {
         "additionalProperties": false,
         "properties": {
@@ -24033,6 +24080,103 @@
           }
         },
         "summary": "Doc",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
+    "/ui/api/linked/{link_id}/files": {
+      "get": {
+        "description": "The receipts that crossed with items shared with you (S11.5.1).",
+        "operationId": "files_ui_api_linked__link_id__files_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedFile"
+                  },
+                  "title": "Response Files Ui Api Linked  Link Id  Files Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Files",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
+    "/ui/api/linked/{link_id}/files/{file_id}": {
+      "get": {
+        "description": "A receipt, streamed through decryption into the answer: its plain bytes never touch the\ndisk, and its hash, signed at the source, is checked as it goes (S11.9.6.4, S11.9.6.5).",
+        "operationId": "file_ui_api_linked__link_id__files__file_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "File",
         "tags": [
           "linked"
         ]

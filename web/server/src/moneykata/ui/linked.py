@@ -256,3 +256,79 @@ def doc(link_id: str, path: str, request: Request, c: Caller = Depends(caller)):
     if body is None:
         raise Problem(404, "not-shared", "That isn't shared with you, or hasn't arrived yet.")
     return json.loads(body)
+
+
+class LinkedFile(Model):
+    id: str
+    itemId: str
+    contentType: str
+    length: int
+    thumbnail: str | None
+    meta: dict  # date, amount, payee, the text read, the transaction
+
+
+def _mine_items(conn, user_id: str) -> set[str]:
+    from ..links import copydb
+
+    return {
+        r.id
+        for r in conn.execute(select(copydb.Item.c.id, copydb.Item.c.viewers))
+        if user_id in json.loads(r.viewers or "[]")
+    }
+
+
+@router.get("/linked/{link_id}/files", response_model=list[LinkedFile])
+def files(link_id: str, request: Request, c: Caller = Depends(caller)):
+    """The receipts that crossed with items shared with you (S11.5.1)."""
+    from ..links import copydb
+
+    srv = server(request)
+    with srv.db.read() as s:
+        o = _open(srv, s, c, link_id)
+    with o.engine.connect() as conn:
+        mine = _mine_items(conn, c.id)
+        return [
+            LinkedFile(
+                id=r.id,
+                itemId=r.itemId,
+                contentType=r.contentType,
+                length=r.length,
+                thumbnail=r.thumbnail,
+                meta=json.loads(r.meta or "{}"),
+            )
+            for r in conn.execute(select(copydb.File))
+            if r.itemId in mine
+        ]
+
+
+@router.get("/linked/{link_id}/files/{file_id}")
+def file(link_id: str, file_id: str, request: Request, c: Caller = Depends(caller)):
+    """A receipt, streamed through decryption into the answer: its plain bytes never touch the
+    disk, and its hash, signed at the source, is checked as it goes (S11.9.6.4, S11.9.6.5)."""
+    import hashlib
+
+    from fastapi.responses import StreamingResponse
+
+    from ..links import copydb, sealed
+    from ..links.copy import folder, private_key
+
+    srv = server(request)
+    with srv.db.read() as s:
+        o = _open(srv, s, c, link_id)
+    with o.engine.connect() as conn:
+        row = conn.execute(select(copydb.File).where(copydb.File.c.id == file_id)).first()
+        if row is None or row.itemId not in _mine_items(conn, c.id):
+            raise Problem(404, "not-shared", "That receipt isn't shared with you.")
+    path = folder(srv.config.data_dir, link_id) / "receipts" / row.fileName
+    priv = private_key(bytes(o.key))
+
+    def stream():
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in sealed.open_sealed(priv, sealed.RECEIPT, link_id, file_id, f):
+                h.update(chunk)
+                yield chunk
+        if h.hexdigest() != row.sha256:
+            raise sealed.SealError("the receipt is not the one its source sent")
+
+    return StreamingResponse(stream(), media_type=row.contentType)

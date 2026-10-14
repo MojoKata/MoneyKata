@@ -128,6 +128,44 @@ def bitcoin_source(s: Session, server) -> Iterable[Cause]:
 
 
 @check
+def linked_servers(s: Session, server) -> Iterable[Cause]:
+    """A linked server failing for longer than the source threshold, and a link whose shares
+    wait for this side's access key (S12.11.1): admins."""
+    from .store.entities.links import Link, LinkedItem
+
+    limit = dt.timedelta(hours=settings.get(s, "alertSourceHours"))
+    now = clock.now()
+    for link in s.scalars(
+        select(Link).where(Link.deleted == false(), Link.state.in_(("active", "pending")))
+    ):
+        name = link.peerName or "A linked server"
+        if link.failingSince and link.lastError:
+            yield Cause(
+                key=f"link:{link.id}",
+                kind="source-failing",
+                title=f"{name} not reached for {_ago(now - link.failingSince)}",
+                about=f"linked server · {link.lastError}",
+                link="/ui/settings/links",
+                fix="Linked servers",
+                icon="link",
+                since=link.failingSince,
+                delay=limit,
+            )
+        if not link.copyPublicKey and s.scalars(
+            select(LinkedItem.id).where(LinkedItem.linkId == link.id)
+        ).first():
+            yield Cause(
+                key=f"link-key:{link.id}",
+                kind="link-key-waiting",
+                title=f"{name} shares something with people here",
+                about="its copy waits for an access key",
+                link="/ui/settings/links",
+                fix="Create the access key",
+                icon="link",
+            )
+
+
+@check
 def backups(s: Session, server) -> Iterable[Cause]:
     from .store.entities.core import TaskRun
 

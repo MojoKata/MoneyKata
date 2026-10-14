@@ -161,3 +161,30 @@ async def deliver(request: Request):
     except ChangeError as e:
         return refusal(request, signing.Refused("change-refused", str(e)))
     return answer(srv, out, caller.nonce)
+
+
+@router.post("/file")
+async def file(request: Request):
+    """One receipt's bytes, for a peer whose people may have it (S11.5.1): streamed through this
+    server's own decryption, its answer signed over the hash the change carried."""
+    from fastapi.responses import StreamingResponse
+
+    from .. import receipts
+    from ..store.entities.receipts import Receipt
+    from .serve import allowed_file
+
+    srv = request.app.state.server
+    try:
+        link, caller, body = await verified(request, ("active",))
+    except signing.Refused as e:
+        return refusal(request, e)
+    rid = str(json.loads(body or b"{}").get("id") or "")
+    if not allowed_file(srv, link.id, rid):
+        return refusal(request, signing.Refused("not-shared", "That receipt isn't shared."))
+    with srv.db.read() as s:
+        r = s.get(Receipt, rid)
+    k, _ = own(srv)
+    headers = signing.sign_answer(k, 200, b"", caller.nonce, digest=r.sha256)
+    return StreamingResponse(
+        receipts.read_file(srv, r), media_type="application/octet-stream", headers=headers
+    )
