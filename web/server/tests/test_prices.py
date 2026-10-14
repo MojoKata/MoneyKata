@@ -258,7 +258,7 @@ def test_typed_prices_win_and_only_for_holders(server):
 
 
 def test_sources_registered():
-    assert {"tiingo", "coinbase", "manual", "stub"} <= set(SOURCES)
+    assert {"tiingo", "coinbase", "manual", "stub", "cboe", "massive"} <= set(SOURCES)
 
 
 def test_a_server_that_holds_nothing_has_no_stale_prices(admin_client, server):
@@ -269,3 +269,34 @@ def test_a_server_that_holds_nothing_has_no_stale_prices(admin_client, server):
     assert admin_client.get("/ui/api/prices/status").json()["stale"] is False
     attention = admin_client.get("/ui/api/dashboard").json()["attention"]
     assert all(a["kind"] != "stale-prices" for a in attention)
+
+
+def test_cboe_marks_options_from_one_chain_per_underlying():
+    """CBOE's delayed quotes (S4.5): a chain fetched once marks every contract on it, at the
+    middle of the bid and the ask; SPX contracts are found under SPXW too."""
+    from pathlib import Path
+
+    from moneykata.prices.cboe import Cboe
+
+    chains = json.loads((Path(__file__).parent / "fixtures" / "cboe-chains.json").read_text())
+    client = FakeClient(lambda u: (200, chains[u.rsplit("/", 1)[-1].removesuffix(".json")]))
+    src = Cboe(client, None)
+    day = dt.date(2026, 10, 14)
+    start, end = day - dt.timedelta(days=5), day
+    leap = src.history(Ref("a", "O:AAPL270115C00230000", "option"), start, end)
+    assert leap == [(day, D("115.55"))]  # bid 114.30, ask 116.80
+    assert src.history(Ref("b", "O:AAPL261014C00245000", "option"), start, end) == [
+        (day, D("97.88"))  # (96.10 + 99.65) / 2 = 97.875, to the even cent
+    ]
+    weekly = src.history(Ref("c", "O:SPX261027C07570000", "option"), start, end)
+    assert weekly == [(day, D("183.05"))]
+    assert src.history(Ref("w", "O:SPXW261027C07570000", "option"), start, end) == weekly
+    assert src.history(Ref("d", "O:AAPL270115C00999000", "option"), start, end) == []
+    assert [u for u, _ in client.calls] == [
+        "https://cdn-api.cboe.com/api/global/delayed_quotes/options/AAPL.json",
+        "https://cdn-api.cboe.com/api/global/delayed_quotes/options/_SPX.json",
+    ]
+    # A chain older than the range asked for gives nothing.
+    assert (
+        src.history(Ref("a", "O:AAPL270115C00230000", "option"), end + dt.timedelta(1), end) == []
+    )

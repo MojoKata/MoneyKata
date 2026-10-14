@@ -10,9 +10,9 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S1.3.
 
-## G12: Option prices and wash-sale edges
+## G12: Adjusted contracts and wash-sale edges
 
-**What is missing:** an option price source tried against a live Massive key (the Basic plan's limits, its history for expired contracts, and how an adjusted contract after a split is named); index and weekly options' tickers; wash sales across a short sale, a loss on an option itself, and a replacement bought through an option assigned or exercised; and capital at risk for spreads and covered calls, which wait on strategies (S3.5).
+**What is missing:** how a contract adjusted after a split or a special dividend is named and priced (its OCC root changes, and CBOE lists it under the new one); wash sales across a short sale, a loss on an option itself, and a replacement bought through an option assigned or exercised; and capital at risk for spreads and covered calls, which wait on strategies (S3.5). Option prices come from CBOE's delayed quotes (S4.5); other sources are G19.
 
 **Touches:** S3.5, S3.8, S3.9, S4.5.
 
@@ -53,3 +53,14 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** small programs, each short enough for a person to read in full and trust, that hold an institution's credentials or personal access token outside MoneyKata, fetch what the institution offers (OFX, CSV, PDF statements), and post it to MoneyKata's import, so an account stays current without downloading and uploading by hand. To specify: where a connector runs (on the host, beside the server, or on a person's own machine) and how it keeps its credentials; the access token it posts with, limited to importing into the accounts it names, since today's tokens only read (S10.9); how its imports are checked and recorded (Activity, an alert when one fails); and the first connectors, for the average cases (a Schwab brokerage account, a UMB bank account).
 
 **Touches:** S1.3, S10.9, S13.7, S17.9.
+
+## G19: Other option price sources
+
+**For later consideration.** CBOE's delayed quotes (S4.5) aren't an official API and could change or close. The alternatives, each to be tried before it is relied on:
+
+- **Schwab Trader API** (official, free with a Schwab account): real-time chains and marks; its sign-in token lasts seven days, so it belongs in an external connector (G18), not the server.
+- **MarketData.app** (official, a free key with a daily request limit): chains and end-of-day quotes.
+- **Massive** (formerly Polygon.io), Basic plan: shipped as the fallback (S4.3) but not yet tried with a live key: its limits, its history for expired contracts.
+- **Tradier** (official, free with an account): delayed chains.
+
+**Touches:** S4.3, S4.5, G18.

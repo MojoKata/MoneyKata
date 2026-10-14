@@ -29,7 +29,8 @@
    | Crypto, other coins | **CoinGecko** Demo plan | free | about 10,000 calls a month; attribution required, shown in Settings and on charts that use it |
    | Gold spot | **PAXG** (a token backed by one troy ounce of gold), from Coinbase | none | tracks spot closely; a proxy |
    | Silver, platinum and palladium spot | **SLV**, **PPLT** and **PALL** from Tiingo, divided by each fund's metal per share | free | the metal per share ships with the tax tables (S16.11) and is updated with them; within a fraction of a percent of spot |
-   | Options | **Massive** (formerly Polygon.io), Basic plan | free | end-of-day prices and two years of history; 5 calls a minute, each page of a result counting as one |
+   | Options | **CBOE delayed quotes** | none | the JSON behind cboe.com's quote pages: an underlying's whole chain in one answer, 15 minutes delayed, read after the close. Not an official API: CBOE offers it for personal, non-commercial use and may change it, so Settings says so |
+   | Options, fallback | **Massive** (formerly Polygon.io), Basic plan | free | end-of-day prices and two years of history; 5 calls a minute, each page of a result counting as one |
    | Treasuries, I bonds and EE bonds | computed | — | from the Treasury's published yield curve and savings-bond rates, which are free official data |
    | No free ticker: 529 portfolios, 401(k) collective trusts, individual corporate and municipal bonds | **manual** | — | a value from a statement or an import, or a typed price, with its date. A statement value older than 90 days is marked stale and raises an alert (S12.11) |
 
@@ -42,8 +43,16 @@
    threshold raises an alert (S12.11). Intraday quotes are not fetched.
 5. **Option marks**: the day's close from the source that serves options, else manual or
    intrinsic value (S3.7). A close older than the last trading day is marked stale.
-   Massive is asked for an option by its OCC ticker (`O:MSFT261120P00480000`: underlying,
-   expiry, put or call, and the strike in thousandths). A typed mark is a price on the
+   An option is named by its OCC ticker (`O:MSFT261120P00480000`: underlying, expiry, put or
+   call, and the strike in thousandths).
+   1. **CBOE** is asked for each underlying's chain once a day, after the close, and every
+      held contract on it is marked from that one answer: at the middle of its bid and ask,
+      rounded to the cent, or at its last trade when it has no two-sided quote. The mark is
+      dated by the underlying's last trade, so a chain read on a holiday adds nothing new.
+   2. **Index options** are in their index's chain (`_SPX`), where weeklies and PM-settled
+      contracts carry their own root: an SPX contract is looked for as SPX and then SPXW,
+      and likewise NDX and NDXP, RUT and RUTW, VIX and VIXW.
+   3. **Massive** is asked for one contract at a time, with its history. A typed mark is a price on the
    option's instrument, entered from the open position (**Type a mark**). Intrinsic value is
    the underlying's latest close past the strike, never below zero. The Open tab labels a
    mark that is typed or intrinsic. Greeks
