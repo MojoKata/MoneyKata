@@ -319,6 +319,7 @@ function copies(live, values, reload, act, release, armed, setArmed) {
                 <tr>
                   <th>Link</th>
                   <th>Copy</th>
+                  <th>Waiting</th>
                   <th>Access key</th>
                   <th>State</th>
                   <th></th>
@@ -335,6 +336,9 @@ function copies(live, values, reload, act, release, armed, setArmed) {
                     <td class="small">${size(c.sizeBytes)}${c.receipts
                       ? ` · ${c.receipts} receipt${c.receipts === 1 ? '' : 's'}`
                       : ''}</td>
+                    <td class="small">${c.waiting
+                      ? `${c.waiting} change${c.waiting === 1 ? '' : 's'}`
+                      : html`<span class="dim">none</span>`}</td>
                     <td class="small">${c.keyMadeAt
                       ? html`${date(c.keyMadeAt)}<div class="dim">by ${
                         c.keyMadeBy || 'an admin'

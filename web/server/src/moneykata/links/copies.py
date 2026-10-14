@@ -1,6 +1,7 @@
 """Linked copies as people and admins use them (requirements S11.9): making the access key,
 unlocking, locking and resetting a copy, with each recorded in Activity (S11.8)."""
 
+import contextlib
 import json
 
 from sqlalchemy import false, select
@@ -59,6 +60,12 @@ def unlock(srv, link_id: str, user_id: str, words: str) -> None:
         raise
     with srv.db.tx() as s:
         activity.record(s, "link.copy-unlocked", actor=user_id, for_admins=True)
+    from .changes import ChangeError, apply
+
+    # What arrived while it was locked is applied now (S11.9.5.3); a change that fails is
+    # reported on the link and the copy stays as it was.
+    with contextlib.suppress(ChangeError):
+        apply(srv, link_id)
 
 
 def lock(srv, link_id: str, user_id: str, admin: bool) -> None:

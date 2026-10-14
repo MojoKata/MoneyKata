@@ -36,7 +36,9 @@ begin then.
 
 The first person its shares name who opens the household's window enters the words; the copy then
 stays unlocked for everyone it shares with, each seeing only what names them, until it goes unused.
-Each copy shows its size, when its key was made and by whom, and who unlocked it. **Lock now**
+Each copy shows its size, the changes **waiting** (pulled while it was locked, sealed so only its
+words open them, and applied when it is next unlocked), when its key was made and by whom, and who
+unlocked it. **Lock now**
 locks it at once. **Reset copy** (if the words are lost) deletes the copy and its key: make a new
 access key, and everything is pulled again from the other server, where nothing was lost.
 

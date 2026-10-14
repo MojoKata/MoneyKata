@@ -28,6 +28,9 @@ class Link(Record):
     copyPublicKey: str | None = None
     copyKeyAt: dt.datetime | None = None
     copyKeyById: str | None = None
+    pulledAt: dt.datetime | None = None
+    inboxAsOf: dt.datetime | None = None
+    needsFull: bool = False
 
 
 @dataclass(kw_only=True, eq=False)

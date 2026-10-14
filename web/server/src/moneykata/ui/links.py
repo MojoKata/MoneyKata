@@ -35,6 +35,7 @@ class CopyOut(Model):
     sizeBytes: int
     receipts: int
     items: int
+    waiting: int  # changes pulled while it was locked
     unlocked: bool
     unlockedBy: str | None
     unlockedAt: dt.datetime | None
@@ -82,6 +83,7 @@ def _copy(s, srv, link: Link) -> CopyOut | None:
     from sqlalchemy import func
 
     from ..links import copies
+    from ..links.changes import waiting
     from ..store.entities.links import LinkedItem
 
     size, receipts = copies.size(srv, link.id)
@@ -97,6 +99,7 @@ def _copy(s, srv, link: Link) -> CopyOut | None:
         items=s.scalar(
             select(func.count()).select_from(LinkedItem).where(LinkedItem.linkId == link.id)
         ),
+        waiting=len(waiting(srv.config.data_dir, link.id)),
         unlocked=o is not None,
         unlockedBy=who.displayName if who else None,
         unlockedAt=o.at if o else None,

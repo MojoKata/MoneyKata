@@ -10,6 +10,7 @@ from sqlalchemy import false, select
 from .. import settings
 from ..errors import Problem
 from ..links import copies
+from ..links.changes import waiting
 from ..links.copy import CopyError
 from ..store.entities.links import Link, LinkedItem
 from ..store.entities.users import User
@@ -32,6 +33,8 @@ class Household(Model):
 class CopyState(Model):
     household: Household
     hasKey: bool  # an admin has created the access key
+    waiting: int  # changes pulled while it was locked
+    pulledAt: dt.datetime | None
     unlockedBy: str | None
     unlockedAt: dt.datetime | None
     locksInSeconds: int | None
@@ -93,6 +96,8 @@ def _state(srv, s, c: Caller, link_id: str) -> CopyState:
     return CopyState(
         household=_household(srv, link, mine[link.id]),
         hasKey=bool(link.copyPublicKey),
+        waiting=len(waiting(srv.config.data_dir, link_id)),
+        pulledAt=link.pulledAt,
         unlockedBy=who.displayName if who else None,
         unlockedAt=o.at if o else None,
         locksInSeconds=int(left) if left is not None else None,

@@ -422,6 +422,7 @@
  * @property {number} sizeBytes
  * @property {number} receipts
  * @property {number} items
+ * @property {number} waiting
  * @property {boolean} unlocked
  * @property {(string | null)} unlockedBy
  * @property {(string | null)} unlockedAt
@@ -432,6 +433,8 @@
  * @typedef {Object} CopyState
  * @property {moneykata__ui__linked__Household} household
  * @property {boolean} hasKey
+ * @property {number} waiting
+ * @property {(string | null)} pulledAt
  * @property {(string | null)} unlockedBy
  * @property {(string | null)} unlockedAt
  * @property {(number | null)} locksInSeconds

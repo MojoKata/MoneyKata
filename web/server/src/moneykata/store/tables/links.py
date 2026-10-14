@@ -35,6 +35,11 @@ Link = record(
     Column("copyPublicKey", Text),
     Column("copyKeyAt", UtcTimestamp),
     Column("copyKeyById", Text, ForeignKey("User.id")),
+    # Pulls (S11.4, S11.9.5): when the last one arrived, the newest change waiting in the inbox,
+    # and whether the next pull asks for everything again (a reset copy, an inbox overflowed).
+    Column("pulledAt", UtcTimestamp),
+    Column("inboxAsOf", UtcTimestamp),
+    Column("needsFull", Boolean, nullable=False, server_default=text("0")),
     CheckConstraint(
         "state IN ('invited', 'requested', 'pending', 'active', 'paused', 'ended')", name="state"
     ),

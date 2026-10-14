@@ -2508,6 +2508,10 @@
               }
             ],
             "title": "Unlockedby"
+          },
+          "waiting": {
+            "title": "Waiting",
+            "type": "integer"
           }
         },
         "required": [
@@ -2516,6 +2520,7 @@
           "sizeBytes",
           "receipts",
           "items",
+          "waiting",
           "unlocked",
           "unlockedBy",
           "unlockedAt",
@@ -2545,6 +2550,18 @@
             ],
             "title": "Locksinseconds"
           },
+          "pulledAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pulledat"
+          },
           "unlockedAt": {
             "anyOf": [
               {
@@ -2567,11 +2584,17 @@
               }
             ],
             "title": "Unlockedby"
+          },
+          "waiting": {
+            "title": "Waiting",
+            "type": "integer"
           }
         },
         "required": [
           "household",
           "hasKey",
+          "waiting",
+          "pulledAt",
           "unlockedBy",
           "unlockedAt",
           "locksInSeconds"
