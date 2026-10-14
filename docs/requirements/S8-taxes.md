@@ -101,3 +101,9 @@ produces worksheets and exports. It never files, and says so (R1.16).
 18. **What MoneyKata does not do**: compute the tax owed, choose a filing status, apply state
     rules, or decide questions of judgement (substantially identical, cost-basis elections).
     It shows the numbers and their sources.
+19. **Bitcoin network fees**: paying a network fee in bitcoin disposes of that bitcoin, and
+    is recorded as a **sale** of the fee's sats at their market value that day, taken from
+    the lots like any sale, its small gain or loss in the Form 8949 rows. This is the common
+    reading and the default; a tax book's settings can treat fees on transfers between the
+    owner's own accounts as not taxed instead, for a preparer who reads it so, and the
+    exports say which was used.

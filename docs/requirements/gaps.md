@@ -16,12 +16,6 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S3.5, S3.8, S3.9, S4.5.
 
-## G13: Bitcoin wallets beyond the common case
-
-**What is missing:** tried against live nodes (Fulcrum, electrs, Bitcoin Core 27 and later, a self-hosted mempool); pinning an Electrum server's certificate rather than accepting the one it presents; taproot (`tr()`) and multisig wallets from their descriptors; matching a transfer out of a wallet with the transfer in at an exchange or another wallet (S1.7) so the basis carries over; the network fee as a disposal of its own for taxes; and a reorganised chain removing a transaction already recorded.
-
-**Touches:** S1.6, S1.7, S8.
-
 ## G14: Linked households beyond the first build
 
 **What is missing:** the window's fuller screens (Positions, a projection's charts, a giving plan's months and organisations, a budget's cash flow and recurring payments), which each need their documents added to what the source sends; a separate listener port for `/link` (it is served under the public address's `/link/` path, for a reverse proxy to expose apart); links tried across two real networks (an overlay such as Tailscale, and a forwarded port), not only two servers on one host; the linked window in the generated mockup; and how much a large household's first full snapshot weighs.
@@ -39,12 +33,6 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** the end of each kind of record beyond the few in `schema.md` §6.2, and what a record shows for one it names that has been deleted or pruned. A gift to a person who was deleted is still money spent, and stays with the year's spending, but who it was given to is open: kept as the person's name at the time, shown as a deleted person, or left blank. The same question arises wherever a record outlives what it names: a donation and its organisation, a transaction and its category or payee, a budget line and its category, a share and its user, a contribution and its 529 plan's beneficiary.
 
 **Touches:** S1, S5, S6, S7, S14.10, `schema.md` §4, §6.
-
-## G17: Bitcoin amounts in sats
-
-**What is missing:** bitcoin amounts as whole numbers of sats, the unit bitcoin itself counts in: stored and sent as integers (on-chain balances, transaction amounts, fees, a bitcoin lot's units), which JSON and the browser carry exactly as plain numbers, since every possible amount is below 2^53. A Profile preference shows them as **sats** (`12,345,678 sats`) or **BTC** (`0.12345678 BTC`), the conversion done only in formatting. Today they are decimal quantities like any other (S13.8.2).
-
-**Touches:** S1.6, S3, S12, S13.8.2, `schema.md`.
 
 ## G18: External connectors
 

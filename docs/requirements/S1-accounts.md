@@ -111,8 +111,10 @@
    exports and statements, one import mapping per exchange. Reading an exchange through its
    API comes later ([out of scope](out-of-scope.md)).
 6. **Self-custody wallets** hold **bitcoin**. Other coins and chains come later ([out of scope](out-of-scope.md)).
-   1. **What the account holds**: addresses, or an **xpub/ypub/zpub** from which addresses
-      are derived (with a gap limit of 20 unused addresses by default).
+   1. **What the account holds**: addresses, an **xpub/ypub/zpub**, or an **output
+      descriptor**, from which addresses are derived (with a gap limit of 20 unused addresses
+      by default). Where a choice isn't settled here, MoneyKata does as Sparrow does, so a
+      wallet exported from Sparrow derives the same addresses.
       1. An xpub's addresses are legacy (1…), a ypub's nested segwit (3…) and a zpub's
          native segwit (bc1q…), on the receive chain (0/i) and the change chain (1/i).
          Addresses typed are checked: legacy, script (3…), native segwit and taproot (bc1p…).
@@ -121,6 +123,13 @@
          last used one are unused; when the explorer or node finds one used, more are
          derived. The account's Settings lists the addresses watched, by chain and index.
       3. Taking a key or address out of the list stops watching its addresses.
+      4. **Descriptors**, as Sparrow, Nunchuk and Bitcoin Core export them: single-key
+         `pkh()`, `sh(wpkh())`, `wpkh()` and `tr()` (taproot, BIP 86), and multisig
+         `wsh(sortedmulti(k, …))` and `wsh(multi(k, …))`, each key with its origin
+         (`[fingerprint/path]xpub…`) and a `/0/*` and `/1/*` or `/<0;1>/*` ending. The
+         descriptor's checksum is checked when it has one. A multisig wallet's addresses are
+         derived from all its keys, and only its public keys are ever held. Miniscript
+         policies beyond these come after the first release (S17.9).
    2. **Where balances and history come from**, set by an admin in Settings › Bitcoin:
       1. a **public explorer** with the Esplora API (mempool.space by default, or
          Blockstream);
@@ -131,28 +140,50 @@
          MoneyKata reach it on the LAN; its credentials are a secret (S14.4).
       3. **How each is read.** Esplora: each address's transactions over HTTPS, with every
          input's previous output, so each transaction's effect on the wallet is known. An
-         Electrum server: each address's history by its script hash over TCP (TLS by default,
-         its own certificate accepted), and the raw transactions, read by MoneyKata. Bitcoin
+         Electrum server: each address's history by its script hash over TCP (TLS by default),
+         and the raw transactions, read by MoneyKata; its certificate is trusted on first use
+         (below). Bitcoin
          Core over JSON-RPC: a watch-only descriptor wallet for each wallet account
          (`moneykata-<account id>`), its keys imported as descriptors over the addresses
          derived, rescanned from the start the first time, then its transactions listed. Only
          public keys and addresses are ever sent.
-      4. **When**: every hour, and at once with the wallet's **Check now**. **Test** in
+      4. **An Electrum server's certificate** is trusted on first use: **Test** in Settings ›
+         Bitcoin shows its SHA-256 fingerprint, an admin confirms it, and it is kept. A server
+         that later presents another certificate is refused, and admins alerted (*the node's
+         certificate changed*), until an admin confirms the new one, as Sparrow does.
+      5. **When**: every hour, and at once with the wallet's **Check now**. **Test** in
          Settings › Bitcoin asks the saved explorer or node for the chain's height. A failure
          lasting past the alert threshold alerts admins and each wallet's owner (S12.11); its
          message never names an address or an amount.
-      5. **What is recorded**: each confirmed transaction once, by its txid. Bitcoin received
-         is a **transfer in** of BTC without a basis, to be entered (Taxes lists it as
-         missing); bitcoin sent is a **transfer out**, its network fee included and noted. A
-         transfer out that was a sale or a payment is changed to one by its owner.
-         Unconfirmed transactions wait. The first coins held start a price refresh, so the
-         wallet is valued at once.
+      6. **What is recorded**: each transaction once, by its txid, once it has **6
+         confirmations** (about an hour); until then it waits. Bitcoin received is a
+         **transfer in** of BTC without a basis, to be entered (Taxes lists it as missing)
+         unless it is matched to a transfer out of another of the owner's accounts (S1.7.1);
+         bitcoin sent is a **transfer out**, its network fee recorded with it (S8.19). A
+         transfer out that was a sale or a payment is changed to one by its owner. The first
+         coins held start a price refresh, so the wallet is valued at once.
+      7. **A reorganised chain**: a recorded transaction that the explorer or node no longer
+         has is never deleted silently. It is marked *no longer on the chain* and the owner
+         alerted, to keep or delete it.
    3. The form **refuses anything that looks like a private key or seed phrase** (WIF, 64
       hex digits, 12 or 24 BIP-39 words, an extended private key such as an xprv), says why,
       and never stores or logs it. The browser clears it from the form as it is typed, before
       anything is sent; the server checks again and its refusal never repeats it.
+   4. **Amounts in sats.** Bitcoin is counted in whole **sats** (100,000,000 to the bitcoin),
+      as bitcoin itself counts: a wallet's balance, a transaction's amount and fee, and a
+      lot's quantity are integers, stored and sent as integers (S13.8.2), exact in every
+      client since no amount of bitcoin reaches 2^53 sats. Each user chooses in Profile
+      whether they are shown as **BTC** (`0.12345678 BTC`, the default) or **sats**
+      (`12,345,678 sats`);
+      the conversion is only in how they are shown. A price is per bitcoin, in dollars.
 7. **Transfers** between two of a user's accounts are matched (same amount, a few days apart),
    so they count neither as spending nor as income, nor as a buy or sell of cash.
+   1. **Bitcoin moved between the owner's accounts** (a wallet and an exchange, or two
+      wallets): a transfer out and a transfer in of the same amount less the network fee,
+      within 3 days, are **proposed** as a pair, and the owner confirms or rejects it. Once
+      confirmed, the coins arrive with the **lots they left with**: their basis and the day
+      each was acquired carry over, the fee aside (S8.19), so nothing is missing a basis and
+      nothing is taxed. A transfer in left unmatched stays missing its basis (S8.4).
 8. **529 plans.** A `529` account holds funds and cash like a brokerage account, plus:
    1. **The plan**: its state and name, the **beneficiary** (a person, S7.7, or a user), the
       opening date, and the state tax deduction the owner expects per year (typed: state
