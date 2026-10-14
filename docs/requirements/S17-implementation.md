@@ -233,4 +233,34 @@
       8. **The MCP endpoint** (S10.9): `/mcp` over Streamable HTTP, read-only tools through
          the user's shares, limited and recorded in Activity.
       9. **The mockup** generated from the app for these screens, and the Docker image.
-   5. **Milestone 5**: linked servers and linked households (S11, S12.10, G1).
+   5. **Milestone 5**, in nine parts:
+      1. **Link keys and the protocol** (S11.1.3, G1): each server's Ed25519 link key,
+         signed calls with their timestamp and nonce checks, the `/link` listener, the
+         `Link` record, and `docs/link-protocol.md` with how versions differ.
+      2. **Invitations** (S11.1, S11.6, S11.7): the link code, the request and its
+         approval, Settings › Linked servers with Pause and End link, and each side's
+         active users and household name and avatar sent at every exchange, kept as remote
+         `User` records.
+      3. **Sharing with linked people** (S10.3.3, S10.4): the Share dialog's people on each
+         linked server (None · Read) and Include receipts, and shares suspended or removed
+         with their remote user or link.
+      4. **The linked copy and its access key** (S11.9.1–S11.9.4, S11.9.8): the copy's
+         folder and SQLCipher database, the 12-word access key and the keys derived from it,
+         unlocking with its limits, the sweeper that locks an unused copy, Lock now and
+         Reset copy.
+      5. **Sealed files** (S11.9.5, S11.9.6): the streaming MKR1 format, the inbox of sealed
+         changes applied in order once unlocked with each signature checked, receipts
+         written straight into the copy, and the full snapshot when the inbox overflows.
+      6. **Pulls** (S11.3.1, S11.4, S11.5, S11.8): each shared item worked out at its source
+         as the people it names see it, versioned so only changes travel, signed, pulled
+         hourly and on Pull now by whichever side can reach the other, copies deleted when a
+         share or link ends, and each pull recorded on both sides.
+      7. **The linked household window** (S12.10): the avatar menu and the Linked households
+         card, `/ui/linked/<link-id>/` with the household's avatar and name, a colour per
+         user, the header strip, the locked state asking for the words, and the screens
+         read only from the copy.
+      8. **Alerts and receipts across links** (S11.5.1, S12.11): a failing link and a first
+         share waiting for its access key alerted, receipts and tax documents shown from the
+         copy through decryption, and what an older or newer peer does.
+      9. **The mockup** generated from the app for these screens, and the Docker image, with
+         two servers linked.
