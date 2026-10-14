@@ -25,7 +25,7 @@ from . import activity, clock, ratelimit, tokens
 from .errors import Problem
 from .store.entities.users import AccessToken
 
-router = APIRouter(tags=["mcp"])
+router = APIRouter(tags=["mcp"], include_in_schema=False)  # not part of the UI's contract
 VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
 LIMIT = ratelimit.Window(60, 60)
 INSTRUCTIONS = (
