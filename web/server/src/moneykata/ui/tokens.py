@@ -116,8 +116,6 @@ def revoke_token(token_id: str, request: Request, c: Caller = Depends(caller)):
         t = s.get(AccessToken, token_id)
         if t is None or t.deleted or t.userId != c.id:
             raise Problem(404, "not-found", "No such token.")
-        t.deleted = True
-        t.deletedAt = clock.now()
-        t.deletedById = c.id
+        t.mark_deleted(c.id)
         activity.record(s, "token.revoked", actor=c.id, owner=c.id, detail={"name": t.name})
     return Response(status_code=204)

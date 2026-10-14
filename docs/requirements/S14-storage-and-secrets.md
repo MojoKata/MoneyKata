@@ -16,12 +16,15 @@
    3. **Revisions:** each change to the tables is a numbered Alembic revision, generated,
       reviewed by hand and committed, and a test fails when tables and revisions disagree.
       At start the server copies the database (verified) and then migrates it, one revision
-      per transaction.
+      per transaction. A committed revision is never changed: a change is a new revision.
+      Until the first release, the revisions may be folded into one baseline, keeping at least
+      one revision after it so a test can carry rows written at the baseline through the
+      server's own upgrade.
    4. **Access:** each table has a repository module. A unit of work is `Database.tx()`
       (`BEGIN IMMEDIATE`) or `Database.read()` (`PRAGMA query_only`, which refuses any
       write). Foreign keys are on, with a 10-second busy timeout.
-   5. **Soft deletes**: records are never removed. Deleting one sets its `deleted`,
-      `deletedAt` and `deletedById`, and each table's view works out whether a record is
+   5. **Soft deletes**: records are never removed. Deleting one sets its `deletedAt` and
+      `deletedById` (its `deleted` is generated from `deletedAt`), and each table's view works out whether a record is
       deleted through the records it belongs to. [`schema.md`](schema.md) (S1) sets the
       fields, the views and the few exceptions.
 2. **Receipts** are files beside it (S9.2), owned by the server's account, mode 0600 in a

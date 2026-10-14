@@ -374,9 +374,10 @@ def show_on_dashboard(
             if body.shown:
                 s.add(ShownProjection(userId=c.id, projectionId=p.id, createdAt=clock.now()))
         else:
-            row_.deleted = not body.shown
-            row_.deletedAt = None if body.shown else clock.now()
-            row_.deletedById = None if body.shown else c.id
+            if body.shown:
+                row_.restore()
+            else:
+                row_.mark_deleted(c.id)
     return body
 
 

@@ -174,10 +174,10 @@ def _set_accounts(s, b: Budget, wanted: list[str], by: str) -> None:
         if m is None:
             s.add(BudgetAccount(budgetId=b.id, accountId=aid, createdAt=now))
         elif m.deleted:
-            m.deleted, m.deletedAt, m.deletedById = False, None, None
+            m.restore()
     for aid, m in current.items():
         if aid not in wanted and not m.deleted:
-            m.deleted, m.deletedAt, m.deletedById = True, now, by
+            m.mark_deleted(by, now)
 
 
 def _month(value: str | None) -> dt.date:

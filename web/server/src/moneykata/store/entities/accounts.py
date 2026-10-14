@@ -2,7 +2,7 @@ import datetime as dt
 from dataclasses import dataclass
 from decimal import Decimal
 
-from . import Record
+from . import Record, SoftDeleted
 
 
 @dataclass(kw_only=True, eq=False)
@@ -116,12 +116,11 @@ class Split(Record):
 
 
 @dataclass(kw_only=True, eq=False)
-class TransactionTag:
+class TransactionTag(SoftDeleted):
     transactionId: str
     userId: str
     tag: str
     createdAt: dt.datetime
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
 
@@ -139,12 +138,11 @@ class Lot(Record):
 
 
 @dataclass(kw_only=True, eq=False)
-class LotPick:
+class LotPick(SoftDeleted):
     saleId: str
     lotId: str
     quantity: Decimal
     createdAt: dt.datetime
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
 

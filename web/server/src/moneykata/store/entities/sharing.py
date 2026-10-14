@@ -1,7 +1,7 @@
 import datetime as dt
 from dataclasses import dataclass
 
-from . import Record
+from . import Record, SoftDeleted
 
 
 @dataclass(kw_only=True, eq=False)
@@ -14,11 +14,10 @@ class Portfolio(Record):
 
 
 @dataclass(kw_only=True, eq=False)
-class PortfolioAccount:
+class PortfolioAccount(SoftDeleted):
     portfolioId: str
     accountId: str
     createdAt: dt.datetime
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
 
@@ -36,11 +35,10 @@ class Share(Record):
 
 
 @dataclass(kw_only=True, eq=False)
-class CountedAccount:
+class CountedAccount(SoftDeleted):
     userId: str
     accountId: str
     createdAt: dt.datetime
     counted: bool = True
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None

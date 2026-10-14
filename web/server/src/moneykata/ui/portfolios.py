@@ -167,10 +167,10 @@ def _set_members(s, p: Portfolio, wanted: list[str], by: str) -> None:
         if m is None:
             s.add(PortfolioAccount(portfolioId=p.id, accountId=aid, createdAt=now))
         elif m.deleted:
-            m.deleted, m.deletedAt, m.deletedById = False, None, None
+            m.restore()
     for aid, m in current.items():
         if aid not in wanted and not m.deleted:
-            m.deleted, m.deletedAt, m.deletedById = True, now, by
+            m.mark_deleted(by, now)
 
 
 @router.get("/portfolios", response_model=list[PortfolioRow])

@@ -1,9 +1,10 @@
 """Maps each entity onto its table (requirements S14.1.2). Imported once, at start."""
 
 from sqlalchemy import event
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import registry
 
-from .entities import Record, _now
+from .entities import Record, SoftDeleted, _now
 from .entities import accounts as acc
 from .entities import assets as asx
 from .entities import budgets as bd
@@ -53,8 +54,21 @@ mapper_registry = registry()
 _done = False
 
 
+def _map(entity, table, **kw) -> None:
+    """Map an entity. A soft-deleting table's `deleted` is generated from `deletedAt` (schema.md
+    §4.1), so the ORM never writes it: the entity's property reads it, and in a query it is
+    `deletedAt IS NOT NULL`."""
+    if not table.info.get("softDelete"):
+        mapper_registry.map_imperatively(entity, table, **kw)
+        return
+    mapper_registry.map_imperatively(entity, table, exclude_properties=["deleted"], **kw)
+    entity.deleted = hybrid_property(
+        SoftDeleted.deleted.fget, expr=lambda cls: cls.deletedAt.is_not(None)
+    )
+
+
 def _versioned(entity, table, **kw) -> None:
-    mapper_registry.map_imperatively(entity, table, version_id_col=table.c.version, **kw)
+    _map(entity, table, version_id_col=table.c.version, **kw)
 
 
 def map_all() -> None:
@@ -65,13 +79,13 @@ def map_all() -> None:
     _versioned(User, users.User)
     _versioned(Group, users.Group)
     _versioned(AccessToken, users.AccessToken)
-    mapper_registry.map_imperatively(UserGroup, users.UserGroups)
-    mapper_registry.map_imperatively(Session, users.Session)
-    mapper_registry.map_imperatively(OneTimeToken, users.OneTimeToken)
-    mapper_registry.map_imperatively(RecoveryCode, users.RecoveryCode)
-    mapper_registry.map_imperatively(SignupRequest, users.SignupRequest)
-    mapper_registry.map_imperatively(Alert, alerts.Alert)
-    mapper_registry.map_imperatively(AlertState, alerts.AlertState)
+    _map(UserGroup, users.UserGroups)
+    _map(Session, users.Session)
+    _map(OneTimeToken, users.OneTimeToken)
+    _map(RecoveryCode, users.RecoveryCode)
+    _map(SignupRequest, users.SignupRequest)
+    _map(Alert, alerts.Alert)
+    _map(AlertState, alerts.AlertState)
     for entity, table in (
         (acc.Category, accounts.Category),
         (acc.Account, accounts.Account),
@@ -107,36 +121,36 @@ def map_all() -> None:
         (acc.Reconciliation, accounts.Reconciliation),
     ):
         _versioned(entity, table)
-    mapper_registry.map_imperatively(acc.TransactionTag, accounts.TransactionTags)
-    mapper_registry.map_imperatively(acc.LotPick, accounts.LotPicks)
+    _map(acc.TransactionTag, accounts.TransactionTags)
+    _map(acc.LotPick, accounts.LotPicks)
     _versioned(pr.PriceSource, prices.PriceSource)
     _versioned(pr.Price, prices.Price)
     _versioned(sh.Portfolio, sharing.Portfolio)
     _versioned(sh.Share, sharing.Share)
-    mapper_registry.map_imperatively(sh.PortfolioAccount, sharing.PortfolioAccounts)
+    _map(sh.PortfolioAccount, sharing.PortfolioAccounts)
     _versioned(bd.Budget, budgets.Budget)
     _versioned(bd.BudgetLine, budgets.BudgetLine)
-    mapper_registry.map_imperatively(bd.BudgetAccount, budgets.BudgetAccounts)
+    _map(bd.BudgetAccount, budgets.BudgetAccounts)
     _versioned(rc.Receipt, receipts.Receipt)
-    mapper_registry.map_imperatively(rc.ReceiptLink, receipts.ReceiptLinks)
-    mapper_registry.map_imperatively(ed.GiftPerson, people.GiftPersons)
-    mapper_registry.map_imperatively(acc.WashSale, options.WashSale)
-    mapper_registry.map_imperatively(acc.WalletAddress, wallets.WalletAddress)
-    mapper_registry.map_imperatively(tx.TaxBookFiler, taxes.TaxBookFilers)
-    mapper_registry.map_imperatively(tx.TaxBookAccount, taxes.TaxBookAccounts)
+    _map(rc.ReceiptLink, receipts.ReceiptLinks)
+    _map(ed.GiftPerson, people.GiftPersons)
+    _map(acc.WashSale, options.WashSale)
+    _map(acc.WalletAddress, wallets.WalletAddress)
+    _map(tx.TaxBookFiler, taxes.TaxBookFilers)
+    _map(tx.TaxBookAccount, taxes.TaxBookAccounts)
     _versioned(pj.AssumptionSet, projections.AssumptionSet)
     _versioned(pj.Projection, projections.Projection)
     _versioned(pj.TaxFigure, projections.TaxFigure)
-    mapper_registry.map_imperatively(pj.ShownProjection, projections.ShownProjections)
-    mapper_registry.map_imperatively(sh.CountedAccount, sharing.CountedAccounts)
+    _map(pj.ShownProjection, projections.ShownProjections)
+    _map(sh.CountedAccount, sharing.CountedAccounts)
     _versioned(Setting, core.Setting)
     _versioned(lk.Link, links.Link)
-    mapper_registry.map_imperatively(lk.LinkedItem, links.LinkedItem)
-    mapper_registry.map_imperatively(lk.LinkSent, links.LinkSent)
-    mapper_registry.map_imperatively(lk.LinkColour, links.LinkColours)
-    mapper_registry.map_imperatively(Secret, core.Secret)
-    mapper_registry.map_imperatively(TaskRun, core.TaskRun)
-    mapper_registry.map_imperatively(Activity, activity.Activity)
+    _map(lk.LinkedItem, links.LinkedItem)
+    _map(lk.LinkSent, links.LinkSent)
+    _map(lk.LinkColour, links.LinkColours)
+    _map(Secret, core.Secret)
+    _map(TaskRun, core.TaskRun)
+    _map(Activity, activity.Activity)
 
 
 @event.listens_for(Record, "before_update", propagate=True)

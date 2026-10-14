@@ -2,7 +2,7 @@ import datetime as dt
 from dataclasses import dataclass
 from decimal import Decimal
 
-from . import Record
+from . import Record, SoftDeleted
 
 
 @dataclass(kw_only=True, eq=False)
@@ -84,10 +84,9 @@ class Gift(Record):
 
 
 @dataclass(kw_only=True, eq=False)
-class GiftPerson:
+class GiftPerson(SoftDeleted):
     giftId: str
     personId: str
     createdAt: dt.datetime
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None

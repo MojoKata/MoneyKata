@@ -1,5 +1,6 @@
 import datetime as dt
 import os
+import re
 import shutil
 import sqlite3
 
@@ -151,13 +152,13 @@ def test_effective_views_follow_what_records_belong_to(tmp_path):
         )
         row = conn.exec_driver_sql('SELECT "effectiveDeleted" FROM "PartEffective"').one()
         assert row[0] == 0
-        conn.exec_driver_sql(f"""UPDATE "Thing" SET deleted = 1, "deletedAt" = '{later}'""")
-        conn.exec_driver_sql(f"""UPDATE "Part" SET deleted = 1, "deletedAt" = '{now}'""")
+        conn.exec_driver_sql(f"""UPDATE "Thing" SET "deletedAt" = '{later}'""")
+        conn.exec_driver_sql(f"""UPDATE "Part" SET "deletedAt" = '{now}'""")
         row = conn.exec_driver_sql(
             'SELECT "effectiveDeleted", "effectiveDeletedAt" FROM "PartEffective"'
         ).one()
         assert row == (1, now)  # the earliest along the chain
-        conn.exec_driver_sql("""UPDATE "Part" SET deleted = 0, "deletedAt" = NULL""")
+        conn.exec_driver_sql("""UPDATE "Part" SET "deletedAt" = NULL""")
         row = conn.exec_driver_sql(
             'SELECT "effectiveDeleted", "effectiveDeletedAt" FROM "PartEffective"'
         ).one()
@@ -355,115 +356,81 @@ def test_a_backup_after_reads_still_writes_its_copy(store, keyed_config):
     maintenance.backup(keyed_config, store)
 
 
-def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
-    """Revisions rebuild tables to change a CHECK (0002 OneTimeToken, 0005 Share): what they
-    hold is kept, and each rebuilt table is the one the declarations make."""
+def _clauses(sql: str) -> list[str]:
+    """A CREATE statement's columns and constraints, in whatever order they were written, and
+    a default with or without the parentheses Alembic writes around it."""
+    sql = re.sub(r"DEFAULT \(('[^']*'|[\w.-]+)\)", r"DEFAULT \1", sql)
+    return sorted(line.strip().rstrip(",").strip() for line in sql.splitlines() if line.strip())
+
+
+def test_revisions_carry_a_database_from_0001_to_head(tmp_path):
+    """Every revision after 0001, run as the server runs them: rows written at 0001 are kept,
+    a deleted one stays deleted, rows referring to a rebuilt table keep their references with
+    foreign keys back on, and each table ends as the declarations make it. The rows are written
+    in 0001's terms, so they change only when 0001 does."""
     from alembic import command
 
     engine = make_engine(tmp_path / "old.db", None)
+    stamp = "'2026-10-01 00:00:00'"
+    uid, gone = ids.new_id("User"), ids.new_id("User")
+    aid, iid, tid = ids.new_id("Acct"), ids.new_id("Imprt"), ids.new_id("Txn")
     with engine.connect() as conn:
         command.upgrade(migrate.alembic_config(conn), "0001")
         conn.commit()
-        uid = ids.new_id("User")
-        conn.exec_driver_sql(
+        for statement in (
             'INSERT INTO "User" (id, username, "displayName", version, "createdAt", '
-            f"\"updatedAt\", deleted) VALUES ('{uid}', 'alice', 'Alice', 1, "
-            "'2026-10-01 00:00:00', '2026-10-01 00:00:00', 0)"
-        )
-        conn.exec_driver_sql(
-            f"INSERT INTO \"OneTimeToken\" VALUES ('h1', 'invitation', '{uid}', NULL, "
-            "'2026-10-01 00:00:00', '2030-01-01 00:00:00')"
-        )
-        conn.commit()
-        # As migrate.upgrade does: a rebuilt table others refer to (0023 User) is dropped and
-        # made again with foreign keys off, then checked.
-        raw = conn.connection.dbapi_connection
-        raw.execute("PRAGMA foreign_keys = OFF")
-        command.upgrade(migrate.alembic_config(conn), "head")
-        conn.commit()
-        assert raw.execute("PRAGMA foreign_key_check").fetchall() == []
-        raw.execute("PRAGMA foreign_keys = ON")
-        assert conn.exec_driver_sql('SELECT purpose FROM "OneTimeToken"').scalars().all() == [
-            "invitation"
-        ]
-        conn.exec_driver_sql(
-            f"INSERT INTO \"OneTimeToken\" VALUES ('h2', 'two-step', '{uid}', NULL, "
-            "'2026-10-01 00:00:00', '2030-01-01 00:00:00')"
-        )
-        rebuilt = (
-            "OneTimeToken",
-            "Share",
-            "Receipt",
-            "Import",
-            "ReceiptLinks",
-            "Account",
-            "Item",
-            "Loan",
-            "Transaction",
-            "User",
-        )
-        migrated = {
-            name: conn.exec_driver_sql(
-                f"SELECT sql FROM sqlite_master WHERE name = '{name}'"
-            ).scalar_one()
-            for name in rebuilt
-        }
-    engine.dispose()
-    fresh = make_engine(tmp_path / "fresh.db", None)
-    wanted = dict.fromkeys(("User", "Group", "Link", *rebuilt))
-    metadata.create_all(fresh, tables=[metadata.tables[n] for n in wanted])
-    with fresh.connect() as conn:
-        made = {
-            name: conn.exec_driver_sql(
-                f"SELECT sql FROM sqlite_master WHERE name = '{name}'"
-            ).scalar_one()
-            for name in rebuilt
-        }
-    fresh.dispose()
-    squash = lambda sql: " ".join(sql.replace('"', "").split())  # noqa: E731
-    for name in rebuilt:
-        # The same columns and constraints, in whatever order the rebuild wrote them.
-        assert sorted(squash(migrated[name])) == sorted(squash(made[name])), name
-
-
-def test_a_rebuilt_table_keeps_the_rows_that_refer_to_it(keyed_config):
-    """Migrations run with foreign keys off, which SQLite only honours outside a transaction:
-    rebuilding Import (revision 0008) with transactions pointing at it must not fail."""
-    from alembic import command
-
-    from moneykata.keys import master
-
-    unlocked = master.open_keys(keyed_config)
-    key = unlocked.keys.sqlcipher_key
-    keyed_config.data_dir.mkdir(parents=True, exist_ok=True)
-    engine = make_engine(keyed_config.db_path, key)
-    with engine.connect() as conn:
-        command.upgrade(migrate.alembic_config(conn), "0007")
-        conn.commit()
-        uid, aid, iid = ids.new_id("User"), ids.new_id("Acct"), ids.new_id("Imprt")
-        stamp = "'2026-10-01 00:00:00'"
-        conn.exec_driver_sql(
-            f'INSERT INTO "User" (id, username, "displayName", version, "createdAt", '
-            f"\"updatedAt\", deleted) VALUES ('{uid}', 'alice', 'Alice', 1, {stamp}, {stamp}, 0)"
-        )
-        conn.exec_driver_sql(
-            f'INSERT INTO "Account" (id, "ownerId", name, type, version, "createdAt", '
+            f"\"updatedAt\", deleted) VALUES ('{uid}', 'alice', 'Alice', 1, {stamp}, {stamp}, 0)",
+            'INSERT INTO "User" (id, username, "displayName", version, "createdAt", '
+            f'"updatedAt", deleted, "deletedAt", "deletedById") VALUES (\'{gone}\', \'bob\', '
+            f"'Bob', 1, {stamp}, {stamp}, 1, {stamp}, '{uid}')",
+            'INSERT INTO "Account" (id, "ownerId", name, type, version, "createdAt", '
             f"\"updatedAt\", deleted) VALUES ('{aid}', '{uid}', 'Checking', 'checking', 1, "
-            f"{stamp}, {stamp}, 0)"
-        )
-        conn.exec_driver_sql(
-            f'INSERT INTO "Import" (id, "accountId", "userId", format, "fileName", '
-            f'"fileHash", version, "createdAt", "updatedAt", deleted) VALUES (\'{iid}\', '
-            f"'{aid}', '{uid}', 'ofx', 'a.ofx', 'h', 1, {stamp}, {stamp}, 0)"
-        )
-        conn.exec_driver_sql(
-            f'INSERT INTO "Transaction" (id, "accountId", date, kind, amount, "importId", '
-            f'version, "createdAt", "updatedAt", deleted) VALUES (\'{ids.new_id("Txn")}\', '
-            f"'{aid}', '2026-10-01', 'deposit', '10.00', '{iid}', 1, {stamp}, {stamp}, 0)"
-        )
+            f"{stamp}, {stamp}, 0)",
+            'INSERT INTO "Import" (id, "accountId", "userId", format, "fileName", "fileHash", '
+            f"version, \"createdAt\", \"updatedAt\", deleted) VALUES ('{iid}', '{aid}', '{uid}', "
+            f"'ofx', 'a.ofx', 'h', 1, {stamp}, {stamp}, 0)",
+            'INSERT INTO "Transaction" (id, "accountId", date, kind, amount, "importId", '
+            f"version, \"createdAt\", \"updatedAt\", deleted) VALUES ('{tid}', '{aid}', "
+            f"'2026-10-01', 'deposit', '10.00', '{iid}', 1, {stamp}, {stamp}, 0)",
+            'INSERT INTO "OneTimeToken" ("tokenHash", purpose, "userId", "createdAt", '
+            f"\"expiresAt\") VALUES ('h1', 'invitation', '{uid}', {stamp}, '2030-01-01 00:00:00')",
+        ):
+            conn.exec_driver_sql(statement)
         conn.commit()
-    assert migrate.upgrade(engine, keyed_config.db_path, key, None)
+        before = {
+            name: conn.exec_driver_sql(f'SELECT count(*) FROM "{name}"').scalar_one()
+            for (name,) in conn.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type = 'table' "
+                "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'ReceiptSearch%'"
+            )
+        }
+
+    assert migrate.upgrade(engine, tmp_path / "old.db", None, None)
+
     with engine.connect() as conn:
-        assert conn.exec_driver_sql('SELECT count(*) FROM "Transaction"').scalar() == 1
         assert conn.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1
+        assert conn.exec_driver_sql("PRAGMA foreign_key_check").fetchall() == []
+        assert conn.exec_driver_sql("PRAGMA integrity_check").scalar() == "ok"
+        for name, count in before.items():
+            if name in metadata.tables:
+                assert conn.exec_driver_sql(f'SELECT count(*) FROM "{name}"').scalar() == count
+        users = conn.exec_driver_sql(
+            'SELECT username, "effectiveDeleted" FROM "UserEffective" ORDER BY 1'
+        ).all()
+        assert [tuple(u) for u in users] == [("alice", 0), ("bob", 1)]
+        txn = conn.exec_driver_sql(f'SELECT "importId" FROM "Transaction" WHERE id = \'{tid}\'')
+        assert txn.scalar_one() == iid
+        migrated = dict(
+            conn.exec_driver_sql("SELECT name, sql FROM sqlite_master WHERE type = 'table'").all()
+        )
     engine.dispose()
+
+    fresh = make_engine(tmp_path / "fresh.db", None)
+    metadata.create_all(fresh)
+    with fresh.connect() as conn:
+        made = dict(
+            conn.exec_driver_sql("SELECT name, sql FROM sqlite_master WHERE type = 'table'").all()
+        )
+    fresh.dispose()
+    differ = [n for n in metadata.tables if _clauses(migrated[n]) != _clauses(made[n])]
+    assert differ == []

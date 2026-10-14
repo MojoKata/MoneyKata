@@ -504,16 +504,12 @@ def _set_tags(s: Session, t: Transaction, user_id: str, tags: list[str]) -> None
     for tag in wanted:
         if tag in current:
             if current[tag].deleted:
-                current[tag].deleted, current[tag].deletedAt, current[tag].deletedById = (
-                    False,
-                    None,
-                    None,
-                )
+                current[tag].restore()
         else:
             s.add(TransactionTag(transactionId=t.id, userId=user_id, tag=tag, createdAt=now))
     for tag, row in current.items():
         if tag not in wanted and not row.deleted:
-            row.deleted, row.deletedAt, row.deletedById = True, now, user_id
+            row.mark_deleted(user_id, now)
 
 
 def _instrument(s: Session, body: TxnIn) -> str | None:

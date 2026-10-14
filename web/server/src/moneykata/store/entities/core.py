@@ -1,17 +1,16 @@
 import datetime as dt
 from dataclasses import dataclass, field
 
-from . import Record, _now
+from . import Record, SoftDeleted, _now
 
 
 @dataclass(kw_only=True, eq=False)
-class Setting:
+class Setting(SoftDeleted):
     key: str
     value: str
     version: int = 1
     updatedAt: dt.datetime = field(default_factory=_now)
     updatedById: str | None = None
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
 

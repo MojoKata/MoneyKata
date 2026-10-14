@@ -323,7 +323,7 @@ def attach(s: Session, user_id: str, r: Receipt, transaction_id: str) -> Receipt
         )
         s.add(row)
     elif row.deleted:
-        row.deleted, row.deletedAt, row.deletedById = False, None, None
+        row.restore()
         row.linkedById = user_id
     s.flush()
     return row
@@ -361,7 +361,7 @@ def attach_item(s: Session, user_id: str, r: Receipt, item, kind: str = "item") 
             )
         )
     elif row.deleted:
-        row.deleted, row.deletedAt, row.deletedById = False, None, None
+        row.restore()
     s.flush()
 
 
@@ -370,7 +370,7 @@ def detach_item(s: Session, user_id: str, r: Receipt, item, kind: str = "item") 
     row = s.get(ReceiptLink, (r.id, kind, item.id))
     if row is None or row.deleted:
         raise Problem(404, "not-found", "The receipt is not kept with that.")
-    row.deleted, row.deletedAt, row.deletedById = True, clock.now(), user_id
+    row.mark_deleted(user_id, clock.now())
 
 
 def of_item(s: Session, item_id: str, kind: str = "item") -> list[Receipt]:
@@ -396,7 +396,7 @@ def detach(s: Session, user_id: str, r: Receipt, transaction_id: str) -> None:
     row = s.get(ReceiptLink, (r.id, "transaction", transaction_id))
     if row is None or row.deleted:
         raise Problem(404, "not-found", "The receipt is not attached to that transaction.")
-    row.deleted, row.deletedAt, row.deletedById = True, clock.now(), user_id
+    row.mark_deleted(user_id, clock.now())
 
 
 def delete(s: Session, user_id: str, r: Receipt) -> None:

@@ -445,13 +445,13 @@ def _set_people(s, g: Gift, ids_: list[str], user_id: str) -> None:
     }
     for pid, gp in have.items():
         if pid not in ids_ and not gp.deleted:
-            gp.deleted, gp.deletedAt, gp.deletedById = True, now, user_id
+            gp.mark_deleted(user_id, now)
     for pid in ids_:
         gp = have.get(pid)
         if gp is None:
             s.add(GiftPerson(giftId=g.id, personId=pid, createdAt=now))
         elif gp.deleted:
-            gp.deleted, gp.deletedAt, gp.deletedById = False, None, None
+            gp.restore()
 
 
 def _categorise(s, t_id: str | None) -> None:

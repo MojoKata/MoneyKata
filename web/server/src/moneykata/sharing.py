@@ -255,7 +255,7 @@ def _drop_annotations(s: Session, user_id: str, account_id: str) -> None:
             TransactionTag.deleted == false(),
         )
     ):
-        tag.deleted, tag.deletedAt, tag.deletedById = True, now, user_id
+        tag.mark_deleted(user_id, now)
 
 
 def _link_live(s: Session, link_id: str) -> bool:

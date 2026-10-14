@@ -10,6 +10,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Column,
+    Computed,
     ForeignKey,
     Index,
     Integer,
@@ -31,13 +32,17 @@ NAMING = {
 metadata = MetaData(naming_convention=NAMING)
 
 
+DELETED = '"deletedAt" IS NOT NULL'
+DELETED_BY = '"deletedAt" IS NOT NULL OR "deletedById" IS NULL'
+
+
 def soft_delete(table: str) -> list:
+    """`deleted` is generated from `deletedAt`, so the two can't disagree (schema.md §4.1)."""
     return [
-        Column("deleted", Boolean, nullable=False, server_default=text("0")),
+        Column("deleted", Boolean, Computed(DELETED, persisted=False)),
         Column("deletedAt", UtcTimestamp),
         Column("deletedById", Text, ForeignKey("User.id")),
-        CheckConstraint('deleted = ("deletedAt" IS NOT NULL)', name="deleted_at"),
-        CheckConstraint('deleted OR "deletedById" IS NULL', name="deleted_by"),
+        CheckConstraint(DELETED_BY, name="deleted_by"),
     ]
 
 

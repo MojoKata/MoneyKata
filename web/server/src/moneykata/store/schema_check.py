@@ -8,6 +8,7 @@ from sqlalchemy import MetaData, Table
 
 from .. import paths
 from . import views
+from .tables._base import DELETED, DELETED_BY
 
 SCHEMA_MD = paths.ROOT / "docs" / "schema.md"
 INFRA = {"SchemaRevision"}
@@ -111,12 +112,13 @@ def _check_soft_delete(t: Table) -> list[str]:
     missing = SOFT_FIELDS - set(t.c.keys())
     if missing:
         out.append(f"{t.name} lacks {sorted(missing)}")
-    texts = {str(getattr(c, "sqltext", "")) for c in t.constraints}
-    if (
-        'deleted = ("deletedAt" IS NOT NULL)' not in texts
-        or 'deleted OR "deletedById" IS NULL' not in texts
-    ):
-        out.append(f"{t.name} lacks the soft-delete CHECKs")
+    else:
+        computed = t.c.deleted.computed
+        if computed is None or str(computed.sqltext) != DELETED or computed.persisted:
+            out.append(f"{t.name}.deleted is not generated from deletedAt")
+        texts = {str(getattr(c, "sqltext", "")) for c in t.constraints}
+        if DELETED_BY not in texts:
+            out.append(f"{t.name} lacks the soft-delete CHECK")
     return out
 
 

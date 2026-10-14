@@ -338,7 +338,7 @@ def type_price(instrument_id: str, body: TypedPrice, request: Request, c: Caller
             )
         else:
             row.close, row.source, row.enteredById = body.price, "manual", c.id
-            row.deleted, row.deletedAt, row.deletedById = False, None, None
+            row.restore()
     server(request).events.publish("prices", {"instrumentId": instrument_id})
     return Response(status_code=201)
 

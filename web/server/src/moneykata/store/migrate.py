@@ -3,7 +3,8 @@ server copies the database (verified), then migrates it one revision per transac
 regenerates the Effective views. A database from a newer release refuses the start.
 
 Revisions are only ever added, never changed once committed: databases made by earlier
-milestones migrate forward like any other.
+releases migrate forward like any other. Before the first release they may be folded into one
+baseline, keeping a revision after it for the tests (requirements S14.1.3).
 
 Migrations run with foreign keys off, as SQLite's table rebuilds need, and a foreign-key check
 must come back clean before they are switched on again.

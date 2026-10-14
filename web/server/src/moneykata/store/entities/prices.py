@@ -2,7 +2,7 @@ import datetime as dt
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from . import Record, _now
+from . import Record, SoftDeleted, _now
 
 
 @dataclass(kw_only=True, eq=False)
@@ -18,7 +18,7 @@ class PriceSource(Record):
 
 
 @dataclass(kw_only=True, eq=False)
-class Price:
+class Price(SoftDeleted):
     instrumentId: str
     date: dt.date
     close: Decimal
@@ -27,6 +27,5 @@ class Price:
     enteredById: str | None = None
     version: int = 1
     updatedAt: dt.datetime = field(default_factory=_now)
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None

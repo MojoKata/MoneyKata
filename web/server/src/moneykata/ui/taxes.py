@@ -437,7 +437,7 @@ def count_account(
         row = s.get(TaxBookAccount, (b.id, account_id))
         if body.counted is None:
             if row is not None and not row.deleted:
-                row.deleted, row.deletedAt, row.deletedById = True, clock.now(), c.id
+                row.mark_deleted(c.id, clock.now())
         elif row is None:
             s.add(
                 TaxBookAccount(
@@ -445,12 +445,8 @@ def count_account(
                 )
             )
         else:
-            row.counted, row.deleted, row.deletedAt, row.deletedById = (
-                body.counted,
-                False,
-                None,
-                None,
-            )
+            row.counted = body.counted
+            row.restore()
         s.flush()
         return detail(s, c, b, lvl)
 

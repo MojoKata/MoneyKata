@@ -38,9 +38,7 @@ def replace(s: Session, account_id: str, entries: list[bk.Entry], gap: int, user
     wanted = {e.value for e in entries}
     for value, k in current.items():
         if value not in wanted:
-            k.deleted = True
-            k.deletedAt = now
-            k.deletedById = user_id
+            k.mark_deleted(user_id, now)
             s.execute(delete(WalletAddress).where(WalletAddress.keyId == k.id))
     for e in entries:
         k = current.get(e.value)

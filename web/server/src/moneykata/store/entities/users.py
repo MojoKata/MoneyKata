@@ -1,7 +1,7 @@
 import datetime as dt
 from dataclasses import dataclass
 
-from . import Record
+from . import Record, SoftDeleted
 
 
 @dataclass(kw_only=True, eq=False)
@@ -38,11 +38,10 @@ class Group(Record):
 
 
 @dataclass(kw_only=True, eq=False)
-class UserGroup:
+class UserGroup(SoftDeleted):
     userId: str
     groupId: str
     createdAt: dt.datetime
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
 

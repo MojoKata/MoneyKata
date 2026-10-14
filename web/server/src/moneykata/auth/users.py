@@ -714,11 +714,11 @@ def set_members(s: Db, by: User, g: Group, member_ids: list[str], record: bool =
             )
     for u in added:
         if u in current:
-            current[u].deleted, current[u].deletedAt, current[u].deletedById = False, None, None
+            current[u].restore()
         else:
             s.add(UserGroup(userId=u, groupId=g.id, createdAt=now()))
     for u in removed:
-        current[u].deleted, current[u].deletedAt, current[u].deletedById = True, now(), by.id
+        current[u].mark_deleted(by.id, now())
     s.flush()
     if record and (added or removed):
         activity.record(

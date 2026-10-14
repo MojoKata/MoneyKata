@@ -142,13 +142,17 @@ Records are never removed from the database: they are marked deleted. The except
 
    | Field         | Type      | Meaning                                                  |
    |---------------|-----------|----------------------------------------------------------|
-   | `deleted`     | boolean   | the record itself was deleted                            |
-   | `deletedAt`   | timestamp | when; null while `deleted` is false                      |
+   | `deleted`     | boolean   | the record itself was deleted: `deletedAt IS NOT NULL`   |
+   | `deletedAt`   | timestamp | when; null while the record is not deleted               |
    | `deletedById` | `User` FK | who; null when the server deleted it (a sync, a job)     |
 
-   A `CHECK` keeps them consistent: `deleted = (deletedAt IS NOT NULL)`, and `deletedById` is
-   null while `deleted` is false. Restoring a record clears all three. Re-adding a row that
-   a many-to-many table already holds as deleted restores it.
+   `deletedAt` is the fact; `deleted` is a virtual generated column computed from it, so the
+   two can't disagree and nothing writes `deleted`. It is there for reading: the
+   `<Table>Effective` views and the partial unique indexes (§4.3) use it. A `CHECK` keeps
+   `deletedById` null while `deletedAt` is. Restoring a record clears `deletedAt` and
+   `deletedById`. Re-adding a row that a many-to-many table already holds as deleted restores
+   it. A copy of rows between tables names its columns and leaves `deleted` out, since a
+   generated column takes no value.
 2. **Effective deletion.** A record is also deleted when something it belongs to is: a
    transaction when its account is, a gift when its person is. *Belongs to* is a foreign key
    declared `ondelete="CASCADE"` to a soft-deletable table. Each table has a view, named

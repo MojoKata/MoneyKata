@@ -216,10 +216,10 @@ def apply_directory(s, link: Link, payload: dict) -> None:
         u.email = r.get("email")
         u.active = True
         if u.deleted:
-            u.deleted, u.deletedAt, u.deletedById = False, None, None
+            u.restore()
     for rid, u in have.items():
         if rid not in seen and not u.deleted:
-            u.deleted, u.deletedAt = True, now
+            u.mark_deleted(None, now)
     s.flush()
 
 
@@ -230,7 +230,7 @@ def end_users(s, link: Link) -> None:
     remove_link_shares(s, link.id)
     now = clock.now()
     for u in s.scalars(select(User).where(User.linkId == link.id, User.deleted == false())):
-        u.deleted, u.deletedAt = True, now
+        u.mark_deleted(None, now)
 
 
 def _get(s, link_id: str) -> Link:

@@ -2,7 +2,7 @@ import datetime as dt
 from dataclasses import dataclass
 from decimal import Decimal
 
-from . import Record
+from . import Record, SoftDeleted
 
 
 @dataclass(kw_only=True, eq=False)
@@ -18,23 +18,21 @@ class TaxBook(Record):
 
 
 @dataclass(kw_only=True, eq=False)
-class TaxBookFiler:
+class TaxBookFiler(SoftDeleted):
     bookId: str
     userId: str
     createdAt: dt.datetime
     acceptedAt: dt.datetime | None = None
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
 
 
 @dataclass(kw_only=True, eq=False)
-class TaxBookAccount:
+class TaxBookAccount(SoftDeleted):
     bookId: str
     accountId: str
     counted: bool
     createdAt: dt.datetime
-    deleted: bool = False
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
 
