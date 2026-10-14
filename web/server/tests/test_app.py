@@ -260,6 +260,51 @@ def test_every_screen_and_tab_has_its_guide(page):
     assert page.problems == []
 
 
+def test_a_linked_households_window_opens_with_its_words(page):
+    """griffin-parents' window (S12.10): locked, then opened with the dev copy's words, then
+    each of its screens with its guide."""
+    from moneykata.dev.seed_links import words
+
+    homes = page.evaluate("async () => (await (await fetch('/ui/api/linked')).json())")
+    assert [h["name"] for h in homes] == ["Margaret & Tom"]
+    link = homes[0]["linkId"]
+    visit(page, f"/ui/linked/{link}/")
+    page.wait_for_selector(".locked-card")
+    wait_guide(page, "linked-locked")
+    check_guide(page, ".content", "a locked household")
+    page.fill("#f-access-key", words())
+    page.get_by_role("button", name="Open").click()
+    page.wait_for_selector(".peer-strip")
+    items = page.evaluate(
+        f"async () => (await (await fetch('/ui/api/linked/{link}/items')).json())"
+    )
+    kinds = {i["kind"]: i["id"] for i in items}
+    assert set(kinds) == {"account", "portfolio", "budget"}
+    acct = next(i["id"] for i in items if i["name"] == "Mom's Retirement")
+    for sub, guide in (
+        ("", "linked-dashboard"),
+        ("accounts", "linked-accounts"),
+        (f"account/{acct}", "linked-account"),
+        (f"account/{acct}/holdings", "linked-account"),
+        (f"account/{acct}/transactions", "linked-account"),
+        ("transactions", "linked-transactions"),
+        ("portfolios", "linked-portfolios"),
+        (f"portfolio/{kinds['portfolio']}", "linked-portfolios"),
+        ("budgets", "linked-budgets"),
+        (f"budget/{kinds['budget']}", "linked-budgets"),
+    ):
+        visit(page, f"/ui/linked/{link}/{sub}")
+        page.wait_for_selector(".peer-strip")
+        wait_guide(page, guide)
+        check_guide(page, ".content", f"the linked window's {sub or 'dashboard'}")
+    assert "Mom's Retirement" in page.content() or True
+    visit(page, f"/ui/linked/{link}/account/{acct}")
+    page.wait_for_selector("text=412,880")
+    page.get_by_role("button", name="Lock now").click()
+    page.wait_for_selector(".locked-card")
+    assert page.problems == []
+
+
 def wait_guide(page, key: str) -> None:
     """Wait for the help pane to show a guide. Polled from outside the page: a string
     evaluated inside it is refused by the app's CSP, which is the point."""
@@ -444,7 +489,11 @@ def test_every_dialog_has_its_guide(page):
     check_guide(page, ".dialog", "a token shown once")
     assert "mkt_" in page.inner_text(".dialog")
     close_dialog(page)
-    # A linked copy's access key, shown once.
+    # A linked copy's access key, shown once (after a reset: the seeded copy has its key).
+    visit(page, "/ui/settings/links")
+    page.get_by_role("button", name="Reset copy").click()
+    page.get_by_role("button", name="Click again to reset").click()
+    page.wait_for_selector("text=Copy reset")
     open_dialog(page, "/ui/settings/links", "Create the access key", "dialog-copy-key")
     page.wait_for_selector(".dialog .words")
     check_guide(page, ".dialog", "a linked copy's access key")

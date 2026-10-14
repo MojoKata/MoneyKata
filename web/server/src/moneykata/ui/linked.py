@@ -7,7 +7,7 @@ import json
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import false, select
 
-from .. import settings
+from .. import clock, settings
 from ..errors import Problem
 from ..links import copies
 from ..links.changes import waiting
@@ -20,8 +20,12 @@ from .deps import Caller, caller, server
 router = APIRouter(prefix="/ui/api", tags=["linked"])
 
 
+PALETTE = ("teal", "violet", "amber", "rose", "green", "blue")
+
+
 class Household(Model):
     linkId: str
+    colour: str  # the colour you chose for its window
     serverName: str | None
     name: str | None
     avatar: dict | None
@@ -52,9 +56,28 @@ def _mine(s, user_id: str) -> dict[str, int]:
     return out
 
 
-def _household(srv, link: Link, n: int) -> Household:
+def _colours(s, user_id: str, link_ids: list[str]) -> dict[str, str]:
+    """Each household's colour for this user: chosen, or the next one not yet used."""
+    from ..store.entities.links import LinkColour
+
+    chosen = {
+        r.linkId: r.colour
+        for r in s.scalars(select(LinkColour).where(LinkColour.userId == user_id))
+    }
+    out, used = {}, set(chosen.values())
+    for lid in sorted(link_ids):
+        if lid in chosen:
+            out[lid] = chosen[lid]
+        else:
+            out[lid] = next((c for c in PALETTE if c not in used), PALETTE[len(out) % 6])
+            used.add(out[lid])
+    return out
+
+
+def _household(srv, link: Link, n: int, colour: str = "teal") -> Household:
     return Household(
         linkId=link.id,
+        colour=colour,
         serverName=link.peerName,
         name=link.householdName,
         avatar=json.loads(link.householdAvatar) if link.householdAvatar else None,
@@ -77,7 +100,9 @@ def households(request: Request, c: Caller = Depends(caller)):
                 Link.state.in_(("active", "paused")),
             )
         )
-        return [_household(srv, link, mine[link.id]) for link in rows]
+        rows = list(rows)
+        colours = _colours(s, c.id, list(mine))
+        return [_household(srv, link, mine[link.id], colours[link.id]) for link in rows]
 
 
 def _state(srv, s, c: Caller, link_id: str) -> CopyState:
@@ -94,7 +119,7 @@ def _state(srv, s, c: Caller, link_id: str) -> CopyState:
     who = s.get(User, o.by) if o else None
     left = srv.copies.locks_in(link_id, settings.get(s, "linkReleaseMinutes"))
     return CopyState(
-        household=_household(srv, link, mine[link.id]),
+        household=_household(srv, link, mine[link.id], _colours(s, c.id, list(mine))[link.id]),
         hasKey=bool(link.copyPublicKey),
         waiting=len(waiting(srv.config.data_dir, link_id)),
         pulledAt=link.pulledAt,
@@ -136,3 +161,98 @@ def lock(link_id: str, request: Request, c: Caller = Depends(caller)):
     copies.lock(srv, link_id, c.id, c.admin)
     with srv.db.read() as s:
         return _state(srv, s, c, link_id)
+
+
+class Colour(Model):
+    colour: str
+
+
+@router.put("/linked/{link_id}/colour", response_model=CopyState)
+def set_colour(link_id: str, body: Colour, request: Request, c: Caller = Depends(caller)):
+    """The colour of this household's window, for you (S12.10.3.2)."""
+    from ..errors import refuse
+    from ..store.entities.links import LinkColour
+
+    if body.colour not in PALETTE:
+        raise refuse("colour", "colour-invalid", "One of the palette's colours.")
+    srv = server(request)
+    with srv.db.tx() as s:
+        _state(srv, s, c, link_id)
+        row = s.get(LinkColour, (c.id, link_id))
+        if row is None:
+            s.add(
+                LinkColour(userId=c.id, linkId=link_id, colour=body.colour, createdAt=clock.now())
+            )
+        else:
+            row.colour = body.colour
+        s.flush()
+        return _state(srv, s, c, link_id)
+
+
+class LinkedRow(Model):
+    id: str
+    kind: str
+    name: str
+    ownerName: str
+    asOf: str
+    row: dict | None  # its row in its list, as its source shows it
+
+
+def _open(srv, s, c: Caller, link_id: str):
+    """The unlocked copy, for a read made for this person (it counts as a use)."""
+    _state(srv, s, c, link_id)
+    o = srv.copies.get(link_id)
+    if o is None:
+        raise Problem(423, "copy-locked", "This household's copy is locked: enter its access key.")
+    return o
+
+
+@router.get("/linked/{link_id}/items", response_model=list[LinkedRow])
+def items(link_id: str, request: Request, c: Caller = Depends(caller)):
+    """What this household shares with you, each with its row (S12.10.3.4)."""
+    from ..links import copydb
+
+    srv = server(request)
+    with srv.db.read() as s:
+        o = _open(srv, s, c, link_id)
+    out = []
+    with o.engine.connect() as conn:
+        rows = {
+            r.itemId: json.loads(r.body)
+            for r in conn.execute(
+                select(copydb.Doc).where(copydb.Doc.c.path == "", copydb.Doc.c.viewer == c.id)
+            )
+        }
+        for it in conn.execute(
+            select(copydb.Item).order_by(copydb.Item.c.kind, copydb.Item.c.name)
+        ):
+            if c.id not in json.loads(it.viewers or "[]"):
+                continue
+            out.append(
+                LinkedRow(
+                    id=it.id,
+                    kind=it.kind,
+                    name=it.name,
+                    ownerName=it.ownerName,
+                    asOf=it.asOf,
+                    row=rows.get(it.id),
+                )
+            )
+    return out
+
+
+@router.get("/linked/{link_id}/doc")
+def doc(link_id: str, path: str, request: Request, c: Caller = Depends(caller)):
+    """One document of an item shared with you, as its source answered it for you."""
+    from ..links import copydb
+
+    srv = server(request)
+    with srv.db.read() as s:
+        o = _open(srv, s, c, link_id)
+    with o.engine.connect() as conn:
+        body = conn.execute(
+            select(copydb.Doc.c.body).where(copydb.Doc.c.path == path, copydb.Doc.c.viewer == c.id)
+        ).scalar()
+    if body is None:
+        raise Problem(404, "not-shared", "That isn't shared with you, or hasn't arrived yet.")
+    return json.loads(body)

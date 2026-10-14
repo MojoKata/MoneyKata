@@ -2324,6 +2324,20 @@
         "title": "ClosedRow",
         "type": "object"
       },
+      "Colour": {
+        "additionalProperties": false,
+        "properties": {
+          "colour": {
+            "title": "Colour",
+            "type": "string"
+          }
+        },
+        "required": [
+          "colour"
+        ],
+        "title": "Colour",
+        "type": "object"
+      },
       "Confirmation": {
         "additionalProperties": false,
         "properties": {
@@ -7335,6 +7349,53 @@
           "users"
         ],
         "title": "LinkedPeople",
+        "type": "object"
+      },
+      "LinkedRow": {
+        "additionalProperties": false,
+        "properties": {
+          "asOf": {
+            "title": "Asof",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "row": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "ownerName",
+          "asOf",
+          "row"
+        ],
+        "title": "LinkedRow",
         "type": "object"
       },
       "LinksView": {
@@ -17772,6 +17833,10 @@
             ],
             "title": "Avatar"
           },
+          "colour": {
+            "title": "Colour",
+            "type": "string"
+          },
           "items": {
             "title": "Items",
             "type": "integer"
@@ -17821,6 +17886,7 @@
         },
         "required": [
           "linkId",
+          "colour",
           "serverName",
           "name",
           "avatar",
@@ -23864,6 +23930,156 @@
           }
         },
         "summary": "Copy State",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
+    "/ui/api/linked/{link_id}/colour": {
+      "put": {
+        "description": "The colour of this household's window, for you (S12.10.3.2).",
+        "operationId": "set_colour_ui_api_linked__link_id__colour_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Colour"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopyState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Colour",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
+    "/ui/api/linked/{link_id}/doc": {
+      "get": {
+        "description": "One document of an item shared with you, as its source answered it for you.",
+        "operationId": "doc_ui_api_linked__link_id__doc_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Doc",
+        "tags": [
+          "linked"
+        ]
+      }
+    },
+    "/ui/api/linked/{link_id}/items": {
+      "get": {
+        "description": "What this household shares with you, each with its row (S12.10.3.4).",
+        "operationId": "items_ui_api_linked__link_id__items_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedRow"
+                  },
+                  "title": "Response Items Ui Api Linked  Link Id  Items Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Items",
         "tags": [
           "linked"
         ]

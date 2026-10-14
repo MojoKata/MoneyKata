@@ -325,6 +325,21 @@ def test_a_shared_account_reaches_the_people_it_names_as_its_screens_show_it(adm
     txns = docs[(acct["id"], f"/transactions?account={acct['id']}", carol_id)]
     assert [t["payee"] for t in txns["items"]] == ["Pension"]
     assert (acct["id"], "", carol_id) in docs, "its row in the accounts list"
+    # The window reads them through the API, only for the people they name.
+    rows = carol.get(f"/ui/api/linked/{b_id}/items").json()
+    assert [(r["kind"], r["name"]) for r in rows] == [("account", "Mom's checking")]
+    assert rows[0]["row"]["balance"] == "1200.00"
+    got = carol.get(f"/ui/api/linked/{b_id}/doc", params={"path": f"/accounts/{acct['id']}"})
+    assert got.status_code == 200 and got.json()["balance"] == "1200.00"
+    assert carol.get(f"/ui/api/linked/{b_id}/doc", params={"path": "/accounts"}).status_code == 404
+    assert dave.get(f"/ui/api/linked/{b_id}/items").status_code == 404
+    homes = carol.get("/ui/api/linked").json()
+    assert homes[0]["colour"] == "teal" and not homes[0]["locked"]
+    r = carol.put(f"/ui/api/linked/{b_id}/colour", json={"colour": "amber"})
+    assert r.json()["household"]["colour"] == "amber"
+    carol.post(f"/ui/api/linked/{b_id}/lock")
+    assert carol.get(f"/ui/api/linked/{b_id}/items").status_code == 423
+    carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
     # Only what changed travels.
     add(alice, acct["id"], amount="-40.00", payee="Pharmacy")
     ca.post(f"/ui/api/settings/links/{a_id}/pull")  # either side can make the exchange

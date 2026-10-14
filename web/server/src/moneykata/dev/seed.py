@@ -45,13 +45,16 @@ def seed(server) -> None:
         seed_taxes(s, people)
         seed_options(s, people)
         seed_wallets(s, people)
-        seed_links(s, people)
+        seed_links(server, s, people)
         seed_sharing(s, people)
         seed_budgets(s, people)
         seed_receipts(server, s, people)
         seed_projections(s, people)
         seed_alerts(s)
     log.info("dev: seeded; sign in as admin, alice or bob with %r", PASSWORD)
+    from .seed_links import words
+
+    log.info("dev: griffin-parents' linked copy opens with: %s", words())
 
 
 def seed_users(s) -> dict[str, User]:

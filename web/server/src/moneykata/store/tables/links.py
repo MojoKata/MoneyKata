@@ -13,7 +13,7 @@ from sqlalchemy import (
 )
 
 from ..types import UtcTimestamp
-from ._base import exception, record, unique_live
+from ._base import exception, pairs, record, unique_live
 
 # A link with another server (S11.1). On the inviting side it starts as an invitation (its
 # code kept as a hash), becomes a request when the other side answers, and is active once an
@@ -90,4 +90,16 @@ LinkSent = exception(
     Column("viewer", Text, nullable=False),  # the peer's user id
     Column("hash", Text, nullable=False),
     PrimaryKeyConstraint("linkId", "itemId", "path", "viewer"),
+)
+
+# The colour each user chose for a linked household's window (S12.10.3.2), from a fixed palette.
+LinkColours = pairs(
+    "LinkColours",
+    Column("userId", Text, ForeignKey("User.id", ondelete="CASCADE"), nullable=False),
+    Column("linkId", Text, ForeignKey("Link.id", ondelete="CASCADE"), nullable=False),
+    Column("colour", Text, nullable=False),
+    CheckConstraint(
+        "colour IN ('teal', 'violet', 'amber', 'rose', 'green', 'blue')", name="colour"
+    ),
+    PrimaryKeyConstraint("userId", "linkId"),
 )

@@ -29,3 +29,9 @@ A balance the institution reported doesn't match MoneyKata's for that day. Open 
 ## Share
 
 Opens the Share dialog for that account. Only its owner shares it.
+
+## Linked households {#linked-households}
+
+Other households, on their own MoneyKata servers, that share something with you. Each opens in a
+window of its own, never mixed with yours: its accounts never count in your totals. The household
+avatar at the top of the sidebar lists them too.

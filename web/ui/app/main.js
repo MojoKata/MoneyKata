@@ -2,9 +2,9 @@
 // setup step, and the frame with its screens.
 import { render } from 'preact';
 import { useEffect } from 'preact/hooks';
-import { LocationProvider, useLocation } from 'preact-iso';
+import { lazy, LocationProvider, Route, Router, useLocation } from 'preact-iso';
 import { html } from './html.js';
-import { api, whenSignedOut } from '../api/client.js';
+import { api, readLinked, whenSignedOut } from '../api/client.js';
 import { applyTheme, helpOpen, theme } from '../store/prefs.js';
 import { ended, loadSession, session } from '../store/session.js';
 import { connect, disconnect } from './stream.js';
@@ -14,6 +14,12 @@ import { DialogHost } from '../components/dialog.js';
 import { MenuHost } from '../components/menu.js';
 import { Toasts } from '../components/toast.js';
 import { installTooltips, TooltipHost } from '../components/tooltip.js';
+
+// A linked household's window (S12.10) is a page of its own: everything it reads comes from
+// that household's copy.
+const LINKED = location.pathname.match(/^\/ui\/linked\/([^/]+)/);
+if (LINKED) readLinked(LINKED[1]);
+const LinkedWindow = lazy(() => import('../screens/linked.js'));
 
 function signOutLocally(/** @type {string} */ why) {
   disconnect();
@@ -32,6 +38,13 @@ function App() {
   if (PUBLIC_PATHS.some((p) => path.startsWith(p))) return html`<${PublicScreens} />`;
   if (!s) return ended.value ? html`<${PublicScreens} />` : null;
   if (s.user.needsSetup) return html`<${SetupScreen} />`;
+  if (LINKED) {
+    return html`
+      <${Router}>
+        <${Route} default component=${LinkedWindow} />
+        </${Router}>
+    `;
+  }
   return html`
     <${Frame} onSignOut=${async () => {
       try {

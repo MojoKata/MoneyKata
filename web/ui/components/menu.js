@@ -9,7 +9,8 @@ const open = signal(null);
 
 /**
  * @param {MouseEvent | KeyboardEvent} e  the event on the button that opens it
- * @param {{ label: string, onSelect?: () => void, href?: string, on?: boolean, head?: boolean }[]} items
+ * @param {{ label: string, onSelect?: () => void, href?: string, target?: string, content?: any,
+ *   on?: boolean, head?: boolean }[]} items
  */
 export function openMenu(e, items) {
   const el = /** @type {HTMLElement} */ (e.currentTarget);
@@ -49,11 +50,11 @@ export function MenuHost() {
   }}>
     ${
     m.items.map((it) =>
-      it.head
-        ? html`<div class="mh">${it.label}</div>`
-        : it.href
-        ? html`<a class="hh-item" role="menuitem" href=${it.href} onClick=${() => (open.value =
-          null)}>${it.label}</a>`
+      it.head ? html`<div class="mh">${it.label}</div>` : it.href
+        ? html`
+          <a class="hh-item" role="menuitem" href=${it.href} target=${it.target}
+            onClick=${() => (open.value = null)}>${it.content || it.label}</a>
+        `
         : html`<button type="button" role="menuitem" class=${it.on ? 'on' : ''} onClick=${() => {
           open.value = null;
           it.onSelect?.();

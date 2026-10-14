@@ -110,6 +110,8 @@ export function Frame({ children, onSignOut }) {
   const nav = me.admin ? [...NAV, ...ADMIN_NAV] : NAV;
   const t = title.value;
   const themeNow = THEMES[theme.value] || THEMES.dark;
+  // The households that share something with you (S12.10.1): none, and the avatar opens nothing.
+  const linked = /** @type {any[] | null} */ (useApiLite('/linked', ['share', 'links']));
 
   useEffect(() => {
     document.body.classList.toggle('privacy', privacy.value);
@@ -127,7 +129,26 @@ export function Frame({ children, onSignOut }) {
   }>
     <aside class="side" aria-label="Navigation">
       <div class="brand">
-        <${HouseholdAvatar} house=${s.household} />
+        ${
+    linked?.length
+      ? html`
+        <button type="button" class="linklike" aria-haspopup="menu" aria-label="Linked households"
+          data-tip="Linked households" onClick=${(/** @type {MouseEvent} */ e) =>
+            openMenu(
+              e,
+              linked.map((/** @type {any} */ h) => ({
+                label: h.name,
+                href: `/ui/linked/${h.linkId}/`,
+                target: `mk-linked-${h.linkId}`,
+                content: html`<${HouseholdAvatar} house=${h} /><span><b>${h.name}</b><div
+            class="small dim">${h.items} item${h.items === 1 ? '' : 's'} shared with you · synced ${
+                  ago(h.syncedAt)
+                }</div></span>`,
+              })),
+            )}><${HouseholdAvatar} house=${s.household} /></button>
+      `
+      : html`<${HouseholdAvatar} house=${s.household} />`
+  }
         <div class="brand-text"><div class="brand-name">${s.household.name}</div>
           <div class="brand-ver">MoneyKata ${version} ${
     mockup

@@ -392,6 +392,11 @@
  */
 
 /**
+ * @typedef {Object} Colour
+ * @property {string} colour
+ */
+
+/**
  * @typedef {Object} Confirmation
  * @property {string} at
  * @property {string} fingerprint
@@ -1178,6 +1183,16 @@
  * @property {(string | null)} householdName
  * @property {boolean} includeReceipts
  * @property {Array<UserGrant>} users
+ */
+
+/**
+ * @typedef {Object} LinkedRow
+ * @property {string} id
+ * @property {string} kind
+ * @property {string} name
+ * @property {string} ownerName
+ * @property {string} asOf
+ * @property {(Object<string, unknown> | null)} row
  */
 
 /**
@@ -2963,6 +2978,7 @@
 /**
  * @typedef {Object} moneykata__ui__linked__Household
  * @property {string} linkId
+ * @property {string} colour
  * @property {(string | null)} serverName
  * @property {(string | null)} name
  * @property {(Object<string, unknown> | null)} avatar

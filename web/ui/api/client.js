@@ -27,6 +27,18 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * A linked household's window (requirements S12.10) reads only what that household shared with
+ * you: each GET of a screen's API path is answered from its copy, as its source worked it out.
+ * @type {string | null}
+ */
+let linked = null;
+/** @param {string | null} linkId */
+export function readLinked(linkId) {
+  linked = linkId;
+}
+const OWN = /^\/(linked|session|events|prices\/status|profile|badges)/;
+
 /** Called when a request finds no session: the frame goes to sign-in. */
 let onSignedOut = (/** @type {string} */ _code) => {};
 /** @param {(code: string) => void} fn */
@@ -54,6 +66,11 @@ async function call(method, path, opts = {}) {
   else if (opts.body !== undefined) {
     headers['Content-Type'] = 'application/json';
     body = JSON.stringify(opts.body);
+  }
+  if (linked && method === 'GET' && !OWN.test(path)) {
+    const inner = url.pathname.slice('/ui/api'.length) + url.search;
+    url.pathname = `/ui/api/linked/${linked}/doc`;
+    url.search = '?' + new URLSearchParams({ path: inner });
   }
   if (opts.version !== undefined) headers['If-Match'] = `"${opts.version}"`;
   if (opts.idempotent) headers['Idempotency-Key'] = crypto.randomUUID();

@@ -152,5 +152,31 @@ export default function Accounts() {
         </section>
       `;
     })}
+    <${LinkedHouseholds} />
   `;
+}
+
+/** What other households share with you, each in a window of its own (S12.10.1). */
+function LinkedHouseholds() {
+  const res = useApi('/linked', {}, ['share', 'links']);
+  const rows = /** @type {any[]} */ (res.data) || [];
+  if (!rows.length) return null;
+  return html`<section class="card mt" data-help="linked-households"><h3>Linked households</h3>
+    <p class="small dim" style=${{ marginTop: '-6px' }}>What other households share with you
+      opens in a window of its own, never mixed with yours.</p>
+    ${
+    rows.map((h) =>
+      html`
+        <a class="list-item" href=${`/ui/linked/${h.linkId}/`} target=${`mk-linked-${h.linkId}`}
+          style=${{ color: 'inherit' }}><span class="brand-av" style=${{
+            background: h.avatar?.color || '#7a4b9c',
+          }}>${h.avatar?.initials || '?'}</span><span class="grow"><b>${h.name}</b><div
+                  class="small dim">${h.items} item${h.items === 1
+                    ? ''
+                    : 's'} shared with you · synced ${ago(h.syncedAt)}${h.locked
+                    ? ' · locked'
+                    : ''}</div></span><${Icon} name="link" /></a>
+      `
+    )
+  }</section>`;
 }

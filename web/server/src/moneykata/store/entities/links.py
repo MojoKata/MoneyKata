@@ -55,3 +55,14 @@ class LinkSent:
     path: str
     viewer: str
     hash: str
+
+
+@dataclass(kw_only=True, eq=False)
+class LinkColour:
+    userId: str
+    linkId: str
+    colour: str
+    createdAt: dt.datetime
+    deleted: bool = False
+    deletedAt: dt.datetime | None = None
+    deletedById: str | None = None
