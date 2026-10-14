@@ -134,3 +134,51 @@ export function OptionTrade({ close, accountId, start }) {
                               </${Dialog}>
   `;
 }
+
+/** An option's end: expired, assigned (short) or exercised (long) (S3.4, S3.6). */
+/** @param {{ close: (v?: any) => void, row: any }} p */
+export function Settle({ close, row }) {
+  useDialogGuide('dialog-option-settle');
+  const short = row.side === 'short';
+  const [f, setF] = useState({
+    how: row.inTheMoney === false ? 'expired' : short ? 'assign' : 'exercise',
+    date: row.expiry || new Date().toISOString().slice(0, 10),
+    contracts: String(Math.abs(Number(row.quantity))),
+  });
+  const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
+  const save = useSubmit(async () => {
+    await api.post(`/accounts/${row.accountId}/options/${row.instrumentId}/settle`, {
+      how: f.how,
+      date: f.date,
+      contracts: clean(f.contracts),
+    });
+    toast(`${row.symbol}: recorded`);
+    close(true);
+  });
+  const e = save.error;
+  return html`
+    <${Dialog} title=${`${row.symbol}: what happened?`} close=${close} onSubmit=${() =>
+      save.run().catch(() => {})}
+      footer=${html`<button class="btn primary" disabled=${save.busy}>Record</button>`}>
+      <div class="field" data-help="how" id="x-how"><label>It was</label>
+        <${Seg} label="It was" value=${f.how} onChange=${set('how')} options=${[
+          ['expired', 'Expired worthless'],
+          short ? ['assign', 'Assigned'] : ['exercise', 'Exercised'],
+        ]} /></div>
+      <div class="row">
+        <${Field} label="On" id="settle-date" error=${errAt(e, 'date')}>
+          <${Input} type="date"
+            value=${f.date} onInput=${set('date')} />
+          </${Field}>
+          <${Field} label="Contracts" id="settle-contracts" error=${errAt(e, 'contracts')}>
+            <${Input}
+              value=${f.contracts} onInput=${set('contracts')} inputmode="numeric" />
+            </${Field}>
+            </div>
+            <p class="small dim">${f.how === 'expired'
+              ? short ? 'The credit is kept as a gain.' : 'The premium paid is lost.'
+              : 'The shares are bought or sold at the strike, with the premium folded into their basis or proceeds.'}</p>
+            <${FormError} error=${e} />
+            </${Dialog}>
+  `;
+}

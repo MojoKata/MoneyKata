@@ -229,6 +229,36 @@ def projections_behind(s: Session, server) -> Iterable[Cause]:
 
 
 @check
+def options_expired(s: Session, server) -> Iterable[Cause]:
+    """An option past its expiry still open: in the money, or with no close to tell, it waits
+    for its owner to say what happened (S3.6)."""
+    from . import options
+    from .ledger import types as atypes
+    from .store.entities.accounts import Account, Instrument
+    from .store.repos import ledger as repo
+
+    today = clock.today()
+    for a in s.scalars(select(Account).where(Account.deleted == false())):
+        if not atypes.investing(a.type):
+            continue
+        for iid in repo.load(s, a).replay().positions():
+            c = options.contract_of(s, iid)
+            if c is None or c.expiry >= today:
+                continue
+            inst = s.get(Instrument, iid)
+            yield Cause(
+                key=f"option-expired:{a.id}:{iid}",
+                kind="option-expired",
+                title=f"{inst.symbol} expired: what happened?",
+                about=f"in {a.name}; expired, assigned or exercised",
+                user_id=a.ownerId,
+                link="/ui/positions/open",
+                fix="Record it",
+                icon="candles",
+            )
+
+
+@check
 def occasions(s: Session, server) -> Iterable[Cause]:
     """An occasion inside its reminder time with nothing bought for it yet (S7.7.3)."""
     from . import gifts

@@ -2,7 +2,9 @@
 
 ## Trade {#action}
 
-**Buy to open** a long call or put; **sell to open** writes one, a short position whose credit is its basis; **buy to close** and **sell to close** end them. Expiry, assignment and exercise are recorded on their own.
+**Buy to open** a long call or put; **sell to open** writes one, a short position whose credit is
+its basis; **buy to close** and **sell to close** end them. Expiry, assignment and exercise are
+recorded on their own.
 
 ## Account
 

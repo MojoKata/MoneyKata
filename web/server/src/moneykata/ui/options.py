@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Request
 from .. import access, activity, ids, options
 from ..errors import FieldError, Problem, refuse
 from ..ledger import types as atypes
-from ..store.entities.accounts import Transaction
+from ..store.entities.accounts import Instrument, Transaction
 from ..store.repos import ledger as repo
 from .conventions import Model, Money, Quantity
 from .deps import Caller, caller, server
@@ -100,3 +100,37 @@ def record_trade(account_id: str, body: OptionTrade, request: Request, c: Caller
             owner=a.ownerId,
         )
         return shape(s, c.id, [t], {a.id: level})[0]
+
+
+class Settle(Model):
+    how: str  # expired, assign, exercise
+    date: dt.date
+    contracts: Quantity | None = None
+
+
+@router.post(
+    "/accounts/{account_id}/options/{instrument_id}/settle",
+    response_model=list[TxnOut],
+    status_code=201,
+)
+def settle(
+    account_id: str, instrument_id: str, body: Settle, request: Request, c: Caller = Depends(caller)
+):
+    """An option's end: it expired, was assigned, or was exercised (S3.4, S3.6)."""
+    if body.how not in ("expired", "assign", "exercise"):
+        raise refuse("how", "how-invalid", "Expired, assigned or exercised.")
+    with server(request).db.tx() as s:
+        a, level = access.account(s, c.id, account_id, "write")
+        inst = s.get(Instrument, instrument_id)
+        if inst is None or inst.deleted:
+            raise refuse("instrumentId", "not-found", "No such option.")
+        made = options.settle(s, c.id, a, inst, body.how, body.date, body.contracts)
+        activity.record(
+            s,
+            "option.settled",
+            actor=c.id,
+            subject_kind="account",
+            subject_id=a.id,
+            owner=a.ownerId,
+        )
+        return shape(s, c.id, made, {a.id: level})

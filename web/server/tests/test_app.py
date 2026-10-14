@@ -405,6 +405,14 @@ def test_every_dialog_has_its_guide(page):
     close_dialog(page)
     open_dialog(page, "/ui/taxes/documents", "Add a filed document", "dialog-tax-document")
     close_dialog(page)
+    # An open option's end.
+    visit(page, "/ui/positions/open")
+    page.get_by_role("row", name=re.compile("MSFT .* 480 P")).click()
+    page.get_by_role("button", name="Expired, assigned or exercised…").click()
+    page.wait_for_selector(".dialog")
+    wait_guide(page, "dialog-option-settle")
+    check_guide(page, ".dialog", "an option's end")
+    close_dialog(page)
     # A 529's form, with a person added in it.
     open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")
     page.get_by_role("button", name=re.compile("^529 plan")).click()

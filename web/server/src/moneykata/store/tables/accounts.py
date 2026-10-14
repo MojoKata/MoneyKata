@@ -205,6 +205,11 @@ Transaction = record(
     Column("duplicateAnswer", Text),
     Column("cleared", Boolean, nullable=False, server_default=text("0")),
     Column("reconciliationId", Text, ForeignKey("Reconciliation.id")),
+    # Assignment and exercise (S3.4): a stock sale's proceeds take the option's premium (an
+    # assigned call's credit added, an exercised put's premium taken off), and the stock trade
+    # names the option's assignment or exercise it came from.
+    Column("proceedsAdjustment", Dec),
+    Column("optionTransactionId", Text, ForeignKey("Transaction.id")),
     Column("createdById", Text, ForeignKey("User.id")),
     _in("kind", TXN_KINDS, "kind"),
     CheckConstraint(

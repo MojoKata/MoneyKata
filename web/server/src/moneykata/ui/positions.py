@@ -9,7 +9,7 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Request
 
-from .. import access, clock, valuation
+from .. import access, clock, options, valuation
 from ..ledger import types as atypes
 from ..store.entities.accounts import Instrument, Transaction
 from ..store.repos import ledger as repo
@@ -51,6 +51,9 @@ class OpenRow(Model):
     term: str  # short, long or mixed
     days: int  # since the oldest open lot
     lots: list[LotOut]
+    expiry: dt.date | None = None  # an option's
+    daysToExpiry: int | None = None
+    inTheMoney: bool | None = None  # by the underlying's latest close
 
 
 class ClosedRow(Model):
@@ -71,8 +74,15 @@ class ClosedRow(Model):
     term: str
 
 
+class Expiring(Model):
+    symbol: str
+    days: int
+    inTheMoney: bool | None
+
+
 class Summary(Model):
     unrealized: Money
+    expiringSoon: list[Expiring]  # options expiring within 7 days
     realizedThisYear: Money
     realizedShort: Money
     realizedLong: Money
@@ -152,6 +162,15 @@ def gather(s, c: Caller, kind: str = "all"):
             value = p.value if p is not None else None
             gain = value - cost if value is not None and cost is not None else None
             flags = [_long_term(lot.acquiredOn, today) for lot in lots]
+            extra = {}
+            oc = options.contract_of(s, iid) if inst.instrumentClass == "option" else None
+            if oc is not None:
+                under = valuation.prices(s, [oc.underlyingId], today).get(oc.underlyingId)
+                extra = {
+                    "expiry": oc.expiry,
+                    "daysToExpiry": (oc.expiry - today).days,
+                    "inTheMoney": options.in_the_money(oc, under.price) if under else None,
+                }
             open_rows.append(
                 OpenRow(
                     accountId=a.id,
@@ -182,6 +201,7 @@ def gather(s, c: Caller, kind: str = "all"):
                         )
                         for lot, f in zip(lots, flags, strict=True)
                     ],
+                    **extra,
                 )
             )
         for (sale, iid), ds in by_sale.items():
@@ -225,6 +245,11 @@ def list_positions(request: Request, kind: str = "all", c: Caller = Depends(call
         return PositionsView(
             summary=Summary(
                 unrealized=sum((r.unrealized or ZERO for r in open_rows), ZERO),
+                expiringSoon=[
+                    Expiring(symbol=r.symbol, days=r.daysToExpiry, inTheMoney=r.inTheMoney)
+                    for r in open_rows
+                    if r.daysToExpiry is not None and r.daysToExpiry <= 7
+                ],
                 realizedThisYear=sum((d.gain for d in this_year), ZERO),
                 realizedShort=sum((d.gain for d in this_year if not d.longTerm), ZERO),
                 realizedLong=sum((d.gain for d in this_year if d.longTerm), ZERO),

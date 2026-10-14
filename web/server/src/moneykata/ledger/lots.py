@@ -174,7 +174,11 @@ def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -
         if not qty:
             return
         method = t.lotMethod or account_method
-        proceeds = t.amount if t.kind == "sell" else ZERO
+        proceeds = (
+            t.amount + (getattr(t, "proceedsAdjustment", None) or ZERO)
+            if t.kind == "sell"
+            else ZERO
+        )
         _consume(out, t, qty, method, proceeds, picks, realize=t.kind == "sell")
     elif t.kind == "split" and t.splitRatio:
         for lot in out.open:
@@ -190,7 +194,15 @@ def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -
 
 # Option trades (S3.2, S3.3): a long contract is a lot like a share's; a short one is a
 # negative lot whose basis is the credit received, negative; closing or expiry realizes it.
-OPTION_TRADES = ("buy-to-open", "sell-to-open", "buy-to-close", "sell-to-close", "expire")
+OPTION_TRADES = (
+    "buy-to-open",
+    "sell-to-open",
+    "buy-to-close",
+    "sell-to-close",
+    "expire",
+    "assign",
+    "exercise",
+)
 
 
 def _option(out: Replay, t, picks: list) -> None:
@@ -205,6 +217,21 @@ def _option(out: Replay, t, picks: list) -> None:
         _consume(out, t, qty, "fifo", t.amount, picks, realize=True)
     elif t.kind == "buy-to-close":
         _cover(out, t, qty, t.amount)
+    elif t.kind in ("assign", "exercise"):
+        # The contract ends without a gain of its own: its premium goes into the stock's basis
+        # or proceeds, on the stock trade made with it (S3.4).
+        left = qty
+        for lot in sorted(
+            (x for x in out.open if x.instrumentId == t.instrumentId and x.quantity),
+            key=lambda x: x.acquiredOn,
+        ):
+            if left <= 0:
+                break
+            take = min(left, abs(lot.quantity))
+            if lot.basis is not None:
+                lot.basis -= (lot.basis * take / abs(lot.quantity)).quantize(CENT)
+            lot.quantity += take if lot.quantity < 0 else -take
+            left -= take
     elif t.kind == "expire":
         # Worthless: what is left of the long lots is lost; the short lots keep their credit.
         longs = sum(

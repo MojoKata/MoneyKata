@@ -3460,6 +3460,37 @@
         "title": "ExpenseOut",
         "type": "object"
       },
+      "Expiring": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "inTheMoney": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inthemoney"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "symbol",
+          "days",
+          "inTheMoney"
+        ],
+        "title": "Expiring",
+        "type": "object"
+      },
       "Filer": {
         "additionalProperties": false,
         "properties": {
@@ -8633,6 +8664,40 @@
             "title": "Days",
             "type": "integer"
           },
+          "daysToExpiry": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daystoexpiry"
+          },
+          "expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry"
+          },
+          "inTheMoney": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inthemoney"
+          },
           "instrumentClass": {
             "title": "Instrumentclass",
             "type": "string"
@@ -12980,6 +13045,49 @@
         "title": "SettingsView",
         "type": "object"
       },
+      "Settle": {
+        "additionalProperties": false,
+        "properties": {
+          "contracts": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "examples": [
+                  "12.5"
+                ],
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contracts"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "how": {
+            "title": "How",
+            "type": "string"
+          }
+        },
+        "required": [
+          "how",
+          "date"
+        ],
+        "title": "Settle",
+        "type": "object"
+      },
       "Setup": {
         "additionalProperties": false,
         "properties": {
@@ -13846,6 +13954,13 @@
       "Summary": {
         "additionalProperties": false,
         "properties": {
+          "expiringSoon": {
+            "items": {
+              "$ref": "#/components/schemas/Expiring"
+            },
+            "title": "Expiringsoon",
+            "type": "array"
+          },
           "realizedLong": {
             "examples": [
               "1234.50"
@@ -13881,6 +13996,7 @@
         },
         "required": [
           "unrealized",
+          "expiringSoon",
           "realizedThisYear",
           "realizedShort",
           "realizedLong"
@@ -18777,6 +18893,72 @@
           }
         },
         "summary": "Record Trade",
+        "tags": [
+          "options"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/options/{instrument_id}/settle": {
+      "post": {
+        "description": "An option's end: it expired, was assigned, or was exercised (S3.4, S3.6).",
+        "operationId": "settle_ui_api_accounts__account_id__options__instrument_id__settle_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Settle"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TxnOut"
+                  },
+                  "title": "Response Settle Ui Api Accounts  Account Id  Options  Instrument Id  Settle Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Settle",
         "tags": [
           "options"
         ]

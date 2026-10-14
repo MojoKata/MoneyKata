@@ -572,6 +572,13 @@
  */
 
 /**
+ * @typedef {Object} Expiring
+ * @property {string} symbol
+ * @property {number} days
+ * @property {(boolean | null)} inTheMoney
+ */
+
+/**
  * @typedef {Object} Filer
  * @property {string} id
  * @property {string} name
@@ -1411,6 +1418,9 @@
  * @property {string} term
  * @property {number} days
  * @property {Array<LotOut>} lots
+ * @property {(string | null)} [expiry]
+ * @property {(number | null)} [daysToExpiry]
+ * @property {(boolean | null)} [inTheMoney]
  */
 
 /**
@@ -2129,6 +2139,13 @@
  */
 
 /**
+ * @typedef {Object} Settle
+ * @property {string} how
+ * @property {string} date
+ * @property {((number | string) | null)} [contracts]
+ */
+
+/**
  * @typedef {Object} Setup
  * @property {string} password
  * @property {string} email
@@ -2302,6 +2319,7 @@
 /**
  * @typedef {Object} Summary
  * @property {string} unrealized
+ * @property {Array<Expiring>} expiringSoon
  * @property {string} realizedThisYear
  * @property {string} realizedShort
  * @property {string} realizedLong

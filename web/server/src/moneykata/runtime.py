@@ -7,7 +7,7 @@ import logging
 
 from sqlalchemy import delete, select
 
-from . import figures, listener, settings, timezones
+from . import clock, figures, listener, settings, timezones
 from .app import Server, create_app
 from .auth import sessions, users
 from .config import Config
@@ -108,6 +108,15 @@ def register_tasks(server: Server) -> None:
         server.services.mailer.send_waiting(smtp, server.guard, ctx.stop)
 
     server.tasks.register("mail", mail, Every(300), last.get("mail"))
+
+    def expire_options(ctx: TaskContext) -> None:
+        """Options that expired out of the money end the day after (S3.6)."""
+        from . import options
+
+        with server.db.tx() as s:
+            options.expire_due(s, clock.today())
+
+    server.tasks.register("options", expire_options, Every(3600), last.get("options"))
 
     from . import alerts
 

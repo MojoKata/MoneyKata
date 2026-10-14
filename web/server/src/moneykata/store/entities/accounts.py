@@ -101,6 +101,8 @@ class Transaction(Record):
     duplicateAnswer: str | None = None
     cleared: bool = False
     reconciliationId: str | None = None
+    proceedsAdjustment: Decimal | None = None
+    optionTransactionId: str | None = None
     createdById: str | None = None
 
 

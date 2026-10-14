@@ -5,7 +5,7 @@ import datetime as dt
 
 import pytest
 from conftest import make_user, sign_in
-from test_accounts import new_account
+from test_accounts import add, new_account
 
 from moneykata import clock
 
@@ -133,3 +133,113 @@ def test_option_kinds_go_through_their_own_endpoint(alice):
         alice, brk["id"], "sell-to-open", "2026-09-02", "1", contracts="1.5", right="straddle"
     )
     assert {e["field"] for e in bad.json()["errors"]} == {"contracts", "right"}
+
+
+def _held(c, acct, symbol):
+    return next(
+        (r for r in c.get("/ui/api/positions").json()["open"] if r["symbol"] == symbol), None
+    )
+
+
+def test_a_short_put_assigned_folds_the_credit_into_the_stock_basis(alice):
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    opt(alice, brk["id"], "sell-to-open", "2026-09-02", "6.40", contracts="1", fees="0")
+    put = _held(alice, brk["id"], "MSFT 20NOV26 480 P")
+    r = alice.post(
+        f"/ui/api/accounts/{brk['id']}/options/{put['instrumentId']}/settle",
+        json={"how": "assign", "date": "2026-11-20"},
+    )
+    assert r.status_code == 201, r.text
+    end, stock = r.json()
+    assert end["kind"] == "assign" and stock["amount"] == "-48000.00"
+    msft = _held(alice, brk["id"], "MSFT")
+    assert msft["quantity"] == "100" and msft["cost"] == "47360.00", "48,000 less the 640 credit"
+    assert _held(alice, brk["id"], "MSFT 20NOV26 480 P") is None
+    assert (
+        alice.post(
+            f"/ui/api/accounts/{brk['id']}/options/{put['instrumentId']}/settle",
+            json={"how": "assign", "date": "2026-11-20"},
+        ).status_code
+        == 422
+    )
+
+
+def test_a_short_call_assigned_adds_its_credit_to_the_proceeds(alice):
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    add(
+        alice,
+        brk["id"],
+        "-40000.00",
+        "2025-01-02",
+        kind="buy",
+        symbol="MSFT",
+        quantity="100",
+        price="400",
+    )
+    opt(
+        alice, brk["id"], "sell-to-open", "2026-09-02", "5.00", right="call", strike="450", fees="0"
+    )
+    call = _held(alice, brk["id"], "MSFT 20NOV26 450 C")
+    alice.post(
+        f"/ui/api/accounts/{brk['id']}/options/{call['instrumentId']}/settle",
+        json={"how": "assign", "date": "2026-11-20"},
+    )
+    closed = next(
+        r for r in alice.get("/ui/api/positions").json()["closed"] if r["symbol"] == "MSFT"
+    )
+    assert closed["proceeds"] == "45500.00" and closed["realized"] == "5500.00"
+    assert closed["term"] == "long"
+
+
+def test_a_long_call_exercised_adds_its_premium_to_the_basis(alice):
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    opt(alice, brk["id"], "buy-to-open", "2026-09-02", "3.00", right="call", strike="450", fees="0")
+    call = _held(alice, brk["id"], "MSFT 20NOV26 450 C")
+    alice.post(
+        f"/ui/api/accounts/{brk['id']}/options/{call['instrumentId']}/settle",
+        json={"how": "exercise", "date": "2026-11-20"},
+    )
+    assert _held(alice, brk["id"], "MSFT")["cost"] == "45300.00"
+
+
+def test_out_of_the_money_expires_the_day_after(server, alice):
+    from moneykata import options
+    from moneykata.prices import refresh as pricing
+    from moneykata.store.entities.accounts import Instrument
+
+    pricing.install()
+    from moneykata.store.entities.prices import Price
+
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    opt(alice, brk["id"], "sell-to-open", "2026-09-02", "6.40", expiry="2026-10-09", fees="0")
+    opt(
+        alice,
+        brk["id"],
+        "sell-to-open",
+        "2026-09-02",
+        "2.00",
+        strike="530",
+        expiry="2026-10-09",
+        fees="0",
+    )
+    with server.db.tx() as s:
+        msft = s.query(Instrument).filter_by(symbol="MSFT").one()
+        s.add(
+            Price(
+                instrumentId=msft.id,
+                date=dt.date(2026, 10, 9),
+                close=500,
+                source="manual",
+                fetchedAt=clock.now(),
+                updatedAt=clock.now(),
+            )
+        )
+    with server.db.tx() as s:
+        assert options.expire_due(s, dt.date(2026, 10, 13)) == 1, "the 480 put; the 530 is ITM"
+    v = alice.get("/ui/api/positions").json()
+    assert [r["symbol"] for r in v["open"]] == ["MSFT 09OCT26 530 P"]
+    expired = next(r for r in v["closed"] if r["how"] == "expired")
+    assert expired["realized"] == "640.00"
+    from moneykata import alerts
+
+    assert [a.kind for a in alerts.evaluate(server)] == ["option-expired"]

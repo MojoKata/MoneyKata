@@ -10,7 +10,7 @@ import { Amt } from '../components/amount.js';
 import { Chips, Empty, Failed, Loading, Tabs } from '../components/bits.js';
 import { openDialog } from '../components/dialog.js';
 import { Icon } from '../components/icon.js';
-import { OptionTrade } from '../components/optiontrade.js';
+import { OptionTrade, Settle } from '../components/optiontrade.js';
 
 const TABS = /** @type {[string, string][]} */ ([
   ['open', 'Open'],
@@ -68,10 +68,13 @@ export default function Positions({ tab }) {
               .length} short</div>
           </div>
           <div class="card kpi">
-            <div class="label">Closed</div>
-            <div class="value">${v.closed
-              .length}</div>
-            <div class="delta dim">closing trades</div>
+            <div class="label">Expiring within 7 days</div>
+            <div class="value">${v.summary.expiringSoon.length}</div>
+            <div class="delta">${v.summary.expiringSoon.map((/** @type {any} */ x) =>
+              html`
+                <span class=${'pill ' + (x.inTheMoney ? 'warn' : '')}>${x.symbol}</span>
+              `
+            )}</div>
           </div>
         </div>
       `
@@ -90,15 +93,15 @@ export default function Positions({ tab }) {
       : !v
       ? html`<${Loading} lines=${6} />`
       : current === 'open'
-      ? html`<${Open} rows=${v.open} />`
+      ? html`<${Open} rows=${v.open} reload=${res.reload} />`
       : current === 'closed'
       ? html`<${Closed} rows=${v.closed} />`
       : html`<${Gains} />`}
   `;
 }
 
-/** @param {{ rows: any[] }} p */
-function Open({ rows }) {
+/** @param {{ rows: any[], reload: () => void }} p */
+function Open({ rows, reload }) {
   const [shown, setShown] = useState(/** @type {string | null} */ (null));
   if (!rows.length) return html`<${Empty}>Nothing open.</${Empty}>`;
   return html`
@@ -125,9 +128,18 @@ function Open({ rows }) {
                 onClick=${() => setShown(shown === key ? null : key)} onKeyDown=${(
                   /** @type {KeyboardEvent} */ e,
                 ) => e.key === 'Enter' && setShown(shown === key ? null : key)}>
-                <td><b>${r.symbol}</b>${r.name
-                  ? html`<div class="small dim">${r.name}</div>`
-                  : null}</td>
+                <td><b>${r.symbol}</b>${r.daysToExpiry != null
+                  ? html`
+                    <span class=${'pill ' + (r.daysToExpiry <= 7 ? 'warn' : '')}>${r
+                        .daysToExpiry < 0
+                      ? 'expired'
+                      : `${r.daysToExpiry}d`}</span>${r.inTheMoney != null
+                      ? html`
+                        <span class="small dim">${r.inTheMoney ? 'ITM' : 'OTM'}</span>
+                      `
+                      : null}
+                  `
+                  : null}${r.name ? html`<div class="small dim">${r.name}</div>` : null}</td>
                 <td class="small dim">${r.accountName}</td>
                 <td><span class=${'pill ' + (r.side === 'short' ? 'warn' : '')}>${r.side === 'short'
                   ? 'Short'
@@ -167,6 +179,23 @@ function Open({ rows }) {
                                   `
                                 )}${Number(r.realized)
                                   ? html`<div class="dim">Realized so far: <${Amt} v=${r.realized} signed /></div>`
+                                  : null}${r.expiry
+                                  ? html`
+                                    <div
+                                      class="toolbar mt"><span class="dim">Expires ${date(
+                                        r.expiry,
+                                      )}</span><span class="spacer"></span><button class="btn sm"
+                                                                        onClick=${(
+                                                                          /** @type {Event} */ ev,
+                                                                        ) => {
+                                                                          ev.stopPropagation();
+                                                                          openDialog(Settle, {
+                                                                            row: r,
+                                                                          }).then((x) =>
+                                                                            x && reload()
+                                                                          );
+                                                                        }}>Expired, assigned or exercised…</button></div>
+                                  `
                                   : null}</div>
                               </td>
                             </tr>
