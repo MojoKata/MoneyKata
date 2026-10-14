@@ -22,6 +22,9 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s
+    logging:                # Docker keeps the logs; these bound them (operations.md)
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
 
   # One-off key commands (S15.4.6): only init and rotate mount the key directory writable,
   # and only rotate mounts moneykata.toml writable (it records the previous key there). The

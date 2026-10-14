@@ -15,8 +15,9 @@
       their calculation code imports SQLAlchemy.
    3. **Revisions:** each change to the tables is a numbered Alembic revision, generated,
       reviewed by hand and committed, and a test fails when tables and revisions disagree.
-      At start the server copies the database (verified) and then migrates it, one revision
-      per transaction. A committed revision is never changed: a change is a new revision.
+      At start the server copies the database (verified) into `pre-upgrade/` in the data
+      directory, keeping the three newest copies, and then migrates it, one revision per
+      transaction. A committed revision is never changed: a change is a new revision.
       Until the first release, the revisions may be folded into one baseline, keeping at least
       one revision after it so a test can carry rows written at the baseline through the
       server's own upgrade.
@@ -47,7 +48,10 @@
 6. **Backups**: daily and verified, of the database **and the receipts directory**, to a
    directory set on the host; the time of day and the number of copies kept are Settings. The
    server makes and verifies (`PRAGMA integrity_check`) the copies itself, and prunes the
-   oldest beyond the number kept (**backup pruning**). They are
+   oldest beyond the number kept (**backup pruning**). `moneykata db backup` makes one at
+   once, and `moneykata db verify-backup` checks one (the newest by default) without changing
+   it: every file against the manifest's hashes, and that it opens with the master key or a
+   previous one. They are
    encrypted as the data is, and open with the master key's recovery phrase (S15.6). A
    restore is documented, and tested by a check. Linked copies (`links/`) are left out: they
    can't be checked without their access keys, and they are pulled again from their sources

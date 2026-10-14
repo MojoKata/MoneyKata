@@ -140,8 +140,12 @@ what key rotation does.
       recovery phrase never goes with them.
    8. **Restoring onto a new host**: install MoneyKata, write the key from the recovery
       phrase with `moneykata keys init --from-phrase` (which checks the checksum and,
-      given the backup, the fingerprint, and sets the owner and mode), restore the data
-      directory from the backup, and start. At start the server unwraps the data key, opens
+      given the backup, the fingerprint, and sets the owner and mode), restore the backup with
+      `moneykata db restore`, and start. The restore runs with the server stopped (the
+      server holds a lock on the data directory while it runs): it checks the backup as
+      `db verify-backup` does, refuses one from a newer release, and moves what it replaces
+      (the database, its keyring, the receipts and the linked copies) aside into
+      `before-restore-<time>/` in the data directory rather than deleting it. At start the server unwraps the data key, opens
       the database, and reports anything it cannot open. `operations.md` has the step-by-step runbook, and a check rehearses
       it.
 7. **Key rotation.** There are two kinds, and they do different things.

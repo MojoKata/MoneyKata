@@ -1,12 +1,14 @@
-"""Opening the database at start, backups (requirements S14.6) and the maintenance shell
-(S14.7)."""
+"""Opening the database at start, backups (requirements S14.6), restoring one (S15.6.8), the
+data directory's lock, and the maintenance shell (S14.7)."""
 
 import datetime as dt
+import fcntl
 import hashlib
 import json
 import logging
 import os
 import shutil
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,6 +20,25 @@ from .db import Database, WrongKey, connect, make_engine
 
 log = logging.getLogger("moneykata.store")
 BACKUP_PREFIX = "moneykata-"
+LOCK_FILE = "moneykata.lock"
+# What a restore replaces in the data directory. Linked copies go too: they are left out of
+# backups and pulled again from their sources (S11.9.9). The TLS pair, the mail folder, the
+# outbox and the pre-upgrade copies stay.
+RESTORED = ("moneykata.db", "moneykata.db-wal", "moneykata.db-shm", "keyring", "receipts", "links")
+
+
+def lock_data_dir(config: Config, why: str):
+    """Hold the data directory's lock: the server holds it while it runs, and a restore takes
+    it, so neither starts while the other has the directory. Returns the open lock file; the
+    lock lasts until it is closed or the process ends."""
+    config.data_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    f = open(config.data_dir / LOCK_FILE, "a")  # noqa: SIM115 - held for the process's life
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        f.close()
+        raise RefuseStart(f"{config.data_dir} is in use by a running MoneyKata; {why}") from None
+    return f
 
 
 @dataclass
@@ -235,7 +256,73 @@ def check_backup(path: Path, master_key: bytes) -> None:
             raise RuntimeError(f"{rel} in {path.name} has changed since the backup")
     ring = master.read_keyring(path / "keyring")
     data_key = master.unwrap(master_key, ring)
-    copy.verify(path / "moneykata.db", master.DataKeys.derive(data_key).sqlcipher_key)
+    # Opened from a scratch copy: opening sets the journal mode, which rewrites the file's
+    # header, and the backup must stay as its manifest describes it.
+    with tempfile.TemporaryDirectory() as tmp:
+        scratch = Path(tmp) / "moneykata.db"
+        shutil.copy2(path / "moneykata.db", scratch)
+        copy.verify(scratch, master.DataKeys.derive(data_key).sqlcipher_key)
+
+
+def master_keys(config: Config) -> list[bytes]:
+    """The master key and any previous ones kept after a rotation (S15.7.1), newest first."""
+    keys = [master.check_key_file(config.key_file, config.data_dir, config.backup_dir)]
+    keys += [
+        master.check_key_file(p.path, config.data_dir, config.backup_dir)
+        for p in config.previous_keys
+    ]
+    return keys
+
+
+def verify_backup(config: Config, path: Path | None = None) -> Path:
+    """`moneykata db verify-backup`: a backup (the newest by default) is whole and opens with
+    the master key or a previous one: the drill operations.md asks for."""
+    if path is None:
+        made = backups(config)
+        if not made:
+            raise RefuseStart(f"there is no backup in {config.backup_dir}")
+        path = made[-1]
+    failure: Exception | None = None
+    for key in master_keys(config):
+        try:
+            check_backup(path, key)
+            return path
+        except ValueError as e:  # this key doesn't unwrap it: try the next
+            failure = e
+    raise RefuseStart(f"{path.name} does not open with the master key: {failure}")
+
+
+def restore(config: Config, backup_path: Path, now: dt.datetime | None = None) -> Path:
+    """`moneykata db restore`, with the server stopped: check the backup, move what it replaces
+    aside into `before-restore-<time>/` in the data directory, and copy it in. The server's
+    next start opens it and migrates it if it is from an earlier release. Returns the folder
+    the replaced files went to."""
+    lock = lock_data_dir(config, "stop the server before restoring")
+    try:
+        verify_backup(config, backup_path)
+        manifest = json.loads((backup_path / "manifest.json").read_text())
+        revision = manifest.get("revision")
+        if revision is not None and revision not in migrate.known():
+            raise RefuseStart(
+                f"{backup_path.name} is at revision {revision}, from a newer MoneyKata than "
+                "this one; restore it with that release or a later one"
+            )
+        stamp = (now or clock.now()).strftime("%Y%m%d-%H%M%S")
+        aside = config.data_dir / f"before-restore-{stamp}"
+        aside.mkdir(mode=0o700)
+        for name in RESTORED:
+            if (config.data_dir / name).exists():
+                os.replace(config.data_dir / name, aside / name)
+        shutil.copy2(backup_path / "moneykata.db", config.db_path)
+        shutil.copy2(backup_path / "keyring", config.keyring_path)
+        for p in (config.db_path, config.keyring_path):
+            os.chmod(p, 0o600)
+        if (backup_path / "receipts").is_dir():
+            shutil.copytree(backup_path / "receipts", config.receipts_dir)
+        log.info("restored %s; the files it replaced are in %s", backup_path.name, aside.name)
+        return aside
+    finally:
+        lock.close()
 
 
 # ---------- the maintenance shell ----------

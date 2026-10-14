@@ -311,10 +311,18 @@ def test_migration_copies_the_database_first(store, keyed_config, monkeypatch):
     monkeypatch.setattr(migrate, "known", lambda: {"0001", "0002"})
     calls = []
     monkeypatch.setattr(migrate.command, "upgrade", lambda cfg, rev: calls.append(rev))
+    older = keyed_config.data_dir / "pre-upgrade"
+    older.mkdir()
+    for i in range(3):  # three copies from earlier upgrades, oldest first
+        (older / f"moneykata-before-000{i}-x.db").write_bytes(b"old")
+        os.utime(older / f"moneykata-before-000{i}-x.db", (1_000_000 + i, 1_000_000 + i))
     maintenance.open_store(keyed_config).db.dispose()
-    copies = list((keyed_config.data_dir / "pre-upgrade").iterdir())
-    assert len(copies) == 1 and calls == ["head"]
-    assert os.stat(copies[0]).st_mode & 0o777 == 0o600
+    copies = sorted(p.name for p in older.iterdir())
+    assert calls == ["head"]
+    # The new copy and the two newest before it: the oldest is removed.
+    assert len(copies) == migrate.PRE_UPGRADE_KEPT and "moneykata-before-0000-x.db" not in copies
+    new = [p for p in older.iterdir() if "0002" in p.name and "-x" not in p.name]
+    assert len(new) == 1 and os.stat(new[0]).st_mode & 0o777 == 0o600
 
 
 def test_database_class_requires_a_unit_of_work(db):
@@ -434,3 +442,45 @@ def test_revisions_carry_a_database_from_0001_to_head(tmp_path):
     fresh.dispose()
     differ = [n for n in metadata.tables if _clauses(migrated[n]) != _clauses(made[n])]
     assert differ == []
+
+
+def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_config):
+    """`moneykata db restore` (S15.6.8): the backup checked, what it replaces moved aside, and
+    the restored database opens at the server's next start."""
+    with store.db.tx() as s:
+        new_user(s, "alice")
+    keyed_config.receipts_dir.mkdir(parents=True)
+    (keyed_config.receipts_dir / "abc.mkr").write_bytes(b"sealed bytes")
+    made = maintenance.backup(keyed_config, store)
+    assert maintenance.verify_backup(keyed_config) == made
+    with store.db.tx() as s:
+        new_user(s, "bob")
+    (keyed_config.receipts_dir / "later.mkr").write_bytes(b"after the backup")
+    store.db.dispose()
+
+    held = maintenance.lock_data_dir(keyed_config, "test")
+    with pytest.raises(RefuseStart, match="stop the server before restoring"):
+        maintenance.restore(keyed_config, made)
+    held.close()
+
+    aside = maintenance.restore(keyed_config, made)
+    assert sorted(p.name for p in (aside / "receipts").iterdir()) == ["abc.mkr", "later.mkr"]
+    assert sorted(p.name for p in keyed_config.receipts_dir.iterdir()) == ["abc.mkr"]
+    again = maintenance.open_store(keyed_config)
+    with again.db.read() as s:
+        assert [u.username for u in s.scalars(select(User))] == ["alice"]
+    again.db.dispose()
+
+
+def test_restore_refuses_a_changed_backup_or_one_from_a_newer_release(store, keyed_config):
+    made = maintenance.backup(keyed_config, store)
+    store.db.dispose()
+    manifest = made / "manifest.json"
+    manifest.write_text(manifest.read_text().replace('"revision": "0002"', '"revision": "9999"'))
+    with pytest.raises(RefuseStart, match="from a newer MoneyKata"):
+        maintenance.restore(keyed_config, made)
+    assert keyed_config.db_path.exists()  # nothing was moved
+    with open(made / "moneykata.db", "ab") as f:
+        f.write(b"x")
+    with pytest.raises(RuntimeError, match="has changed since the backup"):
+        maintenance.verify_backup(keyed_config, made)

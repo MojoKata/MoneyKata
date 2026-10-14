@@ -33,6 +33,7 @@ from .tables import metadata
 log = logging.getLogger("moneykata.store")
 HERE = Path(__file__).resolve().parent
 VERSION_TABLE = "SchemaRevision"
+PRE_UPGRADE_KEPT = 3  # the copies made before migrating that stay (requirements S14.1.3)
 
 
 def alembic_config(connection=None) -> AlembicConfig:
@@ -81,6 +82,11 @@ def upgrade(engine: Engine, db_path: Path, key: str | None, copies_dir: Path | N
         copy.export(engine, dest, key)
         copy.verify(dest, key)
         log.info("copied the database before migrating: %s", dest.name)
+        for old in sorted(
+            copies_dir.glob("moneykata-before-*.db"), key=lambda p: p.stat().st_mtime
+        )[:-PRE_UPGRADE_KEPT]:
+            old.unlink()
+            log.info("removed an older pre-upgrade copy: %s", old.name)
     with engine.connect() as conn:
         for sql in views.drop_all_sql(conn):
             conn.exec_driver_sql(sql)

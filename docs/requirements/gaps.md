@@ -4,12 +4,6 @@ Areas the requirements name but don't yet specify. Each has a lasting id: a gap 
 closed is removed, its text goes into the section it belongs to, and its id is never used
 again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
-## G6: Operations
-
-**What is missing:** `docs/operations.md`: upgrades and migrations in the Docker image, health checks, logs, monitoring, restore drills.
-
-**Touches:** S13, S15, S17.8.
-
 ## G7: API conventions and reference
 
 **What is missing:** the conventions of S13.8 are proposed and await review; `docs/api.md` grows with the code, beside the generated OpenAPI, and documents the MCP tools.

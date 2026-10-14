@@ -185,6 +185,9 @@ async def start(config: Config, seed: bool = False) -> int:
         from .dev import devmode
 
         devmode.prepare(config)
+    from .store.maintenance import lock_data_dir
+
+    lock = lock_data_dir(config, "only one server may use a data directory")  # noqa: F841 - held while running
     server = build(config)
     if config.dev:
         from .dev import devmode

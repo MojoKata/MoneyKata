@@ -33,7 +33,8 @@
 6. **Stopping**: on SIGTERM the server ends every event stream, lets requests in flight finish
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
    cannot start for a reason only an operator can fix (a config file it can't use, a file
-   mode, a database from a newer release, a certificate it can't load), it says why in one
+   mode, a database from a newer release, a certificate it can't load, a data directory another
+   server is using), it says why in one
    `refusing to start:` line and exits 78 (`EX_CONFIG`). The example `compose.yaml` restarts
    it only on failure, three times at most, so a refused start isn't retried in a loop.
 7. **Security policies**. One place for the rules every request

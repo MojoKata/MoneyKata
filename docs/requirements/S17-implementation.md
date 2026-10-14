@@ -136,7 +136,8 @@
    receipts, linked copies), the **backup directory**, and the **key directory**, read only
    for the server and kept out of the backups (S15.4). `moneykata.toml` is mounted too;
    secrets never come from environment variables. `install/compose.yaml` is the example to
-   start from. The image is about 600 MB, most of it the receipt reader (ONNX Runtime,
+   start from; it keeps the logs Docker holds to five files of 10 MB. `docs/operations.md`
+   is the runbook: installing, upgrading, backups, health, logs, restoring and drills. The image is about 600 MB, most of it the receipt reader (ONNX Runtime,
    OpenCV and the models); the reader's worker takes about 350 MB more while it runs, which
    a host too small for it avoids by turning reading off (S9.8.7).
    1. **Architectures**: one multi-architecture image for **amd64** and **arm64**, both built

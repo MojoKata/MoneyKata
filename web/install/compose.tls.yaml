@@ -19,6 +19,10 @@ services:
       - /tmp
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 10s
+    logging:                # Docker keeps the logs; these bound them (operations.md)
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
 
   # The key commands, as in compose.yaml.
   keys-init:
