@@ -127,8 +127,12 @@ def register_tasks(server: Server) -> None:
     server.tasks.register("bitcoin", bitcoin, Every(3600), last.get("bitcoin"))
 
     def links(ctx: TaskContext) -> None:
-        """An exchange with each linked server (S11.4): hourly."""
+        """An exchange with each linked server (S11.4): hourly. Dev mode with stubs makes no
+        outside calls, so its seeded link is left as it is."""
         from .links import manage
+
+        if server.config.stubs:
+            return
 
         manage.exchange_all(server, ctx)
 

@@ -224,6 +224,10 @@ def apply_directory(s, link: Link, payload: dict) -> None:
 
 
 def end_users(s, link: Link) -> None:
+    """A link ended: its users are removed here, with the shares that name them (S10.3.3)."""
+    from ..sharing import remove_link_shares
+
+    remove_link_shares(s, link.id)
     now = clock.now()
     for u in s.scalars(select(User).where(User.linkId == link.id, User.deleted == false())):
         u.deleted, u.deletedAt = True, now

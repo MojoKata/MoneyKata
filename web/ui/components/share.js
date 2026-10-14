@@ -1,5 +1,5 @@
 // The Share dialog (requirements S10.4): every active user, then every active group, each with
-// None · Read · Write; who has access through a group is shown "via" it. Nothing changes until
+// None · Read · Write, then each linked server's people with None · Read; who has access through a group is shown "via" it. Nothing changes until
 // Save. For a portfolio, it names the accounts each person can't see (S5.1.2).
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
@@ -7,13 +7,14 @@ import { api } from '../api/client.js';
 import { useSubmit } from '../app/hooks.js';
 import { Dialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
-import { FormError, Seg } from './fields.js';
+import { FormError, Seg, Switch } from './fields.js';
 import { Avatar, Loading, Tile } from './bits.js';
 import { Icon } from './icon.js';
 import { toast } from './toast.js';
 
 const LEVELS =
   /** @type {[string, string][]} */ ([['none', 'None'], ['read', 'Read'], ['write', 'Write']]);
+const REMOTE = /** @type {[string, string][]} */ ([['none', 'None'], ['read', 'Read']]);
 
 /** @param {{ close: (v?: any) => void, kind: 'account' | 'portfolio' | 'budget', id: string, name: string }} p */
 export function ShareDialog({ close, kind, id, name }) {
@@ -21,15 +22,30 @@ export function ShareDialog({ close, kind, id, name }) {
   const [view, setView] = useState(/** @type {any} */ (null));
   const [users, setUsers] = useState(/** @type {Record<string, string>} */ ({}));
   const [groups, setGroups] = useState(/** @type {Record<string, string>} */ ({}));
+  const [receipts, setReceipts] = useState(/** @type {Record<string, boolean>} */ ({}));
   useEffect(() => {
     api.get(`/shares/${kind}/${id}`).then((v) => {
       setView(v);
-      setUsers(Object.fromEntries(v.users.map((/** @type {any} */ u) => [u.id, u.level])));
+      setUsers(
+        Object.fromEntries(
+          [...v.users, ...v.links.flatMap((/** @type {any} */ l) => l.users)].map((
+            /** @type {any} */ u,
+          ) => [u.id, u.level]),
+        ),
+      );
+      setReceipts(
+        Object.fromEntries(v.links.map((/** @type {any} */ l) => [l.linkId, l.includeReceipts])),
+      );
       setGroups(Object.fromEntries(v.groups.map((/** @type {any} */ g) => [g.id, g.level])));
     });
   }, [kind, id]);
   const save = useSubmit(async (/** @type {boolean} */ too = false) => {
-    const out = await api.put(`/shares/${kind}/${id}`, { users, groups, shareAccountsToo: too });
+    const out = await api.put(`/shares/${kind}/${id}`, {
+      users,
+      groups,
+      receipts,
+      shareAccountsToo: too,
+    });
     if (too && out.alsoShared) {
       setView(out.view);
       toast(`${out.alsoShared} account${out.alsoShared === 1 ? '' : 's'} shared at read`);
@@ -104,6 +120,38 @@ export function ShareDialog({ close, kind, id, name }) {
                   <${Seg} label=${'Access for ' + g.name} value=${groups[g.id]} options=${LEVELS}
                     onChange=${(/** @type {string} */ v) => setGroups({ ...groups, [g.id]: v })} />
                 </div>
+              `
+            )}
+            ${view.links.map((/** @type {any} */ l) =>
+              html`
+                <h4>On ${l.serverName}${l.householdName
+                  ? html`
+                    <span class="small dim">${l.householdName}</span>
+                  `
+                  : null}</h4>
+                <div class="why" data-help="linked-people">People on a linked server, as it
+                  names them: always Read, seen only in its window there.</div>
+                ${l.users.map((/** @type {any} */ u) =>
+                  html`
+                    <div class="list-item">
+                      <${Avatar} name=${u.displayName} id=${u.id} />
+                      <div class="grow">${u.displayName}</div>
+                      <${Seg} label=${'Access for ' + u.displayName} value=${users[u.id]}
+                        options=${REMOTE} onChange=${(/** @type {string} */ v) =>
+                          setUsers({ ...users, [u.id]: v })} />
+                    </div>
+                  `
+                )}
+                ${l.users.some((/** @type {any} */ u) => users[u.id] === 'read')
+                  ? html`<div class="list-item"><span class="grow">Include receipts<div
+                      class="small dim">Their images and the text read from them cross to ${l.serverName} too.</div></span><${Switch} label=${
+                    'Include receipts for ' +
+                    l.serverName
+                  } id=${l.linkId} help="include-receipts" on=${!!receipts[
+                    l.linkId
+                  ]} onChange=${(/** @type {boolean} */ v) =>
+                    setReceipts({ ...receipts, [l.linkId]: v })} /></div>`
+                  : null}
               `
             )}
           </div>

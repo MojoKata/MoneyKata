@@ -42,6 +42,9 @@ Share = record(
     Column("groupId", Text, ForeignKey("Group.id", ondelete="CASCADE")),
     Column("level", Text, nullable=False),
     Column("createdById", Text, ForeignKey("User.id")),
+    # A share with a linked server's user: whether its receipts (and a tax book's document
+    # files) cross too (S11.5.1), the same for every user of that server.
+    Column("includeReceipts", Boolean, nullable=False, server_default=text("0")),
     CheckConstraint(
         "kind IN ('account', 'portfolio', 'budget', 'person', 'giving-plan', 'tax-book', "
         "'projection')",

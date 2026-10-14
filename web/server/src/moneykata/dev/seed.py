@@ -17,6 +17,7 @@ from .seed_budgets import seed_budgets
 from .seed_education import seed_education
 from .seed_gifts import seed_gifts
 from .seed_giving import seed_giving
+from .seed_links import seed_links
 from .seed_loans import seed_loans
 from .seed_options import seed_options
 from .seed_projections import seed_projections
@@ -44,6 +45,7 @@ def seed(server) -> None:
         seed_taxes(s, people)
         seed_options(s, people)
         seed_wallets(s, people)
+        seed_links(s, people)
         seed_sharing(s, people)
         seed_budgets(s, people)
         seed_receipts(server, s, people)

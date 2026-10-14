@@ -1141,6 +1141,15 @@
  */
 
 /**
+ * @typedef {Object} LinkedPeople
+ * @property {string} linkId
+ * @property {string} serverName
+ * @property {(string | null)} householdName
+ * @property {boolean} includeReceipts
+ * @property {Array<UserGrant>} users
+ */
+
+/**
  * @typedef {Object} LinksView
  * @property {string} fingerprint
  * @property {(string | null)} address
@@ -2225,6 +2234,7 @@
  * @property {Object<string, string>} [users]
  * @property {Object<string, string>} [groups]
  * @property {boolean} [shareAccountsToo]
+ * @property {Object<string, boolean>} [receipts]
  */
 
 /**
@@ -2234,6 +2244,7 @@
  * @property {string} itemName
  * @property {Array<UserGrant>} users
  * @property {Array<GroupGrant>} groups
+ * @property {Array<LinkedPeople>} links
  * @property {Object<string, Array<string>>} hidden
  * @property {Array<AccountName>} accounts
  */

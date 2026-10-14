@@ -32,6 +32,7 @@ class Share(Record):
     userId: str | None = None
     groupId: str | None = None
     createdById: str | None = None
+    includeReceipts: bool = False
 
 
 @dataclass(kw_only=True, eq=False)

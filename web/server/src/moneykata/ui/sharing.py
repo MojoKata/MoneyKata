@@ -46,12 +46,21 @@ class AccountName(Model):
     yours: bool
 
 
+class LinkedPeople(Model):
+    linkId: str
+    serverName: str
+    householdName: str | None
+    includeReceipts: bool
+    users: list[UserGrant]
+
+
 class ShareView(Model):
     kind: str
     itemId: str
     itemName: str
     users: list[UserGrant]
     groups: list[GroupGrant]
+    links: list[LinkedPeople]
     hidden: dict[str, list[str]]
     accounts: list[AccountName]
 
@@ -60,6 +69,7 @@ class ShareSave(Model):
     users: dict[str, str] = Field(default_factory=dict)
     groups: dict[str, str] = Field(default_factory=dict)
     shareAccountsToo: bool = False
+    receipts: dict[str, bool] = Field(default_factory=dict)  # by link: Include receipts
 
 
 class Saved(Model):
@@ -116,6 +126,7 @@ def view(s, owner: User, kind: str, item_id: str) -> ShareView:
         kind=kind,
         itemId=item_id,
         itemName=obj.name,
+        links=_linked(s, current),
         users=out_users,
         groups=[
             GroupGrant(
@@ -129,6 +140,45 @@ def view(s, owner: User, kind: str, item_id: str) -> ShareView:
         hidden=hidden,
         accounts=accounts,
     )
+
+
+def _linked(s, current) -> list[LinkedPeople]:
+    """Each live link's people (S10.4): None or Read, with Include receipts per server."""
+    from ..store.entities.links import Link
+
+    direct = {g.userId: g for g in current if g.userId}
+    out = []
+    for link in s.scalars(
+        select(Link)
+        .where(Link.deleted == false(), Link.state.in_(("active", "paused")))
+        .order_by(Link.peerName)
+    ):
+        people = s.scalars(
+            select(User)
+            .where(User.linkId == link.id, User.deleted == false(), User.active)
+            .order_by(User.displayName)
+        ).all()
+        if not people:
+            continue
+        out.append(
+            LinkedPeople(
+                linkId=link.id,
+                serverName=link.peerName or "a linked server",
+                householdName=link.householdName,
+                includeReceipts=any(direct[u.id].includeReceipts for u in people if u.id in direct),
+                users=[
+                    UserGrant(
+                        id=u.id,
+                        displayName=u.displayName,
+                        avatar=None,
+                        level=direct[u.id].level if u.id in direct else "none",
+                        via=[],
+                    )
+                    for u in people
+                ],
+            )
+        )
+    return out
 
 
 def _owner_only(s, c: Caller, kind: str, item_id: str) -> None:
@@ -156,7 +206,14 @@ def save_shares(
     with srv.db.tx() as s:
         _owner_only(s, c, kind, item_id)
         change = sharing.save(
-            s, c.user, kind, item_id, body.users, body.groups, body.shareAccountsToo
+            s,
+            c.user,
+            kind,
+            item_id,
+            body.users,
+            body.groups,
+            body.shareAccountsToo,
+            body.receipts,
         )
         s.flush()
         out = Saved(view=view(s, c.user, kind, item_id), alsoShared=change.alsoShared)

@@ -229,3 +229,40 @@ def test_an_unreachable_peer_is_recorded_on_the_link(admins):
     out = ca.post(f"/ui/api/settings/links/{a_id}/pull").json()
     assert out["state"] == "active" and "didn't answer" in out["lastError"]
     assert out["failingSince"]
+
+
+# ---------- sharing with linked people (S10.3.3, S10.4)
+
+from conftest import sign_in  # noqa: E402
+
+
+def test_an_item_is_shared_read_only_with_a_linked_servers_people(admins):
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    a_id, _ = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post("/ui/api/accounts", json={"name": "Brokerage", "type": "brokerage"}).json()
+    v = alice.get(f"/ui/api/shares/account/{acct['id']}").json()
+    peers = v["links"]
+    assert len(peers) == 1 and peers[0]["linkId"] == a_id
+    carol = next(u for u in peers[0]["users"] if u["displayName"] != "Admin B")
+    assert all(u["id"] != carol["id"] for u in v["users"]), "remote people only under their server"
+    r = alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol["id"]: "write"}})
+    assert r.status_code == 422 and r.json()["code"] == "read-only"
+    r = alice.put(
+        f"/ui/api/shares/account/{acct['id']}",
+        json={"users": {carol["id"]: "read"}, "receipts": {a_id: True}},
+    )
+    assert r.status_code == 200, r.text
+    after = r.json()["view"]["links"][0]
+    assert after["includeReceipts"] is True
+    assert next(u for u in after["users"] if u["id"] == carol["id"])["level"] == "read"
+    # Ending the link removes the share.
+    ca.post(f"/ui/api/settings/links/{a_id}/end")
+    v = alice.get(f"/ui/api/shares/account/{acct['id']}").json()
+    assert v["links"] == []
+    from moneykata.store.entities.sharing import Share
+
+    with a.db.read() as s:
+        assert s.query(Share).filter(Share.deleted.is_(False)).count() == 0

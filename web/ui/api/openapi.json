@@ -7104,6 +7104,50 @@
         "title": "LastYear",
         "type": "object"
       },
+      "LinkedPeople": {
+        "additionalProperties": false,
+        "properties": {
+          "householdName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Householdname"
+          },
+          "includeReceipts": {
+            "title": "Includereceipts",
+            "type": "boolean"
+          },
+          "linkId": {
+            "title": "Linkid",
+            "type": "string"
+          },
+          "serverName": {
+            "title": "Servername",
+            "type": "string"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/UserGrant"
+            },
+            "title": "Users",
+            "type": "array"
+          }
+        },
+        "required": [
+          "linkId",
+          "serverName",
+          "householdName",
+          "includeReceipts",
+          "users"
+        ],
+        "title": "LinkedPeople",
+        "type": "object"
+      },
       "LinksView": {
         "additionalProperties": false,
         "properties": {
@@ -13462,6 +13506,13 @@
             "title": "Groups",
             "type": "object"
           },
+          "receipts": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Receipts",
+            "type": "object"
+          },
           "shareAccountsToo": {
             "default": false,
             "title": "Shareaccountstoo",
@@ -13517,6 +13568,13 @@
             "title": "Kind",
             "type": "string"
           },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedPeople"
+            },
+            "title": "Links",
+            "type": "array"
+          },
           "users": {
             "items": {
               "$ref": "#/components/schemas/UserGrant"
@@ -13531,6 +13589,7 @@
           "itemName",
           "users",
           "groups",
+          "links",
           "hidden",
           "accounts"
         ],

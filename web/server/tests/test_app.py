@@ -444,6 +444,14 @@ def test_every_dialog_has_its_guide(page):
     check_guide(page, ".dialog", "a token shown once")
     assert "mkt_" in page.inner_text(".dialog")
     close_dialog(page)
+    # Sharing with a linked server's people, and its Include receipts.
+    open_dialog(page, "/ui/accounts", "Share Everyday checking", "dialog-share")
+    page.get_by_role("radiogroup", name="Access for Margaret Griffin").get_by_role(
+        "radio", name="Read"
+    ).click()
+    page.wait_for_selector(".dialog [data-help=include-receipts]")
+    check_guide(page, ".dialog", "a share with a linked server's people")
+    close_dialog(page)
     # An invitation, once this server has a link address.
     visit(page, "/ui/settings/links")
     page.fill(".content #f-link-address", page.url.split("/ui/")[0])

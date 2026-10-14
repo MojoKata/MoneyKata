@@ -97,6 +97,7 @@ def save(
     users: dict[str, str],
     groups: dict[str, str],
     share_accounts_too: bool = False,
+    receipts: dict[str, bool] | None = None,
 ) -> Change:
     obj = item(s, kind, item_id)
     if obj.ownerId != by.id:
@@ -108,6 +109,18 @@ def save(
             errors.append(FieldError(f"users.{uid}", "level-invalid", "None, Read or Write."))
         elif u is None or u.deleted or uid == by.id:
             errors.append(FieldError(f"users.{uid}", "user-unknown", "Choose a user."))
+        elif u.linkId and lvl == "write":
+            errors.append(
+                FieldError(
+                    f"users.{uid}",
+                    "read-only",
+                    f"{u.displayName} is on a linked server: shares there are read only.",
+                )
+            )
+        elif u.linkId and lvl != "none" and not _link_live(s, u.linkId):
+            errors.append(
+                FieldError(f"users.{uid}", "link-not-active", "That server's link isn't active.")
+            )
         elif lvl != "none" and not u.active:
             errors.append(
                 FieldError(
@@ -163,6 +176,7 @@ def save(
             row.level = lvl
             change.changed.append((gk, gid, lvl))
     s.flush()
+    _set_receipts(s, kind, item_id, receipts or {})
 
     if kind == "portfolio" and share_accounts_too:
         change.alsoShared = _share_accounts_too(s, by, obj)
@@ -242,3 +256,35 @@ def _drop_annotations(s: Session, user_id: str, account_id: str) -> None:
         )
     ):
         tag.deleted, tag.deletedAt, tag.deletedById = True, now, user_id
+
+
+def _link_live(s: Session, link_id: str) -> bool:
+    from .store.entities.links import Link
+
+    link = s.get(Link, link_id)
+    return link is not None and not link.deleted and link.state in ("active", "paused")
+
+
+def _set_receipts(s: Session, kind: str, item_id: str, receipts: dict[str, bool]) -> None:
+    """Include receipts, per linked server (S11.5.1): the same on each share with its users."""
+    if not receipts:
+        return
+    for g in grants(s, kind, item_id):
+        if not g.userId:
+            continue
+        u = s.get(User, g.userId)
+        if u is not None and u.linkId in receipts:
+            g.includeReceipts = bool(receipts[u.linkId])
+    s.flush()
+
+
+def remove_link_shares(s: Session, link_id: str, by: str | None = None) -> int:
+    """When a link ends, the shares naming its users go (S10.3.3)."""
+    ids_ = [u.id for u in s.scalars(select(User).where(User.linkId == link_id))]
+    if not ids_:
+        return 0
+    n = 0
+    for row in s.scalars(select(Share).where(Share.userId.in_(ids_), Share.deleted == false())):
+        row.mark_deleted(by)
+        n += 1
+    return n
