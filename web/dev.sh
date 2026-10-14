@@ -27,6 +27,9 @@ web/dev.sh <command>
   mockup       rebuild docs/mockups/MoneyKata-app.html from the app
   help-shots   rebuild the help guides' screenshots from the mockup
   deno [args]  run the pinned Deno
+  vendor add NAME VERSION [--young REASON]
+               adopt a browser library's version: cooldown, registry hash and
+               provenance checked, diff of the served files written for review
 USAGE
 }
 
@@ -100,6 +103,9 @@ case "$cmd" in
     ;;
   help-shots)
     cd "$SERVER" && exec uv run --frozen python "$WEB/ui/mockup/help_shots.py" "$@"
+    ;;
+  vendor)
+    cd "$SERVER" && exec uv run --frozen python "$WEB/ui/vendor/vendor.py" "$@"
     ;;
   deno)
     setup_deno

@@ -60,7 +60,6 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 
 | Id | Gap | What is missing |
 |---|---|---|
-| **G2** | [Web security in one place](gaps.md#g2-web-security-in-one-place) | the policies of S13.7 are proposed and await review |
 | **G5** | [Data sunset](gaps.md#g5-data-sunset) | how data older than the seven-year audit period is retired: what goes, what is summarised, who decides, and how it is confirmed (S14.10) |
 | **G6** | [Operations](gaps.md#g6-operations) | `docs/operations.md`: upgrades and migrations in the Docker image, health checks, logs, monitoring, restore drills |
 | **G7** | [API conventions and reference](gaps.md#g7-api-conventions-and-reference) | the conventions of S13.8 are proposed and await review; `docs/api.md` grows with the code, beside the generated OpenAPI, and documents the MCP tools |

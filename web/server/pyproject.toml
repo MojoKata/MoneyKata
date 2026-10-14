@@ -33,6 +33,7 @@ dev = [
     "pytest",
     "ruff",
     "playwright",
+    "sigstore>=4.5",
 ]
 
 [build-system]

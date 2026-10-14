@@ -36,7 +36,7 @@
    mode, a database from a newer release, a certificate it can't load), it says why in one
    `refusing to start:` line and exits 78 (`EX_CONFIG`). The example `compose.yaml` restarts
    it only on failure, three times at most, so a refused start isn't retried in a loop.
-7. **Security policies** *(proposed, for review)*. One place for the rules every request
+7. **Security policies**. One place for the rules every request
    passes through; other sections refer here.
    1. **Sessions**: a 256-bit random token in a cookie named `mk_session`, `HttpOnly`,
       `Secure`, `SameSite=Strict`, `Path=/ui`, stored as its SHA-256. A new token at sign-in
@@ -82,9 +82,16 @@
       every admin action are logged and recorded in Activity.
    10. **TLS** (in `tls` mode): TLS 1.2 and 1.3 only, with the server's default modern cipher
        suites; HTTP/2.
-   11. **Supply chain**: Python dependencies pinned with hashes in `uv.lock`; browser
-       libraries vendored with their hashes in `manifest.json` (S17.3.1); the image built
-       from a pinned base and rebuilt for security updates.
+   11. **Supply chain**: Python dependencies pinned with hashes in `uv.lock`; the image built
+       from a pinned base and rebuilt for security updates. Browser libraries are vendored
+       (S17.3.1) and adopted only through one gate, which is what stands against a
+       compromised release upstream: a version is taken only after a 14-day cooldown (most
+       malicious releases are found and pulled within days), its download must match the
+       registry's integrity hash, its provenance must verify where the package publishes it
+       (and a package that published it before may not stop), and the diff of the files the
+       browser loads is reviewed before the commit. The hash kept in `manifest.json` records
+       exactly what was adopted and refuses a tarball changed afterwards; it does not judge a
+       release.
 8. **API conventions** *(proposed, for review)*, for `/ui/api` and, where they apply, `/mcp`.
    The OpenAPI document is generated from the routes (R3.9).
    1. **Resources and methods**: plural nouns (`/ui/api/accounts`, `/ui/api/accounts/{id}`).

@@ -4,12 +4,6 @@ Areas the requirements name but don't yet specify. Each has a lasting id: a gap 
 closed is removed, its text goes into the section it belongs to, and its id is never used
 again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
-## G2: Web security in one place
-
-**What is missing:** the policies of S13.7 are proposed and await review.
-
-**Touches:** S13, S14.
-
 ## G5: Data sunset
 
 **What is missing:** how data older than the seven-year audit period is retired: what goes, what is summarised, who decides, and how it is confirmed (S14.10).

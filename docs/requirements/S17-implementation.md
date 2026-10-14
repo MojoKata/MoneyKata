@@ -43,6 +43,21 @@
       (S17.4). Each is **vendored**: its npm tarball is committed under `web/ui/vendor/`,
       named with its exact version in `manifest.json`, and `vendor.py extract` unpacks the
       files the import map points at. No npm, no network at install.
+      1. **Adopting a version** goes only through `web/dev.sh vendor add NAME VERSION`. It
+         refuses a version published less than 14 days ago unless `--young` gives the reason
+         (a security fix), which the manifest entry keeps. It checks the download against
+         the registry's integrity hash. Where the registry holds SLSA provenance, it verifies
+         it through Sigstore: built by GitHub Actions from the repository the manifest
+         records for the package, for this name, version and tarball. A package whose pinned
+         version had provenance is refused a version without it. It warns of npm
+         dependencies, which must be vendored too unless the served files bundle them. It
+         writes the manifest entry (version, publish date, tarball, integrity, repository,
+         whether provenance was verified, the unpack directory and the served files), and,
+         for an update, a diff of the served files, which is reviewed before the commit.
+      2. **The hash** in `manifest.json` is npm's own integrity value for the tarball, so
+         anyone can confirm the committed file is what the registry published. `vendor.py
+         extract` (in `web/check`, `web/dev.sh` and the image build) refuses a tarball that
+         doesn't match it.
    2. **An import map** in `index.html` resolves `import 'preact'` to the vendored file.
       JavaScript with JSDoc types, type-checked by Deno. No minification and no source maps,
       so a stack trace names a file in the repository.

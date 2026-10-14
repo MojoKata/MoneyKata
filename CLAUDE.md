@@ -58,6 +58,12 @@ changed: git holds the history. `docs/schema.md` follows the same rule.
 This repository is self-contained. Docs, mockups and code describe MoneyKata in its own terms
 and never refer to other projects as the source of a design or behaviour.
 
+## Vendored browser libraries
+
+A browser library in `web/ui/vendor/` is added or updated only with `web/dev.sh vendor add`
+(requirements S17.3.1), never by editing `manifest.json` or committing a tarball by hand. Don't
+pass `--young` without the user's reason, and read the diff it writes before committing.
+
 ## Schema conventions
 
 `docs/schema.md` sets the database's naming and ID rules. A new table with an `id` gets a row
