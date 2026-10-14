@@ -48,6 +48,8 @@ class Wire:
         class C:
             def _go(self, method, url, **kw):
                 host = urlsplit(url).hostname
+                if guard is not None:
+                    guard.check(host, 443)  # as the real transport does
                 if host in wire.down or host not in wire.apps:
                     raise httpx.ConnectError("unreachable")
                 return wire.apps[host].request(method, url, **kw)
@@ -60,6 +62,8 @@ class Wire:
 
             def stream(self, method, url, **kw):
                 host = urlsplit(url).hostname
+                if guard is not None:
+                    guard.check(host, 443)
                 if host in wire.down or host not in wire.apps:
                     raise httpx.ConnectError("unreachable")
                 return wire.apps[host].stream(method, url, **kw)

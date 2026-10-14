@@ -68,6 +68,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | **G10** | [Statement intervals per account](gaps.md#g10-statement-intervals-per-account) | the interval each account's statements are expected at, how it is set or learned, and the alert threshold that follows |
 | **G12** | [Option prices and wash-sale edges](gaps.md#g12-option-prices-and-wash-sale-edges) | an option source tried with a live key, index and weekly tickers, wash sales through shorts, options and assignment, and capital at risk for spreads |
 | **G13** | [Bitcoin wallets beyond the common case](gaps.md#g13-bitcoin-wallets-beyond-the-common-case) | live nodes, Electrum certificate pinning, taproot and multisig wallets, transfers matched across wallets and exchanges, the network fee for taxes, reorganisations |
+| **G14** | [Linked households beyond the first build](gaps.md#g14-linked-households-beyond-the-first-build) | the window's fuller screens, a separate /link listener port, links across two real networks, the linked window in the generated mockup, and a first snapshot's size |
 
 ## Also here
 

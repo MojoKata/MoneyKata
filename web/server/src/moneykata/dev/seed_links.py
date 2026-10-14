@@ -24,8 +24,30 @@ def words() -> str:
     return " ".join(phrase.to_words(DEV_COPY_KEY))
 
 
+def _fixed(label: bytes) -> Ed25519PrivateKey:
+    return Ed25519PrivateKey.from_private_bytes(hashlib.sha256(label).digest())
+
+
 def seed_links(server, s, people: dict) -> None:
-    peer = Ed25519PrivateKey.generate()
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        NoEncryption,
+        PrivateFormat,
+    )
+
+    from ..store.repos import secrets as secret_repo
+
+    # Dev mode's keys are fixed, so the sample data (and the generated mockup) is the same on
+    # every run; a real server makes its link key at random (S11.1.3).
+    own = _fixed(b"moneykata dev link key")
+    secret_repo.put(
+        s,
+        server.keys.secrets,
+        *keys.SECRET,
+        keys.b64(own.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())),
+        None,
+    )
+    peer = _fixed(b"moneykata dev griffin-parents link key")
     link = Link(
         id=ids.new_id("Link"),
         state="active",

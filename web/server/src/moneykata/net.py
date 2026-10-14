@@ -113,8 +113,12 @@ class Client(httpx.Client):
     """httpx.Client with the guard, the timeouts and a ceiling on the bytes read."""
 
     def __init__(self, guard: Guard, max_bytes: int = MAX_RESPONSE, **kw) -> None:
+        # The transport does the TLS, so a certificate check turned off (a linked server's own
+        # certificate, S11.2) must reach it: httpx ignores the client's own setting once a
+        # transport is given.
+        verify = kw.pop("verify", True)
         super().__init__(
-            transport=_Transport(guard, max_bytes),
+            transport=_Transport(guard, max_bytes, verify=verify),
             timeout=TIMEOUT,
             follow_redirects=False,
             headers={"User-Agent": "MoneyKata"},

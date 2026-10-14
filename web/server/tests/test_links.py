@@ -11,6 +11,11 @@ from moneykata.links import client, keys, signing
 from moneykata.store.entities.links import Link
 
 
+def reach(srv, *hosts):
+    """Let a server call these hosts, as a link to them would."""
+    srv.guard.allow(hosts, hosts)
+
+
 @pytest.fixture
 def pair(tmp_path, monkeypatch):
     a, b = make_server(tmp_path, "a"), make_server(tmp_path, "b")
@@ -43,6 +48,7 @@ def link(srv, peer_url, peer_key, state="active", role="inviter") -> str:
 
 def test_a_linked_server_answers_a_signed_call_and_signs_its_answer(pair):
     a, b, (url_a, url_b), _ = pair
+    reach(a, "b.test")
     ka, kb = public(a), public(b)
     assert ka != kb and len(ka) == 32
     assert public(a) == ka, "made once, then kept"
@@ -59,6 +65,7 @@ def test_a_linked_server_answers_a_signed_call_and_signs_its_answer(pair):
 
 def test_a_call_from_an_unknown_key_or_the_wrong_link_state_is_refused(pair):
     a, b, (url_a, url_b), _ = pair
+    reach(a, "b.test")
     kb = public(b)
     with pytest.raises(client.LinkError) as e:
         client.call(a, url_b, kb, "/link/v1/ping")
@@ -71,6 +78,7 @@ def test_a_call_from_an_unknown_key_or_the_wrong_link_state_is_refused(pair):
 
 def test_an_answer_not_signed_by_the_peer_is_refused(pair):
     a, b, (url_a, url_b), _ = pair
+    reach(a, "b.test")
     link(b, url_a, public(a))
     stranger = keys.raw_public(signing.Ed25519PrivateKey.generate().public_key())
     with pytest.raises(client.LinkError) as e:
@@ -110,6 +118,7 @@ def test_signatures_times_and_nonces_are_checked():
 
 def test_a_peer_speaking_another_protocol_is_told_which_this_one_speaks(pair, monkeypatch):
     a, b, (url_a, url_b), _ = pair
+    reach(a, "b.test")
     link(b, url_a, public(a))
     monkeypatch.setattr(client, "PROTOCOL", 2)
     with pytest.raises(client.LinkError) as e:
@@ -119,6 +128,7 @@ def test_a_peer_speaking_another_protocol_is_told_which_this_one_speaks(pair, mo
 
 def test_an_unreachable_peer_says_so(pair):
     a, b, (_, url_b), wire = pair
+    reach(a, "b.test")
     wire.down.add("b.test")
     with pytest.raises(client.LinkError) as e:
         client.call(a, url_b, public(b), "/link/v1/ping")

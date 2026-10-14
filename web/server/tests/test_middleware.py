@@ -75,3 +75,16 @@ def test_forwarded_headers_only_from_trusted_proxies(config):
     fwd = {"x-forwarded-for": "203.0.113.9, 10.0.0.2", "x-forwarded-proto": "https"}
     assert call("10.0.0.1", fwd, ["10.0.0.0/8"]) == {"client": "203.0.113.9", "scheme": "https"}
     assert call("192.0.2.1", fwd, ["10.0.0.0/8"]) == {"client": "192.0.2.1", "scheme": "http"}
+
+
+def test_an_outbound_client_passes_its_certificate_check_to_its_transport():
+    """A linked server's own certificate (S11.2): verify=False must reach the transport, which
+    does the TLS; httpx ignores the client's setting once a transport is given."""
+    import ssl
+
+    from moneykata import net
+
+    c = net.Client(net.Guard(), verify=False)
+    ctx = c._transport._pool._ssl_context
+    assert ctx.verify_mode == ssl.CERT_NONE
+    assert net.Client(net.Guard())._transport._pool._ssl_context.verify_mode == ssl.CERT_REQUIRED

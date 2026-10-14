@@ -151,9 +151,10 @@ def linked_servers(s: Session, server) -> Iterable[Cause]:
                 since=link.failingSince,
                 delay=limit,
             )
-        if not link.copyPublicKey and s.scalars(
-            select(LinkedItem.id).where(LinkedItem.linkId == link.id)
-        ).first():
+        if (
+            not link.copyPublicKey
+            and s.scalars(select(LinkedItem.id).where(LinkedItem.linkId == link.id)).first()
+        ):
             yield Cause(
                 key=f"link-key:{link.id}",
                 kind="link-key-waiting",

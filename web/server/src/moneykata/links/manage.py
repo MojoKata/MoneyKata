@@ -288,12 +288,18 @@ def exchange(srv, link_id: str) -> None:
     """One exchange with the peer (S11.2–S11.4), made by whichever side can reach the other:
     each side's directory for the other's, the peer's change for this side in its answer, and
     then this side's change for the peer. A refusal saying the link ended there ends it here."""
+    from ..ui.prices import apply_egress
     from . import receive, serve
 
     with srv.db.read() as s:
         link = _get(s, link_id)
         if link.state not in ("active", "pending"):
             return
+    # A peer's host joins the egress guard's list when its request arrives; make sure the
+    # guard knows it before calling (S13.5).
+    apply_egress(srv)
+    with srv.db.read() as s:
+        link = _get(s, link_id)
         address, peer = link.address, keys.unb64(link.peerKey)
         mine = {**directory(s), "have": link.gotSeq, "wantFull": link.needsFull}
     try:

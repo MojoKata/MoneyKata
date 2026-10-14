@@ -51,3 +51,9 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 **What is missing:** tried against live nodes (Fulcrum, electrs, Bitcoin Core 27 and later, a self-hosted mempool); pinning an Electrum server's certificate rather than accepting the one it presents; taproot (`tr()`) and multisig wallets from their descriptors; matching a transfer out of a wallet with the transfer in at an exchange or another wallet (S1.7) so the basis carries over; the network fee as a disposal of its own for taxes; and a reorganised chain removing a transaction already recorded.
 
 **Touches:** S1.6, S1.7, S8.
+
+## G14: Linked households beyond the first build
+
+**What is missing:** the window's fuller screens (Positions, a projection's charts, a giving plan's months and organisations, a budget's cash flow and recurring payments), which each need their documents added to what the source sends; a separate listener port for `/link` (it is served under the public address's `/link/` path, for a reverse proxy to expose apart); links tried across two real networks (an overlay such as Tailscale, and a forwarded port), not only two servers on one host; the linked window in the generated mockup; and how much a large household's first full snapshot weighs.
+
+**Touches:** S11.2, S11.3.1, S12.9, S12.10.
