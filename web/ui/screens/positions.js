@@ -8,6 +8,9 @@ import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
 import { Chips, Empty, Failed, Loading, Tabs } from '../components/bits.js';
+import { openDialog } from '../components/dialog.js';
+import { Icon } from '../components/icon.js';
+import { OptionTrade } from '../components/optiontrade.js';
 
 const TABS = /** @type {[string, string][]} */ ([
   ['open', 'Open'],
@@ -76,6 +79,10 @@ export default function Positions({ tab }) {
     <div class="toolbar mt">
       <${Chips} label="Show" value=${kind} onChange=${setKind}
         options=${KIND} />
+      <span class="spacer"></span>
+      <button class="btn primary" onClick=${() =>
+        openDialog(OptionTrade, {}).then((x) => x && res.reload())}><${Icon} name="plus" /> Record
+        an option trade</button>
     </div>
     <${Tabs} tabs=${TABS} current=${current} base="/ui/positions" />
     ${res.error

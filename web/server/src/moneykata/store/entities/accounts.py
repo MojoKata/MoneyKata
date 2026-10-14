@@ -209,3 +209,14 @@ class PayoffPlan(Record):
     following: bool = False
     followingSince: dt.date | None = None
     createdById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class OptionContract(Record):
+    id: str
+    instrumentId: str
+    underlyingId: str
+    right: str
+    strike: Decimal
+    expiry: dt.date
+    multiplier: int = 100

@@ -393,6 +393,7 @@ def test_revisions_migrate_a_database_from_0001_keeping_its_tokens(tmp_path):
             "Account",
             "Item",
             "Loan",
+            "Transaction",
         )
         migrated = {
             name: conn.exec_driver_sql(

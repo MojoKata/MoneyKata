@@ -1414,6 +1414,20 @@
  */
 
 /**
+ * @typedef {Object} OptionTrade
+ * @property {string} date
+ * @property {string} action
+ * @property {string} underlying
+ * @property {string} right
+ * @property {(number | string)} strike
+ * @property {string} expiry
+ * @property {(number | string)} contracts
+ * @property {(number | string)} premium
+ * @property {(number | string)} [fees]
+ * @property {number} [multiplier]
+ */
+
+/**
  * @typedef {Object} OrganisationIn
  * @property {string} name
  * @property {(string | null)} [ein]

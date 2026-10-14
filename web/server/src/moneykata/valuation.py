@@ -94,10 +94,13 @@ class Position:
     quantity: Decimal
     costBasis: Decimal | None
     price: Price | None
+    multiplier: int = 1  # an option contract's shares (S3.2)
 
     @property
     def value(self) -> Decimal | None:
-        return None if self.price is None else (self.quantity * self.price.price).quantize(CENT)
+        if self.price is None:
+            return None
+        return (self.quantity * self.price.price * self.multiplier).quantize(CENT)
 
     @property
     def gain(self) -> Decimal | None:
@@ -113,6 +116,7 @@ def positions(s: Session, ledger, day: dt.date | None = None) -> list[Position]:
     for lot in replay.open:
         by.setdefault(lot.instrumentId, []).append(lot)
     found = prices(s, list(by), day)
+    mult = multipliers(s, list(by))
     out = []
     for iid, open_lots in by.items():
         qty = sum((x.quantity for x in open_lots), ZERO)
@@ -121,8 +125,24 @@ def positions(s: Session, ledger, day: dt.date | None = None) -> list[Position]:
             if any(x.basis is None for x in open_lots)
             else sum((x.basis for x in open_lots), ZERO)
         )
-        out.append(Position(iid, qty, basis, found.get(iid)))
+        out.append(Position(iid, qty, basis, found.get(iid), mult.get(iid, 1)))
     return out
+
+
+def multipliers(s: Session, instrument_ids: list[str]) -> dict[str, int]:
+    """Option contracts' shares per contract; anything else counts one."""
+    from .store.entities.accounts import OptionContract
+
+    if not instrument_ids:
+        return {}
+    return {
+        o.instrumentId: o.multiplier
+        for o in s.scalars(
+            select(OptionContract).where(
+                OptionContract.instrumentId.in_(instrument_ids), OptionContract.deleted == false()
+            )
+        )
+    }
 
 
 def account_value(s: Session, ledger, investing: bool, day: dt.date | None = None) -> Decimal:
@@ -227,6 +247,7 @@ def series(
         held.append((day, _positions_on(ledger, day)))
     ids_ = sorted({i for _, pos in held for i in pos})
     points = price_points(s, ids_, first, last)
+    mult = multipliers(s, ids_)
     out = []
     h_i = 0
     cursor = {i: 0 for i in ids_}
@@ -242,7 +263,7 @@ def series(
         value = cash[day]
         for iid, qty in held[h_i][1].items():
             if current.get(iid) is not None:
-                value += (qty * current[iid]).quantize(CENT)
+                value += (qty * current[iid] * mult.get(iid, 1)).quantize(CENT)
         out.append((day, value))
     return out
 

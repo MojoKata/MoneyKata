@@ -8751,6 +8751,115 @@
         "title": "OpenRow",
         "type": "object"
       },
+      "OptionTrade": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "contracts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Contracts",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "expiry": {
+            "format": "date",
+            "title": "Expiry",
+            "type": "string"
+          },
+          "fees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "default": "0",
+            "examples": [
+              "1234.50"
+            ],
+            "format": "money",
+            "title": "Fees",
+            "type": "string"
+          },
+          "multiplier": {
+            "default": 100,
+            "title": "Multiplier",
+            "type": "integer"
+          },
+          "premium": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Premium",
+            "type": "string"
+          },
+          "right": {
+            "title": "Right",
+            "type": "string"
+          },
+          "strike": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "examples": [
+              "12.5"
+            ],
+            "format": "decimal",
+            "title": "Strike",
+            "type": "string"
+          },
+          "underlying": {
+            "title": "Underlying",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "action",
+          "underlying",
+          "right",
+          "strike",
+          "expiry",
+          "contracts",
+          "premium"
+        ],
+        "title": "OptionTrade",
+        "type": "object"
+      },
       "OrganisationIn": {
         "additionalProperties": false,
         "properties": {
@@ -18618,6 +18727,58 @@
         "summary": "Suggest Split",
         "tags": [
           "loans"
+        ]
+      }
+    },
+    "/ui/api/accounts/{account_id}/options": {
+      "post": {
+        "operationId": "record_trade_ui_api_accounts__account_id__options_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptionTrade"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TxnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Trade",
+        "tags": [
+          "options"
         ]
       }
     },

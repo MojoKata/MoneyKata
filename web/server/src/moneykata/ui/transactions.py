@@ -40,6 +40,16 @@ INSTRUMENT_KINDS = (
     "split",
     "return-of-capital",
 )
+# Recorded through the option-trade endpoint (S3.2), which knows the contract.
+OPTION_KINDS = (
+    "buy-to-open",
+    "sell-to-open",
+    "buy-to-close",
+    "sell-to-close",
+    "expire",
+    "assign",
+    "exercise",
+)
 
 
 class SplitIn(Model):
@@ -410,6 +420,10 @@ def _check(s: Session, body, kind: str, investing: bool) -> list[FieldError]:
     errors = []
     if kind not in TXN_KINDS:
         errors.append(FieldError("kind", "kind-invalid", "Choose a kind of transaction."))
+    elif kind in OPTION_KINDS:
+        errors.append(
+            FieldError("kind", "option-kind", "Record an option trade from the account's Holdings.")
+        )
     if kind in INSTRUMENT_KINDS and not investing:
         errors.append(
             FieldError("kind", "kind-not-for-account", "Trades belong in an investing account.")

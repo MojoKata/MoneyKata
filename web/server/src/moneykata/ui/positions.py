@@ -103,7 +103,14 @@ def _term(flags: list[bool]) -> str:
 def _how(t: Transaction | None) -> str:
     if t is None:
         return "sold"
-    return {"sell": "sold", "buy": "bought back"}.get(t.kind, t.kind)
+    return {
+        "sell": "sold",
+        "sell-to-close": "sold",
+        "buy-to-close": "bought back",
+        "expire": "expired",
+        "assign": "assigned",
+        "exercise": "exercised",
+    }.get(t.kind, t.kind)
 
 
 def gather(s, c: Caller, kind: str = "all"):
@@ -193,7 +200,7 @@ def gather(s, c: Caller, kind: str = "all"):
                     instrumentId=iid,
                     symbol=inst.symbol,
                     instrumentClass=inst.instrumentClass,
-                    side="short" if (t is not None and t.kind == "buy") else "long",
+                    side="short" if any((d.basis or ZERO) < 0 for d in ds) else "long",
                     quantity=sum((d.quantity for d in ds), ZERO),
                     opened=min(d.acquiredOn for d in ds),
                     closed=ds[0].soldOn,

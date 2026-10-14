@@ -80,6 +80,7 @@ TEXT = {
     "loan.payment": "{actor} recorded a payment on {subject}",
     "loan.plan-saved": "{actor} saved a payoff plan for {subject}",
     "gift.saved": "{actor} saved a gift",
+    "option.traded": "{actor} recorded an option trade in {subject}",
     "donation.recorded": "{actor} recorded a donation",
     "tax-book.created": "{actor} made a tax book",
     "529.contribution": "{actor} recorded a contribution to {subject}",

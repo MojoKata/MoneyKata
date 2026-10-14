@@ -6,6 +6,7 @@ import { html } from '../app/html.js';
 import { PlansFor } from '../components/plans.js';
 import { LoanSummary, Schedule, TermsCard } from '../components/loan.js';
 import { Payoff } from '../components/payoff.js';
+import { OptionTrade } from '../components/optiontrade.js';
 import { Items, ItemsSummary } from '../components/items.js';
 import { Contributions, Goal, PlanCard, PlanFacts, Withdrawals } from '../components/edu.js';
 import { api } from '../api/client.js';
@@ -165,10 +166,21 @@ function Holdings({ a }) {
   const h = /** @type {any} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!h) return html`<${Loading} />`;
+  const trade = a.level !== 'read'
+    ? html`
+      <div
+        class="toolbar"><span class="spacer"></span><button class="btn sm" onClick=${() =>
+          openDialog(OptionTrade, { accountId: a.id }).then((x) =>
+            x && res.reload()
+          )}>Record an option
+            trade</button></div>
+    `
+    : null;
   if (!h.holdings.length) {
-    return html`<${Empty}>Nothing held yet. Import the broker's file, or add a trade.</${Empty}>`;
+    return html`${trade}<${Empty}>Nothing held yet. Import the broker's file, or add a trade.</${Empty}>`;
   }
   return html`
+    ${trade}
     <div class="card" style=${{ padding: '4px 8px' }}>
       <div class="table-wrap">
         <table class="t">

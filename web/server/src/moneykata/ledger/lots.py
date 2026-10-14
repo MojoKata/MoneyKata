@@ -151,6 +151,9 @@ def replay(
 def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -> None:
     if not t.instrumentId:
         return
+    if t.kind in OPTION_TRADES:
+        _option(out, t, picks)
+        return
     if t.kind in ("buy", "reinvest", "transfer-in"):
         if made:
             for lot in made:
@@ -183,6 +186,65 @@ def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -
         for lot in held:
             cut = (t.amount * lot.quantity / total).quantize(CENT) if total else ZERO
             lot.basis = max(ZERO, lot.basis - cut)
+
+
+# Option trades (S3.2, S3.3): a long contract is a lot like a share's; a short one is a
+# negative lot whose basis is the credit received, negative; closing or expiry realizes it.
+OPTION_TRADES = ("buy-to-open", "sell-to-open", "buy-to-close", "sell-to-close", "expire")
+
+
+def _option(out: Replay, t, picks: list) -> None:
+    qty = abs(t.quantity or ZERO)
+    if not qty:
+        return
+    if t.kind == "buy-to-open":
+        out.open.append(OpenLot(None, t.instrumentId, t.date, qty, -t.amount))
+    elif t.kind == "sell-to-open":
+        out.open.append(OpenLot(None, t.instrumentId, t.date, -qty, -t.amount))
+    elif t.kind == "sell-to-close":
+        _consume(out, t, qty, "fifo", t.amount, picks, realize=True)
+    elif t.kind == "buy-to-close":
+        _cover(out, t, qty, t.amount)
+    elif t.kind == "expire":
+        # Worthless: what is left of the long lots is lost; the short lots keep their credit.
+        longs = sum(
+            (x.quantity for x in out.open if x.instrumentId == t.instrumentId and x.quantity > 0),
+            ZERO,
+        )
+        if longs:
+            _consume(out, t, min(qty, longs), "fifo", ZERO, picks, realize=True)
+        else:
+            _cover(out, t, qty, ZERO)
+
+
+def _cover(out: Replay, t, qty: Decimal, proceeds: Decimal) -> None:
+    """Close short lots, oldest first: each realizes its credit less the share of the cost to
+    close (proceeds, negative or zero)."""
+    shorts = sorted(
+        (x for x in out.open if x.instrumentId == t.instrumentId and x.quantity < 0),
+        key=lambda x: x.acquiredOn,
+    )
+    left, allotted = qty, ZERO
+    for lot in shorts:
+        if left <= 0:
+            break
+        take = min(left, -lot.quantity)
+        left -= take
+        last = left <= 0
+        share = proceeds - allotted if last else (proceeds * take / qty).quantize(CENT)
+        allotted += share
+        basis = None
+        if lot.basis is not None:
+            basis = (lot.basis * take / -lot.quantity).quantize(CENT)
+            lot.basis -= basis
+        lot.quantity += take
+        out.disposals.append(
+            Disposal(
+                t.id, lot.lotId, t.instrumentId, lot.acquiredOn, t.date, take, share, basis, "fifo"
+            )
+        )
+    if left > 0:
+        out.problems.append(Problem("close-without-open", t.instrumentId, t.date, t.id, left))
 
 
 def _consume(

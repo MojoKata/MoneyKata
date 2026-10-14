@@ -62,6 +62,14 @@ TXN_KINDS = (
     "transfer-in",
     "transfer-out",
     "split",
+    # Options (S3.2): the four opening and closing trades, expiry, assignment and exercise.
+    "buy-to-open",
+    "sell-to-open",
+    "buy-to-close",
+    "sell-to-close",
+    "expire",
+    "assign",
+    "exercise",
 )
 INSTRUMENT_CLASSES = (
     "cash",

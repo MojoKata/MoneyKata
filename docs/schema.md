@@ -97,6 +97,7 @@ The prefixes of the tables that exist.
 | Lyout  | StatementLayout  | What statement import learned of an institution's layout: section signs, lines to skip.      |
 | Map    | ImportMapping    | A saved column mapping for one institution's CSV files.                                      |
 | Occsn  | Occasion         | A dated occasion for a person: an anniversary, a holiday, a custom date.                     |
+| OptCt  | OptionContract   | An option instrument's contract: its underlying, call or put, strike, expiry and multiplier. |
 | Orgzn  | Organisation     | An organisation given to: its EIN, whether gifts to it are deductible, causes, pledges.      |
 | Persn  | Person           | Someone in a user's life who need not be a user of the server.                               |
 | Portf  | Portfolio        | A named set of accounts, or parts of them, charted as one.                                   |
