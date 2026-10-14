@@ -209,6 +209,28 @@
          sales, income, retirement, deductions, the documents checklist, giving, education,
          gifts, loans and physical assets; 8949 CSV, TXF and the PDF summary.
       9. **The mockup** generated from the app for these screens, and the Docker image.
-   4. **Milestone 4**: positions and options (S3), bitcoin wallets and own node (S1.6, G9),
-      the MCP endpoint (S10.9).
+   4. **Milestone 4**, in nine parts:
+      1. **Positions** (S3.1, S3.9): the Positions screen, open and closed, with each lot's
+         holding period, and realized and unrealized gains by year, month, account and
+         instrument.
+      2. **Options** (S3.2, S3.3): option contracts as instruments, the four opening and
+         closing trades, short options as negative lots, and their gains at close.
+      3. **Expiry, assignment and exercise** (S3.4, S3.6): expiry applied the day after out
+         of the money, an in-the-money expiry asked about, and assignment and exercise
+         folding the premium into the stock's basis or proceeds.
+      4. **Option marks and trades** (S3.7, S3.9, S4.5): marks from a source, typed, or
+         intrinsic; per-trade P/L and return on capital at risk; options in Form 8949 and
+         flagged for wash-sale review; and the wash-sale basis carried into the replacement
+         lot (G11).
+      5. **Bitcoin wallets** (S1.6.1, S1.6.3): addresses and extended public keys, the
+         addresses derived from them with a gap limit, and the form that refuses keys and
+         seed phrases.
+      6. **Bitcoin sources** (S1.6.2, G9): Settings › Bitcoin with a public explorer or the
+         household's own node (Esplora, an Electrum server, Bitcoin Core), and the wallets'
+         balances and history kept current from it.
+      7. **Access tokens** (S10.9.1): Profile › Access tokens, their scope and expiry, shown
+         once and stored as a hash.
+      8. **The MCP endpoint** (S10.9): `/mcp` over Streamable HTTP, read-only tools through
+         the user's shares, limited and recorded in Activity.
+      9. **The mockup** generated from the app for these screens, and the Docker image.
    5. **Milestone 5**: linked servers and linked households (S11, S12.10, G1).
