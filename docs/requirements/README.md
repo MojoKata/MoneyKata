@@ -63,7 +63,7 @@ None open. A new gap takes the next id after G19.
 
 ## Later work
 
-Work planned for after the first release ([later.md](later.md), S17.9.7).
+Work planned for after the first release ([later.md](later.md), S17.9.8).
 
 | Id | Item | What it is |
 |---|---|---|
@@ -79,8 +79,7 @@ Work planned for after the first release ([later.md](later.md), S17.9.7).
 
 # R1. Decisions
 
-The rulings the rest of the requirements apply. Rulings marked *(proposed)* are
-recommendations waiting for a decision.
+The rulings the rest of the requirements apply.
 
 1. **The stack** (S17): a Python server (FastAPI under Hypercorn), SQLite through
    **SQLAlchemy** with **Alembic** migrations, and a browser app with **no build step** (Preact,

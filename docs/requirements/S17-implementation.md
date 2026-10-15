@@ -153,7 +153,7 @@
    4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
       reverse proxy. A second example runs `tls` mode with a self-signed certificate for
       testing on a local network (S13.3).
-9. **Milestones** *(proposed)*. The requirements describe the finished product; this is the
+9. **Milestones**. The requirements describe the finished product; this is the
    order to build it in. Each milestone ends with `web/check` passing, a Docker image that
    runs, and the generated mockup covering what was built.
    1. **Milestone 1, the foundation and one household's accounts:**
@@ -199,9 +199,8 @@
          and the inbox, sharing and retention.
       6. **Reading receipts** (S9.8): the worker process, RapidOCR with its shipped models,
          the field parser, matching, search and Settings › Receipts.
-      7. **Statement import** (S1.3.3): bank and card statements, read and checked, with
-         their layout learned per institution, and brokerage and plan statements' summary,
-         positions and cash activity (S1.3.3.8); reading trades waits (L1).
+      7. **Statement import** (S1.3.3.1–S1.3.3.4): bank and card statements, read and
+         checked, with their layout learned per institution.
       8. **Projections and assumptions** (S6.1–S6.9): Profile › Assumptions, the models,
          scenarios, active projections with tracking, the Dashboard's Plans card, and
          Settings › Tax tables with the contribution limits and the bitcoin models' figures.
@@ -281,11 +280,39 @@
          copy through decryption, and what an older or newer peer does.
       9. **The mockup** generated from the app for these screens, and the Docker image, with
          two servers linked.
-   6. **The first release** follows the milestones, and needs besides: the MoneyKata Connector
+   6. **Milestone 6**, what the requirements settled after milestone 5, in nine parts:
+      1. **People and relationships** (S10.10, S7.7): people with sex and dates, every user
+         a person, dated relationships and the family tree, gift plans, the duplicate-name
+         check and ask-to-share, the spouse read by date for wash sales and tax books, and a
+         deleted person's gifts. Tax-book dependents (S8.14.5).
+      2. **Statements, more of them** (S1.3.3.5, S1.3.3.6, S1.11.7): a combined statement
+         split per account, a statement kept without reading, and statements expected per
+         account with their alert.
+      3. **Brokerage and plan statements** (S1.3.3.8): the summary as a balance anchor, the
+         positions as a holdings check, the cash activity, and trades offered to the trade
+         dialog.
+      4. **File retention and pruning** (S14.10, S16.17): when each record ended, a
+         category's and the statements' retention, each file's *Kept until* and Keep, and
+         Settings › Storage with Prune.
+      5. **Strategies** (S3.5): grouping proposed and by hand, rolls, the shapes, max profit
+         and loss, breakevens, and capital at risk now and at open on Positions, the account
+         and the portfolio.
+      6. **Adjusted contracts** (S3.10): whole-number splits applied with the stock's, other
+         adjustments from the OCC memo with their root and deliverable, linked on import,
+         assigned and exercised by deliverable, and marked under the new root.
+      7. **Bitcoin, the rest** (S1.6, S1.7.1, S8.19): output descriptors, the node's
+         certificate trusted on first use, confirmations and reorgs, bitcoin kept in sats
+         with Profile's BTC or sats, transfers between wallets matched with their lots, and
+         network fees as sales.
+      8. **Links, the rest** (S11, S12.10): every screen of each shared kind in the linked
+         window, `/link/` as a path, sync oldest to newest with its progress, and Pause for a
+         duration with Resume now (S12.13).
+      9. **The mockup** generated from the app for these screens, and the Docker image.
+   7. **The first release** follows the milestones, and needs besides: the MoneyKata Connector
       (S18), bitcoin wallets tried against live nodes (Fulcrum, electrs, Bitcoin Core 27
       and later, a self-hosted mempool), which the build has no node to try against, and
       links tried across two real networks (an overlay such as Tailscale, and a forwarded
       port), not only two servers on one host.
-   7. **After the first release**: learned column positions for statements (S1.3.3.7),
+   8. **After the first release**: learned column positions for statements (S1.3.3.7),
       miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of
       [later work](later.md) (L1, L2).

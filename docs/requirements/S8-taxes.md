@@ -63,8 +63,25 @@ produces worksheets and exports. It never files, and says so (R1.16).
        prepare the return, such as a grown child or a preparer with an account here, gets
        **write**: they can edit filings, attach documents and resolve issues, but not delete
        the tax book or change its sharing.
-    4. **New tax book** copies the filers and accounts from the year before, and turns last
-       year's received documents into this year's expected ones (S8.16).
+    4. **New tax book** copies the filers, accounts and dependents from the year before, and
+       turns last year's received documents into this year's expected ones (S8.16).
+    5. **Dependents**: the people the filers claim for the year, chosen from the household's
+       people (S10.10). MoneyKata doesn't decide who qualifies (S8.18); dependents feed the
+       panels, the checklist and a few flags.
+       1. **Each** has how they are claimed (*qualifying child* or *qualifying relative*,
+          suggested from the family tree: a child or grandchild under 19, or under 24 and a
+          student), the months they lived with the filers, and a *full-time student* tick.
+       2. **One tax book a year**: a person claimed on two tax books for the same year is
+          flagged on both. A dependent can still have a tax book of their own, which notes
+          that they are claimed on another.
+       3. **What they feed**: each one's age on Dec 31 in Deductions and credits (S8.7),
+          with who is under 17, who is under 13, and who ages out this year; a dependent
+          student's 1098-T and 529 withdrawals in Education (S8.10); their expected documents
+          in the checklist (S8.8), such as a 1098-T or a childcare provider's statement; and a
+          dependent child's unearned income in accounts the book counts (S8.14.2) flagged
+          when it passes the year's threshold for Form 8615, from the tax tables (S16.11).
+       4. **A new tax book** copies them a year older, and leaves out anyone past a
+          qualifying child's age who isn't claimed as a relative, saying whom.
 15. **Filings**: one per return: federal (Form 1040), a state's or a locality's. An
     **amended return** is a filing of its own that names the one it amends. Each filing has:
     1. the jurisdiction, the form, and the **filing status** as typed (MoneyKata never
