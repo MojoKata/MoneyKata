@@ -108,3 +108,6 @@
        with its counts. Each record keeps its row, amounts and links, and shows *File pruned
        Jan 3, 2034*. A pruned file stays in the backups made before it until backup pruning
        (S14.6) removes them, so a restore can bring it back until then.
+    6. **Linked copies follow their source.** File pruning never touches a linked copy
+       (S11.9): a file the source prunes leaves the copy at its next pull, and the copy keeps
+       nothing longer than its source does.

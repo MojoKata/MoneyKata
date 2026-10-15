@@ -49,8 +49,9 @@
       (Settings › Sign-in and sessions). Signing out, a password change and deactivation end
       every session of that user at once.
    2. **Re-authentication**: changing the password, the email address or two-step, making an
-      access token, creating a linked copy's access key, sharing with a linked server, and
-      exporting data each need the password again if it was last given more than 10 minutes
+      access token, creating a linked copy's access key, resetting a linked copy, sharing with
+      a linked server, pairing or unpairing the connector, pruning files, and exporting data
+      each need the password again if it was last given more than 10 minutes
       ago.
    3. **Passwords**: argon2id (64 MiB, 3 passes, parallelism 1), the minimum length of
       S16.5, and no other rules. Checked against a shipped list of the 100,000 most common
@@ -65,7 +66,8 @@
       2. linked copies' access keys: S11.9.3.3;
       3. the API: 600 requests a minute per session; uploads: 60 files an hour per user;
       4. `/mcp`: 60 calls a minute per token (S10.9.4); `/link`: 60 calls a minute per
-         link.
+         link; `/connector`: 60 calls a minute, its files counted against the upload limit
+         above.
    6. **Request limits**: JSON bodies up to 1 MB, uploads up to the size in Settings
       (25 MB by default), at most 100 MB of uploads in flight per user, and request headers
       up to 16 KB. Each upload's type is checked from its content, never its name (S9.1).

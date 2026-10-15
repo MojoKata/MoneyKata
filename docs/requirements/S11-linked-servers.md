@@ -121,7 +121,9 @@ preparer.
       1. **Made by the receiving admin**, when the link's first share arrives: Settings ›
          Linked servers › **Create the access key**. The server makes the copy key, shows the
          words once, and asks the admin to confirm they have saved them, typically in the
-         household's password manager, where the people the shares name can reach them.
+         household's password manager, where the people the shares name can reach them. The
+         receiving admin is trusted with the copy: holding the words, they could open it, as
+         anyone with the words could (S11.9.10).
          Pulls into the copy begin then.
       2. Separate keys are derived from the copy key with HKDF-SHA256, each under its own
          label: the **database key**, which SQLCipher uses as its raw key (`PRAGMA key =
