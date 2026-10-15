@@ -2,6 +2,7 @@
 what is known about it, its thumbnail, and what it is attached to."""
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Column,
     ForeignKey,
@@ -44,6 +45,11 @@ Receipt = record(
     Column("text", Text),
     Column("suggested", Text, nullable=False, server_default=text("'{}'")),
     Column("filled", Text, nullable=False, server_default=text("'[]'")),
+    # Kept for ever, whatever its retention (S14.10.1.3).
+    Column("keep", Boolean, nullable=False, server_default=text("0")),
+    # Its file removed by file pruning (S14.10.5); the row and its links stay.
+    Column("filePrunedAt", UtcTimestamp),
+    Column("filePrunedById", Text, ForeignKey("User.id")),
     CheckConstraint(
         "\"readStatus\" IN ('off', 'waiting', 'reading', 'read', 'failed')", name="read_status"
     ),

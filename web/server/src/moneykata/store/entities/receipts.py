@@ -28,6 +28,9 @@ class Receipt(Record):
     text: str | None = None
     suggested: str = "{}"
     filled: str = "[]"
+    keep: bool = False
+    filePrunedAt: dt.datetime | None = None
+    filePrunedById: str | None = None
 
 
 @dataclass(kw_only=True, eq=False)

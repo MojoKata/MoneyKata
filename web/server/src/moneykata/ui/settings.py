@@ -363,7 +363,9 @@ def reread_all(request: Request, c: Caller = Depends(admin)):
         if not settings.get(s, "readReceipts"):
             raise Problem(409, "reading-off", "Turn on Read receipts first.")
         ids = []
-        for r in s.query(Receipt).filter(Receipt.deleted.is_(False)):
+        for r in s.query(Receipt).filter(
+            Receipt.deleted.is_(False), Receipt.filePrunedAt.is_(None)
+        ):
             r.readStatus, r.readError = "waiting", None
             ids.append(r.id)
         activity.record(s, "receipts.reread", actor=c.id, for_admins=True)
@@ -598,3 +600,111 @@ def backup_now(request: Request, c: Caller = Depends(admin)):
     with srv.db.tx() as s:
         activity.record(s, "backups.started", actor=c.id, for_admins=True)
     return Response(status_code=202)
+
+
+# ---- Storage and file pruning (S16.17, S14.10) ----
+
+
+class Size(Model):
+    files: int
+    bytes: int
+
+
+class CategorySize(Size):
+    category: str
+
+
+class YearSizes(Model):
+    year: int
+    categories: list[CategorySize]
+
+
+class StorageOut(Model):
+    databaseBytes: int
+    receiptsBytes: int
+    expired: Size
+    later: Size  # expiring later, or kept while what they belong to is open
+    forever: Size
+    pruned: int  # files pruned before
+    byYear: list[YearSizes]  # what expires each coming year, by category
+    expiredBy: list[CategorySize]  # what can be pruned now, by category
+    keepStatementsYears: int | None
+
+
+def _size(g) -> Size:
+    return Size(files=g.files, bytes=g.bytes)
+
+
+@router.get("/settings/storage", response_model=StorageOut)
+def storage(request: Request, c: Caller = Depends(admin)):
+    """Sizes and counts only, never what the files hold (S14.10.4)."""
+    from ..receipts import retention
+
+    srv = server(request)
+    with srv.db.read() as s:
+        st = retention.storage(s, srv.config.receipts_dir)
+        return StorageOut(
+            databaseBytes=_database_bytes(s),
+            receiptsBytes=st.receiptsBytes,
+            expired=_size(st.expired),
+            later=_size(st.later),
+            forever=_size(st.forever),
+            pruned=st.pruned,
+            byYear=[
+                YearSizes(
+                    year=y,
+                    categories=[
+                        CategorySize(category=k, files=g.files, bytes=g.bytes)
+                        for k, g in sorted(cats.items())
+                    ],
+                )
+                for y, cats in st.byYear.items()
+            ],
+            expiredBy=[
+                CategorySize(category=k, files=g.files, bytes=g.bytes)
+                for k, g in sorted(st.expiredBy.items())
+            ],
+            keepStatementsYears=settings.get(s, "keepStatementsYears"),
+        )
+
+
+class PruneIn(Model):
+    categories: list[str]  # those ticked in the preview
+    count: int  # typed by the admin, to confirm
+
+
+class PruneOut(Model):
+    files: int
+    bytes: int
+    backup: str
+
+
+@router.post("/settings/storage/prune", response_model=PruneOut)
+def prune_files(body: PruneIn, request: Request, c: Caller = Depends(admin)):
+    """Remove the expired files of the categories ticked: a verified backup first, then the
+    files, keeping every record; recorded in Activity with its counts (S14.10.5)."""
+    from ..errors import refuse
+    from ..receipts import retention
+    from ..store import maintenance
+    from .deps import recent_auth
+
+    recent_auth(c)
+    srv = server(request)
+    with srv.db.read() as s:
+        rows = retention.prunable(s, body.categories)
+    if not rows:
+        raise refuse("categories", "nothing-to-prune", "No expired files in what is ticked.")
+    if body.count != len(rows):
+        raise refuse("count", "count-mismatch", f"Type {len(rows):,} to prune them.")
+    made = maintenance.backup(srv.config, srv.store)
+    with srv.db.tx() as s:
+        rows = retention.prunable(s, body.categories)
+        freed = retention.prune_files(s, srv.config.receipts_dir, rows, c.id)
+        activity.record(
+            s,
+            "files.pruned",
+            actor=c.id,
+            for_admins=True,
+            detail={"files": len(rows), "bytes": freed, "categories": body.categories},
+        )
+    return PruneOut(files=len(rows), bytes=freed, backup=made.name)

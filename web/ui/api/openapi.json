@@ -2159,12 +2159,41 @@
         "title": "Categorise",
         "type": "object"
       },
+      "CategoryChange": {
+        "additionalProperties": false,
+        "properties": {
+          "keepReceiptsYears": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keepreceiptsyears"
+          }
+        },
+        "title": "CategoryChange",
+        "type": "object"
+      },
       "CategoryOut": {
         "additionalProperties": false,
         "properties": {
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "keepReceiptsYears": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keepreceiptsyears"
           },
           "kind": {
             "title": "Kind",
@@ -2199,6 +2228,10 @@
               }
             ],
             "title": "Taxtag"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -2207,9 +2240,35 @@
           "kind",
           "parentId",
           "taxTag",
-          "path"
+          "path",
+          "keepReceiptsYears",
+          "version"
         ],
         "title": "CategoryOut",
+        "type": "object"
+      },
+      "CategorySize": {
+        "additionalProperties": false,
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "files": {
+            "title": "Files",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "files",
+          "bytes",
+          "category"
+        ],
+        "title": "CategorySize",
         "type": "object"
       },
       "Change": {
@@ -14010,6 +14069,52 @@
         "title": "ProjectionRow",
         "type": "object"
       },
+      "PruneIn": {
+        "additionalProperties": false,
+        "properties": {
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "categories",
+          "count"
+        ],
+        "title": "PruneIn",
+        "type": "object"
+      },
+      "PruneOut": {
+        "additionalProperties": false,
+        "properties": {
+          "backup": {
+            "title": "Backup",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "files": {
+            "title": "Files",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "files",
+          "bytes",
+          "backup"
+        ],
+        "title": "PruneOut",
+        "type": "object"
+      },
       "Purchase": {
         "additionalProperties": false,
         "properties": {
@@ -14216,6 +14321,17 @@
             ],
             "title": "Date"
           },
+          "keep": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keep"
+          },
           "notes": {
             "anyOf": [
               {
@@ -14290,6 +14406,18 @@
             "title": "Filename",
             "type": "string"
           },
+          "filePrunedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fileprunedat"
+          },
           "filled": {
             "items": {
               "type": "string"
@@ -14304,6 +14432,45 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "keep": {
+            "title": "Keep",
+            "type": "boolean"
+          },
+          "kept": {
+            "title": "Kept",
+            "type": "string"
+          },
+          "keptSoon": {
+            "title": "Keptsoon",
+            "type": "boolean"
+          },
+          "keptState": {
+            "title": "Keptstate",
+            "type": "string"
+          },
+          "keptUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keptuntil"
+          },
+          "keptWhy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keptwhy"
           },
           "level": {
             "title": "Level",
@@ -14464,13 +14631,20 @@
           "readStatus",
           "readError",
           "filled",
+          "keep",
+          "filePrunedAt",
           "version",
           "matches",
           "text",
           "suggested",
           "readMethod",
           "readEngine",
-          "readAt"
+          "readAt",
+          "kept",
+          "keptState",
+          "keptUntil",
+          "keptSoon",
+          "keptWhy"
         ],
         "title": "ReceiptDetail",
         "type": "object"
@@ -14509,6 +14683,18 @@
             "title": "Filename",
             "type": "string"
           },
+          "filePrunedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fileprunedat"
+          },
           "filled": {
             "items": {
               "type": "string"
@@ -14523,6 +14709,10 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "keep": {
+            "title": "Keep",
+            "type": "boolean"
           },
           "level": {
             "title": "Level",
@@ -14624,6 +14814,8 @@
           "readStatus",
           "readError",
           "filled",
+          "keep",
+          "filePrunedAt",
           "version"
         ],
         "title": "ReceiptRow",
@@ -16290,6 +16482,25 @@
         "title": "SignupRow",
         "type": "object"
       },
+      "Size": {
+        "additionalProperties": false,
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "files": {
+            "title": "Files",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "files",
+          "bytes"
+        ],
+        "title": "Size",
+        "type": "object"
+      },
       "SourceChange": {
         "additionalProperties": false,
         "properties": {
@@ -16828,6 +17039,70 @@
           "amount"
         ],
         "title": "StatementRowIn",
+        "type": "object"
+      },
+      "StorageOut": {
+        "additionalProperties": false,
+        "properties": {
+          "byYear": {
+            "items": {
+              "$ref": "#/components/schemas/YearSizes"
+            },
+            "title": "Byyear",
+            "type": "array"
+          },
+          "databaseBytes": {
+            "title": "Databasebytes",
+            "type": "integer"
+          },
+          "expired": {
+            "$ref": "#/components/schemas/Size"
+          },
+          "expiredBy": {
+            "items": {
+              "$ref": "#/components/schemas/CategorySize"
+            },
+            "title": "Expiredby",
+            "type": "array"
+          },
+          "forever": {
+            "$ref": "#/components/schemas/Size"
+          },
+          "keepStatementsYears": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keepstatementsyears"
+          },
+          "later": {
+            "$ref": "#/components/schemas/Size"
+          },
+          "pruned": {
+            "title": "Pruned",
+            "type": "integer"
+          },
+          "receiptsBytes": {
+            "title": "Receiptsbytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "databaseBytes",
+          "receiptsBytes",
+          "expired",
+          "later",
+          "forever",
+          "pruned",
+          "byYear",
+          "expiredBy",
+          "keepStatementsYears"
+        ],
+        "title": "StorageOut",
         "type": "object"
       },
       "StudentOut": {
@@ -19561,6 +19836,28 @@
           "percent"
         ],
         "title": "YearPct",
+        "type": "object"
+      },
+      "YearSizes": {
+        "additionalProperties": false,
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategorySize"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "categories"
+        ],
+        "title": "YearSizes",
         "type": "object"
       },
       "Zones": {
@@ -24250,6 +24547,59 @@
           }
         },
         "summary": "Create Category",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
+    "/ui/api/categories/{category_id}": {
+      "patch": {
+        "description": "How long receipts in it are kept after their record ended: an admin's, since it decides\nwhat file pruning may remove (S14.10.1.1).",
+        "operationId": "change_category_ui_api_categories__category_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Category",
         "tags": [
           "transactions"
         ]
@@ -31317,6 +31667,70 @@
           }
         },
         "summary": "Reread All",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/storage": {
+      "get": {
+        "description": "Sizes and counts only, never what the files hold (S14.10.4).",
+        "operationId": "storage_ui_api_settings_storage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Storage",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/storage/prune": {
+      "post": {
+        "description": "Remove the expired files of the categories ticked: a verified backup first, then the\nfiles, keeping every record; recorded in Activity with its counts (S14.10.5).",
+        "operationId": "prune_files_ui_api_settings_storage_prune_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PruneIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PruneOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prune Files",
         "tags": [
           "settings"
         ]

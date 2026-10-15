@@ -103,6 +103,13 @@ def _choice(*options: str) -> Callable[[Any], str]:
     return check
 
 
+def _optional_int(lo: int, hi: int) -> Callable[[Any], int | None]:
+    def check(v: Any) -> int | None:
+        return None if v is None else _int(lo, hi)(v)
+
+    return check
+
+
 def _optional_text(max_len: int) -> Callable[[Any], str | None]:
     def check(v: Any) -> str | None:
         if v in (None, ""):
@@ -204,6 +211,8 @@ _d("readStatements", "imports", True, _bool)
 _d("receiptMaxMb", "receipts", 25, _int(1, 100))
 _d("readReceipts", "receipts", True, _bool)
 _d("receiptReadJobs", "receipts", 1, _int(1, 4))
+# Storage (S16.17, S14.10): how long statements' files are kept; none: for ever
+_d("keepStatementsYears", "storage", None, _optional_int(1, 100))
 # Backups (S16.12, S14.6)
 _d("backupTime", "backups", "02:30", _time)
 _d("backupCopies", "backups", 14, _int(1, 365))

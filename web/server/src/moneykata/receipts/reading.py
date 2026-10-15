@@ -185,7 +185,12 @@ class Reader:
         srv = self.server
         with srv.db.tx() as s:
             r = s.get(Receipt, rid)
-            if r is None or r.deleted or r.readStatus not in ("waiting", "reading"):
+            if (
+                r is None
+                or r.deleted
+                or r.filePrunedAt is not None
+                or r.readStatus not in ("waiting", "reading")
+            ):
                 return
             if not settings.get(s, "readReceipts"):
                 r.readStatus = "off"

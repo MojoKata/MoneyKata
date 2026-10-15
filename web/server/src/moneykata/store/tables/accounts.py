@@ -100,7 +100,13 @@ Category = record(
     # Shipped categories carry a key, so a later release can find and correct them.
     Column("builtIn", Text),
     Column("createdById", Text, ForeignKey("User.id")),
+    # Keep receipts for so many years after their record ended (S14.10.1.1); none: for ever,
+    # or a subcategory takes its parent's.
+    Column("keepReceiptsYears", Integer),
     _in("kind", ("expense", "income", "transfer"), "kind"),
+    CheckConstraint(
+        '"keepReceiptsYears" IS NULL OR "keepReceiptsYears" >= 1', name="keep_receipts_years"
+    ),
 )
 unique_live(Category, "parentId", "name")
 

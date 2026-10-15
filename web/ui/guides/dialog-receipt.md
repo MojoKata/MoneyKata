@@ -41,3 +41,11 @@ Everything the reader found, which the Receipts screen searches.
 ## Delete
 
 Only its owner, and only once nothing links to it.
+
+## Keep
+
+Keeps the file for ever, whatever its retention: for a warranty, or a medical bill an HSA may repay
+later. Beside it, how long the file is kept otherwise: _Kept until Mar 2031_ (in bold within 90
+days), _Kept while the lot is open_ while what it is attached to hasn't ended, or _Kept for ever_.
+An expired file shows _Expired Mar 2031, prunable_, and an admin may prune it in Settings ›
+Storage; a pruned file's record keeps its amounts, dates and links.

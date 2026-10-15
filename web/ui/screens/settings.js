@@ -14,6 +14,7 @@ import { errAt, Field, FormError, Input, Select, Switch, SwitchRow } from '../co
 import { toast } from '../components/toast.js';
 import { loadSession } from '../store/session.js';
 import { LinksSection } from '../components/links.js';
+import { StorageSection } from '../components/storage.js';
 
 const SECTIONS = /** @type {[string, string][]} */ ([
   ['general', 'General'],
@@ -28,6 +29,7 @@ const SECTIONS = /** @type {[string, string][]} */ ([
   ['receipts', 'Receipts'],
   ['tax-tables', 'Tax tables'],
   ['backups', 'Backups'],
+  ['storage', 'Storage'],
   ['keys', 'Key storage'],
   ['alerts', 'Alerts'],
 ]);
@@ -51,6 +53,8 @@ export default function Settings({ section }) {
         ? html`<${Prices} />`
         : current === 'backups'
         ? html`<${Backups} />`
+        : current === 'storage'
+        ? html`<${StorageSection} />`
         : current === 'keys'
         ? html`<${Keys} />`
         : current === 'email'

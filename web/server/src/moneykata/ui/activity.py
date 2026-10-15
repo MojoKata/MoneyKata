@@ -58,6 +58,7 @@ TEXT = {
     "keys.reencrypt-started": "{actor} started re-encrypting under a new data key",
     "keys.reencrypted": "The data key was replaced: the database and secrets are re-encrypted",
     "backups.started": "{actor} started a backup",
+    "files.pruned": "{actor} pruned {files} expired files after a backup",
     "account.created": "{actor} made the account {subject}",
     "account.updated": "{actor} changed {fields} of {subject}",
     "account.closed": "{actor} closed {subject}",
@@ -193,6 +194,7 @@ def render(a: Activity, names: dict[tuple[str, str], str]) -> str:
         "name": detail.get("name", ""),
         "tool": detail.get("tool", "").replace("_", " "),
         "why": detail.get("why", ""),
+        "files": f"{detail.get('files', 0):,}",
     }
     template = TEXT.get(a.kind, "{actor}: " + a.kind)
     return template.format(**values)

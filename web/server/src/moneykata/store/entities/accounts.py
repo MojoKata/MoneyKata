@@ -14,6 +14,7 @@ class Category(Record):
     taxTag: str | None = None
     builtIn: str | None = None
     createdById: str | None = None
+    keepReceiptsYears: int | None = None
 
 
 @dataclass(kw_only=True, eq=False)

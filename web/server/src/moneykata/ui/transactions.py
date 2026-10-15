@@ -35,11 +35,12 @@ from .conventions import (
     Page,
     Paging,
     Quantity,
+    check,
     gone,
     if_match,
     stale,
 )
-from .deps import Caller, caller, server
+from .deps import Caller, admin, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["transactions"])
 INSTRUMENT_KINDS = (
@@ -168,6 +169,12 @@ class CategoryOut(Model):
     parentId: str | None
     taxTag: str | None
     path: str
+    keepReceiptsYears: int | None  # its own; none: its parent's, or for ever (S14.10.1.1)
+    version: int
+
+
+class CategoryChange(Model):
+    keepReceiptsYears: int | None = None
 
 
 class NewCategory(Model):
@@ -834,10 +841,46 @@ def list_categories(request: Request, c: Caller = Depends(caller)):
                     parentId=x.parentId,
                     taxTag=x.taxTag,
                     path=paths[x.id],
+                    keepReceiptsYears=x.keepReceiptsYears,
+                    version=x.version,
                 )
                 for x in cats
             ),
             key=lambda x: x.path.lower(),
+        )
+
+
+@router.patch("/categories/{category_id}", response_model=CategoryOut)
+def change_category(
+    category_id: str,
+    body: CategoryChange,
+    request: Request,
+    c: Caller = Depends(admin),
+    version: int = Depends(if_match),
+):
+    """How long receipts in it are kept after their record ended: an admin's, since it decides
+    what file pruning may remove (S14.10.1.1)."""
+    years = body.keepReceiptsYears
+    if years is not None and not 1 <= years <= 100:
+        raise refuse("keepReceiptsYears", "years-invalid", "A whole number of years from 1.")
+    with server(request).db.tx() as s:
+        cat = s.get(Category, category_id)
+        if cat is None or cat.deleted:
+            raise Problem(404, "not-found", "Not found")
+        check(cat, version, {"id": cat.id, "version": cat.version})
+        cat.keepReceiptsYears = years
+        cat.updatedAt = clock.now()
+        s.flush()
+        cats = list(s.scalars(select(Category).where(Category.deleted == false())))
+        return CategoryOut(
+            id=cat.id,
+            name=cat.name,
+            kind=cat.kind,
+            parentId=cat.parentId,
+            taxTag=cat.taxTag,
+            path=_paths(cats)[cat.id],
+            keepReceiptsYears=cat.keepReceiptsYears,
+            version=cat.version,
         )
 
 
@@ -886,6 +929,8 @@ def create_category(body: NewCategory, request: Request, c: Caller = Depends(cal
             parentId=cat.parentId,
             taxTag=cat.taxTag,
             path=paths[cat.id],
+            keepReceiptsYears=None,
+            version=cat.version,
         )
     return JSONResponse(out.model_dump(mode="json"), status_code=201)
 

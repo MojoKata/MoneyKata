@@ -144,7 +144,10 @@ def store(s: Session, server, owner_id: str, name: str, data: bytes) -> Stored:
     digest = hashlib.sha256(data).hexdigest()
     mine = s.scalars(
         select(Receipt).where(
-            Receipt.sha256 == digest, Receipt.ownerId == owner_id, Receipt.deleted == false()
+            Receipt.sha256 == digest,
+            Receipt.ownerId == owner_id,
+            Receipt.deleted == false(),
+            Receipt.filePrunedAt.is_(None),
         )
     ).first()
     if mine is not None:

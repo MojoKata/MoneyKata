@@ -380,6 +380,11 @@
  */
 
 /**
+ * @typedef {Object} CategoryChange
+ * @property {(number | null)} [keepReceiptsYears]
+ */
+
+/**
  * @typedef {Object} CategoryOut
  * @property {string} id
  * @property {string} name
@@ -387,6 +392,15 @@
  * @property {(string | null)} parentId
  * @property {(string | null)} taxTag
  * @property {string} path
+ * @property {(number | null)} keepReceiptsYears
+ * @property {number} version
+ */
+
+/**
+ * @typedef {Object} CategorySize
+ * @property {number} files
+ * @property {number} bytes
+ * @property {string} category
  */
 
 /**
@@ -2463,6 +2477,19 @@
  */
 
 /**
+ * @typedef {Object} PruneIn
+ * @property {Array<string>} categories
+ * @property {number} count
+ */
+
+/**
+ * @typedef {Object} PruneOut
+ * @property {number} files
+ * @property {number} bytes
+ * @property {string} backup
+ */
+
+/**
  * @typedef {Object} Purchase
  * @property {string} transactionId
  * @property {string} date
@@ -2507,6 +2534,7 @@
  * @property {(string | null)} [payee]
  * @property {(string | null)} [notes]
  * @property {(Array<string> | null)} [tags]
+ * @property {(boolean | null)} [keep]
  */
 
 /**
@@ -2529,6 +2557,8 @@
  * @property {string} readStatus
  * @property {(string | null)} readError
  * @property {Array<string>} filled
+ * @property {boolean} keep
+ * @property {(string | null)} filePrunedAt
  * @property {number} version
  * @property {Array<Suggestion>} matches
  * @property {(string | null)} text
@@ -2536,6 +2566,11 @@
  * @property {(string | null)} readMethod
  * @property {(string | null)} readEngine
  * @property {(string | null)} readAt
+ * @property {string} kept
+ * @property {string} keptState
+ * @property {(string | null)} keptUntil
+ * @property {boolean} keptSoon
+ * @property {(string | null)} keptWhy
  */
 
 /**
@@ -2558,6 +2593,8 @@
  * @property {string} readStatus
  * @property {(string | null)} readError
  * @property {Array<string>} filled
+ * @property {boolean} keep
+ * @property {(string | null)} filePrunedAt
  * @property {number} version
  */
 
@@ -2909,6 +2946,12 @@
  */
 
 /**
+ * @typedef {Object} Size
+ * @property {number} files
+ * @property {number} bytes
+ */
+
+/**
  * @typedef {Object} SourceChange
  * @property {(boolean | null)} [enabled]
  * @property {(Object<string, number> | null)} [preference]
@@ -3000,6 +3043,19 @@
  * @property {string} description
  * @property {import('../app/dec.js').Dec} amount
  * @property {boolean} [include]
+ */
+
+/**
+ * @typedef {Object} StorageOut
+ * @property {number} databaseBytes
+ * @property {number} receiptsBytes
+ * @property {Size} expired
+ * @property {Size} later
+ * @property {Size} forever
+ * @property {number} pruned
+ * @property {Array<YearSizes>} byYear
+ * @property {Array<CategorySize>} expiredBy
+ * @property {(number | null)} keepStatementsYears
  */
 
 /**
@@ -3486,6 +3542,12 @@
  * @typedef {Object} YearPct
  * @property {number} year
  * @property {(import('../app/dec.js').Dec | null)} percent
+ */
+
+/**
+ * @typedef {Object} YearSizes
+ * @property {number} year
+ * @property {Array<CategorySize>} categories
  */
 
 /**

@@ -86,8 +86,12 @@
           them for ever. A subcategory without its own takes its parent's. Any whole number
           of years from 1 is allowed; under 7 the field warns that 7 covers every IRS audit
           window.
+          An admin sets it, in Settings › Storage, since it decides what file pruning may
+          remove.
        2. **Statements** have one period, in Settings › Storage (S16.17), empty (for ever)
-          by default.
+          by default. A statement ends with its own period, so it expires that many years
+          after its last day; one without a date ends with its account's last transaction
+          once the account is closed.
        3. **A file** (a receipt or a statement) has a **Keep** toggle that keeps it for ever.
     2. **When a file expires**: at the latest end of the records it is attached to, plus the
        longest of their periods. It never expires when Keep is on, when any of those records
@@ -104,8 +108,10 @@
        sizes and counts only, never what the files hold.
     5. **Prune 1,284 files (2.1 GB)** names what has expired. It previews them by category,
        any of which can be unticked, makes a verified backup (S14.6), asks the admin to type
-       the count to confirm, removes the files, and records the file pruning in Activity
-       with its counts. Each record keeps its row, amounts and links, and shows *File pruned
+       the count to confirm, and their password again if given over 10 minutes ago
+       (S13.7.2), removes the files, and records the file pruning in Activity with its
+       counts. A file several receipts share is removed once none of them needs it, and the
+       same file uploaded again after it is a new receipt with its file. Each record keeps its row, amounts and links, and shows *File pruned
        Jan 3, 2034*. A pruned file stays in the backups made before it until backup pruning
        (S14.6) removes them, so a restore can bring it back until then.
     6. **Linked copies follow their source.** File pruning never touches a linked copy

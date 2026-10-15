@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from .. import activity, clock, exactjson, receipts, settings
 from ..errors import Problem, refuse
 from ..keys.files import FileError
-from ..receipts import reading
+from ..receipts import reading, retention
 from ..store.entities.accounts import Account, Transaction
 from ..store.entities.assets import Item
 from ..store.entities.education import QualifiedExpense
@@ -54,6 +54,8 @@ class ReceiptRow(Model):
     readStatus: str
     readError: str | None
     filled: list[str]
+    keep: bool  # kept for ever, whatever its retention (S14.10.1.3)
+    filePrunedAt: dt.datetime | None  # its file removed by file pruning (S14.10.5)
     version: int
 
 
@@ -79,6 +81,11 @@ class ReceiptDetail(ReceiptRow):
     readMethod: str | None
     readEngine: str | None
     readAt: dt.datetime | None
+    kept: str  # Kept until Mar 2031, Kept while the lot is open, Kept for ever (S14.10.3)
+    keptState: str  # forever, open, until, expired, pruned
+    keptUntil: dt.date | None
+    keptSoon: bool  # within 90 days
+    keptWhy: str | None  # Groceries keeps receipts 3 years
 
 
 class ReceiptChange(Model):
@@ -87,6 +94,7 @@ class ReceiptChange(Model):
     payee: str | None = None
     notes: str | None = None
     tags: list[str] | None = None
+    keep: bool | None = None
 
 
 class Attach(Model):
@@ -163,12 +171,15 @@ def row(s, r: Receipt, level: str) -> ReceiptRow:
         readStatus=r.readStatus,
         readError=r.readError,
         filled=json.loads(r.filled or "[]"),
+        keep=r.keep,
+        filePrunedAt=r.filePrunedAt,
         version=r.version,
     )
 
 
 def detail(s, user_id: str, r: Receipt, level: str) -> ReceiptDetail:
     base = row(s, r, level)
+    rt = retention.retention(retention.Context(s), r)
     return ReceiptDetail(
         **base.model_dump(),
         matches=[
@@ -189,6 +200,17 @@ def detail(s, user_id: str, r: Receipt, level: str) -> ReceiptDetail:
         readMethod=r.readMethod,
         readEngine=r.readEngine,
         readAt=r.readAt,
+        kept=rt.label if rt.state != "pruned" else f"File pruned {r.filePrunedAt:%b %-d, %Y}",
+        keptState=rt.state,
+        keptUntil=rt.until,
+        keptSoon=rt.soon,
+        keptWhy=(
+            f"{rt.category} keeps "
+            + ("statements" if rt.category == "Statements" else "receipts")
+            + f" {rt.years} year{'s' if rt.years != 1 else ''}"
+            if rt.years
+            else None
+        ),
     )
 
 
@@ -291,6 +313,8 @@ def change_receipt(
         if "tags" in sent and body.tags is not None:
             tags = sorted({t.strip().lower() for t in body.tags if t.strip()})
             r.tags = exactjson.dumps(tags)
+        if "keep" in sent and body.keep is not None:
+            r.keep = body.keep
         r.updatedAt = dt.datetime.now(dt.UTC)
         s.flush()
         return detail(s, c.id, r, lvl)
@@ -377,6 +401,8 @@ def receipt_file(receipt_id: str, request: Request, c: Caller = Depends(caller))
     srv = server(request)
     with srv.db.read() as s:
         r, _ = receipts.get(s, c.id, receipt_id)
+    if r.filePrunedAt is not None:
+        raise Problem(410, "file-pruned", f"Its file was pruned on {r.filePrunedAt:%b %-d, %Y}.")
     headers = {
         "Content-Disposition": _disposition(r.fileName),
         "Content-Security-Policy": "sandbox",

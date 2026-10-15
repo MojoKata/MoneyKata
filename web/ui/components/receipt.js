@@ -7,7 +7,7 @@ import { useApi, useSubmit } from '../app/hooks.js';
 import { date, money } from '../app/format.js';
 import { Dialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
-import { errAt, Field, FormError, Input } from './fields.js';
+import { errAt, Field, FormError, Input, SwitchRow } from './fields.js';
 import { Icon } from './icon.js';
 import { toast } from './toast.js';
 
@@ -155,6 +155,10 @@ export function ReceiptDialog({ close, id }) {
       : undefined;
   const set = (/** @type {string} */ k) => (/** @type {string} */ v) => setF({ ...f, [k]: v });
   const file = `/ui/api/receipts/${id}/file`;
+  const keep = useSubmit(async (/** @type {boolean} */ on) => {
+    await api.patch(`/receipts/${id}`, { keep: on }, r.version);
+    res.reload();
+  });
   return html`
     <${Dialog} title=${r.fileName} wide close=${close}
       onSubmit=${() => save.run().catch(() => {})}
@@ -170,7 +174,15 @@ export function ReceiptDialog({ close, id }) {
       }${canEdit ? html`<button class="btn primary" disabled=${save.busy}>Save</button>` : null}`}>
       <div class="split" style=${{ alignItems: 'flex-start' }}>
         <div class="receipt-view">
-          ${r.mediaType === 'application/pdf'
+          ${r.filePrunedAt
+            ? html`
+              <div class="notice" role="note">
+                <${Icon} name="info" />
+                <div>${r.kept}: its
+                            record keeps its amounts, dates and links.</div>
+              </div>
+            `
+            : r.mediaType === 'application/pdf'
             ? html`<a href=${file} target="_blank" rel="noopener" class="pdf-open">
               ${
               r.hasThumbnail
@@ -208,6 +220,15 @@ export function ReceiptDialog({ close, id }) {
                     )}><${Icon} name="refresh" /> Read again</button>
               `
               : null}</div>
+          ${r.filePrunedAt ? null : html`
+            <${SwitchRow} label="Keep" hint=${r.keep
+              ? 'Kept for ever, whatever its retention.'
+              : html`${r.keptSoon ? html`<b>${r.kept}</b>` : r.kept}${
+                r.keptWhy ? ` · ${r.keptWhy}` : ''
+              }`} on=${r.keep} disabled=${!canEdit || keep.busy}
+              onChange=${(/** @type {boolean} */ on) => keep.run(on).catch((e) => toast(e.message))}
+            />
+          `}
           <p class="small dim">${KIND[r.mediaType]} · ${(r.size / 1024).toFixed(
             0,
           )} KB · uploaded ${date(r.uploadedAt)}${r.level !== 'owner'

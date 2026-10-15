@@ -210,11 +210,11 @@ attached to it (receipts, statements) expire under their retention, and so when 
 may remove them. When a record ended is worked out, never stored, so it follows the records
 as they change.
 
-1. **`endedAt`**: each table a file can be attached to has a view, `<Table>Ended`, with its
-   keys and `endedAt`: when the record stopped being needed for anything ongoing, or null
-   while it still is. The views are generated from the table declarations, like the
-   `<Table>Effective` views (§4.2), and only file pruning and a file's *Kept until* read
-   them, so their cost never falls on everyday queries.
+1. **`endedAt`**: for each table a file can be attached to (`Transaction`, `Account`,
+   `Item`, `QualifiedExpense`, `Gift`, `Donation`), when the record stopped being needed for
+   anything ongoing, or none while it still is. It is worked out by the server's retention
+   rules (`receipts/retention.py`) from the rules below, and only file pruning and a file's
+   *Kept until* ask for it, so its cost never falls on everyday queries.
 2. **Its own end**: declared with the table, as an expression over its own row and the
    rows it is deleted with. A deleted record's own end is the earlier of its declared end and
    its `effectiveDeletedAt`. Without a declared end, a record ends only when it is effectively

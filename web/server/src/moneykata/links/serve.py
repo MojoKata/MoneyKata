@@ -264,7 +264,8 @@ def receipt_files(srv, account_id: str) -> list[dict]:
         out = {}
         for ln in links:
             r = s.get(Receipt, ln.receiptId)
-            if r is None or r.deleted or r.id in out:
+            # A file the source prunes leaves the copy at its next pull (S14.10.6).
+            if r is None or r.deleted or r.filePrunedAt is not None or r.id in out:
                 continue
             out[r.id] = {
                 "id": r.id,
