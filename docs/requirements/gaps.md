@@ -10,12 +10,6 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S1.3.3.8, S3.
 
-## G12: Adjusted contracts and capital at risk
-
-**What is missing:** how a contract adjusted after a split or a special dividend is named and priced (its OCC root changes, and CBOE lists it under the new one); and capital at risk for spreads and covered calls, which wait on strategies (S3.5). The wash-sale cases the rules leave unsettled are flagged for review (S3.8.5). Option prices come from CBOE's delayed quotes (S4.5); other sources are G19.
-
-**Touches:** S3.5, S3.8, S3.9, S4.5.
-
 ## G19: Other option price sources
 
 **For later consideration.** CBOE's delayed quotes (S4.5) aren't an official API and could change or close. The alternatives, each to be tried before it is relied on:

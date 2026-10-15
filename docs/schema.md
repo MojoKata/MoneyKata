@@ -100,7 +100,7 @@ The prefixes of the tables that exist.
 | Lyout  | StatementLayout  | What statement import learned of an institution's layout: section signs, lines to skip.               |
 | Map    | ImportMapping    | A saved column mapping for one institution's CSV files.                                               |
 | Occsn  | Occasion         | A dated occasion in a gift plan: an anniversary, a holiday, a custom date.                            |
-| OptCt  | OptionContract   | An option instrument's contract: its underlying, call or put, strike, expiry and multiplier.          |
+| OptCt  | OptionContract   | An option's contract: underlying, call or put, strike, expiry, multiplier, root and deliverable.      |
 | Orgzn  | Organisation     | An organisation given to: its EIN, whether gifts to it are deductible, causes, pledges.               |
 | Persn  | Person           | Someone in the household's life: every user, and people who never sign in.                            |
 | Portf  | Portfolio        | A named set of accounts, or parts of them, charted as one.                                            |
@@ -136,6 +136,7 @@ designed yet. A row moves to §3.1 when its table is.
 | Cnctr  | Connector     | The MoneyKata Connector paired with this server: its public keys (S18.4).        |
 | Conn   | Connection    | One sign-in at one institution, kept by the connector, owned by a user (S18.6).   |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
+| Strat  | Strategy      | Option legs and shares held together as one: its shape, legs and rolls (S3.5).    |
 
 ## 4. Soft deletes
 
