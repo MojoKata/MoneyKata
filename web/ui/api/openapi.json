@@ -15,6 +15,17 @@
             ],
             "title": "Active"
           },
+          "connectionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connectionid"
+          },
           "countInNetWorth": {
             "anyOf": [
               {
@@ -137,6 +148,17 @@
               }
             ],
             "title": "Statementinterval"
+          },
+          "syncAccount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syncaccount"
           }
         },
         "title": "AccountChange",
@@ -186,6 +208,17 @@
               }
             ],
             "title": "Change"
+          },
+          "connectionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connectionid"
           },
           "countInNetWorth": {
             "title": "Countinnetworth",
@@ -391,6 +424,17 @@
             ],
             "title": "Statementintervalproposal"
           },
+          "syncAccount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syncaccount"
+          },
           "tax": {
             "anyOf": [
               {
@@ -451,7 +495,9 @@
           "statementIntervalDefault",
           "statementIntervalProposal",
           "optionsValue",
-          "capitalAtRisk"
+          "capitalAtRisk",
+          "connectionId",
+          "syncAccount"
         ],
         "title": "AccountDetail",
         "type": "object"
@@ -2772,6 +2818,54 @@
         "title": "Confirmation",
         "type": "object"
       },
+      "ConnectionChange": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings"
+          }
+        },
+        "title": "ConnectionChange",
+        "type": "object"
+      },
+      "ConnectionMade": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "connection": {
+            "$ref": "#/components/schemas/ConnectionOut"
+          }
+        },
+        "required": [
+          "connection",
+          "command"
+        ],
+        "title": "ConnectionMade",
+        "type": "object"
+      },
       "ConnectionOut": {
         "additionalProperties": false,
         "properties": {
@@ -2866,6 +2960,10 @@
           "state": {
             "title": "State",
             "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -2882,9 +2980,54 @@
           "accounts",
           "credentialWaiting",
           "signInAddress",
-          "createdAt"
+          "createdAt",
+          "version"
         ],
         "title": "ConnectionOut",
+        "type": "object"
+      },
+      "ConnectorInfo": {
+        "additionalProperties": false,
+        "description": "What any user needs to start a Connection: whether a connector is paired, and its keys.",
+        "properties": {
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "paired": {
+            "title": "Paired",
+            "type": "boolean"
+          },
+          "sealingKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sealingkey"
+          }
+        },
+        "required": [
+          "paired",
+          "locked",
+          "fingerprint",
+          "sealingKey"
+        ],
+        "title": "ConnectorInfo",
         "type": "object"
       },
       "ConnectorOut": {
@@ -3341,6 +3484,21 @@
           "counted"
         ],
         "title": "Counted",
+        "type": "object"
+      },
+      "Credential": {
+        "additionalProperties": false,
+        "description": "A credential sealed in the browser to the connector's sealing key: the box as it is.",
+        "properties": {
+          "sealed": {
+            "title": "Sealed",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sealed"
+        ],
+        "title": "Credential",
         "type": "object"
       },
       "Dashboard": {
@@ -10111,6 +10269,30 @@
         "title": "NewCategory",
         "type": "object"
       },
+      "NewConnection": {
+        "additionalProperties": false,
+        "properties": {
+          "driver": {
+            "title": "Driver",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "settings": {
+            "additionalProperties": true,
+            "title": "Settings",
+            "type": "object"
+          }
+        },
+        "required": [
+          "driver",
+          "label"
+        ],
+        "title": "NewConnection",
+        "type": "object"
+      },
       "NewGroup": {
         "additionalProperties": false,
         "properties": {
@@ -11637,6 +11819,37 @@
           "limit"
         ],
         "title": "Page[Close]",
+        "type": "object"
+      },
+      "Page_ConnectionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[ConnectionOut]",
         "type": "object"
       },
       "Page_DonationOut_": {
@@ -26090,6 +26303,27 @@
         ]
       }
     },
+    "/ui/api/connector": {
+      "get": {
+        "operationId": "connector_info_ui_api_connector_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Connector Info",
+        "tags": [
+          "connections"
+        ]
+      }
+    },
     "/ui/api/contributions/{transaction_id}": {
       "put": {
         "description": "Who an existing deposit (an imported one) came from, and whether it is a five-year\nelection.",
@@ -30811,6 +31045,247 @@
         "summary": "Change Profile",
         "tags": [
           "profile"
+        ]
+      }
+    },
+    "/ui/api/profile/connections": {
+      "get": {
+        "operationId": "list_connections_ui_api_profile_connections_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ConnectionOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Connections",
+        "tags": [
+          "connections"
+        ]
+      },
+      "post": {
+        "operationId": "new_connection_ui_api_profile_connections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewConnection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionMade"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "New Connection",
+        "tags": [
+          "connections"
+        ]
+      }
+    },
+    "/ui/api/profile/connections/{connection_id}": {
+      "delete": {
+        "description": "Remove (S18.6.4): its accounts' sync turns off, and the connector deletes its\ncredentials at its next report.",
+        "operationId": "remove_connection_ui_api_profile_connections__connection_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "title": "Connection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Connection",
+        "tags": [
+          "connections"
+        ]
+      },
+      "patch": {
+        "operationId": "change_connection_ui_api_profile_connections__connection_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "title": "Connection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Connection",
+        "tags": [
+          "connections"
+        ]
+      }
+    },
+    "/ui/api/profile/connections/{connection_id}/credential": {
+      "put": {
+        "description": "The credential sealed in the browser (S18.7.1): kept as it is until the connector\ncollects it on its next report. A secret, replaced outright: no version (S13.8.6).",
+        "operationId": "put_credential_ui_api_profile_connections__connection_id__credential_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "connection_id",
+            "required": true,
+            "schema": {
+              "title": "Connection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Credential",
+        "tags": [
+          "connections"
         ]
       }
     },

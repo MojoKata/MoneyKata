@@ -9,6 +9,7 @@ import { Payoff } from '../components/payoff.js';
 import { OptionTrade } from '../components/optiontrade.js';
 import { Items, ItemsSummary } from '../components/items.js';
 import { WalletCard } from '../components/wallet.js';
+import { SyncCard } from '../components/connections.js';
 import { Contributions, Goal, PlanCard, PlanFacts, Withdrawals } from '../components/edu.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
@@ -951,6 +952,7 @@ function Settings({ a, reload }) {
                 <${Select}
                   value=${f.keptBy} onChange=${set('keptBy')} options=${KEPT_BY} />
                 </${Field}>
+                <${SyncCard} a=${a} reload=${reload} />
                 <${StatementsExpected} a=${a} reload=${reload} />
                 </div>
                 </div>
@@ -974,6 +976,7 @@ function Settings({ a, reload }) {
               <p
                 class="small dim">Import OFX, QFX or CSV files from the Transactions tab. A CSV's columns are asked
                     once per institution and remembered.</p>
+              <${SyncCard} a=${a} reload=${reload} />
               <${StatementsExpected} a=${a} reload=${reload} />
               </div>
         `}</div>

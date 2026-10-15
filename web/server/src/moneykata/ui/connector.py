@@ -47,6 +47,7 @@ class ConnectionOut(Model):
     credentialWaiting: bool  # sealed for the connector, not yet collected
     signInAddress: str | None
     createdAt: dt.datetime
+    version: int
 
 
 class ConnectorOut(Model):
@@ -97,6 +98,7 @@ def connection_out(s, c: Connection) -> ConnectionOut:
         credentialWaiting=bool(c.sealedCredential),
         signInAddress=c.signInAddress,
         createdAt=c.createdAt,
+        version=c.version,
     )
 
 

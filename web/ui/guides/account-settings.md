@@ -54,6 +54,23 @@ accounts count once.
 
 How the account is kept current: from files you import (OFX, QFX or CSV), or by hand.
 
+## Sync using MoneyKata Connector {#sync-using-moneykata-connector}
+
+The connector fetches this account from its institution with one of your connections and
+imports what it fetches as an upload would. Only the account's owner turns it on; an account
+shared with write can't be. **Save sync** keeps the choice. Each post shows in Activity as by
+the connector and the connection.
+
+## Connection
+
+One of your own sign-ins kept by the connector (Profile › Connections), or **New connection…**
+to start one here.
+
+## Institution account
+
+Which of the connection's accounts at the institution this account is, by name and last four
+digits, from what the driver found on its first run; typed until then.
+
 ## Statements expected {#statements-expected}
 
 How often the institution issues statements: monthly, quarterly, yearly or none. Left as the type,

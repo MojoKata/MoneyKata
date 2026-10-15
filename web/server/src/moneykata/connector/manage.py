@@ -216,19 +216,16 @@ def apply_report(srv, row: Connector, body: dict, version: str | None, protocol:
         row.locked = bool(body.get("locked", True))
         row.connectorVersion = version
         row.protocol = protocol
+        # Removed Connections (deleted here, S18.6.4) are listed so the connector deletes
+        # their credentials, until it has reported without them once.
         mine = {
-            c.id: c
-            for c in s.scalars(
-                select(Connection).where(
-                    Connection.connectorId == row.id, Connection.deleted == false()
-                )
-            )
+            c.id: c for c in s.scalars(select(Connection).where(Connection.connectorId == row.id))
         }
         for rep in body.get("connections") or []:
             if not isinstance(rep, dict):
                 continue
             c = mine.get(str(rep.get("id") or ""))
-            if c is None or c.state == "removed":
+            if c is None or c.deleted or c.state == "removed":
                 continue
             state = rep.get("state")
             if state in STATES:
@@ -253,7 +250,7 @@ def apply_report(srv, row: Connector, body: dict, version: str | None, protocol:
         live = []
         removed = []
         for c in mine.values():
-            if c.state == "removed":
+            if c.deleted or c.state == "removed":
                 removed.append(c.id)
                 continue
             owner = s.get(User, c.ownerId)

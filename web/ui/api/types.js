@@ -15,6 +15,8 @@
  * @property {(boolean | null)} [active]
  * @property {(string | null)} [statementInterval]
  * @property {boolean} [dismissIntervalProposal]
+ * @property {(string | null)} [connectionId]
+ * @property {(string | null)} [syncAccount]
  */
 
 /**
@@ -55,6 +57,8 @@
  * @property {(string | null)} statementIntervalProposal
  * @property {(import('../app/dec.js').Dec | null)} optionsValue
  * @property {(import('../app/dec.js').Dec | null)} capitalAtRisk
+ * @property {(string | null)} connectionId
+ * @property {(string | null)} syncAccount
  */
 
 /**
@@ -498,6 +502,18 @@
  */
 
 /**
+ * @typedef {Object} ConnectionChange
+ * @property {(string | null)} [label]
+ * @property {(Object<string, unknown> | null)} [settings]
+ */
+
+/**
+ * @typedef {Object} ConnectionMade
+ * @property {ConnectionOut} connection
+ * @property {string} command
+ */
+
+/**
  * @typedef {Object} ConnectionOut
  * @property {string} id
  * @property {string} ownerId
@@ -513,6 +529,16 @@
  * @property {boolean} credentialWaiting
  * @property {(string | null)} signInAddress
  * @property {string} createdAt
+ * @property {number} version
+ */
+
+/**
+ * What any user needs to start a Connection: whether a connector is paired, and its keys.
+ * @typedef {Object} ConnectorInfo
+ * @property {boolean} paired
+ * @property {boolean} locked
+ * @property {(string | null)} fingerprint
+ * @property {(string | null)} sealingKey
  */
 
 /**
@@ -590,6 +616,12 @@
 /**
  * @typedef {Object} Counted
  * @property {boolean} counted
+ */
+
+/**
+ * A credential sealed in the browser to the connector's sealing key: the box as it is.
+ * @typedef {Object} Credential
+ * @property {string} sealed
  */
 
 /**
@@ -1723,6 +1755,13 @@
  */
 
 /**
+ * @typedef {Object} NewConnection
+ * @property {string} driver
+ * @property {string} label
+ * @property {Object<string, unknown>} [settings]
+ */
+
+/**
  * @typedef {Object} NewGroup
  * @property {string} name
  * @property {Array<string>} [memberIds]
@@ -1995,6 +2034,14 @@
 /**
  * @typedef {Object} Page_Close_
  * @property {Array<Close>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_ConnectionOut_
+ * @property {Array<ConnectionOut>} items
  * @property {number} total
  * @property {number} offset
  * @property {number} limit

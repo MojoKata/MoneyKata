@@ -15,6 +15,7 @@ from ..store.entities.users import Group, User, UserGroup
 from .seed_accounts import seed_accounts
 from .seed_assets import seed_assets
 from .seed_budgets import seed_budgets
+from .seed_connector import seed_connector
 from .seed_education import seed_education
 from .seed_gifts import seed_gifts
 from .seed_giving import seed_giving
@@ -49,6 +50,7 @@ def seed(server) -> None:
         seed_options(s, people)
         seed_wallets(s, people)
         seed_links(server, s, people)
+        seed_connector(s, people)
         seed_sharing(s, people)
         seed_budgets(s, people)
         seed_receipts(server, s, people)

@@ -15,6 +15,7 @@ import { useDialogGuide, useGuide } from '../components/help.js';
 import { applyTheme, theme } from '../store/prefs.js';
 import { loadSession, session } from '../store/session.js';
 import { AccessTokens } from '../components/tokens.js';
+import { Connections } from '../components/connections.js';
 import { num } from '../app/dec.js';
 
 export default function Profile() {
@@ -163,6 +164,7 @@ export default function Profile() {
           <${Email} p=${p} reload=${res.reload} />
           <${Password} />
           <${TwoStep} p=${p} reload=${res.reload} />
+          <${Connections} />
           <${AccessTokens} />
         </div></div>
       <${Assumptions} />

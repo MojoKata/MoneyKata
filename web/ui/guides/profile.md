@@ -72,6 +72,16 @@ that sign in when the phone is lost. Turning it on or off emails you.
 
 Asked again when you last gave it more than 10 minutes ago.
 
+## Connections {#connections}
+
+Your sign-ins at institutions, kept by the MoneyKata Connector and never by MoneyKata: each with
+its driver (Schwab, OFX Direct Connect or a folder of downloads), the institution accounts the
+driver found, the accounts here it keeps current, and its state from the connector's last
+report. **New connection** starts one; **Sign in again** or **Change credentials** gives the
+connector new ones, sealed in this browser to its key so MoneyKata can't read them; **Remove**
+(the click asks again) turns its accounts' sync off, and the connector deletes its credentials.
+A connection that needs a sign-in, as Schwab's does each week, alerts you.
+
 ## Access tokens {#access-tokens}
 
 Let an AI assistant, or another tool that speaks the Model Context Protocol, read your finances at

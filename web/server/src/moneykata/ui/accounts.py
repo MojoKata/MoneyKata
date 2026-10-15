@@ -77,6 +77,10 @@ class AccountDetail(AccountRow):
     statementIntervalProposal: str | None  # learned from what arrives, not yet accepted
     optionsValue: Money | None  # an investing account's options' market value
     capitalAtRisk: Money | None  # beside it (S3.5.6)
+    # Sync using MoneyKata Connector (S18.6.2): the owner's Connection and which of its
+    # institution accounts this is; shown to the owner only.
+    connectionId: str | None
+    syncAccount: str | None
 
 
 class NewAccount(Model):
@@ -106,6 +110,10 @@ class AccountChange(Model):
     active: bool | None = None
     statementInterval: str | None = None  # null: back to the type's default
     dismissIntervalProposal: bool = False
+    # Sync using MoneyKata Connector (S18.6.2), the owner's alone: a Connection of theirs and
+    # the institution account; null turns it off.
+    connectionId: str | None = None
+    syncAccount: str | None = None
 
 
 class Point(Model):
@@ -370,6 +378,8 @@ def row(
         openingStandIn=start.standIn,
         tax=atypes.TAX[a.type],
         statementInterval=a.statementInterval,
+        connectionId=a.connectionId if level == "owner" else None,
+        syncAccount=a.syncAccount if level == "owner" else None,
         statementIntervalDefault=expected.default_interval(a.type, json.loads(a.keptBy)),
         statementIntervalProposal=expected.proposal(a, imports_of(s, a.id)),
         **_options_risk(s, a, ledger),
@@ -468,6 +478,8 @@ def change_account(
             "mask",
             "statementInterval",
             "dismissIntervalProposal",
+            "connectionId",
+            "syncAccount",
         }
         if level != "owner" and sent & settings_fields:
             raise Problem(403, "owner-only", "Only the account's owner changes its settings.")
@@ -498,6 +510,25 @@ def change_account(
         if "statementInterval" in sent and a.statementInterval != body.statementInterval:
             a.statementInterval = body.statementInterval
             changed.append("statementInterval")
+        if "connectionId" in sent or "syncAccount" in sent:
+            from ..store.entities.connector import Connection
+
+            cid = body.connectionId if "connectionId" in sent else a.connectionId
+            if cid is not None:
+                conn = s.get(Connection, cid)
+                if conn is None or conn.deleted or conn.ownerId != c.id or conn.state == "removed":
+                    raise refuse("connectionId", "not-found", "One of your own connections.")
+                which = (body.syncAccount or "").strip() if "syncAccount" in sent else a.syncAccount
+                if not which:
+                    raise refuse(
+                        "syncAccount", "sync-account-missing", "Which institution account this is."
+                    )
+                if (a.connectionId, a.syncAccount) != (cid, which):
+                    a.connectionId, a.syncAccount = cid, which
+                    changed.append("sync")
+            elif a.connectionId is not None:
+                a.connectionId, a.syncAccount = None, None
+                changed.append("sync")
         if body.dismissIntervalProposal:
             seen = expected.proposal(a, imports_of(s, a.id))
             if seen is not None:

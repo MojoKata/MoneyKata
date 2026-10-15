@@ -365,11 +365,12 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/taxes/documents", "Add a document", "dialog-tax-document"),
         ("/ui/profile", "Compare models", "dialog-bitcoin-models"),
         ("/ui/profile", "New token", "dialog-new-token"),
+        ("/ui/profile", "New connection", "dialog-connection"),
         ("/ui/users", "New user", "dialog-new-user"),
         ("/ui/users", "New group", "dialog-group"),
         ("/ui/settings/prices", "Add a source", "dialog-add-source"),
         ("/ui/settings/links", "Enter a link code", "dialog-link-join"),
-        ("/ui/settings/connector", "Pair…", "dialog-connector-pair"),
+        ("/ui/settings/connector", "Pair a replacement…", "dialog-connector-pair"),
     ):
         open_dialog(page, path, button, guide)
         close_dialog(page)
@@ -759,4 +760,28 @@ def test_import_a_statement_through_the_app(page):
     page.get_by_role("button", name="Import 1 new").click()
     page.wait_for_selector(".dialog >> text=Imported")
     page.get_by_role("button", name="Done").click()
+    assert page.problems == []
+
+
+def test_a_credential_sealed_in_the_browser_opens_only_with_the_connectors_key(page):
+    """The box web/ui/app/sealed.js makes with WebCrypto (S18.7.1) is the construction
+    moneykata.connector.sealed opens: X25519, HKDF-SHA256 over the Connection's id, AES-GCM."""
+    from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+
+    from moneykata.connector import sealed
+    from moneykata.links import keys
+
+    key = X25519PrivateKey.generate()
+    public = keys.b64(key.public_key().public_bytes_raw())
+    visit(page, "/ui/")
+    version = page.evaluate("fetch('/healthz').then((r) => r.json()).then((j) => j.version)")
+    box = page.evaluate(
+        "([v, key]) => import(`/ui/v/${v}/app/sealed.js`)"
+        ".then((m) => m.seal('{\"password\": \"hunter2\"}', key, 'Conn_test'))",
+        [version, public],
+    )
+    assert sealed.looks_sealed(box)
+    assert sealed.open_box(box, key, "Conn_test") == b'{"password": "hunter2"}'
+    with pytest.raises(Exception):  # noqa: B017 - another Connection's id: a different key
+        sealed.open_box(box, key, "Conn_other")
     assert page.problems == []
