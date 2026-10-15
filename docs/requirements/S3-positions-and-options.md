@@ -24,8 +24,8 @@
 8. **Wash sales**: a loss sale with a purchase of the same or a *substantially identical*
    instrument within 30 days either side is flagged, its disallowed loss computed and added to
    the replacement lot's basis. This covers the user's own accounts, IRAs included, and the
-   accounts of anyone the user marks as their spouse. Options on the same underlying are
-   flagged for review, not decided (S8.3).
+   accounts of the user's spouse on the date of the sale (S10.10.4). Options on the same
+   underlying are flagged for review, not decided (S8.3).
    1. The match is the same instrument, a stock or fund (ETFs and mutual funds included),
       bought or reinvested within 30 days before or after a sale at a loss in a taxable
       account. Whether a different instrument is substantially identical is the preparer's

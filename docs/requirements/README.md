@@ -64,7 +64,6 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 | **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | reading a brokerage statement's positions, cash activity and trades; until then it is kept without reading |
 | **G12** | [Adjusted contracts and capital at risk](gaps.md#g12-adjusted-contracts-and-capital-at-risk) | option contracts adjusted after a split, and capital at risk for spreads and covered calls |
 | **G15** | [What database pruning's yearly summaries hold](gaps.md#g15-what-database-prunings-yearly-summaries-hold) | what the yearly summaries left by database pruning hold beyond the averages, and which reports read them (S14.10.5) |
-| **G16** | [How each record decides it has ended](gaps.md#g16-how-each-record-decides-it-has-ended) | each kind of record's end, and what a record shows for one it names that was deleted or pruned, such as a gift to a deleted person |
 | **G19** | [Other option price sources](gaps.md#g19-other-option-price-sources) | for later: Schwab Trader API through a connector driver, MarketData.app, Massive with a live key, Tradier |
 
 ## Also here
@@ -216,11 +215,13 @@ recommendations waiting for a decision.
 17. **Physical asset:** a thing of value that is not a security: precious metals,
     collectables, property, a vehicle. A physical-asset account holds **items**, each with
     its own purchase date, cost basis, valuations and notes (S1.10).
-18. **Person:** someone in a user's life who is not necessarily a user of the server: a
-    child, a parent, a friend. A person has dates (**occasions**) such as a birthday or an
-    anniversary, and can be a 529 plan's beneficiary (S7.7).
+18. **Person:** someone in the household's life: every user is one, and so are children,
+    parents and friends who never sign in. A person has a name, sex, birthday and
+    **relationships** with other people, from which the family tree is worked out (S10.10).
+    A person can be a 529 plan's beneficiary (S1.8).
 19. **Gift:** something given to (or received from) a person for an occasion, from idea to
-    given, with its cost (S7.8). **Giving** means charitable donations, tracked against a
+    given, with its cost (S7.8). A user's **gift plan** for a person holds their budget,
+    occasions and notes for that person (S7.7). **Giving** means charitable donations, tracked against a
     **giving target** (S7.9).
 20. **Words not used:** *Wallet* for anything but a self-custody crypto wallet. *Asset* on
     its own for a security: the UI says holding or instrument, and keeps *asset* for
@@ -234,6 +235,8 @@ recommendations waiting for a decision.
 23. **Connection:** one sign-in at one institution, kept by the connector and owned by the
     user whose sign-in it is; an account's sync names a Connection and the institution
     account it is (S18.6).
+24. **Relationship:** a dated link between two people: *spouse*, *couple*, *child*,
+    *friend*, *colleague* or *family* (S10.10.4).
 
 # R3. Design principles
 
@@ -260,3 +263,8 @@ recommendations waiting for a decision.
    category of 3 transactions", and amounts stay out of the log.
 9. **The contract is generated.** OpenAPI comes from the routes, the UI's JSDoc types come
    from it, and a check fails on drift (S17.5).
+10. **History reads as it was.** Past figures are left as they were, so they are recognised
+    when looked back on. A record that ends or is deleted (an account closed, a person
+    deleted) changes what comes after its end, never what came before: past budget months,
+    returns and gifts keep it, shown by its name and marked *(closed)* or *(deleted)*
+    (`schema.md` §6).

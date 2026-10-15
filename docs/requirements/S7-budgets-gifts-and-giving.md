@@ -31,19 +31,20 @@
       (a subscription, rent), since a utility bill varies anyway.
 6. **Budget alerts** *(later)*: a category passing a threshold, a large transaction, a low
    balance, raised as alerts (S12.11).
-7. **People and occasions.** Each user keeps their own list of **people** (on the Gifts
-   screen):
-   1. **A person has** a name, a relationship (child, parent, sibling, partner, friend, …),
-      an optional link to a user of this server or of a linked server (S11), a **birthday** (the year optional, for
-      their age), **anniversaries** (wedding, or any other, each with its own date), the
-      **holidays** they get gifts for, a yearly **gift budget** or one per occasion, a
-      reminder lead time (14 days by default), and notes (sizes, likes, what they already
-      have).
+7. **Gift plans and occasions.** People are the household's (S10.10). On the Gifts screen
+   each user keeps a **gift plan** for each person they give to or receive from:
+   1. **A gift plan has** its person, the **holidays** they get gifts for, **anniversaries**
+      other than a wedding (each with its own date), a yearly **gift budget** or one per
+      occasion, a reminder lead time (14 days by default), and notes (sizes, likes, what
+      they already have). The person's **birthday**, their **wedding anniversary** (the start
+      of a *spouse* relationship) and their relation to the user (*your granddaughter*,
+      S10.10.5) come from the person. Adding a gift plan for someone new adds the person
+      first, as S10.10.3 says.
    2. **Holidays** ship as a list with their dates computed per year: fixed dates
       (Christmas, Valentine's Day), rule-based ones (Mother's Day, Father's Day,
       Thanksgiving), and lunar or lunisolar ones (Hanukkah, Diwali, Lunar New Year, Eid
       al-Fitr) from shipped tables, plus **custom occasions** with a date of their own.
-   3. **Upcoming occasions**: the next 60 days of everyone's dates, each with its budget,
+   3. **Upcoming occasions**: the next 60 days of the dates in the user's gift plans, each with its budget,
       the gifts planned so far, and what is still missing. Those inside their lead time show
       on the Dashboard (*Emma's birthday in 9 days, no gift yet*), and an occasion entering
       its lead time raises an alert (S12.11).
@@ -59,13 +60,16 @@
    4. **History**: per person, what was given in past years (so it isn't given twice) and
       the spending per year against their budget. Per year: gift spending by person and by
       occasion. Gift transactions are categorised *Gifts* in budgets (S7.2).
-   5. **Privacy**: the people list and gifts are their owner's alone. A user may share a
-      person (with their gifts) with another user or group, read or write, so a couple plans
-      their children's gifts together. A gift for a person who is linked to a user is
-      **never shown to that user**, even through a share, so a surprise stays one. For a
+   5. **Privacy**: gift plans and gifts are their owner's alone. A user may share a gift
+      plan (with its gifts) with another user or group, read or write, so a couple plans
+      their children's gifts together. A gift for a person who is a user is **never shown
+      to that user**, even through a share, so a surprise stays one. For a
       user of a linked server, the owner's server leaves those gifts out before sending, so
       they never reach the other server.
-   6. **Gift-tax flag**: money given to one person in a year (cash gifts, and 529
+   6. **A deleted person**: gifts bought, given or received stay, still count in past
+      spending, and show the person as *Emma (deleted)* (R3.10). Ideas and planned gifts
+      for that person alone are deleted with them; a shared idea loses only that person.
+   7. **Gift-tax flag**: money given to one person in a year (cash gifts, and 529
       contributions, S1.8.2) above the annual exclusion is flagged for Form 709 (S8.11).
 9. **Charitable giving.**
    1. **A giving plan** per year, per user or per group (as budgets are): a **target** as a

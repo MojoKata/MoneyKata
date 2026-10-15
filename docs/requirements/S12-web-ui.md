@@ -57,10 +57,9 @@
    13. **Activity**: the changes of S10.8, newest first, filtered by account and person;
    14. **Users and Groups**, **Settings** (admins);
    15. **Alerts**: what needs the user's attention, with a live count on its badge (S12.11);
-   16. the user tile opens **Profile** (name, email, avatar, password, two-step, alert
-       emails, time zone (S14.9), assumptions for projections (S6.3), access tokens, birth
-       year, spouse for
-       wash sales) and **Sign out**.
+   16. the user tile opens **Profile** (name, sex, birthday, relationships (S10.10), email,
+       avatar, password, two-step, alert emails, time zone (S14.9), assumptions for
+       projections (S6.3), access tokens) and **Sign out**.
 3. **Privacy mode**: a button in the header (an eye) blurs every amount on the page until
    clicked again, for using the app with someone looking over your shoulder. The browser
    remembers it.
@@ -174,7 +173,8 @@
           interval (S1.11.7), naming the statement missing, a reconciliation mismatch
           left open for 7 days (S1.11), and a Connection that keeps one of their accounts
           current needing a sign-in or failing (S18.5);
-       3. **for each user**: an occasion entering its lead time (S7.7.3), an option
+       3. **for each user**: a request to share a private person they created (S10.10.3),
+          an occasion entering its lead time (S7.7.3), an option
           expiring within a week, a pledge due (S7.9), an active projection falling
           behind (S6.7.5), and budget alerts when they come (S7.6).
     2. **One alert per cause.** The alerts task looks at every cause every 15 minutes, and

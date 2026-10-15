@@ -106,7 +106,7 @@ class Database:
 
 def live(entity, table, *, include_deleted: bool = False):
     """SELECT entity, leaving out what is effectively deleted (schema.md §4.2): through its
-    Effective view where it belongs to something, else by its own `deleted`."""
+    Effective view where it is deleted with something, else by its own `deleted`."""
     stmt = select(entity)
     if include_deleted:
         return stmt

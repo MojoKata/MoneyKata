@@ -98,10 +98,10 @@ The prefixes of the tables that exist.
 | Lot    | Lot              | One acquisition of an instrument, and what remains open.                                              |
 | Lyout  | StatementLayout  | What statement import learned of an institution's layout: section signs, lines to skip.               |
 | Map    | ImportMapping    | A saved column mapping for one institution's CSV files.                                               |
-| Occsn  | Occasion         | A dated occasion for a person: an anniversary, a holiday, a custom date.                              |
+| Occsn  | Occasion         | A dated occasion in a gift plan: an anniversary, a holiday, a custom date.                            |
 | OptCt  | OptionContract   | An option instrument's contract: its underlying, call or put, strike, expiry and multiplier.          |
 | Orgzn  | Organisation     | An organisation given to: its EIN, whether gifts to it are deductible, causes, pledges.               |
-| Persn  | Person           | Someone in a user's life who need not be a user of the server.                                        |
+| Persn  | Person           | Someone in the household's life: every user, and people who never sign in.                            |
 | Portf  | Portfolio        | A named set of accounts, or parts of them, charted as one.                                            |
 | Prjct  | Projection       | How money will grow toward a goal; an active one is tracked against its baseline.                     |
 | Pyoff  | PayoffPlan       | A saved overpayment plan for a loan; one may be the plan being followed.                              |
@@ -133,7 +133,9 @@ designed yet. A row moves to §3.1 when its table is.
 |--------|---------------|-----------------------------------------------------------------------------------|
 | Cnctr  | Connector     | The MoneyKata Connector paired with this server: its public keys (S18.4).        |
 | Conn   | Connection    | One sign-in at one institution, kept by the connector, owned by a user (S18.6).   |
+| GfPln  | GiftPlan      | One user's gift plan for a person: holidays, anniversaries, budget, lead time, notes (S7.7). |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
+| Rltn   | Relationship  | A dated link between two people: spouse, couple, child, friend, colleague, family (S10.10.4). |
 
 ## 4. Soft deletes
 
@@ -155,12 +157,12 @@ Records are never removed from the database: they are marked deleted. The except
    `deletedById`. Re-adding a row that a many-to-many table already holds as deleted restores
    it. A copy of rows between tables names its columns and leaves `deleted` out, since a
    generated column takes no value.
-2. **Effective deletion.** A record is also deleted when something it belongs to is: a
-   transaction when its account is, a gift when its person is. *Belongs to* is a foreign key
-   declared `ondelete="CASCADE"` to a soft-deletable table. Each table has a view, named
+2. **Effective deletion.** A record is also deleted when something it is *deleted with* is
+   (§6.3): a transaction when its account is. *Deleted with* is a foreign key declared
+   `ondelete="CASCADE"` to a soft-deletable table. Each table has a view, named
    `<Table>Effective` (`TransactionEffective`), with every column of the table plus:
    1. `effectiveDeleted`: the record's own `deleted`, or the `effectiveDeleted` of any record
-      it belongs to;
+      it is deleted with;
    2. `effectiveDeletedAt`: the earliest `deletedAt` along that chain.
 
    The views are generated from the table declarations, chaining each parent's view, so a
@@ -209,28 +211,49 @@ record ended is worked out, never stored, so it follows the records as they chan
    `<Table>Effective` views (§4.2), and only database pruning reads them, so their cost never falls
    on everyday queries.
 2. **Its own end**: declared with the table, as an expression over its own row and the
-   rows it belongs to. Without one, a record ends only when it is effectively deleted, at
-   its `effectiveDeletedAt`.
+   rows it is deleted with. A deleted record's own end is the earlier of its declared end and
+   its `effectiveDeletedAt`. Without a declared end, a record ends only when it is effectively
+   deleted.
 
-   | Table          | Its own end                                                         |
-   |----------------|---------------------------------------------------------------------|
-   | `Lot`          | the date of the sale that takes its last share; none while any is held |
-   | `Transaction`  | its date                                                            |
-   | `Split`, `TransactionTags` | their transaction's end                                 |
-   | `Receipt`      | the latest end of what it is attached to; its own date when it is attached to nothing |
-   | `Import`       | the latest end of the transactions it brought in                    |
-   | `Activity`     | when it was written                                                 |
-   | `TaxBook`      | none: tax books are never pruned                                    |
+   | Its own end | Tables |
+   |---|---|
+   | never | `Instrument`, `Price` (requirements S4.6), `TaxFigure`, `Setting` while set; `TaxBook` (never pruned, S14.10.5) and with it `Filing`, `EstimatedPayment`, `TaxDocument`, `TaxBookFilers`, `TaxBookAccounts`; `User` (users are made inactive, not deleted, S10.2) |
+   | its date | `Transaction`, `Anchor`, `Holding` (as of), `Reconciliation` (the statement's), `Donation`, `QualifiedExpense`; `Receipt` (its own date, or when it was uploaded) |
+   | an event | `Account`: deleted, or closed with nothing in it still open; `Lot`: the sale of its last share; `Import`: its latest transaction's end; `BudgetLine`: the month before a later line for its category starts; `Gift`, given or received: the later of its occasion and its purchase; `Occasion` with a year: its date; `GivingPlan`: the end of its year; `Item`: its sale; `AccessToken`: expiry or revoking; `SignupRequest`: decided, or expired unconfirmed; `Link`: unlinked; `Relationship`: its `to` date |
+   | when deleted | `Budget`, `Portfolio`, `Projection`, `AssumptionSet`, `Person`, `GiftPlan`, a `Gift` still an idea or planned, `Organisation`, `PayoffPlan`, `Group`, `Share`, `PriceSource`, `ImportMapping`, `StatementLayout`; a remote `User` with its link |
+   | its parent's | `Split`, `LotPicks`, `TransactionTags`, `WalletKey`, `OptionContract`, `BudgetAccounts`, `PortfolioAccounts`, `CountedAccounts`, `ShownProjections`, `GiftPersons`, `ReceiptLinks`, `EducationPlan`, `Contribution`, `Loan`, `ItemValuation`, `Improvement`, `UserGroups`, `LinkColours`; a yearly `Occasion` |
+   | `Activity` | when it was written |
 
-   A deleted record's own end is the earlier of its declared end and its
-   `effectiveDeletedAt`.
-3. **Keeping alive**: a foreign key may be declared to keep what it points at alive: the
-   record it points at ends no earlier than the record holding the key. A lot keeps the
-   purchase that opened it alive, and a lot pick keeps its sale. A record's `endedAt` is
-   the latest of its own end and the `endedAt` of every record that keeps it alive; if any
-   of those is null, so is its own.
-4. **Prices** never end (requirements S4.6), and the exceptions of §4.4 are removed on
+3. **What a foreign key does**: each foreign key is declared with one of these, for when
+   the record it points at (the parent) is deleted and for when each one ends:
+
+   | Ruling             | When the parent is deleted                       | Ending |
+   |--------------------|--------------------------------------------------|--------|
+   | **deleted with**   | the record is deleted with it (`ondelete="CASCADE"`, §4.2) | it ends with its parent, which ends no earlier than it |
+   | **keeps ref**      | the record stays and shows the parent, marked deleted | the parent ends no earlier than the record |
+   | **keeps name**     | the record stays and shows the parent's name as it was, marked deleted or closed | each ends on its own; the record keeps a copy of the parent's name beside the key, so a pruned parent still reads right |
+   | **nullifies**      | the record stays and the key is cleared          | each ends on its own |
+   | **prevents delete**| deleting the parent is refused while the record exists | each ends on its own |
+
+   A record's `endedAt` is the latest of its own end and the `endedAt` of every record that
+   keeps a ref to it, or is deleted with it; if any of those is null, so is its own.
+
+   Whatever ends or is deleted still counts in figures before its end (requirements R3.10):
+   a budget or portfolio counts an account up to the date it closed, and shows it after as
+   *UMB Checking (closed)*.
+4. **The rulings.** A key to a user or person that is not listed (`ownerId`, `createdById`,
+   `enteredById`, `decidedById`, `updatedById`, …) keeps name.
+
+   | Ruling | Keys |
+   |---|---|
+   | **deleted with** | `accountId` of `Transaction`, `Anchor`, `Holding`, `Lot`, `Import`, `Reconciliation`, `WalletKey`, `EducationPlan`, `QualifiedExpense`, `Loan`, `PayoffPlan`, `Item`; `Split.transactionId`; `Lot.transactionId` (also keeps ref); `LotPicks.lotId`, `LotPicks.saleId`; `TransactionTags` both keys; `OptionContract.instrumentId`; `Price.instrumentId`; `BudgetLine.budgetId`; `BudgetAccounts.budgetId`; `PortfolioAccounts.portfolioId`; `CountedAccounts`, `ShownProjections`, `UserGroups`, `LinkColours` both keys; `GiftPlan.personId`; `Occasion.giftPlanId`; `GiftPersons.giftId`; `ReceiptLinks.receiptId`; `TaxBookFilers.bookId`, `TaxBookAccounts.bookId`, `Filing.bookId`, `EstimatedPayment.filingId`, `TaxDocument.bookId`, `TaxDocument.filingId`; `Contribution.transactionId`; `ItemValuation.itemId`, `Improvement.itemId`; `Share.itemId`, `Share.userId`, `Share.groupId`; `AccessToken.userId`; `User.linkId`; `Connection.ownerId` (a user's sign-ins go with them) |
+   | **keeps ref** | `Transaction.importId`, `instrumentId`, `reconciliationId`; `Transaction.transferId` and `optionTransactionId`, both ways; `Lot.transactionId`, `Lot.instrumentId`; `LotPicks.saleId`; `Holding.instrumentId`; `OptionContract.underlyingId`; `Gift.transactionId`; `Donation.transactionId`, `Donation.instrumentId`; `ReceiptLinks.itemId` (the receipt ends no earlier than what it is linked to); `TaxDocument.receiptId`; `QualifiedExpense.transactionId`; `Loan.securedById`; `User.personId` |
+   | **keeps name** | `categoryId` of `Transaction`, `Split`, `BudgetLine`; `BudgetAccounts.accountId`, `PortfolioAccounts.accountId`; what a `Projection` is built on (it waits for its owner to choose again before recomputing); `GiftPersons.personId`; `Donation.organisationId`, `fromAccountId`, `dafAccountId`; `TaxBookAccounts.accountId`, `TaxDocument.accountId`; `Filing.resultTransactionId`, `EstimatedPayment.transactionId`; `EducationPlan.beneficiaryId`; `Contribution.fromPersonId`; `Relationship.person1Id`, `person2Id`; every key to a user or person not listed elsewhere |
+   | **nullifies** | `Anchor.importId`, `Holding.importId`; an account's `connectionId` (its sync turns off, requirements S18.6.4) |
+   | **prevents delete** | `Category.parentId`; `Filing.amendsId` |
+
+   **One exception**: deleting a person deletes the gifts still ideas or planned for that
+   person alone; gifts bought, given or received keep the person's name (requirements
+   S7.8.6).
+5. **Prices** never end (requirements S4.6), and the exceptions of §4.4 are removed on
    their own schedules, not pruned.
-
-How each kind of record decides it has ended beyond this table, and what a record that
-outlives the record it names shows for it, is open (G16).

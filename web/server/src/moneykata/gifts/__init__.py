@@ -278,7 +278,7 @@ def spending(s: Session, user_id: str, year: int) -> Spending:
             "occasion": "Anniversaries and other dates",
         }.get(kind, "Other")
         by_occasion[name] += g.cost
-    # 529 contributions to the person are gifts to them too (S1.8.2, S7.8.6).
+    # 529 contributions to the person are gifts to them too (S1.8.2, S7.8.7).
     from .. import education
     from ..store.entities.accounts import Account
     from ..store.entities.education import EducationPlan

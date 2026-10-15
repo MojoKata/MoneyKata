@@ -22,12 +22,6 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S5, S7, S14.10.
 
-## G16: How each record decides it has ended
-
-**What is missing:** the end of each kind of record beyond the few in `schema.md` §6.2, and what a record shows for one it names that has been deleted or pruned. A gift to a person who was deleted is still money spent, and stays with the year's spending, but who it was given to is open: kept as the person's name at the time, shown as a deleted person, or left blank. The same question arises wherever a record outlives what it names: a donation and its organisation, a transaction and its category or payee, a budget line and its category, a share and its user, a contribution and its 529 plan's beneficiary.
-
-**Touches:** S1, S5, S6, S7, S14.10, `schema.md` §4, §6.
-
 ## G19: Other option price sources
 
 **For later consideration.** CBOE's delayed quotes (S4.5) aren't an official API and could change or close. The alternatives, each to be tried before it is relied on:

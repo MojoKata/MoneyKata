@@ -187,7 +187,7 @@
       each was acquired carry over, the fee aside (S8.19), so nothing is missing a basis and
       nothing is taxed. A transfer in left unmatched stays missing its basis (S8.4).
 8. **529 plans.** A `529` account holds funds and cash like a brokerage account, plus:
-   1. **The plan**: its state and name, the **beneficiary** (a person, S7.7, or a user), the
+   1. **The plan**: its state and name, the **beneficiary** (a person, S10.10), the
       opening date, and the state tax deduction the owner expects per year (typed: state
       rules are not modelled, S8.18).
    2. **Contributions** record who contributed (the owner, or a named relative), so gifts to

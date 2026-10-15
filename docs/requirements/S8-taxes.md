@@ -40,7 +40,7 @@ produces worksheets and exports. It never files, and says so (R1.16).
     qualified expenses and their receipts, and the part not covered, whose earnings may be
     taxable with a 10% additional tax. MoneyKata shows the figures. The preparer applies the
     rules, and the coordination with education credits.
-11. **Gifts** (S7.8.6): each person who received more than the annual exclusion in the
+11. **Gifts** (S7.8.7): each person who received more than the annual exclusion in the
     year, from cash gifts and 529 contributions, with the five-year 529 elections still
     running, as a prompt to file **Form 709**.
 12. **Loans** (S1.9.6): mortgage interest, points, PMI and property tax paid through escrow
@@ -52,9 +52,9 @@ produces worksheets and exports. It never files, and says so (R1.16).
 14. **Tax books.** A tax book is the tax record of one **tax year** for one user, or for a
     married couple filing jointly. Each household member who files has their own, and a
     couple filing separately has two.
-    1. **Filers**: one user, or two who are married. Creating a tax book names the year and
-       the filers. A user named as a filer by someone else accepts before the tax book counts
-       their accounts.
+    1. **Filers**: one user, or two who are spouses (S10.10.4) on the last day of the year, or
+       of whom one died during it. Creating a tax book names the year and the filers. A user
+       named as a filer by someone else accepts before the tax book counts their accounts.
     2. **Accounts counted**: the filers' own accounts, each counted once even when the filers
        share it with each other. The owner can add an account they can see (a custodial
        account in a child's name) or leave one out, and the panels say what was left out.

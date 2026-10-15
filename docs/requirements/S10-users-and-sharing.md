@@ -57,13 +57,14 @@
 2. **Admins are not superusers of money.** An admin manages users, groups and Settings, and
    sees only the accounts and portfolios shared with them. Users are not deleted: a user
    who leaves is made inactive (S10.1.7), and their data stays.
-3. **What can be shared**: seven kinds of item, each with one owner and its own list of shares:
+3. **What can be shared**: seven kinds of item, each with one owner and its own list of shares
+   (people are the household's, S10.10.2):
    | Kind | A share includes |
    |---|---|
    | **Account** | its transactions, holdings, positions and receipts; a loan's payoff plans and a physical-asset account's items |
    | **Portfolio** | its charts and the accounts in it, as S5.1 says |
    | **Budget** | its categories, plan, actuals and trends (S7.1) |
-   | **Person** | their occasions and gifts (S7.8.5) |
+   | **Gift plan** | its person's occasions, budget, notes and gifts (S7.8.5) |
    | **Giving plan** | its target, pace, donations and organisations (S7.9.1) |
    | **Tax book** | its panels, filings and documents (S8.14.3) |
    | **Projection** | its inputs, results and tracking (S6) |
@@ -86,9 +87,10 @@
          server (S11.3).
       2. **Only local users** appear where a user signs in, owns or changes something here:
          sign-in, Users and Groups, group membership (a group can hold write shares, and a
-         remote user only ever reads), the Admins group, tax-book filers (S8.14.1), the
-         spouse for wash sales, the owner of anything, and who receives alerts (S12.11). A
-         person on the Gifts screen can be linked to a user of either kind (S7.7.1).
+         remote user only ever reads), the Admins group, tax-book filers (S8.14.1), a
+         spouse (S10.10.4), the owner of anything, and who receives alerts (S12.11). A
+         remote user has a person too, filled from its server and used only for gifts
+         (S10.10.1).
       3. **Settings › Linked servers** lists each link's users, read only.
 4. **The Share dialog** lists every active user, then every active group, then the people on
    each linked server, each list alphabetical under a heading with a line on what sharing
@@ -142,3 +144,47 @@
    6. **The protocol**: JSON-RPC 2.0 over POST, answered as JSON (no server-sent stream, so
       GET is refused); the token as a bearer token; a request whose Origin header names
       another site is refused, so a web page can't use a token it has found.
+10. **People and relationships.**
+    1. **A person** has a name, a **sex** (*male* or *female*, required), a **birthday**
+       (the year optional, for their age) and, once they have died, the date (`diedOn`).
+       **Every user is a person**: a user's display name and birthday are their person's,
+       edited in Profile. A remote user's person is filled from its server (S10.3.3.1) and is
+       used only for gifts.
+    2. **People are the household's.** A new person is seen by every local user. Its
+       creator may make it **private**, and then share it as any item (S10.3). A person is
+       changed only by that person, when they are a user, by its creator, or by an admin.
+    3. **One person, once.** Adding a person whose name matches one already here, ignoring
+       case, shows that person instead. A private one shows **Ask to share**, which asks its
+       creator and the admins (an alert, S12.11). **A different person** adds the new one
+       only once both have birth years and they differ, so the two can be told apart.
+    4. **A relationship** joins two people from a date (optional) to a date (empty while it
+       holds): *spouse*, *couple*, *child*, *friend*, *colleague* or *family*, the last with
+       an optional label (*godmother*). *Child* runs from the parent to the child; the rest
+       run both ways. A user adds relationships they are in; an admin adds any.
+       1. **At most one spouse at a time**, and no one is their own ancestor.
+       2. **A marriage ends** by divorce (its end date) or by death (a spouse's `diedOn`,
+          which ends it on that date). The same two people can marry again: a new row.
+       3. **The spouse** is read for wash sales on the date of the sale (S3.8) and for a
+          joint tax book on the last day of its year (S8.14.1). Couples, friends and
+          colleagues are for gifts and sharing only.
+    5. **The family tree** is worked out from *child*, *spouse* and *couple*, never stored,
+       as of a date, so a past year shows that year's family (R3.10):
+
+       | Shown as | Worked out from |
+       |---|---|
+       | mother, father / son, daughter | *child* |
+       | sister, brother | both parents shared |
+       | half-sister, half-brother | one parent shared |
+       | grandmother, grandfather / granddaughter, grandson; great- and further | chains of *child* |
+       | aunt, uncle / niece, nephew | a parent's sibling |
+       | cousin | a child of a parent's sibling; anyone further out is a *relative* |
+       | stepmother, stepfather / stepdaughter, stepson / stepsister, stepbrother | a parent's spouse who isn't a parent, and their children |
+       | mother-in-law, father-in-law / daughter-in-law, son-in-law / sister-in-law, brother-in-law | through a spouse, or a child's spouse |
+       | ex-wife, ex-husband | a marriage ended by divorce; the in-laws through it end with it |
+       | wife, husband, widow, widower | *spouse*, ended by death for the last two |
+
+       The words follow each person's sex. Adoption and guardianship are *child*. A person
+       related in a way the tree can't show is entered as *family* with a label.
+    6. **Shown** on a person's page as their relationships, stored and worked out, and on
+       the Gifts screen as the person's relation to the user (*Emma, your granddaughter*).
+       Profile lists the user's own and adds them (S12.2).

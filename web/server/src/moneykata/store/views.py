@@ -1,7 +1,7 @@
 """The `<Table>Effective` views (docs/schema.md §4.2), generated from the table declarations.
 
-A record is effectively deleted when it is deleted itself or when anything it belongs to is:
-*belongs to* is a foreign key declared ondelete="CASCADE" to a soft-deletable table. Each view
+A record is effectively deleted when it is deleted itself or when anything it is deleted with is:
+*deleted with* is a foreign key declared ondelete="CASCADE" to a soft-deletable table. Each view
 chains its parents' views, so a new cascading key changes the view with it.
 """
 
