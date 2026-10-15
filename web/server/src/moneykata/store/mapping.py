@@ -94,6 +94,7 @@ def map_all() -> None:
         (acc.StatementLayout, accounts.StatementLayout),
         (acc.Loan, loans.Loan),
         (acc.OptionContract, options.OptionContract),
+        (acc.Strategy, options.Strategy),
         (acc.WalletKey, wallets.WalletKey),
         (acc.PayoffPlan, loans.PayoffPlan),
         (tx.TaxBook, taxes.TaxBook),
@@ -139,6 +140,7 @@ def map_all() -> None:
     _map(rc.ReceiptLink, receipts.ReceiptLinks)
     _map(ed.GiftPerson, people.GiftPersons)
     _map(acc.WashSale, options.WashSale)
+    _map(acc.StrategyLeg, options.StrategyLegs)
     _map(acc.WalletAddress, wallets.WalletAddress)
     _map(tx.TaxBookFiler, taxes.TaxBookFilers)
     _map(tx.TaxBookAccount, taxes.TaxBookAccounts)

@@ -234,6 +234,20 @@ function Holdings({ p }) {
               </td>
               <td colspan="3"></td>
             </tr>
+            ${h.optionsValue != null
+              ? html`
+                <tr>
+                  <td colspan="4" data-help="capital-at-risk">Options · capital at risk</td>
+                  <td
+                    class="num">
+                    <${Amt} v=${h.optionsValue} />
+                    <div class="small dim">at risk <${Amt}
+                                v=${h.capitalAtRisk} /></div>
+                  </td>
+                  <td colspan="3"></td>
+                </tr>
+              `
+              : null}
           </tfoot>
         </table>
       </div>

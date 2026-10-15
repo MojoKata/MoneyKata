@@ -18,3 +18,7 @@ held more than a year is long term.
 
 An option also shows its expiry. **Expired, assigned or exercised…** records its end; **Type a
 mark…** gives it a price when the price source has none.
+
+## Select
+
+Tick legs in one account and on one underlying, then **Group** them as a strategy.

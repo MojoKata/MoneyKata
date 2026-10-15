@@ -12,9 +12,11 @@ import { openDialog } from '../components/dialog.js';
 import { Icon } from '../components/icon.js';
 import { Mark, OptionTrade, Settle } from '../components/optiontrade.js';
 import { Dec, dec, num } from '../app/dec.js';
+import { GroupButton, Strategies } from '../components/strategies.js';
 
 const TABS = /** @type {[string, string][]} */ ([
   ['open', 'Open'],
+  ['strategies', 'Strategies'],
   ['closed', 'Closed'],
   ['trades', 'Option trades'],
   ['gains', 'Gains'],
@@ -102,6 +104,8 @@ export default function Positions({ tab }) {
       ? html`<${Loading} lines=${6} />`
       : current === 'open'
       ? html`<${Open} rows=${v.open} reload=${res.reload} />`
+      : current === 'strategies'
+      ? html`<${Strategies} />`
       : current === 'closed'
       ? html`<${Closed} rows=${v.closed} />`
       : current === 'trades'
@@ -113,14 +117,29 @@ export default function Positions({ tab }) {
 /** @param {{ rows: any[], reload: () => void }} p */
 function Open({ rows, reload }) {
   const [shown, setShown] = useState(/** @type {string | null} */ (null));
+  // Legs selected to group as a strategy by hand (S3.5.1).
+  const [picked, setPicked] = useState(/** @type {string[]} */ ([]));
   if (!rows.length) return html`<${Empty}>Nothing open.</${Empty}>`;
+  const keyOf = (/** @type {any} */ r) => r.accountId + r.instrumentId;
+  const pick = (/** @type {string} */ k) =>
+    setPicked(picked.includes(k) ? picked.filter((x) => x !== k) : [...picked, k]);
+  const chosen = rows.filter((r) => picked.includes(keyOf(r)));
   return html`
+    ${picked.length
+      ? html`<div class="toolbar mb"><span class="small dim">${picked.length} selected: group them
+          as a strategy.</span><span class="spacer"></span><${GroupButton} rows=${chosen}
+          done=${() => {
+        setPicked([]);
+        reload();
+      }} /></div>`
+      : null}
     <div class="card" style=${{ padding: '4px 8px' }}>
       <div class="table-wrap">
         <table class="t">
           <caption class="sr-only">Open positions</caption>
           <thead>
             <tr>
+              <th><span class="sr-only">Select</span></th>
               <th>Instrument</th>
               <th>Account</th>
               <th>Side</th>
@@ -138,6 +157,9 @@ function Open({ rows, reload }) {
                 onClick=${() => setShown(shown === key ? null : key)} onKeyDown=${(
                   /** @type {KeyboardEvent} */ e,
                 ) => e.key === 'Enter' && setShown(shown === key ? null : key)}>
+                <td onClick=${(/** @type {Event} */ e) => e.stopPropagation()}><input
+                  type="checkbox" aria-label=${'Select ' + r.symbol}
+                  checked=${picked.includes(key)} onChange=${() => pick(key)} /></td>
                 <td><b>${r.symbol}</b>${r.daysToExpiry != null
                   ? html`
                     <span class=${'pill ' + (r.daysToExpiry <= 7 ? 'warn' : '')}>${r
@@ -175,7 +197,7 @@ function Open({ rows, reload }) {
                         ${shown === key
                           ? html`
                             <tr>
-                              <td colspan="8">
+                              <td colspan="9">
                                 <div class="small" style=${{ padding: '4px 0' }}>${r.lots.map((
                                   /** @type {any} */ l,
                                 ) =>

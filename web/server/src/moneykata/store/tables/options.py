@@ -1,10 +1,20 @@
 """Option contracts (requirements S3.2): what makes an option instrument one: its underlying,
 call or put, strike, expiry and the shares a contract covers; and wash sales (S3.8)."""
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Index, Integer, Text, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Index,
+    Integer,
+    PrimaryKeyConstraint,
+    Text,
+    text,
+)
 
-from ..types import Day, Dec, UtcTimestamp
-from ._base import exception, record, unique_live
+from ..types import Cents, Day, Dec, UtcTimestamp
+from ._base import exception, pairs, record, unique_live
 
 OptionContract = record(
     "OptionContract",
@@ -21,6 +31,33 @@ OptionContract = record(
     Index("ix_OptionContract_underlying", "underlyingId", "expiry"),
 )
 unique_live(OptionContract, "instrumentId")
+
+# Legs held together and shown as one (S3.5): a label over the legs, whose lots, gains and wash
+# sales stay their own. A dismissed one records a proposal turned down, not to be made again.
+Strategy = record(
+    "Strategy",
+    "Strat",
+    Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
+    Column("underlyingId", Text, ForeignKey("Instrument.id"), nullable=False),
+    Column("name", Text),  # the owner's; else its shape's
+    Column("openedOn", Day, nullable=False),
+    Column("cashSecured", Boolean, nullable=False, server_default=text("0")),
+    # The broker's margin requirement, the capital at risk of an undefined-risk strategy.
+    Column("marginRequirement", Cents),
+    Column("dismissed", Boolean, nullable=False, server_default=text("0")),
+    Index("ix_Strategy_accountId", "accountId"),
+)
+
+# A strategy's legs: each an instrument held in its account (an option contract, or the
+# shares a covered call covers, `quantity` of them), joined when grouped or rolled into it.
+StrategyLegs = pairs(
+    "StrategyLegs",
+    Column("strategyId", Text, ForeignKey("Strategy.id", ondelete="CASCADE"), nullable=False),
+    Column("instrumentId", Text, ForeignKey("Instrument.id"), nullable=False),
+    Column("quantity", Dec),  # shares, for a stock leg; none: the whole position
+    Column("addedOn", Day, nullable=False),
+    PrimaryKeyConstraint("strategyId", "instrumentId"),
+)
 
 # A wash sale (S3.8): a loss disallowed because the same instrument was bought within 30 days,
 # moved to the replacement's basis with the sold shares' holding period. Worked out from the

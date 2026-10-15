@@ -21,16 +21,20 @@
       the same day are offered as a strategy on the Positions screen (*Group as an iron
       condor?*), and a short call against 100 or more shares held, whenever they were
       bought, as a covered call. Legs can be grouped by hand (select them, **Group**) and a
-      group undone at any time.
+      group undone at any time. A strategy's legs are in one account, on one underlying. A
+      proposal turned down (*Not a strategy*) isn't made again.
    2. **Rolls**: a leg closed and another opened on the same underlying the same day is
-      offered to stay in the group. A strategy keeps its history (its legs, its rolls and
-      its P/L from open to close, closed legs included).
+      offered to stay in the group, or turned down. A strategy keeps its history (its legs,
+      its rolls and its P/L from open to close, closed legs included); it opened when its
+      first leg did, and closes when its last option leg does.
    3. **The shapes recognised** (anything else is *Custom*): long call, long put, short call
       (naked), short put (*cash-secured* is the owner's tick); covered call, protective put,
       collar; bull and bear call spreads and put spreads; long and short straddles and
       strangles; iron condor, iron butterfly, butterfly; calendar and diagonal.
    4. **Figures**: cost or credit, mark, unrealized and realized P/L, **max profit**, **max
-      loss** and **breakevens at expiry**, *unlimited* where it is. A calendar or diagonal
+      loss** and **breakevens at expiry**, *unlimited* where it is, worked out from the payoff
+      at each strike, at zero and beyond the highest, so a *Custom* strategy gets them too.
+      Shares count at their value on the day the strategy opened. A calendar or diagonal
       shows its P/L only, as its outcome depends on volatility.
    5. **Capital at risk**, shown **now** and **at open**:
 
@@ -42,12 +46,16 @@
       | covered call, protective put, collar | the shares' market value, less the net premium |
       | naked call, short straddle and strangle | *unlimited*, or the broker's margin requirement the owner types |
 
+      Each row is the strategy's max loss at expiry where that is finite, which is how a
+      short put without the *cash-secured* tick, a long straddle or a butterfly are counted
+      too; a calendar or diagonal risks its net debit, or the margin typed.
       *Now* uses today's prices; *at open* uses those of the day the strategy opened, and
       is what a strategy's **return on capital at risk** is worked on. The shares' cost basis
       shows on their own leg.
-   6. **Where it shows**: Positions lists legs under their strategy, expandable, with these
-      figures; an investing account and a portfolio show **Capital at risk** beside their
-      options' market value. Allocation charts keep market value.
+   6. **Where it shows**: Positions has a **Strategies** tab listing each strategy with its
+      legs and these figures, and the proposals; an investing account and a portfolio show
+      **Capital at risk** beside their options' market value, counting each option outside a
+      strategy as a single leg (S3.9.2). Allocation charts keep market value.
 6. **Expiry** is applied automatically the day after an option expires out of the money by
    the underlying's closing price. An in-the-money expiry asks the user what happened.
 7. **Valuation**: an open option's mark is the price source's daily option close where there is

@@ -241,6 +241,29 @@ class OptionContract(Record):
 
 
 @dataclass(kw_only=True, eq=False)
+class Strategy(Record):
+    id: str
+    accountId: str
+    underlyingId: str
+    openedOn: dt.date
+    name: str | None = None
+    cashSecured: bool = False
+    marginRequirement: Decimal | None = None
+    dismissed: bool = False
+
+
+@dataclass(kw_only=True, eq=False)
+class StrategyLeg(SoftDeleted):
+    strategyId: str
+    instrumentId: str
+    addedOn: dt.date
+    createdAt: dt.datetime
+    quantity: Decimal | None = None
+    deletedAt: dt.datetime | None = None
+    deletedById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
 class WashSale:
     id: str
     ownerId: str

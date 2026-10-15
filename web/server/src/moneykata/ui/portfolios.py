@@ -14,6 +14,7 @@ from .. import access, activity, clock, figures, ids, valuation
 from ..errors import FieldError, Problem
 from ..ledger import performance as perf
 from ..ledger import types as atypes
+from ..options import strategies as strat
 from ..store.entities.accounts import Account
 from ..store.entities.sharing import Portfolio, PortfolioAccount
 from ..store.entities.users import User
@@ -342,6 +343,8 @@ class PortfolioHoldings(Model):
     holdings: list[HoldingTotal]
     cash: Money
     total: Money
+    optionsValue: Money | None  # its options' market value
+    capitalAtRisk: Money | None  # beside it (S3.5.6)
 
 
 def _target(s, c: Caller, portfolio_id: str) -> tuple[Portfolio | None, list[Account], str]:
@@ -436,11 +439,14 @@ def portfolio_holdings(portfolio_id: str, request: Request, c: Caller = Depends(
         _, accounts, _ = _target(s, c, portfolio_id)
         by: dict[str, dict] = {}
         cash = Decimal(0)
+        opts = risk = Decimal(0)
         for a in accounts:
             led = repo.load(s, a)
             cash += led.balance()
             if not atypes.investing(a.type):
                 continue
+            v, r = strat.risk_of_account(s, led)
+            opts, risk = opts + v, risk + r
             for pos in valuation.positions(s, led):
                 h = by.setdefault(
                     pos.instrumentId,
@@ -492,4 +498,10 @@ def portfolio_holdings(portfolio_id: str, request: Request, c: Caller = Depends(
                     accounts=sorted(set(h["accounts"])),
                 )
             )
-        return PortfolioHoldings(holdings=out, cash=cash, total=total)
+        return PortfolioHoldings(
+            holdings=out,
+            cash=cash,
+            total=total,
+            optionsValue=opts if opts or risk else None,
+            capitalAtRisk=risk if opts or risk else None,
+        )

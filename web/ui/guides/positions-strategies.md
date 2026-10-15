@@ -1,0 +1,37 @@
+# Positions: Strategies
+
+Legs held together, such as a covered call, a vertical spread or an iron condor, shown as one.
+Grouping is a label: each leg keeps its own lots, gains and wash sales.
+
+![Strategies](shots/positions-strategies.webp)
+
+## Proposed
+
+Legs on one underlying opened in one account on the same day are offered as a strategy, and so is a
+short call against 100 or more shares held. **Group them**, or **Not a strategy**, which isn't
+asked again. A leg closed and another opened on the same underlying the same day is offered as a
+roll: kept in the strategy, it keeps its history, closed legs and their P/L included.
+
+## Strategy
+
+Its shape, worked out from its open legs: long and short calls and puts, a cash-secured put, a
+covered call, a protective put, a collar, bull and bear spreads, straddles and strangles, an iron
+condor or iron butterfly, a butterfly, a calendar or a diagonal; anything else is _Custom_.
+
+## Max profit and max loss
+
+At expiry, _unlimited_ where it is. Shares count at their value on the day the strategy opened. A
+calendar or diagonal shows its P/L only, as its outcome rests on volatility.
+
+## At risk now {#at-risk-now}
+
+Capital at risk at today's prices: the most the strategy can lose at expiry. For a strategy whose
+loss has no limit, the broker's margin requirement you type, or _unlimited_.
+
+## At open {#at-open}
+
+Capital at risk at the prices of the day the strategy opened; its return is worked on this.
+
+## Group legs
+
+Select legs on the **Open** tab and **Group** them, in one account and on one underlying.

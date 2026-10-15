@@ -408,6 +408,25 @@ def option_trades(request: Request, c: Caller = Depends(caller)):
                 if trade is not None:
                     p = positions.get(iid)
                     out.append(_trade_row(a, inst, oc, trade, None, p.value if p else None))
+        # A leg in a strategy takes its strategy's capital at risk at open (S3.9.2).
+        from ..options import strategies as strat
+
+        at_open: dict[tuple[str, str], Decimal] = {}
+        for a, _ in access.visible_accounts(s, c.id):
+            mine = strat.of_account(s, a.id) if atypes.investing(a.type) else []
+            if not mine:
+                continue
+            book = strat.Book(s, repo.load(s, a))
+            for st in mine:
+                v = strat.view(book, st)
+                if v.riskAtOpen:
+                    for x in v.legs:
+                        at_open[(a.id, x.instrumentId)] = v.riskAtOpen
+        for r in out:
+            risk = at_open.get((r.accountId, r.instrumentId))
+            if risk is not None:
+                r.capitalAtRisk = risk
+                r.returnPct = round(float(r.pl / risk * 100), 2) if r.pl is not None else None
     open_rows = [r for r in out if r.closed is None]
     done = sorted((r for r in out if r.closed is not None), key=lambda r: r.closed, reverse=True)
     return sorted(open_rows, key=lambda r: r.opened, reverse=True) + done

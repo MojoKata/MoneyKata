@@ -53,6 +53,8 @@
  * @property {(string | null)} statementInterval
  * @property {string} statementIntervalDefault
  * @property {(string | null)} statementIntervalProposal
+ * @property {(import('../app/dec.js').Dec | null)} optionsValue
+ * @property {(import('../app/dec.js').Dec | null)} capitalAtRisk
  */
 
 /**
@@ -1362,6 +1364,27 @@
  */
 
 /**
+ * @typedef {Object} LegIn
+ * @property {string} instrumentId
+ * @property {(import('../app/dec.js').Dec | null)} [quantity]
+ */
+
+/**
+ * @typedef {Object} LegOut
+ * @property {string} instrumentId
+ * @property {string} symbol
+ * @property {string} kind
+ * @property {import('../app/dec.js').Dec} quantity
+ * @property {import('../app/dec.js').Dec} cost
+ * @property {(import('../app/dec.js').Dec | null)} value
+ * @property {(import('../app/dec.js').Dec | null)} strike
+ * @property {(string | null)} expiry
+ * @property {import('../app/dec.js').Dec} realized
+ * @property {(string | null)} addedOn
+ * @property {(string | null)} closedOn
+ */
+
+/**
  * @typedef {Object} LinkedFile
  * @property {string} id
  * @property {string} itemId
@@ -1646,6 +1669,14 @@
 /**
  * @typedef {Object} NewSource
  * @property {string} name
+ */
+
+/**
+ * @typedef {Object} NewStrategy
+ * @property {string} accountId
+ * @property {Array<LegIn>} legs
+ * @property {(string | null)} [name]
+ * @property {boolean} [dismiss]
  */
 
 /**
@@ -2329,6 +2360,8 @@
  * @property {Array<HoldingTotal>} holdings
  * @property {import('../app/dec.js').Dec} cash
  * @property {import('../app/dec.js').Dec} total
+ * @property {(import('../app/dec.js').Dec | null)} optionsValue
+ * @property {(import('../app/dec.js').Dec | null)} capitalAtRisk
  */
 
 /**
@@ -2474,6 +2507,26 @@
  * @property {boolean} shown
  * @property {number} sharedWith
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} ProposalLeg
+ * @property {string} instrumentId
+ * @property {string} symbol
+ * @property {(import('../app/dec.js').Dec | null)} quantity
+ */
+
+/**
+ * @typedef {Object} ProposalOut
+ * @property {string} key
+ * @property {string} kind
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {string} underlying
+ * @property {string} openedOn
+ * @property {string} shape
+ * @property {Array<ProposalLeg>} legs
+ * @property {(string | null)} strategyId
  */
 
 /**
@@ -3056,6 +3109,49 @@
  * @property {Array<YearSizes>} byYear
  * @property {Array<CategorySize>} expiredBy
  * @property {(number | null)} keepStatementsYears
+ */
+
+/**
+ * @typedef {Object} StrategiesView
+ * @property {Array<StrategyOut>} strategies
+ * @property {Array<ProposalOut>} proposals
+ */
+
+/**
+ * @typedef {Object} StrategyChange
+ * @property {(string | null)} [name]
+ * @property {(boolean | null)} [cashSecured]
+ * @property {(import('../app/dec.js').Dec | null)} [marginRequirement]
+ * @property {Array<LegIn>} [roll]
+ * @property {Array<string>} [declineRoll]
+ */
+
+/**
+ * @typedef {Object} StrategyOut
+ * @property {string} id
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {string} name
+ * @property {string} shape
+ * @property {string} underlying
+ * @property {string} openedOn
+ * @property {(string | null)} closedOn
+ * @property {Array<LegOut>} legs
+ * @property {import('../app/dec.js').Dec} credit
+ * @property {(import('../app/dec.js').Dec | null)} unrealized
+ * @property {import('../app/dec.js').Dec} realized
+ * @property {(import('../app/dec.js').Dec | null)} pl
+ * @property {(import('../app/dec.js').Dec | null)} maxProfit
+ * @property {(import('../app/dec.js').Dec | null)} maxLoss
+ * @property {Array<import('../app/dec.js').Dec>} breakevens
+ * @property {boolean} expiryKnown
+ * @property {(import('../app/dec.js').Dec | null)} capitalAtRiskNow
+ * @property {(import('../app/dec.js').Dec | null)} capitalAtRiskAtOpen
+ * @property {(import('../app/dec.js').Dec | null)} returnPct
+ * @property {boolean} cashSecured
+ * @property {(import('../app/dec.js').Dec | null)} marginRequirement
+ * @property {boolean} canWrite
+ * @property {number} version
  */
 
 /**

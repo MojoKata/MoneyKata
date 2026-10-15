@@ -157,6 +157,21 @@
             "title": "Balance",
             "type": "number"
           },
+          "capitalAtRisk": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitalatrisk"
+          },
           "change": {
             "anyOf": [
               {
@@ -308,6 +323,21 @@
             "title": "Openingworkedout",
             "type": "number"
           },
+          "optionsValue": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Optionsvalue"
+          },
           "ownerAvatar": {
             "anyOf": [
               {
@@ -419,7 +449,9 @@
           "tax",
           "statementInterval",
           "statementIntervalDefault",
-          "statementIntervalProposal"
+          "statementIntervalProposal",
+          "optionsValue",
+          "capitalAtRisk"
         ],
         "title": "AccountDetail",
         "type": "object"
@@ -8090,6 +8122,157 @@
         "title": "LastYear",
         "type": "object"
       },
+      "LegIn": {
+        "additionalProperties": false,
+        "properties": {
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          }
+        },
+        "required": [
+          "instrumentId"
+        ],
+        "title": "LegIn",
+        "type": "object"
+      },
+      "LegOut": {
+        "additionalProperties": false,
+        "properties": {
+          "addedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Addedon"
+          },
+          "closedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closedon"
+          },
+          "cost": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Cost",
+            "type": "number"
+          },
+          "expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry"
+          },
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "quantity": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
+            "title": "Quantity",
+            "type": "number"
+          },
+          "realized": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Realized",
+            "type": "number"
+          },
+          "strike": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strike"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "instrumentId",
+          "symbol",
+          "kind",
+          "quantity",
+          "cost",
+          "value",
+          "strike",
+          "expiry",
+          "realized",
+          "addedOn",
+          "closedOn"
+        ],
+        "title": "LegOut",
+        "type": "object"
+      },
       "LinkedFile": {
         "additionalProperties": false,
         "properties": {
@@ -9590,6 +9773,45 @@
           "name"
         ],
         "title": "NewSource",
+        "type": "object"
+      },
+      "NewStrategy": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "dismiss": {
+            "default": false,
+            "title": "Dismiss",
+            "type": "boolean"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/LegIn"
+            },
+            "minItems": 1,
+            "title": "Legs",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "required": [
+          "accountId",
+          "legs"
+        ],
+        "title": "NewStrategy",
         "type": "object"
       },
       "NewToken": {
@@ -13152,6 +13374,21 @@
       "PortfolioHoldings": {
         "additionalProperties": false,
         "properties": {
+          "capitalAtRisk": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitalatrisk"
+          },
           "cash": {
             "examples": [
               1234.5
@@ -13167,6 +13404,21 @@
             "title": "Holdings",
             "type": "array"
           },
+          "optionsValue": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Optionsvalue"
+          },
           "total": {
             "examples": [
               1234.5
@@ -13179,7 +13431,9 @@
         "required": [
           "holdings",
           "cash",
-          "total"
+          "total",
+          "optionsValue",
+          "capitalAtRisk"
         ],
         "title": "PortfolioHoldings",
         "type": "object"
@@ -14067,6 +14321,106 @@
           "version"
         ],
         "title": "ProjectionRow",
+        "type": "object"
+      },
+      "ProposalLeg": {
+        "additionalProperties": false,
+        "properties": {
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrumentId",
+          "symbol",
+          "quantity"
+        ],
+        "title": "ProposalLeg",
+        "type": "object"
+      },
+      "ProposalOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalLeg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "openedOn": {
+            "format": "date",
+            "title": "Openedon",
+            "type": "string"
+          },
+          "shape": {
+            "title": "Shape",
+            "type": "string"
+          },
+          "strategyId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategyid"
+          },
+          "underlying": {
+            "title": "Underlying",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "kind",
+          "accountId",
+          "accountName",
+          "underlying",
+          "openedOn",
+          "shape",
+          "legs",
+          "strategyId"
+        ],
+        "title": "ProposalOut",
         "type": "object"
       },
       "PruneIn": {
@@ -17103,6 +17457,333 @@
           "keepStatementsYears"
         ],
         "title": "StorageOut",
+        "type": "object"
+      },
+      "StrategiesView": {
+        "additionalProperties": false,
+        "properties": {
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalOut"
+            },
+            "title": "Proposals",
+            "type": "array"
+          },
+          "strategies": {
+            "items": {
+              "$ref": "#/components/schemas/StrategyOut"
+            },
+            "title": "Strategies",
+            "type": "array"
+          }
+        },
+        "required": [
+          "strategies",
+          "proposals"
+        ],
+        "title": "StrategiesView",
+        "type": "object"
+      },
+      "StrategyChange": {
+        "additionalProperties": false,
+        "properties": {
+          "cashSecured": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cashsecured"
+          },
+          "declineRoll": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Declineroll",
+            "type": "array"
+          },
+          "marginRequirement": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marginrequirement"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "roll": {
+            "items": {
+              "$ref": "#/components/schemas/LegIn"
+            },
+            "title": "Roll",
+            "type": "array"
+          }
+        },
+        "title": "StrategyChange",
+        "type": "object"
+      },
+      "StrategyOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "title": "Accountid",
+            "type": "string"
+          },
+          "accountName": {
+            "title": "Accountname",
+            "type": "string"
+          },
+          "breakevens": {
+            "items": {
+              "examples": [
+                1234.5
+              ],
+              "format": "money",
+              "type": "number"
+            },
+            "title": "Breakevens",
+            "type": "array"
+          },
+          "canWrite": {
+            "title": "Canwrite",
+            "type": "boolean"
+          },
+          "capitalAtRiskAtOpen": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitalatriskatopen"
+          },
+          "capitalAtRiskNow": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitalatrisknow"
+          },
+          "cashSecured": {
+            "title": "Cashsecured",
+            "type": "boolean"
+          },
+          "closedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closedon"
+          },
+          "credit": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Credit",
+            "type": "number"
+          },
+          "expiryKnown": {
+            "title": "Expiryknown",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/LegOut"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "marginRequirement": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marginrequirement"
+          },
+          "maxLoss": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxloss"
+          },
+          "maxProfit": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxprofit"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "openedOn": {
+            "format": "date",
+            "title": "Openedon",
+            "type": "string"
+          },
+          "pl": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pl"
+          },
+          "realized": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Realized",
+            "type": "number"
+          },
+          "returnPct": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Returnpct"
+          },
+          "shape": {
+            "title": "Shape",
+            "type": "string"
+          },
+          "underlying": {
+            "title": "Underlying",
+            "type": "string"
+          },
+          "unrealized": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealized"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "accountName",
+          "name",
+          "shape",
+          "underlying",
+          "openedOn",
+          "closedOn",
+          "legs",
+          "credit",
+          "unrealized",
+          "realized",
+          "pl",
+          "maxProfit",
+          "maxLoss",
+          "breakevens",
+          "expiryKnown",
+          "capitalAtRiskNow",
+          "capitalAtRiskAtOpen",
+          "returnPct",
+          "cashSecured",
+          "marginRequirement",
+          "canWrite",
+          "version"
+        ],
+        "title": "StrategyOut",
         "type": "object"
       },
       "StudentOut": {
@@ -28955,6 +29636,28 @@
         ]
       }
     },
+    "/ui/api/positions/strategies": {
+      "get": {
+        "description": "Open strategies first, then those closed; the proposals for the accounts the caller\nmay change.",
+        "operationId": "list_strategies_ui_api_positions_strategies_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrategiesView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Strategies",
+        "tags": [
+          "strategies"
+        ]
+      }
+    },
     "/ui/api/price-sources": {
       "get": {
         "operationId": "list_sources_ui_api_price_sources_get",
@@ -32196,6 +32899,141 @@
         "summary": "Signup Confirm",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/ui/api/strategies": {
+      "post": {
+        "description": "Group legs by hand or as proposed, or turn a proposal down.",
+        "operationId": "group_ui_api_strategies_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewStrategy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrategiesView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Group",
+        "tags": [
+          "strategies"
+        ]
+      }
+    },
+    "/ui/api/strategies/{strategy_id}": {
+      "delete": {
+        "description": "The group undone: its legs stand on their own again (S3.5.1).",
+        "operationId": "undo_ui_api_strategies__strategy_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "strategy_id",
+            "required": true,
+            "schema": {
+              "title": "Strategy Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Undo",
+        "tags": [
+          "strategies"
+        ]
+      },
+      "patch": {
+        "operationId": "change_ui_api_strategies__strategy_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "strategy_id",
+            "required": true,
+            "schema": {
+              "title": "Strategy Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StrategyChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrategyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change",
+        "tags": [
+          "strategies"
         ]
       }
     },

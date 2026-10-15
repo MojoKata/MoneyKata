@@ -145,6 +145,11 @@ function Details({ a }) {
             LOT_METHODS.find(([k]) => k === a.lotMethod)?.[1]
           }</div>`
           : null}
+        ${a.optionsValue != null
+          ? html`<div class="list-item"><span class="grow dim" data-help="capital-at-risk">Options ·
+              capital at risk</span><span><${Amt} v=${a.optionsValue} /> · <${Amt}
+              v=${a.capitalAtRisk} /></span></div>`
+          : null}
         <div class="list-item"><span class="grow dim">Tax treatment</span>${a.tax || '—'}</div>
         <div class="list-item"><span class="grow dim">Opening balance</span><span><${Amt} v=${a
           .openingWorkedOut} />${a.openingStandIn
@@ -1072,7 +1077,7 @@ function StatementChecks({ v }) {
                 : h.ok
                 ? html`<span class="pill ok">matches</span>`
                 : html`<span class="pill warn">${String(h.difference).replace('-', '')} ${
-                  Number(h.difference) > 0 ? 'short' : 'over'
+                  dec(h.difference).sign() > 0 ? 'short' : 'over'
                 }</span>`
             }</div>`
           )

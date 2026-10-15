@@ -75,6 +75,8 @@ class AccountDetail(AccountRow):
     statementInterval: str | None  # set; none set follows the type (S1.11.7)
     statementIntervalDefault: str  # the type's
     statementIntervalProposal: str | None  # learned from what arrives, not yet accepted
+    optionsValue: Money | None  # an investing account's options' market value
+    capitalAtRisk: Money | None  # beside it (S3.5.6)
 
 
 class NewAccount(Model):
@@ -370,7 +372,19 @@ def row(
         statementInterval=a.statementInterval,
         statementIntervalDefault=expected.default_interval(a.type, json.loads(a.keptBy)),
         statementIntervalProposal=expected.proposal(a, imports_of(s, a.id)),
+        **_options_risk(s, a, ledger),
     )
+
+
+def _options_risk(s, a, ledger) -> dict:
+    if not atypes.investing(a.type):
+        return {"optionsValue": None, "capitalAtRisk": None}
+    from ..options import strategies as strat
+
+    value, risk = strat.risk_of_account(s, ledger)
+    if not value and not risk:
+        return {"optionsValue": None, "capitalAtRisk": None}
+    return {"optionsValue": value, "capitalAtRisk": risk}
 
 
 def imports_of(s, account_id: str) -> list[Import]:
