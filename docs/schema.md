@@ -135,7 +135,7 @@ designed yet. A row moves to §3.1 when its table is.
 |--------|---------------|-----------------------------------------------------------------------------------|
 | Cnctr  | Connector     | The MoneyKata Connector paired with this server: its public keys (S18.4).        |
 | Conn   | Connection    | One sign-in at one institution, kept by the connector, owned by a user (S18.6).   |
-| Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
+| Posn   | Position      | An instrument held in an account, followed from open to closed.                   |
 | Strat  | Strategy      | Option legs and shares held together as one: its shape, legs and rolls (S3.5).    |
 
 ## 4. Soft deletes

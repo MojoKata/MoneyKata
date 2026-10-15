@@ -546,11 +546,11 @@ def test_every_dialog_has_its_guide(page):
 
 def test_the_help_pane_follows_the_focus_and_f1_toggles_it(page):
     visit(page, "/ui/profile")
-    page.focus("#f-birth-year")
-    page.wait_for_selector('.help [data-anchor="birth-year"].flash')
-    page.wait_for_selector('.help [data-anchor="birth-year"]:not(.flash)')
+    page.focus("#f-birthday")
+    page.wait_for_selector('.help [data-anchor="birthday"].flash')
+    page.wait_for_selector('.help [data-anchor="birthday"]:not(.flash)')
     assert page.locator(".help h2.active").evaluate_all("hs => hs.map(h => h.dataset.anchor)") == [
-        "birth-year"
+        "birthday"
     ]
     page.focus("#f-display-name")
     page.wait_for_selector('.help [data-anchor="display-name"].active')
@@ -700,6 +700,7 @@ def test_sign_up_through_the_app(page):
     guest.goto(page.base + "/ui/")
     guest.get_by_role("button", name="Sign up").click()
     guest.fill("#f-display-name", "Erin Shaw")
+    guest.select_option("#f-sex", "female")
     guest.fill("#f-email", "erin@shaw.family")
     guest.fill("#f-username", "erin")
     guest.fill("#f-password", "a long passphrase for erin")
