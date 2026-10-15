@@ -26,6 +26,11 @@
             ],
             "title": "Countinnetworth"
           },
+          "dismissIntervalProposal": {
+            "default": false,
+            "title": "Dismissintervalproposal",
+            "type": "boolean"
+          },
           "institution": {
             "anyOf": [
               {
@@ -121,6 +126,17 @@
               }
             ],
             "title": "Openingdate"
+          },
+          "statementInterval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statementinterval"
           }
         },
         "title": "AccountChange",
@@ -319,6 +335,32 @@
             "title": "Sharedwith",
             "type": "integer"
           },
+          "statementInterval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statementinterval"
+          },
+          "statementIntervalDefault": {
+            "title": "Statementintervaldefault",
+            "type": "string"
+          },
+          "statementIntervalProposal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statementintervalproposal"
+          },
           "tax": {
             "anyOf": [
               {
@@ -374,7 +416,10 @@
           "openingDate",
           "openingWorkedOut",
           "openingStandIn",
-          "tax"
+          "tax",
+          "statementInterval",
+          "statementIntervalDefault",
+          "statementIntervalProposal"
         ],
         "title": "AccountDetail",
         "type": "object"
@@ -1260,6 +1305,20 @@
           "lastError"
         ],
         "title": "BitcoinView",
+        "type": "object"
+      },
+      "Body_keep_upload_ui_api_accounts__account_id__statements_keep_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_keep_upload_ui_api_accounts__account_id__statements_keep_post",
         "type": "object"
       },
       "Body_upload_ui_api_accounts__account_id__imports_post": {
@@ -7589,6 +7648,37 @@
           "code"
         ],
         "title": "JoinIn",
+        "type": "object"
+      },
+      "KeepIn": {
+        "additionalProperties": false,
+        "properties": {
+          "periodEnd": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Periodend"
+          },
+          "periodStart": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Periodstart"
+          }
+        },
+        "title": "KeepIn",
         "type": "object"
       },
       "KeyStorage": {
@@ -16277,6 +16367,17 @@
             "title": "Acceptdifference",
             "type": "boolean"
           },
+          "accountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountid"
+          },
           "closing": {
             "examples": [
               1234.5
@@ -16285,6 +16386,11 @@
             "title": "Closing",
             "type": "number"
           },
+          "leftOut": {
+            "default": false,
+            "title": "Leftout",
+            "type": "boolean"
+          },
           "opening": {
             "examples": [
               1234.5
@@ -16292,6 +16398,17 @@
             "format": "money",
             "title": "Opening",
             "type": "number"
+          },
+          "part": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part"
           },
           "periodEnd": {
             "format": "date",
@@ -22563,6 +22680,59 @@
         ]
       }
     },
+    "/ui/api/accounts/{account_id}/statements/keep": {
+      "post": {
+        "description": "A statement to keep on its account as it is: its period and institution are read where\nthey can be, for the person to check.",
+        "operationId": "keep_upload_ui_api_accounts__account_id__statements_keep_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_keep_upload_ui_api_accounts__account_id__statements_keep_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Keep Upload",
+        "tags": [
+          "imports"
+        ]
+      }
+    },
     "/ui/api/accounts/{account_id}/wallet": {
       "get": {
         "operationId": "get_wallet_ui_api_accounts__account_id__wallet_get",
@@ -25264,6 +25434,59 @@
         ]
       }
     },
+    "/ui/api/imports/{upload_id}/keep": {
+      "post": {
+        "description": "Kept on the account as a receipt named by its period, its period recorded so it counts\nas the statement expected (S1.11.7), its lines never added.",
+        "operationId": "keep_statement_ui_api_imports__upload_id__keep_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "title": "Upload Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeepIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Keep Statement",
+        "tags": [
+          "imports"
+        ]
+      }
+    },
     "/ui/api/imports/{upload_id}/mapping": {
       "post": {
         "operationId": "apply_mapping_ui_api_imports__upload_id__mapping_post",
@@ -25318,7 +25541,7 @@
     },
     "/ui/api/imports/{upload_id}/statement": {
       "post": {
-        "description": "Nothing is saved until the person has checked it: the rows they keep become\ntransactions (what is already there is matched, not added twice), the balances become the\naccount's anchors, the file is kept as a receipt on the account, and the layout is learned\nfor the next statement from this institution.",
+        "description": "Nothing is saved until the person has checked it: the rows they keep become\ntransactions (what is already there is matched, not added twice), the balances become the\naccount's anchors, the file is kept as a receipt on the account, and the layout is learned\nfor the next statement from this institution. A statement of several accounts is saved\nonce each part is saved or left out.",
         "operationId": "save_statement_ui_api_imports__upload_id__statement_post",
         "parameters": [
           {

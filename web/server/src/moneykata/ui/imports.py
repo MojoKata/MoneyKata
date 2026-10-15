@@ -21,6 +21,7 @@ from ..errors import Problem, refuse
 from ..importers import csvfile, ofx, statements
 from ..importers.parsed import ParsedFile, ReadError, Row
 from ..jobs import Job
+from ..ledger import types as atypes
 from ..store.entities.accounts import (
     Account,
     Import,
@@ -51,6 +52,10 @@ class Held:
     lines: list | None = None
     statement: object | None = None
     method: str | None = None
+    # A statement of several accounts (S1.3.3.5): each part's parse, and what the person
+    # decided for each, saved together once every part is decided.
+    parts: list | None = None
+    decisions: dict | None = None
 
 
 _held: dict[str, Held] = {}
@@ -292,14 +297,11 @@ def _institution_key(account: Account, st) -> str:
     return (account.institution or st.institution or "").strip()
 
 
-def _run_statement(
-    srv, job: Job, account_id: str, user_id: str, data: bytes, name: str, media: str
-) -> None:
-    """Read it in a worker process, as receipts are, then parse it with what is known of its
-    institution's layout, and hold it for the person to check."""
+def _read(srv, job: Job, data: bytes, media: str) -> tuple[list[str], str] | None:
+    """The statement's lines, read in a worker process as receipts are; None when it can't be
+    read (the job is then failed)."""
     from ..receipts.reading import Worker
 
-    srv.jobs.update(job, state="running", progress=0.1)
     worker = Worker()
     try:
         outcome = worker.read(data, media)
@@ -311,33 +313,95 @@ def _run_statement(
             state="failed",
             error={"code": "statement-unreadable", "message": f"Couldn't read it: {outcome[1]}."},
         )
-        return
-    _, lines, method, _engine = outcome
-    with srv.db.read() as s:
-        account, _ = access.account(s, user_id, account_id, "write")
-        card = account.type == "credit-card"
-        first = statements.parse(lines, clock.today(), None, card, account.institution)
-        saved = _layout(s, account.ownerId, _institution_key(account, first))
-        st = statements.parse(
-            lines,
-            clock.today(),
-            json.loads(saved.layout) if saved else None,
-            card,
-            account.institution or first.institution,
-        )
-        existing = s.scalars(
+        return None
+    return outcome[1], outcome[2]
+
+
+def _parse(s, account: Account, lines: list[str], period=None):
+    """Parsed with what is known of its institution's layout; and whether that was known."""
+    card = account.type == "credit-card"
+    first = statements.parse(lines, clock.today(), None, card, account.institution, period)
+    saved = _layout(s, account.ownerId, _institution_key(account, first))
+    st = statements.parse(
+        lines,
+        clock.today(),
+        json.loads(saved.layout) if saved else None,
+        card,
+        account.institution or first.institution,
+        period,
+    )
+    return st, saved is not None
+
+
+def _present(s, account_id: str | None) -> set:
+    if account_id is None:
+        return set()
+    return {
+        (x.date, x.amount)
+        for x in s.scalars(
             select(Transaction).where(
                 Transaction.accountId == account_id, Transaction.deleted == false()
             )
-        ).all()
-    have = {(x.date, x.amount) for x in existing}
+        )
+    }
+
+
+def _figures(st, have: set) -> dict:
+    return {
+        "institution": st.institution,
+        "periodStart": st.periodStart.isoformat() if st.periodStart else None,
+        "periodEnd": st.periodEnd.isoformat() if st.periodEnd else None,
+        "opening": str(st.opening) if st.opening is not None else None,
+        "closing": str(st.closing) if st.closing is not None else None,
+        "rows": [
+            {
+                "date": r.date.isoformat(),
+                "description": r.description,
+                "amount": str(r.amount),
+                "confidence": r.confidence,
+                "present": (r.date, r.amount) in have,
+            }
+            for r in st.rows
+        ],
+    }
+
+
+EMPTY = "No transactions were found in it. Is it a bank or card statement? It can be kept as it is."
+
+
+def _run_statement(
+    srv, job: Job, account_id: str, user_id: str, data: bytes, name: str, media: str
+) -> None:
+    """Read it, then parse it with what is known of its institution's layout, and hold it for
+    the person to check. A statement of several accounts is split where each part begins, and
+    each part goes to the account whose last four digits it shows (S1.3.3.5)."""
+    srv.jobs.update(job, state="running", progress=0.1)
+    got = _read(srv, job, data, media)
+    if got is None:
+        return
+    lines, method = got
+    pieces = statements.split(lines)
+    with srv.db.read() as s:
+        account, _ = access.account(s, user_id, account_id, "write")
+        if len(pieces) >= 2:
+            _hold_parts(srv, job, s, account, user_id, data, name, lines, method, pieces)
+            return
+        st, learned = _parse(s, account, lines)
+        have = _present(s, account_id)
     if not st.rows:
+        # Kept as it is instead, if the person likes (S1.3.3.6).
+        upload_id = _hold(data, account_id, user_id, name, lines=lines, method=method)
+        start, end, _ = statements.period_and_institution(lines)
         srv.jobs.update(
             job,
             state="failed",
             error={
                 "code": "statement-empty",
-                "message": "No transactions were found in it. Is it a bank or card statement?",
+                "message": EMPTY,
+                "uploadId": upload_id,
+                "fileName": name,
+                "periodStart": start.isoformat() if start else None,
+                "periodEnd": end.isoformat() if end else None,
             },
         )
         return
@@ -351,24 +415,63 @@ def _run_statement(
             "uploadId": upload_id,
             "fileName": name,
             "method": method,
-            "pages": None,
-            "institution": st.institution,
-            "learned": saved is not None,
-            "periodStart": st.periodStart.isoformat() if st.periodStart else None,
-            "periodEnd": st.periodEnd.isoformat() if st.periodEnd else None,
-            "opening": str(st.opening) if st.opening is not None else None,
-            "closing": str(st.closing) if st.closing is not None else None,
-            "rows": [
-                {
-                    "date": r.date.isoformat(),
-                    "description": r.description,
-                    "amount": str(r.amount),
-                    "confidence": r.confidence,
-                    "present": (r.date, r.amount) in have,
-                }
-                for r in st.rows
-            ],
+            "learned": learned,
             "accountId": account_id,
+            **_figures(st, have),
+        },
+    )
+
+
+def _hold_parts(srv, job, s, account, user_id, data, name, lines, method, pieces) -> None:
+    whole = statements.period_and_institution(lines)
+    writable = [
+        a
+        for a, lvl in access.visible_accounts(s, user_id)
+        if lvl in ("owner", "write") and atypes.reconcilable(a.type)
+    ]
+    parsed, out = [], []
+    for i, piece in enumerate(pieces):
+        matches = [a for a in writable if a.mask == piece.last4]
+        chosen = matches[0] if len(matches) == 1 else None
+        st, _ = _parse(s, chosen or account, piece.lines, whole[:2])
+        if st.institution is None:
+            st.institution = whole[2]
+        parsed.append(st)
+        out.append(
+            {
+                "index": i,
+                "last4": piece.last4,
+                "header": piece.header,
+                "lineCount": len(piece.lines),
+                "accountId": chosen.id if chosen else None,
+                "candidates": [
+                    {"id": a.id, "name": a.name, "mask": a.mask} for a in (matches or writable)
+                ],
+                **_figures(st, _present(s, chosen.id if chosen else None)),
+            }
+        )
+    upload_id = _hold(
+        data,
+        account.id,
+        user_id,
+        name,
+        lines=lines,
+        statement=parsed[0],
+        method=method,
+        parts=parsed,
+        decisions={},
+    )
+    srv.jobs.update(
+        job,
+        state="done",
+        progress=1.0,
+        result={
+            "needsReview": True,
+            "uploadId": upload_id,
+            "fileName": name,
+            "method": method,
+            "accountId": account.id,
+            "parts": out,
         },
     )
 
@@ -388,21 +491,26 @@ class StatementIn(Model):
     rows: list[StatementRowIn]
     # Save even though the transactions don't add up to the closing balance.
     acceptDifference: bool = False
+    # A statement of several accounts: which part, the account it goes to, or left out.
+    part: int | None = None
+    accountId: str | None = None
+    leftOut: bool = False
 
 
-@router.post("/imports/{upload_id}/statement", response_model=JobOut)
-def save_statement(
-    upload_id: str, body: StatementIn, request: Request, c: Caller = Depends(caller)
-):
-    """Nothing is saved until the person has checked it: the rows they keep become
-    transactions (what is already there is matched, not added twice), the balances become the
-    account's anchors, the file is kept as a receipt on the account, and the layout is learned
-    for the next statement from this institution."""
-    srv = server(request)
+class KeepIn(Model):
+    periodStart: dt.date | None = None
+    periodEnd: dt.date | None = None
+
+
+def _held_for(upload_id: str, c: Caller) -> Held:
     with _held_lock:
         held = _held.get(upload_id)
-    if held is None or held.userId != c.id or held.until < clock.now() or held.statement is None:
+    if held is None or held.userId != c.id or held.until < clock.now():
         raise Problem(404, "upload-gone", "That upload has expired; choose the file again.")
+    return held
+
+
+def _checked(body: StatementIn) -> list[StatementRowIn]:
     kept = [r for r in body.rows if r.include]
     difference = body.closing - body.opening - sum((r.amount for r in kept), Decimal(0))
     if difference != 0 and not body.acceptDifference:
@@ -414,7 +522,10 @@ def save_statement(
         )
     if body.periodEnd < body.periodStart:
         raise refuse("periodEnd", "period-backwards", "The period ends before it starts.")
-    st = held.statement
+    return kept
+
+
+def _apply(s, c: Caller, held: Held, account: Account, st, body: StatementIn, kept):
     parsed = ParsedFile(
         format="statement",
         rows=[
@@ -434,35 +545,73 @@ def save_statement(
         coveredTo=body.periodEnd,
         institution=st.institution,
     )
+    applied = repo.apply_import(
+        s,
+        account,
+        c.id,
+        parsed,
+        held.fileName or "statement",
+        hashlib.sha256(held.data).hexdigest(),
+    )
+    _learn(s, account, st, kept)
+    return applied
+
+
+def _keep_file(s, srv, c: Caller, held: Held, account_ids: list[str], institution, start, end):
+    """The file kept once as a receipt, named by its period, on each account it filled."""
+    from ..receipts import reading
+
+    stored = receipts.store(s, srv, c.id, held.fileName or "statement.pdf", held.data)
+    r = stored.receipt
+    if held.lines:
+        r.readStatus, r.readMethod, r.readAt = "read", held.method, clock.now()
+        r.text = "\n".join(held.lines)
+    r.date = end
+    r.payee = statements.name(institution, start, end)
+    if held.lines:
+        reading.index(s, r)
+    for a in account_ids:
+        receipts.attach_account(s, c.id, r, a)
+    return r
+
+
+def _done(srv, c: Caller, result: dict, accounts: list[str]) -> JobOut:
+    job = srv.jobs.create("import", c.id)
+    srv.jobs.update(job, state="done", progress=1.0, result=result)
+    for a in accounts:
+        srv.events.publish("import", {"accountId": a}, users=[c.id])
+    return job_out(job)
+
+
+@router.post("/imports/{upload_id}/statement", response_model=JobOut)
+def save_statement(
+    upload_id: str, body: StatementIn, request: Request, c: Caller = Depends(caller)
+):
+    """Nothing is saved until the person has checked it: the rows they keep become
+    transactions (what is already there is matched, not added twice), the balances become the
+    account's anchors, the file is kept as a receipt on the account, and the layout is learned
+    for the next statement from this institution. A statement of several accounts is saved
+    once each part is saved or left out."""
+    srv = server(request)
+    held = _held_for(upload_id, c)
+    if held.statement is None:
+        raise Problem(404, "upload-gone", "That upload has expired; choose the file again.")
+    if held.parts is not None:
+        return _save_part(srv, c, upload_id, held, body)
+    kept = _checked(body)
+    st = held.statement
     with srv.db.tx() as s:
         account, _ = access.account(s, c.id, held.accountId, "write")
-        applied = repo.apply_import(
-            s,
-            account,
-            c.id,
-            parsed,
-            held.fileName or "statement",
-            hashlib.sha256(held.data).hexdigest(),
+        applied = _apply(s, c, held, account, st, body, kept)
+        r = _keep_file(
+            s, srv, c, held, [account.id], st.institution, body.periodStart, body.periodEnd
         )
-        stored = receipts.store(s, srv, c.id, held.fileName or "statement.pdf", held.data)
-        r = stored.receipt
-        r.readStatus, r.readMethod, r.readAt = "read", held.method, clock.now()
-        r.text = "\n".join(held.lines or [])
-        r.date = body.periodEnd
-        r.payee = f"{account.institution or 'Statement'} statement"
-        from ..receipts import reading
-
-        reading.index(s, r)
-        receipts.attach_account(s, c.id, r, account.id)
-        _learn(s, account, st, kept)
     with _held_lock:
         _held.pop(upload_id, None)
-    job = srv.jobs.create("import", c.id)
-    srv.jobs.update(
-        job,
-        state="done",
-        progress=1.0,
-        result={
+    return _done(
+        srv,
+        c,
+        {
             "importId": applied.importId,
             "added": applied.added,
             "matched": applied.matched,
@@ -474,9 +623,169 @@ def save_statement(
             "accountId": held.accountId,
             "receiptId": r.id,
         },
+        [held.accountId],
     )
-    srv.events.publish("import", {"accountId": held.accountId}, users=[c.id])
-    return job_out(job)
+
+
+def _save_part(srv, c: Caller, upload_id: str, held: Held, body: StatementIn) -> JobOut:
+    n = len(held.parts)
+    if body.part is None or not 0 <= body.part < n:
+        raise refuse("part", "part-unknown", f"One of the statement's {n} parts.")
+    if not body.leftOut:
+        _checked(body)
+        if not body.accountId:
+            raise refuse("accountId", "account-missing", "The account this part goes to.")
+        with srv.db.read() as s:
+            access.account(s, c.id, body.accountId, "write")
+    held.decisions[body.part] = body
+    left = [i for i in range(n) if i not in held.decisions]
+    if left:
+        return _done(srv, c, {"part": body.part, "remaining": left}, [])
+    saved = [(i, d) for i, d in sorted(held.decisions.items()) if not d.leftOut]
+    results, accounts = [], []
+    with srv.db.tx() as s:
+        for i, d in saved:
+            account, _ = access.account(s, c.id, d.accountId, "write")
+            applied = _apply(s, c, held, account, held.parts[i], d, _checked(d))
+            accounts.append(account.id)
+            results.append({"part": i, "accountId": account.id, "added": applied.added})
+        r = None
+        if saved:
+            ends = [d.periodEnd for _, d in saved]
+            starts = [d.periodStart for _, d in saved]
+            r = _keep_file(
+                s,
+                srv,
+                c,
+                held,
+                list(dict.fromkeys(accounts)),
+                held.parts[saved[0][0]].institution,
+                min(starts),
+                max(ends),
+            )
+    with _held_lock:
+        _held.pop(upload_id, None)
+    return _done(
+        srv,
+        c,
+        {
+            "parts": results,
+            "leftOut": [i for i, d in sorted(held.decisions.items()) if d.leftOut],
+            "receiptId": r.id if r else None,
+            "accountId": held.accountId,
+        },
+        accounts,
+    )
+
+
+# ---------- statements kept without reading (S1.3.3.6) ----------
+
+
+@router.post("/accounts/{account_id}/statements/keep", response_model=JobOut, status_code=202)
+async def keep_upload(
+    account_id: str, request: Request, file: UploadFile = File(...), c: Caller = Depends(caller)
+):
+    """A statement to keep on its account as it is: its period and institution are read where
+    they can be, for the person to check."""
+    srv = server(request)
+    srv.upload_rate.check(c.id, "uploads")
+    with srv.db.read() as s:
+        access.account(s, c.id, account_id, "write")
+        limit = settings.get(s, "importMaxMb") * 1024 * 1024
+        reads = settings.get(s, "readStatements")
+    data = await file.read(limit + 1)
+    if len(data) > limit:
+        raise Problem(413, "too-large", f"Files are up to {limit // (1024 * 1024)} MB.")
+    if not data:
+        raise refuse("file", "file-empty", "The file is empty.")
+    media = receipts.sniff(data[:16])
+    if media is None:
+        raise Problem(415, "unsupported-type", "A statement: a PDF or a photo of one.")
+    job = srv.jobs.create("import", c.id)
+    _pool.submit(_run_keep, srv, job, account_id, c.id, data, file.filename or "", media, reads)
+    return _accepted(job)
+
+
+def _run_keep(srv, job, account_id, user_id, data, name, media, reads: bool) -> None:
+    srv.jobs.update(job, state="running", progress=0.1)
+    lines: list[str] = []
+    method = None
+    if reads:
+        got = _read(srv, job, data, media)
+        if got is None:
+            return
+        lines, method = got
+    start, end, inst = statements.period_and_institution(lines)
+    upload_id = _hold(data, account_id, user_id, name, lines=lines or None, method=method)
+    srv.jobs.update(
+        job,
+        state="done",
+        progress=1.0,
+        result={
+            "keep": True,
+            "uploadId": upload_id,
+            "fileName": name,
+            "read": bool(lines),
+            "periodStart": start.isoformat() if start else None,
+            "periodEnd": end.isoformat() if end else None,
+            "institution": inst,
+            "accountId": account_id,
+        },
+    )
+
+
+@router.post("/imports/{upload_id}/keep", response_model=JobOut)
+def keep_statement(upload_id: str, body: KeepIn, request: Request, c: Caller = Depends(caller)):
+    """Kept on the account as a receipt named by its period, its period recorded so it counts
+    as the statement expected (S1.11.7), its lines never added."""
+    srv = server(request)
+    held = _held_for(upload_id, c)
+    if body.periodStart is None or body.periodEnd is None:
+        raise refuse("periodEnd", "period-missing", "The period the statement covers.")
+    if body.periodEnd < body.periodStart:
+        raise refuse("periodEnd", "period-backwards", "The period ends before it starts.")
+    digest = hashlib.sha256(held.data).hexdigest()
+    with srv.db.tx() as s:
+        account, _ = access.account(s, c.id, held.accountId, "write")
+        twice = s.scalars(
+            select(Import).where(
+                Import.accountId == account.id,
+                Import.fileHash == digest,
+                Import.deleted == false(),
+            )
+        ).first()
+        if twice is not None:
+            raise refuse("file", "statement-kept-already", "This statement is already here.", 409)
+        inst = statements.period_and_institution(held.lines or [])[2]
+        r = _keep_file(
+            s,
+            srv,
+            c,
+            held,
+            [account.id],
+            account.institution or inst,
+            body.periodStart,
+            body.periodEnd,
+        )
+        imp = Import(
+            id=ids.new_id("Imprt"),
+            accountId=account.id,
+            userId=c.id,
+            format="kept",
+            fileName=held.fileName or "statement.pdf",
+            fileHash=digest,
+            coveredFrom=body.periodStart,
+            coveredTo=body.periodEnd,
+        )
+        s.add(imp)
+    with _held_lock:
+        _held.pop(upload_id, None)
+    return _done(
+        srv,
+        c,
+        {"kept": True, "importId": imp.id, "receiptId": r.id, "accountId": held.accountId},
+        [held.accountId],
+    )
 
 
 def _learn(s, account: Account, st, kept: list[StatementRowIn]) -> None:

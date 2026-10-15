@@ -53,3 +53,13 @@ accounts count once.
 How the account is kept current: from files you import (OFX, QFX or CSV), or by hand.
 
 {{account-type settings}}
+
+## Statements expected {#statements-expected}
+
+How often the institution issues statements: monthly, quarterly, yearly or none. Left as the type,
+it follows the account's type: monthly for banking, cards, brokerage, IRAs, HSAs and loans; quarterly
+for 401(k)s, 403(b)s, 457(b)s and 529s; none for accounts kept by hand. A statement is overdue once
+its period has passed and a grace after it (15 days monthly, 30 quarterly, 60 yearly): an alert
+names the one missing, and clears when it arrives, read or kept. Once three statements or imports
+have arrived, MoneyKata proposes the interval they arrive at when it differs; dismissed, it isn't
+proposed again.

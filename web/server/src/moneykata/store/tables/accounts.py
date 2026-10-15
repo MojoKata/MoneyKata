@@ -121,9 +121,18 @@ Account = record(
     # out from the earliest balance the institution reported, and marked as a stand-in (R3.2).
     Column("openingBalance", Cents),
     Column("openingDate", Day),
+    # How often its institution issues statements (S1.11.7); none set: the type's default.
+    Column("statementInterval", Text),
+    # A learned interval the owner dismissed, so it isn't proposed again.
+    Column("statementIntervalDismissed", Text),
     _in("type", ACCOUNT_TYPES, "type"),
     _in("lotMethod", LOT_METHODS, "lot_method"),
     CheckConstraint("mask IS NULL OR (length(mask) = 4 AND mask GLOB '[0-9]*')", name="mask"),
+    CheckConstraint(
+        '"statementInterval" IS NULL OR '
+        "\"statementInterval\" IN ('monthly', 'quarterly', 'yearly', 'none')",
+        name="statement_interval",
+    ),
     Index("ix_Account_ownerId", "ownerId"),
 )
 
@@ -171,7 +180,8 @@ Import = record(
     Column("added", Integer, nullable=False, server_default=text("0")),
     Column("matched", Integer, nullable=False, server_default=text("0")),
     Column("changed", Integer, nullable=False, server_default=text("0")),
-    _in("format", ("ofx", "csv", "statement"), "format"),
+    # kept: a statement kept without reading (S1.3.3.6), its period recorded, nothing added.
+    _in("format", ("ofx", "csv", "statement", "kept"), "format"),
     Index("ix_Import_accountId", "accountId"),
 )
 

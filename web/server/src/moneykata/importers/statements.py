@@ -202,12 +202,16 @@ def parse(
     layout: dict | None = None,
     card: bool = False,
     institution: str | None = None,
+    period: tuple[dt.date | None, dt.date | None] | None = None,
 ) -> Statement:
+    """`period`: the whole statement's, for a part of one that doesn't repeat it."""
     layout = layout or {}
     learned = {k.lower(): v for k, v in layout.get("signs", {}).items()}
     skip = [x.lower() for x in layout.get("skip", [])]
     st = Statement(institution=institution, card=card)
     st.periodStart, st.periodEnd = _period(lines)
+    if st.periodStart is None and period is not None:
+        st.periodStart, st.periodEnd = period
     st.opening = _balance(lines, OPENING)
     st.closing = _balance(lines, CLOSING)
     fallback_year = (st.periodEnd or today).year
@@ -295,6 +299,70 @@ def _institution(lines: list[str]) -> str | None:
         if re.search(r"\b(bank|credit\s+union|card|schwab|financial|n\.a\.)\b", line, re.I):
             return line.strip()[:80]
     return None
+
+
+# A header naming one account's part of a combined statement (S1.3.3.5): *Account Number
+# XXXX-1234*, *Account ending in 9030*, *Acct # ...5521*, or a name followed by its number.
+ACCOUNT_HEADER = re.compile(
+    r"\b(?:account\s+(?:number|no\.?|#)|account\s+ending(?:\s+in)?|acct\.?\s*(?:#|no\.?|"
+    r"ending(?:\s+in)?))\s*:?\s*[xX*•.\-\s\d]*?(\d{4})\b(?!\s*[/-]\d)",
+    re.I,
+)
+NAMED_HEADER = re.compile(
+    r"^\s*(?:[A-Z][\w'&]*\s+){0,4}(?:checking|savings|money\s+market|brokerage|card)\b[^\d]{0,20}"
+    r"[xX*•.\-]{2,}\s?(\d{4})\s*$",
+    re.I,
+)
+
+
+@dataclass
+class Part:
+    """One account's part of a statement, from the header naming it."""
+
+    last4: str
+    header: str
+    lines: list[str]
+
+
+def split(lines: list[str]) -> list[Part]:
+    """The parts of a statement of several accounts, each from a header naming an account to
+    the next naming another; a header repeated on later pages stays in its part. A statement of
+    one account gives one part, or none when no header names an account."""
+    parts: list[Part] = []
+    by_last4: dict[str, Part] = {}
+    current: Part | None = None
+    for line in lines:
+        m = ACCOUNT_HEADER.search(line) or NAMED_HEADER.match(line)
+        if m and (current is None or m.group(1) != current.last4):
+            current = by_last4.get(m.group(1))
+            if current is None:
+                current = Part(m.group(1), line.strip()[:120], [])
+                by_last4[current.last4] = current
+                parts.append(current)
+        if current is not None:
+            current.lines.append(line)
+    return parts
+
+
+def period_and_institution(lines: list[str]) -> tuple[dt.date | None, dt.date | None, str | None]:
+    """What a statement kept without reading is named by: its period and institution, where
+    they can be read (S1.3.3.6)."""
+    start, end = _period(lines)
+    if start is None:
+        days = [d for line in lines[:60] for d in _dates_in(line)]
+        if len(days) >= 2:
+            start, end = min(days), max(days)
+    return start, end, _institution(lines)
+
+
+def name(institution: str | None, start: dt.date | None, end: dt.date | None) -> str:
+    """A statement's name, from its period: *UMB statement, Sep 1 – Sep 30, 2026*."""
+    who = f"{institution} statement" if institution else "Statement"
+    if start is None or end is None:
+        return who
+    if start.year == end.year:
+        return f"{who}, {start:%b %-d} – {end:%b %-d, %Y}"
+    return f"{who}, {start:%b %-d, %Y} – {end:%b %-d, %Y}"
 
 
 def learn(layout: dict | None, st: Statement, kept: list[StatementRow]) -> dict:

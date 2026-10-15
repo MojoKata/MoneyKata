@@ -917,7 +917,17 @@ function Settings({ a, reload }) {
           .busy}>Save</button></div>
       </form>
       ${loan
-        ? html`<${TermsCard} a=${a} />`
+        ? html`
+          <div class="grid" style=${{ alignContent: 'start' }}>
+            <${TermsCard} a=${a} />
+            <div
+              class="card">
+              <h3>Statements</h3>
+              <${StatementsExpected} a=${a} reload=${reload}
+              />
+            </div>
+          </div>
+        `
         : BY_TYPE[a.type]?.wallet
         ? html`<${WalletCard} a=${a} />`
         : BY_TYPE[a.type]?.education
@@ -929,6 +939,7 @@ function Settings({ a, reload }) {
                 <${Select}
                   value=${f.keptBy} onChange=${set('keptBy')} options=${KEPT_BY} />
                 </${Field}>
+                <${StatementsExpected} a=${a} reload=${reload} />
                 </div>
                 <${PlanCard} a=${a} />
                 </div>
@@ -952,7 +963,60 @@ function Settings({ a, reload }) {
               <p
                 class="small dim">Import OFX, QFX or CSV files from the Transactions tab. A CSV's columns are asked
                     once per institution and remembered.</p>
+              <${StatementsExpected} a=${a} reload=${reload} />
               </div>
         `}</div>
+  `;
+}
+
+const INTERVALS = /** @type {[string, string][]} */ ([
+  ['monthly', 'Monthly'],
+  ['quarterly', 'Quarterly'],
+  ['yearly', 'Yearly'],
+  ['none', 'None'],
+]);
+
+/**
+ * How often the institution issues statements (S1.11.7): an overdue one raises an alert. Set
+ * here or following the account's type; one learned from what arrives is proposed.
+ * @param {{ a: any, reload: () => void }} p
+ */
+function StatementsExpected({ a, reload }) {
+  const change = useSubmit(async (/** @type {any} */ body) => {
+    await api.patch(`/accounts/${a.id}`, body, a.version);
+    reload();
+  });
+  const label = (/** @type {string} */ k) => INTERVALS.find(([x]) => x === k)?.[1] || k;
+  const p = a.statementIntervalProposal;
+  return html`
+    <${Field} label="Statements expected" id="statements-expected" error=${errAt(
+      change.error,
+      'statementInterval',
+    )}
+      hint="An alert asks for a statement once it is overdue: the interval and a grace period after it.">
+      <${Select} value=${a.statementInterval || ''} onChange=${(/** @type {string} */ v) =>
+        change.run({ statementInterval: v || null }).then(() => toast('Saved')).catch(() => {})}
+        options=${[
+          ['', `As the type: ${label(a.statementIntervalDefault).toLowerCase()}`],
+          ...INTERVALS,
+        ]} />
+    </${Field}>
+    ${p
+      ? html`
+        <div class="notice" role="status">
+          <${Icon} name="info" />
+          <div>Statements seem to
+                  arrive ${label(p)
+                    .toLowerCase()}. <button type="button" class="btn sm" disabled=${change
+                    .busy} onClick=${() =>
+                    change.run({ statementInterval: p }).catch(() => {})}>Use ${label(p)
+                    .toLowerCase()}</button> <button type="button" class="btn sm" disabled=${change
+                    .busy} onClick=${() =>
+                    change.run({ dismissIntervalProposal: true }).catch(
+                      () => {},
+                    )}>Dismiss</button></div>
+        </div>
+      `
+      : null}
   `;
 }

@@ -31,8 +31,11 @@ class Coverage:
 
 
 def coverage(imports: list) -> Coverage:
+    # A statement kept without reading covers nothing: its lines were never added (S1.3.3.6).
     spans = sorted(
-        (i.coveredFrom, i.coveredTo, i.id) for i in imports if i.coveredFrom and i.coveredTo
+        (i.coveredFrom, i.coveredTo, i.id)
+        for i in imports
+        if i.coveredFrom and i.coveredTo and getattr(i, "format", None) != "kept"
     )
     periods: list[Period] = []
     overlaps = []

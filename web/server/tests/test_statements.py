@@ -55,6 +55,28 @@ Transactions
 """
 
 
+COMBINED = """UMB Bank, n.a.
+Statement Period: 09/01/26 - 09/30/26
+Free Checking Account Number XXXXXX4821
+Beginning Balance $1,000.00
+Ending Balance $1,500.00
+Deposits and Other Credits
+09/15 ACME CORP PAYROLL 2,000.00
+Withdrawals and Other Debits
+09/20 ONLINE TRANSFER TO SAVINGS 1,500.00
+UMB Bank, n.a.  Page 2 of 3
+Account Number XXXXXX4821 (continued)
+Daily Balance
+09/15 3,000.00
+Savings Account Number XXXXXX9030
+Beginning Balance $10,000.00
+Ending Balance $11,502.10
+Deposits and Other Credits
+09/20 ONLINE TRANSFER FROM CHECKING 1,500.00
+09/30 INTEREST PAID 2.10
+"""
+
+
 def parse(text, **kw):
     return statements.parse(text.splitlines(), TODAY, **kw)
 
@@ -131,11 +153,11 @@ Fee Detail
 # ---------- through the server ----------
 
 
-def _import(c, account_id, data, name="statement.pdf"):
+def _import(c, account_id, data, name="statement.pdf", keep=False):
     from test_accounts import wait_job
 
     r = c.post(
-        f"/ui/api/accounts/{account_id}/imports",
+        f"/ui/api/accounts/{account_id}/" + ("statements/keep" if keep else "imports"),
         files={"file": (name, data, "application/pdf")},
     )
     assert r.status_code == 202, r.text
@@ -204,3 +226,106 @@ def test_statement_reading_can_be_off(server, admin_client):
         files={"file": ("s.pdf", text_pdf(UMB.splitlines()), "application/pdf")},
     )
     assert r.status_code == 415 and r.json()["code"] == "statements-off"
+
+
+def test_a_statement_of_two_accounts_splits_where_each_begins():
+    lines = COMBINED.splitlines()
+    parts = statements.split(lines)
+    assert [p.last4 for p in parts] == ["4821", "9030"]
+    assert "Page 2 of 3" in "\n".join(parts[0].lines), "a repeated header stays in its part"
+    whole = statements._period(lines)
+    checking = statements.parse(parts[0].lines, TODAY, period=whole)
+    savings = statements.parse(parts[1].lines, TODAY, period=whole)
+    assert (checking.opening, checking.closing, checking.difference) == (
+        Decimal("1000.00"),
+        Decimal("1500.00"),
+        0,
+    )
+    assert savings.periodEnd == dt.date(2026, 9, 30), "the period from the top of the whole"
+    assert [r.amount for r in savings.rows] == [Decimal("1500.00"), Decimal("2.10")]
+    assert savings.difference == 0
+    assert statements.split(UMB.splitlines()) == [], "one account, no header: no parts"
+
+
+def test_a_kept_statement_is_named_by_its_period():
+    start, end, inst = statements.period_and_institution(UMB.splitlines())
+    assert statements.name(inst, start, end) == "UMB Bank, n.a. statement, Sep 1 – Sep 30, 2026"
+    assert statements.name(None, None, None) == "Statement"
+
+
+def _body(p: dict, **kw) -> dict:
+    return {
+        "periodStart": p["periodStart"],
+        "periodEnd": p["periodEnd"],
+        "opening": p["opening"],
+        "closing": p["closing"],
+        "rows": [
+            {"date": x["date"], "description": x["description"], "amount": x["amount"]}
+            for x in p["rows"]
+        ],
+        **kw,
+    }
+
+
+def test_a_combined_statement_is_saved_once_each_part_is_saved_or_left_out(server):
+    from conftest import make_user, sign_in
+    from test_accounts import new_account
+    from test_reading import text_pdf
+
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    checking = new_account(c, name="Free Checking", institution="UMB Bank", mask="4821")
+    savings = new_account(c, name="Savings", type="savings", institution="UMB Bank", mask="1111")
+    review = _import(c, checking["id"], text_pdf(COMBINED.splitlines()))["result"]
+    parts = review["parts"]
+    assert [p["last4"] for p in parts] == ["4821", "9030"]
+    assert parts[0]["accountId"] == checking["id"]
+    assert parts[1]["accountId"] is None, "no account ends in 9030: the person chooses"
+    assert savings["id"] in {x["id"] for x in parts[1]["candidates"]}
+    url = f"/ui/api/imports/{review['uploadId']}/statement"
+    r = c.post(url, json=_body(parts[0], part=0, accountId=checking["id"]))
+    assert r.json()["result"] == {"part": 0, "remaining": [1]}
+    assert c.get(f"/ui/api/accounts/{checking['id']}/imports").json()["items"] == [], (
+        "nothing is saved until every part is decided"
+    )
+    r = c.post(url, json=_body(parts[1], part=1))
+    assert r.json()["errors"][0]["field"] == "accountId"
+    r = c.post(url, json=_body(parts[1], part=1, accountId=savings["id"]))
+    assert r.status_code == 200, r.text
+    done = r.json()["result"]
+    assert [(p["part"], p["added"]) for p in done["parts"]] == [(0, 2), (1, 2)]
+    rc = c.get(f"/ui/api/receipts/{done['receiptId']}").json()
+    assert {x["accountId"] for x in rc["links"]} == {checking["id"], savings["id"]}, (
+        "the PDF is kept once, on each account it filled"
+    )
+    assert rc["payee"] == "UMB Bank statement, Sep 1 – Sep 30, 2026"
+
+
+def test_a_statement_kept_without_reading_counts_as_arrived(server):
+    from conftest import make_user, sign_in
+    from test_accounts import new_account
+    from test_reading import text_pdf
+
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    acct = new_account(c, institution="UMB Bank", keptBy=["file"])
+    pdf = text_pdf(UMB.splitlines())
+    job = _import(c, acct["id"], pdf, keep=True)
+    found = job["result"]
+    assert (found["periodStart"], found["periodEnd"]) == ("2026-09-01", "2026-09-30")
+    url = f"/ui/api/imports/{found['uploadId']}/keep"
+    r = c.post(url, json={"periodStart": "2026-09-01", "periodEnd": "2026-09-30"})
+    assert r.status_code == 200, r.text
+    kept = r.json()["result"]
+    rows = c.get(f"/ui/api/accounts/{acct['id']}/imports").json()["items"]
+    assert [(x["format"], x["coveredTo"], x["added"]) for x in rows] == [("kept", "2026-09-30", 0)]
+    assert c.get(f"/ui/api/transactions?account={acct['id']}").json()["items"] == []
+    rc = c.get(f"/ui/api/receipts/{kept['receiptId']}").json()
+    assert rc["payee"] == "UMB Bank statement, Sep 1 – Sep 30, 2026"
+    # Kept twice is refused.
+    again = _import(c, acct["id"], pdf, keep=True)["result"]
+    r = c.post(
+        f"/ui/api/imports/{again['uploadId']}/keep",
+        json={"periodStart": "2026-09-01", "periodEnd": "2026-09-30"},
+    )
+    assert r.json()["code"] == "statement-kept-already"

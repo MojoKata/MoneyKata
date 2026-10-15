@@ -98,11 +98,15 @@ def test_a_failed_backup_alerts_at_once_and_resolves(server, admin_client, froze
     assert listed(admin_client)["open"] == []
 
 
-def test_an_account_without_imports_for_45_days_alerts_its_owner(server, admin_client, frozen):
+def test_an_overdue_statement_alerts_the_accounts_owner(server, admin_client, frozen):
     alice = make_user(server, "alice")
     with server.db.tx() as s:
         a = Account(
-            id=ids.new_id("Acct"), ownerId=alice.id, name="Joint Household", type="checking"
+            id=ids.new_id("Acct"),
+            ownerId=alice.id,
+            name="Joint Household",
+            type="checking",
+            keptBy='["file"]',
         )
         s.add(a)
         s.flush()
@@ -112,18 +116,36 @@ def test_an_account_without_imports_for_45_days_alerts_its_owner(server, admin_c
                 accountId=a.id,
                 userId=alice.id,
                 format="ofx",
-                fileName="sep.ofx",
+                fileName="aug.ofx",
                 fileHash="x",
-                coveredFrom=dt.date(2026, 8, 1),
+                coveredFrom=dt.date(2026, 7, 26),
                 coveredTo=dt.date(2026, 8, 25),
             )
         )
+    # Due Sep 25, overdue from Oct 10 after 15 days' grace; today is Oct 13.
     alerts.evaluate(server)
     c = sign_in(server, "alice")
     rows = listed(c)["open"]
-    assert [r["title"] for r in rows] == ["Joint Household: nothing imported for 49 days"]
+    assert [r["title"] for r in rows] == ["Joint Household: the September statement is overdue"]
+    assert rows[0]["about"] == "monthly statements · the last ended Aug 25 · overdue from Oct 10"
     assert not rows[0]["forAdmins"]
     assert listed(admin_client)["open"] == [], "an admin never sees someone's account"
+    # A statement covering it clears it; one kept without reading counts.
+    with server.db.tx() as s:
+        s.add(
+            Import(
+                id=ids.new_id("Imprt"),
+                accountId=a.id,
+                userId=alice.id,
+                format="kept",
+                fileName="sep.pdf",
+                fileHash="y",
+                coveredFrom=dt.date(2026, 8, 26),
+                coveredTo=dt.date(2026, 9, 25),
+            )
+        )
+    alerts.evaluate(server)
+    assert listed(c)["open"] == []
 
 
 def test_seen_and_dismissed_are_each_persons_own(server, admin_client, frozen):
@@ -177,7 +199,13 @@ def test_the_daily_summary_goes_once_a_day_after_its_time(server, frozen):
     alice = make_user(server, "alice")
     with server.db.tx() as s:
         settings.put(s, "smtpHost", "smtp.home.lan", None)
-        a = Account(id=ids.new_id("Acct"), ownerId=alice.id, name="Savings", type="savings")
+        a = Account(
+            id=ids.new_id("Acct"),
+            ownerId=alice.id,
+            name="Savings",
+            type="savings",
+            keptBy='["file"]',
+        )
         s.add(a)
         s.flush()
         s.add(

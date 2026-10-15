@@ -13,6 +13,8 @@
  * @property {(string | null)} [openingDate]
  * @property {(boolean | null)} [countInNetWorth]
  * @property {(boolean | null)} [active]
+ * @property {(string | null)} [statementInterval]
+ * @property {boolean} [dismissIntervalProposal]
  */
 
 /**
@@ -48,6 +50,9 @@
  * @property {import('../app/dec.js').Dec} openingWorkedOut
  * @property {boolean} openingStandIn
  * @property {(string | null)} tax
+ * @property {(string | null)} statementInterval
+ * @property {string} statementIntervalDefault
+ * @property {(string | null)} statementIntervalProposal
  */
 
 /**
@@ -223,6 +228,11 @@
  * @property {number} wallets
  * @property {(string | null)} lastRun
  * @property {(string | null)} lastError
+ */
+
+/**
+ * @typedef {Object} Body_keep_upload_ui_api_accounts__account_id__statements_keep_post
+ * @property {string} file
  */
 
 /**
@@ -1267,6 +1277,12 @@
 /**
  * @typedef {Object} JoinIn
  * @property {string} code
+ */
+
+/**
+ * @typedef {Object} KeepIn
+ * @property {(string | null)} [periodStart]
+ * @property {(string | null)} [periodEnd]
  */
 
 /**
@@ -2925,6 +2941,9 @@
  * @property {import('../app/dec.js').Dec} closing
  * @property {Array<StatementRowIn>} rows
  * @property {boolean} [acceptDifference]
+ * @property {(number | null)} [part]
+ * @property {(string | null)} [accountId]
+ * @property {boolean} [leftOut]
  */
 
 /**

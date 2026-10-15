@@ -31,6 +31,8 @@ class Account(Record):
     countInNetWorth: bool = True
     openingBalance: Decimal | None = None
     openingDate: dt.date | None = None
+    statementInterval: str | None = None
+    statementIntervalDismissed: str | None = None
 
 
 @dataclass(kw_only=True, eq=False)

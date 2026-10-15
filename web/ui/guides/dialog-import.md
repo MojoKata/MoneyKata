@@ -6,6 +6,14 @@ payee, so a file can be imported again safely.
 
 A statement is read on this server, and shown for you to check before anything is saved.
 
+A statement of several accounts, such as a combined checking and savings statement, is split
+where each account's part begins, and each part is checked in turn.
+
+## Keep a statement without reading it {#keep-without-reading}
+
+Keeps a statement on its account as it is, for the record: one from an account kept current from
+OFX, a brokerage statement, or one whose lines can't be read. Only its period is asked for.
+
 ## Into account
 
 The account the file belongs to.

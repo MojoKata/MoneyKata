@@ -14,9 +14,16 @@ from sqlalchemy import false, select
 
 from .. import access, activity, clock, exactjson, ids, valuation
 from ..errors import FieldError, Problem, refuse
-from ..ledger import reconcile
+from ..ledger import expected, reconcile
 from ..ledger import types as atypes
-from ..store.entities.accounts import Account, Anchor, Instrument, Reconciliation, Transaction
+from ..store.entities.accounts import (
+    Account,
+    Anchor,
+    Import,
+    Instrument,
+    Reconciliation,
+    Transaction,
+)
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
 from ..store.tables.accounts import ACCOUNT_TYPES, LOT_METHODS
@@ -64,6 +71,9 @@ class AccountDetail(AccountRow):
     openingWorkedOut: Money
     openingStandIn: bool
     tax: str | None
+    statementInterval: str | None  # set; none set follows the type (S1.11.7)
+    statementIntervalDefault: str  # the type's
+    statementIntervalProposal: str | None  # learned from what arrives, not yet accepted
 
 
 class NewAccount(Model):
@@ -91,6 +101,8 @@ class AccountChange(Model):
     openingDate: dt.date | None = None
     countInNetWorth: bool | None = None
     active: bool | None = None
+    statementInterval: str | None = None  # null: back to the type's default
+    dismissIntervalProposal: bool = False
 
 
 class Point(Model):
@@ -227,6 +239,15 @@ def _check(body: NewAccount | AccountChange) -> list[FieldError]:
                 "keptBy", "kept-by-invalid", "Manual, file import, statement import or bitcoin."
             )
         )
+    every = getattr(body, "statementInterval", None)
+    if every is not None and every not in expected.INTERVALS:
+        errors.append(
+            FieldError(
+                "statementInterval",
+                "statement-interval-invalid",
+                "Monthly, quarterly, yearly or none.",
+            )
+        )
     if body.notes and len(body.notes) > 20000:
         errors.append(FieldError("notes", "notes-too-long", "Notes are up to 20,000 characters."))
     if (body.openingBalance is None) != (body.openingDate is None) and (
@@ -321,6 +342,15 @@ def row(
         openingWorkedOut=start.balance,
         openingStandIn=start.standIn,
         tax=atypes.TAX[a.type],
+        statementInterval=a.statementInterval,
+        statementIntervalDefault=expected.default_interval(a.type, json.loads(a.keptBy)),
+        statementIntervalProposal=expected.proposal(a, imports_of(s, a.id)),
+    )
+
+
+def imports_of(s, account_id: str) -> list[Import]:
+    return list(
+        s.scalars(select(Import).where(Import.accountId == account_id, Import.deleted == false()))
     )
 
 
@@ -397,6 +427,8 @@ def change_account(
             "name",
             "institution",
             "mask",
+            "statementInterval",
+            "dismissIntervalProposal",
         }
         if level != "owner" and sent & settings_fields:
             raise Problem(403, "owner-only", "Only the account's owner changes its settings.")
@@ -424,6 +456,14 @@ def change_account(
         if "keptBy" in sent and body.keptBy is not None:
             a.keptBy = exactjson.dumps(body.keptBy)
             changed.append("keptBy")
+        if "statementInterval" in sent and a.statementInterval != body.statementInterval:
+            a.statementInterval = body.statementInterval
+            changed.append("statementInterval")
+        if body.dismissIntervalProposal:
+            seen = expected.proposal(a, imports_of(s, a.id))
+            if seen is not None:
+                a.statementIntervalDismissed = seen
+                changed.append("statementIntervalDismissed")
         if changed:
             kind = (
                 "account.closed"

@@ -27,7 +27,6 @@ from .store.entities.users import User
 log = logging.getLogger("moneykata.alerts")
 
 KEEP_RESOLVED_DAYS = 90
-STALE_IMPORT_DAYS = 45
 MISMATCH_DAYS = 7
 PHRASE_CHECK_DAYS = 365
 
@@ -232,9 +231,9 @@ def recovery_phrase(s: Session, server) -> Iterable[Cause]:
 
 @check
 def accounts(s: Session, server) -> Iterable[Cause]:
-    """For each account's owner: nothing imported for a month and a half, and a balance the
-    institution reported that has disagreed for 7 days (S1.11)."""
-    from .ledger import reconcile
+    """For each account's owner: a statement overdue at its account's interval (S1.11.7), and a
+    balance the institution reported that has disagreed for 7 days (S1.11)."""
+    from .ledger import expected, reconcile
     from .store.entities.accounts import Account, Import
     from .store.repos import ledger as repo
 
@@ -246,20 +245,21 @@ def accounts(s: Session, server) -> Iterable[Cause]:
         ).all()
         if not imports:
             continue
-        last = max((i.coveredTo or i.createdAt.date()) for i in imports)
-        if (today - last).days > STALE_IMPORT_DAYS:
+        late = expected.overdue(a, imports, today)
+        if late is not None:
             yield Cause(
-                key=f"stale:{a.id}",
-                kind="import-stale",
-                title=f"{a.name}: nothing imported for {(today - last).days} days",
-                about=f"the last import covers up to {last:%b %-d, %Y}",
+                # One alert per missing statement: it clears when one covering it arrives.
+                key=f"statement:{a.id}:{late.periodEnd.isoformat()}",
+                kind="statement-overdue",
+                title=f"{a.name}: {late.name} is overdue",
+                about=f"{expected.interval(a)} statements · the last ended "
+                f"{late.periodStart - dt.timedelta(days=1):%b %-d} · "
+                f"overdue from {late.due:%b %-d}",
                 user_id=a.ownerId,
                 link=f"/ui/accounts/{a.id}/reconcile",
                 fix="Import a statement",
                 icon="receipt",
-                since=dt.datetime.combine(
-                    last + dt.timedelta(days=STALE_IMPORT_DAYS), dt.time(), dt.UTC
-                ),
+                since=dt.datetime.combine(late.due, dt.time(), dt.UTC),
             )
         ledger = repo.load(s, a)
         checks = reconcile.checks(
@@ -474,7 +474,7 @@ _KINDS = {
     "email": {"source-failing"},
     "backups": {"backup-failed"},
     "recovery_phrase": {"phrase-check"},
-    "accounts": {"import-stale", "reconcile-mismatch"},
+    "accounts": {"statement-overdue", "reconcile-mismatch"},
     "projections_behind": {"projection-behind"},
 }
 

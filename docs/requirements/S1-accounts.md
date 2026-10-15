@@ -74,10 +74,15 @@
       6. **Kept without reading**: any statement can be kept on its account as it is, for the
          record, without its lines being read: a brokerage statement's trades (L1), a
          statement whose layout isn't read, or one the person only wants archived. MoneyKata
-         reads its period and institution where it can, for the person to check, and keeps
-         the PDF on the account as a receipt (S9) named by its period, as a read statement
-         is kept. An account kept current from OFX or CSV is archived this way, its
-         statements kept beside the imports that carry its activity.
+         reads its period and institution where it can (with statement reading off, the
+         person types the period), for the person to check, and keeps the PDF on the account
+         as a receipt (S9) named by its period (*UMB statement, Sep 1 – Sep 30, 2026*), as a
+         read statement is kept. Its period is recorded as an import that adds nothing: it
+         counts as the statement expected (S1.11.7) but not as coverage (S1.11.1), since its
+         lines were never added. A statement whose lines can't be read is offered to be kept
+         this way, and the same file isn't kept twice on an account. An account kept current
+         from OFX or CSV is archived this way, its statements kept beside the imports that
+         carry its activity.
       7. **Learned column positions** *(after the first release, S17.9)*, for layouts with
          no section headings and no running balance, where the sign of an amount comes from
          the column it is in (separate *Debits* and *Credits* columns):
@@ -314,15 +319,18 @@
     7. **Statements expected**: each account kept from files or statements has the interval
        its institution issues them at, set in the account's settings:
        1. **Monthly, quarterly, yearly or none.** The default follows the account's type:
-          monthly for banking, cards, brokerage, IRAs, HSAs and loans; quarterly for 401(k),
-          403(b), 457(b) and 529 plans; none for accounts kept by hand, watched wallets and
-          physical assets.
+          monthly for banking, cards, brokerage, crypto exchanges, IRAs, HSAs and loans;
+          quarterly for 401(k), 403(b), 457(b) and 529 plans and donor-advised funds; none for
+          accounts kept by hand, watched wallets and physical assets.
        2. **Learned**: once an account has three statements or imports, MoneyKata works out
-          the interval they arrive at and, where it differs from the one set, proposes it in
+          the interval they arrive at (the typical gap between the ends of what they cover;
+          files downloaded more often than every 20 days teach nothing) and, where it differs
+          from the one in force, proposes it in
           the account's settings (*Statements seem to arrive quarterly*); the owner accepts or
           dismisses it, and a dismissed proposal isn't made again for that interval.
        3. **Overdue**: a statement is overdue once the interval has passed since the last one
           ended, plus a grace period (15 days for monthly, 30 for quarterly, 60 for yearly),
           so a monthly statement ending Aug 31 is overdue from Oct 15. The alert (S12.11) names
-          the statement missing (*the September statement*), and clears when one covering it
-          arrives. An interval of none never alerts.
+          the statement missing (*the September statement*, *the July–September statement*,
+          *the 2026 statement*), and clears when one covering it arrives, read or kept. An
+          interval of none never alerts, nor does an account with nothing imported yet.

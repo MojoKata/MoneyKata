@@ -47,15 +47,22 @@ export function ImportDialog({ close, accounts, accountId }) {
   const [result, setResult] = useState(/** @type {any} */ (null));
   const [mapping, setMapping] = useState(/** @type {any} */ (null));
   const [review, setReview] = useState(/** @type {any} */ (null));
+  // A statement kept as it is, without its lines (S1.3.3.6): asked for, or offered when its
+  // lines can't be read.
+  const [keeping, setKeeping] = useState(false);
+  const [kept, setKept] = useState(/** @type {any} */ (null));
 
   const start = async () => {
     if (!file) return;
     setBusy(true);
     setError(null);
     try {
-      const job = await finished((await api.upload(`/accounts/${target}/imports`, file)).id);
-      if (job.state === 'failed') setError({ message: job.error.message });
+      const path = keeping ? `/accounts/${target}/statements/keep` : `/accounts/${target}/imports`;
+      const job = await finished((await api.upload(path, file)).id);
+      if (job.state === 'failed') setError({ ...job.error });
+      else if (job.result.keep) setKept(job.result);
       else if (job.result.needsMapping) setMapping(job.result);
+      else if (job.result.parts) setReview({ ...job.result, at: 0 });
       else if (job.result.needsReview) {
         setReview({
           ...job.result,
@@ -116,6 +123,12 @@ export function ImportDialog({ close, accounts, accountId }) {
     </${Dialog}>`;
   }
 
+  if (kept) return html`<${KeepReview} kept=${kept} close=${close} />`;
+
+  if (review?.parts) {
+    return html`<${PartsReview} review=${review} setReview=${setReview} close=${close} />`;
+  }
+
   if (review) {
     return html`
       <${StatementReview} review=${review} setReview=${setReview} close=${close}
@@ -172,11 +185,15 @@ export function ImportDialog({ close, accounts, accountId }) {
     `;
   }
 
+  const empty = error?.code === 'statement-empty' ? error : null;
   return html`
-    <${Dialog} title="Import transactions" close=${close} onSubmit=${start}
-      note="OFX, QFX or CSV, or a statement (PDF or photo). Re-importing adds only what's new."
+    <${Dialog} title=${keeping ? 'Keep a statement' : 'Import transactions'} close=${close}
+      onSubmit=${start}
+      note=${keeping
+        ? 'Kept on the account as it is, named by its period. Its lines aren’t read.'
+        : "OFX, QFX or CSV, or a statement (PDF or photo). Re-importing adds only what's new."}
       footer=${html`<button class="btn primary" disabled=${busy || !file || !target}>${
-        busy ? 'Importing…' : 'Import'
+        busy ? 'Reading…' : keeping ? 'Next' : 'Import'
       }</button>`}>
       <${Field} label="Into account" id="into-account">
         <${Select} value=${target} onChange=${setTarget}
@@ -194,9 +211,122 @@ export function ImportDialog({ close, accounts, accountId }) {
             )
           } KB</p>`
           : null}
-        <${FormError} error=${error} />
+        ${empty
+          ? html`
+            <div class="notice warn" role="alert">
+              <${Icon} name="alert" />
+              <div>${empty
+                .message} <button type="button" class="btn sm" onClick=${() =>
+                setKept({
+                  uploadId: empty.uploadId,
+                  fileName: empty.fileName,
+                  periodStart: empty.periodStart,
+                  periodEnd: empty.periodEnd,
+                  read: true,
+                  accountId: target,
+                })}>Keep it without reading</button></div>
+            </div>
+          `
+          : html`<${FormError} error=${error} />`}
+        ${keeping ? null : html`
+          <p
+            class="small"><a href="#" data-help="keep-without-reading" onClick=${(
+              /** @type {Event} */ e,
+            ) => {
+              e.preventDefault();
+              setKeeping(true);
+            }}>Keep a statement without reading it</a>: for the record, such as one from an
+                      account kept current from OFX.</p>
+        `}
       </${Dialog}>
   `;
+}
+
+/**
+ * A statement kept on its account as it is (S1.3.3.6): its period, read where it could be,
+ * checked, and the file kept as a receipt named by it.
+ * @param {{ kept: any, close: (v?: any) => void }} p
+ */
+function KeepReview({ kept, close }) {
+  useDialogGuide('dialog-statement-keep');
+  const [f, setF] = useState({
+    periodStart: kept.periodStart || '',
+    periodEnd: kept.periodEnd || '',
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(/** @type {any} */ (null));
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const job = await api.post(`/imports/${kept.uploadId}/keep`, f);
+      changes.value = { ...changes.value, import: (changes.value.import || 0) + 1 };
+      toast('Statement kept on the account');
+      close(job.result);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return html`
+    <${Dialog} title="Keep the statement" close=${close} onSubmit=${save}
+      footer=${html`<button class="btn primary" disabled=${busy}>Keep it</button>`}>
+      <p class="small dim" style=${{ marginTop: 0 }}>${kept.fileName}${kept.institution
+        ? ` · ${kept.institution}`
+        : ''}</p>
+      <div class="row">
+        <${Field} label="Period from" id="period-start" error=${errAt(error, 'periodStart')}
+          hint=${kept.periodStart ? 'Read from the statement.' : ''}>
+          <${Input} type="date" value=${f.periodStart} onInput=${(/** @type {string} */ v) =>
+            setF({ ...f, periodStart: v })} required />
+          </${Field}>
+          <${Field} label="Period to" id="period-end" error=${errAt(error, 'periodEnd')}>
+            <${Input} type="date" value=${f.periodEnd} onInput=${(/** @type {string} */ v) =>
+              setF({ ...f, periodEnd: v })} required />
+            </${Field}>
+            </div>
+            <p class="small dim">Its lines aren't added. It counts as the account's statement for the
+        period, so no alert asks for it.</p>
+            <${FormError} error=${error} shown=${['periodStart', 'periodEnd', 'accountId']} />
+            </${Dialog}>
+  `;
+}
+
+/**
+ * A statement of several accounts (S1.3.3.5): each part checked in turn, against its own
+ * balances, and saved to the account it shows or one chosen, or left out. Nothing is saved
+ * until every part is decided.
+ * @param {{ review: any, setReview: (v: any) => void, close: (v?: any) => void }} p
+ */
+function PartsReview({ review, setReview, close }) {
+  const part = review.parts[review.at];
+  const [current, setCurrent] = useState(() => partReview(review, part));
+  useEffect(() => setCurrent(partReview(review, part)), [review.at]);
+  const next = (/** @type {any} */ result) => {
+    if (result.remaining) setReview({ ...review, at: result.remaining[0] });
+    else {
+      changes.value = { ...changes.value, import: (changes.value.import || 0) + 1 };
+      const n = result.parts.length;
+      toast(n ? `Statement saved to ${n} account${n === 1 ? '' : 's'}` : 'Every part left out');
+      close(result);
+    }
+  };
+  return html`
+    <${StatementReview} key=${review.at} review=${current} setReview=${setCurrent}
+      close=${close} done=${next} part=${{ ...part, total: review.parts.length }} />
+  `;
+}
+
+/** @param {any} review @param {any} part */
+function partReview(review, part) {
+  return {
+    ...review,
+    ...part,
+    accountId: part.accountId || '',
+    rows: part.rows.map((/** @type {any} */ r) => ({ ...r, include: !r.present })),
+    accept: false,
+  };
 }
 
 /**
@@ -204,10 +334,10 @@ export function ImportDialog({ close, accounts, accountId }) {
  * and each transaction, which can be corrected or left out. It is saved only when the
  * transactions add up from the opening to the closing balance, or the difference is accepted.
  * @param {{ review: any, setReview: (v: any) => void, close: (v?: any) => void,
- *   done: (r: any) => void }} p
+ *   done: (r: any) => void, part?: any }} p
  */
-function StatementReview({ review, setReview, close, done }) {
-  useDialogGuide('dialog-statement');
+function StatementReview({ review, setReview, close, done, part = null }) {
+  useDialogGuide(part ? 'dialog-statement-split' : 'dialog-statement');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(/** @type {any} */ (null));
   const kept = review.rows.filter((/** @type {any} */ r) => r.include);
@@ -225,11 +355,12 @@ function StatementReview({ review, setReview, close, done }) {
         i === j ? { ...r, [k]: v } : r
       ),
     });
-  const save = async () => {
+  const save = async (/** @type {boolean} */ leftOut = false) => {
     setBusy(true);
     setError(null);
     try {
       const job = await api.post(`/imports/${review.uploadId}/statement`, {
+        ...(part ? { part: part.index, accountId: review.accountId || null, leftOut } : {}),
         periodStart: review.periodStart,
         periodEnd: review.periodEnd,
         opening: review.opening,
@@ -250,17 +381,45 @@ function StatementReview({ review, setReview, close, done }) {
     }
   };
   const fresh = kept.filter((/** @type {any} */ r) => !r.present).length;
+  const label = part
+    ? `Save part ${part.index + 1}${part.index + 1 < part.total ? ' · next part' : ''}`
+    : `Import ${fresh} new`;
   return html`
-    <${Dialog} title="Check the statement" wide close=${close} onSubmit=${save}
+    <${Dialog} title=${part
+      ? `Part ${part.index + 1} of ${part.total}: account ending ${part.last4}`
+      : 'Check the statement'} wide close=${close} onSubmit=${() => save(false)}
       note=${review.learned
         ? `Read with what was learned of ${review.institution || 'this institution'}'s statements.`
         : 'What you correct here is remembered for the next statement from this institution.'}
-      footer=${html`<button class="btn primary" disabled=${
-        busy || (diff !== 0n && !review.accept)
-      }>${busy ? 'Saving…' : `Import ${fresh} new`}</button>`}>
+      footer=${html`${
+        part
+          ? html`
+            <button type="button" class="btn" disabled=${busy}
+              onClick=${() => save(true)}>Leave this part out</button><span class="spacer"></span>
+          `
+          : null
+      }<button class="btn primary" disabled=${
+        busy || (diff !== 0n && !review.accept) || (part && !review.accountId)
+      }>${busy ? 'Saving…' : label}</button>`}>
       <p class="small dim" style=${{ marginTop: 0 }}>${review.fileName} · ${review.method === 'text'
         ? 'read from its text layer'
         : 'read with OCR'}${review.institution ? ` · ${review.institution}` : ''}</p>
+      ${part
+        ? html`
+          <${Field} label="Account" id="part-account" error=${errAt(error, 'accountId')}
+            hint=${part.accountId
+              ? `Its header shows ${part.header}.`
+              : `No account here ends in ${part.last4}: choose one, or leave this part out.`}>
+            <${Select} value=${review.accountId} onChange=${set('accountId')} options=${[
+              ['', 'Choose…'],
+              ...part.candidates.map((/** @type {any} */ a) => [
+                a.id,
+                a.name + (a.mask ? ` ··${a.mask}` : ''),
+              ]),
+            ]} />
+            </${Field}>
+        `
+        : null}
       <div class="row">
         <${Field} label="Period from" id="period-start" error=${errAt(error, 'periodStart')}>
           <${Input} type="date" value=${review.periodStart || ''} onInput=${set(
@@ -329,7 +488,7 @@ function StatementReview({ review, setReview, close, done }) {
           money(fromCents(diff))
         } it is short</span></label>`
         : null}
-      <${FormError} error=${error} shown=${['periodStart', 'periodEnd']} />
+      <${FormError} error=${error} shown=${['periodStart', 'periodEnd', 'accountId']} />
     </${Dialog}>
   `;
 }
