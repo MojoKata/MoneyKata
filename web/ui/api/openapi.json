@@ -671,6 +671,56 @@
         "title": "Activated",
         "type": "object"
       },
+      "ActivityIn": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Amount",
+            "type": "number"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "include": {
+            "default": true,
+            "title": "Include",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "date",
+          "description",
+          "amount",
+          "kind"
+        ],
+        "title": "ActivityIn",
+        "type": "object"
+      },
       "ActivityItem": {
         "additionalProperties": false,
         "properties": {
@@ -1572,6 +1622,56 @@
           "gain"
         ],
         "title": "BoxTotal",
+        "type": "object"
+      },
+      "BrokerageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "endingValue": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endingvalue"
+          },
+          "periodEnd": {
+            "format": "date",
+            "title": "Periodend",
+            "type": "string"
+          },
+          "periodStart": {
+            "format": "date",
+            "title": "Periodstart",
+            "type": "string"
+          },
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/PositionIn"
+            },
+            "title": "Positions",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityIn"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "periodStart",
+          "periodEnd"
+        ],
+        "title": "BrokerageIn",
         "type": "object"
       },
       "BudgetChange": {
@@ -5830,6 +5930,134 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HoldingCheckRow": {
+        "additionalProperties": false,
+        "properties": {
+          "cash": {
+            "title": "Cash",
+            "type": "boolean"
+          },
+          "difference": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difference"
+          },
+          "held": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held"
+          },
+          "heldBasis": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heldbasis"
+          },
+          "instrumentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrumentid"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "statement": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statement"
+          },
+          "statementBasis": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statementbasis"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "label",
+          "instrumentId",
+          "symbol",
+          "statement",
+          "held",
+          "difference",
+          "statementBasis",
+          "heldBasis",
+          "cash",
+          "ok"
+        ],
+        "title": "HoldingCheckRow",
         "type": "object"
       },
       "HoldingRow": {
@@ -13074,6 +13302,107 @@
         "title": "PortfolioSeries",
         "type": "object"
       },
+      "PositionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "cash": {
+            "default": false,
+            "title": "Cash",
+            "type": "boolean"
+          },
+          "costBasis": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costbasis"
+          },
+          "instrumentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrumentid"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "marketValue": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marketvalue"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "examples": [
+                  12.5
+                ],
+                "format": "decimal",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "PositionIn",
+        "type": "object"
+      },
       "PositionsView": {
         "additionalProperties": false,
         "properties": {
@@ -14321,6 +14650,25 @@
             "title": "Gaps",
             "type": "array"
           },
+          "holdingChecks": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingCheckRow"
+            },
+            "title": "Holdingchecks",
+            "type": "array"
+          },
+          "holdingChecksAsOf": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holdingchecksasof"
+          },
           "needsAnchor": {
             "title": "Needsanchor",
             "type": "boolean"
@@ -14353,6 +14701,13 @@
             },
             "title": "Reconciliations",
             "type": "array"
+          },
+          "valueChecks": {
+            "items": {
+              "$ref": "#/components/schemas/ValueCheckRow"
+            },
+            "title": "Valuechecks",
+            "type": "array"
           }
         },
         "required": [
@@ -14360,6 +14715,9 @@
           "gaps",
           "overlaps",
           "checks",
+          "valueChecks",
+          "holdingChecksAsOf",
+          "holdingChecks",
           "needsAnchor",
           "openingStandIn",
           "reconciliations"
@@ -18720,6 +19078,53 @@
           "version"
         ],
         "title": "ValuationOut",
+        "type": "object"
+      },
+      "ValueCheckRow": {
+        "additionalProperties": false,
+        "properties": {
+          "computed": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Computed",
+            "type": "number"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "difference": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Difference",
+            "type": "number"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "reported": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Reported",
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "reported",
+          "computed",
+          "difference",
+          "ok"
+        ],
+        "title": "ValueCheckRow",
         "type": "object"
       },
       "Via": {
@@ -25431,6 +25836,59 @@
         "summary": "List Holidays",
         "tags": [
           "gifts"
+        ]
+      }
+    },
+    "/ui/api/imports/{upload_id}/brokerage": {
+      "post": {
+        "description": "The ending value becomes a value anchor on the last day; the positions a holdings check\n(or, for an account kept by snapshots, its holdings that day); the cash lines kept become\ntransactions; and the PDF is kept on the account. Trades are never added here.",
+        "operationId": "save_brokerage_ui_api_imports__upload_id__brokerage_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "title": "Upload Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrokerageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Brokerage",
+        "tags": [
+          "imports"
         ]
       }
     },

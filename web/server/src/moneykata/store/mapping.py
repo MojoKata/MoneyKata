@@ -121,6 +121,7 @@ def map_all() -> None:
         (acc.Lot, accounts.Lot),
         (acc.Holding, accounts.Holding),
         (acc.Anchor, accounts.Anchor),
+        (acc.HoldingCheck, accounts.HoldingCheck),
         (acc.Reconciliation, accounts.Reconciliation),
     ):
         _versioned(entity, table)

@@ -41,9 +41,12 @@ const TRADE = ['buy', 'sell', 'reinvest', 'transfer-in', 'transfer-out'];
 const clean = (s) => String(s).replace(/[$,\s]/g, '').replace('−', '-');
 
 /**
- * @param {{ close: (v?: any) => void, txn?: any, accounts: any[], accountId?: string }} p
+ * `start` fills a new transaction, such as a trade a statement shows but doesn't read
+ * (S1.3.3.8).
+ * @param {{ close: (v?: any) => void, txn?: any, start?: any, accounts: any[],
+ *   accountId?: string }} p
  */
-export function TransactionDialog({ close, txn, accounts, accountId }) {
+export function TransactionDialog({ close, txn, start, accounts, accountId }) {
   useDialogGuide('dialog-transaction');
   const editing = !!txn;
   const readOnly = editing && txn.level === 'read';
@@ -52,21 +55,22 @@ export function TransactionDialog({ close, txn, accounts, accountId }) {
   const account = accounts.find((a) => a.id === acct) || { type: 'checking' };
   const type = BY_TYPE[account.type] || BY_TYPE.checking;
   const cats = useCategories();
+  const init = txn || start;
   const [f, setF] = useState({
-    date: txn?.date || new Date().toISOString().slice(0, 10),
-    kind: txn?.kind || (type.investing ? 'buy' : 'withdrawal'),
-    amount: txn?.amount || '',
-    payee: txn?.payee || '',
-    memo: txn?.memo || '',
-    categoryId: txn?.categoryId || '',
-    symbol: txn?.symbol || '',
-    quantity: txn?.quantity || '',
-    price: txn?.price || '',
-    fees: txn?.fees || '',
+    date: init?.date || new Date().toISOString().slice(0, 10),
+    kind: init?.kind || (type.investing ? 'buy' : 'withdrawal'),
+    amount: init?.amount || '',
+    payee: init?.payee || '',
+    memo: init?.memo || '',
+    categoryId: init?.categoryId || '',
+    symbol: init?.symbol || '',
+    quantity: init?.quantity || '',
+    price: init?.price || '',
+    fees: init?.fees || '',
     costBasis: '',
-    contributionYear: txn?.contributionYear ? String(txn.contributionYear) : '',
-    contributionSource: txn?.contributionSource || '',
-    tags: (txn?.tags || []).join(', '),
+    contributionYear: init?.contributionYear ? String(txn.contributionYear) : '',
+    contributionSource: init?.contributionSource || '',
+    tags: (init?.tags || []).join(', '),
   });
   const [splits, setSplits] = useState(
     /** @type {{ categoryId: string, amount: string, memo: string }[]} */ (

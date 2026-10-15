@@ -161,6 +161,21 @@ class Holding(Record):
 
 
 @dataclass(kw_only=True, eq=False)
+class HoldingCheck(Record):
+    id: str
+    accountId: str
+    asOf: dt.date
+    label: str
+    importId: str | None = None
+    instrumentId: str | None = None
+    quantity: Decimal | None = None
+    price: Decimal | None = None
+    marketValue: Decimal | None = None
+    costBasis: Decimal | None = None
+    cash: bool = False
+
+
+@dataclass(kw_only=True, eq=False)
 class Anchor(Record):
     id: str
     accountId: str

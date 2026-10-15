@@ -136,3 +136,35 @@ def needs_anchor(anchors: list, transactions: list, today: dt.date) -> bool:
     if not reported:
         return bool(transactions)
     return (today - reported[-1][0]).days > ANCHOR_DAYS
+
+
+VALUE_TOLERANCE = Decimal("0.005")  # half a percent: prices a day apart, rounding
+
+
+@dataclass
+class ValueCheck:
+    """A statement's ending value against what the account was worth that day."""
+
+    date: dt.date
+    reported: Decimal
+    computed: Decimal
+
+    @property
+    def difference(self) -> Decimal:
+        return self.reported - self.computed
+
+    @property
+    def ok(self) -> bool:
+        return abs(self.difference) <= max(Decimal(1), abs(self.reported) * VALUE_TOLERANCE)
+
+
+def value_checks(s, ledger, anchors: list) -> list[ValueCheck]:
+    from .. import valuation
+    from . import types as atypes
+
+    investing = atypes.investing(ledger.account.type)
+    return [
+        ValueCheck(a.date, a.balance, valuation.account_value(s, ledger, investing, a.date))
+        for a in sorted(anchors, key=lambda a: a.date)
+        if a.source == "statement-value"
+    ]

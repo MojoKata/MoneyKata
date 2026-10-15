@@ -10,15 +10,16 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import Field
-from sqlalchemy import false, select
+from sqlalchemy import false, func, select
 
 from .. import access, activity, clock, exactjson, ids, valuation
 from ..errors import FieldError, Problem, refuse
-from ..ledger import expected, reconcile
+from ..ledger import expected, holdingcheck, reconcile
 from ..ledger import types as atypes
 from ..store.entities.accounts import (
     Account,
     Anchor,
+    HoldingCheck,
     Import,
     Instrument,
     Reconciliation,
@@ -181,11 +182,35 @@ class ReconciliationRow(Model):
     version: int
 
 
+class ValueCheckRow(Model):
+    date: dt.date
+    reported: Money  # a statement's ending value
+    computed: Money  # what the account was worth that day
+    difference: Money
+    ok: bool
+
+
+class HoldingCheckRow(Model):
+    label: str
+    instrumentId: str | None
+    symbol: str | None
+    statement: Quantity | None  # its quantity, or the cash
+    held: Quantity | None  # MoneyKata's that day
+    difference: Quantity | None
+    statementBasis: Money | None
+    heldBasis: Money | None
+    cash: bool
+    ok: bool
+
+
 class ReconcileView(Model):
     periods: list[PeriodRow]
     gaps: list[list[dt.date]]
     overlaps: list[list[dt.date]]
     checks: list[CheckRow]
+    valueChecks: list[ValueCheckRow]  # brokerage statements' ending values (S1.3.3.8.1)
+    holdingChecksAsOf: dt.date | None
+    holdingChecks: list[HoldingCheckRow]  # the latest statement's positions (S1.3.3.8.2)
     needsAnchor: bool
     openingStandIn: bool
     reconciliations: list[ReconciliationRow]
@@ -628,6 +653,31 @@ def account_reconcile(account_id: str, request: Request, c: Caller = Depends(cal
             .where(Reconciliation.accountId == a.id, Reconciliation.deleted == false())
             .order_by(Reconciliation.statementDate)
         ).all()
+        asof = s.scalar(
+            select(func.max(HoldingCheck.asOf)).where(
+                HoldingCheck.accountId == a.id, HoldingCheck.deleted == false()
+            )
+        )
+        rows = (
+            s.scalars(
+                select(HoldingCheck)
+                .where(
+                    HoldingCheck.accountId == a.id,
+                    HoldingCheck.deleted == false(),
+                    HoldingCheck.asOf == asof,
+                )
+                .order_by(HoldingCheck.cash, HoldingCheck.label)
+            ).all()
+            if asof
+            else []
+        )
+        held_lines = holdingcheck.compare(ledger, asof, rows) if asof else []
+        symbols = {
+            i.id: i.symbol
+            for i in s.scalars(
+                select(Instrument).where(Instrument.id.in_([r.instrumentId for r in rows]))
+            )
+        }
         return ReconcileView(
             periods=[
                 PeriodRow(start=p.start, end=p.end, importIds=p.importIds) for p in cover.periods
@@ -653,6 +703,32 @@ def account_reconcile(account_id: str, request: Request, c: Caller = Depends(cal
                     else None,
                 )
                 for k in checks
+            ],
+            valueChecks=[
+                ValueCheckRow(
+                    date=v.date,
+                    reported=v.reported,
+                    computed=v.computed,
+                    difference=v.difference,
+                    ok=v.ok,
+                )
+                for v in reconcile.value_checks(s, ledger, ledger.anchors)
+            ],
+            holdingChecksAsOf=asof,
+            holdingChecks=[
+                HoldingCheckRow(
+                    label=x.label,
+                    instrumentId=x.instrumentId,
+                    symbol=symbols.get(x.instrumentId),
+                    statement=x.statement,
+                    held=x.held,
+                    difference=x.difference,
+                    statementBasis=x.statementBasis,
+                    heldBasis=x.heldBasis,
+                    cash=x.cash,
+                    ok=x.ok,
+                )
+                for x in held_lines
             ],
             needsAnchor=reconcile.needs_anchor(ledger.anchors, ledger.transactions, clock.today()),
             openingStandIn=start.standIn,

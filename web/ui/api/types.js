@@ -103,6 +103,16 @@
  */
 
 /**
+ * @typedef {Object} ActivityIn
+ * @property {string} date
+ * @property {string} description
+ * @property {import('../app/dec.js').Dec} amount
+ * @property {string} kind
+ * @property {boolean} [include]
+ * @property {(string | null)} [symbol]
+ */
+
+/**
  * @typedef {Object} ActivityItem
  * @property {string} id
  * @property {string} at
@@ -284,6 +294,15 @@
  * @property {import('../app/dec.js').Dec} basis
  * @property {import('../app/dec.js').Dec} adjustment
  * @property {import('../app/dec.js').Dec} gain
+ */
+
+/**
+ * @typedef {Object} BrokerageIn
+ * @property {string} periodStart
+ * @property {string} periodEnd
+ * @property {(import('../app/dec.js').Dec | null)} [endingValue]
+ * @property {Array<PositionIn>} [positions]
+ * @property {Array<ActivityIn>} [rows]
  */
 
 /**
@@ -1014,6 +1033,20 @@
 /**
  * @typedef {Object} HTTPValidationError
  * @property {Array<ValidationError>} [detail]
+ */
+
+/**
+ * @typedef {Object} HoldingCheckRow
+ * @property {string} label
+ * @property {(string | null)} instrumentId
+ * @property {(string | null)} symbol
+ * @property {(import('../app/dec.js').Dec | null)} statement
+ * @property {(import('../app/dec.js').Dec | null)} held
+ * @property {(import('../app/dec.js').Dec | null)} difference
+ * @property {(import('../app/dec.js').Dec | null)} statementBasis
+ * @property {(import('../app/dec.js').Dec | null)} heldBasis
+ * @property {boolean} cash
+ * @property {boolean} ok
  */
 
 /**
@@ -2314,6 +2347,18 @@
  */
 
 /**
+ * @typedef {Object} PositionIn
+ * @property {string} label
+ * @property {(string | null)} [instrumentId]
+ * @property {(string | null)} [symbol]
+ * @property {(import('../app/dec.js').Dec | null)} [quantity]
+ * @property {(import('../app/dec.js').Dec | null)} [price]
+ * @property {(import('../app/dec.js').Dec | null)} [marketValue]
+ * @property {(import('../app/dec.js').Dec | null)} [costBasis]
+ * @property {boolean} [cash]
+ */
+
+/**
  * @typedef {Object} PositionsView
  * @property {Summary} summary
  * @property {Array<OpenRow>} open
@@ -2522,6 +2567,9 @@
  * @property {Array<Array<string>>} gaps
  * @property {Array<Array<string>>} overlaps
  * @property {Array<CheckRow>} checks
+ * @property {Array<ValueCheckRow>} valueChecks
+ * @property {(string | null)} holdingChecksAsOf
+ * @property {Array<HoldingCheckRow>} holdingChecks
  * @property {boolean} needsAnchor
  * @property {boolean} openingStandIn
  * @property {Array<ReconciliationRow>} reconciliations
@@ -3341,6 +3389,15 @@
  * @property {string} source
  * @property {(string | null)} note
  * @property {number} version
+ */
+
+/**
+ * @typedef {Object} ValueCheckRow
+ * @property {string} date
+ * @property {import('../app/dec.js').Dec} reported
+ * @property {import('../app/dec.js').Dec} computed
+ * @property {import('../app/dec.js').Dec} difference
+ * @property {boolean} ok
  */
 
 /**

@@ -6,6 +6,7 @@ live stream announces its end (S13.8.7)."""
 import datetime as dt
 import hashlib
 import json
+import re
 import secrets
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -14,24 +15,30 @@ from decimal import Decimal
 
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse
+from pydantic import Field
 from sqlalchemy import false, select
 
 from .. import access, clock, exactjson, ids, receipts, settings
 from ..errors import Problem, refuse
-from ..importers import csvfile, ofx, statements
-from ..importers.parsed import ParsedFile, ReadError, Row
+from ..importers import brokerage, csvfile, ofx, statements
+from ..importers.parsed import ParsedFile, ReadError, Row, Security
 from ..jobs import Job
+from ..ledger import holdingcheck
 from ..ledger import types as atypes
 from ..store.entities.accounts import (
     Account,
+    Anchor,
+    Holding,
+    HoldingCheck,
     Import,
     ImportMapping,
+    Instrument,
     StatementLayout,
     Transaction,
 )
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
-from .conventions import ExactRoute, Loose, Model, Money, Ratio
+from .conventions import ExactRoute, Loose, Model, Money, Quantity, Ratio
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["imports"])
@@ -383,6 +390,10 @@ def _run_statement(
     pieces = statements.split(lines)
     with srv.db.read() as s:
         account, _ = access.account(s, user_id, account_id, "write")
+        if atypes.investing(account.type) and _run_brokerage(
+            srv, job, s, account, user_id, data, name, lines, method
+        ):
+            return
         if len(pieces) >= 2:
             _hold_parts(srv, job, s, account, user_id, data, name, lines, method, pieces)
             return
@@ -473,6 +484,348 @@ def _hold_parts(srv, job, s, account, user_id, data, name, lines, method, pieces
             "accountId": account.id,
             "parts": out,
         },
+    )
+
+
+# ---------- brokerage and plan statements (S1.3.3.8) ----------
+
+
+def _find_instrument(s, symbol: str | None, cusip: str | None, label: str) -> Instrument | None:
+    """The instrument a statement's position names, if MoneyKata knows it: never made here."""
+    q = select(Instrument).where(Instrument.deleted == false())
+    for cond in (
+        Instrument.cusip == cusip if cusip else None,
+        Instrument.symbol == symbol.upper() if symbol else None,
+        Instrument.name == label if label else None,
+    ):
+        if cond is not None:
+            found = s.scalars(q.where(cond)).first()
+            if found is not None:
+                return found
+    return None
+
+
+def snapshot_kept(s, account: Account) -> bool:
+    """An account kept by snapshots (R3.2): kept from statements only, with no trades of its
+    own; a statement's positions are then its holdings on that date."""
+    if json.loads(account.keptBy or "[]") != ["statement"]:
+        return False
+    return (
+        s.scalar(
+            select(Transaction.id).where(
+                Transaction.accountId == account.id,
+                Transaction.deleted == false(),
+                Transaction.instrumentId.is_not(None),
+            )
+        )
+        is None
+    )
+
+
+def _run_brokerage(srv, job, s, account, user_id, data, name, lines, method) -> bool:
+    """A brokerage or plan statement: its summary, positions and cash read and held for the
+    person to check. A photo of one isn't read: it is offered to be kept. False when it isn't
+    one, for the bank reader to try."""
+    if method != "text":
+        upload_id = _hold(data, account.id, user_id, name, lines=lines, method=method)
+        start, end, _ = statements.period_and_institution(lines)
+        srv.jobs.update(
+            job,
+            state="failed",
+            error={
+                "code": "brokerage-photo",
+                "message": "A photo of a brokerage statement isn't read: its tables don't "
+                "survive OCR reliably. Upload the PDF to have it read, or keep this one.",
+                "uploadId": upload_id,
+                "fileName": name,
+                "periodStart": start.isoformat() if start else None,
+                "periodEnd": end.isoformat() if end else None,
+            },
+        )
+        return True
+    saved = _layout(s, account.ownerId, (account.institution or "").strip())
+    b = brokerage.parse(lines, clock.today(), json.loads(saved.layout) if saved else None)
+    if not b.read:
+        return False
+    if b.institution is None:
+        b.institution = account.institution
+    ledger = repo.load(s, account)
+    day = b.periodEnd or clock.today()
+    have = _present(s, account.id)
+    by_file = "file" in json.loads(account.keptBy or "[]")
+    rows = []
+    for p in b.positions:
+        inst = None if p.cash else _find_instrument(s, p.symbol, p.cusip, p.label)
+        rows.append(
+            holdingcheck_row(p, inst.id if inst else None),
+        )
+    trades = []
+    for a in b.activity:
+        if a.kind != "trade" or not a.symbol or not a.quantity:
+            continue
+        inst = _find_instrument(s, a.symbol, None, "")
+        if inst is not None:
+            sold = re.search(r"\b(sold|sell)\b", a.description, re.I) is not None
+            what = (
+                "reinvestment"
+                if "reinvest" in a.description.lower()
+                else ("sale" if sold else "purchase")
+            )
+            trades.append((a.date, inst.id, -a.quantity if sold else a.quantity, what))
+    lines_ = holdingcheck.compare(ledger, day, rows, trades)
+    totals = brokerage.totals(b)
+    upload_id = _hold(data, account.id, user_id, name, lines=lines, statement=b, method=method)
+    srv.jobs.update(
+        job,
+        state="done",
+        progress=1.0,
+        result={
+            "needsReview": True,
+            "kind": "brokerage",
+            "uploadId": upload_id,
+            "fileName": name,
+            "method": method,
+            "accountId": account.id,
+            "institution": b.institution,
+            "periodStart": b.periodStart.isoformat() if b.periodStart else None,
+            "periodEnd": b.periodEnd.isoformat() if b.periodEnd else None,
+            "summary": {k: _text(v) for k, v in b.summary.__dict__.items()},
+            "totals": {k: _text(v) for k, v in totals.items()},
+            "byFile": by_file,
+            "snapshot": snapshot_kept(s, account),
+            "positions": [
+                {
+                    "label": r.label,
+                    "symbol": p.symbol,
+                    "instrumentId": r.instrumentId,
+                    "quantity": _text(r.quantity),
+                    "price": _text(r.price),
+                    "marketValue": _text(r.marketValue),
+                    "costBasis": _text(r.costBasis),
+                    "cash": r.cash,
+                    "held": _text(x.held),
+                    "heldBasis": _text(x.heldBasis),
+                    "difference": _text(x.difference),
+                    "hint": x.hint,
+                }
+                for p, r, x in zip(b.positions, rows, lines_, strict=True)
+            ],
+            "activity": [
+                {
+                    "date": a.date.isoformat(),
+                    "description": a.description,
+                    "amount": str(a.amount),
+                    "kind": a.kind,
+                    "notRead": a.notRead,
+                    "symbol": a.symbol,
+                    "quantity": _text(a.quantity),
+                    "price": _text(a.price),
+                    "present": (a.date, a.amount) in have,
+                }
+                for a in b.activity
+            ],
+        },
+    )
+    return True
+
+
+def _text(v) -> str | None:
+    return str(v) if v is not None else None
+
+
+def holdingcheck_row(p, instrument_id: str | None) -> HoldingCheck:
+    return HoldingCheck(
+        id="",
+        accountId="",
+        asOf=dt.date.min,
+        label=p.label,
+        instrumentId=instrument_id,
+        quantity=p.quantity,
+        price=p.price,
+        marketValue=p.value,
+        costBasis=p.cost,
+        cash=p.cash,
+    )
+
+
+class PositionIn(Model):
+    label: str
+    instrumentId: str | None = None
+    symbol: str | None = None
+    quantity: Quantity | None = None
+    price: Quantity | None = None
+    marketValue: Money | None = None
+    costBasis: Money | None = None
+    cash: bool = False
+
+
+class ActivityIn(Model):
+    date: dt.date
+    description: str
+    amount: Money
+    kind: str
+    include: bool = True
+    symbol: str | None = None
+
+
+class BrokerageIn(Model):
+    periodStart: dt.date
+    periodEnd: dt.date
+    endingValue: Money | None = None
+    positions: list[PositionIn] = Field(default_factory=list)
+    rows: list[ActivityIn] = Field(default_factory=list)
+
+
+CASH_KINDS = ("deposit", "withdrawal", "dividend", "interest", "fee")
+
+
+@router.post("/imports/{upload_id}/brokerage", response_model=JobOut)
+def save_brokerage(
+    upload_id: str, body: BrokerageIn, request: Request, c: Caller = Depends(caller)
+):
+    """The ending value becomes a value anchor on the last day; the positions a holdings check
+    (or, for an account kept by snapshots, its holdings that day); the cash lines kept become
+    transactions; and the PDF is kept on the account. Trades are never added here."""
+    srv = server(request)
+    held = _held_for(upload_id, c)
+    b = held.statement
+    if not isinstance(b, brokerage.Brokerage):
+        raise Problem(404, "upload-gone", "That upload has expired; choose the file again.")
+    if body.periodEnd < body.periodStart:
+        raise refuse("periodEnd", "period-backwards", "The period ends before it starts.")
+    bad = next((r for r in body.rows if r.include and r.kind not in CASH_KINDS), None)
+    if bad is not None:
+        raise refuse("rows", "row-not-cash", "Trades aren't added here: enter them as trades.")
+    kept = [r for r in body.rows if r.include]
+    cash = next((p for p in body.positions if p.cash and p.marketValue is not None), None)
+    with srv.db.tx() as s:
+        account, _ = access.account(s, c.id, held.accountId, "write")
+        securities = {}
+        rows = []
+        for r in kept:
+            inst = _find_instrument(s, r.symbol, None, "") if r.kind == "dividend" else None
+            if inst is not None:
+                securities[inst.symbol] = Security(
+                    inst.symbol, inst.symbol, inst.name, inst.instrumentClass, inst.cusip
+                )
+            rows.append(
+                Row(
+                    date=r.date,
+                    kind=r.kind,
+                    amount=r.amount,
+                    payee=r.description.strip() or None,
+                    security=inst.symbol if inst is not None else None,
+                )
+            )
+        parsed = ParsedFile(
+            format="statement",
+            rows=rows,
+            securities=securities,
+            balances=[(body.periodEnd, cash.marketValue)] if cash else [],
+            coveredFrom=body.periodStart,
+            coveredTo=body.periodEnd,
+            institution=b.institution,
+        )
+        applied = repo.apply_import(
+            s,
+            account,
+            c.id,
+            parsed,
+            held.fileName or "statement",
+            hashlib.sha256(held.data).hexdigest(),
+        )
+        if body.endingValue is not None:
+            s.add(
+                Anchor(
+                    id=ids.new_id("Anchr"),
+                    accountId=account.id,
+                    date=body.periodEnd,
+                    balance=body.endingValue,
+                    source="statement-value",
+                    importId=applied.importId,
+                    createdById=c.id,
+                )
+            )
+        snapshot = snapshot_kept(s, account)
+        for p in body.positions:
+            if p.instrumentId is not None and s.get(Instrument, p.instrumentId) is None:
+                raise refuse("positions", "instrument-unknown", "One of the instruments here.")
+            inst_id = p.instrumentId
+            if snapshot and not p.cash and inst_id is None and (p.symbol or p.label):
+                inst_id = repo.instrument(
+                    s, p.symbol, p.label, "mutual-fund" if p.symbol is None else "equity"
+                ).id
+            s.add(
+                HoldingCheck(
+                    id=ids.new_id("HdChk"),
+                    accountId=account.id,
+                    importId=applied.importId,
+                    asOf=body.periodEnd,
+                    instrumentId=inst_id,
+                    label=p.label[:120],
+                    quantity=p.quantity,
+                    price=p.price,
+                    marketValue=p.marketValue,
+                    costBasis=p.costBasis,
+                    cash=p.cash,
+                )
+            )
+            if snapshot and not p.cash and inst_id is not None and p.quantity:
+                s.add(
+                    Holding(
+                        id=ids.new_id("Hold"),
+                        accountId=account.id,
+                        instrumentId=inst_id,
+                        asOf=body.periodEnd,
+                        quantity=p.quantity,
+                        marketValue=p.marketValue,
+                        importId=applied.importId,
+                    )
+                )
+        r = _keep_file(
+            s, srv, c, held, [account.id], b.institution, body.periodStart, body.periodEnd
+        )
+        have = {(a.date, a.amount) for a in b.activity}
+        left = [
+            x.description
+            for x in body.rows
+            if not x.include and x.kind in CASH_KINDS and (x.date, x.amount) in have
+        ]
+        key = (account.institution or b.institution or "").strip()
+        if key and left:
+            row = _layout(s, account.ownerId, key)
+            learned = brokerage.learn(json.loads(row.layout) if row else None, b, left)
+            text = exactjson.dumps(learned, sort_keys=True)
+            if row is None:
+                s.add(
+                    StatementLayout(
+                        id=ids.new_id("Lyout"),
+                        ownerId=account.ownerId,
+                        institution=key,
+                        layout=text,
+                    )
+                )
+            else:
+                row.layout = text
+    with _held_lock:
+        _held.pop(upload_id, None)
+    return _done(
+        srv,
+        c,
+        {
+            "importId": applied.importId,
+            "added": applied.added,
+            "matched": applied.matched,
+            "changed": applied.changed,
+            "transfers": applied.transfers,
+            "coveredFrom": body.periodStart.isoformat(),
+            "coveredTo": body.periodEnd.isoformat(),
+            "warnings": applied.warnings,
+            "accountId": held.accountId,
+            "receiptId": r.id,
+            "snapshot": snapshot,
+        },
+        [held.accountId],
     )
 
 

@@ -6,7 +6,8 @@ import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { changes } from '../app/stream.js';
 import { cents, date, fromCents, money } from '../app/format.js';
-import { Dialog } from '../components/dialog.js';
+import { Dialog, openDialog } from '../components/dialog.js';
+import { TransactionDialog } from './transaction-dialog.js';
 import { useDialogGuide } from '../components/help.js';
 import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
 import { Icon } from '../components/icon.js';
@@ -63,7 +64,15 @@ export function ImportDialog({ close, accounts, accountId }) {
       else if (job.result.keep) setKept(job.result);
       else if (job.result.needsMapping) setMapping(job.result);
       else if (job.result.parts) setReview({ ...job.result, at: 0 });
-      else if (job.result.needsReview) {
+      else if (job.result.kind === 'brokerage') {
+        setReview({
+          ...job.result,
+          activity: job.result.activity.map((/** @type {any} */ r) => ({
+            ...r,
+            include: !r.present && !r.notRead && !job.result.byFile,
+          })),
+        });
+      } else if (job.result.needsReview) {
         setReview({
           ...job.result,
           rows: job.result.rows.map((/** @type {any} */ r) => ({ ...r, include: !r.present })),
@@ -125,6 +134,16 @@ export function ImportDialog({ close, accounts, accountId }) {
 
   if (kept) return html`<${KeepReview} kept=${kept} close=${close} />`;
 
+  if (review?.kind === 'brokerage') {
+    return html`
+      <${BrokerageReview} review=${review} setReview=${setReview} close=${close}
+        accounts=${accounts} done=${(/** @type {any} */ r) => {
+          setReview(null);
+          setResult(r);
+        }} />
+    `;
+  }
+
   if (review?.parts) {
     return html`<${PartsReview} review=${review} setReview=${setReview} close=${close} />`;
   }
@@ -185,7 +204,9 @@ export function ImportDialog({ close, accounts, accountId }) {
     `;
   }
 
-  const empty = error?.code === 'statement-empty' ? error : null;
+  const empty = error?.code === 'statement-empty' || error?.code === 'brokerage-photo'
+    ? error
+    : null;
   return html`
     <${Dialog} title=${keeping ? 'Keep a statement' : 'Import transactions'} close=${close}
       onSubmit=${start}
@@ -489,6 +510,200 @@ function StatementReview({ review, setReview, close, done, part = null }) {
         } it is short</span></label>`
         : null}
       <${FormError} error=${error} shown=${['periodStart', 'periodEnd', 'accountId']} />
+    </${Dialog}>
+  `;
+}
+
+/**
+ * A brokerage or plan statement (S1.3.3.8): its summary, whose ending value becomes a value
+ * anchor; its positions checked against what is held; and its cash lines, checked against the
+ * summary and kept as transactions. Trades aren't read: each opens the trade dialog filled in.
+ * @param {{ review: any, setReview: (v: any) => void, close: (v?: any) => void,
+ *   done: (r: any) => void, accounts: any[] }} p
+ */
+function BrokerageReview({ review, setReview, close, done, accounts }) {
+  useDialogGuide('dialog-brokerage-statement');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(/** @type {any} */ (null));
+  const sm = review.summary;
+  const setRow = (/** @type {number} */ i) =>
+    setReview({
+      ...review,
+      activity: review.activity.map((/** @type {any} */ r, /** @type {number} */ j) =>
+        i === j ? { ...r, include: !r.include } : r
+      ),
+    });
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const job = await api.post(`/imports/${review.uploadId}/brokerage`, {
+        periodStart: review.periodStart,
+        periodEnd: review.periodEnd,
+        endingValue: sm.ending,
+        positions: review.positions.map((/** @type {any} */ p) => ({
+          label: p.label,
+          symbol: p.symbol,
+          instrumentId: p.instrumentId,
+          quantity: p.quantity,
+          price: p.price,
+          marketValue: p.marketValue,
+          costBasis: p.costBasis,
+          cash: p.cash,
+        })),
+        rows: review.activity.map((/** @type {any} */ r) => ({
+          date: r.date,
+          description: r.description,
+          amount: r.amount,
+          kind: r.kind,
+          symbol: r.symbol,
+          include: r.include && !r.notRead,
+        })),
+      });
+      done(job.result);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const trade = (/** @type {any} */ r) => {
+    const sold = /\b(sold|sell)\b/i.test(r.description);
+    openDialog(TransactionDialog, {
+      accounts,
+      accountId: review.accountId,
+      start: {
+        date: r.date,
+        kind: /reinvest/i.test(r.description) ? 'reinvest' : sold ? 'sell' : 'buy',
+        symbol: r.symbol || '',
+        quantity: r.quantity || '',
+        price: r.price || '',
+        amount: r.amount,
+        payee: r.description,
+      },
+    });
+  };
+  const figure = (/** @type {string} */ label, /** @type {string | null} */ v) =>
+    v == null ? null : html`
+      <div>
+        <div class="k">${label}</div>
+        <div class="v amt">${money(v)}</div>
+      </div>
+    `;
+  const read = /** @type {Record<string, string | null>} */ (review.totals);
+  const offBy = ['deposits', 'withdrawals', 'income'].filter((k) =>
+    sm[k] != null && read[k] != null && cents(sm[k]) !== cents(read[k])
+  );
+  return html`
+    <${Dialog} title="Check the statement" wide close=${close} onSubmit=${save}
+      note=${`What you leave out is remembered for the next statement from ${
+        review.institution || 'this institution'
+      }.`}
+      footer=${html`<button class="btn primary" disabled=${busy}>${
+        busy ? 'Saving…' : review.snapshot ? 'Save the holdings' : 'Save the anchor and check'
+      }</button>`}>
+      <p class="small dim" style=${{ marginTop: 0 }}>${review
+        .fileName} · read from its text layer${review.institution
+        ? ` · ${review.institution}`
+        : ''} · ${date(review.periodStart)} to ${date(review.periodEnd)}</p>
+      <h4 style=${{ margin: '8px 0' }} data-help="summary">Summary</h4>
+      <div class="kv">${figure('Starting value', sm.starting)}${figure(
+        'Deposits',
+        sm.deposits,
+      )}${figure('Withdrawals', sm.withdrawals)}${figure('Income', sm.income)}${figure(
+        'Change in value',
+        sm.change,
+      )}${figure('Ending value', sm.ending)}</div>
+      <p class="small dim">${review.snapshot
+        ? `This account is kept by snapshots: its positions become its holdings on ${
+          date(review.periodEnd)
+        }.`
+        : `The ending value becomes a balance anchor on ${date(review.periodEnd)}.`}</p>
+      <h4 style=${{ margin: '12px 0 8px' }} data-help="positions">Positions on ${date(
+        review.periodEnd,
+      )}</h4>
+      <div class="table-wrap"><table class="t">
+        <thead><tr><th>Holding</th><th class="num">Statement</th><th class="num">MoneyKata</th><th
+          class="num">Market value</th><th></th></tr></thead>
+        <tbody>${review.positions.map((/** @type {any} */ p) =>
+          html`
+            <tr>
+              <td><b>${p.symbol || p.label}</b>${p.symbol
+                ? html`<div class="small dim">${p.label}</div>`
+                : null}</td>
+              <td class="num">${p.quantity ?? '—'}</td>
+              <td class="num">${p.held ??
+                html`<span class="dim">not held</span>`}</td>
+              <td class="num">${p.marketValue ? money(p.marketValue) : '—'}</td>
+              <td>${p.difference == null
+                ? html`<span class="pill">${
+                  p.instrumentId || p.cash ? 'checked' : 'not matched'
+                }</span>`
+                : Number(p.difference) === 0
+                ? html`<span class="pill"><${Icon} name="check" /> matches</span>`
+                : html`<span class="pill warn">${p.difference.replace(/^-/, '')} ${
+                  Number(p.difference) > 0 ? 'short' : 'over'
+                }</span>`}</td>
+            </tr>${p.hint
+              ? html`
+                <tr>
+                  <td colspan="5" class="small"><${Icon} name="alert" /> ${p.symbol ||
+                    p.label}: ${p.hint}.</td>
+                </tr>
+              `
+              : null}
+          `
+        )}</tbody>
+      </table></div>
+      <h4 style=${{ margin: '12px 0 8px' }} data-help="cash-activity">Cash activity</h4>
+      <div class="table-wrap"><table class="t">
+        <thead><tr><th></th><th>Date</th><th>Description</th><th class="num">Amount</th><th
+          ></th></tr></thead>
+        <tbody>${review.activity.map((/** @type {any} */ r, /** @type {number} */ i) =>
+          html`
+            <tr class=${r.include && !r.notRead ? '' : 'dim'}>
+              <td>${r.notRead ? null : html`
+                <input type="checkbox" checked=${r.include}
+                  aria-label=${'Import ' + r.description} onChange=${() => setRow(i)} />
+              `}</td>
+              <td class="dim">${date(r.date)}</td>
+              <td>${r.description}</td>
+              <td class="num">${money(r.amount)}</td>
+              <td>${r.notRead
+                ? html`<span class="pill warn">not read</span> ${
+                  r.kind === 'trade'
+                    ? html`<a href="#" onClick=${(/** @type {Event} */ e) => {
+                      e.preventDefault();
+                      trade(r);
+                    }}>enter it as a trade</a>`
+                    : html`<span class="small dim">${
+                      r.kind.replace('-', ' ')
+                    }: enter it by hand</span>`
+                }`
+                : r.present
+                ? html`<span class="pill">already here</span>`
+                : html`<span class="pill info">${r.kind}</span>`}</td>
+            </tr>
+          `
+        )}</tbody>
+      </table></div>
+      ${offBy.length
+        ? html`
+          <div class="notice warn mt">
+            <${Icon} name="alert" />
+            <div>The lines read don't add up
+                    to the summary's ${offBy.join(
+                      ' and ',
+                    )}: a line may not have been read. Check them
+                    before saving.</div>
+          </div>
+        `
+        : null}
+      <p class="small dim">${review.byFile
+        ? "This account's files already carry its activity, so every cash line starts left out."
+        : 'Lines already in the account start left out.'} Trades aren't read: each opens the
+        trade dialog with its figures. The PDF is kept on the account.</p>
+      <${FormError} error=${error} />
     </${Dialog}>
   `;
 }

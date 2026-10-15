@@ -483,6 +483,7 @@ function Reconcile({ a, all, reload }) {
         : null}
     </div>
     ${bad ? html`<${Mismatch} a=${a} check=${bad} all=${all} again=${again} />` : null}
+    <${StatementChecks} v=${v} />
     ${v.reconciliations.length
       ? html`<div class="card mt"><h3>Statements ticked off</h3>${
         v.reconciliations.map((/** @type {any} */ r) =>
@@ -1018,5 +1019,65 @@ function StatementsExpected({ a, reload }) {
         </div>
       `
       : null}
+  `;
+}
+
+/**
+ * A brokerage statement's checks (S1.3.3.8): its ending values against what the account was
+ * worth those days, and its latest positions against what is held.
+ * @param {{ v: any }} p
+ */
+function StatementChecks({ v }) {
+  if (!v.valueChecks.length && !v.holdingChecks.length) return null;
+  return html`
+    <div class="grid g2 mt">
+      ${v.valueChecks.length
+        ? html`
+          <div
+            class="card"><h3 data-help="value-checks">Statement values</h3>${v.valueChecks
+              .slice(-6)
+              .reverse()
+              .map((/** @type {any} */ c) =>
+                html`<div class="list-item"><div class="grow">${date(c.date)}<div class="small dim"
+              >statement <${Amt} v=${c.reported} /> · MoneyKata <${Amt} v=${c.computed} /></div
+              ></div>${
+                  c.ok
+                    ? html`<span class="pill ok">matches</span>`
+                    : html`<span class="pill warn"><${Amt} v=${c.difference} signed /></span>`
+                }</div>`
+              )}<p class="small dim">Cash and holdings together, at that day's prices: within half a
+                      percent counts as a match.</p></div>
+        `
+        : null}
+      ${v.holdingChecks.length
+        ? html`<div class="card"><h3 data-help="holdings-check">Holdings on ${
+          date(
+            v.holdingChecksAsOf,
+          )
+        }</h3>${
+          v.holdingChecks.map((/** @type {any} */ h) =>
+            html`<div class="list-item"><div class="grow">${
+              h.symbol || h.label
+            }<div class="small dim"
+            >statement ${h.statement ?? '—'} · MoneyKata ${h.held ?? 'not held'}${
+              h
+                  .statementBasis != null
+                ? html`
+                  · basis on the statement <${Amt} v=${h.statementBasis} />
+                `
+                : null
+            }</div></div>${
+              h.difference == null
+                ? html`<span class="pill">not matched</span>`
+                : h.ok
+                ? html`<span class="pill ok">matches</span>`
+                : html`<span class="pill warn">${String(h.difference).replace('-', '')} ${
+                  Number(h.difference) > 0 ? 'short' : 'over'
+                }</span>`
+            }</div>`
+          )
+        }</div>`
+        : null}
+    </div>
   `;
 }

@@ -112,22 +112,32 @@
          1. **The summary**: the starting and ending value, deposits, withdrawals, income
             and the change in value. The **ending value** becomes a balance anchor on the
             period's last day (S1.11), or a balance snapshot for an account kept by
-            snapshots (R3.2).
+            snapshots (R3.2). Being cash and holdings together, it is checked on the
+            *Reconcile* tab against what the account was worth that day, at that day's
+            prices, within half a percent, apart from the cash anchors. An account kept by
+            snapshots is one kept from statements only, with no trades of its own.
          2. **The positions** on the last day: symbol (or CUSIP, or a fund's name),
             quantity, price and market value, a row split over two lines read as one. They
             become a **holdings check** at that date: each is matched to what MoneyKata
             holds, and a quantity that differs is shown with the difference, as an anchor
             shows a cash difference (a missed split, a dropped reinvestment). For an account
             kept by snapshots, they are its holdings on that date. A cost basis on the
-            statement is shown beside the lots' and never written over them.
+            statement is shown beside the lots' and never written over them. A difference
+            that the statement's own trade lines account for is pointed at (*the Sep 24
+            reinvestment of 5.1120 isn't entered yet*). The cash or sweep line is checked
+            against the account's cash and becomes a cash anchor. The latest check shows on
+            the *Reconcile* tab, worked out again as transactions are entered.
          3. **The cash activity**: deposits, withdrawals, dividends, interest and fees,
             checked against the summary's figures as bank lines are against their balances,
             for an account with no OFX, CSV or Connection to carry it. Lines already in the
-            account start left out, so a statement read beside its OFX adds nothing twice.
+            account start left out, so a statement read beside its OFX adds nothing twice,
+            and every line does when the account is kept from files. Lines that don't add up
+            to the summary's figures are flagged, not refused: a line may not have been read.
 
          **Not read**: trades (buys and sells), options activity, corporate actions and
-         margin detail. Each shows as a line left out, *not read: enter it as a trade*,
-         with its figures filled into the trade dialog (S3) when chosen (L1).
+         margin detail. Each shows as a line left out, *not read*; a trade offers *enter it
+         as a trade*, with its figures filled into the trade dialog (S3) when chosen, and the
+         rest are entered by hand (L1).
    4. **bitcoin watch** (self-custody wallets): balances and transactions read by address or
       xpub (S1.6);
    5. **the MoneyKata Connector**: files fetched from the institution by the connector's

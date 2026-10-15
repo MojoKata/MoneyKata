@@ -39,3 +39,14 @@ from Transactions.
 
 Records the difference as a balance adjustment with a note, shown as such in the account and in
 Activity.
+
+## Statement values {#value-checks}
+
+A brokerage statement's ending value against what MoneyKata says the account was worth that day:
+cash and holdings at that day's prices. Within half a percent counts as a match.
+
+## Holdings check {#holdings-check}
+
+The latest brokerage statement's positions against what MoneyKata holds on its last day. A
+quantity that differs is shown with the difference: a missed split, a reinvestment or a buy not
+entered yet.

@@ -306,8 +306,28 @@ Anchor = record(
     Column("importId", Text, ForeignKey("Import.id")),
     Column("note", Text),
     Column("createdById", Text, ForeignKey("User.id")),
-    _in("source", ("running-balance", "ofx", "statement", "typed"), "source"),
+    # statement-value: a brokerage statement's ending value, cash and holdings together,
+    # checked against the account's value rather than its cash (S1.3.3.8.1).
+    _in("source", ("running-balance", "ofx", "statement", "typed", "statement-value"), "source"),
     Index("ix_Anchor_account_date", "accountId", "date"),
+)
+
+# A position as a brokerage statement shows it on its last day (S1.3.3.8.2): checked against
+# what MoneyKata holds then, never written over the lots.
+HoldingCheck = record(
+    "HoldingCheck",
+    "HdChk",
+    Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
+    Column("importId", Text, ForeignKey("Import.id")),
+    Column("asOf", Day, nullable=False),
+    Column("instrumentId", Text, ForeignKey("Instrument.id")),  # none: not matched
+    Column("label", Text, nullable=False),  # as the statement names it
+    Column("quantity", Dec),
+    Column("price", Dec),
+    Column("marketValue", Cents),
+    Column("costBasis", Cents),
+    Column("cash", Boolean, nullable=False, server_default=text("0")),
+    Index("ix_HoldingCheck_account_asOf", "accountId", "asOf"),
 )
 
 Reconciliation = record(

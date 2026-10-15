@@ -19,7 +19,8 @@ class Opening:
 def points(anchors: list, transactions: list) -> list[tuple[dt.date, Decimal, str, str | None]]:
     """Every reported balance, oldest first: anchors, and each day's last running balance from
     a CSV (every row is an anchor, S1.11.2). (date, balance, source, anchor or txn id)."""
-    out = [(a.date, a.balance, a.source, a.id) for a in anchors]
+    # A statement's ending value is cash and holdings together: checked apart (S1.3.3.8.1).
+    out = [(a.date, a.balance, a.source, a.id) for a in anchors if a.source != "statement-value"]
     by_day: dict[dt.date, tuple] = {}
     for t in sorted(transactions, key=lambda t: (t.date, t.createdAt, t.id)):
         if t.runningBalance is not None:
