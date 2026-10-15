@@ -5,12 +5,12 @@
       avatar, and a password stored as an argon2id hash. They sign in with username or email.
       The only password rule is a minimum length that admins set (12 by default).
    2. **The default admin.** A server with no users creates `admin` with a published default
-      password at start. Its first sign-in leads only to a setup step: choose a password and
-      give an email address.
-   3. **Invitations.** Admins never set passwords. Creating a user (name, username, email,
-      groups) emails an invitation link, and the user chooses their password from it.
+      password at start. Its first sign-in leads only to a setup step: choose a password, give
+      an email address, and give the admin's name and sex (male until then, S10.10.1).
+   3. **Invitations.** Admins never set passwords. Creating a user (name, sex, username,
+      email, groups) emails an invitation link, and the user chooses their password from it.
    4. **Sign-up**, when an admin turns it on (it needs SMTP and the public URL, and can be
-      limited to email domains): a person gives their name and email, confirms the email,
+      limited to email domains): a person gives their name, sex and email, confirms the email,
       and waits on a *waiting for approval* screen until an admin approves or rejects the
       request.
       1. **Asking**: from **Sign up** on the sign-in screen, with a username and a password
@@ -149,7 +149,8 @@
        (the year optional, for their age) and, once they have died, the date (`diedOn`).
        **Every user is a person**: a user's display name and birthday are their person's,
        edited in Profile. A remote user's person is filled from its server (S10.3.3.1) and is
-       used only for gifts.
+       used only for gifts. A new or remote user whose name is already one person's here
+       becomes that person.
     2. **People are the household's.** A new person is seen by every local user. Its
        creator may make it **private**, and then share it as any item (S10.3). A person is
        changed only by that person, when they are a user, by its creator, or by an admin.

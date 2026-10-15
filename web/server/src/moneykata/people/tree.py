@@ -31,7 +31,7 @@ WORDS = {
     "spouse": ("wife", "husband"),
     "ex-spouse": ("ex-wife", "ex-husband"),
     "widowed": ("widow", "widower"),
-    "couple": ("partner", "partner"),
+    "couple": ("couple", "couple"),
     "friend": ("friend", "friend"),
     "colleague": ("colleague", "colleague"),
     "family": ("family", "family"),

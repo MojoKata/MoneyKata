@@ -135,8 +135,8 @@ def ensure_default_admin(s: Db) -> bool:
 
     u = User(
         id=ids.new_id("User"),
-        # Its sex is asked at the setup step; until then a placeholder (S10.1.2).
-        personId=people.make(s, "Admin", "female").id,
+        # Its sex is asked at the setup step; until then male, the default (S10.1.2).
+        personId=people.make(s, "Admin", "male").id,
         username=DEFAULT_ADMIN,
         displayName="Admin",
         passwordHash=passwords.hash_password(DEFAULT_PASSWORD),

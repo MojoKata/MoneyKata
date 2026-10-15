@@ -208,7 +208,7 @@ def apply_directory(s, link: Link, payload: dict) -> None:
         u = have.get(rid)
         name = str(r.get("displayName") or r.get("username") or "?")[:120]
         # A remote user's person is filled from its server, for gifts (S10.10.1).
-        sex = r.get("sex") if r.get("sex") in people.SEXES else "female"
+        sex = r.get("sex") if r.get("sex") in people.SEXES else "male"
         if u is None:
             u = User(
                 id=ids.new_id("User"),
