@@ -498,6 +498,40 @@
  */
 
 /**
+ * @typedef {Object} ConnectionOut
+ * @property {string} id
+ * @property {string} ownerId
+ * @property {string} ownerName
+ * @property {string} driver
+ * @property {string} label
+ * @property {string} state
+ * @property {(string | null)} message
+ * @property {(string | null)} lastRunAt
+ * @property {(number | null)} lastRunAdded
+ * @property {Array<InstitutionAccount>} institutionAccounts
+ * @property {Array<SyncedAccount>} accounts
+ * @property {boolean} credentialWaiting
+ * @property {(string | null)} signInAddress
+ * @property {string} createdAt
+ */
+
+/**
+ * @typedef {Object} ConnectorOut
+ * @property {string} state
+ * @property {(string | null)} fingerprint
+ * @property {string} serverFingerprint
+ * @property {(string | null)} sealingKey
+ * @property {boolean} locked
+ * @property {(string | null)} pairedAt
+ * @property {(string | null)} pairedBy
+ * @property {(string | null)} lastReportAt
+ * @property {(number | null)} silentForSeconds
+ * @property {(string | null)} connectorVersion
+ * @property {(string | null)} codeExpiresAt
+ * @property {Array<ConnectionOut>} connections
+ */
+
+/**
  * @typedef {Object} ContractAdjustment
  * @property {string} instrumentId
  * @property {string} root
@@ -1206,6 +1240,12 @@
  * @property {string} sharedAt
  * @property {Array<string>} names
  * @property {boolean} includeReceipts
+ */
+
+/**
+ * @typedef {Object} InstitutionAccount
+ * @property {string} name
+ * @property {(string | null)} last4
  */
 
 /**
@@ -2215,6 +2255,13 @@
  * @property {import('../app/dec.js').Dec} amount
  * @property {(string | null)} payee
  * @property {string} accountName
+ */
+
+/**
+ * @typedef {Object} PairingOut
+ * @property {string} code
+ * @property {string} expiresAt
+ * @property {string} command
  */
 
 /**
@@ -3276,6 +3323,13 @@
  * @typedef {Object} SyncOut
  * @property {number} recorded
  * @property {WalletView} wallet
+ */
+
+/**
+ * @typedef {Object} SyncedAccount
+ * @property {string} id
+ * @property {string} name
+ * @property {(string | null)} syncAccount
  */
 
 /**

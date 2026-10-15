@@ -2181,14 +2181,15 @@ label.drop {
 "GET /ui/api/receipts?show=inbox":{"body": {"items": [], "limit": 500, "offset": 0, "total": 0}, "status": 200},
 "GET /ui/api/relationships":{"body": {"items": [], "limit": 500, "offset": 0, "total": 0}, "status": 200},
 "GET /ui/api/session":{"body": {"dev": true, "household": {"avatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "name": "Alice & Bob"}, "serverName": "moneykata", "user": {"admin": true, "avatar": null, "bitcoinUnit": "btc", "displayName": "Admin", "email": "admin@griffin.home", "id": "User_01m4rdf800e00tf99mm9efehdp", "needsSetup": false, "theme": "dark", "timeZone": "auto", "username": "admin", "zone": "UTC"}, "version": "0.1.0"}, "status": 200},
-"GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "bitcoin": ["bitcoinSource", "bitcoinEsploraUrl", "bitcoinNodeHost", "bitcoinNodePort", "bitcoinNodeTls", "bitcoinRpcUser", "bitcoinNodeCert", "bitcoinNodeCertOffered"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "links": ["linkAddress", "linkReleaseMinutes"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"], "storage": ["keepStatementsYears"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "bitcoinEsploraUrl": "https://mempool.space/api", "bitcoinNodeCert": null, "bitcoinNodeCertOffered": null, "bitcoinNodeHost": null, "bitcoinNodePort": 50002, "bitcoinNodeTls": true, "bitcoinRpcUser": null, "bitcoinSource": "esplora", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keepStatementsYears": null, "keyReminderMonths": 12, "linkAddress": null, "linkReleaseMinutes": 60, "lockoutFailures": 10, "lockoutMinutes": 15, "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": null, "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "version": 2, "versions": {"householdAvatar": 1, "householdName": 1}}, "status": 200},
-"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2635883, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
+"GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "bitcoin": ["bitcoinSource", "bitcoinEsploraUrl", "bitcoinNodeHost", "bitcoinNodePort", "bitcoinNodeTls", "bitcoinRpcUser", "bitcoinNodeCert", "bitcoinNodeCertOffered"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "links": ["linkAddress", "linkReleaseMinutes"], "network": ["networkAppRanges", "networkLinkRanges", "networkConnectorRanges"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"], "storage": ["keepStatementsYears"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "bitcoinEsploraUrl": "https://mempool.space/api", "bitcoinNodeCert": null, "bitcoinNodeCertOffered": null, "bitcoinNodeHost": null, "bitcoinNodePort": 50002, "bitcoinNodeTls": true, "bitcoinRpcUser": null, "bitcoinSource": "esplora", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keepStatementsYears": null, "keyReminderMonths": 12, "linkAddress": null, "linkReleaseMinutes": 60, "lockoutFailures": 10, "lockoutMinutes": 15, "networkAppRanges": [], "networkConnectorRanges": ["127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "::1/128", "fc00::/7"], "networkLinkRanges": [], "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": null, "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "version": 2, "versions": {"householdAvatar": 1, "householdName": 1}}, "status": 200},
+"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2656363, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
 "GET /ui/api/settings/bitcoin":{"body": {"certificate": null, "certificateOffered": null, "lastError": null, "lastRun": null, "password": null, "wallets": 1}, "status": 200},
+"GET /ui/api/settings/connector":{"body": {"codeExpiresAt": null, "connections": [], "connectorVersion": null, "fingerprint": null, "lastReportAt": null, "locked": true, "pairedAt": null, "pairedBy": null, "sealingKey": null, "serverFingerprint": "d27d 1a94 1ba0 8df5", "silentForSeconds": null, "state": "none"}, "status": 200},
 "GET /ui/api/settings/email":{"body": {"lastError": null, "lastRun": null, "password": null, "setAside": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2682880, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
+"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2707456, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
 "GET /ui/api/settings/links":{"body": {"address": null, "fingerprint": "d27d 1a94 1ba0 8df5", "links": [{"address": "https://money.parents.ts.net", "codeExpiresAt": null, "createdAt": "2026-10-12T16:00:00Z", "endedAt": null, "failingSince": null, "fingerprint": "2774 b0db 58c5 2747", "householdAvatar": {"color": "#7a4b9c", "initials": "MT", "kind": "initials"}, "householdName": "Margaret & Tom", "id": "Link_01m4rdf800e00ssm4x59pbnntd", "incoming": [{"includeReceipts": false, "kind": "account", "names": ["Alice Griffin", "Bob Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "account", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "budget", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "portfolio", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}], "lastError": null, "lastOkAt": "2026-10-12T16:00:00Z", "linkedCopy": {"items": 4, "keyMadeAt": "2026-10-12T16:00:00Z", "keyMadeBy": null, "locksInSeconds": null, "receipts": 0, "sizeBytes": 13272, "unlocked": false, "unlockedAt": null, "unlockedBy": null, "waiting": 1}, "pausedUntil": null, "peerName": "griffin-parents", "peerVersion": "0.1.0", "role": "inviter", "state": "active", "syncBytes": null, "syncThrough": null, "syncTotal": null, "users": [{"displayName": "Margaret Griffin", "email": "margaret@parents.home", "id": "User_01m4rdf800e029senk6fw9b9rk", "username": "margaret"}, {"displayName": "Tom Griffin", "email": "tom@parents.home", "id": "User_01m4rdf800e02sbv3fknze4jfe", "username": "tom"}]}]}, "status": 200},
 "GET /ui/api/settings/receipts":{"body": {"failed": 0, "lastRun": "2026-10-12T16:00:00Z", "read": 3, "reading": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2682880, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
+"GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2707456, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
 "GET /ui/api/settings/tax-tables":{"body": {"rows": [{"corrected": false, "group": "Retirement", "key": "iraLimit", "kind": "money", "label": "IRA contribution limit", "shipped": 7500, "source": "IRS", "value": 7500}, {"corrected": false, "group": "Retirement", "key": "iraCatchUp", "kind": "money", "label": "IRA catch-up (50+)", "shipped": 1100, "source": "IRS", "value": 1100}, {"corrected": false, "group": "Retirement", "key": "k401Deferral", "kind": "money", "label": "401(k) employee deferral", "shipped": 24500, "source": "IRS", "value": 24500}, {"corrected": false, "group": "Retirement", "key": "k401CatchUp", "kind": "money", "label": "401(k) catch-up (50–59, 64+)", "shipped": 8000, "source": "IRS", "value": 8000}, {"corrected": false, "group": "Retirement", "key": "k401CatchUp6063", "kind": "money", "label": "401(k) catch-up (60–63)", "shipped": 11250, "source": "IRS", "value": 11250}, {"corrected": false, "group": "Retirement", "key": "hsaSelf", "kind": "money", "label": "HSA, self-only", "shipped": 4400, "source": "IRS", "value": 4400}, {"corrected": false, "group": "Retirement", "key": "hsaFamily", "kind": "money", "label": "HSA, family", "shipped": 8750, "source": "IRS", "value": 8750}, {"corrected": false, "group": "Retirement", "key": "rmdAge", "kind": "number", "label": "RMD starting age", "shipped": 73, "source": "IRS", "value": 73}, {"corrected": false, "group": "Gifts and giving", "key": "giftExclusion", "kind": "money", "label": "Annual gift exclusion", "shipped": 19000, "source": "IRS", "value": 19000}, {"corrected": false, "group": "Gifts and giving", "key": "rothFrom529", "kind": "money", "label": "529 to Roth IRA, lifetime", "shipped": 35000, "source": "IRS", "value": 35000}, {"corrected": false, "group": "Gifts and giving", "key": "qcdLimit", "kind": "money", "label": "QCD limit", "shipped": 111000, "source": "IRS", "value": 111000}, {"corrected": false, "group": "Taxes", "key": "collectablesRate", "kind": "percent", "label": "Collectables rate (max)", "shipped": 28, "source": "IRS", "value": 28}, {"corrected": false, "group": "Taxes", "key": "form8615Threshold", "kind": "money", "label": "Form 8615 unearned income", "shipped": 2700, "source": "IRS", "value": 2700}, {"corrected": false, "group": "Taxes", "key": "federalDue", "kind": "numbers", "label": "Federal return due (month, day)", "shipped": [4, 15], "source": "IRS", "value": [4, 15]}, {"corrected": false, "group": "Education", "key": "collegePublic", "kind": "money", "label": "College a year, public four-year (in-state)", "shipped": 27100, "source": "NCES Digest of Education Statistics, table 330.10", "value": 27100}, {"corrected": false, "group": "Education", "key": "collegePrivate", "kind": "money", "label": "College a year, private nonprofit four-year", "shipped": 60300, "source": "NCES Digest of Education Statistics, table 330.10", "value": 60300}, {"corrected": false, "group": "Metal spot", "key": "slvOzPerShare", "kind": "number", "label": "Silver per SLV share (troy oz)", "shipped": 0.8591, "source": "iShares", "value": 0.8591}, {"corrected": false, "group": "Metal spot", "key": "ppltOzPerShare", "kind": "number", "label": "Platinum per PPLT share (troy oz)", "shipped": 0.0909, "source": "abrdn", "value": 0.0909}, {"corrected": false, "group": "Metal spot", "key": "pallOzPerShare", "kind": "number", "label": "Palladium per PALL share (troy oz)", "shipped": 0.0909, "source": "abrdn", "value": 0.0909}, {"corrected": false, "group": "Bitcoin models", "key": "btcPowerLaw", "kind": "numbers", "label": "Bitcoin power law (A, n)", "shipped": [0.00000000000000001, 5.8], "source": "Santostasi's fit: price = A × days since the genesis block ^ n", "value": [0.00000000000000001, 5.8]}, {"corrected": false, "group": "Bitcoin models", "key": "btcLogRegression", "kind": "numbers", "label": "Bitcoin log regression (a, b)", "shipped": [2.66167155, 17.91837619], "source": "the rainbow chart's curve: log10(price) = a × ln(days) − b", "value": [2.66167155, 17.91837619]}, {"corrected": false, "group": "Bitcoin models", "key": "btcStockToFlow", "kind": "numbers", "label": "Bitcoin stock-to-flow (a, b)", "shipped": [14.6, 3.3], "source": "PlanB (2019): market value = e^a × SF^b", "value": [14.6, 3.3]}, {"corrected": false, "group": "Bitcoin models", "key": "btcSaylor2045", "kind": "numbers", "label": "Saylor 2045 (bear, base, bull)", "shipped": [3000000, 13000000, 49000000], "source": "Michael Saylor, Bitcoin24 (2024)", "value": [3000000, 13000000, 49000000]}, {"corrected": false, "group": "Bitcoin models", "key": "btcArk2030", "kind": "numbers", "label": "ARK 2030 (bear, base, bull)", "shipped": [500000, 1200000, 2400000], "source": "ARK Invest, Big Ideas (2025)", "value": [500000, 1200000, 2400000]}], "version": 0, "year": 2026, "years": [2025, 2026]}, "status": 200},
 "GET /ui/api/signup":{"body": {"domains": [], "open": false}, "status": 200},
 "GET /ui/api/signup-requests":{"body": {"items": [], "limit": 500, "offset": 0, "total": 0}, "status": 200},
@@ -2450,14 +2451,15 @@ label.drop {
 "GET /ui/api/receipts?show=inbox":{"body": {"items": [{"amount": 5.75, "date": "2026-10-09", "fileName": "IMG_2310.jpg", "filePrunedAt": null, "filled": ["amount", "date", "payee"], "hasThumbnail": true, "id": "Rcpt_01m4rdf800e01b8wtz5xkns5zj", "keep": false, "level": "owner", "links": [], "mediaType": "image/jpeg", "notes": null, "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "payee": "Blue Bottle Coffee", "readError": null, "readStatus": "read", "size": 8604, "tags": [], "uploadedAt": "2026-10-12T16:00:00Z", "version": 2}, {"amount": 153.58, "date": "2026-09-30", "fileName": "city-power-sept.pdf", "filePrunedAt": null, "filled": ["amount", "date", "payee"], "hasThumbnail": true, "id": "Rcpt_01m4rdf800e01r8nmmkzcszdzv", "keep": false, "level": "owner", "links": [], "mediaType": "application/pdf", "notes": null, "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "payee": "City Power & Water", "readError": null, "readStatus": "read", "size": 13413, "tags": [], "uploadedAt": "2026-10-12T16:00:00Z", "version": 2}], "limit": 500, "offset": 0, "total": 2}, "status": 200},
 "GET /ui/api/relationships":{"body": {"items": [{"canChange": true, "endsOn": null, "fromDate": null, "id": "Rltn_01m4rdf800e01shhzemj9kmnfe", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e02844dfnfyp9y96", "name": "Emma Griffin"}, "relation": "child", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": null, "id": "Rltn_01m4rdf800e02bf5jgffndvbeb", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e02tsv7f23fh5z29", "name": "Carol Griffin"}, "relation": "child", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": "2015-05-01", "id": "Rltn_01m4rdf800e04reh25zer6sdkx", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e04a5zzmr1yqp0z6", "name": "Priya Shah"}, "relation": "friend", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": "2009-06-14", "id": "Rltn_01m4rdf800e00rg957k7kepe84", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e01rjw9bshc99z5y", "name": "Bob Griffin"}, "relation": "spouse", "toDate": null, "version": 1}], "limit": 500, "offset": 0, "total": 4}, "status": 200},
 "GET /ui/api/session":{"body": {"dev": true, "household": {"avatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "name": "Alice & Bob"}, "serverName": "moneykata", "user": {"admin": true, "avatar": null, "bitcoinUnit": "btc", "displayName": "Alice Griffin", "email": "alice@griffin.home", "id": "User_01m4rdf800e018w8wax25eypm1", "needsSetup": false, "theme": "dark", "timeZone": "auto", "username": "alice", "zone": "UTC"}, "version": "0.1.0"}, "status": 200},
-"GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "bitcoin": ["bitcoinSource", "bitcoinEsploraUrl", "bitcoinNodeHost", "bitcoinNodePort", "bitcoinNodeTls", "bitcoinRpcUser", "bitcoinNodeCert", "bitcoinNodeCertOffered"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "links": ["linkAddress", "linkReleaseMinutes"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"], "storage": ["keepStatementsYears"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "bitcoinEsploraUrl": "https://mempool.space/api", "bitcoinNodeCert": null, "bitcoinNodeCertOffered": null, "bitcoinNodeHost": null, "bitcoinNodePort": 50002, "bitcoinNodeTls": true, "bitcoinRpcUser": null, "bitcoinSource": "esplora", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keepStatementsYears": null, "keyReminderMonths": 12, "linkAddress": null, "linkReleaseMinutes": 60, "lockoutFailures": 10, "lockoutMinutes": 15, "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": null, "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "version": 2, "versions": {"householdAvatar": 1, "householdName": 1}}, "status": 200},
-"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2635883, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
+"GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "bitcoin": ["bitcoinSource", "bitcoinEsploraUrl", "bitcoinNodeHost", "bitcoinNodePort", "bitcoinNodeTls", "bitcoinRpcUser", "bitcoinNodeCert", "bitcoinNodeCertOffered"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "links": ["linkAddress", "linkReleaseMinutes"], "network": ["networkAppRanges", "networkLinkRanges", "networkConnectorRanges"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"], "storage": ["keepStatementsYears"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "bitcoinEsploraUrl": "https://mempool.space/api", "bitcoinNodeCert": null, "bitcoinNodeCertOffered": null, "bitcoinNodeHost": null, "bitcoinNodePort": 50002, "bitcoinNodeTls": true, "bitcoinRpcUser": null, "bitcoinSource": "esplora", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keepStatementsYears": null, "keyReminderMonths": 12, "linkAddress": null, "linkReleaseMinutes": 60, "lockoutFailures": 10, "lockoutMinutes": 15, "networkAppRanges": [], "networkConnectorRanges": ["127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "::1/128", "fc00::/7"], "networkLinkRanges": [], "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": null, "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "version": 2, "versions": {"householdAvatar": 1, "householdName": 1}}, "status": 200},
+"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2656363, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
 "GET /ui/api/settings/bitcoin":{"body": {"certificate": null, "certificateOffered": null, "lastError": null, "lastRun": null, "password": null, "wallets": 1}, "status": 200},
+"GET /ui/api/settings/connector":{"body": {"codeExpiresAt": null, "connections": [], "connectorVersion": null, "fingerprint": null, "lastReportAt": null, "locked": true, "pairedAt": null, "pairedBy": null, "sealingKey": null, "serverFingerprint": "d27d 1a94 1ba0 8df5", "silentForSeconds": null, "state": "none"}, "status": 200},
 "GET /ui/api/settings/email":{"body": {"lastError": null, "lastRun": null, "password": null, "setAside": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2682880, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
+"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2707456, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
 "GET /ui/api/settings/links":{"body": {"address": null, "fingerprint": "d27d 1a94 1ba0 8df5", "links": [{"address": "https://money.parents.ts.net", "codeExpiresAt": null, "createdAt": "2026-10-12T16:00:00Z", "endedAt": null, "failingSince": null, "fingerprint": "2774 b0db 58c5 2747", "householdAvatar": {"color": "#7a4b9c", "initials": "MT", "kind": "initials"}, "householdName": "Margaret & Tom", "id": "Link_01m4rdf800e00ssm4x59pbnntd", "incoming": [{"includeReceipts": false, "kind": "account", "names": ["Alice Griffin", "Bob Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "account", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "budget", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "portfolio", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}], "lastError": null, "lastOkAt": "2026-10-12T16:00:00Z", "linkedCopy": {"items": 4, "keyMadeAt": "2026-10-12T16:00:00Z", "keyMadeBy": null, "locksInSeconds": null, "receipts": 0, "sizeBytes": 13272, "unlocked": false, "unlockedAt": null, "unlockedBy": null, "waiting": 1}, "pausedUntil": null, "peerName": "griffin-parents", "peerVersion": "0.1.0", "role": "inviter", "state": "active", "syncBytes": null, "syncThrough": null, "syncTotal": null, "users": [{"displayName": "Margaret Griffin", "email": "margaret@parents.home", "id": "User_01m4rdf800e029senk6fw9b9rk", "username": "margaret"}, {"displayName": "Tom Griffin", "email": "tom@parents.home", "id": "User_01m4rdf800e02sbv3fknze4jfe", "username": "tom"}]}]}, "status": 200},
 "GET /ui/api/settings/receipts":{"body": {"failed": 0, "lastRun": "2026-10-12T16:00:00Z", "read": 3, "reading": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2682880, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
+"GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2707456, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
 "GET /ui/api/settings/tax-tables":{"body": {"rows": [{"corrected": false, "group": "Retirement", "key": "iraLimit", "kind": "money", "label": "IRA contribution limit", "shipped": 7500, "source": "IRS", "value": 7500}, {"corrected": false, "group": "Retirement", "key": "iraCatchUp", "kind": "money", "label": "IRA catch-up (50+)", "shipped": 1100, "source": "IRS", "value": 1100}, {"corrected": false, "group": "Retirement", "key": "k401Deferral", "kind": "money", "label": "401(k) employee deferral", "shipped": 24500, "source": "IRS", "value": 24500}, {"corrected": false, "group": "Retirement", "key": "k401CatchUp", "kind": "money", "label": "401(k) catch-up (50–59, 64+)", "shipped": 8000, "source": "IRS", "value": 8000}, {"corrected": false, "group": "Retirement", "key": "k401CatchUp6063", "kind": "money", "label": "401(k) catch-up (60–63)", "shipped": 11250, "source": "IRS", "value": 11250}, {"corrected": false, "group": "Retirement", "key": "hsaSelf", "kind": "money", "label": "HSA, self-only", "shipped": 4400, "source": "IRS", "value": 4400}, {"corrected": false, "group": "Retirement", "key": "hsaFamily", "kind": "money", "label": "HSA, family", "shipped": 8750, "source": "IRS", "value": 8750}, {"corrected": false, "group": "Retirement", "key": "rmdAge", "kind": "number", "label": "RMD starting age", "shipped": 73, "source": "IRS", "value": 73}, {"corrected": false, "group": "Gifts and giving", "key": "giftExclusion", "kind": "money", "label": "Annual gift exclusion", "shipped": 19000, "source": "IRS", "value": 19000}, {"corrected": false, "group": "Gifts and giving", "key": "rothFrom529", "kind": "money", "label": "529 to Roth IRA, lifetime", "shipped": 35000, "source": "IRS", "value": 35000}, {"corrected": false, "group": "Gifts and giving", "key": "qcdLimit", "kind": "money", "label": "QCD limit", "shipped": 111000, "source": "IRS", "value": 111000}, {"corrected": false, "group": "Taxes", "key": "collectablesRate", "kind": "percent", "label": "Collectables rate (max)", "shipped": 28, "source": "IRS", "value": 28}, {"corrected": false, "group": "Taxes", "key": "form8615Threshold", "kind": "money", "label": "Form 8615 unearned income", "shipped": 2700, "source": "IRS", "value": 2700}, {"corrected": false, "group": "Taxes", "key": "federalDue", "kind": "numbers", "label": "Federal return due (month, day)", "shipped": [4, 15], "source": "IRS", "value": [4, 15]}, {"corrected": false, "group": "Education", "key": "collegePublic", "kind": "money", "label": "College a year, public four-year (in-state)", "shipped": 27100, "source": "NCES Digest of Education Statistics, table 330.10", "value": 27100}, {"corrected": false, "group": "Education", "key": "collegePrivate", "kind": "money", "label": "College a year, private nonprofit four-year", "shipped": 60300, "source": "NCES Digest of Education Statistics, table 330.10", "value": 60300}, {"corrected": false, "group": "Metal spot", "key": "slvOzPerShare", "kind": "number", "label": "Silver per SLV share (troy oz)", "shipped": 0.8591, "source": "iShares", "value": 0.8591}, {"corrected": false, "group": "Metal spot", "key": "ppltOzPerShare", "kind": "number", "label": "Platinum per PPLT share (troy oz)", "shipped": 0.0909, "source": "abrdn", "value": 0.0909}, {"corrected": false, "group": "Metal spot", "key": "pallOzPerShare", "kind": "number", "label": "Palladium per PALL share (troy oz)", "shipped": 0.0909, "source": "abrdn", "value": 0.0909}, {"corrected": false, "group": "Bitcoin models", "key": "btcPowerLaw", "kind": "numbers", "label": "Bitcoin power law (A, n)", "shipped": [0.00000000000000001, 5.8], "source": "Santostasi's fit: price = A × days since the genesis block ^ n", "value": [0.00000000000000001, 5.8]}, {"corrected": false, "group": "Bitcoin models", "key": "btcLogRegression", "kind": "numbers", "label": "Bitcoin log regression (a, b)", "shipped": [2.66167155, 17.91837619], "source": "the rainbow chart's curve: log10(price) = a × ln(days) − b", "value": [2.66167155, 17.91837619]}, {"corrected": false, "group": "Bitcoin models", "key": "btcStockToFlow", "kind": "numbers", "label": "Bitcoin stock-to-flow (a, b)", "shipped": [14.6, 3.3], "source": "PlanB (2019): market value = e^a × SF^b", "value": [14.6, 3.3]}, {"corrected": false, "group": "Bitcoin models", "key": "btcSaylor2045", "kind": "numbers", "label": "Saylor 2045 (bear, base, bull)", "shipped": [3000000, 13000000, 49000000], "source": "Michael Saylor, Bitcoin24 (2024)", "value": [3000000, 13000000, 49000000]}, {"corrected": false, "group": "Bitcoin models", "key": "btcArk2030", "kind": "numbers", "label": "ARK 2030 (bear, base, bull)", "shipped": [500000, 1200000, 2400000], "source": "ARK Invest, Big Ideas (2025)", "value": [500000, 1200000, 2400000]}], "version": 0, "year": 2026, "years": [2025, 2026]}, "status": 200},
 "GET /ui/api/shares/account/Acct_01m4rdf800e00rpbkavrdymf5d":{"body": {"accounts": [], "groups": [{"id": "Group_01m4rdf800e00tya428n81rvcb", "level": "none", "members": 2, "name": "Admins"}, {"id": "Group_01m4rdf800e0192x3k8skth481", "level": "read", "members": 2, "name": "Household"}], "hidden": {}, "itemId": "Acct_01m4rdf800e00rpbkavrdymf5d", "itemName": "Everyday checking", "kind": "account", "links": [{"householdName": "Margaret & Tom", "includeReceipts": false, "linkId": "Link_01m4rdf800e00ssm4x59pbnntd", "serverName": "griffin-parents", "users": [{"avatar": null, "displayName": "Margaret Griffin", "id": "User_01m4rdf800e029senk6fw9b9rk", "level": "none", "via": []}, {"avatar": null, "displayName": "Tom Griffin", "id": "User_01m4rdf800e02sbv3fknze4jfe", "level": "none", "via": []}]}], "users": [{"avatar": null, "displayName": "Admin", "id": "User_01m4rdf800e00tf99mm9efehdp", "level": "none", "via": []}, {"avatar": null, "displayName": "Bob Griffin", "id": "User_01m4rdf800e01skjft3xb5ewck", "level": "none", "via": [{"groupId": "Group_01m4rdf800e0192x3k8skth481", "groupName": "Household", "level": "read"}]}], "version": 1}, "status": 200},
 "GET /ui/api/shares/account/Acct_01m4rdf800e01b9479fephfqf8":{"body": {"accounts": [], "groups": [{"id": "Group_01m4rdf800e00tya428n81rvcb", "level": "none", "members": 2, "name": "Admins"}, {"id": "Group_01m4rdf800e0192x3k8skth481", "level": "none", "members": 2, "name": "Household"}], "hidden": {}, "itemId": "Acct_01m4rdf800e01b9479fephfqf8", "itemName": "Emergency savings", "kind": "account", "links": [{"householdName": "Margaret & Tom", "includeReceipts": false, "linkId": "Link_01m4rdf800e00ssm4x59pbnntd", "serverName": "griffin-parents", "users": [{"avatar": null, "displayName": "Margaret Griffin", "id": "User_01m4rdf800e029senk6fw9b9rk", "level": "none", "via": []}, {"avatar": null, "displayName": "Tom Griffin", "id": "User_01m4rdf800e02sbv3fknze4jfe", "level": "none", "via": []}]}], "users": [{"avatar": null, "displayName": "Admin", "id": "User_01m4rdf800e00tf99mm9efehdp", "level": "none", "via": []}, {"avatar": null, "displayName": "Bob Griffin", "id": "User_01m4rdf800e01skjft3xb5ewck", "level": "write", "via": []}], "version": 1}, "status": 200},
@@ -2725,6 +2727,7 @@ label.drop {
 "dialog-brokerage-statement":"# Check a brokerage statement\n\nA brokerage or plan statement's PDF, read from its text layer: its summary, its positions on the\nlast day and its cash activity, checked here before anything is saved. A photo or scan isn't read,\nsince its tables don't survive OCR reliably: keep it on the account instead.\n\n## Summary {#summary}\n\nThe starting and ending value, deposits, withdrawals, income and the change in value. The ending\nvalue becomes a balance anchor on the last day, checked on the Reconcile tab against what the\naccount was worth that day, cash and holdings at that day's prices.\n\n## Positions {#positions}\n\nEach holding the statement shows, against what MoneyKata holds that day. A difference is shown,\nand pointed at the statement's own trade lines when they account for it (a reinvestment or a buy\nnot entered yet). The statement's cost basis is kept beside the lots' and never written over them.\nFor an account kept by snapshots (kept from statements only, with no trades of its own), the\npositions become its holdings on that date. The cash or sweep line is checked against the account's\ncash, and becomes a cash anchor.\n\n## Cash activity {#cash-activity}\n\nDeposits, withdrawals, dividends, interest and fees, each kept as a transaction when ticked. Lines\nalready in the account start left out, and every line does when the account's files already carry\nits activity. When the lines read don't add up to the summary's figures, a line may not have been\nread: check them.\n\nTrades, options activity, corporate actions and margin lines aren't read. A trade opens the trade\ndialog with its figures filled in; the others are entered by hand.\n",
 "dialog-budget":"# New budget\n\nA budget plans spending per category over the accounts you choose. Plan its categories next, with\n**Edit plan**.\n\n## Name\n\nSuch as _Household_ or _My spending_.\n\n## Accounts\n\nThe accounts whose transactions count: usually your checking accounts and cards. Investment accounts\naren't offered. To share a household budget, use **Share** on it afterwards and give a group\n**Write**.\n",
 "dialog-category":"# A category's retention\n\n## Keep receipts for {#keep-receipts-years}\n\nHow many years receipts in this category are kept after the record they are attached to ended: a\ntransaction on its date, a purchase once the lot is sold. Empty keeps them for ever, or as its parent\ncategory says. Under 7 years, note that 7 covers every IRS audit window.\n",
+"dialog-connector-pair":"# Pair a connector\n\n## Pairing command {#pairing-command}\n\nRun it on the connector's host within 24 hours. The code in it holds this server's address, its\nkey's fingerprint and a one-time secret; it works once. The connector checks the fingerprint\nbefore it sends anything, makes its own keys if it has none, and introduces itself. Both sides\nthen show the connector's fingerprint: compare them before trusting it. Pairing another\nconnector replaces the one paired, as Unpair does.\n",
 "dialog-copy-key":"# A linked copy's access key\n\n## The words {#words}\n\nTwelve words from the BIP39 list, the last carrying a checksum: the only way into this link's copy.\nMoneyKata keeps no copy of them, in any form. Save them in the household's password manager, where\nthe people this link's shares name can reach them.\n\n## I have saved the 12 words {#words-saved}\n\n**Done** waits for this tick. If the words are ever lost, **Reset copy** makes new ones, and the\ncopy is pulled again in full.\n",
 "dialog-dependent":"# A dependent\n\nSomeone the filers claim for the year, from the household's people. MoneyKata doesn't decide who\nqualifies: what you enter here feeds the panels, the documents expected and a few flags.\n\n## Person {#person}\n\nOne of the household's people, with their relation to the filers on Dec 31. Someone not listed yet\nis added on the Gifts screen first.\n\n## Claimed as {#claimed-as}\n\n**Qualifying child** or **qualifying relative**, as you file it. The family tree suggests it: a\nchild or grandchild under 19, or under 24 and a full-time student, is suggested as a qualifying\nchild; anyone else as a qualifying relative.\n\n## Months lived with you {#months}\n\nHow many months of the year they lived with the filers, from 0 to 12.\n\n## Full-time student\n\nA full-time student for at least five months of the year. Their 1098-T is then expected, and shows\nbeside the 529 withdrawals for them in Education.\n\n## Accounts in their name {#accounts-in-their-name}\n\nThe accounts this book counts that are theirs, such as a custodial account. A dependent child's\ninterest, dividends and gains in them are checked against the year's Form 8615 threshold from\nSettings › Tax tables.\n\n## Remove\n\nTakes them off this year's book only.\n",
 "dialog-donation":"# A donation\n\n## Type {#kind}\n\n**Cash**, **goods** at their fair value, **appreciated shares** from a lot, a **QCD** from an IRA\n(counted, but not deducted), money **into a donor-advised fund**, or a **grant** from one (not\ndeducted again).\n\n## Organisation\n\nWho received it.\n\n## Date\n\nThe day it was given.\n\n## Donor-advised fund {#fund}\n\nThe fund it went into, or that made the grant.\n\n## From account {#from-account}\n\nWhere the money or shares came from: its side is recorded too. Leave it for a gift already in an\nimported account.\n\n## From lot {#lot}\n\nThe lot the shares come from. They leave the account without realizing a gain.\n\n## Shares {#quantity}\n\nHow many shares were given.\n\n## Amount\n\nWhat was given: the cash, the goods' fair market value, or the shares' market value on the day. For\nshares held a year or less, the deduction is their basis.\n\n## What was given {#description}\n\nThe goods: two bags of clothes, a piano. Goods over $500 in a year need Form 8283; an item over\n$5,000 needs a qualified appraisal.\n\n## Paid by the fund\n\nA grant from a donor-advised fund is pending until the fund pays it.\n\n## Acknowledgement received\n\nThe organisation's written acknowledgement, needed for any single gift of $250 or more.\n\n## Acknowledgement\n\nThe acknowledgement letter or email, kept as a receipt.\n",
@@ -2811,11 +2814,13 @@ label.drop {
 "settings-alerts":"# Alerts\n\nHow alerts behave for everyone. Each user chooses in Profile whether alerts reach them by email.\n\n## Alert when a source has failed for {#alert-source-hours}\n\nHow long a price source, or email, may keep failing before admins are alerted. A source that fails\nnow and then and recovers raises nothing; one that keeps failing raises one alert, which resolves by\nitself when it works again. 48 hours by default.\n\n## Daily summary at {#alert-summary-time}\n\nWhen the daily summary email goes to those who chose it, in each person's own time zone. It lists\nthe alerts opened since the last one, and none is sent on a day without any.\n",
 "settings-backups":"# Settings: Backups\n\nDaily copies of the database and receipts, made, checked and pruned by the server.\n\n![Settings: Backups](shots/settings-backups.webp)\n\n## Time of day\n\nWhen the daily backup runs.\n\n## Copies kept\n\nHow many backups stay; older ones are deleted. 14 by default.\n\n## Back up now\n\nMakes a backup now.\n\n## Restoring\n\nBackups are encrypted as the data is, and open with the master key's recovery phrase. The directory\nis set on the host, outside the data directory.\n",
 "settings-bitcoin":"# Bitcoin\n\nWhere self-custody wallets' balances and history come from: a public explorer, or the\nhousehold's own node. Admins only.\n\n![Bitcoin settings](shots/settings-bitcoin.webp)\n\n## Explorer or node\n\n**Public: mempool.space** or **Blockstream**: nothing to set up, but the explorer sees which\naddresses are asked about. **Own node**, which keeps them private: a **mempool or Esplora**\ninstance, an **Electrum server** (Fulcrum or electrs), or **Bitcoin Core**, where MoneyKata keeps a\nwatch-only descriptor wallet for each wallet account. Only public keys and addresses are ever sent.\n\n## Esplora address {#esplora-url}\n\nYour own instance's API: `http://umbrel.local:3006/api`, for example.\n\n## Node address {#node-host}\n\nThe node's host name or address on your network. Naming it here lets MoneyKata reach it there,\npast the guard that otherwise keeps it off local addresses.\n\n## Node port {#node-port}\n\n50002 for an Electrum server with TLS (50001 without); 8332 for Bitcoin Core.\n\n## TLS\n\nAn Electrum server's TLS, usually on. Its certificate is usually one it made itself, so it is\ntrusted on first use: **Test** shows its SHA-256 fingerprint, and once you confirm it, any other\ncertificate is refused, and admins alerted, until you confirm the new one.\n\n## Certificate\n\nThe Electrum server's certificate trusted, by its SHA-256 fingerprint. Confirm a new one only if\nyou know why it changed, such as the node being set up again.\n\n## RPC user {#rpc-user}\n\nBitcoin Core's `rpcuser`, or the user of an `rpcauth` line.\n\n## Node password {#node-password}\n\nIts password. Stored encrypted, never shown again: type a new one to replace it.\n\n## Last checked {#checked}\n\nHow many wallets there are and when they were last read. Wallets are read every hour, and each\nwallet's **Check now** reads it at once. A failure lasting longer than Settings › Alerts allows\nalerts admins and each wallet's owner.\n\n## Test\n\nAsks the saved explorer or node for the chain's height, and says what failed. Save first.\n",
+"settings-connector":"# Connector\n\nThe MoneyKata Connector is a second service that keeps people's sign-ins at their institutions,\nfetches with its drivers, and pushes what it fetches into imports. MoneyKata can't reach it or\nread its vault: it only hears its signed reports, every five minutes. Admins only.\n\n![Connector](shots/settings-connector.webp)\n\nThe card shows whether a connector is paired, its key's fingerprint, the version it runs, when\nit last reported and whether it is **locked**. It starts locked after every restart of its own;\nan admin unlocks it on its host with its 12 words. A connector not heard from for 15 minutes,\nor locked, raises an alert for admins.\n\n## Pair {#pair}\n\nShows a one-time pairing code, in the command to run on the connector's host, valid 24 hours.\nIt holds this server's address and key fingerprint; the connector then introduces itself, and\nboth sides show its fingerprint for you to compare. One connector is paired at a time: pairing\nanother replaces it, as Unpair does. Needs your password again when it was given over 10\nminutes ago.\n\n## Unpair {#unpair}\n\nRefuses the connector's key from then on, stops every Connection, and turns every account's\nsync off. The connector deletes the credentials it held for this server. Needs your password\nagain when it was given over 10 minutes ago.\n\n## Connections {#connections}\n\nEvery person's sign-ins, kept by the connector: who owns each, its driver (Folder, OFX Direct\nConnect or Schwab), the accounts it keeps current, and its state from the last report: ok with\nwhat the last run added, waiting for credentials, needs a sign-in, or failing with the\nconnector's words. Credentials are never shown here, or anywhere: they exist only in the\nconnector's vault. People start and change their own under Profile › Connections.\n",
 "settings-email":"# Email (SMTP)\n\nHow MoneyKata sends its emails: invitations, password resets, sign-up links and decisions, alerts.\nUntil a host is set, each email is written to the `mail` folder in the data directory instead, where\nan admin can open it.\n\nEmails go out in the background, so nothing waits on the mail server. One that can't be sent stays\nqueued and is tried again every five minutes; this section shows the queue and the last error.\n\n## Host {#smtp-host}\n\nThe mail server's name, such as your email provider's SMTP server or a relay on your network.\nMoneyKata reaches only this host for email.\n\n## Port {#smtp-port}\n\n587 for STARTTLS, 465 for TLS, 25 for a plain relay.\n\n## Security {#smtp-security}\n\n**STARTTLS** and **TLS** encrypt the connection and check the server's certificate. **None** sends\nin the clear: only for a relay on your own network.\n\n## Username {#smtp-username}\n\nThe account to sign in to the mail server with, often an email address. Leave it empty for a relay\nthat needs none.\n\n## Password {#smtp-password}\n\nKept encrypted as a secret, used only when sending, and never shown again. Many providers want an\napp password rather than your own.\n\n## From address {#smtp-from}\n\nThe sender emails show, such as `MoneyKata \u003cmoney@example.com>`. Your provider may insist it matches\nthe username.\n\n## Send a test email\n\nSends one to your own address now, through the saved settings, and says what failed if it couldn't.\n",
 "settings-general":"# Settings: General\n\nThe server's name and the household it belongs to.\n\n![Settings: General](shots/settings-general.webp)\n\n## Server name\n\nShown to linked servers.\n\n## Server time zone\n\nRead from the host. A user whose time zone is **Auto** sees times in it.\n\n## Household name\n\nAt the top of the sidebar.\n\n## Household initials\n\nThe household's avatar.\n\n## Household colour\n\nThe avatar's colour.\n\n## Public URL\n\nThe address people reach MoneyKata at, such as `https://money.example.lan`. Links in emails\n(invitations, resets) are built from it, never from the request.\n",
 "settings-imports":"# Settings: Imports\n\n![Settings: Imports](shots/settings-imports.webp)\n\n## File types\n\nOFX, QFX and CSV, and statements as PDF, JPEG, PNG, WebP or HEIC, checked from what's inside the\nfile, never its name.\n\n## Largest file {#largest-file}\n\nThe biggest file that can be imported, in MB.\n\n## Read statements\n\nWhether a statement's PDF or photo can be imported. It is read on this server by the receipt reader,\nin its own process, and checked by the person before anything is saved. Off, only OFX, QFX and CSV\nfiles import.\n",
 "settings-keys":"# Settings: Key storage\n\nRead only. Everything the server stores is encrypted under one master key, a file on the host.\n\n![Settings: Key storage](shots/settings-keys.webp)\n\n## Fingerprint\n\nA short name for the key that reveals nothing about it, such as `mk-3f9a…c21e`.\n\n## Recovery phrase\n\nThe master key written as 12 words, the only way back if the key file is lost. Check a copy once a\nyear on the host with `moneykata keys verify`.\n\n## Test\n\nChecks the key file, unwraps the data key and opens the database and a secret.\n\n## Re-encrypt\n\nMakes a new data key and re-encrypts the database and every secret under it. Rarely needed: only\nwhen the data key may have been exposed. It doesn't change the master key, which is rotated on the\nhost with `moneykata keys rotate`.\n",
 "settings-links":"# Linked servers\n\nOther MoneyKata servers that share read-only with this one: another household's, or a\npreparer's. Admins only.\n\n![Linked servers](shots/settings-links.webp)\n\n**Invite a server** makes a one-time code for the other server's admin. **Enter a link code**\nanswers one: MoneyKata connects to the address in the code, checks the server's key against the\nfingerprint in it, and asks to link. The inviting side then lists it as **wants to link**: compare\nthe fingerprint shown with what the other admin sees for their own server (by phone, in person)\nand **Approve** or **Reject** it.\n\n## This server's link address {#link-address}\n\nWhere other servers reach this one, as `https://…` without a path: MoneyKata answers them under\n`/link/`. It must be reachable from the other server: a forwarded port, a reverse proxy that\npasses `/link/`, or both servers on one overlay network such as Tailscale or WireGuard (the easy\nway, with no open port). Empty, the public URL is used.\n\nA link works when either side can reach the other: each exchange carries both directions.\n\nEach link shows its state, its fingerprint and MoneyKata version, and when the last exchange\nworked. **Pull now** exchanges at once rather than at the next hour. **Pause** stops this side\nexchanging for a time you choose; it shows **paused until** then and resumes on its own, or at\nonce with **Resume now**. **End link** ends it on both sides: the other side learns at once, or\nat its next call; its users are removed here, and nothing is deleted on the server that shared.\nA server that can't be reached shows **unreachable since** and the reason.\n\n## Syncing {#progress}\n\nA large change, such as the first pull into a new copy, arrives in parts of about 4 MB, oldest\nfirst, so what has arrived is usable at once. While parts are still coming the link shows the date\nit has reached and how much of the change has arrived.\n\n## Linked copies {#linked-copies}\n\nWhat each link brings in is kept apart from this household's data, in its own encrypted copy under\nits own **access key**: 12 words. This server's master key can't open it, and backups leave it\nout. **Create the access key** once the link is active: MoneyKata shows the words once, for the\nhousehold's password manager, where the people its shares name can reach them. Pulls into the copy\nbegin then.\n\nThe first person its shares name who opens the household's window enters the words; the copy then\nstays unlocked for everyone it shares with, each seeing only what names them, until it goes unused.\nEach copy shows its size, the changes **waiting** (pulled while it was locked, sealed so only its\nwords open them, and applied when it is next unlocked), when its key was made and by whom, and who\nunlocked it. **Lock now**\nlocks it at once. **Reset copy** (if the words are lost) deletes the copy and its key: make a new\naccess key, and everything is pulled again from the other server, where nothing was lost.\n\n## Release linked keys after {#link-release}\n\nHow long an unlocked copy's key stays in memory with nobody viewing it: 15 minutes, 1 hour (the\ndefault) or 4 hours. Background work, such as a pull, doesn't count as viewing. A restart locks\nevery copy.\n\n## Shared from a linked server {#incoming}\n\nWhat each linked server shares with people here, as an admin sees it: only its kind, its owner's\nname, when it was shared and the people here it names. Its name and figures stay inside the\nencrypted copy, for those people. The owner there decides who sees what; an admin here can't\nchange it, and nothing shared from there can be shared on.\n\n## Users on linked servers {#linked-users}\n\nEach linked server's active users, sent at every exchange and updated in place: a new user is\nadded, a changed name or email is updated, and a user no longer on the list is removed (and comes\nback if they return). People here can share with them, always read only. They never sign in here,\njoin a group, own anything or receive alerts.\n",
+"settings-network":"# Network\n\nWhich addresses may reach each part of this server. Each list holds address ranges, one per\nline, as `192.168.1.0/24` or a single address; an empty list allows any address. A change\napplies to the next request. Addresses outside a list get *not found*, as if the path didn't\nexist. `/healthz` and `/demo` answer any address. Admins only.\n\n![Network](shots/settings-network.webp)\n\n## Allowed to use the app {#network-app-ranges}\n\nThe ranges that may reach the app (`/ui`), and `/mcp` with it, since an agent sits where a\nperson's browser does and its token is already the user's. Empty by default: any address the\nhost's port mapping and firewall let through.\n\n## Allowed to link {#network-link-ranges}\n\nWhere linked servers call `/link` from: an overlay network's range (Tailscale uses\n`100.64.0.0/10`), or the other household's address. Empty by default.\n\n## Allowed to connect {#network-connector-ranges}\n\nWhere the MoneyKata Connector calls `/connector` from. By default the LAN and the overlay\n(`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, loopback and the private\nIPv6 range), so a connector beside the server or on the household's overlay works as it is. A\nconnector on a laptop away from home needs the range it calls from added here.\n",
 "settings-passwords":"# Settings: Passwords\n\n![Settings: Passwords](shots/settings-passwords.webp)\n\n## Minimum length\n\nAt least 8; 12 by default. It is the only rule: no character classes and no expiry. The 100,000 most\ncommon passwords are refused whatever their length.\n",
 "settings-prices":"# Settings: Prices\n\nWhere daily closes come from. Prices are free and daily, never live.\n\n![Settings: Prices](shots/settings-prices.webp)\n\n## Price sources\n\nThe sources added, each with the classes it serves. For each class the first enabled source is used,\nand the next one when it fails.\n\n## Add a source\n\nEvery source MoneyKata ships. One that needs a key can't be enabled until its key is set.\n\n## Enabled {#enabled}\n\nWhether the source is used.\n\n## Key\n\nA source's key is stored encrypted and never shown again: only that it is set, when and by whom.\n\n## Last run\n\nWhen the source was last used, and its last error.\n\n## Daily refresh at\n\nWhen the daily refresh runs, after the US market close. 6:00 PM Eastern by default.\n\n## Refresh prices\n\nRuns the daily refresh now.\n\n{{part prices-tiingo}} {{part prices-coinbase}} {{part prices-manual}}\n",
 "settings-receipts":"# Receipts\n\nHow receipts are kept: encrypted in the data directory, each file once however often it is uploaded,\nand in every backup.\n\n## Largest file (MB) {#receipt-max-mb}\n\nThe largest receipt that can be uploaded, 25 MB by default. The file types are PDF, JPEG, PNG, WebP\nand HEIC, checked from each file's content.\n\n## Read receipts\n\nMoneyKata reads each receipt's date, total and merchant on this server, with RapidOCR, and suggests\nthe transaction it belongs to. Nothing leaves the server, and no outside service or download is\ninvolved. A PDF with text in it is read directly; a photo or scan is read by OCR. Turn it off on a\nhost too small to run it: receipts still upload and can be filled in by hand.\n\n## Jobs at a time {#receipt-read-jobs}\n\nHow many receipts are read at once, each in its own process limited to 2 threads, a lower priority,\n1.5 GB of memory and 60 seconds a receipt. A batch of uploads works through the queue.\n\n## Reading\n\nThe queue: receipts waiting, read, and those that couldn't be read, with the reason on each.\n\n## Re-read all receipts\n\nAfter an update with new models: every receipt is read again. Only empty fields, and those still\nholding what was read before, are replaced; anything a person typed stays.\n",
@@ -3941,6 +3946,40 @@ export const api = {
  */
 
 /**
+ * @typedef {Object} ConnectionOut
+ * @property {string} id
+ * @property {string} ownerId
+ * @property {string} ownerName
+ * @property {string} driver
+ * @property {string} label
+ * @property {string} state
+ * @property {(string | null)} message
+ * @property {(string | null)} lastRunAt
+ * @property {(number | null)} lastRunAdded
+ * @property {Array<InstitutionAccount>} institutionAccounts
+ * @property {Array<SyncedAccount>} accounts
+ * @property {boolean} credentialWaiting
+ * @property {(string | null)} signInAddress
+ * @property {string} createdAt
+ */
+
+/**
+ * @typedef {Object} ConnectorOut
+ * @property {string} state
+ * @property {(string | null)} fingerprint
+ * @property {string} serverFingerprint
+ * @property {(string | null)} sealingKey
+ * @property {boolean} locked
+ * @property {(string | null)} pairedAt
+ * @property {(string | null)} pairedBy
+ * @property {(string | null)} lastReportAt
+ * @property {(number | null)} silentForSeconds
+ * @property {(string | null)} connectorVersion
+ * @property {(string | null)} codeExpiresAt
+ * @property {Array<ConnectionOut>} connections
+ */
+
+/**
  * @typedef {Object} ContractAdjustment
  * @property {string} instrumentId
  * @property {string} root
@@ -4649,6 +4688,12 @@ export const api = {
  * @property {string} sharedAt
  * @property {Array<string>} names
  * @property {boolean} includeReceipts
+ */
+
+/**
+ * @typedef {Object} InstitutionAccount
+ * @property {string} name
+ * @property {(string | null)} last4
  */
 
 /**
@@ -5658,6 +5703,13 @@ export const api = {
  * @property {import('@mk/app/dec.js').Dec} amount
  * @property {(string | null)} payee
  * @property {string} accountName
+ */
+
+/**
+ * @typedef {Object} PairingOut
+ * @property {string} code
+ * @property {string} expiresAt
+ * @property {string} command
  */
 
 /**
@@ -6719,6 +6771,13 @@ export const api = {
  * @typedef {Object} SyncOut
  * @property {number} recorded
  * @property {WalletView} wallet
+ */
+
+/**
+ * @typedef {Object} SyncedAccount
+ * @property {string} id
+ * @property {string} name
+ * @property {(string | null)} syncAccount
  */
 
 /**
@@ -9002,6 +9061,216 @@ export function Failed({ error }) {
         `
         : null}</div>
     </div>
+  `;
+}
+</script>
+<script type="text/plain" data-module="@mk/components/connector.js">
+// Settings › Connector (requirements S16.18, S18.4, S18.5): pairing with the MoneyKata
+// Connector, whether it is locked, its last report, and every Connection's state, owner and
+// accounts, never their credentials.
+import { useEffect, useState } from 'preact/hooks';
+import { html } from '@mk/app/html.js';
+import { api } from '@mk/api/client.js';
+import { useApi, useSubmit } from '@mk/app/hooks.js';
+import { ago, moment } from '@mk/app/format.js';
+import { withReauth } from '@mk/components/reauth.js';
+import { Dialog, openDialog } from '@mk/components/dialog.js';
+import { useDialogGuide } from '@mk/components/help.js';
+import { FormError } from '@mk/components/fields.js';
+import { Failed, Loading } from '@mk/components/bits.js';
+import { Icon } from '@mk/components/icon.js';
+import { toast } from '@mk/components/toast.js';
+
+export const DRIVERS = /** @type {Record<string, string>} */ ({
+  folder: 'Folder',
+  'ofx-direct': 'OFX Direct Connect',
+  schwab: 'Schwab',
+});
+const STATE = /** @type {Record<string, [string, string]>} */ ({
+  new: ['waiting for credentials', ''],
+  ok: ['ok', 'ok'],
+  'needs-sign-in': ['needs a sign-in', 'warn'],
+  failing: ['failing', 'bad'],
+  removed: ['removed', ''],
+});
+
+/** @param {any} c */
+export function connectionState(c) {
+  const [label, tone] = STATE[c.state] || [c.state, ''];
+  const detail = c.state === 'ok' && c.lastRunAt
+    ? ` · ${c.lastRunAdded != null ? `${c.lastRunAdded} new · ` : ''}${ago(c.lastRunAt)}`
+    : c.message && c.state !== 'ok'
+    ? ` · ${c.message}`
+    : '';
+  return html`<span class=${'pill ' + tone}>${label}${detail}</span>`;
+}
+
+export function ConnectorSection() {
+  const res = useApi('/settings/connector', {}, ['task']);
+  const v = /** @type {any} */ (res.data);
+  const [armed, setArmed] = useState(false);
+  const unpair = useSubmit(async () => {
+    await withReauth(() => api.post('/settings/connector/unpair'));
+    toast('Unpaired: every Connection stopped and every sync is off');
+    setArmed(false);
+    res.reload();
+  });
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!v) return html`<${Loading} />`;
+  const paired = v.state === 'paired';
+  const tone = !paired ? '' : v.silentForSeconds ? 'bad' : v.locked ? 'warn' : 'ok';
+  const status = !paired
+    ? v.state === 'pairing' ? 'pairing code out' : 'not paired'
+    : v.silentForSeconds
+    ? `not heard from for ${Math.round(v.silentForSeconds / 60)} min`
+    : v.locked
+    ? 'paired · locked'
+    : 'paired · unlocked';
+  return html`
+    <div class="card">
+      <h3>MoneyKata Connector<span class="spacer"></span><span class=${'pill ' + tone}><${Icon}
+          name=${paired && !v.locked ? 'check' : 'lock'} /> ${status}</span></h3>
+      <p class="small dim" style=${{ marginTop: '-6px' }}>A second service that holds
+        institutions' credentials, fetches with its drivers and pushes into imports.
+        MoneyKata can't reach it or read its vault: it only hears its signed reports.</p>
+      ${paired
+        ? html`
+          <div class="list-item"><span class="grow dim">Connector</span><code
+              class="mono small">${v.fingerprint}</code>${v.connectorVersion
+                ? html`
+                  <span class="small dim">· version ${v.connectorVersion}</span>
+                `
+                : null}</div>
+          <div class="list-item"><span class="grow dim">Last report</span>${v.lastReportAt
+            ? html`${ago(v.lastReportAt)}${
+              v.pairedAt
+                ? html`
+                  <span class="small dim">· paired ${moment(v.pairedAt)}${v.pairedBy
+                    ? ` by ${v.pairedBy}`
+                    : ''}</span>
+                `
+                : null
+            }`
+            : 'never'}</div>
+        `
+        : v.state === 'pairing'
+        ? html`
+          <div class="notice">
+            <${Icon} name="info" />
+            <div>A pairing code is out until
+                      ${moment(v.codeExpiresAt)}. Run it on the connector's host, then compare the
+                      fingerprint both sides show.</div>
+          </div>
+        `
+        : html`
+          <div class="notice">
+            <${Icon} name="info" />
+            <div>No connector is paired. This
+                      server's key fingerprint, which the pairing code carries:
+                      <code>${v.serverFingerprint}</code></div>
+          </div>
+        `}
+      <div class="toolbar mt">
+        <button class="btn" onClick=${() =>
+          openDialog(PairDialog, {}).then(() => res.reload())}>${paired
+          ? 'Pair a replacement…'
+          : 'Pair…'}</button>
+        <span class="spacer"></span>
+        ${paired || v.state === 'pairing'
+          ? armed
+            ? html`
+              <span class="small dim">Every Connection stops and every account's sync
+                              turns off.</span> <button class="btn danger" disabled=${unpair.busy}
+                onClick=${() => unpair.run().catch(() => {})}>Unpair now</button>
+                            <button class="btn" onClick=${() => setArmed(false)}>Keep</button>
+            `
+            : html`<button class="btn danger" onClick=${() => setArmed(true)}>Unpair…</button>`
+          : null}
+      </div>
+      <${FormError} error=${unpair.error} />
+    </div>
+    <div class="card">
+      <h3>Connections</h3>
+      <p class="small dim" style=${{ marginTop: '-6px' }}>Each person's sign-ins, kept by the
+        connector. Their credentials are never shown here.</p>
+      ${v.connections.length
+        ? html`
+          <div class="table-wrap">
+            <table class="t">
+              <caption class="sr-only">Connections</caption>
+              <thead>
+                <tr>
+                  <th>Connection</th>
+                  <th>Owner</th>
+                  <th>Accounts</th>
+                  <th>State</th>
+                </tr>
+              </thead>
+              <tbody>${v.connections.map((/** @type {any} */ c) =>
+                html`
+                  <tr>
+                    <td><b>${c.label}</b><div class="small dim">${DRIVERS[c.driver] ||
+                      c.driver} driver</div></td>
+                    <td>${c.ownerName}</td>
+                    <td class="small">${c.accounts.length
+                      ? c.accounts.map((/** @type {any} */ a) =>
+                        `${a.name}${a.syncAccount ? ` (${a.syncAccount})` : ''}`
+                      ).join(' · ')
+                      : html`<span class="dim">none yet</span>`}</td>
+                    <td>${connectionState(c)}${c.credentialWaiting
+                      ? html`<div class="small dim">credentials waiting for the connector</div>`
+                      : null}</td>
+                  </tr>
+                `
+              )}</tbody>
+            </table>
+          </div>
+        `
+        : html`<p class="small dim">None yet. Each person starts their own under Profile ›
+            Connections once a connector is paired.</p>`}
+    </div>
+  `;
+}
+
+/** @param {{ close: (v?: any) => void }} p */
+function PairDialog({ close }) {
+  useDialogGuide('dialog-connector-pair');
+  const [made, setMade] = useState(/** @type {any} */ (null));
+  const make = useSubmit(async () => {
+    setMade(await withReauth(() => api.post('/settings/connector/pairings')));
+  });
+  useEffect(() => {
+    make.run().catch(() => {});
+  }, []);
+  return html`
+    <${Dialog} title="Pair a connector" close=${close} onSubmit=${() => close(true)}
+      note="The code works once, for 24 hours."
+      footer=${html`
+        <button type="button" class="btn" disabled=${!made} onClick=${() =>
+          navigator.clipboard?.writeText(made.command).then(() => toast('Copied'))}>Copy the
+          command</button>
+        <button class="btn primary">Done</button>
+      `}>
+      <p class="small dim" style=${{ marginTop: 0 }}>On the connector's host, run this. The
+        code holds this server's address and key fingerprint; the connector then introduces
+        itself, and both sides show its fingerprint for you to compare.</p>
+      ${make.error ? html`<${FormError} error=${make.error} />` : made
+        ? html`
+          <div class="field"
+            data-help="pairing-command"><code class="mono" style=${{
+              display: 'block',
+              padding: '10px 12px',
+              background: 'var(--bg-3)',
+              borderRadius: '8px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+            }}>${made.command}</code></div>
+        `
+        : html`<${Loading} lines=${2} />`}
+      <div class="notice mt"><${Icon} name="info" /><div>Pairing another connector replaces
+        the one paired: its Connections stop and their accounts' sync turns off, as Unpair
+        does.</div></div>
+    </${Dialog}>
   `;
 }
 </script>
@@ -24031,6 +24300,7 @@ import { errAt, Field, FormError, Input, Select, Switch, SwitchRow } from '@mk/c
 import { toast } from '@mk/components/toast.js';
 import { loadSession } from '@mk/store/session.js';
 import { LinksSection } from '@mk/components/links.js';
+import { ConnectorSection } from '@mk/components/connector.js';
 import { StorageSection } from '@mk/components/storage.js';
 
 const SECTIONS = /** @type {[string, string][]} */ ([
@@ -24042,12 +24312,14 @@ const SECTIONS = /** @type {[string, string][]} */ ([
   ['prices', 'Prices'],
   ['bitcoin', 'Bitcoin'],
   ['links', 'Linked servers'],
+  ['connector', 'Connector'],
   ['imports', 'Imports'],
   ['receipts', 'Receipts'],
   ['tax-tables', 'Tax tables'],
   ['backups', 'Backups'],
   ['storage', 'Storage'],
   ['keys', 'Key storage'],
+  ['network', 'Network'],
   ['alerts', 'Alerts'],
 ]);
 
@@ -24080,6 +24352,8 @@ export default function Settings({ section }) {
         ? html`<${BitcoinSection} />`
         : current === 'links'
         ? html`<${LinksSection} />`
+        : current === 'connector'
+        ? html`<${ConnectorSection} />`
         : current === 'tax-tables'
         ? html`<${TaxTables} />`
         : html`<${Plain} section=${current} />`}</div>
@@ -24224,6 +24498,44 @@ function Plain({ section }) {
                 signupDomains: x.split(',').map((d) => d.trim()).filter(Boolean),
               })} />
           </${Field}>
+      `,
+    );
+  }
+  if (section === 'network') {
+    const ranges = (/** @type {string} */ k) => (f[k] || []).join('\n');
+    const setRanges = (/** @type {string} */ k) => (/** @type {string} */ x) =>
+      setF({ ...f, [k]: x.split(/[\n,]/).map((r) => r.trim()).filter(Boolean) });
+    const area = (/** @type {string} */ k, /** @type {string} */ placeholder) =>
+      html`
+        <textarea class="in" rows="3" value=${ranges(k)} placeholder=${placeholder}
+          onInput=${(/** @type {any} */ ev) => setRanges(k)(ev.currentTarget.value)}></textarea>
+      `;
+    return form(
+      ['networkAppRanges', 'networkLinkRanges', 'networkConnectorRanges'],
+      html`
+        <h3>Network</h3>
+        <${Field} label="Allowed to use the app" id="network-app-ranges" error=${errAt(
+          e,
+          'networkAppRanges',
+        )}
+          hint="Address ranges that may reach /ui, and /mcp with it, one per line. Empty allows any.">
+          ${area('networkAppRanges', 'any address')}
+          </${Field}>
+          <${Field} label="Allowed to link" id="network-link-ranges" error=${errAt(
+            e,
+            'networkLinkRanges',
+          )}
+            hint="Where linked servers call /link from. Empty allows any.">
+            ${area('networkLinkRanges', 'any address')}
+            </${Field}>
+            <${Field} label="Allowed to connect" id="network-connector-ranges" error=${errAt(
+              e,
+              'networkConnectorRanges',
+            )}
+              hint="Where the MoneyKata Connector calls /connector from: the LAN and the overlay by default. A connector on a laptop away from home needs its range added.">
+              ${area('networkConnectorRanges', 'any address')}
+              </${Field}>
+              <p class="small dim">/healthz and /demo answer any address.</p>
       `,
     );
   }

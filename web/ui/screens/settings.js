@@ -14,6 +14,7 @@ import { errAt, Field, FormError, Input, Select, Switch, SwitchRow } from '../co
 import { toast } from '../components/toast.js';
 import { loadSession } from '../store/session.js';
 import { LinksSection } from '../components/links.js';
+import { ConnectorSection } from '../components/connector.js';
 import { StorageSection } from '../components/storage.js';
 
 const SECTIONS = /** @type {[string, string][]} */ ([
@@ -25,12 +26,14 @@ const SECTIONS = /** @type {[string, string][]} */ ([
   ['prices', 'Prices'],
   ['bitcoin', 'Bitcoin'],
   ['links', 'Linked servers'],
+  ['connector', 'Connector'],
   ['imports', 'Imports'],
   ['receipts', 'Receipts'],
   ['tax-tables', 'Tax tables'],
   ['backups', 'Backups'],
   ['storage', 'Storage'],
   ['keys', 'Key storage'],
+  ['network', 'Network'],
   ['alerts', 'Alerts'],
 ]);
 
@@ -63,6 +66,8 @@ export default function Settings({ section }) {
         ? html`<${BitcoinSection} />`
         : current === 'links'
         ? html`<${LinksSection} />`
+        : current === 'connector'
+        ? html`<${ConnectorSection} />`
         : current === 'tax-tables'
         ? html`<${TaxTables} />`
         : html`<${Plain} section=${current} />`}</div>
@@ -207,6 +212,44 @@ function Plain({ section }) {
                 signupDomains: x.split(',').map((d) => d.trim()).filter(Boolean),
               })} />
           </${Field}>
+      `,
+    );
+  }
+  if (section === 'network') {
+    const ranges = (/** @type {string} */ k) => (f[k] || []).join('\n');
+    const setRanges = (/** @type {string} */ k) => (/** @type {string} */ x) =>
+      setF({ ...f, [k]: x.split(/[\n,]/).map((r) => r.trim()).filter(Boolean) });
+    const area = (/** @type {string} */ k, /** @type {string} */ placeholder) =>
+      html`
+        <textarea class="in" rows="3" value=${ranges(k)} placeholder=${placeholder}
+          onInput=${(/** @type {any} */ ev) => setRanges(k)(ev.currentTarget.value)}></textarea>
+      `;
+    return form(
+      ['networkAppRanges', 'networkLinkRanges', 'networkConnectorRanges'],
+      html`
+        <h3>Network</h3>
+        <${Field} label="Allowed to use the app" id="network-app-ranges" error=${errAt(
+          e,
+          'networkAppRanges',
+        )}
+          hint="Address ranges that may reach /ui, and /mcp with it, one per line. Empty allows any.">
+          ${area('networkAppRanges', 'any address')}
+          </${Field}>
+          <${Field} label="Allowed to link" id="network-link-ranges" error=${errAt(
+            e,
+            'networkLinkRanges',
+          )}
+            hint="Where linked servers call /link from. Empty allows any.">
+            ${area('networkLinkRanges', 'any address')}
+            </${Field}>
+            <${Field} label="Allowed to connect" id="network-connector-ranges" error=${errAt(
+              e,
+              'networkConnectorRanges',
+            )}
+              hint="Where the MoneyKata Connector calls /connector from: the LAN and the overlay by default. A connector on a laptop away from home needs its range added.">
+              ${area('networkConnectorRanges', 'any address')}
+              </${Field}>
+              <p class="small dim">/healthz and /demo answer any address.</p>
       `,
     );
   }

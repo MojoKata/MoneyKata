@@ -1,0 +1,208 @@
+// Settings › Connector (requirements S16.18, S18.4, S18.5): pairing with the MoneyKata
+// Connector, whether it is locked, its last report, and every Connection's state, owner and
+// accounts, never their credentials.
+import { useEffect, useState } from 'preact/hooks';
+import { html } from '../app/html.js';
+import { api } from '../api/client.js';
+import { useApi, useSubmit } from '../app/hooks.js';
+import { ago, moment } from '../app/format.js';
+import { withReauth } from './reauth.js';
+import { Dialog, openDialog } from './dialog.js';
+import { useDialogGuide } from './help.js';
+import { FormError } from './fields.js';
+import { Failed, Loading } from './bits.js';
+import { Icon } from './icon.js';
+import { toast } from './toast.js';
+
+export const DRIVERS = /** @type {Record<string, string>} */ ({
+  folder: 'Folder',
+  'ofx-direct': 'OFX Direct Connect',
+  schwab: 'Schwab',
+});
+const STATE = /** @type {Record<string, [string, string]>} */ ({
+  new: ['waiting for credentials', ''],
+  ok: ['ok', 'ok'],
+  'needs-sign-in': ['needs a sign-in', 'warn'],
+  failing: ['failing', 'bad'],
+  removed: ['removed', ''],
+});
+
+/** @param {any} c */
+export function connectionState(c) {
+  const [label, tone] = STATE[c.state] || [c.state, ''];
+  const detail = c.state === 'ok' && c.lastRunAt
+    ? ` · ${c.lastRunAdded != null ? `${c.lastRunAdded} new · ` : ''}${ago(c.lastRunAt)}`
+    : c.message && c.state !== 'ok'
+    ? ` · ${c.message}`
+    : '';
+  return html`<span class=${'pill ' + tone}>${label}${detail}</span>`;
+}
+
+export function ConnectorSection() {
+  const res = useApi('/settings/connector', {}, ['task']);
+  const v = /** @type {any} */ (res.data);
+  const [armed, setArmed] = useState(false);
+  const unpair = useSubmit(async () => {
+    await withReauth(() => api.post('/settings/connector/unpair'));
+    toast('Unpaired: every Connection stopped and every sync is off');
+    setArmed(false);
+    res.reload();
+  });
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!v) return html`<${Loading} />`;
+  const paired = v.state === 'paired';
+  const tone = !paired ? '' : v.silentForSeconds ? 'bad' : v.locked ? 'warn' : 'ok';
+  const status = !paired
+    ? v.state === 'pairing' ? 'pairing code out' : 'not paired'
+    : v.silentForSeconds
+    ? `not heard from for ${Math.round(v.silentForSeconds / 60)} min`
+    : v.locked
+    ? 'paired · locked'
+    : 'paired · unlocked';
+  return html`
+    <div class="card">
+      <h3>MoneyKata Connector<span class="spacer"></span><span class=${'pill ' + tone}><${Icon}
+          name=${paired && !v.locked ? 'check' : 'lock'} /> ${status}</span></h3>
+      <p class="small dim" style=${{ marginTop: '-6px' }}>A second service that holds
+        institutions' credentials, fetches with its drivers and pushes into imports.
+        MoneyKata can't reach it or read its vault: it only hears its signed reports.</p>
+      ${paired
+        ? html`
+          <div class="list-item"><span class="grow dim">Connector</span><code
+              class="mono small">${v.fingerprint}</code>${v.connectorVersion
+                ? html`
+                  <span class="small dim">· version ${v.connectorVersion}</span>
+                `
+                : null}</div>
+          <div class="list-item"><span class="grow dim">Last report</span>${v.lastReportAt
+            ? html`${ago(v.lastReportAt)}${
+              v.pairedAt
+                ? html`
+                  <span class="small dim">· paired ${moment(v.pairedAt)}${v.pairedBy
+                    ? ` by ${v.pairedBy}`
+                    : ''}</span>
+                `
+                : null
+            }`
+            : 'never'}</div>
+        `
+        : v.state === 'pairing'
+        ? html`
+          <div class="notice">
+            <${Icon} name="info" />
+            <div>A pairing code is out until
+                      ${moment(v.codeExpiresAt)}. Run it on the connector's host, then compare the
+                      fingerprint both sides show.</div>
+          </div>
+        `
+        : html`
+          <div class="notice">
+            <${Icon} name="info" />
+            <div>No connector is paired. This
+                      server's key fingerprint, which the pairing code carries:${' '}
+                      <code>${v.serverFingerprint}</code></div>
+          </div>
+        `}
+      <div class="toolbar mt">
+        <button class="btn" onClick=${() =>
+          openDialog(PairDialog, {}).then(() => res.reload())}>${paired
+          ? 'Pair a replacement…'
+          : 'Pair…'}</button>
+        <span class="spacer"></span>
+        ${paired || v.state === 'pairing'
+          ? armed
+            ? html`
+              <span class="small dim">Every Connection stops and every account's sync
+                              turns off.</span> <button class="btn danger" disabled=${unpair.busy}
+                onClick=${() => unpair.run().catch(() => {})}>Unpair now</button>
+                            <button class="btn" onClick=${() => setArmed(false)}>Keep</button>
+            `
+            : html`<button class="btn danger" onClick=${() => setArmed(true)}>Unpair…</button>`
+          : null}
+      </div>
+      <${FormError} error=${unpair.error} />
+    </div>
+    <div class="card">
+      <h3>Connections</h3>
+      <p class="small dim" style=${{ marginTop: '-6px' }}>Each person's sign-ins, kept by the
+        connector. Their credentials are never shown here.</p>
+      ${v.connections.length
+        ? html`
+          <div class="table-wrap">
+            <table class="t">
+              <caption class="sr-only">Connections</caption>
+              <thead>
+                <tr>
+                  <th>Connection</th>
+                  <th>Owner</th>
+                  <th>Accounts</th>
+                  <th>State</th>
+                </tr>
+              </thead>
+              <tbody>${v.connections.map((/** @type {any} */ c) =>
+                html`
+                  <tr>
+                    <td><b>${c.label}</b><div class="small dim">${DRIVERS[c.driver] ||
+                      c.driver} driver</div></td>
+                    <td>${c.ownerName}</td>
+                    <td class="small">${c.accounts.length
+                      ? c.accounts.map((/** @type {any} */ a) =>
+                        `${a.name}${a.syncAccount ? ` (${a.syncAccount})` : ''}`
+                      ).join(' · ')
+                      : html`<span class="dim">none yet</span>`}</td>
+                    <td>${connectionState(c)}${c.credentialWaiting
+                      ? html`<div class="small dim">credentials waiting for the connector</div>`
+                      : null}</td>
+                  </tr>
+                `
+              )}</tbody>
+            </table>
+          </div>
+        `
+        : html`<p class="small dim">None yet. Each person starts their own under Profile ›
+            Connections once a connector is paired.</p>`}
+    </div>
+  `;
+}
+
+/** @param {{ close: (v?: any) => void }} p */
+function PairDialog({ close }) {
+  useDialogGuide('dialog-connector-pair');
+  const [made, setMade] = useState(/** @type {any} */ (null));
+  const make = useSubmit(async () => {
+    setMade(await withReauth(() => api.post('/settings/connector/pairings')));
+  });
+  useEffect(() => {
+    make.run().catch(() => {});
+  }, []);
+  return html`
+    <${Dialog} title="Pair a connector" close=${close} onSubmit=${() => close(true)}
+      note="The code works once, for 24 hours."
+      footer=${html`
+        <button type="button" class="btn" disabled=${!made} onClick=${() =>
+          navigator.clipboard?.writeText(made.command).then(() => toast('Copied'))}>Copy the
+          command</button>
+        <button class="btn primary">Done</button>
+      `}>
+      <p class="small dim" style=${{ marginTop: 0 }}>On the connector's host, run this. The
+        code holds this server's address and key fingerprint; the connector then introduces
+        itself, and both sides show its fingerprint for you to compare.</p>
+      ${make.error ? html`<${FormError} error=${make.error} />` : made
+        ? html`
+          <div class="field"
+            data-help="pairing-command"><code class="mono" style=${{
+              display: 'block',
+              padding: '10px 12px',
+              background: 'var(--bg-3)',
+              borderRadius: '8px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+            }}>${made.command}</code></div>
+        `
+        : html`<${Loading} lines=${2} />`}
+      <div class="notice mt"><${Icon} name="info" /><div>Pairing another connector replaces
+        the one paired: its Connections stop and their accounts' sync turns off, as Unpair
+        does.</div></div>
+    </${Dialog}>
+  `;
+}

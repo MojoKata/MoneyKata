@@ -25,12 +25,14 @@ SETTINGS = (
     "prices",
     "bitcoin",
     "links",
+    "connector",
     "imports",
     "receipts",
     "tax-tables",
     "backups",
     "storage",
     "keys",
+    "network",
     "alerts",
 )
 

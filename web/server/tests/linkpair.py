@@ -39,7 +39,9 @@ class Wire:
         self.down: set[str] = set()
 
     def add(self, name: str, srv: Server) -> str:
-        self.apps[f"{name}.test"] = TestClient(create_app(srv), base_url=f"https://{name}.test")
+        self.apps[f"{name}.test"] = TestClient(
+            create_app(srv), base_url=f"https://{name}.test", client=("127.0.0.1", 50000)
+        )
         return f"https://{name}.test"
 
     def client(self, guard=None, **kw):
@@ -88,7 +90,9 @@ def admin_of(srv: Server, base: str) -> TestClient:
 
     with srv.db.tx() as s:
         settings.put(s, "publicUrl", base, None)
-    c = TestClient(create_app(srv), base_url=base, headers={"Origin": base})
+    c = TestClient(
+        create_app(srv), base_url=base, headers={"Origin": base}, client=("127.0.0.1", 50000)
+    )
     r = c.post("/ui/api/session", json={"login": "admin", "password": "moneykata-setup"})
     assert r.status_code == 200, r.text
     r = c.post(

@@ -8,7 +8,9 @@ the conventions, S10.9 agents); this page says how to use them.
 | `/ui/api`   | the browser app                         | the session cookie (S13.7.1)         |
 | `/mcp`      | an AI assistant, read only (S10.9)      | an access token made in Profile      |
 
-`/link` is the protocol between linked servers: `docs/link-protocol.md`.
+`/link` is the protocol between linked servers (`docs/link-protocol.md`), and `/connector/v1`
+the one between the paired MoneyKata Connector and this server (`docs/connector-protocol.md`);
+each is signed, and neither takes a session or a token.
 
 ## 1. `/ui/api`
 

@@ -37,6 +37,8 @@ def seed(server) -> None:
             log.info("dev: already seeded")
             return
         people = seed_users(s)
+        # The dev server's own address, so what builds links and codes from it works (S16.1).
+        settings.put(s, "publicUrl", f"https://localhost:{server.config.port}", None)
         seed_accounts(s, people)
         seed_loans(s, people)
         seed_assets(s, people)

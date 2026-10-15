@@ -31,11 +31,13 @@ SETTINGS_SECTIONS = (
     "prices",
     "bitcoin",
     "links",
+    "connector",
     "imports",
     "receipts",
     "tax-tables",
     "backups",
     "keys",
+    "network",
     "alerts",
 )
 
@@ -367,6 +369,7 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/users", "New group", "dialog-group"),
         ("/ui/settings/prices", "Add a source", "dialog-add-source"),
         ("/ui/settings/links", "Enter a link code", "dialog-link-join"),
+        ("/ui/settings/connector", "Pair…", "dialog-connector-pair"),
     ):
         open_dialog(page, path, button, guide)
         close_dialog(page)

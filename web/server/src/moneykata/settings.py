@@ -86,6 +86,24 @@ def _domains(v: Any) -> list[str]:
     return out
 
 
+def _ranges(v: Any) -> list[str]:
+    """Address ranges, one per entry (S16.14): CIDR or a single address; empty allows any."""
+    import ipaddress
+
+    if not isinstance(v, list) or not all(isinstance(r, str) for r in v):
+        raise Invalid("a list of address ranges")
+    out = []
+    for r in v:
+        r = r.strip()
+        if not r:
+            continue
+        try:
+            out.append(str(ipaddress.ip_network(r, strict=False)))
+        except ValueError:
+            raise Invalid(f"{r!r} is not an address or a range such as 192.168.1.0/24") from None
+    return out
+
+
 def _host(v: Any) -> str | None:
     if v in (None, ""):
         return None
@@ -207,6 +225,21 @@ _d("bitcoinNodeCertOffered", "bitcoin", None, _optional_text(64))
 # when not set), and how long an unlocked linked copy may go unused (S11.9.4)
 _d("linkAddress", "links", None, _url)
 _d("linkReleaseMinutes", "links", 60, _int(5, 24 * 60))
+# Network (S16.14): the address ranges allowed to reach each path; empty allows any. /mcp
+# follows the app's; the connector's defaults to the LAN and the overlay (Tailscale's range)
+# so a connector on a laptop away from home needs an admin to widen it.
+LAN_AND_OVERLAY = [
+    "127.0.0.0/8",
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "100.64.0.0/10",
+    "::1/128",
+    "fc00::/7",
+]
+_d("networkAppRanges", "network", [], _ranges)
+_d("networkLinkRanges", "network", [], _ranges)
+_d("networkConnectorRanges", "network", LAN_AND_OVERLAY, _ranges)
 # Imports (S16.8)
 _d("importMaxMb", "imports", 25, _int(1, 200))
 # Statements (PDFs and photos) read on the server, in the receipt reader's worker (S1.3.3)

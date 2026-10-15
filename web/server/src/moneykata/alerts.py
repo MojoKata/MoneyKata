@@ -209,6 +209,61 @@ def linked_servers(s: Session, server) -> Iterable[Cause]:
 
 
 @check
+def connector(s: Session, server) -> Iterable[Cause]:
+    """The MoneyKata Connector locked, or not heard from for 15 minutes (S18.5): admins. A
+    Connection that needs a sign-in or is failing: its owner (S18.5.3)."""
+    from .connector import manage
+    from .store.entities.connector import Connection
+
+    row = manage.paired(s)
+    if row is None:
+        return
+    silent = manage.silent_for(row)
+    if silent is not None:
+        yield Cause(
+            key="connector:silent",
+            kind="connector-silent",
+            title="The MoneyKata Connector hasn't been heard from",
+            about=f"Connector · last report {row.lastReportAt:%b %-d, %H:%M} UTC · "
+            "it is stopped, down, or can't reach MoneyKata",
+            link="/ui/settings/connector",
+            fix="Connector settings",
+            icon="sync",
+            since=row.lastReportAt,
+        )
+    elif row.locked:
+        yield Cause(
+            key="connector:locked",
+            kind="connector-locked",
+            title="The MoneyKata Connector is locked",
+            about="Connector · unlock it on its host with its 12 words",
+            link="/ui/settings/connector",
+            fix="Connector settings",
+            icon="lock",
+            since=row.lastReportAt,
+        )
+    for c in s.scalars(
+        select(Connection).where(
+            Connection.connectorId == row.id,
+            Connection.deleted == false(),
+            Connection.state.in_(("needs-sign-in", "failing")),
+        )
+    ):
+        needs = c.state == "needs-sign-in"
+        yield Cause(
+            key=f"connection:{c.id}:{c.state}",
+            kind="connection-failing",
+            title=f"{c.label} {'needs a sign-in' if needs else 'is failing'}",
+            about=f"Connection · {c.message or c.driver}",
+            user_id=c.ownerId,
+            link="/ui/profile",
+            fix="Sign in again" if needs else "Your connections",
+            icon="lock" if needs else "sync",
+            since=c.lastRunAt,
+        )
+
+
+@check
 def backups(s: Session, server) -> Iterable[Cause]:
     from .store.entities.core import TaskRun
 
@@ -521,6 +576,7 @@ _KINDS = {
     "projections_behind": {"projection-behind"},
     "bitcoin_certificate": {"node-certificate"},
     "bitcoin_off_chain": {"off-chain"},
+    "connector": {"connector-silent", "connector-locked", "connection-failing"},
 }
 
 

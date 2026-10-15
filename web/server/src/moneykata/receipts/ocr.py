@@ -142,6 +142,24 @@ def _ocr(images) -> list[str]:
     return out
 
 
+def text_layer(data: bytes) -> list[str] | None:
+    """A PDF's text layer as lines, or None when it has none worth reading: what a statement
+    kept without reading is named by (S1.3.3.6), with no OCR."""
+    import pypdfium2 as pdfium
+
+    try:
+        pdf = pdfium.PdfDocument(data)
+    except Exception:
+        raise ReadError("the PDF can't be opened") from None
+    try:
+        texts = [pdf[i].get_textpage().get_text_range() for i in range(len(pdf))]
+    finally:
+        pdf.close()
+    if not any(len(t.strip()) >= TEXT_LAYER_CHARS for t in texts):
+        return None
+    return [ln.strip() for t in texts for ln in t.splitlines() if ln.strip()]
+
+
 def read(data: bytes, media_type: str) -> Read:
     from PIL import Image
 
@@ -149,15 +167,11 @@ def read(data: bytes, media_type: str) -> Read:
     if media_type == "application/pdf":
         import pypdfium2 as pdfium
 
+        lines = text_layer(data)
+        if lines is not None:
+            return Read(lines, "text", "pypdfium2 text layer")
+        pdf = pdfium.PdfDocument(data)
         try:
-            pdf = pdfium.PdfDocument(data)
-        except Exception:
-            raise ReadError("the PDF can't be opened") from None
-        try:
-            texts = [pdf[i].get_textpage().get_text_range() for i in range(len(pdf))]
-            if any(len(t.strip()) >= TEXT_LAYER_CHARS for t in texts):
-                lines = [ln.strip() for t in texts for ln in t.splitlines() if ln.strip()]
-                return Read(lines, "text", "pypdfium2 text layer")
             pages = [
                 pdf[i].render(scale=DPI / 72).to_pil() for i in range(min(len(pdf), MAX_PAGES))
             ]

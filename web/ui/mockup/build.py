@@ -50,12 +50,14 @@ SETTINGS = (
     "prices",
     "bitcoin",
     "links",
+    "connector",
     "imports",
     "receipts",
     "tax-tables",
     "backups",
     "storage",
     "keys",
+    "network",
     "alerts",
 )
 # (path, button, guide): the dialogs that load something when they open.
@@ -82,6 +84,7 @@ DIALOGS = (
     ("/ui/users", "New group", "dialog-group"),
     ("/ui/settings/prices", "Add a source", "dialog-add-source"),
     ("/ui/settings/links", "Enter a link code", "dialog-link-join"),
+    ("/ui/settings/connector", "Pair…", "dialog-connector-pair"),
 )
 # POSTs that only work something out: the first answer is kept, for the page to show.
 COMPUTED = re.compile(r"/ui/api/accounts/[^/]+/loan/(payoff|split)$")

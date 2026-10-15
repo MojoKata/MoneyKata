@@ -43,6 +43,9 @@ class Server:
     sign_in: ratelimit.SignInGuard = field(default_factory=ratelimit.SignInGuard)
     # Nonces of linked servers' calls, so none is accepted twice (S11.1.3).
     link_nonces: Nonces = field(default_factory=Nonces)
+    # The paired connector's calls (S18.4.3): its nonces, and 60 calls a minute (S13.7.5.4).
+    conn_nonces: Nonces = field(default_factory=Nonces)
+    conn_limit: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(60, 60))
     # The unlocked linked copies, in memory only (S11.9.3).
     copies: Copies = field(default_factory=Copies)
 
@@ -89,6 +92,17 @@ class Server:
             mb = max(settings.get(s, "importMaxMb"), settings.get(s, "receiptMaxMb"))
         # A file of the limit, with the form around it.
         return (mb + 1) * 1024 * 1024
+
+    def network_ranges(self) -> dict[str, list[str]]:
+        """Settings › Network (S16.14), read for each request."""
+        if self.store is None:
+            return {}
+        with self.db.read() as s:
+            return {
+                "app": settings.get(s, "networkAppRanges"),
+                "link": settings.get(s, "networkLinkRanges"),
+                "connector": settings.get(s, "networkConnectorRanges"),
+            }
 
     def session_max_age(self) -> int:
         if self.store is None:
@@ -163,6 +177,9 @@ def create_app(server: Server) -> FastAPI:
         users,
         wallets,
     )
+    from .ui import (
+        connector as connector_settings,
+    )
     from .ui import settings as settings_routes
 
     for module in (
@@ -172,6 +189,7 @@ def create_app(server: Server) -> FastAPI:
         tokens,
         settings_routes,
         links,
+        connector_settings,
         linked,
         accounts,
         transactions,
@@ -200,10 +218,12 @@ def create_app(server: Server) -> FastAPI:
     ):
         app.include_router(module.router)
     from . import mcp
+    from .connector import routes as connector_routes
     from .links import routes as link_routes
 
     app.include_router(mcp.router)
     app.include_router(link_routes.router)
+    app.include_router(connector_routes.router)
     # Last: its catch-alls answer for paths no route above has.
     app.include_router(static.router(static.Static(server.version, server.config.dev)))
 
@@ -214,6 +234,7 @@ def create_app(server: Server) -> FastAPI:
     app.add_middleware(middleware.OriginCheck)
     app.add_middleware(middleware.SecurityHeaders, tls=server.config.mode == "tls")
     app.add_middleware(middleware.AccessLog)
+    app.add_middleware(middleware.AddressRanges, ranges=server.network_ranges)
     app.add_middleware(
         middleware.ClientAddress, mode=server.config.mode, trusted=server.config.trusted_proxies
     )

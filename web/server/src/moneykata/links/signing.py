@@ -15,7 +15,11 @@ over these lines:
 The receiver refuses a key it has no link with, a bad signature, a time more than 60 seconds
 off its own, and a nonce it has seen in the last two minutes. The answer is signed the same
 way (`MK-LINK-1-ANSWER`, the status in place of the method and path, and the request's nonce),
-so the caller knows who answered."""
+so the caller knows who answered.
+
+The MoneyKata Connector signs its calls the same way under its own scheme (`MK-Conn-*`
+headers, `MK-CONN-1` labels; docs/connector-protocol.md §3): the `scheme` argument picks
+which."""
 
 import hashlib
 import secrets
@@ -32,6 +36,24 @@ from .keys import b64, fingerprint, raw_public, unb64
 
 SKEW = 60  # seconds a call's time may be off
 NONCE_SECONDS = 120
+
+
+@dataclass(frozen=True)
+class Scheme:
+    """The header prefix and the signed text's first line of one kind of signed call."""
+
+    header: str  # MK-<header>-Key, -Time, -Nonce, -Signature
+    label: str  # the first line: MK-LINK-1, MK-CONN-1
+
+    def h(self, name: str) -> str:
+        return f"MK-{self.header}-{name}"
+
+    def lower(self, name: str) -> str:
+        return self.h(name).lower()
+
+
+LINK = Scheme("Link", "MK-LINK-1")
+CONN = Scheme("Conn", "MK-CONN-1")
 
 
 class Refused(Exception):
@@ -58,47 +80,67 @@ class Signed:
 
 
 def sign_request(
-    key: Ed25519PrivateKey, method: str, path: str, body: bytes, receiver_fp: str, now=None
+    key: Ed25519PrivateKey,
+    method: str,
+    path: str,
+    body: bytes,
+    receiver_fp: str,
+    now=None,
+    scheme: Scheme = LINK,
 ) -> Signed:
     t = str(int(now if now is not None else time.time()))
     nonce = b64(secrets.token_bytes(16))
-    msg = _lines("MK-LINK-1", method.upper(), path, body_hash(body), t, nonce, receiver_fp)
+    msg = _lines(scheme.label, method.upper(), path, body_hash(body), t, nonce, receiver_fp)
     return Signed(
         {
-            "MK-Link-Key": b64(raw_public(key.public_key())),
-            "MK-Link-Time": t,
-            "MK-Link-Nonce": nonce,
-            "MK-Link-Signature": b64(key.sign(msg)),
+            scheme.h("Key"): b64(raw_public(key.public_key())),
+            scheme.h("Time"): t,
+            scheme.h("Nonce"): nonce,
+            scheme.h("Signature"): b64(key.sign(msg)),
         },
         nonce,
     )
 
 
 def sign_answer(
-    key: Ed25519PrivateKey, status: int, body: bytes, nonce: str, now=None, digest=None
+    key: Ed25519PrivateKey,
+    status: int,
+    body: bytes,
+    nonce: str,
+    now=None,
+    digest=None,
+    scheme: Scheme = LINK,
 ) -> dict:
     """`digest` signs a body streamed later, by its SHA-256, rather than bytes in hand."""
     t = str(int(now if now is not None else time.time()))
-    msg = _lines("MK-LINK-1-ANSWER", status, digest or body_hash(body), t, nonce)
-    return {"MK-Link-Time": t, "MK-Link-Signature": b64(key.sign(msg))}
+    msg = _lines(scheme.label + "-ANSWER", status, digest or body_hash(body), t, nonce)
+    return {scheme.h("Time"): t, scheme.h("Signature"): b64(key.sign(msg))}
 
 
 def verify_answer(
-    public: bytes, status: int, body: bytes, nonce: str, headers, now=None, digest=None
+    public: bytes,
+    status: int,
+    body: bytes,
+    nonce: str,
+    headers,
+    now=None,
+    digest=None,
+    scheme: Scheme = LINK,
 ) -> None:
+    who = "linked server" if scheme is LINK else "server"
     try:
-        t = int(headers["MK-Link-Time"])
-        sig = unb64(headers["MK-Link-Signature"])
+        t = int(headers[scheme.h("Time")])
+        sig = unb64(headers[scheme.h("Signature")])
     except KeyError, ValueError:
-        raise Refused("answer-unsigned", "The linked server's answer wasn't signed.") from None
+        raise Refused("answer-unsigned", f"The {who}'s answer wasn't signed.") from None
     if abs((now if now is not None else time.time()) - t) > SKEW:
-        raise Refused("clock-skew", "The linked server's clock is more than a minute off.")
+        raise Refused("clock-skew", f"The {who}'s clock is more than a minute off.")
     try:
         Ed25519PublicKey.from_public_bytes(public).verify(
-            sig, _lines("MK-LINK-1-ANSWER", status, digest or body_hash(body), t, nonce)
+            sig, _lines(scheme.label + "-ANSWER", status, digest or body_hash(body), t, nonce)
         )
     except InvalidSignature:
-        raise Refused("bad-signature", "The answer isn't signed by the linked server.") from None
+        raise Refused("bad-signature", f"The answer isn't signed by the {who}.") from None
 
 
 class Nonces:
@@ -127,21 +169,30 @@ class Caller:
 
 
 def verify_request(
-    headers, method: str, path: str, body: bytes, own_fp: str, nonces: Nonces, now=None
+    headers,
+    method: str,
+    path: str,
+    body: bytes,
+    own_fp: str,
+    nonces: Nonces,
+    now=None,
+    scheme: Scheme = LINK,
 ) -> Caller:
-    """The verified caller's key, or Refused. Which link it belongs to is the caller's check."""
+    """The verified caller's key, or Refused. Which link (or connector) it belongs to is the
+    caller's check."""
+    who = "A linked server's" if scheme is LINK else "The connector's"
     try:
-        public = unb64(headers["mk-link-key"])
-        t = int(headers["mk-link-time"])
-        nonce = headers["mk-link-nonce"]
-        sig = unb64(headers["mk-link-signature"])
+        public = unb64(headers[scheme.lower("key")])
+        t = int(headers[scheme.lower("time")])
+        nonce = headers[scheme.lower("nonce")]
+        sig = unb64(headers[scheme.lower("signature")])
     except KeyError, ValueError:
-        raise Refused("unsigned", "A linked server's call must be signed.") from None
+        raise Refused("unsigned", f"{who} call must be signed.") from None
     if len(public) != 32 or not 8 <= len(nonce) <= 64:
-        raise Refused("unsigned", "A linked server's call must be signed.")
+        raise Refused("unsigned", f"{who} call must be signed.")
     if abs((now if now is not None else time.time()) - t) > SKEW:
         raise Refused("clock-skew", "The call's time is more than a minute off this server's.")
-    msg = _lines("MK-LINK-1", method.upper(), path, body_hash(body), t, nonce, own_fp)
+    msg = _lines(scheme.label, method.upper(), path, body_hash(body), t, nonce, own_fp)
     try:
         Ed25519PublicKey.from_public_bytes(public).verify(sig, msg)
     except InvalidSignature, ValueError:

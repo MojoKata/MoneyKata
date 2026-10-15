@@ -135,6 +135,42 @@ class SecurityHeaders:
         await self.app(scope, receive, wrapped)
 
 
+class AddressRanges:
+    """Only the address ranges Settings › Network allows reach each path (S16.14): the app
+    (`/ui`, and `/mcp` with it), `/link` and `/connector`; `/healthz` and `/demo` answer any
+    address. An address outside answers 404, as for what doesn't exist. The ranges are read
+    for each request, so a change applies to the next one (R3.7)."""
+
+    PATHS = (("/ui", "app"), ("/mcp", "app"), ("/link", "link"), ("/connector", "connector"))
+
+    def __init__(self, app, ranges: Callable[[], dict[str, list[str]]]):
+        self.app = app
+        self.ranges = ranges
+
+    @staticmethod
+    def _allowed(addr: str, ranges: list[str]) -> bool:
+        if not ranges:
+            return True
+        try:
+            ip = ipaddress.ip_address(addr)
+        except ValueError:
+            return False
+        if ip.version == 6 and ip.ipv4_mapped:
+            ip = ip.ipv4_mapped
+        return any(ip in ipaddress.ip_network(r) for r in ranges)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket") and scope.get("client"):
+            path = scope["path"]
+            which = next((w for p, w in self.PATHS if path == p or path.startswith(p + "/")), None)
+            if which is not None:
+                ranges = self.ranges().get(which) or []
+                if not self._allowed(scope["client"][0], ranges):
+                    await _send_problem(404, "not-found", "Not found.")(send)
+                    return
+        await self.app(scope, receive, send)
+
+
 class OriginCheck:
     """A request that changes something must come from the app's own origin (S13.7.4)."""
 

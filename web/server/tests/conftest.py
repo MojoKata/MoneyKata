@@ -28,7 +28,7 @@ def config(tmp_path) -> Config:
 def bare_client(config):
     """The app with no database: static files, headers and middleware only."""
     server = Server(config=config, ready=True)
-    with TestClient(create_app(server), base_url="http://mk.test") as c:
+    with TestClient(create_app(server), base_url="http://mk.test", client=LOOPBACK) as c:
         yield c
 
 
@@ -53,6 +53,8 @@ def db(store):
 
 passwords.use_fast_hashing_for_tests()
 ORIGIN = "https://mk.test"
+# Where a test client calls from: an address, as a real client has (Settings › Network, S16.14).
+LOOPBACK = ("127.0.0.1", 50000)
 
 
 @pytest.fixture
@@ -117,7 +119,9 @@ class ExactClient(TestClient):
 
 
 def new_client(srv) -> TestClient:
-    return ExactClient(create_app(srv), base_url=ORIGIN, headers={"Origin": ORIGIN})
+    return ExactClient(
+        create_app(srv), base_url=ORIGIN, headers={"Origin": ORIGIN}, client=LOOPBACK
+    )
 
 
 @pytest.fixture

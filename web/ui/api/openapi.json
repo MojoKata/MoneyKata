@@ -2772,6 +2772,252 @@
         "title": "Confirmation",
         "type": "object"
       },
+      "ConnectionOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/SyncedAccount"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "credentialWaiting": {
+            "title": "Credentialwaiting",
+            "type": "boolean"
+          },
+          "driver": {
+            "title": "Driver",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "institutionAccounts": {
+            "items": {
+              "$ref": "#/components/schemas/InstitutionAccount"
+            },
+            "title": "Institutionaccounts",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "lastRunAdded": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrunadded"
+          },
+          "lastRunAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrunat"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "ownerId": {
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "ownerName": {
+            "title": "Ownername",
+            "type": "string"
+          },
+          "signInAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signinaddress"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "ownerName",
+          "driver",
+          "label",
+          "state",
+          "message",
+          "lastRunAt",
+          "lastRunAdded",
+          "institutionAccounts",
+          "accounts",
+          "credentialWaiting",
+          "signInAddress",
+          "createdAt"
+        ],
+        "title": "ConnectionOut",
+        "type": "object"
+      },
+      "ConnectorOut": {
+        "additionalProperties": false,
+        "properties": {
+          "codeExpiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codeexpiresat"
+          },
+          "connections": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOut"
+            },
+            "title": "Connections",
+            "type": "array"
+          },
+          "connectorVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connectorversion"
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "lastReportAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastreportat"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "pairedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pairedat"
+          },
+          "pairedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pairedby"
+          },
+          "sealingKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sealingkey"
+          },
+          "serverFingerprint": {
+            "title": "Serverfingerprint",
+            "type": "string"
+          },
+          "silentForSeconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Silentforseconds"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "fingerprint",
+          "serverFingerprint",
+          "sealingKey",
+          "locked",
+          "pairedAt",
+          "pairedBy",
+          "lastReportAt",
+          "silentForSeconds",
+          "connectorVersion",
+          "codeExpiresAt",
+          "connections"
+        ],
+        "title": "ConnectorOut",
+        "type": "object"
+      },
       "ContractAdjustment": {
         "additionalProperties": false,
         "properties": {
@@ -6963,6 +7209,32 @@
           "includeReceipts"
         ],
         "title": "Incoming",
+        "type": "object"
+      },
+      "InstitutionAccount": {
+        "additionalProperties": false,
+        "properties": {
+          "last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last4"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "last4"
+        ],
+        "title": "InstitutionAccount",
         "type": "object"
       },
       "InstrumentOut": {
@@ -12372,6 +12644,31 @@
           "accountName"
         ],
         "title": "Paid",
+        "type": "object"
+      },
+      "PairingOut": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "title": "Expiresat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "expiresAt",
+          "command"
+        ],
+        "title": "PairingOut",
         "type": "object"
       },
       "Panels": {
@@ -18340,6 +18637,37 @@
           "wallet"
         ],
         "title": "SyncOut",
+        "type": "object"
+      },
+      "SyncedAccount": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "syncAccount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syncaccount"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "syncAccount"
+        ],
+        "title": "SyncedAccount",
         "type": "object"
       },
       "TagIn": {
@@ -32375,6 +32703,71 @@
         "summary": "Bitcoin Test",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/connector": {
+      "get": {
+        "operationId": "get_connector_ui_api_settings_connector_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Connector",
+        "tags": [
+          "connector"
+        ]
+      }
+    },
+    "/ui/api/settings/connector/pairings": {
+      "post": {
+        "description": "Pair (S18.4.1): a one-time code, valid 24 hours, shown once; the password again if given\nover 10 minutes ago (S13.7.2).",
+        "operationId": "pair_ui_api_settings_connector_pairings_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Pair",
+        "tags": [
+          "connector"
+        ]
+      }
+    },
+    "/ui/api/settings/connector/unpair": {
+      "post": {
+        "description": "Unpair (S18.4.4): the connector's key is refused from then on, every Connection stops\nand every account's sync turns off.",
+        "operationId": "unpair_ui_api_settings_connector_unpair_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Unpair",
+        "tags": [
+          "connector"
         ]
       }
     },
