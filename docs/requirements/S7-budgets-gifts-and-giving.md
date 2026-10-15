@@ -10,7 +10,8 @@
       that month. A plan line on a parent category counts its children with it.
 2. **Categories** form a two-level tree (*Housing › Rent*). Each is an expense, income or
    transfer category. A default set ships, and each category may carry a **tax tag**
-   (charitable, medical, business, childcare, education, …) that feeds Taxes (S8.5).
+   (charitable, medical, business, childcare, education, …) that feeds Taxes (S8.5), and
+   **Keep receipts for** a number of years, empty for ever (S14.10.1).
 3. **Each period** has, per category, the **planned** amount, the **actual** from
    categorised transactions, and what remains, with optional **rollover** of the unspent or
    overspent remainder to the next period. Spending shows as an amount spent, income as

@@ -44,3 +44,8 @@ reason.
 15. **Bank aggregation** (SimpleFIN Bridge and the like). It costs each user a subscription
     and gives a third party standing read access to their accounts. Statements and exports
     the user downloads cover the same ground (S1.3).
+16. **Pruning records** from the database, leaving yearly or monthly summaries in their
+    place. A household's rows grow by about 10 MB a year, while its receipt and statement
+    files grow 50 to 100 times faster; removing rows saves little, loses history that
+    can't be brought back once backups age out, and makes every report add summaries to
+    what survived. Only files are pruned, by their retention (S14.10).

@@ -16,12 +16,6 @@ again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
 **Touches:** S3.5, S3.8, S3.9, S4.5.
 
-## G15: What database pruning's yearly summaries hold
-
-**What is missing:** what the yearly summaries left by database pruning (S14.10.5) hold beyond income and spending by category, gifts, donations and contributions per owner and year: totals by payee, income by holding, a closed account's yearly balances; and which reports and charts read them for the pruned years.
-
-**Touches:** S5, S7, S14.10.
-
 ## G19: Other option price sources
 
 **For later consideration.** CBOE's delayed quotes (S4.5) aren't an official API and could change or close. The alternatives, each to be tried before it is relied on:

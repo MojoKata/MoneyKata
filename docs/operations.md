@@ -125,7 +125,7 @@ newer one has migrated: it says so in a `refusing to start:` line (§5.1).
   They never hold amounts, names of accounts or payees, secrets or passwords. The example
   compose files keep five files of 10 MB each.
 - **Space**: Settings › Storage shows the size of the database and the receipts, and what
-  could be removed by database pruning (S14.10).
+  could be removed by file pruning (S14.10).
 
 ### 5.1 When it won't start
 

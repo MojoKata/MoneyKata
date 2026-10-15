@@ -32,7 +32,9 @@
    in the other side's linked copy (S11.5, S11.9).
 7. **Retention**: a receipt is deleted only by its owner and only when nothing links to it.
    The file stays while any receipt row names its hash, deleted or not (`schema.md` §4).
-   Backups include the receipts directory (S14.6).
+   Backups include the receipts directory (S14.6). Its file is kept for as long as its
+   category says, shown on the receipt as *Kept until…* or *Kept for ever*, and the
+   receipt's **Keep** toggle holds it for ever (S14.10).
 8. **Reading receipts (OCR)**: MoneyKata reads the date, total and merchant from each receipt
    **on the server, with RapidOCR**, and suggests the transaction it belongs to. Nothing
    leaves the server, and no external service, model download or GPU is involved.

@@ -63,7 +63,6 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 |---|---|---|
 | **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | reading a brokerage statement's positions, cash activity and trades; until then it is kept without reading |
 | **G12** | [Adjusted contracts and capital at risk](gaps.md#g12-adjusted-contracts-and-capital-at-risk) | option contracts adjusted after a split, and capital at risk for spreads and covered calls |
-| **G15** | [What database pruning's yearly summaries hold](gaps.md#g15-what-database-prunings-yearly-summaries-hold) | what the yearly summaries left by database pruning hold beyond the averages, and which reports read them (S14.10.5) |
 | **G19** | [Other option price sources](gaps.md#g19-other-option-price-sources) | for later: Schwab Trader API through a connector driver, MarketData.app, Massive with a live key, Tradier |
 
 ## Also here
