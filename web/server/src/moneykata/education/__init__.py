@@ -53,24 +53,20 @@ def plan_of(s: Session, account: Account) -> EducationPlan | None:
 
 @dataclass
 class Beneficiary:
-    kind: str  # person or user
+    kind: str  # person
     id: str
     name: str
     birthYear: int | None
+    deleted: bool = False  # kept by name (schema.md §6.4)
 
 
 def beneficiary(s: Session, plan: EducationPlan | None) -> Beneficiary | None:
-    if plan is None:
+    if plan is None or not plan.beneficiaryId:
         return None
-    if plan.beneficiaryPersonId:
-        p = s.get(Person, plan.beneficiaryPersonId)
-        if p is not None and not p.deleted:
-            return Beneficiary("person", p.id, p.name, p.birthYear)
-    if plan.beneficiaryUserId:
-        u = s.get(User, plan.beneficiaryUserId)
-        if u is not None:
-            return Beneficiary("user", u.id, u.displayName, u.birthYear)
-    return None
+    p = s.get(Person, plan.beneficiaryId)
+    if p is None:
+        return None
+    return Beneficiary("person", p.id, p.name, p.birthYear, p.deleted)
 
 
 def _years(day: dt.date, n: int) -> dt.date:
@@ -85,7 +81,7 @@ class ContributionRow:
     transactionId: str
     date: dt.date
     amount: Decimal
-    contributor: str  # owner, user:<id> or person:<id>
+    contributor: str  # owner or person:<id>
     name: str
     relationship: str | None
     fiveYear: bool
@@ -115,15 +111,18 @@ def contributions(s: Session, account: Account) -> list[ContributionRow]:
         )
     }
     out = []
+    words = None
     for t in txns:
         c = tags.get(t.id)
         key, name, rel = "owner", owner.displayName, "owner"
-        if c is not None and c.fromUserId:
-            u = s.get(User, c.fromUserId)
-            key, name, rel = f"user:{u.id}", u.displayName, None
-        elif c is not None and c.fromPersonId:
+        if c is not None and c.fromPersonId:
             p = s.get(Person, c.fromPersonId)
-            key, name, rel = f"person:{p.id}", p.name, p.relationship
+            if words is None:
+                from ..people import tree
+
+                words = tree.relation_to(s, owner.personId)
+            found = words.get(p.id)
+            key, name, rel = f"person:{p.id}", p.name, found.word if found else None
         out.append(ContributionRow(t.id, t.date, t.amount, key, name, rel, bool(c and c.fiveYear)))
     return out
 
@@ -248,13 +247,12 @@ def rollover(
     )
 
 
-def accounts_for(s: Session, kind: str, beneficiary_id: str, account_ids: list[str]) -> list[str]:
+def accounts_for(s: Session, beneficiary_id: str, account_ids: list[str]) -> list[str]:
     """Of these accounts, the 529s for this beneficiary."""
-    col = EducationPlan.beneficiaryPersonId if kind == "person" else EducationPlan.beneficiaryUserId
     return list(
         s.scalars(
             select(EducationPlan.accountId).where(
-                col == beneficiary_id,
+                EducationPlan.beneficiaryId == beneficiary_id,
                 EducationPlan.deleted == false(),
                 EducationPlan.accountId.in_(account_ids),
             )

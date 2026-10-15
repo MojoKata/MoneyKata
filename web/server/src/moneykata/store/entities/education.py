@@ -8,13 +8,32 @@ from . import Record, SoftDeleted
 @dataclass(kw_only=True, eq=False)
 class Person(Record):
     id: str
-    ownerId: str
     name: str
-    relationship: str | None = None
-    userId: str | None = None
+    sex: str
+    ownerId: str | None = None
     birthMonth: int | None = None
     birthDay: int | None = None
     birthYear: int | None = None
+    diedOn: dt.date | None = None
+    private: bool = False
+
+
+@dataclass(kw_only=True, eq=False)
+class Relationship(Record):
+    id: str
+    person1Id: str
+    person2Id: str
+    relation: str
+    label: str | None = None
+    fromDate: dt.date | None = None
+    toDate: dt.date | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class GiftPlan(Record):
+    id: str
+    ownerId: str
+    personId: str
     giftBudget: Decimal | None = None
     leadDays: int = 14
     notes: str | None = None
@@ -26,8 +45,7 @@ class EducationPlan(Record):
     accountId: str
     planState: str | None = None
     planName: str | None = None
-    beneficiaryPersonId: str | None = None
-    beneficiaryUserId: str | None = None
+    beneficiaryId: str | None = None
     openedOn: dt.date | None = None
     stateDeduction: Decimal | None = None
 
@@ -36,7 +54,6 @@ class EducationPlan(Record):
 class Contribution(Record):
     id: str
     transactionId: str
-    fromUserId: str | None = None
     fromPersonId: str | None = None
     fiveYear: bool = False
 
@@ -56,7 +73,7 @@ class QualifiedExpense(Record):
 @dataclass(kw_only=True, eq=False)
 class Occasion(Record):
     id: str
-    personId: str
+    giftPlanId: str
     kind: str
     name: str | None = None
     holiday: str | None = None

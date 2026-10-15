@@ -27,10 +27,13 @@ def couple(server, frozen):
     alice, bob = sign_in(server, "alice"), sign_in(server, "bob")
     a_id = alice.get("/ui/api/session").json()["user"]["id"]
     b_id = bob.get("/ui/api/session").json()["user"]["id"]
-    for c, other in ((alice, b_id), (bob, a_id)):
-        v = c.get("/ui/api/profile").json()["version"]
-        r = c.patch("/ui/api/profile", json={"spouseId": other}, headers={"If-Match": f'"{v}"'})
-        assert r.status_code == 200, r.text
+    pa = alice.get("/ui/api/profile").json()["personId"]
+    pb = bob.get("/ui/api/profile").json()["personId"]
+    r = alice.post(
+        "/ui/api/relationships",
+        json={"person1Id": pa, "person2Id": pb, "relation": "spouse", "fromDate": "2009-06-14"},
+    )
+    assert r.status_code == 201, r.text
     return alice, bob, a_id, b_id
 
 

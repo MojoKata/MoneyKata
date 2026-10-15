@@ -14,7 +14,6 @@ from sqlalchemy.orm import Session
 from . import clock, ids
 from .ledger import types as atypes
 from .store.entities.accounts import Account, Instrument, Lot, Transaction, WashSale
-from .store.entities.users import User
 from .store.repos import ledger as repo
 
 DAYS = 30
@@ -23,13 +22,17 @@ CLASSES = ("equity", "etf", "mutual-fund")
 
 
 def household(s: Session, user_id: str) -> list[str]:
-    """The user and whoever is married to them, either way round."""
-    out = {user_id}
-    u = s.get(User, user_id)
-    if u is not None and u.spouseId:
-        out.add(u.spouseId)
-    out |= set(s.scalars(select(User.id).where(User.spouseId == user_id)))
-    return sorted(out)
+    """The user and everyone ever married to them, and to those in turn (S10.10.4), whose
+    trades are worked out together; a match counts only with the spouse on the day sold."""
+    from . import people
+
+    seen, todo = {user_id}, [user_id]
+    while todo:
+        for other in people.spouse_users_ever(s, todo.pop()):
+            if other not in seen:
+                seen.add(other)
+                todo.append(other)
+    return sorted(seen)
 
 
 @dataclass
@@ -75,6 +78,18 @@ def recompute(s: Session, user_id: str) -> int:
             if d.instrumentId in classes and d.gain is not None and d.gain < 0 and d.saleId:
                 losses.append((a, d))
     losses.sort(key=lambda x: x[1].soldOn)
+    from . import people
+
+    spouse_on: dict[tuple[str, dt.date], str | None] = {}
+
+    def counts(seller: str, buyer: str, day: dt.date) -> bool:
+        """A buy counts in the seller's own accounts, or their spouse's on the day sold."""
+        if seller == buyer:
+            return True
+        if (seller, day) not in spouse_on:
+            spouse_on[(seller, day)] = people.spouse_user_on(s, seller, day)
+        return spouse_on[(seller, day)] == buyer
+
     made = 0
     now = clock.now()
     for a, d in losses:
@@ -87,6 +102,8 @@ def recompute(s: Session, user_id: str) -> int:
             if left <= 0:
                 break
             if abs((b.txn.date - d.soldOn).days) > DAYS or b.remaining <= 0:
+                continue
+            if not counts(a.ownerId, by_id[b.txn.accountId].ownerId, d.soldOn):
                 continue
             if b.txn.id == own or b.txn.id == d.saleId:
                 continue

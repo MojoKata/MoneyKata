@@ -20,7 +20,7 @@ from ..store.entities.sharing import Share
 from ..store.entities.users import User
 from . import changes, keys
 
-KINDS = ("account", "portfolio", "budget", "person", "giving-plan", "tax-book", "projection")
+KINDS = ("account", "portfolio", "budget", "gift-plan", "giving-plan", "tax-book", "projection")
 
 
 @dataclass
@@ -58,7 +58,7 @@ def _document(x):
 def shared_items(srv, link_id: str) -> tuple[dict[str, Item], dict[str, User]]:
     """The items shared with this link's people, and those people (here, remote users)."""
     from .. import sharing
-    from ..store.entities.education import Person
+    from ..store.entities.education import GiftPlan
 
     with srv.db.read() as s:
         people = {
@@ -81,16 +81,23 @@ def shared_items(srv, link_id: str) -> tuple[dict[str, Item], dict[str, User]]:
                 continue
             if getattr(obj, "deleted", False):
                 continue
-            # Gifts for a person linked to a user of that server never cross (S7.8.5).
-            if g.kind == "person" and isinstance(obj, Person) and obj.userId in people:
+            if g.kind not in KINDS:
                 continue
+            # Gifts for a user of that server never cross (S7.8.5).
+            if isinstance(obj, GiftPlan) and obj.personId in {u.personId for u in people.values()}:
+                continue
+            name = getattr(obj, "name", None) or str(getattr(obj, "year", ""))
+            if isinstance(obj, GiftPlan):
+                from ..store.entities.education import Person
+
+                name = s.get(Person, obj.personId).name
             owner = s.get(User, obj.ownerId)
             it = out.setdefault(
                 g.itemId,
                 Item(
                     g.itemId,
                     g.kind,
-                    getattr(obj, "name", None) or str(getattr(obj, "year", "")),
+                    name,
                     owner.displayName if owner else "?",
                     g.createdAt.isoformat(),
                 ),
@@ -156,8 +163,12 @@ def _paths(srv, it: Item) -> list[tuple[str, callable]]:
     if it.kind == "giving-plan":
         year = int(it.name) if it.name.isdigit() else None
         return [(f"/giving?year={year}", lambda c: giving.get_giving(r, year, c))]
-    if it.kind == "person":
-        return [(f"/gifts?person={i}", lambda c: gifts.list_gifts(r, None, i, c))]
+    if it.kind == "gift-plan":
+        from ..store.entities.education import GiftPlan
+
+        with srv.db.read() as s:
+            person = s.get(GiftPlan, i).personId
+        return [(f"/gifts?person={i}", lambda c: gifts.list_gifts(r, None, person, c))]
     return []
 
 
@@ -167,7 +178,7 @@ ROWS = {
     "budget": "/budgets",
     "tax-book": "/tax-books",
     "projection": "/projections",
-    "person": "/people",
+    "gift-plan": "/people",
 }
 
 
@@ -181,11 +192,12 @@ def _rows(srv, kind: str, c) -> dict[str, dict]:
         "budget": lambda: budgets.list_budgets(r, c),
         "tax-book": lambda: taxes.list_books(r, c),
         "projection": lambda: projections.list_projections(r, c),
-        "person": lambda: gifts.list_people(r, c),
+        "gift-plan": lambda: gifts.list_people(r, c),
     }.get(kind)
     if fn is None:
         return {}
-    return {row["id"]: row for row in _dump(fn()) if isinstance(row, dict) and "id" in row}
+    key = "planId" if kind == "gift-plan" else "id"
+    return {row[key]: row for row in _dump(fn()) if isinstance(row, dict) and key in row}
 
 
 def work_out(srv, link_id: str) -> tuple[dict[str, Item], dict[tuple[str, str, str], object]]:

@@ -16,7 +16,9 @@ from .conventions import ExactRoute, Model, check_version, if_match, version_of
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["sharing"])
-Kind = Literal["account", "portfolio", "budget", "projection", "person", "giving-plan", "tax-book"]
+Kind = Literal[
+    "account", "portfolio", "budget", "projection", "person", "gift-plan", "giving-plan", "tax-book"
+]
 
 
 class Via(Model):
@@ -127,7 +129,7 @@ def view(s, owner: User, kind: str, item_id: str) -> ShareView:
         version=version_of(s, Share, Share.kind == kind, Share.itemId == item_id),
         kind=kind,
         itemId=item_id,
-        itemName=obj.name,
+        itemName=sharing.name_of(s, kind, obj),
         links=_linked(s, current),
         users=out_users,
         groups=[
@@ -185,7 +187,12 @@ def _linked(s, current) -> list[LinkedPeople]:
 
 def _owner_only(s, c: Caller, kind: str, item_id: str) -> None:
     obj = sharing.item(s, kind, item_id)
-    lvl = access.level_of(s, c.id, kind, obj.ownerId, obj.id, obj.deleted)
+    if kind == "person":  # a private person: whoever may change them shares them (S10.10.2)
+        from .. import people
+
+        lvl = people.level(s, c.id, obj)
+    else:
+        lvl = access.level_of(s, c.id, kind, obj.ownerId, obj.id, obj.deleted)
     if lvl is None:
         raise Problem(404, "not-found", "Not found")
     if lvl != "owner":

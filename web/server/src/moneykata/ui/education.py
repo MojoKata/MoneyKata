@@ -1,4 +1,4 @@
-"""529 plans (requirements S1.8): the plan and its beneficiary (a person, S7.7, or a user),
+"""529 plans (requirements S1.8): the plan and its beneficiary (a person, S10.10),
 contributions and who made them against the annual gift exclusion, withdrawals against
 qualified expenses with their receipts, the Roth IRA rollover, and the Goal tab's education
 projection (S6.2.2)."""
@@ -10,7 +10,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, education, exactjson, ids, projections, receipts
+from .. import access, activity, clock, education, exactjson, ids, people, projections, receipts
 from ..errors import Problem, refuse
 from ..store.entities.accounts import Account, Transaction
 from ..store.entities.education import Contribution, EducationPlan, Person, QualifiedExpense
@@ -30,13 +30,14 @@ router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["education"])
 
 
 class BeneficiaryRef(Model):
-    kind: str  # person or user
+    kind: str  # person, or user for a user's own person
     id: str
 
 
 class BeneficiaryOut(BeneficiaryRef):
     name: str
     birthYear: int | None
+    deleted: bool = False
 
 
 class PlanIn(Model):
@@ -77,7 +78,9 @@ def _account(s, c: Caller, account_id: str, need: str = "read") -> tuple[Account
 def _beneficiary_out(b: education.Beneficiary | None) -> BeneficiaryOut | None:
     if b is None:
         return None
-    return BeneficiaryOut(kind=b.kind, id=b.id, name=b.name, birthYear=b.birthYear)
+    return BeneficiaryOut(
+        kind=b.kind, id=b.id, name=b.name, birthYear=b.birthYear, deleted=b.deleted
+    )
 
 
 def plan_view(s, a: Account, lvl: str) -> PlanOut:
@@ -98,17 +101,24 @@ def plan_view(s, a: Account, lvl: str) -> PlanOut:
     )
 
 
+def _person_of(s, c: Caller, kind: str, ident: str) -> Person | None:
+    """A person the caller can see; a user stands for their own person (S10.10.1)."""
+    if kind == "user":
+        u = s.get(User, ident)
+        ident = u.personId if u is not None else ""
+    if kind not in ("person", "user"):
+        return None
+    p = s.get(Person, ident)
+    return p if p is not None and people.level(s, c.id, p) is not None else None
+
+
 def _check_beneficiary(s, c: Caller, b: BeneficiaryRef | None, owner_id: str) -> dict:
     if b is None:
-        return {"beneficiaryPersonId": None, "beneficiaryUserId": None}
-    if b.kind == "person":
-        p = s.get(Person, b.id)
-        if p is None or p.deleted or p.ownerId != owner_id:
-            raise refuse("beneficiary", "beneficiary-invalid", "A person on the owner's list.")
-        return {"beneficiaryPersonId": p.id, "beneficiaryUserId": None}
-    if b.kind == "user" and s.get(User, b.id) is not None:
-        return {"beneficiaryPersonId": None, "beneficiaryUserId": b.id}
-    raise refuse("beneficiary", "beneficiary-invalid", "A person or a user.")
+        return {"beneficiaryId": None}
+    p = _person_of(s, c, b.kind, b.id)
+    if p is None:
+        raise refuse("beneficiary", "beneficiary-invalid", "One of the household's people.")
+    return {"beneficiaryId": p.id}
 
 
 @router.get("/accounts/{account_id}/plan529", response_model=PlanOut)
@@ -193,7 +203,7 @@ class ContributionsView(Model):
 class ContributionIn(Model):
     date: dt.date
     amount: Money
-    contributor: str = "owner"  # owner, user:<id> or person:<id>
+    contributor: str = "owner"  # owner, person:<id>, or user:<id> for their person
     fiveYear: bool = False
     fromAccountId: str | None = None  # its half of the transfer is made too
 
@@ -203,17 +213,14 @@ class TagIn(Model):
     fiveYear: bool = False
 
 
-def _contributor(s, c: Caller, key: str, owner_id: str) -> tuple[str | None, str | None]:
+def _contributor(s, c: Caller, key: str, owner_id: str) -> str | None:
     if key == "owner":
-        return None, None
+        return None
     kind, _, ident = key.partition(":")
-    if kind == "user" and s.get(User, ident) is not None:
-        return ident, None
-    if kind == "person":
-        p = s.get(Person, ident)
-        if p is not None and not p.deleted and p.ownerId == owner_id:
-            return None, p.id
-    raise refuse("contributor", "contributor-invalid", "The owner, a user or a person.")
+    p = _person_of(s, c, kind, ident)
+    if p is None:
+        raise refuse("contributor", "contributor-invalid", "The owner or a person.")
+    return p.id
 
 
 def _tag_of(s, txn_id: str) -> Contribution | None:
@@ -245,20 +252,19 @@ def contributions_view(s, a: Account, lvl: str) -> ContributionsView:
     )
 
 
-def _tag(s, txn_id: str, from_user, from_person, five: bool) -> None:
+def _tag(s, txn_id: str, from_person, five: bool) -> None:
     row = _tag_of(s, txn_id)
     if row is None:
         s.add(
             Contribution(
                 id=ids.new_id("Cntrb"),
                 transactionId=txn_id,
-                fromUserId=from_user,
                 fromPersonId=from_person,
                 fiveYear=five,
             )
         )
     else:
-        row.fromUserId, row.fromPersonId, row.fiveYear = from_user, from_person, five
+        row.fromPersonId, row.fiveYear = from_person, five
         row.updatedAt = clock.now()
 
 
@@ -280,7 +286,7 @@ def add_contribution(
         raise refuse("amount", "amount-invalid", "More than zero.")
     with server(request).db.tx() as s:
         a, lvl = _account(s, c, account_id, "write")
-        from_user, from_person = _contributor(s, c, body.contributor, a.ownerId)
+        from_person = _contributor(s, c, body.contributor, a.ownerId)
         other = None
         if body.fromAccountId:
             access.account(s, c.id, body.fromAccountId, "write")
@@ -307,7 +313,7 @@ def add_contribution(
         s.flush()
         if other is not None:
             txn.transferId, other.transferId = other.id, txn.id
-        _tag(s, txn.id, from_user, from_person, body.fiveYear)
+        _tag(s, txn.id, from_person, body.fiveYear)
         s.flush()
         activity.record(
             s,
@@ -336,8 +342,8 @@ def tag_contribution(
             raise Problem(404, "not-found", "No such contribution.")
         a, lvl = _account(s, c, t.accountId, "write")
         check(_tag_of(s, t.id), version, lambda: contributions_view(s, a, lvl))
-        from_user, from_person = _contributor(s, c, body.contributor, a.ownerId)
-        _tag(s, t.id, from_user, from_person, body.fiveYear)
+        from_person = _contributor(s, c, body.contributor, a.ownerId)
+        _tag(s, t.id, from_person, body.fiveYear)
         s.flush()
         return contributions_view(s, a, lvl)
 
@@ -484,6 +490,9 @@ def _goals(s, c: Caller, b: education.Beneficiary) -> list[Projection]:
         if p.goal != "education":
             continue
         who = json.loads(p.inputs or "{}").get("beneficiary") or {}
+        if who.get("kind") == "user":
+            u = s.get(User, who.get("id") or "")
+            who = {"kind": "person", "id": u.personId if u else None}
         if who.get("kind") == b.kind and who.get("id") == b.id:
             out.append(p)
     return sorted(out, key=lambda p: (not p.active, p.createdAt))
@@ -519,7 +528,7 @@ def start_goal(account_id: str, request: Request, c: Caller = Depends(caller)):
         if b is None:
             raise Problem(409, "no-beneficiary", "Choose the beneficiary in Settings first.")
         mine = [x.id for x, _ in access.visible_accounts(s, c.id)]
-        built = education.accounts_for(s, b.kind, b.id, mine) or [a.id]
+        built = education.accounts_for(s, b.id, mine) or [a.id]
         rows = education.contributions(s, a)
         year = clock.today().year
         recent = sum((r.amount for r in rows if r.date.year >= year - 1), Decimal(0))

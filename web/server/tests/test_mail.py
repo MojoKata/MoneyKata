@@ -98,7 +98,8 @@ def test_with_smtp_emails_go_through_the_outbox(admin_client, server, smtp):
     set_public_url(server)
     before = len(mails(server))
     r = admin_client.post(
-        "/ui/api/users", json={"displayName": "Dave", "username": "dave", "email": "dave@x.lan"}
+        "/ui/api/users",
+        json={"displayName": "Dave", "username": "dave", "email": "dave@x.lan", "sex": "male"},
     )
     assert r.status_code == 201
     assert len(mails(server)) == before, "not written to the mail folder"
@@ -120,7 +121,8 @@ def test_a_failure_keeps_the_email_and_says_why(admin_client, server, smtp):
     set_up_smtp(admin_client, password="wrong")
     set_public_url(server)
     admin_client.post(
-        "/ui/api/users", json={"displayName": "Dave", "username": "dave", "email": "dave@x.lan"}
+        "/ui/api/users",
+        json={"displayName": "Dave", "username": "dave", "email": "dave@x.lan", "sex": "male"},
     )
     with pytest.raises(RuntimeError, match="refused the username or password"):
         server.services.mailer.send_waiting(_smtp(server), server.guard)
@@ -167,7 +169,13 @@ def sign_up(server, email="erin@shaw.family", username="erin"):
     with new_client(server) as c:
         return c.post(
             "/ui/api/signup",
-            json={"displayName": "Erin Shaw", "username": username, "email": email, "password": PW},
+            json={
+                "displayName": "Erin Shaw",
+                "username": username,
+                "email": email,
+                "password": PW,
+                "sex": "female",
+            },
         )
 
 

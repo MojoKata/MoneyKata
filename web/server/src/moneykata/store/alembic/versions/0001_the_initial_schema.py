@@ -43,8 +43,7 @@ def upgrade() -> None:
         sa.Column("avatar", sa.Text(), nullable=True),
         sa.Column("timeZone", sa.Text(), server_default=sa.text("'auto'"), nullable=False),
         sa.Column("theme", sa.Text(), server_default=sa.text("'dark'"), nullable=False),
-        sa.Column("birthYear", sa.Integer(), nullable=True),
-        sa.Column("spouseId", sa.Text(), nullable=True),
+        sa.Column("personId", sa.Text(), nullable=False),
         sa.Column("alertEmails", sa.Text(), server_default=sa.text("'daily'"), nullable=False),
         sa.Column("lastSignInAt", moneykata.store.types.UtcTimestamp(), nullable=True),
         sa.Column("reactivationAskedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
@@ -76,7 +75,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["linkId"], ["Link.id"], name="fk_User_linkId_Link", use_alter=True
         ),
-        sa.ForeignKeyConstraint(["spouseId"], ["User.id"], name=op.f("fk_User_spouseId_User")),
+        sa.ForeignKeyConstraint(
+            ["personId"], ["Person.id"], name="fk_User_personId_Person", use_alter=True
+        ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_User")),
         info={"prefix": "User", "softDelete": True},
         sqlite_with_rowid=False,
@@ -87,6 +88,12 @@ def upgrade() -> None:
             ["email"],
             unique=True,
             sqlite_where=sa.text('NOT deleted AND "linkId" IS NULL'),
+        )
+        batch_op.create_index(
+            "ux_User_personId",
+            ["personId"],
+            unique=True,
+            sqlite_where=sa.text("NOT deleted"),
         )
         batch_op.create_index(
             "ux_User_linkId_remoteId",
@@ -630,13 +637,106 @@ def upgrade() -> None:
     op.create_table(
         "Person",
         sa.Column("id", sa.Text(), nullable=False),
-        sa.Column("ownerId", sa.Text(), nullable=False),
+        sa.Column("ownerId", sa.Text(), nullable=True),
         sa.Column("name", sa.Text(), nullable=False),
-        sa.Column("relationship", sa.Text(), nullable=True),
-        sa.Column("userId", sa.Text(), nullable=True),
+        sa.Column("sex", sa.Text(), nullable=False),
         sa.Column("birthMonth", sa.Integer(), nullable=True),
         sa.Column("birthDay", sa.Integer(), nullable=True),
         sa.Column("birthYear", sa.Integer(), nullable=True),
+        sa.Column("diedOn", moneykata.store.types.Day(), nullable=True),
+        sa.Column("private", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Persn_*' AND length(id) = 32", name=op.f("ck_Person_id")),
+        sa.CheckConstraint("sex IN ('male', 'female')", name=op.f("ck_Person_sex")),
+        sa.CheckConstraint(
+            '"birthDay" IS NULL OR "birthDay" BETWEEN 1 AND 31', name=op.f("ck_Person_birth_day")
+        ),
+        sa.CheckConstraint(
+            '"birthMonth" IS NULL OR "birthMonth" BETWEEN 1 AND 12',
+            name=op.f("ck_Person_birth_month"),
+        ),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Person_deleted_at")
+        ),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Person_deleted_by")),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Person_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(["ownerId"], ["User.id"], name=op.f("fk_Person_ownerId_User")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Person")),
+        info={"prefix": "Persn", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Person", schema=None) as batch_op:
+        batch_op.create_index("ix_Person_name", ["name"], unique=False)
+
+    op.create_table(
+        "Relationship",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("person1Id", sa.Text(), nullable=False),
+        sa.Column("person2Id", sa.Text(), nullable=False),
+        sa.Column("relation", sa.Text(), nullable=False),
+        sa.Column("label", sa.Text(), nullable=True),
+        sa.Column("fromDate", moneykata.store.types.Day(), nullable=True),
+        sa.Column("toDate", moneykata.store.types.Day(), nullable=True),
+        sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("createdAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("updatedAt", moneykata.store.types.UtcTimestamp(), nullable=False),
+        sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
+        sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
+        sa.Column("deletedById", sa.Text(), nullable=True),
+        sa.CheckConstraint("id GLOB 'Rltn_*' AND length(id) = 31", name=op.f("ck_Relationship_id")),
+        sa.CheckConstraint(
+            "relation IN ('spouse', 'couple', 'child', 'friend', 'colleague', 'family')",
+            name=op.f("ck_Relationship_relation"),
+        ),
+        sa.CheckConstraint('"person1Id" <> "person2Id"', name=op.f("ck_Relationship_two_people")),
+        sa.CheckConstraint(
+            'relation = \'child\' OR "person1Id" < "person2Id"',
+            name=op.f("ck_Relationship_ordered"),
+        ),
+        sa.CheckConstraint(
+            '"toDate" IS NULL OR "fromDate" IS NULL OR "toDate" >= "fromDate"',
+            name=op.f("ck_Relationship_dates"),
+        ),
+        sa.CheckConstraint(
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Relationship_deleted_at")
+        ),
+        sa.CheckConstraint(
+            'deleted OR "deletedById" IS NULL', name=op.f("ck_Relationship_deleted_by")
+        ),
+        sa.ForeignKeyConstraint(
+            ["deletedById"], ["User.id"], name=op.f("fk_Relationship_deletedById_User")
+        ),
+        sa.ForeignKeyConstraint(
+            ["person1Id"], ["Person.id"], name=op.f("fk_Relationship_person1Id_Person")
+        ),
+        sa.ForeignKeyConstraint(
+            ["person2Id"], ["Person.id"], name=op.f("fk_Relationship_person2Id_Person")
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_Relationship")),
+        info={"prefix": "Rltn", "softDelete": True},
+        sqlite_with_rowid=False,
+    )
+    with op.batch_alter_table("Relationship", schema=None) as batch_op:
+        batch_op.create_index("ix_Relationship_person2Id", ["person2Id"], unique=False)
+        batch_op.create_index(
+            "ux_Relationship_person1Id_person2Id_relation_fromDate",
+            ["person1Id", "person2Id", "relation", "fromDate"],
+            unique=True,
+            sqlite_where=sa.text("NOT deleted"),
+        )
+
+    op.create_table(
+        "GiftPlan",
+        sa.Column("id", sa.Text(), nullable=False),
+        sa.Column("ownerId", sa.Text(), nullable=False),
+        sa.Column("personId", sa.Text(), nullable=False),
         sa.Column("giftBudget", moneykata.store.types.Dec(), nullable=True),
         sa.Column("leadDays", sa.Integer(), server_default=sa.text("(14)"), nullable=False),
         sa.Column("notes", sa.Text(), nullable=True),
@@ -646,30 +746,34 @@ def upgrade() -> None:
         sa.Column("deleted", sa.Boolean(), server_default=sa.text("0"), nullable=False),
         sa.Column("deletedAt", moneykata.store.types.UtcTimestamp(), nullable=True),
         sa.Column("deletedById", sa.Text(), nullable=True),
-        sa.CheckConstraint("id GLOB 'Persn_*' AND length(id) = 32", name=op.f("ck_Person_id")),
+        sa.CheckConstraint("id GLOB 'GfPln_*' AND length(id) = 32", name=op.f("ck_GiftPlan_id")),
+        sa.CheckConstraint('"leadDays" >= 0', name=op.f("ck_GiftPlan_lead_days")),
         sa.CheckConstraint(
-            '"birthDay" IS NULL OR "birthDay" BETWEEN 1 AND 31', name=op.f("ck_Person_birth_day")
+            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_GiftPlan_deleted_at")
         ),
-        sa.CheckConstraint(
-            '"birthMonth" IS NULL OR "birthMonth" BETWEEN 1 AND 12',
-            name=op.f("ck_Person_birth_month"),
-        ),
-        sa.CheckConstraint('"leadDays" >= 0', name=op.f("ck_Person_lead_days")),
-        sa.CheckConstraint(
-            'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Person_deleted_at")
-        ),
-        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_Person_deleted_by")),
+        sa.CheckConstraint('deleted OR "deletedById" IS NULL', name=op.f("ck_GiftPlan_deleted_by")),
         sa.ForeignKeyConstraint(
-            ["deletedById"], ["User.id"], name=op.f("fk_Person_deletedById_User")
+            ["deletedById"], ["User.id"], name=op.f("fk_GiftPlan_deletedById_User")
         ),
-        sa.ForeignKeyConstraint(["ownerId"], ["User.id"], name=op.f("fk_Person_ownerId_User")),
-        sa.ForeignKeyConstraint(["userId"], ["User.id"], name=op.f("fk_Person_userId_User")),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_Person")),
-        info={"prefix": "Persn", "softDelete": True},
+        sa.ForeignKeyConstraint(["ownerId"], ["User.id"], name=op.f("fk_GiftPlan_ownerId_User")),
+        sa.ForeignKeyConstraint(
+            ["personId"],
+            ["Person.id"],
+            name=op.f("fk_GiftPlan_personId_Person"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_GiftPlan")),
+        info={"prefix": "GfPln", "softDelete": True},
         sqlite_with_rowid=False,
     )
-    with op.batch_alter_table("Person", schema=None) as batch_op:
-        batch_op.create_index("ix_Person_ownerId", ["ownerId"], unique=False)
+    with op.batch_alter_table("GiftPlan", schema=None) as batch_op:
+        batch_op.create_index("ix_GiftPlan_personId", ["personId"], unique=False)
+        batch_op.create_index(
+            "ux_GiftPlan_ownerId_personId",
+            ["ownerId", "personId"],
+            unique=True,
+            sqlite_where=sa.text("NOT deleted"),
+        )
 
     op.create_table(
         "Portfolio",
@@ -921,6 +1025,7 @@ def upgrade() -> None:
         sa.Column("username", sa.Text(), nullable=False),
         sa.Column("email", sa.Text(), nullable=False),
         sa.Column("passwordHash", sa.Text(), nullable=False),
+        sa.Column("sex", sa.Text(), nullable=False),
         sa.Column("status", sa.Text(), server_default=sa.text("'confirming'"), nullable=False),
         sa.Column("confirmTokenHash", sa.Text(), nullable=True),
         sa.Column("confirmBy", moneykata.store.types.UtcTimestamp(), nullable=False),
@@ -941,6 +1046,7 @@ def upgrade() -> None:
             "status IN ('confirming', 'waiting', 'approved', 'rejected')",
             name=op.f("ck_SignupRequest_status"),
         ),
+        sa.CheckConstraint("sex IN ('male', 'female')", name=op.f("ck_SignupRequest_sex")),
         sa.CheckConstraint(
             'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_SignupRequest_deleted_at")
         ),
@@ -1203,8 +1309,7 @@ def upgrade() -> None:
         sa.Column("accountId", sa.Text(), nullable=False),
         sa.Column("planState", sa.Text(), nullable=True),
         sa.Column("planName", sa.Text(), nullable=True),
-        sa.Column("beneficiaryPersonId", sa.Text(), nullable=True),
-        sa.Column("beneficiaryUserId", sa.Text(), nullable=True),
+        sa.Column("beneficiaryId", sa.Text(), nullable=True),
         sa.Column("openedOn", moneykata.store.types.Day(), nullable=True),
         sa.Column("stateDeduction", moneykata.store.types.Dec(), nullable=True),
         sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
@@ -1215,10 +1320,6 @@ def upgrade() -> None:
         sa.Column("deletedById", sa.Text(), nullable=True),
         sa.CheckConstraint(
             "id GLOB 'EdPln_*' AND length(id) = 32", name=op.f("ck_EducationPlan_id")
-        ),
-        sa.CheckConstraint(
-            '"beneficiaryPersonId" IS NULL OR "beneficiaryUserId" IS NULL',
-            name=op.f("ck_EducationPlan_one_beneficiary"),
         ),
         sa.CheckConstraint(
             'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_EducationPlan_deleted_at")
@@ -1233,12 +1334,7 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["beneficiaryPersonId"],
-            ["Person.id"],
-            name=op.f("fk_EducationPlan_beneficiaryPersonId_Person"),
-        ),
-        sa.ForeignKeyConstraint(
-            ["beneficiaryUserId"], ["User.id"], name=op.f("fk_EducationPlan_beneficiaryUserId_User")
+            ["beneficiaryId"], ["Person.id"], name=op.f("fk_EducationPlan_beneficiaryId_Person")
         ),
         sa.ForeignKeyConstraint(
             ["deletedById"], ["User.id"], name=op.f("fk_EducationPlan_deletedById_User")
@@ -1462,7 +1558,7 @@ def upgrade() -> None:
     op.create_table(
         "Occasion",
         sa.Column("id", sa.Text(), nullable=False),
-        sa.Column("personId", sa.Text(), nullable=False),
+        sa.Column("giftPlanId", sa.Text(), nullable=False),
         sa.Column("kind", sa.Text(), nullable=False),
         sa.Column("name", sa.Text(), nullable=True),
         sa.Column("holiday", sa.Text(), nullable=True),
@@ -1495,9 +1591,9 @@ def upgrade() -> None:
             ["deletedById"], ["User.id"], name=op.f("fk_Occasion_deletedById_User")
         ),
         sa.ForeignKeyConstraint(
-            ["personId"],
-            ["Person.id"],
-            name=op.f("fk_Occasion_personId_Person"),
+            ["giftPlanId"],
+            ["GiftPlan.id"],
+            name=op.f("fk_Occasion_giftPlanId_GiftPlan"),
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_Occasion")),
@@ -1505,7 +1601,7 @@ def upgrade() -> None:
         sqlite_with_rowid=False,
     )
     with op.batch_alter_table("Occasion", schema=None) as batch_op:
-        batch_op.create_index("ix_Occasion_personId", ["personId"], unique=False)
+        batch_op.create_index("ix_Occasion_giftPlanId", ["giftPlanId"], unique=False)
 
     op.create_table(
         "OptionContract",
@@ -1757,7 +1853,7 @@ def upgrade() -> None:
         sa.Column("deletedById", sa.Text(), nullable=True),
         sa.CheckConstraint("id GLOB 'Share_*' AND length(id) = 32", name=op.f("ck_Share_id")),
         sa.CheckConstraint(
-            "kind IN ('account', 'portfolio', 'budget', 'person', 'giving-plan', 'tax-book', 'projection')",
+            "kind IN ('account', 'portfolio', 'budget', 'person', 'gift-plan', 'giving-plan', 'tax-book', 'projection')",
             name=op.f("ck_Share_kind"),
         ),
         sa.CheckConstraint("level IN ('read', 'write')", name=op.f("ck_Share_level")),
@@ -2329,7 +2425,6 @@ def upgrade() -> None:
         "Contribution",
         sa.Column("id", sa.Text(), nullable=False),
         sa.Column("transactionId", sa.Text(), nullable=False),
-        sa.Column("fromUserId", sa.Text(), nullable=True),
         sa.Column("fromPersonId", sa.Text(), nullable=True),
         sa.Column("fiveYear", sa.Boolean(), server_default=sa.text("0"), nullable=False),
         sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
@@ -2342,10 +2437,6 @@ def upgrade() -> None:
             "id GLOB 'Cntrb_*' AND length(id) = 32", name=op.f("ck_Contribution_id")
         ),
         sa.CheckConstraint(
-            '"fromUserId" IS NULL OR "fromPersonId" IS NULL',
-            name=op.f("ck_Contribution_one_contributor"),
-        ),
-        sa.CheckConstraint(
             'deleted = ("deletedAt" IS NOT NULL)', name=op.f("ck_Contribution_deleted_at")
         ),
         sa.CheckConstraint(
@@ -2356,9 +2447,6 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["fromPersonId"], ["Person.id"], name=op.f("fk_Contribution_fromPersonId_Person")
-        ),
-        sa.ForeignKeyConstraint(
-            ["fromUserId"], ["User.id"], name=op.f("fk_Contribution_fromUserId_User")
         ),
         sa.ForeignKeyConstraint(
             ["transactionId"],
@@ -2825,7 +2913,6 @@ def upgrade() -> None:
             ["personId"],
             ["Person.id"],
             name=op.f("fk_GiftPersons_personId_Person"),
-            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("giftId", "personId", name=op.f("pk_GiftPersons")),
         info={"softDelete": True, "pairs": True},

@@ -409,7 +409,7 @@ function NewBook({ close, rows }) {
   const year = new Date().getFullYear();
   const [f, setF] = useState({ year: String(year - 1), joint: false, fromLastYear: true });
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
-  const spouse = p?.spouseId ? p.people.find((/** @type {any} */ x) => x.id === p.spouseId) : null;
+  const spouse = p?.spouse || null;
   const save = useSubmit(async () => {
     const out = await api.post('/tax-books', {
       year: Number(f.year),
@@ -433,7 +433,8 @@ function NewBook({ close, rows }) {
         </${Field}>
         <${SwitchRow} label="Filing jointly" hint=${spouse
           ? `With ${spouse.displayName}, who is asked to accept before their accounts count.`
-          : 'Set your spouse in Profile to file jointly.'} on=${f.joint && !!spouse}
+          : 'Add your spouse among your relationships in Profile to file jointly.'} on=${f.joint &&
+          !!spouse}
           disabled=${!spouse} onChange=${set('joint')} />
         <${SwitchRow} label="Start from last year" hint=${has
           ? "Copies last year's accounts left out or added; its received documents become this year's expected ones."

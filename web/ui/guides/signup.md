@@ -7,6 +7,10 @@ email either way.
 
 As others here will see it.
 
+## Sex
+
+Your person's (every user is one): it chooses the words for the family tree.
+
 ## Email address {#email}
 
 A link to confirm it is sent here first. The request reaches the admins only once it is confirmed.

@@ -80,6 +80,8 @@ TEXT = {
     "loan.payment": "{actor} recorded a payment on {subject}",
     "loan.plan-saved": "{actor} saved a payoff plan for {subject}",
     "gift.saved": "{actor} saved a gift",
+    "person.share-asked": "{actor} asked for a private person to be shared",
+    "relationship.saved": "{actor} saved a relationship",
     "option.traded": "{actor} recorded an option trade in {subject}",
     "token.created": "{actor} made an access token, {name}",
     "token.revoked": "{actor} revoked the access token {name}",

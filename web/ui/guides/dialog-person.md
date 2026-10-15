@@ -1,19 +1,24 @@
-# A person
+# A gift plan
 
-Someone you give gifts to. They needn't be a user of this server.
+Your plan for someone you give gifts to: your budget, their holidays and dates, and your notes.
+Yours alone unless you share it.
+
+## The person {#the-person}
+
+Name, sex and birthday belong to the person, seen by the whole household unless whoever added
+them keeps them private. Only the person (when they sign in here), whoever added them or an admin
+changes them. How they're related to you is worked out from relationships. Gifts for someone who
+uses this server are never shown to them, even through a share.
 
 ## Name
 
-What they're called in your lists.
+One person, once: a name already here shows that person instead, to plan for them, or to ask
+whoever added them to share them. **A different person** with the same name is added once both
+have birth years, and they differ.
 
-## Relationship
+## Sex
 
-Daughter, father, friend: how they are related to you.
-
-## Linked user {#linked-user}
-
-When they are a user of this server: gifts for them are never shown to them, here or anywhere else,
-even through a share.
+Chooses the words for the family tree: mother or father, niece or nephew.
 
 ## Birthday
 
@@ -30,8 +35,8 @@ Mother's Day, and lunar or lunisolar ones like Diwali from shipped tables.
 
 ## Anniversaries and other dates {#dates}
 
-A wedding anniversary, a name day, any other date of their own, each with a budget of its own if you
-like.
+Any anniversary other than a wedding, a name day, any other date of their own, each with a budget
+of its own if you like. A wedding anniversary comes from their marriage.
 
 ## Remind me {#lead-days}
 

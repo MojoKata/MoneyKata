@@ -8,7 +8,8 @@ The tax year.
 
 ## Filing jointly
 
-With your spouse (set in Profile). They're asked to accept before the book counts their accounts.
+With your spouse (from your relationships in Profile), married on the last day of the year. They're
+asked to accept before the book counts their accounts.
 
 ## Start from last year
 

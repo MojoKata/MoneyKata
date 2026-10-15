@@ -169,7 +169,7 @@ def _check(s, user_id: str, name, goal, built, inputs) -> list[FieldError]:
 
 
 def _check_beneficiary(s, user_id: str, who) -> list[FieldError]:
-    """An education goal is for a person on the user's list, or a user."""
+    """An education goal is for a person the user can see, or a user (S10.10)."""
     from ..store.entities.education import Person
     from ..store.entities.users import User
 
@@ -177,8 +177,10 @@ def _check_beneficiary(s, user_id: str, who) -> list[FieldError]:
     if not isinstance(who, dict):
         return bad
     if who.get("kind") == "person":
+        from .. import people
+
         p = s.get(Person, who.get("id") or "")
-        return [] if p is not None and not p.deleted and p.ownerId == user_id else bad
+        return [] if p is not None and people.level(s, user_id, p) is not None else bad
     if who.get("kind") == "user":
         return [] if s.get(User, who.get("id") or "") is not None else bad
     return bad

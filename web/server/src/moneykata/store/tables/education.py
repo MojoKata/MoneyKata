@@ -12,27 +12,20 @@ EducationPlan = record(
     Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
     Column("planState", Text),  # the sponsoring state: Utah, Nevada…
     Column("planName", Text),  # my529, Bright Start…
-    # The beneficiary: a person on the owner's list, or a user.
-    Column("beneficiaryPersonId", Text, ForeignKey("Person.id")),
-    Column("beneficiaryUserId", Text, ForeignKey("User.id")),
+    Column("beneficiaryId", Text, ForeignKey("Person.id")),  # a person (S10.10)
     Column("openedOn", Day),
     Column("stateDeduction", Dec),  # what the owner expects a year, typed (S8.18)
-    CheckConstraint(
-        '"beneficiaryPersonId" IS NULL OR "beneficiaryUserId" IS NULL', name="one_beneficiary"
-    ),
 )
 unique_live(EducationPlan, "accountId")
 
-# Who a contribution (a deposit into a 529) came from: the owner (neither set), a user or a
-# person; a five-year election spreads it over five years of gift exclusions (S1.8.2).
+# Who a contribution (a deposit into a 529) came from: the owner (none set) or a person; a
+# five-year election spreads it over five years of gift exclusions (S1.8.2).
 Contribution = record(
     "Contribution",
     "Cntrb",
     Column("transactionId", Text, ForeignKey("Transaction.id", ondelete="CASCADE"), nullable=False),
-    Column("fromUserId", Text, ForeignKey("User.id")),
     Column("fromPersonId", Text, ForeignKey("Person.id")),
     Column("fiveYear", Boolean, nullable=False, server_default=text("0")),
-    CheckConstraint('"fromUserId" IS NULL OR "fromPersonId" IS NULL', name="one_contributor"),
 )
 unique_live(Contribution, "transactionId")
 

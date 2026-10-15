@@ -1,18 +1,19 @@
-"""Profile (requirements S12.2.16): name, email, avatar, password, two-step sign-in, time
-zone, theme, birth year, spouse for wash sales and alert emails. Assumptions and access tokens
-come with their features."""
+"""Profile (requirements S12.2.16): name, sex, birthday and relationships (the user's person,
+S10.10), email, avatar, password, two-step sign-in, time zone, theme and alert emails.
+Assumptions and access tokens come with their features."""
 
 import datetime as dt
 import re
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
-from sqlalchemy import false, select
+from sqlalchemy import select
 
-from .. import activity, clock, settings, timezones
+from .. import activity, clock, people, settings, timezones
 from ..auth import sessions, twostep
 from ..auth import users as accounts
 from ..errors import refuse
+from ..people import tree
 from ..store.entities.users import OneTimeToken, User
 from .conventions import Deleted, ExactRoute, Gone, Model, check, if_match, stale
 from .deps import Caller, caller, recent_auth, server, set_cookie
@@ -22,9 +23,21 @@ AVATAR = re.compile(r"^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")
 AVATAR_MAX = 256 * 1024
 
 
-class Person(Model):
-    id: str
+class Relation(Model):
+    """Someone the user is related to (S10.10.6): stored, or worked out from those."""
+
+    personId: str
+    name: str
+    word: str  # husband, daughter, mother-in-law
+    stored: bool
+
+
+class Spouse(Model):
+    """Who the user is married to today, when they are a user here (S10.10.4.3)."""
+
+    id: str  # the user
     displayName: str
+    birthYear: int | None
 
 
 class TwoStep(Model):
@@ -61,11 +74,15 @@ class Profile(Model):
     timeZone: str
     zone: str
     theme: str
+    personId: str
+    sex: str
+    birthMonth: int | None
+    birthDay: int | None
     birthYear: int | None
-    spouseId: str | None
     alertEmails: str
     twoStep: TwoStep
-    people: list[Person]
+    relations: list[Relation]
+    spouse: Spouse | None
     version: int
 
 
@@ -74,8 +91,10 @@ class ProfileChange(Model):
     avatar: str | None = None
     timeZone: str | None = None
     theme: str | None = None
+    sex: str | None = None
+    birthMonth: int | None = None
+    birthDay: int | None = None
     birthYear: int | None = None
-    spouseId: str | None = None
     alertEmails: str | None = None
 
 
@@ -101,11 +120,13 @@ def profile(s, u: User) -> Profile:
             OneTimeToken.expiresAt > sessions.now(),
         )
     ).first()
-    others = s.scalars(
-        select(User)
-        .where(User.deleted == false(), User.active, User.id != u.id, User.linkId.is_(None))
-        .order_by(User.displayName)
-    ).all()
+    me = people.of_user(s, u.id)
+    g = tree.graph(s)
+    relations = [
+        Relation(personId=r.personId, name=g.people[r.personId].name, word=r.word, stored=r.stored)
+        for r in g.relations(me.id)
+        if people.level(s, u.id, g.people[r.personId]) is not None
+    ]
     return Profile(
         id=u.id,
         username=u.username,
@@ -116,17 +137,29 @@ def profile(s, u: User) -> Profile:
         timeZone=u.timeZone,
         zone=timezones.zone_for(u.timeZone),
         theme=u.theme,
-        birthYear=u.birthYear,
-        spouseId=u.spouseId,
+        personId=me.id,
+        sex=me.sex,
+        birthMonth=me.birthMonth,
+        birthDay=me.birthDay,
+        birthYear=me.birthYear,
         alertEmails=u.alertEmails,
         twoStep=TwoStep(
             on=twostep.is_on(u),
             since=u.twoStepAt,
             recoveryCodesLeft=twostep.codes_left(s, u.id),
         ),
-        people=[Person(id=o.id, displayName=o.displayName) for o in others],
+        relations=relations,
+        spouse=_spouse(s, u.id),
         version=u.version,
     )
+
+
+def _spouse(s, user_id: str) -> Spouse | None:
+    other = people.spouse_user_on(s, user_id, clock.today())
+    if other is None:
+        return None
+    u = s.get(User, other)
+    return Spouse(id=u.id, displayName=u.displayName, birthYear=people.birth_year(s, u.id))
 
 
 @router.get("/profile", response_model=Profile)
@@ -147,12 +180,13 @@ def change_profile(
         u = s.get(User, c.id)
         if u.version != version:
             raise stale(profile(s, u))
+        me = people.of_user(s, u.id)
         fields = []
         if "displayName" in sent:
             name = (body.displayName or "").strip()
             if not name or len(name) > 80:
                 raise refuse("displayName", "name-invalid", "Enter a name of up to 80 characters.")
-            u.displayName = name
+            people.change(s, me, {"name": name})
             fields.append("displayName")
         if "avatar" in sent:
             if body.avatar is not None and (
@@ -174,18 +208,23 @@ def change_profile(
                 raise refuse("theme", "theme-invalid", "Dark, light or the system's.")
             u.theme = body.theme
             fields.append("theme")
-        if "birthYear" in sent:
-            if body.birthYear is not None and not 1900 <= body.birthYear <= 2100:
+        if "sex" in sent:
+            if body.sex not in people.SEXES:
+                raise refuse("sex", "sex-invalid", "Female or male.")
+            people.change(s, me, {"sex": body.sex})
+            u.updatedAt = clock.now()
+            fields.append("sex")
+        if sent & {"birthMonth", "birthDay", "birthYear"}:
+            month, day, year = body.birthMonth, body.birthDay, body.birthYear
+            if (month is None) != (day is None):
+                raise refuse("birthDay", "birthday-incomplete", "A month and a day.")
+            if month is not None and not (1 <= month <= 12 and 1 <= day <= 31):
+                raise refuse("birthDay", "day-invalid", "A day of the year.")
+            if year is not None and not 1900 <= year <= 2100:
                 raise refuse("birthYear", "year-invalid", "Enter a year such as 1979.")
-            u.birthYear = body.birthYear
-            fields.append("birthYear")
-        if "spouseId" in sent:
-            if body.spouseId is not None:
-                other = s.get(User, body.spouseId)
-                if other is None or other.deleted or other.id == u.id or other.linkId:
-                    raise refuse("spouseId", "user-unknown", "Choose a user of this server.")
-            u.spouseId = body.spouseId
-            fields.append("spouseId")
+            people.change(s, me, {"birthMonth": month, "birthDay": day, "birthYear": year})
+            u.updatedAt = clock.now()
+            fields.append("birthday")
         if "alertEmails" in sent:
             if body.alertEmails not in ("each", "daily", "none"):
                 raise refuse(

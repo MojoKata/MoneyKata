@@ -166,7 +166,8 @@ def test_a_change_of_privilege_gives_a_new_token(server, admin_client):
 
 def test_invitation_needs_the_public_url_outside_dev_mode(admin_client):
     r = admin_client.post(
-        "/ui/api/users", json={"displayName": "Eve", "username": "eve", "email": "eve@home.lan"}
+        "/ui/api/users",
+        json={"displayName": "Eve", "username": "eve", "email": "eve@home.lan", "sex": "female"},
     )
     assert r.status_code == 422
     assert r.json()["errors"][0]["field"] == "publicUrl"
@@ -176,7 +177,12 @@ def test_invite_join_and_sign_in(admin_client, server):
     set_public_url(server)
     r = admin_client.post(
         "/ui/api/users",
-        json={"displayName": "Eve Shaw", "username": "Eve", "email": "eve@home.lan"},
+        json={
+            "displayName": "Eve Shaw",
+            "username": "Eve",
+            "email": "eve@home.lan",
+            "sex": "female",
+        },
     )
     assert r.status_code == 201, r.text
     assert r.headers["location"].startswith("/ui/api/users/User_")
@@ -220,7 +226,7 @@ def test_new_users_are_checked_field_by_field(admin_client, server):
         },
     )
     fields = {e["field"] for e in r.json()["errors"]}
-    assert fields == {"displayName", "username", "email", "groupIds"}
+    assert fields == {"displayName", "username", "email", "sex", "groupIds"}
 
 
 def test_only_admins_manage_users(server):

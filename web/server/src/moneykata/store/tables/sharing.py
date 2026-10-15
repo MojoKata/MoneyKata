@@ -32,7 +32,7 @@ PortfolioAccounts = pairs(
 )
 
 # A grant of one item, at one level, to a user or a group (S10.3): any of the seven kinds,
-# each served as it is built.
+# each served as it is built, or a private person (S10.10.2).
 Share = record(
     "Share",
     "Share",
@@ -46,8 +46,8 @@ Share = record(
     # files) cross too (S11.5.1), the same for every user of that server.
     Column("includeReceipts", Boolean, nullable=False, server_default=text("0")),
     CheckConstraint(
-        "kind IN ('account', 'portfolio', 'budget', 'person', 'giving-plan', 'tax-book', "
-        "'projection')",
+        "kind IN ('account', 'portfolio', 'budget', 'person', 'gift-plan', 'giving-plan', "
+        "'tax-book', 'projection')",
         name="kind",
     ),
     CheckConstraint("level IN ('read', 'write')", name="level"),

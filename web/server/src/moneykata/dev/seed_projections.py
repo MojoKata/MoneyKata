@@ -6,6 +6,7 @@ import json
 from sqlalchemy import select
 
 from .. import clock, ids, projections
+from .. import people as household
 from ..store.entities.accounts import Account
 from ..store.entities.projections import Projection
 from ..store.entities.sharing import Portfolio, Share
@@ -15,8 +16,8 @@ def seed_projections(s, people: dict) -> None:
     alice, bob = people["alice"], people["bob"]
     retirement = s.scalars(select(Portfolio).where(Portfolio.name == "Retirement")).first()
     couple = [
-        {"name": alice.displayName, "birthYear": alice.birthYear, "retireAge": 62},
-        {"name": bob.displayName, "birthYear": bob.birthYear, "retireAge": 62},
+        {"name": u.displayName, "birthYear": household.birth_year(s, u.id), "retireAge": 62}
+        for u in (alice, bob)
     ]
     base = {
         "contribution": {"amount": 30000, "growth": 3},

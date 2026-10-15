@@ -11,7 +11,7 @@ from decimal import Decimal
 from sqlalchemy import Integer, cast, false, func, select
 from sqlalchemy.orm import Session
 
-from .. import assets, education, gifts, giving, loans
+from .. import assets, education, gifts, giving, loans, people
 from ..ledger import types as atypes
 from ..projections import taxtables
 from ..store.entities.accounts import (
@@ -418,7 +418,8 @@ def retirement(s: Session, book: TaxBook) -> Retirement:
     ira_by_owner: dict[str, Decimal] = defaultdict(lambda: ZERO)
     for a in accounts:
         owner = s.get(User, a.ownerId)
-        age = y - owner.birthYear if owner.birthYear else None
+        born = people.birth_year(s, a.ownerId)
+        age = y - born if born else None
         put = (
             s.scalar(
                 select(func.coalesce(func.sum(Transaction.amount), 0)).where(
@@ -804,15 +805,38 @@ def issues(s: Session, book: TaxBook, rows: list[Row]) -> list[Issue]:
 
 
 def spouse_accounts(s: Session, book: TaxBook) -> list[Account]:
-    """For wash sales: the filers' spouses' accounts, when filing separately (S3.8)."""
+    """For wash sales: the filers' spouses' accounts, when filing separately (S3.8): whoever
+    was married to a filer at any time in the year."""
     who = {f.userId for f in books.filers(s, book)}
     out = []
+    spouses = set()
     for uid in who:
-        u = s.get(User, uid)
-        if u.spouseId and u.spouseId not in who:
-            out += list(
-                s.scalars(
-                    select(Account).where(Account.ownerId == u.spouseId, Account.deleted == false())
-                )
-            )
+        for other in people.spouse_users_ever(s, uid):
+            if other in who or other in spouses:
+                continue
+            first, last = dt.date(book.year, 1, 1), dt.date(book.year, 12, 31)
+            if any(
+                people.spouse_user_on(s, uid, day) == other
+                for day in (first, last, *_marriage_days(s, uid, other, first, last))
+            ):
+                spouses.add(other)
+    for other in sorted(spouses):
+        out += list(
+            s.scalars(select(Account).where(Account.ownerId == other, Account.deleted == false()))
+        )
     return out
+
+
+def _marriage_days(s: Session, user_a: str, user_b: str, first, last) -> list:
+    """The days in a year a marriage between two users began, to test it held that year."""
+    a, b = people.of_user(s, user_a), people.of_user(s, user_b)
+    days = []
+    for r in people.live_relationships(s, [a.id]):
+        if (
+            r.relation == "spouse"
+            and people.other(r, a.id) == b.id
+            and r.fromDate
+            and first <= r.fromDate <= last
+        ):
+            days.append(r.fromDate)
+    return days

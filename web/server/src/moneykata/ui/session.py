@@ -67,6 +67,7 @@ class Setup(Model):
     password: str
     email: str
     displayName: str | None = None
+    sex: str | None = None  # the default admin's person (S10.10.1)
 
 
 class Password(Model):
@@ -98,6 +99,7 @@ class SignupForm(Model):
     username: str
     email: str
     password: str
+    sex: str | None = None
 
 
 class SignupConfirmed(Model):
@@ -279,7 +281,7 @@ def setup(body: Setup, request: Request, c: Caller = Depends(caller_in_setup)):
     srv = server(request)
     with srv.db.tx() as s:
         user = s.get(User, c.id)
-        accounts.finish_setup(s, user, body.password, body.email, body.displayName)
+        accounts.finish_setup(s, user, body.password, body.email, body.displayName, body.sex)
         sessions.end_all(s, user.id)
         admin = accounts.is_admin(s, user.id)
         token = sessions.create(s, user.id, admin, False)
@@ -334,7 +336,15 @@ def signup_request(body: SignupForm, request: Request):
     srv = server(request)
     _throttle(request)
     with srv.db.tx() as s:
-        signup.request(s, srv.services, body.displayName, body.username, body.email, body.password)
+        signup.request(
+            s,
+            srv.services,
+            body.displayName,
+            body.username,
+            body.email,
+            body.password,
+            body.sex,
+        )
     return Response(status_code=202)
 
 

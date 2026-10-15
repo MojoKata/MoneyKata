@@ -30,7 +30,7 @@ def plan(c, **kw):
         "/ui/api/people",
         json={
             "name": "Emma Griffin",
-            "relationship": "child",
+            "sex": "female",
             "birthYear": 2018,
             "birthMonth": 10,
             "birthDay": 20,
@@ -51,13 +51,14 @@ def plan(c, **kw):
     return acct, emma, r.json()
 
 
-def test_people_are_their_owners_alone(server, alice):
-    alice.post("/ui/api/people", json={"name": "Emma", "birthYear": 2018})
+def test_gift_plans_are_their_owners_alone(server, alice):
+    alice.post("/ui/api/people", json={"name": "Emma", "sex": "female", "birthYear": 2018})
     make_user(server, "bob")
     bob = sign_in(server, "bob")
     assert bob.get("/ui/api/people").json()["items"] == []
+    assert "Emma" in {p["name"] for p in bob.get("/ui/api/persons").json()["items"]}
     bad = alice.post("/ui/api/people", json={"name": " ", "birthMonth": 13})
-    assert {e["field"] for e in bad.json()["errors"]} >= {"name", "birthMonth"}
+    assert {e["field"] for e in bad.json()["errors"]} >= {"name", "sex", "birthMonth"}
 
 
 def test_the_plan_and_its_beneficiary(alice):
@@ -67,6 +68,7 @@ def test_the_plan_and_its_beneficiary(alice):
         "id": emma["id"],
         "name": "Emma Griffin",
         "birthYear": 2018,
+        "deleted": False,
     }
     assert p["planState"] == "Utah" and p["stateDeduction"] == "2410.00"
     assert p["rollover"]["possibleFrom"] == "2033-05-02" and p["rollover"]["limit"] == "35000.00"
@@ -76,9 +78,7 @@ def test_the_plan_and_its_beneficiary(alice):
 
 def test_contributions_against_the_gift_exclusion(server, alice):
     acct, _, _ = plan(alice)
-    gran = alice.post(
-        "/ui/api/people", json={"name": "Margaret Griffin", "relationship": "grandmother"}
-    ).json()
+    gran = alice.post("/ui/api/people", json={"name": "Margaret Griffin", "sex": "female"}).json()
     bank = new_account(alice, name="Checking")
     add(alice, bank["id"], "20000.00", "2026-01-02")
     r = alice.post(

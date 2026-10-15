@@ -1,5 +1,5 @@
-// Profile (requirements S12.2.16): name, email, avatar, password, two-step sign-in (S10.1.6),
-// time zone, theme, birth year, spouse for wash sales and alert emails.
+// Profile (requirements S12.2.16): name, sex, birthday and relationships (S10.10), email,
+// avatar, password, two-step sign-in (S10.1.6), time zone, theme and alert emails.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
@@ -29,20 +29,27 @@ export default function Profile() {
         displayName: p.displayName,
         timeZone: p.timeZone,
         theme: p.theme,
-        birthYear: p.birthYear ? String(p.birthYear) : '',
-        spouseId: p.spouseId || '',
+        sex: p.sex,
+        birthday: p.birthMonth
+          ? `${p.birthYear || ''}-${String(p.birthMonth).padStart(2, '0')}-${
+            String(p.birthDay).padStart(2, '0')
+          }`.replace(/^-/, '')
+          : '',
         alertEmails: p.alertEmails,
         avatar: p.avatar,
       });
     }
   }, [p]);
   const save = useSubmit(async () => {
+    const m = String(f.birthday || '').trim().match(/^(?:(\d{4})-)?(\d{1,2})-(\d{1,2})$/);
     await api.patch('/profile', {
       displayName: f.displayName,
       timeZone: f.timeZone,
       theme: f.theme,
-      birthYear: f.birthYear ? Number(f.birthYear) : null,
-      spouseId: f.spouseId || null,
+      sex: f.sex,
+      birthMonth: m ? Number(m[2]) : null,
+      birthDay: m ? Number(m[3]) : null,
+      birthYear: m && m[1] ? Number(m[1]) : null,
       alertEmails: f.alertEmails,
       avatar: f.avatar,
     }, p.version);
@@ -110,18 +117,16 @@ export default function Profile() {
               'system',
               "The system's",
             ]]} /></${Field}>
-          <${Field} label="Birth year" error=${errAt(
-            e,
-            'birthYear',
-          )} hint="For contribution catch-up limits and RMDs."><${Input}
-            value=${f.birthYear} onInput=${set('birthYear')} inputmode="numeric" /></${Field}>
-          <${Field} label="Spouse for wash sales" id="spouse" error=${errAt(e, 'spouseId')}
-            hint="Wash sales are checked across your accounts and your spouse's shared ones."><${Select} value=${f
-              .spouseId}
-            onChange=${set('spouseId')} options=${[
-              ['', 'None'],
-              ...p.people.map((/** @type {any} */ x) => [x.id, x.displayName]),
-            ]} /></${Field}>
+          <div class="row">
+            <${Field} label="Sex" error=${errAt(e, 'sex')}><${Select} value=${f.sex}
+              onChange=${set('sex')} options=${[['female', 'Female'], [
+                'male',
+                'Male',
+              ]]} /></${Field}>
+            <${Field} label="Birthday" error=${errAt(e, 'birthDay') || errAt(e, 'birthYear')}
+              hint="1979-04-12. For catch-up limits, RMDs and your age in projections."><${Input}
+              value=${f.birthday} onInput=${set('birthday')} placeholder="YYYY-MM-DD" /></${Field}>
+          </div>
           <${Field} label="Alert emails" error=${errAt(
             e,
             'alertEmails',
@@ -135,20 +140,131 @@ export default function Profile() {
             'displayName',
             'timeZone',
             'theme',
+            'sex',
+            'birthDay',
             'birthYear',
-            'spouseId',
             'alertEmails',
             'avatar',
           ]} />
           <button class="btn primary" disabled=${save.busy}>Save</button>
         </form>
         <div class="grid" style=${{ alignContent: 'start' }}>
+          <${Relations} p=${p} reload=${res.reload} />
           <${Email} p=${p} reload=${res.reload} />
           <${Password} />
           <${TwoStep} p=${p} reload=${res.reload} />
           <${AccessTokens} />
         </div></div>
       <${Assumptions} />
+  `;
+}
+
+/** Who the user is related to (S10.10.6): those entered, and those worked out from them. */
+/** @param {{ p: any, reload: () => void }} props */
+function Relations({ p, reload }) {
+  const add = () => openDialog(RelationshipDialog, { me: p.personId }).then(reload);
+  const stored = p.relations.filter((/** @type {any} */ r) => r.stored);
+  const worked = p.relations.filter((/** @type {any} */ r) => !r.stored);
+  const row = (/** @type {any} */ r) =>
+    html`
+      <div class="list-item">
+        <div class="grow"><b>${r.name}</b> · ${r.word}</div>
+      </div>
+    `;
+  return html`
+    <div class="card" data-help="relationships"><h3>Relationships<span class="spacer"></span><button
+      type="button" class="btn sm" onClick=${add}>Add</button></h3>
+      ${stored.length ? stored.map(row) : html`<p class="small dim">None yet.</p>`}
+      ${worked.length
+        ? html`<div class="small dim" style=${{ margin: '10px 0 4px' }}>Worked out from these</div>
+          ${worked.map(row)}`
+        : null}
+    </div>
+  `;
+}
+
+/** @param {{ close: (v?: any) => void, me: string }} props */
+function RelationshipDialog({ close, me }) {
+  useDialogGuide('dialog-relationship');
+  const persons = useApi('/persons');
+  const [f, setF] = useState({
+    relation: 'spouse',
+    other: '',
+    fromDate: '',
+    toDate: '',
+    label: '',
+  });
+  const set = (/** @type {string} */ k) => (/** @type {any} */ v) => setF({ ...f, [k]: v });
+  const save = useSubmit(async () => {
+    // "Child of" runs from the other person to me; the rest from me.
+    const [kind, mine] = f.relation === 'child-of'
+      ? ['child', false]
+      : f.relation === 'parent-of'
+      ? ['child', true]
+      : [f.relation, true];
+    await api.post('/relationships', {
+      person1Id: mine ? me : f.other,
+      person2Id: mine ? f.other : me,
+      relation: kind,
+      label: f.label || null,
+      fromDate: f.fromDate || null,
+      toDate: f.toDate || null,
+    });
+    toast('Saved');
+    close(true);
+  });
+  const e = save.error;
+  const list = /** @type {any[]} */ ((/** @type {any} */ (persons.data))?.items || []).filter((
+    /** @type {any} */ x,
+  ) => x.id !== me);
+  return html`
+    <${Dialog} title="Add a relationship" close=${close} onSubmit=${() =>
+      save.run().catch(
+        () => {},
+      )} footer=${html`<button class="btn primary" disabled=${save.busy}>Add</button>`}>
+      <p class="small dim" style=${{ marginTop: 0 }}>Mothers, grandparents, cousins and in-laws
+        are worked out from these.</p>
+      <div class="row">
+        <${Field} label="I am the" id="relation" error=${errAt(e, 'relation')}>
+          <${Select} value=${f.relation} onChange=${set('relation')} options=${[
+            ['spouse', 'Spouse of'],
+            ['couple', 'Couple with'],
+            ['parent-of', 'Parent of'],
+            ['child-of', 'Child of'],
+            ['friend', 'Friend of'],
+            ['colleague', 'Colleague of'],
+            ['family', 'Family of'],
+          ]} />
+          </${Field}>
+          <${Field} label="Other person" id="other-person" error=${errAt(e, 'person2Id') ||
+            errAt(e, 'person1Id')}>
+            <${Select} value=${f.other} onChange=${set('other')} options=${[
+              ['', 'Choose…'],
+              ...list.map((/** @type {any} */ x) => [x.id, x.name]),
+            ]} />
+            </${Field}>
+            </div>
+            <div class="row">
+              <${Field} label="From" id="from-date" error=${errAt(e, 'fromDate')}>
+                <${Input} type="date" value=${f.fromDate} onInput=${set('fromDate')} />
+                </${Field}>
+                <${Field} label="To" id="to-date" error=${errAt(e, 'toDate')}
+                  hint="Empty while it holds. A death ends a marriage by itself.">
+                  <${Input} type="date" value=${f.toDate} onInput=${set('toDate')} />
+                  </${Field}>
+                  <${Field} label="Label" error=${errAt(e, 'label')} hint="For family: godmother.">
+                    <${Input} value=${f.label} onInput=${set('label')} />
+                    </${Field}>
+                    </div>
+                    <${FormError} error=${e} shown=${[
+                      'relation',
+                      'person1Id',
+                      'person2Id',
+                      'fromDate',
+                      'toDate',
+                      'label',
+                    ]} />
+                    </${Dialog}>
   `;
 }
 

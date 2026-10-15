@@ -13,7 +13,8 @@ import secrets
 
 from sqlalchemy import false, select
 
-from .. import activity, clock, ids, settings
+from .. import activity, clock, ids, people, settings
+from ..store.entities.education import Person
 from ..store.entities.links import Link
 from ..store.entities.users import User
 from . import client, keys
@@ -44,7 +45,13 @@ def directory(s) -> dict:
     return {
         "household": household(s),
         "users": [
-            {"id": u.id, "username": u.username, "displayName": u.displayName, "email": u.email}
+            {
+                "id": u.id,
+                "username": u.username,
+                "displayName": u.displayName,
+                "email": u.email,
+                "sex": people.of_user(s, u.id).sex,
+            }
             for u in users
         ],
     }
@@ -199,11 +206,15 @@ def apply_directory(s, link: Link, payload: dict) -> None:
             continue
         seen.add(rid)
         u = have.get(rid)
+        name = str(r.get("displayName") or r.get("username") or "?")[:120]
+        # A remote user's person is filled from its server, for gifts (S10.10.1).
+        sex = r.get("sex") if r.get("sex") in people.SEXES else "female"
         if u is None:
             u = User(
                 id=ids.new_id("User"),
+                personId=people.for_new_user(s, name, sex).id,
                 username=str(r.get("username") or rid)[:64],
-                displayName=str(r.get("displayName") or r.get("username") or "?")[:120],
+                displayName=name,
                 email=r.get("email"),
                 linkId=link.id,
                 remoteId=rid,
@@ -213,6 +224,7 @@ def apply_directory(s, link: Link, payload: dict) -> None:
             continue
         u.username = str(r.get("username") or u.username)[:64]
         u.displayName = str(r.get("displayName") or u.displayName)[:120]
+        people.change(s, s.get(Person, u.personId), {"name": u.displayName, "sex": sex})
         u.email = r.get("email")
         u.active = True
         if u.deleted:

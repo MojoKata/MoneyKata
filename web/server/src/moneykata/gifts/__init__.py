@@ -1,66 +1,101 @@
-"""Gifts (requirements S7.7, S7.8): people and their occasions, what each user may see (a
-person's owner, or those it is shared with, but never the gifts for themselves), the occasions
-coming up with what is planned for them, spending by person, occasion and year, and the
-gift-tax flag."""
+"""Gifts (requirements S7.7, S7.8): each user's gift plans for the household's people, with
+their occasions; what each user may see (their own plans and gifts, and plans shared with
+them, but never the gifts for themselves); the occasions coming up with what is planned for
+them; spending by person, occasion and year; and the gift-tax flag."""
 
 import datetime as dt
 from collections import defaultdict
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from sqlalchemy import false, or_, select
+from sqlalchemy import false, select
 from sqlalchemy.orm import Session
 
-from .. import access
+from .. import access, people
 from ..projections import taxtables
-from ..store.entities.education import Gift, GiftPerson, Occasion, Person
+from ..store.entities.education import Gift, GiftPerson, GiftPlan, Occasion, Person
+from ..store.entities.users import User
 from . import holidays
 
 ZERO = Decimal(0)
 UPCOMING_DAYS = 60
 STATUSES = ("idea", "planned", "bought", "given", "received")
 SPENT = ("bought", "given")
+NOT_YET = ("idea", "planned")
 
 
-def visible_people(s: Session, user_id: str) -> list[tuple[Person, str]]:
-    """The user's own people, and those shared with them, with the level of each."""
+@dataclass
+class Plan:
+    """A gift plan the user can see, with its person and the user's level on it."""
+
+    plan: GiftPlan
+    person: Person
+    level: str
+
+
+def visible_plans(s: Session, user_id: str) -> list[Plan]:
+    """The user's own gift plans and those shared with them, one per person: their own when
+    they have one, else the shared one they hold the higher level on."""
     r = access.reach(s, user_id)
-    shared = [i for (k, i) in r.levels if k == "person"]
+    shared = [i for (k, i) in r.levels if k == "gift-plan"]
     rows = s.scalars(
-        select(Person)
-        .where(Person.deleted == false(), or_(Person.ownerId == user_id, Person.id.in_(shared)))
-        .order_by(Person.name)
+        select(GiftPlan).where(
+            GiftPlan.deleted == false(),
+            (GiftPlan.ownerId == user_id) | GiftPlan.id.in_(shared),
+        )
     ).all()
-    out = []
-    for p in rows:
-        lvl = access.level_of(s, user_id, "person", p.ownerId, p.id, p.deleted, r)
-        if lvl is not None:
-            out.append((p, lvl))
-    return out
+    best: dict[str, Plan] = {}
+    for gp in rows:
+        p = s.get(Person, gp.personId)
+        if p is None or p.deleted:
+            continue
+        lvl = access.level_of(s, user_id, "gift-plan", gp.ownerId, gp.id, gp.deleted, r)
+        if lvl is None:
+            continue
+        have = best.get(p.id)
+        if have is None or access.RANK[lvl] > access.RANK[have.level]:
+            best[p.id] = Plan(gp, p, lvl)
+    return sorted(best.values(), key=lambda x: x.person.name)
 
 
-def person(s: Session, user_id: str, person_id: str, need: str = "read") -> tuple[Person, str]:
+def plan_for(s: Session, user_id: str, person_id: str, need: str = "read") -> Plan:
     from ..errors import Problem
 
-    p = s.get(Person, person_id)
-    lvl = access.level_of(s, user_id, "person", p.ownerId, p.id, p.deleted) if p else None
+    found = next((x for x in visible_plans(s, user_id) if x.person.id == person_id), None)
+    if found is None:
+        raise Problem(404, "not-found", "Not found")
+    if access.RANK[found.level] < access.RANK[need]:
+        raise Problem(403, "read-only", "This gift plan is shared with you to read.")
+    return found
+
+
+def plan_by_id(s: Session, user_id: str, plan_id: str, need: str = "read") -> Plan:
+    from ..errors import Problem
+
+    gp = s.get(GiftPlan, plan_id)
+    p = s.get(Person, gp.personId) if gp else None
+    lvl = (
+        access.level_of(s, user_id, "gift-plan", gp.ownerId, gp.id, gp.deleted)
+        if gp and p and not p.deleted
+        else None
+    )
     if lvl is None:
         raise Problem(404, "not-found", "Not found")
     if access.RANK[lvl] < access.RANK[need]:
-        raise Problem(403, "read-only", "This person is shared with you to read.")
-    return p, lvl
+        raise Problem(403, "read-only", "This gift plan is shared with you to read.")
+    return Plan(gp, p, lvl)
 
 
-def occasions_of(s: Session, person_ids: list[str]) -> dict[str, list[Occasion]]:
-    out: dict[str, list[Occasion]] = {i: [] for i in person_ids}
-    if not person_ids:
+def occasions_of(s: Session, plan_ids: list[str]) -> dict[str, list[Occasion]]:
+    out: dict[str, list[Occasion]] = {i: [] for i in plan_ids}
+    if not plan_ids:
         return out
     for o in s.scalars(
         select(Occasion)
-        .where(Occasion.personId.in_(person_ids), Occasion.deleted == false())
+        .where(Occasion.giftPlanId.in_(plan_ids), Occasion.deleted == false())
         .order_by(Occasion.createdAt)
     ):
-        out[o.personId].append(o)
+        out[o.giftPlanId].append(o)
     return out
 
 
@@ -75,41 +110,61 @@ def people_of_gifts(s: Session, gift_ids: list[str]) -> dict[str, list[str]]:
     return out
 
 
-def visible_gifts(
-    s: Session, user_id: str, people: dict[str, Person]
-) -> list[tuple[Gift, list[str]]]:
-    """Gifts for (or from) the people the user can see, and their own gifts; never a gift for
-    a person linked to the user, even through a share, so a surprise stays one (S7.8.5)."""
-    ids = list(people)
-    # Anyone's person who is the viewer: on another user's list, so maybe not visible here.
-    linked_to_me = set(
-        s.scalars(select(Person.id).where(Person.userId == user_id, Person.deleted == false()))
-    )
-    gift_ids = set(
-        s.scalars(
-            select(GiftPerson.giftId).where(
-                GiftPerson.personId.in_(ids), GiftPerson.deleted == false()
-            )
-        )
-    )
+def visible_gifts(s: Session, user_id: str) -> list[tuple[Gift, list[str]]]:
+    """The user's own gifts, and the gifts in the plans shared with them; never a gift for
+    the user themselves, even through a share, so a surprise stays one (S7.8.5)."""
+    me = s.get(User, user_id)
+    mine_person = me.personId if me else None
+    r = access.reach(s, user_id)
+    shared = [i for (k, i) in r.levels if k == "gift-plan"]
+    # (owner, person) pairs whose gifts the user sees through a shared plan.
+    through: set[tuple[str, str]] = set()
+    if shared:
+        for gp in s.scalars(
+            select(GiftPlan).where(GiftPlan.id.in_(shared), GiftPlan.deleted == false())
+        ):
+            through.add((gp.ownerId, gp.personId))
+    owners = {o for o, _ in through} | {user_id}
     rows = s.scalars(
-        select(Gift).where(
-            Gift.deleted == false(), or_(Gift.id.in_(gift_ids), Gift.ownerId == user_id)
-        )
+        select(Gift).where(Gift.deleted == false(), Gift.ownerId.in_(list(owners)))
     ).all()
     whom = people_of_gifts(s, [g.id for g in rows])
     out = []
     for g in rows:
         ps = whom[g.id]
-        if g.status != "received" and any(p in linked_to_me for p in ps):
+        if g.ownerId != user_id and not any((g.ownerId, p) in through for p in ps):
+            continue
+        if g.status != "received" and mine_person in ps:
             continue
         out.append((g, ps))
     return out
 
 
+def level_on_gift(s: Session, user_id: str, g: Gift, ps: list[str]) -> str | None:
+    """A gift's owner holds it; others hold the lowest of their levels on the owner's plans
+    for its people."""
+    if g.ownerId == user_id:
+        return "owner"
+    r = access.reach(s, user_id)
+    levels = []
+    for pid in ps:
+        gp = s.scalars(
+            select(GiftPlan).where(
+                GiftPlan.ownerId == g.ownerId,
+                GiftPlan.personId == pid,
+                GiftPlan.deleted == false(),
+            )
+        ).first()
+        levels.append(r.levels.get(("gift-plan", gp.id)) if gp else None)
+    held = [x for x in levels if x]
+    if not held:
+        return None
+    return min(held, key=lambda x: access.RANK[x]) if len(held) == len(levels) else "read"
+
+
 @dataclass
 class Date:
-    key: str  # birthday, holiday:<key> or occasion:<id>
+    key: str  # birthday, wedding, holiday:<key> or occasion:<id>
     label: str
     date: dt.date
     budget: Decimal | None
@@ -124,10 +179,21 @@ def _safe(year: int, month: int, day: int) -> dt.date:
         return dt.date(year, month, 28)
 
 
-def dates_in(p: Person, occs: list[Occasion], year: int) -> list[Date]:
-    """A person's dated occasions in a year."""
+def wedding_of(s: Session, person_id: str) -> dt.date | None:
+    """The start of the person's marriage, while it holds (S7.7.1)."""
+    for r in people.live_relationships(s, [person_id]):
+        if r.relation == "spouse" and r.fromDate and people.holds_on(s, r, people.today()):
+            return r.fromDate
+    return None
+
+
+def dates_in(
+    p: Person, occs: list[Occasion], year: int, wedding: dt.date | None = None
+) -> list[Date]:
+    """A person's dated occasions in a year: their birthday, their wedding anniversary, and
+    the plan's own occasions."""
     out = []
-    if p.birthMonth and p.birthDay:
+    if p.birthMonth and p.birthDay and not p.diedOn:
         out.append(
             Date(
                 "birthday",
@@ -136,6 +202,17 @@ def dates_in(p: Person, occs: list[Occasion], year: int) -> list[Date]:
                 None,
                 "birthday",
                 year - p.birthYear if p.birthYear else None,
+            )
+        )
+    if wedding is not None and year > wedding.year:
+        out.append(
+            Date(
+                "wedding",
+                "Wedding anniversary",
+                _safe(year, wedding.month, wedding.day),
+                None,
+                "anniversary",
+                year - wedding.year,
             )
         )
     for o in occs:
@@ -164,6 +241,8 @@ def label_of(key: str | None, occs: list[Occasion]) -> str:
         return "An idea"
     if key == "birthday":
         return "Birthday"
+    if key == "wedding":
+        return "Wedding anniversary"
     kind, _, ident = key.partition(":")
     if kind == "holiday" and ident in holidays.HOLIDAYS:
         return holidays.label(ident)
@@ -182,17 +261,21 @@ class Upcoming:
 
 
 def upcoming(s: Session, user_id: str, today: dt.date, days: int = UPCOMING_DAYS) -> list[Upcoming]:
-    """Everyone's dates in the next 60 days, each with the gifts for it (S7.7.3)."""
-    people = dict((p.id, p) for p, _ in visible_people(s, user_id))
-    occs = occasions_of(s, list(people))
-    gifts = visible_gifts(s, user_id, people)
+    """The dates in the user's gift plans in the next 60 days, each with the gifts for it
+    (S7.7.3)."""
+    me = s.get(User, user_id)
+    plans = visible_plans(s, user_id)
+    occs = occasions_of(s, [x.plan.id for x in plans])
+    gifts = visible_gifts(s, user_id)
     end = today + dt.timedelta(days=days)
     out = []
-    for p in people.values():
-        if p.userId == user_id:
+    for x in plans:
+        p = x.person
+        if me is not None and p.id == me.personId:
             continue  # your own dates are for others to plan
+        wedding = wedding_of(s, p.id)
         for year in {today.year, end.year}:
-            for d in dates_in(p, occs[p.id], year):
+            for d in dates_in(p, occs[x.plan.id], year, wedding):
                 if not today <= d.date <= end:
                     continue
                 left = (d.date - today).days
@@ -209,7 +292,7 @@ def upcoming(s: Session, user_id: str, today: dt.date, days: int = UPCOMING_DAYS
                         p,
                         d,
                         left,
-                        left <= p.leadDays,
+                        left <= x.plan.leadDays,
                         mine,
                         sum((g.cost or ZERO for g in mine if g.status != "idea"), ZERO),
                     )
@@ -252,12 +335,13 @@ class Spending:
 
 
 def spending(s: Session, user_id: str, year: int) -> Spending:
-    people = dict((p.id, p) for p, _ in visible_people(s, user_id))
+    me = s.get(User, user_id)
+    plans = {x.person.id: x for x in visible_plans(s, user_id)}
     by_person: dict[str, Decimal] = defaultdict(lambda: ZERO)
     by_occasion: dict[str, Decimal] = defaultdict(lambda: ZERO)
     by_year: dict[int, Decimal] = defaultdict(lambda: ZERO)
     money: dict[str, Decimal] = defaultdict(lambda: ZERO)
-    for g, ps in visible_gifts(s, user_id, people):
+    for g, ps in visible_gifts(s, user_id):
         if g.status not in SPENT or not g.cost:
             continue
         y = gift_day(g, s)
@@ -274,6 +358,7 @@ def spending(s: Session, user_id: str, year: int) -> Spending:
         kind = (g.occasion or "other").partition(":")[0]
         name = {
             "birthday": "Birthdays",
+            "wedding": "Anniversaries and other dates",
             "holiday": label_of(g.occasion, []),
             "occasion": "Anniversaries and other dates",
         }.get(kind, "Other")
@@ -285,7 +370,7 @@ def spending(s: Session, user_id: str, year: int) -> Spending:
 
     for plan in s.scalars(
         select(EducationPlan).where(
-            EducationPlan.beneficiaryPersonId.in_(list(people)), EducationPlan.deleted == false()
+            EducationPlan.beneficiaryId.in_(list(plans)), EducationPlan.deleted == false()
         )
     ):
         a = s.get(Account, plan.accountId)
@@ -293,21 +378,58 @@ def spending(s: Session, user_id: str, year: int) -> Spending:
             continue
         for r in education.contributions(s, a):
             if r.contributor == "owner" and r.date.year == year and not r.fiveYear:
-                money[plan.beneficiaryPersonId] += r.amount
+                money[plan.beneficiaryId] += r.amount
     limit = Decimal(str(taxtables.figures(s, year)["giftExclusion"]))
     return Spending(
         year=year,
         byPerson=[
-            (p, by_person.get(p.id, ZERO), p.giftBudget)
-            for p in people.values()
-            if p.userId != user_id
+            (x.person, by_person.get(pid, ZERO), x.plan.giftBudget)
+            for pid, x in plans.items()
+            if me is None or pid != me.personId
         ],
         byOccasion=sorted(by_occasion.items(), key=lambda x: -x[1]),
         byYear=sorted(by_year.items()),
-        flagged=[(people[pid], amt, limit) for pid, amt in money.items() if amt > limit],
+        flagged=[(s.get(Person, pid), amt, limit) for pid, amt in money.items() if amt > limit],
     )
 
 
 def label_for_occasion(s: Session, g: Gift, ps: list[str]) -> str:
-    occs = occasions_of(s, ps)
+    owner_plans = [
+        gp.id
+        for gp in s.scalars(
+            select(GiftPlan).where(
+                GiftPlan.ownerId == g.ownerId,
+                GiftPlan.personId.in_(ps),
+                GiftPlan.deleted == false(),
+            )
+        )
+    ]
+    occs = occasions_of(s, owner_plans)
     return label_of(g.occasion, [o for v in occs.values() for o in v])
+
+
+def delete_person(s: Session, p: Person, by: str) -> None:
+    """Deleting a person (S7.8.6): their gift plans go with them, ideas and planned gifts for
+    them alone are deleted, and every other gift keeps them by name."""
+    from .. import clock
+
+    now = clock.now()
+    p.mark_deleted(by, now)
+    for gp in s.scalars(
+        select(GiftPlan).where(GiftPlan.personId == p.id, GiftPlan.deleted == false())
+    ):
+        gp.mark_deleted(by, now)
+    links = list(
+        s.scalars(
+            select(GiftPerson).where(GiftPerson.personId == p.id, GiftPerson.deleted == false())
+        )
+    )
+    whom = people_of_gifts(s, [x.giftId for x in links])
+    for x in links:
+        g = s.get(Gift, x.giftId)
+        if g is None or g.deleted or g.status not in NOT_YET:
+            continue
+        if whom[g.id] == [p.id]:
+            g.mark_deleted(by, now)
+        else:
+            x.mark_deleted(by, now)

@@ -27,5 +27,5 @@ build it on.
 
 ## Who
 
-You, or you and your spouse (set in Profile for wash sales): each with a birth year and retirement
+You, or you and your spouse (from your relationships in Profile): each with a birth year and retirement
 age.

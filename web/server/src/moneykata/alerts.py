@@ -358,6 +358,38 @@ def occasions(s: Session, server) -> Iterable[Cause]:
             )
 
 
+@check
+def share_asked(s: Session, server) -> Iterable[Cause]:
+    """Someone asked for a private person to be shared (S10.10.3): to whoever added them and
+    to the admins, until the person is shared with the asker or no longer private."""
+    from . import people
+    from .store.entities.core import Activity
+    from .store.entities.education import Person
+
+    since = clock.now() - dt.timedelta(days=KEEP_RESOLVED_DAYS)
+    for a in s.scalars(
+        select(Activity).where(Activity.kind == "person.share-asked", Activity.at >= since)
+    ):
+        p = s.get(Person, a.subjectId)
+        asker = s.get(User, a.actorId) if a.actorId else None
+        if p is None or p.deleted or not p.private or asker is None or not asker.active:
+            continue
+        if people.level(s, asker.id, p) is not None:
+            continue
+        for to in {p.ownerId, None}:
+            yield Cause(
+                key=f"share-asked:{p.id}:{asker.id}:{to or 'admins'}",
+                kind="share-asked",
+                title=f"{asker.displayName} asks to see {p.name}",
+                about="Share the person, or make them seen by the household",
+                user_id=to,
+                link="/ui/gifts/people",
+                fix="Share",
+                icon="share",
+                since=a.at,
+            )
+
+
 def occasion_title(up) -> str:
     """'Emma's birthday in 9 days'; a holiday or a named date keeps its capitals."""
     when = "today" if up.days == 0 else "tomorrow" if up.days == 1 else f"in {up.days} days"

@@ -20,18 +20,25 @@ Times show in it. **Auto** follows the server's.
 
 Dark, light or your system's. The button at the foot of the sidebar switches it too.
 
-## Birth year
+## Sex
 
-For retirement contribution catch-up limits and required minimum distributions.
+Chooses the words for the family tree: wife or husband, mother-in-law or father-in-law.
 
-## Spouse for wash sales {#spouse}
+## Birthday
 
-A **wash sale** is a loss sale with a purchase of the same thing within 30 days before or after; the
-loss is put off, not lost. Your spouse's accounts count too.
+For retirement contribution catch-up limits, required minimum distributions and your age in
+projections.
 
 ## Alert emails
 
 Whether alerts reach you by email: each one, a daily summary, or none.
+
+## Relationships
+
+Your spouse, children, friends and colleagues, each from a date and, once over, to a date.
+Parents, grandparents, cousins and in-laws are worked out from them. Your spouse on the day of a
+sale counts for **wash sales** (a loss sale with a purchase of the same thing within 30 days either
+side), and your spouse on the last day of a year for a joint tax book.
 
 ## New email address
 

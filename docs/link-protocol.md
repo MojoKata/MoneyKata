@@ -102,12 +102,14 @@ Every `exchange` carries the sender's directory, and its answer the receiver's:
 {
   "household": {"serverName": "griffin-parents", "name": "Margaret & Tom", "avatar": {...}},
   "users": [{"id": "User_…", "username": "margaret", "displayName": "Margaret Griffin",
-             "email": "margaret@parents.home"}]
+             "email": "margaret@parents.home", "sex": "female"}]
 }
 ```
 
 Only active local users are listed. The receiver keeps each as a remote user by its `id`:
 added, updated in place, soft-deleted when it leaves the list and restored when it returns.
+Each remote user has a person here, with the name and sex the directory gives (requirements
+S10.10.1), used only for gifts.
 
 ### 4.3 Exchanges
 

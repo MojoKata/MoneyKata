@@ -894,6 +894,20 @@
         "title": "Approval",
         "type": "object"
       },
+      "Asked": {
+        "additionalProperties": false,
+        "properties": {
+          "asked": {
+            "title": "Asked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "asked"
+        ],
+        "title": "Asked",
+        "type": "object"
+      },
       "AssumptionsView": {
         "additionalProperties": false,
         "properties": {
@@ -1116,6 +1130,11 @@
               }
             ],
             "title": "Birthyear"
+          },
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
           },
           "id": {
             "title": "Id",
@@ -8408,6 +8427,30 @@
         "title": "MonthView",
         "type": "object"
       },
+      "Named": {
+        "additionalProperties": false,
+        "properties": {
+          "deleted": {
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "deleted"
+        ],
+        "title": "Named",
+        "type": "object"
+      },
       "NetWorthSeries": {
         "additionalProperties": false,
         "properties": {
@@ -8862,6 +8905,17 @@
             },
             "title": "Groupids",
             "type": "array"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
           },
           "username": {
             "title": "Username",
@@ -10417,6 +10471,37 @@
         "title": "Page[PersonOut]",
         "type": "object"
       },
+      "Page_PersonRow_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PersonRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[PersonRow]",
+        "type": "object"
+      },
       "Page_Plan_": {
         "properties": {
           "items": {
@@ -10601,6 +10686,68 @@
           "limit"
         ],
         "title": "Page[RecurringRow]",
+        "type": "object"
+      },
+      "Page_RelationOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RelationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[RelationOut]",
+        "type": "object"
+      },
+      "Page_RelationshipOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RelationshipOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[RelationshipOut]",
         "type": "object"
       },
       "Page_ReturnRow_": {
@@ -11464,141 +11611,9 @@
         "title": "PeriodRow",
         "type": "object"
       },
-      "Person": {
-        "additionalProperties": false,
-        "properties": {
-          "displayName": {
-            "title": "Displayname",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "displayName"
-        ],
-        "title": "Person",
-        "type": "object"
-      },
-      "PersonIn": {
-        "additionalProperties": false,
-        "properties": {
-          "birthDay": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Birthday"
-          },
-          "birthMonth": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Birthmonth"
-          },
-          "birthYear": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Birthyear"
-          },
-          "giftBudget": {
-            "anyOf": [
-              {
-                "examples": [
-                  1234.5
-                ],
-                "format": "money",
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Giftbudget"
-          },
-          "leadDays": {
-            "default": 14,
-            "title": "Leaddays",
-            "type": "integer"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "occasions": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/OccasionIn"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Occasions"
-          },
-          "relationship": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Relationship"
-          },
-          "userId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Userid"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "PersonIn",
-        "type": "object"
-      },
       "PersonOut": {
         "additionalProperties": false,
+        "description": "A gift plan the caller sees, with its person.",
         "properties": {
           "birthDay": {
             "anyOf": [
@@ -11632,6 +11647,22 @@
               }
             ],
             "title": "Birthyear"
+          },
+          "canChangePerson": {
+            "title": "Canchangeperson",
+            "type": "boolean"
+          },
+          "diedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diedon"
           },
           "giftBudget": {
             "anyOf": [
@@ -11707,7 +11738,19 @@
             "title": "Ownername",
             "type": "string"
           },
-          "relationship": {
+          "personVersion": {
+            "title": "Personversion",
+            "type": "integer"
+          },
+          "planId": {
+            "title": "Planid",
+            "type": "string"
+          },
+          "private": {
+            "title": "Private",
+            "type": "boolean"
+          },
+          "relation": {
             "anyOf": [
               {
                 "type": "string"
@@ -11716,7 +11759,11 @@
                 "type": "null"
               }
             ],
-            "title": "Relationship"
+            "title": "Relation"
+          },
+          "sex": {
+            "title": "Sex",
+            "type": "string"
           },
           "spent": {
             "examples": [
@@ -11751,17 +11798,35 @@
           "version": {
             "title": "Version",
             "type": "integer"
+          },
+          "wedding": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wedding"
           }
         },
         "required": [
           "id",
+          "planId",
           "name",
-          "relationship",
+          "sex",
+          "relation",
           "userId",
           "userName",
           "birthMonth",
           "birthDay",
           "birthYear",
+          "diedOn",
+          "wedding",
+          "private",
+          "canChangePerson",
           "giftBudget",
           "leadDays",
           "notes",
@@ -11771,7 +11836,8 @@
           "lastGift",
           "level",
           "ownerName",
-          "version"
+          "version",
+          "personVersion"
         ],
         "title": "PersonOut",
         "type": "object"
@@ -11779,6 +11845,11 @@
       "PersonRef": {
         "additionalProperties": false,
         "properties": {
+          "deleted": {
+            "default": false,
+            "title": "Deleted",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -11793,6 +11864,130 @@
           "name"
         ],
         "title": "PersonRef",
+        "type": "object"
+      },
+      "PersonRow": {
+        "additionalProperties": false,
+        "properties": {
+          "birthDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
+          "birthMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthmonth"
+          },
+          "birthYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthyear"
+          },
+          "canChange": {
+            "title": "Canchange",
+            "type": "boolean"
+          },
+          "createdBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdby"
+          },
+          "diedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diedon"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "private": {
+            "title": "Private",
+            "type": "boolean"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relation"
+          },
+          "sex": {
+            "title": "Sex",
+            "type": "string"
+          },
+          "userId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userid"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sex",
+          "birthMonth",
+          "birthDay",
+          "birthYear",
+          "diedOn",
+          "private",
+          "userId",
+          "relation",
+          "canChange",
+          "createdBy",
+          "version"
+        ],
+        "title": "PersonRow",
         "type": "object"
       },
       "PersonSpend": {
@@ -12490,6 +12685,28 @@
             ],
             "title": "Avatar"
           },
+          "birthDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
+          "birthMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthmonth"
+          },
           "birthYear": {
             "anyOf": [
               {
@@ -12531,23 +12748,30 @@
             ],
             "title": "Pendingemail"
           },
-          "people": {
+          "personId": {
+            "title": "Personid",
+            "type": "string"
+          },
+          "relations": {
             "items": {
-              "$ref": "#/components/schemas/Person"
+              "$ref": "#/components/schemas/Relation"
             },
-            "title": "People",
+            "title": "Relations",
             "type": "array"
           },
-          "spouseId": {
+          "sex": {
+            "title": "Sex",
+            "type": "string"
+          },
+          "spouse": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/Spouse"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Spouseid"
+            ]
           },
           "theme": {
             "title": "Theme",
@@ -12583,11 +12807,15 @@
           "timeZone",
           "zone",
           "theme",
+          "personId",
+          "sex",
+          "birthMonth",
+          "birthDay",
           "birthYear",
-          "spouseId",
           "alertEmails",
           "twoStep",
-          "people",
+          "relations",
+          "spouse",
           "version"
         ],
         "title": "Profile",
@@ -12618,6 +12846,28 @@
             ],
             "title": "Avatar"
           },
+          "birthDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
+          "birthMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthmonth"
+          },
           "birthYear": {
             "anyOf": [
               {
@@ -12640,7 +12890,7 @@
             ],
             "title": "Displayname"
           },
-          "spouseId": {
+          "sex": {
             "anyOf": [
               {
                 "type": "string"
@@ -12649,7 +12899,7 @@
                 "type": "null"
               }
             ],
-            "title": "Spouseid"
+            "title": "Sex"
           },
           "theme": {
             "anyOf": [
@@ -13783,6 +14033,229 @@
         "title": "RecurringRow",
         "type": "object"
       },
+      "Relation": {
+        "additionalProperties": false,
+        "description": "Someone the user is related to (S10.10.6): stored, or worked out from those.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "personId": {
+            "title": "Personid",
+            "type": "string"
+          },
+          "stored": {
+            "title": "Stored",
+            "type": "boolean"
+          },
+          "word": {
+            "title": "Word",
+            "type": "string"
+          }
+        },
+        "required": [
+          "personId",
+          "name",
+          "word",
+          "stored"
+        ],
+        "title": "Relation",
+        "type": "object"
+      },
+      "RelationOut": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "personId": {
+            "title": "Personid",
+            "type": "string"
+          },
+          "stored": {
+            "title": "Stored",
+            "type": "boolean"
+          },
+          "word": {
+            "title": "Word",
+            "type": "string"
+          }
+        },
+        "required": [
+          "personId",
+          "name",
+          "key",
+          "word",
+          "stored",
+          "label"
+        ],
+        "title": "RelationOut",
+        "type": "object"
+      },
+      "RelationshipIn": {
+        "additionalProperties": false,
+        "properties": {
+          "fromDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fromdate"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "person1Id": {
+            "title": "Person1Id",
+            "type": "string"
+          },
+          "person2Id": {
+            "title": "Person2Id",
+            "type": "string"
+          },
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          },
+          "toDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Todate"
+          }
+        },
+        "required": [
+          "person1Id",
+          "person2Id",
+          "relation"
+        ],
+        "title": "RelationshipIn",
+        "type": "object"
+      },
+      "RelationshipOut": {
+        "additionalProperties": false,
+        "properties": {
+          "canChange": {
+            "title": "Canchange",
+            "type": "boolean"
+          },
+          "endsOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endson"
+          },
+          "fromDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fromdate"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "person1": {
+            "$ref": "#/components/schemas/Named"
+          },
+          "person2": {
+            "$ref": "#/components/schemas/Named"
+          },
+          "relation": {
+            "title": "Relation",
+            "type": "string"
+          },
+          "toDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Todate"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "person1",
+          "person2",
+          "relation",
+          "label",
+          "fromDate",
+          "toDate",
+          "endsOn",
+          "canChange",
+          "version"
+        ],
+        "title": "RelationshipOut",
+        "type": "object"
+      },
       "RemoteUser": {
         "additionalProperties": false,
         "properties": {
@@ -14649,6 +15122,17 @@
           "password": {
             "title": "Password",
             "type": "string"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
           }
         },
         "required": [
@@ -14852,6 +15336,17 @@
           "password": {
             "title": "Password",
             "type": "string"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
           },
           "username": {
             "title": "Username",
@@ -15325,6 +15820,38 @@
           "amount"
         ],
         "title": "SplitIn",
+        "type": "object"
+      },
+      "Spouse": {
+        "additionalProperties": false,
+        "description": "Who the user is married to today, when they are a user here (S10.10.4.3).",
+        "properties": {
+          "birthYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthyear"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "birthYear"
+        ],
+        "title": "Spouse",
         "type": "object"
       },
       "StatementIn": {
@@ -18368,6 +18895,129 @@
         "title": "DocumentIn",
         "type": "object"
       },
+      "moneykata__ui__gifts__PersonIn": {
+        "additionalProperties": false,
+        "description": "A gift plan, and the person it is for: an existing one (`personId`) or a new one.",
+        "properties": {
+          "birthDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
+          "birthMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthmonth"
+          },
+          "birthYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthyear"
+          },
+          "differentPerson": {
+            "default": false,
+            "title": "Differentperson",
+            "type": "boolean"
+          },
+          "giftBudget": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Giftbudget"
+          },
+          "leadDays": {
+            "default": 14,
+            "title": "Leaddays",
+            "type": "integer"
+          },
+          "name": {
+            "default": "",
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "occasions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OccasionIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occasions"
+          },
+          "personId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personid"
+          },
+          "private": {
+            "default": false,
+            "title": "Private",
+            "type": "boolean"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
+          }
+        },
+        "title": "PersonIn",
+        "type": "object"
+      },
       "moneykata__ui__giving__DocumentIn": {
         "additionalProperties": false,
         "properties": {
@@ -19110,6 +19760,86 @@
           "overpayment"
         ],
         "title": "SplitOut",
+        "type": "object"
+      },
+      "moneykata__ui__people__PersonIn": {
+        "additionalProperties": false,
+        "properties": {
+          "birthDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
+          "birthMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthmonth"
+          },
+          "birthYear": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthyear"
+          },
+          "diedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diedon"
+          },
+          "differentPerson": {
+            "default": false,
+            "title": "Differentperson",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "private": {
+            "default": false,
+            "title": "Private",
+            "type": "boolean"
+          },
+          "sex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sex"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "PersonIn",
         "type": "object"
       },
       "moneykata__ui__prices__SecretSet": {
@@ -25666,7 +26396,7 @@
     },
     "/ui/api/people": {
       "get": {
-        "description": "The caller's people and those shared with them.",
+        "description": "The caller's gift plans and those shared with them, with their people.",
         "operationId": "list_people_ui_api_people_get",
         "parameters": [
           {
@@ -25721,12 +26451,13 @@
         ]
       },
       "post": {
+        "description": "A gift plan for someone: a person already here, or a new one, added once (S10.10.3).",
         "operationId": "add_person_ui_api_people_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PersonIn"
+                "$ref": "#/components/schemas/moneykata__ui__gifts__PersonIn"
               }
             }
           },
@@ -25762,7 +26493,199 @@
     },
     "/ui/api/people/{person_id}": {
       "delete": {
-        "operationId": "delete_person_ui_api_people__person_id__delete",
+        "description": "The caller's gift plan for this person; the person stays (S10.10).",
+        "operationId": "delete_plan_ui_api_people__person_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Plan",
+        "tags": [
+          "gifts"
+        ]
+      },
+      "patch": {
+        "description": "The gift plan, and the person's own fields when the caller may change them.",
+        "operationId": "change_person_ui_api_people__person_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/moneykata__ui__gifts__PersonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Person",
+        "tags": [
+          "gifts"
+        ]
+      }
+    },
+    "/ui/api/persons": {
+      "get": {
+        "description": "The household's people the caller can see, with how each is related to them.",
+        "operationId": "list_persons_ui_api_persons_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PersonRow_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Persons",
+        "tags": [
+          "people"
+        ]
+      },
+      "post": {
+        "description": "A person, added once (S10.10.3).",
+        "operationId": "add_person_ui_api_persons_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/moneykata__ui__people__PersonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Person",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/ui/api/persons/{person_id}": {
+      "delete": {
+        "description": "A person who isn't a user. Gifts bought, given or received keep them by name; ideas and\nplanned gifts for them alone go with them (S7.8.6).",
+        "operationId": "delete_person_ui_api_persons__person_id__delete",
         "parameters": [
           {
             "in": "path",
@@ -25798,11 +26721,12 @@
         },
         "summary": "Delete Person",
         "tags": [
-          "gifts"
+          "people"
         ]
       },
       "patch": {
-        "operationId": "change_person_ui_api_people__person_id__patch",
+        "description": "Only the person, whoever added them, or an admin changes them (S10.10.2).",
+        "operationId": "change_person_ui_api_persons__person_id__patch",
         "parameters": [
           {
             "in": "path",
@@ -25818,7 +26742,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PersonIn"
+                "$ref": "#/components/schemas/moneykata__ui__people__PersonIn"
               }
             }
           },
@@ -25829,7 +26753,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonOut"
+                  "$ref": "#/components/schemas/PersonRow"
                 }
               }
             },
@@ -25848,7 +26772,133 @@
         },
         "summary": "Change Person",
         "tags": [
-          "gifts"
+          "people"
+        ]
+      }
+    },
+    "/ui/api/persons/{person_id}/ask-to-share": {
+      "post": {
+        "description": "Ask whoever added a private person, and the admins, to share them (S10.10.3).",
+        "operationId": "ask_to_share_ui_api_persons__person_id__ask_to_share_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asked"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask To Share",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/ui/api/persons/{person_id}/relations": {
+      "get": {
+        "description": "Everyone the person is related to as of a day, stored and worked out (S10.10.5).",
+        "operationId": "person_relations_ui_api_persons__person_id__relations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "on",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "On"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RelationOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Person Relations",
+        "tags": [
+          "people"
         ]
       }
     },
@@ -27909,6 +28959,210 @@
         ]
       }
     },
+    "/ui/api/relationships": {
+      "get": {
+        "description": "The stored relationships of a person (the caller's own by default).",
+        "operationId": "list_relationships_ui_api_relationships_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "person",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Person"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RelationshipOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Relationships",
+        "tags": [
+          "people"
+        ]
+      },
+      "post": {
+        "operationId": "add_relationship_ui_api_relationships_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Relationship",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/ui/api/relationships/{rel_id}": {
+      "delete": {
+        "operationId": "delete_relationship_ui_api_relationships__rel_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rel_id",
+            "required": true,
+            "schema": {
+              "title": "Rel Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Relationship",
+        "tags": [
+          "people"
+        ]
+      },
+      "patch": {
+        "operationId": "change_relationship_ui_api_relationships__rel_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rel_id",
+            "required": true,
+            "schema": {
+              "title": "Rel Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Relationship",
+        "tags": [
+          "people"
+        ]
+      }
+    },
     "/ui/api/session": {
       "delete": {
         "description": "Signing out ends every session of the user at once (S13.7.1).",
@@ -29030,6 +30284,7 @@
                 "budget",
                 "projection",
                 "person",
+                "gift-plan",
                 "giving-plan",
                 "tax-book"
               ],
@@ -29089,6 +30344,7 @@
                 "budget",
                 "projection",
                 "person",
+                "gift-plan",
                 "giving-plan",
                 "tax-book"
               ],

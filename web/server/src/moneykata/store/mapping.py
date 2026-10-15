@@ -104,6 +104,8 @@ def map_all() -> None:
         (gv.Organisation, giving.Organisation),
         (gv.Donation, giving.Donation),
         (ed.Person, people.Person),
+        (ed.Relationship, people.Relationship),
+        (ed.GiftPlan, people.GiftPlan),
         (ed.Occasion, people.Occasion),
         (ed.Gift, people.Gift),
         (ed.EducationPlan, education.EducationPlan),
