@@ -107,7 +107,7 @@ class Cboe(TickerSource):
 
         try:
             return json.loads(body).get("data")
-        except (ValueError, AttributeError):
+        except ValueError, AttributeError:
             raise SourceError(f"{self.label} answered with something that is not JSON") from None
 
     def history(self, ref: Ref, start: dt.date, end: dt.date) -> list[tuple[dt.date, Decimal]]:

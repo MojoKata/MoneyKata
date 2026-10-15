@@ -337,7 +337,7 @@ class BookDetail(BookRow):
     canWrite: bool
 
 
-def _dependent(d: "dependents.Dependent") -> DependentOut:
+def _dependent(d: dependents.Dependent) -> DependentOut:
     return DependentOut(
         id=d.row.id,
         personId=d.person.id,

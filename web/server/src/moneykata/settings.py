@@ -61,7 +61,7 @@ def _time(v: Any) -> str:
 def _zone(v: Any) -> str:
     try:
         ZoneInfo(v)
-    except (ZoneInfoNotFoundError, ValueError, TypeError):
+    except ZoneInfoNotFoundError, ValueError, TypeError:
         raise Invalid("a time zone name, such as America/New_York") from None
     return v
 

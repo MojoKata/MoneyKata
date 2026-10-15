@@ -42,7 +42,7 @@ def verify(public: bytes, change: dict) -> None:
         Ed25519PublicKey.from_public_bytes(public).verify(
             unb64(change.get("signature", "")), _canonical(change)
         )
-    except (InvalidSignature, ValueError):
+    except InvalidSignature, ValueError:
         raise ChangeError(f"change {change.get('seq')} fails its signature check") from None
 
 
@@ -92,7 +92,7 @@ def enqueue(srv, link_id: str, change: dict, local: dict | None = None) -> bool:
 def _as_of(change: dict) -> dt.datetime | None:
     try:
         return dt.datetime.fromisoformat(change["asOf"])
-    except (KeyError, ValueError, TypeError):
+    except KeyError, ValueError, TypeError:
         return None
 
 

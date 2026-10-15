@@ -64,7 +64,7 @@ class TaskRun:
 @dataclass
 class Task:
     name: str
-    run: Callable[["TaskContext"], None]
+    run: Callable[[TaskContext], None]
     schedule: Every | Daily | None
     last: TaskRun | None = None
     running: bool = False
@@ -75,7 +75,7 @@ class Task:
 class TaskContext:
     name: str
     stop: threading.Event
-    limits: "ProviderLimits"
+    limits: ProviderLimits
 
     def check(self) -> None:
         if self.stop.is_set():

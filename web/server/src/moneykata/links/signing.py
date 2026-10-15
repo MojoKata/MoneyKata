@@ -89,7 +89,7 @@ def verify_answer(
     try:
         t = int(headers["MK-Link-Time"])
         sig = unb64(headers["MK-Link-Signature"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         raise Refused("answer-unsigned", "The linked server's answer wasn't signed.") from None
     if abs((now if now is not None else time.time()) - t) > SKEW:
         raise Refused("clock-skew", "The linked server's clock is more than a minute off.")
@@ -135,7 +135,7 @@ def verify_request(
         t = int(headers["mk-link-time"])
         nonce = headers["mk-link-nonce"]
         sig = unb64(headers["mk-link-signature"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         raise Refused("unsigned", "A linked server's call must be signed.") from None
     if len(public) != 32 or not 8 <= len(nonce) <= 64:
         raise Refused("unsigned", "A linked server's call must be signed.")
@@ -144,7 +144,7 @@ def verify_request(
     msg = _lines("MK-LINK-1", method.upper(), path, body_hash(body), t, nonce, own_fp)
     try:
         Ed25519PublicKey.from_public_bytes(public).verify(sig, msg)
-    except (InvalidSignature, ValueError):
+    except InvalidSignature, ValueError:
         raise Refused("bad-signature", "The call's signature doesn't match its key.") from None
     if not nonces.first(fingerprint(public), nonce):
         raise Refused("replayed", "This call was already made.")

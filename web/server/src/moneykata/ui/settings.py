@@ -600,7 +600,7 @@ def backups(request: Request, c: Caller = Depends(admin)):
     for path in reversed(maintenance.backups(srv.config)):
         try:
             meta = json.loads((path / "manifest.json").read_text())
-        except (OSError, ValueError):
+        except OSError, ValueError:
             continue
         out.append(
             BackupOut(

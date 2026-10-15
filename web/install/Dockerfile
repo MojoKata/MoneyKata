@@ -3,7 +3,7 @@
 #   docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) .
 # One image for amd64 and arm64: add --platform linux/amd64,linux/arm64 (arm64 under QEMU).
 
-ARG PYTHON=python:3.12-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258
+ARG PYTHON=python:3.14-slim-bookworm@sha256:48b13b003dda20b16f9442b8475aa05fe21bf6579a8c881db92ffb4d8fd20f83
 
 FROM ${PYTHON} AS build
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \

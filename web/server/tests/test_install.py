@@ -9,6 +9,7 @@ import tomllib
 import yaml
 
 from moneykata import config, paths
+from moneykata.dev import wheels
 from moneykata.keys.cli import SERVER_UID
 
 INSTALL = paths.WEB / "install"
@@ -40,7 +41,8 @@ def test_the_image_runs_as_the_server_account_on_its_port():
 def test_the_image_is_built_from_pinned_sources():
     """A base pinned by digest, the build tool pinned with hashes, and no secret or dev file in
     the build context (S13.7.11, S15.4.5)."""
-    assert re.search(r"^ARG PYTHON=python:3\.12-[\w.-]+@sha256:[0-9a-f]{64}$", DOCKERFILE, re.M)
+    base = rf"^ARG PYTHON=python:3\.{wheels.MINOR}-[\w.-]+@sha256:[0-9a-f]{{64}}$"
+    assert re.search(base, DOCKERFILE, re.M), "the base image must be the project's Python"
     requirements = (INSTALL / "build-requirements.txt").read_text()
     assert "--hash=sha256:" in requirements
     assert "--require-hashes" in DOCKERFILE

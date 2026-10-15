@@ -11,7 +11,7 @@ from .. import clock
 from ..net import Client
 from ..tasks import TaskError
 
-SOURCES: dict[str, type["TickerSource"]] = {}
+SOURCES: dict[str, type[TickerSource]] = {}
 
 
 class SourceError(TaskError):

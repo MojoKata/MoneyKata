@@ -149,7 +149,7 @@ def _check(s, user_id: str, name, goal, built, inputs) -> list[FieldError]:
             try:
                 if float(built.get("amount", -1)) < 0:
                     raise ValueError
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 errors.append(FieldError("builtOn.amount", "amount-invalid", "An amount."))
         elif kind == "portfolio":
             try:

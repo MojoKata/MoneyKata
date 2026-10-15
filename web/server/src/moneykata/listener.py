@@ -72,7 +72,7 @@ def _covers(cert_path: Path) -> set[str]:
     try:
         cert = x509.load_pem_x509_certificate(cert_path.read_bytes())
         alt = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
-    except (ValueError, x509.ExtensionNotFound):
+    except ValueError, x509.ExtensionNotFound:
         return set()
     return {str(n.value) for n in alt}
 

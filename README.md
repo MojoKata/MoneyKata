@@ -55,7 +55,7 @@ lists every library with its purpose, its risks and when to look at it again.
 
 ## Development
 
-Needs Python 3.12, [uv](https://docs.astral.sh/uv/) and curl; `setup` fetches the pinned Deno
+Needs Python 3.14, [uv](https://docs.astral.sh/uv/) and curl; `setup` fetches the pinned Deno
 and Playwright's Chromium.
 
 ```

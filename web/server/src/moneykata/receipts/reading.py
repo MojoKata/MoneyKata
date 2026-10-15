@@ -109,7 +109,7 @@ class Worker:
                     self.stop()
                     return ("error", f"it took longer than {int(limit)} seconds")
             return self.conn.recv()
-        except (EOFError, BrokenPipeError, OSError):
+        except EOFError, BrokenPipeError, OSError:
             self.stop()
             return ("error", "the reader stopped while reading it")
 

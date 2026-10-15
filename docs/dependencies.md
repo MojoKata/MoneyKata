@@ -7,7 +7,8 @@ page is the register.
 
 **Audited against:** `web/server/uv.lock` `sha256:—` and `web/ui/vendor/manifest.json`
 `sha256:—` (filled in by `web/dev.sh audit` once milestone 7 part 9 builds it; until then
-the audit of 2026-10-15 was by hand).
+the audits are by hand: 2026-10-15 the first pass over every wheel, and the same day the
+re-lock for Python 3.14, which changed no package's version and so added nothing to audit).
 
 ## The egress audit rule
 
@@ -30,7 +31,7 @@ server's own HTTP client, not native code or a library's own client. So:
 
 ## Python (the server)
 
-Pinned with hashes in `web/server/uv.lock`; Python 3.12 until milestone 7 part 1 moves it to 3.14 (S17.9.7.1: every native wheel below exists for cp314 on both architectures, checked 2026-10-15); installed in the image from wheels
+Pinned with hashes in `web/server/uv.lock`; Python 3.14 (every native wheel below exists for cp314 on both architectures, checked on PyPI 2026-10-15); installed in the image from wheels
 for amd64 and arm64 (S17.8.1). *Direct* means named in `pyproject.toml`.
 
 ### Direct
@@ -54,7 +55,7 @@ for amd64 and arm64 (S17.8.1). *Direct* means named in `pyproject.toml`.
 | pypdfium2 | 5.14.0 | a PDF's text layer and first-page render (S9.5, S9.8.2) | PDFium is the engine browsers ship; wheels for both architectures | parses untrusted PDFs: only in the worker, with its limits | on PDFium advisories |
 | pi-heif | 1.4.0 | reading iPhone photos (HEIC) (S9.1) | decodes only, smaller than pillow-heif | libheif parses untrusted input: worker only | — |
 | rapidocr | 3.10.0 | the OCR pipeline over the PP-OCR models (S9.8) | runs the models on ONNX Runtime with no service and no GPU; ships the models in its wheel | **egress**: downloads a model when its path is missing (`requests`); MoneyKata names every model's path and checks its hash first (S9.8.3), so it never does. Brings opencv, shapely, pyclipper, omegaconf, tqdm, requests, six, colorlog | when a smaller English-only model ships, or an engine without the `requests` and `tqdm` baggage |
-| onnxruntime | 1.31.0 | runs the OCR models on the CPU (S9.8.2) | the runtime RapidOCR targets; CPU wheels for amd64 and arm64 | **egress, telemetry**: carries Microsoft's 1DS telemetry client with its collector URL (`mobile.events.data.microsoft.com`) compiled in. MoneyKata calls `disable_telemetry_events()` before the first session (`receipts/ocr.py`); a probe of the image saw no connection either way. First on the list to replace | each release: whether the wheel's telemetry became opt-out at run time, and whether a build without it (or another runtime) is available |
+| onnxruntime | 1.31.0 | runs the OCR models on the CPU (S9.8.2) | the runtime RapidOCR targets; CPU wheels for amd64 and arm64 | **egress, telemetry**: carries Microsoft's 1DS telemetry client with its collector URL (`mobile.events.data.microsoft.com`) compiled in. MoneyKata calls `disable_telemetry_events()` before the first session (`receipts/ocr.py`); a probe of the image saw no connection either way. In the image, where the home directory is unwritable, the import logs *Failed to persist telemetry device ID; using an in-memory identifier* once per worker start: expected, and better than the file it wanted to write. First on the list to replace | each release: whether the wheel's telemetry became opt-out at run time, and whether a build without it (or another runtime) is available |
 
 ### Transitive, worth knowing
 
@@ -80,7 +81,7 @@ for amd64 and arm64 (S17.8.1). *Direct* means named in `pyproject.toml`.
 | sigstore | from `uv.lock` | verifying npm provenance in `vendor add` (S17.3.1) | **egress** at `vendor add` only |
 | uv | 0.12.5 | the build stage's installer (`install/build-requirements.txt`, hashed) | fetches wheels at image build only |
 | Deno | 2.9.7 | type-check, lint and format of the browser app (`web/pins`) | **egress** at `setup` only |
-| python:3.12-slim-bookworm | by digest in the Dockerfile | the image's base | security updates arrive only when the digest moves: with each release and on a Debian or Python fix, by `web/dev.sh base-update` (S17.8.5). Last moved: the first build, 2026-10-12 |
+| python:3.14-slim-bookworm | by digest in the Dockerfile | the image's base | security updates arrive only when the digest moves: with each release and on a Debian or Python fix, by `web/dev.sh base-update` (S17.8.5). Last moved: 2026-10-15, from 3.12 to 3.14 (Docker Hub's build of 2026-10-06) |
 
 ## JavaScript (the browser app)
 

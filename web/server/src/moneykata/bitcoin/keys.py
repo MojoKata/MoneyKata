@@ -208,7 +208,7 @@ class ExtendedKey:
     chain: bytes
     key: bytes  # compressed public key
 
-    def child(self, i: int) -> "ExtendedKey":
+    def child(self, i: int) -> ExtendedKey:
         if i >= 2**31:
             raise ValueError("a public key can't derive hardened children")
         h = hmac.new(self.chain, self.key + i.to_bytes(4, "big"), hashlib.sha512).digest()

@@ -139,7 +139,7 @@ class Keyring:
         )
 
     @staticmethod
-    def from_json(text: str) -> "Keyring":
+    def from_json(text: str) -> Keyring:
         d = json.loads(text)
         if d.get("format") != KEYRING_FORMAT:
             raise ValueError("not a MoneyKata keyring")
@@ -216,7 +216,7 @@ class DataKeys:
     secrets: bytes
 
     @staticmethod
-    def derive(data_key: bytes) -> "DataKeys":
+    def derive(data_key: bytes) -> DataKeys:
         return DataKeys(
             database=hkdf(data_key, "moneykata database"),
             receipts=X25519PrivateKey.from_private_bytes(hkdf(data_key, "moneykata receipts")),

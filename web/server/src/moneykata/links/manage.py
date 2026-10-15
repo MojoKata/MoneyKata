@@ -73,7 +73,7 @@ def decode_code(code: str) -> dict:
     try:
         out = json.loads(keys.unb64(code[5:]))
         assert isinstance(out, dict) and {"a", "f", "c"} <= set(out)
-    except (ValueError, AssertionError):
+    except ValueError, AssertionError:
         raise LinkError("code-invalid", "The link code is damaged: copy it again whole.") from None
     return out
 

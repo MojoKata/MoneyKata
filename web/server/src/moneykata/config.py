@@ -117,7 +117,7 @@ def parse(raw: dict, where: str, path: Path | None = None) -> Config:
     for entry in server.get("trusted_proxies", []):
         try:
             proxies.append(ipaddress.ip_network(entry, strict=False))
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             raise RefuseStart(
                 f"{where}: server.trusted_proxies: {entry!r} is not an address or network"
             ) from None

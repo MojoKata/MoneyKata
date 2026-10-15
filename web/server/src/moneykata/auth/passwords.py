@@ -52,7 +52,7 @@ def verify(stored: str | None, password: str) -> bool:
         _DUMMY.append(_hasher.hash("moneykata timing dummy"))
     try:
         return _hasher.verify(stored or _DUMMY[0], password) and stored is not None
-    except (VerifyMismatchError, VerificationError, InvalidHashError):
+    except VerifyMismatchError, VerificationError, InvalidHashError:
         return False
 
 

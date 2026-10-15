@@ -9,23 +9,37 @@ import sys
 import tomllib
 from pathlib import Path
 
-LOCK = Path(__file__).resolve().parents[3] / "uv.lock"
+SERVER = Path(__file__).resolve().parents[3]
+LOCK = SERVER / "uv.lock"
 ARCHES = {"amd64": ("x86_64",), "arm64": ("aarch64",)}
 
 
+def minor() -> int:
+    """The one Python minor version the project runs on, from `requires-python` (S17.2)."""
+    spec = tomllib.loads((SERVER / "pyproject.toml").read_text())["project"]["requires-python"]
+    found = re.fullmatch(r"==3\.(\d+)\.\*", spec)
+    if not found:
+        raise SystemExit(f"requires-python must pin one minor version (==3.N.*), not {spec!r}")
+    return int(found.group(1))
+
+
+MINOR = minor()
+CPYTHON = f"cp3{MINOR}"
+
+
 def fits(filename: str, machine: str) -> bool:
-    """A wheel that installs on glibc Linux for CPython 3.12 on this machine."""
+    """A wheel that installs on glibc Linux for the project's CPython on this machine."""
     python, abi, platform = filename[:-4].split("-")[-3:]
 
     def python_ok(tag: str) -> bool:
-        if tag in ("py3", "cp312"):
+        if tag in ("py3", CPYTHON):
             return True
         stable = re.fullmatch(r"cp3(\d+)", tag)
-        return bool(stable) and int(stable.group(1)) <= 12 and abi == "abi3"
+        return bool(stable) and int(stable.group(1)) <= MINOR and abi == "abi3"
 
     if not any(python_ok(t) for t in python.split(".")):
         return False
-    if not any(a in ("none", "abi3", "cp312") for a in abi.split(".")):
+    if not any(a in ("none", "abi3", CPYTHON) for a in abi.split(".")):
         return False
     return any(
         p == "any" or (p.startswith(("manylinux", "linux")) and p.endswith(machine))

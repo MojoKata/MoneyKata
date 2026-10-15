@@ -28,7 +28,7 @@ def host_zone() -> str:
 def valid(name: str) -> bool:
     try:
         ZoneInfo(name)
-    except (ZoneInfoNotFoundError, ValueError):
+    except ZoneInfoNotFoundError, ValueError:
         return False
     return True
 
