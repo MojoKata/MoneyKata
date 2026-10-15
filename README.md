@@ -8,9 +8,10 @@ receipts and tax books, and prepares the numbers a tax return needs. Several peo
 server, and households on other MoneyKata servers can share with named people here, read
 only, in a window of their own.
 
-**Status:** six of the seven milestones (requirements S17.9.1–S17.9.6) are built in `web/`;
-milestone 7 (S17.9.7: the MoneyKata Connector, the mocks and the manual test plan, and the
-hardening) is next. The gaps and the open questions are listed in the requirements' README.
+**Status:** the seven milestones (requirements S17.9.1–S17.9.7) are built: the server in
+`web/`, the MoneyKata Connector in `connector/`. What the build couldn't try for real is in
+[`docs/test-plan.md`](docs/test-plan.md); the gaps and the open questions are listed in the
+requirements' README.
 
 ## Where to start
 
