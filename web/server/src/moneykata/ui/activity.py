@@ -85,6 +85,7 @@ TEXT = {
     "relationship.saved": "{actor} saved a relationship",
     "option.traded": "{actor} recorded an option trade in {subject}",
     "strategy.grouped": "{actor} grouped legs as a strategy in {subject}",
+    "option.adjusted": "{actor} adjusted options in {subject} after a corporate action",
     "token.created": "{actor} made an access token, {name}",
     "token.revoked": "{actor} revoked the access token {name}",
     "link.invited": "{actor} made an invitation for another server",

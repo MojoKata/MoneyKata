@@ -73,6 +73,8 @@ class Replay:
     open: list[OpenLot] = field(default_factory=list)
     disposals: list[Disposal] = field(default_factory=list)
     problems: list[Problem] = field(default_factory=list)
+    # Lots an adjusted contract gave up, waiting for its new contract (S3.10).
+    carried: dict = field(default_factory=dict)
 
     def quantity(self, instrument_id: str) -> Decimal:
         return sum((lot.quantity for lot in self.open if lot.instrumentId == instrument_id), ZERO)
@@ -217,6 +219,9 @@ def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -
     if t.kind in OPTION_TRADES:
         _option(out, t, picks)
         return
+    if t.kind == "option-adjust":
+        _adjust(out, t)
+        return
     if t.kind in ("buy", "reinvest", "transfer-in"):
         if made:
             for lot in made:
@@ -253,6 +258,27 @@ def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -
         for lot in held:
             cut = (t.amount * lot.quantity / total).quantize(CENT) if total else ZERO
             lot.basis = max(ZERO, lot.basis - cut)
+
+
+def _adjust(out: Replay, t) -> None:
+    """An adjusted contract (S3.10): the old contract's lots leave with no sale, and open on
+    the new one with their days held and their whole basis, the contracts times the ratio."""
+    if t.splitRatio is None:
+        gone = [lot for lot in out.open if lot.instrumentId == t.instrumentId]
+        out.open = [lot for lot in out.open if lot.instrumentId != t.instrumentId]
+        out.carried[t.id] = gone
+        return
+    for lot in out.carried.pop(t.transferId, []):
+        out.open.append(
+            OpenLot(
+                lot.lotId,
+                t.instrumentId,
+                lot.acquiredOn,
+                lot.quantity * t.splitRatio,
+                lot.basis,
+                lot.standIn,
+            )
+        )
 
 
 # Option trades (S3.2, S3.3): a long contract is a lot like a share's; a short one is a

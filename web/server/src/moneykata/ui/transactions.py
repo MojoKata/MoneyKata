@@ -612,6 +612,12 @@ def create_transaction(body: TxnIn, request: Request, c: Caller = Depends(caller
         _set_tags(s, t, c.id, body.tags)
         repo.match_transfer(s, t, a.ownerId)
         s.flush()
+        if t.kind == "split" and inst_id:
+            # Its open options follow a whole-number split (S3.10.1).
+            from ..options import adjust
+
+            adjust.with_split(s, c.id, a, t)
+            s.flush()
         if inst_id:
             washes.recompute(s, a.ownerId)
         out = shape(s, c.id, [t], {a.id: level})[0]
@@ -722,6 +728,10 @@ def delete_transaction(
 ):
     with server(request).db.tx() as s:
         t, a, _ = _editable(s, c, txn_id, version, confirm)
+        if t.kind in ("split", "option-adjust"):
+            from ..options import adjust
+
+            adjust.undo(s, c.id, t)
         repo.unlink_transfer(s, t)
         t.mark_deleted(c.id)
         if t.instrumentId:

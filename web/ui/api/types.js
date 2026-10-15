@@ -129,6 +129,25 @@
  */
 
 /**
+ * @typedef {Object} Adjustable
+ * @property {string} underlying
+ * @property {string} underlyingId
+ * @property {Array<OpenContract>} contracts
+ */
+
+/**
+ * @typedef {Object} Adjusted
+ * @property {number} contracts
+ * @property {number} accounts
+ */
+
+/**
+ * @typedef {Object} Adjustment
+ * @property {string} date
+ * @property {Array<ContractAdjustment>} contracts
+ */
+
+/**
  * @typedef {Object} AlertList
  * @property {Array<AlertRow>} open
  * @property {Array<AlertRow>} resolved
@@ -471,6 +490,15 @@
  */
 
 /**
+ * @typedef {Object} ContractAdjustment
+ * @property {string} instrumentId
+ * @property {string} root
+ * @property {import('../app/dec.js').Dec} strike
+ * @property {Array<DeliverablePart>} deliverable
+ * @property {import('../app/dec.js').Dec} [cash]
+ */
+
+/**
  * @typedef {Object} ContributionIn
  * @property {string} date
  * @property {import('../app/dec.js').Dec} amount
@@ -575,6 +603,12 @@
  * @typedef {Object} Deleted_WithdrawalsView_
  * @property {Gone} deleted
  * @property {(WithdrawalsView | null)} [parent]
+ */
+
+/**
+ * @typedef {Object} DeliverablePart
+ * @property {string} symbol
+ * @property {import('../app/dec.js').Dec} shares
  */
 
 /**
@@ -1736,6 +1770,17 @@
  */
 
 /**
+ * @typedef {Object} OpenContract
+ * @property {string} instrumentId
+ * @property {string} symbol
+ * @property {string} right
+ * @property {import('../app/dec.js').Dec} strike
+ * @property {string} expiry
+ * @property {(string | null)} root
+ * @property {Array<string>} held
+ */
+
+/**
  * @typedef {Object} OpenRow
  * @property {string} accountId
  * @property {string} accountName
@@ -1844,6 +1889,14 @@
 /**
  * @typedef {Object} Page_ActivityItem_
  * @property {Array<ActivityItem>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_Adjustable_
+ * @property {Array<Adjustable>} items
  * @property {number} total
  * @property {number} offset
  * @property {number} limit

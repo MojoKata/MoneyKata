@@ -238,6 +238,9 @@ class OptionContract(Record):
     strike: Decimal
     expiry: dt.date
     multiplier: int = 100
+    root: str | None = None
+    deliverable: str | None = None
+    deliverableCash: Decimal | None = None
 
 
 @dataclass(kw_only=True, eq=False)

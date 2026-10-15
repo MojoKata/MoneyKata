@@ -11,7 +11,7 @@ import { Amt } from './amount.js';
 import { Dec, dec } from '../app/dec.js';
 import { Empty, Failed, Loading } from './bits.js';
 import { Dialog, openDialog } from './dialog.js';
-import { errAt, Field, FormError, Input, SwitchRow } from './fields.js';
+import { errAt, Field, FormError, Input, Select, SwitchRow } from './fields.js';
 import { useDialogGuide } from './help.js';
 import { Icon } from './icon.js';
 import { toast } from './toast.js';
@@ -185,9 +185,165 @@ export function Strategies() {
       `
       : html`<${Empty}>No strategies yet. Legs opened together are offered here; or select legs on
         the Open tab and Group them.</${Empty}>`}
-    <p class="small dim mt">Grouping is a label: each leg keeps its own lots, gains and wash sales.
-      Capital at risk is the most the strategy can lose at expiry; for undefined risk, the margin
-      you type.</p>
+    <div class="toolbar mt"><span class="small dim">Grouping is a label: each leg keeps its own
+      lots, gains and wash sales. Capital at risk is the most the strategy can lose at expiry; for
+      undefined risk, the margin you type.</span><span class="spacer"></span><button type="button"
+      class="btn sm" onClick=${() =>
+        openDialog(AdjustDialog, {}).then((x) => x && res.reload())}>An underlying was
+      adjusted…</button></div>
+  `;
+}
+
+/** "150 XYZ + 20 ABC" as the deliverable's parts. @param {string} text */
+const parts = (text) =>
+  text.split(/[+,]/).map((p) => p.trim()).filter(Boolean).map((p) => {
+    const m = p.match(/^([\d.,]+)\s+([A-Za-z.]+)$/);
+    return m
+      ? { shares: m[1].replace(/,/g, ''), symbol: m[2].toUpperCase() }
+      : { shares: '', symbol: p };
+  });
+
+/**
+ * The OCC adjusted an underlying's options (S3.10.2): each open contract's new root, strike and
+ * deliverable, from its information memo. The lots carry over: nothing is sold.
+ * @param {{ close: (v?: any) => void }} p
+ */
+function AdjustDialog({ close }) {
+  useDialogGuide('dialog-option-adjust');
+  const res = useApi('/options/adjustable');
+  const groups = /** @type {any[] | null} */ ((/** @type {any} */ (res.data))?.items ?? null);
+  const [under, setUnder] = useState('');
+  const [rows, setRows] = useState(/** @type {Record<string, any>} */ ({}));
+  const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
+  const g = groups?.find((x) => x.underlyingId === under) || groups?.[0];
+  const row = (/** @type {any} */ c) =>
+    rows[c.instrumentId] || {
+      root: `${g.underlying}1`,
+      strike: String(c.strike),
+      deliverable: `100 ${g.underlying}`,
+      cash: '0',
+    };
+  const set = (/** @type {string} */ id, /** @type {string} */ k) => (/** @type {string} */ v) =>
+    setRows({
+      ...rows,
+      [id]: { ...row(g.contracts.find((/** @type {any} */ c) => c.instrumentId === id)), [k]: v },
+    });
+  const save = useSubmit(async () => {
+    const out = await api.post('/options/adjust', {
+      date: day,
+      contracts: g.contracts.map((/** @type {any} */ c) => {
+        const r = row(c);
+        return {
+          instrumentId: c.instrumentId,
+          root: r.root,
+          strike: r.strike,
+          deliverable: parts(r.deliverable),
+          cash: r.cash || '0',
+        };
+      }),
+    });
+    toast(`${out.contracts} contract${out.contracts === 1 ? '' : 's'} adjusted`);
+    close(out);
+  });
+  if (!groups) return null;
+  return html`
+    <${Dialog} title=${g
+      ? `Options on ${g.underlying} after a corporate action`
+      : 'Adjusted options'}
+      wide close=${close} onSubmit=${() => g && save.run().catch(() => {})}
+      note=${g
+        ? html`
+          <a href=${`https://infomemo.theocc.com/infomemo/search?symbol=${
+            encodeURIComponent(g.underlying)
+          }`}
+            target="_blank" rel="noopener">Find the OCC's memo for ${g.underlying}</a>
+        `
+        : null}
+      footer=${g
+        ? html`<button class="btn primary" disabled=${save.busy}>${`Adjust ${g.contracts.length} contract${
+          g.contracts.length === 1 ? '' : 's'
+        }`}</button>`
+        : null}>
+      ${!g ? html`<p>No options are open in accounts you can change.</p>` : html`
+        <p class="small dim" style=${{ marginTop: 0 }}>A split that isn't a whole number, a
+          merger, a spin-off or a large special dividend changes each open contract's root and
+          deliverable, as the OCC's information memo says. The lots carry over: nothing is
+          sold. A whole-number split needs none of this.</p>
+        <div class="row">
+          <${Field} label="Underlying" id="adjust-underlying">
+            <${Select} value=${g.underlyingId} onChange=${setUnder}
+              options=${groups.map((x) => [x.underlyingId, x.underlying])} />
+            </${Field}>
+            <${Field} label="Effective" id="adjust-date" error=${errAt(save.error, 'date')}>
+              <${Input} type="date" value=${day} onInput=${setDay} />
+              </${Field}>
+              </div>
+              <div class="table-wrap">
+                <table class="t">
+                  <thead>
+                    <tr>
+                      <th>Contract</th>
+                      <th
+                        data-help="new-root">New root</th>
+                      <th class="num">Strike</th>
+                      <th
+                        data-help="deliverable">Deliverable</th>
+                      <th class="num">Cash</th>
+                    </tr>
+                  </thead>
+                  <tbody>${g
+                    .contracts.map((/** @type {any} */ c, /** @type {number} */ i) => {
+                      const r = row(c);
+                      return html`
+                        <tr>
+                          <td><b>${c.symbol}</b><div class="small dim">${c.held.join(
+                            '; ',
+                          )}</div></td>
+                          <td><input class="in" style=${{ maxWidth: '90px' }}
+                                        aria-label="New root" value=${r.root} onInput=${(
+                                          /** @type {any} */ e,
+                                        ) =>
+                                          set(c.instrumentId, 'root')(
+                                            e.currentTarget.value,
+                                          )} />${errAt(
+                                            save.error,
+                                            `contracts.${i}.root`,
+                                          )
+                                          ? html`<div class="err">${
+                                            errAt(save.error, `contracts.${i}.root`)
+                                          }</div>`
+                                          : null}</td>
+                          <td class="num"><input class="in num" style=${{ maxWidth: '90px' }}
+                                        aria-label="Strike" value=${r.strike} onInput=${(
+                                          /** @type {any} */ e,
+                                        ) =>
+                                          set(c.instrumentId, 'strike')(
+                                            e.currentTarget.value,
+                                          )} /></td>
+                          <td><input class="in"
+                                        style=${{
+                                          maxWidth: '180px',
+                                        }} aria-label="Deliverable" value=${r.deliverable}
+                                        placeholder="150 XYZ + 20 ABC" onInput=${(
+                                          /** @type {any} */ e,
+                                        ) =>
+                                          set(c.instrumentId, 'deliverable')(
+                                            e.currentTarget.value,
+                                          )} /></td>
+                          <td class="num"
+                          ><input class="in num" style=${{ maxWidth: '90px' }} aria-label="Cash"
+                                        value=${r.cash} onInput=${(/** @type {any} */ e) =>
+                                          set(c.instrumentId, 'cash')(
+                                            e.currentTarget.value,
+                                          )} /></td>
+                        </tr>
+                      `;
+                    })}</tbody>
+                </table>
+              </div>
+              <${FormError} error=${save.error} shown=${['date']} />
+      `}
+    </${Dialog}>
   `;
 }
 

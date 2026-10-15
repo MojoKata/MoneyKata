@@ -25,6 +25,12 @@ OptionContract = record(
     Column("strike", Dec, nullable=False),
     Column("expiry", Day, nullable=False),
     Column("multiplier", Integer, nullable=False, server_default=text("100")),
+    # An adjusted contract's root (AAPL1, S3.10.2); none: its underlying's symbol.
+    Column("root", Text),
+    # What a contract delivers when adjusted, as JSON: [{"instrumentId", "shares"}], with the
+    # cash; none: the multiplier's shares of its underlying.
+    Column("deliverable", Text),
+    Column("deliverableCash", Dec),
     CheckConstraint("\"right\" IN ('call', 'put')", name="right"),
     CheckConstraint("strike > 0", name="strike"),
     CheckConstraint("multiplier > 0", name="multiplier"),

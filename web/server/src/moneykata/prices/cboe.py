@@ -134,7 +134,9 @@ class Cboe(TickerSource):
     def option(self, ref: Ref, start: dt.date, end: dt.date) -> list[tuple[dt.date, Decimal]]:
         """Only the latest close: CBOE gives the chain as it is now, not its history."""
         root, rest = split_occ(ref.symbol)
-        chain, roots = INDEXES.get(root, (root, (root,)))
+        # An adjusted contract's root (XYZ1) is listed in its underlying's chain (S3.10.5).
+        base = root.rstrip("0123456789") or root
+        chain, roots = INDEXES.get(root, (base, (root,)))
         day, rows = self.chain(chain)
         if not start <= day <= end:
             return []

@@ -287,7 +287,7 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
                 under = s.get(Instrument, c.underlyingId) if c else None
             if c is None or under is None:
                 continue
-            ref = Ref(inst.id, options.occ(under.symbol, c), "option")
+            ref = Ref(inst.id, options.occ(c.root or under.symbol, c), "option")
         per_share = None
         if not candidates and inst.symbol in METAL_PROXIES:
             # Metal spot from a proxy's closes, divided by the metal each share holds (S4.3).

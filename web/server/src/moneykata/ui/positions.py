@@ -122,6 +122,7 @@ def _how(t: Transaction | None) -> str:
         "expire": "expired",
         "assign": "assigned",
         "exercise": "exercised",
+        "option-adjust": "adjusted",
     }.get(t.kind, t.kind)
 
 
@@ -167,11 +168,11 @@ def gather(s, c: Caller, kind: str = "all"):
             extra = {}
             oc = options.contract_of(s, iid) if inst.instrumentClass == "option" else None
             if oc is not None:
-                under = valuation.prices(s, [oc.underlyingId], today).get(oc.underlyingId)
+                under = options.per_share(s, oc, today)
                 extra = {
                     "expiry": oc.expiry,
                     "daysToExpiry": (oc.expiry - today).days,
-                    "inTheMoney": options.in_the_money(oc, under.price) if under else None,
+                    "inTheMoney": options.in_the_money(oc, under[0]) if under else None,
                 }
             open_rows.append(
                 OpenRow(
@@ -352,7 +353,7 @@ class OptionTradeRow(Model):
 
 
 OPTION_KINDS = ("buy-to-open", "sell-to-open", "buy-to-close", "sell-to-close")
-ENDS = ("expire", "assign", "exercise")
+ENDS = ("expire", "assign", "exercise", "option-adjust")
 
 
 @router.get("/positions/option-trades", response_model=list[OptionTradeRow])
@@ -386,6 +387,9 @@ def option_trades(request: Request, c: Caller = Depends(caller)):
                         step = qty
                     elif t.kind in ("sell-to-open", "sell-to-close"):
                         step = -qty
+                    elif t.kind == "option-adjust" and t.splitRatio is not None:
+                        # The adjusted contract takes over the old one's side (S3.10).
+                        step = qty if _adjusted_long(led, t) else -qty
                     else:
                         step = -qty if net > 0 else qty
                     if trade is None:
@@ -430,6 +434,20 @@ def option_trades(request: Request, c: Caller = Depends(caller)):
     open_rows = [r for r in out if r.closed is None]
     done = sorted((r for r in out if r.closed is not None), key=lambda r: r.closed, reverse=True)
     return sorted(open_rows, key=lambda r: r.opened, reverse=True) + done
+
+
+def _adjusted_long(led, t: Transaction) -> bool:
+    """Whether the contract an adjustment came from was held long when it was adjusted."""
+    old = next((y.instrumentId for y in led.transactions if y.id == t.transferId), None)
+    held = ZERO
+    for x in led.transactions:
+        if x.instrumentId != old or (x.date, x.createdAt) > (t.date, t.createdAt):
+            continue
+        if x.kind in ("buy-to-open", "buy-to-close"):
+            held += abs(x.quantity or ZERO)
+        elif x.kind in ("sell-to-open", "sell-to-close"):
+            held -= abs(x.quantity or ZERO)
+    return held > 0
 
 
 def _trade_row(a, inst, oc, trade, last: Transaction | None, value) -> OptionTradeRow:

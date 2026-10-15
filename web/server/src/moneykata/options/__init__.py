@@ -133,52 +133,100 @@ def settle(s: Session, user_id: str, account, inst, how: str, day: dt.date, cont
     made.append(end)
     if how == "expired":
         return made
-    shares = n * c.multiplier
-    cash = (c.strike * shares).quantize(CENT)
-    under = s.get(Instrument, c.underlyingId)
+    paid = (c.strike * n * c.multiplier).quantize(CENT)  # the strike on every contract
     buys = (how == "exercise" and c.right == "call") or (how == "assign" and c.right == "put")
-    stock = Transaction(
-        id=ids.new_id("Txn"),
-        accountId=account.id,
-        date=day,
-        kind="buy" if buys else "sell",
-        amount=-cash if buys else cash,
-        payee=f"{'Buy' if buys else 'Sell'} {under.symbol} at {c.strike.normalize():f} "
-        f"({'assigned' if how == 'assign' else 'exercised'})",
-        instrumentId=under.id,
-        quantity=shares,
-        price=c.strike,
-        lotMethod=None if buys else account.lotMethod,
-        optionTransactionId=end.id,
-        createdById=user_id,
-    )
-    if not buys and basis is not None:
-        # A short call's credit adds to the proceeds; a long put's premium comes off them.
-        stock.proceedsAdjustment = -basis
-    s.add(stock)
-    s.flush()
-    if buys:
-        # A long call's premium adds to the stock's basis; a short put's credit comes off it.
-        s.add(
-            Lot(
-                id=ids.new_id("Lot"),
-                accountId=account.id,
-                instrumentId=under.id,
-                transactionId=stock.id,
-                acquiredOn=day,
-                quantity=shares,
-                costBasis=cash + (basis or Decimal(0)),
-                basisMissing=False,
-            )
+    parts = deliverable(s, c, day)
+    extra = ((c.deliverableCash or Decimal(0)) * n).quantize(CENT)
+    word = "assigned" if how == "assign" else "exercised"
+    given = Decimal(0)
+    for i, (under, per, weight) in enumerate(parts):
+        shares = per * n
+        # The strike, the premium and the deliverable's cash are spread over its parts by
+        # their value that day (S3.10.4); the last takes what rounding leaves.
+        last = i == len(parts) - 1
+        cash = paid - given if last else (paid * weight).quantize(CENT)
+        given += cash
+        prem = None if basis is None else (basis * weight).quantize(CENT)
+        extra_part = (extra * weight).quantize(CENT)
+        stock = Transaction(
+            id=ids.new_id("Txn"),
+            accountId=account.id,
+            date=day,
+            kind="buy" if buys else "sell",
+            amount=-cash if buys else cash,
+            payee=f"{'Buy' if buys else 'Sell'} {under.symbol} at {c.strike.normalize():f} "
+            f"({word})",
+            instrumentId=under.id,
+            quantity=shares,
+            price=(cash / shares).quantize(Decimal("0.0001")) if shares else c.strike,
+            lotMethod=None if buys else account.lotMethod,
+            optionTransactionId=end.id,
+            createdById=user_id,
         )
-    made.append(stock)
+        if not buys:
+            # A short call's credit adds to the proceeds; a long put's premium comes off them;
+            # cash the deliverable carries goes with the shares.
+            stock.proceedsAdjustment = -(prem or Decimal(0)) - extra_part
+        s.add(stock)
+        s.flush()
+        if buys:
+            # A long call's premium adds to the basis; a short put's credit comes off it; cash
+            # the deliverable brings comes off it too.
+            s.add(
+                Lot(
+                    id=ids.new_id("Lot"),
+                    accountId=account.id,
+                    instrumentId=under.id,
+                    transactionId=stock.id,
+                    acquiredOn=day,
+                    quantity=shares,
+                    costBasis=cash + (prem or Decimal(0)) - extra_part,
+                    basisMissing=False,
+                )
+            )
+        made.append(stock)
+    if extra:
+        cash_txn = Transaction(
+            id=ids.new_id("Txn"),
+            accountId=account.id,
+            date=day,
+            kind="deposit" if buys else "withdrawal",
+            amount=extra if buys else -extra,
+            payee=f"Deliverable cash ({word} {inst.symbol})",
+            optionTransactionId=end.id,
+            createdById=user_id,
+        )
+        s.add(cash_txn)
+        s.flush()
+        made.append(cash_txn)
     return made
+
+
+def deliverable(s: Session, c: OptionContract, day: dt.date) -> list:
+    """What one contract delivers: (instrument, shares, its share of the value). An adjusted
+    contract's parts are weighed by their value that day, or by their shares without prices."""
+    import json
+
+    from .. import valuation
+
+    if not c.deliverable:
+        return [(s.get(Instrument, c.underlyingId), Decimal(c.multiplier), Decimal(1))]
+    rows = [
+        (s.get(Instrument, x["instrumentId"]), Decimal(str(x["shares"])))
+        for x in json.loads(c.deliverable)
+    ]
+    found = valuation.prices(s, [i.id for i, _ in rows], day)
+    if all(i.id in found for i, _ in rows):
+        values = [found[i.id].price * q for i, q in rows]
+    else:
+        values = [q for _, q in rows]
+    total = sum(values, Decimal(0)) or Decimal(1)
+    return [(i, q, v / total) for (i, q), v in zip(rows, values, strict=True)]
 
 
 def expire_due(s: Session, today: dt.date) -> int:
     """Options past their expiry the underlying's close left out of the money expire the day
     after (S3.6); those in the money, or without a close, wait for the user."""
-    from .. import valuation
     from ..ledger import types as atypes
     from ..store.entities.accounts import Account
 
@@ -191,14 +239,36 @@ def expire_due(s: Session, today: dt.date) -> int:
             c = contract_of(s, iid)
             if c is None or c.expiry >= today:
                 continue
-            close = valuation.prices(s, [c.underlyingId], c.expiry).get(c.underlyingId)
-            if close is None or close.asOf < c.expiry - dt.timedelta(days=4):
+            close = per_share(s, c, c.expiry)
+            if close is None or close[1] < c.expiry - dt.timedelta(days=4):
                 continue
-            if in_the_money(c, close.price):
+            if in_the_money(c, close[0]):
                 continue
             settle(s, a.ownerId, a, s.get(Instrument, iid), "expired", c.expiry)
             done += 1
     return done
+
+
+def per_share(s: Session, c: OptionContract, day: dt.date | None):
+    """What a contract delivers, per share of its multiplier, at a day's closes, and the
+    oldest close used: the underlying's price, or for an adjusted contract its deliverable's
+    value (its shares and cash) divided by the multiplier (S3.10.5). None without closes."""
+    import json
+
+    from .. import valuation
+
+    if not c.deliverable:
+        p = valuation.prices(s, [c.underlyingId], day).get(c.underlyingId)
+        return (p.price, p.asOf) if p is not None else None
+    rows = json.loads(c.deliverable)
+    found = valuation.prices(s, [x["instrumentId"] for x in rows], day)
+    if any(x["instrumentId"] not in found for x in rows):
+        return None
+    worth = sum(
+        (found[x["instrumentId"]].price * Decimal(str(x["shares"])) for x in rows), Decimal(0)
+    ) + (c.deliverableCash or Decimal(0))
+    asof = min(found[x["instrumentId"]].asOf for x in rows)
+    return worth / c.multiplier, asof
 
 
 def in_the_money(c: OptionContract, price: Decimal) -> bool:

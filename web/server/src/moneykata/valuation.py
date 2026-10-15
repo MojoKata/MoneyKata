@@ -143,11 +143,12 @@ def intrinsic(s: Session, instrument_id: str, day: dt.date | None = None) -> Pri
     c = options.contract_of(s, instrument_id)
     if c is None:
         return None
-    under = prices(s, [c.underlyingId], day).get(c.underlyingId)
+    under = options.per_share(s, c, day)
     if under is None:
         return None
-    worth = under.price - c.strike if c.right == "call" else c.strike - under.price
-    return Price(max(worth, ZERO), under.asOf, "intrinsic")
+    price, asof = under
+    worth = price - c.strike if c.right == "call" else c.strike - price
+    return Price(max(worth, ZERO), asof, "intrinsic")
 
 
 def multipliers(s: Session, instrument_ids: list[str]) -> dict[str, int]:

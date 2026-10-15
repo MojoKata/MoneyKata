@@ -70,6 +70,9 @@ TXN_KINDS = (
     "expire",
     "assign",
     "exercise",
+    # An adjusted contract (S3.10): the lots of one carried to the other, nothing sold. A pair
+    # linked by transferId: on the old contract, then on the new with the ratio of contracts.
+    "option-adjust",
 )
 INSTRUMENT_CLASSES = (
     "cash",

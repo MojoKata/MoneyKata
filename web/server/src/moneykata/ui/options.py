@@ -135,3 +135,141 @@ def settle(
             owner=a.ownerId,
         )
         return shape(s, c.id, made, {a.id: level})
+
+
+# ---- Adjusted contracts (S3.10.2) ----
+
+
+class OpenContract(Model):
+    instrumentId: str
+    symbol: str
+    right: str
+    strike: Quantity
+    expiry: dt.date
+    root: str | None
+    held: list[str]  # the accounts it is open in, with how many: "Short 2 in Options"
+
+
+class Adjustable(Model):
+    underlying: str
+    underlyingId: str
+    contracts: list[OpenContract]
+
+
+@router.get("/options/adjustable", response_model=list[Adjustable])
+def adjustable(request: Request, c: Caller = Depends(caller)):
+    """The caller's open contracts, by underlying, that an adjustment from the OCC's memo can
+    change: in the accounts they may change."""
+    by: dict[str, dict] = {}
+    with server(request).db.read() as s:
+        for a, level in access.visible_accounts(s, c.id):
+            if level not in ("owner", "write") or not atypes.investing(a.type):
+                continue
+            for iid, qty in repo.load(s, a).replay().positions().items():
+                oc = options.contract_of(s, iid)
+                if oc is None:
+                    continue
+                under = s.get(Instrument, oc.underlyingId)
+                group = by.setdefault(
+                    under.id, {"underlying": under.symbol, "underlyingId": under.id, "c": {}}
+                )
+                row = group["c"].setdefault(
+                    iid,
+                    {
+                        "instrumentId": iid,
+                        "symbol": s.get(Instrument, iid).symbol,
+                        "right": oc.right,
+                        "strike": oc.strike,
+                        "expiry": oc.expiry,
+                        "root": oc.root,
+                        "held": [],
+                    },
+                )
+                side = "Short" if qty < 0 else "Long"
+                row["held"].append(f"{side} {abs(qty).normalize():f} in {a.name}")
+    return [
+        Adjustable(
+            underlying=g["underlying"],
+            underlyingId=g["underlyingId"],
+            contracts=[OpenContract(**x) for x in g["c"].values()],
+        )
+        for g in sorted(by.values(), key=lambda g: g["underlying"])
+    ]
+
+
+class DeliverablePart(Model):
+    symbol: str
+    shares: Quantity
+
+
+class ContractAdjustment(Model):
+    instrumentId: str
+    root: str
+    strike: Quantity
+    deliverable: list[DeliverablePart]
+    cash: Money = Decimal(0)
+
+
+class Adjustment(Model):
+    date: dt.date
+    contracts: list[ContractAdjustment]
+
+
+class Adjusted(Model):
+    contracts: int
+    accounts: int
+
+
+@router.post("/options/adjust", response_model=Adjusted)
+def adjust_contracts(body: Adjustment, request: Request, c: Caller = Depends(caller)):
+    """Each open contract to its new root, strike and deliverable, from the OCC's memo; its
+    lots carry over in every account the caller may change, nothing sold (S3.10.2)."""
+    from ..options import adjust
+
+    if not body.contracts:
+        raise refuse("contracts", "contracts-missing", "At least one contract.")
+    moved = 0
+    touched: set[str] = set()
+    with server(request).db.tx() as s:
+        mine = [
+            a
+            for a, level in access.visible_accounts(s, c.id)
+            if level in ("owner", "write") and atypes.investing(a.type)
+        ]
+        for i, x in enumerate(body.contracts):
+            oc = options.contract_of(s, x.instrumentId)
+            if oc is None:
+                raise refuse(f"contracts.{i}.instrumentId", "not-an-option", "An open contract.")
+            root = x.root.strip().upper()
+            if not adjust.ADJUSTED_ROOT.match(root) and root != (oc.root or "").upper():
+                raise refuse(f"contracts.{i}.root", "root-invalid", "The new root, such as XYZ1.")
+            if x.strike <= 0:
+                raise refuse(f"contracts.{i}.strike", "strike-invalid", "A strike above 0.")
+            parts = adjust.check_deliverable(
+                s, [{"symbol": p.symbol, "shares": p.shares} for p in x.deliverable]
+            )
+            if not parts:
+                raise refuse(
+                    f"contracts.{i}.deliverable", "deliverable-missing", "What it delivers."
+                )
+            old = s.get(Instrument, x.instrumentId)
+            new, _ = adjust.adjusted_contract(s, oc, root, x.strike, parts, x.cash)
+            for a in mine:
+                if adjust.carry(s, c.id, a, old, new, Decimal(1), body.date):
+                    moved += 1
+                    touched.add(a.id)
+        for a in mine:
+            if a.id in touched:
+                activity.record(
+                    s,
+                    "option.adjusted",
+                    actor=c.id,
+                    subject_kind="account",
+                    subject_id=a.id,
+                    owner=a.ownerId,
+                )
+        s.flush()
+        owners = {a.ownerId for a in mine if a.id in touched}
+        for o in owners:
+            washes.recompute(s, o)
+    return Adjusted(contracts=moved, accounts=len(touched))

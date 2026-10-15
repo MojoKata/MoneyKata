@@ -227,6 +227,44 @@ class Applied:
     warnings: list[str] = field(default_factory=list)
 
 
+def _option(s: Session, account: Account, sec, result) -> Instrument | None:
+    """An option the file names by its OCC ticker, made a contract (S3.2). A root ending in a
+    digit is an adjusted contract (S3.10.3): linked to the adjusted contract already here, or,
+    when the account still holds the contract it adjusts, named in a warning to adjust it."""
+    from ..options import adjust, contract, contract_of, symbol
+
+    for text in (sec.symbol, sec.name, sec.key):
+        occ = adjust.parse_occ(text or "")
+        if occ is not None:
+            break
+    else:
+        return None
+    root, expiry, right, strike = occ
+    if not adjust.ADJUSTED_ROOT.match(root):
+        inst, _ = contract(s, root, right, strike, expiry)
+        return inst
+    name = symbol(root, expiry, right, strike)
+    here = s.scalars(
+        select(Instrument).where(Instrument.symbol == name, Instrument.deleted == false())
+    ).first()
+    if here is not None and contract_of(s, here.id) is not None:
+        return here
+    base = root.rstrip("0123456789")
+    held = load(s, account).replay().positions()
+    for iid in held:
+        c = contract_of(s, iid)
+        if c is None or c.right != right or c.expiry != expiry or (c.root or "") == root:
+            continue
+        under = s.get(Instrument, c.underlyingId)
+        if under is not None and under.symbol == base:
+            result.warnings.append(
+                f"{name} looks like an adjustment of {s.get(Instrument, iid).symbol}: adjust it "
+                "on Positions › Strategies, from the OCC's memo, so its lots carry over"
+            )
+            break
+    return None
+
+
 def apply_import(
     s: Session, account: Account, user_id: str, parsed: ParsedFile, file_name: str, file_hash: str
 ) -> Applied:
@@ -248,7 +286,10 @@ def apply_import(
     result = Applied(imp.id, coveredFrom=parsed.coveredFrom, coveredTo=parsed.coveredTo)
     instruments: dict[str, Instrument] = {}
     for key, sec in parsed.securities.items():
-        instruments[key] = instrument(s, sec.symbol, sec.name, sec.instrumentClass, sec.cusip)
+        found = _option(s, account, sec, result) if sec.instrumentClass == "option" else None
+        instruments[key] = found or instrument(
+            s, sec.symbol, sec.name, sec.instrumentClass, sec.cusip
+        )
 
     existing = s.scalars(
         select(Transaction).where(
@@ -320,6 +361,14 @@ def apply_import(
         added.append(txn)
     result.added = len(added)
     s.flush()
+    # A whole-number split imported takes the account's open options with it (S3.10.1).
+    splits = [t for t in added if t.kind == "split" and t.instrumentId and t.splitRatio]
+    if splits:
+        from ..options import adjust
+
+        for t in splits:
+            adjust.with_split(s, user_id, account, t)
+        s.flush()
 
     # A balance the file reports: an OFX file's, or a statement's opening and closing.
     source = "statement" if parsed.format == "statement" else "ofx"

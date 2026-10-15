@@ -855,6 +855,75 @@
         "title": "ActivityItem",
         "type": "object"
       },
+      "Adjustable": {
+        "additionalProperties": false,
+        "properties": {
+          "contracts": {
+            "items": {
+              "$ref": "#/components/schemas/OpenContract"
+            },
+            "title": "Contracts",
+            "type": "array"
+          },
+          "underlying": {
+            "title": "Underlying",
+            "type": "string"
+          },
+          "underlyingId": {
+            "title": "Underlyingid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "underlying",
+          "underlyingId",
+          "contracts"
+        ],
+        "title": "Adjustable",
+        "type": "object"
+      },
+      "Adjusted": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "title": "Accounts",
+            "type": "integer"
+          },
+          "contracts": {
+            "title": "Contracts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contracts",
+          "accounts"
+        ],
+        "title": "Adjusted",
+        "type": "object"
+      },
+      "Adjustment": {
+        "additionalProperties": false,
+        "properties": {
+          "contracts": {
+            "items": {
+              "$ref": "#/components/schemas/ContractAdjustment"
+            },
+            "title": "Contracts",
+            "type": "array"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "contracts"
+        ],
+        "title": "Adjustment",
+        "type": "object"
+      },
       "AlertList": {
         "additionalProperties": false,
         "properties": {
@@ -2660,6 +2729,51 @@
         "title": "Confirmation",
         "type": "object"
       },
+      "ContractAdjustment": {
+        "additionalProperties": false,
+        "properties": {
+          "cash": {
+            "default": "0",
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Cash",
+            "type": "number"
+          },
+          "deliverable": {
+            "items": {
+              "$ref": "#/components/schemas/DeliverablePart"
+            },
+            "title": "Deliverable",
+            "type": "array"
+          },
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "root": {
+            "title": "Root",
+            "type": "string"
+          },
+          "strike": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
+            "title": "Strike",
+            "type": "number"
+          }
+        },
+        "required": [
+          "instrumentId",
+          "root",
+          "strike",
+          "deliverable"
+        ],
+        "title": "ContractAdjustment",
+        "type": "object"
+      },
       "ContributionIn": {
         "additionalProperties": false,
         "properties": {
@@ -3176,6 +3290,29 @@
           "deleted"
         ],
         "title": "Deleted[WithdrawalsView]",
+        "type": "object"
+      },
+      "DeliverablePart": {
+        "additionalProperties": false,
+        "properties": {
+          "shares": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
+            "title": "Shares",
+            "type": "number"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "symbol",
+          "shares"
+        ],
+        "title": "DeliverablePart",
         "type": "object"
       },
       "DependentAge": {
@@ -10134,6 +10271,65 @@
         "title": "OccasionOut",
         "type": "object"
       },
+      "OpenContract": {
+        "additionalProperties": false,
+        "properties": {
+          "expiry": {
+            "format": "date",
+            "title": "Expiry",
+            "type": "string"
+          },
+          "held": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Held",
+            "type": "array"
+          },
+          "instrumentId": {
+            "title": "Instrumentid",
+            "type": "string"
+          },
+          "right": {
+            "title": "Right",
+            "type": "string"
+          },
+          "root": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Root"
+          },
+          "strike": {
+            "examples": [
+              12.5
+            ],
+            "format": "decimal",
+            "title": "Strike",
+            "type": "number"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrumentId",
+          "symbol",
+          "right",
+          "strike",
+          "expiry",
+          "root",
+          "held"
+        ],
+        "title": "OpenContract",
+        "type": "object"
+      },
       "OpenRow": {
         "additionalProperties": false,
         "properties": {
@@ -10899,6 +11095,37 @@
           "limit"
         ],
         "title": "Page[ActivityItem]",
+        "type": "object"
+      },
+      "Page_Adjustable_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Adjustable"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[Adjustable]",
         "type": "object"
       },
       "Page_BookRow_": {
@@ -28490,6 +28717,105 @@
         "summary": "Unlock",
         "tags": [
           "linked"
+        ]
+      }
+    },
+    "/ui/api/options/adjust": {
+      "post": {
+        "description": "Each open contract to its new root, strike and deliverable, from the OCC's memo; its\nlots carry over in every account the caller may change, nothing sold (S3.10.2).",
+        "operationId": "adjust_contracts_ui_api_options_adjust_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Adjustment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Adjusted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Adjust Contracts",
+        "tags": [
+          "options"
+        ]
+      }
+    },
+    "/ui/api/options/adjustable": {
+      "get": {
+        "description": "The caller's open contracts, by underlying, that an adjustment from the OCC's memo can\nchange: in the accounts they may change.",
+        "operationId": "adjustable_ui_api_options_adjustable_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Adjustable_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Adjustable",
+        "tags": [
+          "options"
         ]
       }
     },

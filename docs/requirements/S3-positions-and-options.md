@@ -106,18 +106,27 @@
 10. **Adjusted contracts**: when the underlying splits, merges, spins off a company or pays a
     large special dividend, the OCC adjusts its open options. The lot carries over to the
     adjusted contract: no sale, and no wash sale.
-    1. **A whole-number split** (2:1, 4:1) is applied with the stock's split (S2.4):
-       contracts × the ratio, strike ÷ the ratio, the basis spread over the new contracts.
-       The old contract ends.
+    1. **A whole-number split** (2:1, 4:1) is applied with the stock's split (S2.4), in the
+       account the split is recorded or imported in: contracts × the ratio, strike ÷ the
+       ratio, the basis spread over the new contracts. The old contract ends. Deleting the
+       split undoes it. A reverse split, not a whole number, is adjusted as below.
     2. **Any other adjustment** gives the contract a new root (AAPL becomes *AAPL1*), keeps
        its strike, and changes its **deliverable**: shares other than 100 (150 for a 3:2
        split), shares and cash, or shares of two companies. Recording the corporate action
        asks for each open contract's new root, strike and deliverable, from the OCC's
-       information memo (linked to its search).
-    3. **On import**, a line whose symbol has an adjusted root (one ending in a digit) is
-       offered to link to the open contract it adjusts.
+       information memo (linked to its search), on Positions › Strategies (*An underlying was
+       adjusted*); every account the user can change that holds the contract is adjusted.
+       The multiplier stays 100: what changes is the deliverable.
+    3. **On import**, an option named by its OCC ticker is made a contract. One whose root
+       is adjusted (ending in a digit) links to the adjusted contract already here; while the
+       account still holds the contract it adjusts, the import names it in a warning, to be
+       adjusted from the memo so its lots carry over.
     4. **Assignment and exercise** of an adjusted contract open or close a lot for each
-       instrument in its deliverable, and its cash goes into the proceeds or the basis.
+       instrument in its deliverable, and its cash goes into the proceeds or the basis. The
+       strike paid or received, the premium and the cash are spread over the deliverable's
+       parts by their market value that day (by their shares when a price is missing). On
+       Option trades, the old contract's trade ends *adjusted* and the adjusted contract's
+       continues on the same side.
     5. **Its mark** is CBOE's, which lists it under its new root in the underlying's chain
        (S4.5); without one, its intrinsic value is its deliverable's value less the strike
        × 100.
