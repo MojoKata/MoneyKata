@@ -147,3 +147,20 @@ curl -sk --resolve moneykata.loco:443:127.0.0.1 https://moneykata.loco/healthz
 
 In Playwright, launch Chromium with `--host-resolver-rules=MAP moneykata.loco 127.0.0.1` and
 open pages with `ignore_https_errors=True`.
+
+## Bitcoin backends without a node
+
+`web/dev.sh mocks` runs a fake Esplora, a fake Electrum server and a fake Bitcoin Core on
+local ports (3006, 50002 and 8332 by default; `--tls` gives the Electrum server a certificate,
+whose fingerprint it prints), all answering for one small chain on the dev seed's wallet. In
+Settings › Bitcoin, name one of them (a loopback node is named by an admin, so the egress
+guard lets it through) and **Test**, then **Check now** on *Cold storage*. The tests run each
+real backend against them (`test_mocks.py`); the live nodes are in `docs/test-plan.md`.
+
+## The images for another architecture
+
+`web/install/smoke.sh linux/arm64` builds the server's and the connector's images for arm64
+under QEMU and runs them once (requirements S17.8.1). The build machine needs the emulator
+registered once: `docker run --privileged --rm tonistiigi/binfmt --install arm64`. Under
+emulation the server starts in about half a minute and reads a receipt in about a minute;
+its speed on real hardware is the test plan's T7.

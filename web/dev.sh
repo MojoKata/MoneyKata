@@ -24,6 +24,7 @@ web/dev.sh <command>
   test [args]  run pytest (arguments pass through)
   check        run every check: what CI runs (web/check)
   mail         list the emails dev mode has written
+  mocks        fake bitcoin backends (Esplora, Electrum, Core) on local ports
   mockup       rebuild docs/mockups/MoneyKata-app.html from the app
   help-shots   rebuild the help guides' screenshots from the mockup
   deno [args]  run the pinned Deno
@@ -91,6 +92,10 @@ case "$cmd" in
     ;;
   test)
     cd "$SERVER" && exec uv run --frozen pytest "$@"
+    ;;
+  mocks)
+    # Fake bitcoin backends on local ports (S17.9.7.8); point Settings › Bitcoin at them.
+    cd "$SERVER" && exec uv run --frozen python -m moneykata.dev.mocks "$@"
     ;;
   check)
     exec "$WEB/check" "$@"

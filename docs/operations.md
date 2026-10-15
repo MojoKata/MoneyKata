@@ -48,7 +48,11 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    docker load < moneykata-0.1.0.tar.gz                              # on the server
    ```
 
-   Add `--platform linux/amd64,linux/arm64` for one image that also runs on arm64.
+   Add `--platform linux/amd64,linux/arm64` for one image that also runs on arm64 (QEMU
+   on the build machine: `docker run --privileged --rm tonistiigi/binfmt --install arm64`,
+   once). `web/install/smoke.sh [linux/arm64]` builds both images for a platform and runs
+   them once, as a release's gate (S17.8.1): the key from a phrase, a refused start, health,
+   a sign-in, a receipt read, the connector's vault and unlock, and clean stops.
 2. **Make the folders**, owned by the container's user:
 
    ```sh

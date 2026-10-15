@@ -138,3 +138,13 @@ def test_only_the_key_commands_mount_the_key_directory_writable():
         for service, spec in services.items():
             if service not in ("keys-init", "keys-rotate"):
                 assert "user" not in spec, f"{name}: {service} must run as the image's user"
+
+
+def test_the_smoke_script_is_there_for_each_platform():
+    """The release gate (S17.8.1): both images built for a platform and run once."""
+    script = INSTALL / "smoke.sh"
+    assert script.exists() and script.stat().st_mode & 0o111, (
+        "web/install/smoke.sh must be executable"
+    )
+    text = script.read_text()
+    assert "linux/arm64" in text and "keys init --from-phrase" in text and "unlock" in text

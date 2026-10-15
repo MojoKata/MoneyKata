@@ -117,11 +117,12 @@ class Client(httpx.Client):
         # certificate, S11.2) must reach it: httpx ignores the client's own setting once a
         # transport is given.
         verify = kw.pop("verify", True)
+        headers = {"User-Agent": "MoneyKata", **(kw.pop("headers", None) or {})}
         super().__init__(
             transport=_Transport(guard, max_bytes, verify=verify),
             timeout=TIMEOUT,
             follow_redirects=False,
-            headers={"User-Agent": "MoneyKata"},
+            headers=headers,
             **kw,
         )
         self._max = max_bytes
