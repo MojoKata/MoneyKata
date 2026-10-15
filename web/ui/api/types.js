@@ -259,6 +259,8 @@
  * @property {number} wallets
  * @property {(string | null)} lastRun
  * @property {(string | null)} lastError
+ * @property {(string | null)} certificate
+ * @property {(string | null)} certificateOffered
  */
 
 /**
@@ -277,6 +279,11 @@
  */
 
 /**
+ * @typedef {Object} BookChange
+ * @property {string} bitcoinFees
+ */
+
+/**
  * @typedef {Object} BookDetail
  * @property {string} id
  * @property {number} year
@@ -284,6 +291,7 @@
  * @property {string} level
  * @property {string} label
  * @property {number} version
+ * @property {string} bitcoinFees
  * @property {Array<DependentOut>} dependents
  * @property {Array<Form8615Out>} form8615
  * @property {Array<string>} claimedElsewhere
@@ -1541,6 +1549,7 @@
  * @property {string} timeZone
  * @property {string} zone
  * @property {string} theme
+ * @property {string} bitcoinUnit
  */
 
 /**
@@ -1645,6 +1654,7 @@
  * @property {number} year
  * @property {Array<string>} filers
  * @property {boolean} [fromLastYear]
+ * @property {string} [bitcoinFees]
  */
 
 /**
@@ -2159,6 +2169,14 @@
  */
 
 /**
+ * @typedef {Object} Page_TransferPair_
+ * @property {Array<TransferPair>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
  * @typedef {Object} Page_TrendPoint_
  * @property {Array<TrendPoint>} items
  * @property {number} total
@@ -2497,6 +2515,7 @@
  * @property {(number | null)} birthDay
  * @property {(number | null)} birthYear
  * @property {string} alertEmails
+ * @property {string} bitcoinUnit
  * @property {TwoStep} twoStep
  * @property {Array<Relation>} relations
  * @property {(Spouse | null)} spouse
@@ -2514,6 +2533,7 @@
  * @property {(number | null)} [birthDay]
  * @property {(number | null)} [birthYear]
  * @property {(string | null)} [alertEmails]
+ * @property {(string | null)} [bitcoinUnit]
  */
 
 /**
@@ -3381,8 +3401,24 @@
  */
 
 /**
+ * @typedef {Object} TransferAnswer
+ * @property {boolean} confirm
+ */
+
+/**
  * @typedef {Object} TransferLink
  * @property {(string | null)} otherId
+ */
+
+/**
+ * @typedef {Object} TransferPair
+ * @property {string} id
+ * @property {string} fromAccount
+ * @property {string} toAccount
+ * @property {string} fromDate
+ * @property {string} toDate
+ * @property {number} sats
+ * @property {number} version
  */
 
 /**
@@ -3390,6 +3426,11 @@
  * @property {string} month
  * @property {import('../app/dec.js').Dec} planned
  * @property {import('../app/dec.js').Dec} actual
+ */
+
+/**
+ * @typedef {Object} TrustCertificate
+ * @property {string} sha256
  */
 
 /**
@@ -3494,6 +3535,7 @@
  * @property {boolean} cleared
  * @property {boolean} reconciled
  * @property {(import('../app/dec.js').Dec | null)} amountWas
+ * @property {(string | null)} offChainAt
  * @property {Array<moneykata__ui__transactions__SplitOut>} splits
  * @property {Array<string>} tags
  * @property {number} receipts

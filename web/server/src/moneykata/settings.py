@@ -199,6 +199,10 @@ _d("bitcoinNodeHost", "bitcoin", None, _host)
 _d("bitcoinNodePort", "bitcoin", 50002, _int(1, 65535))
 _d("bitcoinNodeTls", "bitcoin", True, _bool)
 _d("bitcoinRpcUser", "bitcoin", None, _optional_text(200))
+# An Electrum server's certificate, trusted on first use (S1.6.2.4): its SHA-256, and another
+# one it has since presented, waiting for an admin to confirm
+_d("bitcoinNodeCert", "bitcoin", None, _optional_text(64))
+_d("bitcoinNodeCertOffered", "bitcoin", None, _optional_text(64))
 # Linked servers (S16.9, S11): the address peers reach this server's /link at (the public URL
 # when not set), and how long an unlocked linked copy may go unused (S11.9.4)
 _d("linkAddress", "links", None, _url)

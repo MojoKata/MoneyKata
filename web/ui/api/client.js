@@ -100,7 +100,7 @@ async function call(method, path, opts = {}) {
 export const api = {
   /** @param {string} path @param {Record<string, any>} [params] */
   get: (path, params) => call('GET', path, { params }),
-  /** @param {string} path @param {any} [body] @param {{ idempotent?: boolean }} [o] */
+  /** @param {string} path @param {any} [body] @param {{ idempotent?: boolean, version?: number }} [o] */
   post: (path, body, o = {}) => call('POST', path, { body, ...o }),
   /** @param {string} path @param {any} body @param {number} [version] */
   put: (path, body, version) => call('PUT', path, { body, version }),

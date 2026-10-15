@@ -104,6 +104,7 @@ class TxnOut(Model):
     cleared: bool
     reconciled: bool
     amountWas: Money | None
+    offChainAt: dt.datetime | None  # bitcoin no longer on the chain, to keep or delete (S1.6.2.7)
     splits: list[SplitOut]
     tags: list[str]
     receipts: int
@@ -299,6 +300,7 @@ def shape(
                 cleared=t.cleared,
                 reconciled=t.reconciliationId in finished,
                 amountWas=t.amountWas,
+                offChainAt=t.offChainAt,
                 splits=[
                     SplitOut(id=x.id, categoryId=x.categoryId, amount=x.amount, memo=x.memo)
                     for x in splits.get(t.id, [])
@@ -954,3 +956,18 @@ def search_instruments(
             InstrumentOut(id=i.id, symbol=i.symbol, name=i.name, instrumentClass=i.instrumentClass)
             for i in repo.search_instruments(s, q)
         ]
+
+
+@router.post("/transactions/{txn_id}/keep", response_model=TxnOut)
+def keep_off_chain(
+    txn_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
+    """Keep a bitcoin transaction the explorer or node no longer has: its mark is cleared
+    (S1.6.2.7). Deleting it is the usual delete."""
+    with server(request).db.tx() as s:
+        t, a, level = _editable(s, c, txn_id, version, True)
+        if t.offChainAt is None:
+            raise refuse(None, "on-chain", "It is still on the chain.")
+        t.offChainAt = None
+        s.flush()
+        return shape(s, c.id, [t], {a.id: level})[0]

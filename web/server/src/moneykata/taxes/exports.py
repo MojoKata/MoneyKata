@@ -21,10 +21,21 @@ def _money(d: Decimal | None) -> str:
     return "" if d is None else f"{d:.2f}"
 
 
-def csv_8949(rows: list[Row], year: int) -> str:
+FEES = {
+    "sale": "Bitcoin network fees are sales of their sats, the common reading (S8.19).",
+    "not-taxed": "Bitcoin network fees on transfers between the owner's own accounts are not "
+    "taxed, as the book's settings choose (S8.19).",
+}
+
+
+def covers(bitcoin_fees: str = "sale") -> str:
+    return f"{COVERS} {FEES.get(bitcoin_fees, FEES['sale'])}"
+
+
+def csv_8949(rows: list[Row], year: int, bitcoin_fees: str = "sale") -> str:
     out = io.StringIO()
     w = csv.writer(out)
-    w.writerow([f"# Form 8949 for {year}, from MoneyKata. {COVERS}"])
+    w.writerow([f"# Form 8949 for {year}, from MoneyKata. {covers(bitcoin_fees)}"])
     w.writerow(
         [
             "Box",

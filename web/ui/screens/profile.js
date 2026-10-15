@@ -37,6 +37,7 @@ export default function Profile() {
           }`.replace(/^-/, '')
           : '',
         alertEmails: p.alertEmails,
+        bitcoinUnit: p.bitcoinUnit,
         avatar: p.avatar,
       });
     }
@@ -52,6 +53,7 @@ export default function Profile() {
       birthDay: m ? Number(m[3]) : null,
       birthYear: m && m[1] ? Number(m[1]) : null,
       alertEmails: f.alertEmails,
+      bitcoinUnit: f.bitcoinUnit,
       avatar: f.avatar,
     }, p.version);
     theme.value = f.theme;
@@ -137,6 +139,12 @@ export default function Profile() {
               ['daily', 'A daily summary'],
               ['none', 'None'],
             ]} /></${Field}>
+          <${Field} label="Bitcoin in" id="bitcoin-unit" error=${errAt(e, 'bitcoinUnit')}
+            hint="How amounts of bitcoin are shown; they are kept to the sat either way.">
+            <${Select} value=${f.bitcoinUnit} onChange=${set('bitcoinUnit')} options=${[
+              ['btc', 'BTC: 0.12345678 BTC'],
+              ['sats', 'Sats: 12,345,678 sats'],
+            ]} /></${Field}>
           <${FormError} error=${e} shown=${[
             'displayName',
             'timeZone',
@@ -145,6 +153,7 @@ export default function Profile() {
             'birthDay',
             'birthYear',
             'alertEmails',
+            'bitcoinUnit',
             'avatar',
           ]} />
           <button class="btn primary" disabled=${save.busy}>Save</button>

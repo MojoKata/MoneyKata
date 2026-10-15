@@ -117,6 +117,19 @@ export function TxTable({ rows, showAccount = true, onChanged, accounts = [] }) 
                   color: 'var(--ask)',
                 }}>amount changed in a later import</div>`
                 : null
+            }${
+              t.offChainAt
+                ? html`<div class="small"><span class="pill warn">no longer on the chain</span>
+                    <button type="button" class="btn sm" onClick=${(/** @type {Event} */ e) => {
+                  e.stopPropagation();
+                  api.post(`/transactions/${t.id}/keep`, undefined, { version: t.version }).then(
+                    () => {
+                      toast('Kept');
+                      onChanged && onChanged();
+                    },
+                  ).catch((/** @type {any} */ x) => toast(x.message));
+                }}>Keep it</button></div>`
+                : null
             }</td>
         <td>${
               t.splits.length

@@ -146,6 +146,7 @@ def test_only_a_wallet_holds_keys(alice):
 
 import dataclasses  # noqa: E402
 import datetime as dt  # noqa: E402
+from decimal import Decimal as D  # noqa: E402
 
 from moneykata.bitcoin import sources, sync  # noqa: E402
 
@@ -178,6 +179,9 @@ class Fake:
         if self.far in addresses:
             out.append(sources.Tx("c" * 64, T2, 10_000_000, 0, {self.far}))
         out.append(sources.Tx("d" * 64, None, 5_000, 0, {FIRST}))  # unconfirmed
+        shallow = sources.Tx("e" * 64, T2, 7_000, 0, {FIRST})
+        shallow.confirmations = 3  # waits for 6
+        out.append(shallow)
         return out
 
 
@@ -197,10 +201,12 @@ def test_a_sync_records_each_transaction_once_and_extends_the_gap(server, alice,
     items = alice.get("/ui/api/transactions", params={"account": w["id"]}).json()["items"]
     got = sorted((t["kind"], t["quantity"], t["date"]) for t in items)
     assert got == [
+        ("fee", None, "2026-06-09"),
+        ("sell", "0.00001", "2026-06-09"),
         ("transfer-in", "0.1", "2026-06-09"),
         ("transfer-in", "0.5", "2026-03-02"),
-        ("transfer-out", "0.20001", "2026-06-09"),
-    ]
+        ("transfer-out", "0.2", "2026-06-09"),
+    ], "the fee's sats are sold, beside a fee of their value (S8.19)"
     assert alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync").json()["recorded"] == 0
     held = next(
         p for p in alice.get("/ui/api/positions").json()["open"] if p["accountId"] == w["id"]
@@ -303,6 +309,8 @@ def test_an_electrum_servers_history_is_read_from_raw_transactions(monkeypatch):
             return by_hash.get(params[0], [])
         if method == "blockchain.block.header":
             return header.hex()
+        if method == "blockchain.headers.subscribe":
+            return {"height": 900_105}
         if method == "blockchain.transaction.get":
             return {
                 "ab" * 32: fund,
@@ -313,8 +321,8 @@ def test_an_electrum_servers_history_is_read_from_raw_transactions(monkeypatch):
 
     monkeypatch.setattr(sources.Electrum, "call", call)
     e = sources.Electrum(sources.Config(kind="electrum", host="node.lan"), guard=None)
-    got = {t.txid: (t.net, t.fee) for t in e.history([FIRST, SECOND, CHANGE])}
-    assert got == {"ab" * 32: (50_000_000, 0), "cd" * 32: (-20_001_000, 1_000)}
+    got = {t.txid: (t.net, t.fee, t.confirmations) for t in e.history([FIRST, SECOND, CHANGE])}
+    assert got == {"ab" * 32: (50_000_000, 0, 106), "cd" * 32: (-20_001_000, 1_000, 6)}
 
 
 def test_core_gets_the_keys_as_watch_only_descriptors():
@@ -360,3 +368,124 @@ def test_settings_bitcoin_keeps_the_password_secret_and_tests_the_source(server,
     server.config = dataclasses.replace(server.config, stubs=True)
     r = c.post("/ui/api/settings/bitcoin/test")
     assert r.status_code == 200 and "answered" in r.json()["answer"]
+
+
+# ---------- the rest (S1.6.2.4, S1.6.2.7, S1.7.1)
+
+
+def test_a_transfer_between_the_owners_wallets_carries_its_lots(server, alice, monkeypatch):
+    from moneykata import ids
+    from moneykata.store.entities.accounts import Lot, Transaction
+    from moneykata.store.repos import ledger as repo
+
+    one = new_account(alice, name="Hot wallet", type="crypto-wallet")
+    two = new_account(alice, name="Cold storage", type="crypto-wallet")
+    with server.db.tx() as s:
+        btc = repo.instrument(s, "BTC", "Bitcoin", "crypto")
+        buy = Transaction(
+            id=ids.new_id("Txn"),
+            accountId=one["id"],
+            date=dt.date(2025, 1, 5),
+            kind="transfer-in",
+            amount=0,
+            instrumentId=btc.id,
+            quantity=D("0.3"),
+        )
+        s.add(buy)
+        s.flush()
+        s.add(
+            Lot(
+                id=ids.new_id("Lot"),
+                accountId=one["id"],
+                instrumentId=btc.id,
+                transactionId=buy.id,
+                acquiredOn=dt.date(2025, 1, 5),
+                quantity=D("0.3"),
+                costBasis=D("27000"),
+            )
+        )
+        for acct, kind, day in ((one, "transfer-out", 10), (two, "transfer-in", 11)):
+            s.add(
+                Transaction(
+                    id=ids.new_id("Txn"),
+                    accountId=acct["id"],
+                    date=dt.date(2026, 6, day),
+                    kind=kind,
+                    amount=0,
+                    instrumentId=btc.id,
+                    quantity=D("0.1"),
+                    fitId=f"btc:{kind}",
+                )
+            )
+        from moneykata.bitcoin import transfers
+
+        users = alice.get("/ui/api/session").json()["user"]["id"]
+        assert transfers.propose(s, users) == 1
+    [pair] = alice.get("/ui/api/transfers/bitcoin").json()["items"]
+    assert (pair["fromAccount"], pair["toAccount"], pair["sats"]) == (
+        "Hot wallet",
+        "Cold storage",
+        10_000_000,
+    )
+    r = alice.post(
+        f"/ui/api/transfers/bitcoin/{pair['id']}",
+        json={"confirm": True},
+        headers={"If-Match": f'"{pair["version"]}"'},
+    )
+    assert r.status_code == 200 and r.json() == []
+    held = {
+        p["accountName"]: p
+        for p in alice.get("/ui/api/positions").json()["open"]
+        if p["symbol"] == "BTC"
+    }
+    cold = held["Cold storage"]
+    assert (cold["quantity"], cold["cost"]) == ("0.1", 9000), "the basis came with the coins"
+    assert cold["lots"][0]["acquiredOn"] == "2025-01-05", "and the day they were acquired"
+    assert held["Hot wallet"]["cost"] == 18000
+
+
+def test_a_transaction_that_leaves_the_chain_is_marked_and_kept_or_deleted(
+    server, alice, monkeypatch
+):
+    w = new_account(alice, name="Cold storage", type="crypto-wallet")
+    alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB})
+    fake = Fake(keys.extended(ZPUB).address(0, 19))
+    monkeypatch.setattr(sync, "source", lambda srv, s: fake)
+    alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync")
+
+    class Reorged(Fake):
+        def history(self, addresses):
+            return [t for t in super().history(addresses) if t.txid != "a" * 64]
+
+    monkeypatch.setattr(sync, "source", lambda srv, s: Reorged(fake.far))
+    alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync")
+    items = alice.get("/ui/api/transactions", params={"account": w["id"]}).json()["items"]
+    gone = [t for t in items if t["offChainAt"]]
+    assert [t["quantity"] for t in gone] == ["0.5"], "marked, never deleted"
+    from moneykata import alerts
+
+    alerts.evaluate(server)
+    titles = [a["title"] for a in alice.get("/ui/api/alerts").json()["open"]]
+    assert "Cold storage: a bitcoin transaction is no longer on the chain" in titles
+    t = gone[0]
+    r = alice.post(
+        f"/ui/api/transactions/{t['id']}/keep", headers={"If-Match": f'"{t["version"]}"'}
+    )
+    assert r.status_code == 200 and r.json()["offChainAt"] is None
+
+
+def test_a_node_certificate_is_trusted_once_confirmed(server, admin_client):
+    from moneykata import alerts, settings
+
+    with server.db.tx() as s:
+        settings.put(s, "bitcoinNodeCertOffered", "ab" * 32, None)
+    alerts.evaluate(server)
+    titles = [a["title"] for a in admin_client.get("/ui/api/alerts").json()["open"]]
+    assert "The bitcoin node's certificate changed" in titles
+    r = admin_client.post("/ui/api/settings/bitcoin/certificate", json={"sha256": "nope"})
+    assert r.json()["code"] == "fingerprint-invalid"
+    v = admin_client.post("/ui/api/settings/bitcoin/certificate", json={"sha256": "AB" * 32}).json()
+    assert (v["certificate"], v["certificateOffered"]) == ("ab" * 32, None)
+    alerts.evaluate(server)
+    titles = [a["title"] for a in admin_client.get("/ui/api/alerts").json()["open"]]
+    assert "The bitcoin node's certificate changed" not in titles

@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { useApi, useList } from '../app/hooks.js';
-import { date, quantity } from '../app/format.js';
+import { bitcoin, date, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -176,7 +176,9 @@ function Open({ rows, reload }) {
                 <td><span class=${'pill ' + (r.side === 'short' ? 'warn' : '')}>${r.side === 'short'
                   ? 'Short'
                   : 'Long'}</span></td>
-                <td class="num">${quantity(r.quantity)}</td>
+                <td class="num">${r.symbol === 'BTC'
+                  ? bitcoin(r.quantity)
+                  : quantity(r.quantity)}</td>
                 <td class="num">${r.cost ? html`<${Amt} v=${r.cost} />` : html`
                   <span
                     class="pill warn">missing</span>

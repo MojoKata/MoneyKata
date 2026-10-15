@@ -12,7 +12,7 @@ import { WalletCard } from '../components/wallet.js';
 import { Contributions, Goal, PlanCard, PlanFacts, Withdrawals } from '../components/edu.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { ago, date, price, quantity } from '../app/format.js';
+import { ago, bitcoin, date, price, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -97,6 +97,9 @@ function Overview({ a, reload }) {
   const s = /** @type {any} */ (series.data);
   return html`
     <${PlansFor} kind="account" id=${a.id} />
+    ${a.type.startsWith('crypto') && a.level === 'owner'
+      ? html`<${BitcoinPairs} a=${a} reload=${reload} />`
+      : null}
     <div class="grid g-main">
       <div class="card"><h3>${a.investing
         ? 'Value'
@@ -212,7 +215,9 @@ function Holdings({ a }) {
                   : 'false'}
                   style=${{ color: 'var(--fg)', fontWeight: 600 }}>${x.symbol}</button></td>
                 <td class="dim">${x.name || ''}</td>
-                <td class="num">${quantity(x.quantity)}</td>
+                <td class="num">${x.symbol === 'BTC'
+                  ? bitcoin(x.quantity)
+                  : quantity(x.quantity)}</td>
                 <td class="num amt" data-tip=${x.price
                   ? `${
                     x.priceSource === 'close'
@@ -1085,4 +1090,42 @@ function StatementChecks({ v }) {
         : null}
     </div>
   `;
+}
+
+/**
+ * Bitcoin moved between the owner's accounts, proposed as pairs (S1.7.1): confirmed, the coins
+ * arrive with the lots they left with.
+ * @param {{ a: any, reload: () => void }} p
+ */
+function BitcoinPairs({ a, reload }) {
+  const res = useList('/transfers/bitcoin', {}, ['import']);
+  const rows = /** @type {any[]} */ (res.data || []).filter((x) =>
+    x.fromAccount === a.name || x.toAccount === a.name
+  );
+  const act = useSubmit(async (/** @type {any} */ x, /** @type {boolean} */ confirm) => {
+    await api.post(`/transfers/bitcoin/${x.id}`, { confirm }, { version: x.version });
+    toast(confirm ? 'Matched: the coins carry their lots' : 'Not a transfer between your accounts');
+    res.reload();
+    reload();
+  });
+  return html`${
+    rows.map((x) =>
+      html`
+        <div class="notice mb" role="status">
+          <${Icon} name="info" />
+          <div><b>${bitcoin(
+            x.sats,
+            true,
+          )}</b> left ${x.fromAccount} on ${date(x.fromDate)} and arrived in ${x
+            .toAccount} on ${date(
+              x.toDate,
+            )}: one transfer? <button type="button" class="btn sm primary" disabled=${act.busy}
+              onClick=${() =>
+                act.run(x, true).catch(() => {})}>Match them</button> <button type="button"
+              class="btn sm" disabled=${act.busy} onClick=${() =>
+                act.run(x, false).catch(() => {})}>Not a transfer</button></div>
+        </div>
+      `
+    )
+  }`;
 }

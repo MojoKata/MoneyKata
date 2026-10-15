@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { PlansFor } from '../components/plans.js';
 import { useApi, useList } from '../app/hooks.js';
-import { date, quantity } from '../app/format.js';
+import { bitcoin, date, quantity } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Amt, Pct } from '../components/amount.js';
@@ -202,7 +202,9 @@ function Holdings({ p }) {
                   : null}
                     <div class="small dim">${x.accounts.join(', ')}</div></td>
                 <td class="dim">${x.name || ''}</td>
-                <td class="num">${quantity(x.quantity)}</td>
+                <td class="num">${x.symbol === 'BTC'
+                  ? bitcoin(x.quantity)
+                  : quantity(x.quantity)}</td>
                 <td class="num amt" data-tip=${x.price
                   ? `${x.priceSource === 'close' ? 'Daily close' : x.priceSource} · as of ${
                     date(x.priceAsOf)

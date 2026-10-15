@@ -62,6 +62,20 @@ def _wallet_account(s, c: Caller, account_id: str, level: str):
     return a, lv
 
 
+def _held_sats(s, account_id: str) -> int:
+    """What the wallet holds, from its ledger, in whole sats (S1.6.4)."""
+    from sqlalchemy import select
+
+    from ..store.entities.accounts import Account, Instrument
+    from ..store.repos import ledger as repo
+
+    btc = s.scalars(select(Instrument.id).where(Instrument.symbol == "BTC")).first()
+    if btc is None:
+        return 0
+    qty = repo.load(s, s.get(Account, account_id)).replay().quantity(btc)
+    return int(qty * 100_000_000)
+
+
 def _view(s, account_id: str) -> WalletView:
     keys = wallet.keys_of(s, account_id)
     rows = wallet.addresses_of(s, account_id)
@@ -101,7 +115,7 @@ def _view(s, account_id: str) -> WalletView:
         ],
         watched=len(rows),
         used=sum(1 for r in rows if r.used),
-        balanceSats=sum(r.balanceSats for r in rows),
+        balanceSats=_held_sats(s, account_id),
         checkedAt=max((r.checkedAt for r in rows if r.checkedAt), default=None),
     )
 
@@ -170,3 +184,58 @@ def sync_wallet(account_id: str, request: Request, c: Caller = Depends(caller)):
         raise Problem(502, "source-failed", str(e)) from None
     with srv.db.read() as s:
         return SyncOut(recorded=made, wallet=_view(s, a.id))
+
+
+# ---- Bitcoin moved between the owner's accounts (S1.7.1) ----
+
+
+class TransferPair(Model):
+    id: str
+    fromAccount: str
+    toAccount: str
+    fromDate: dt.date
+    toDate: dt.date
+    sats: int
+    version: int
+
+
+@router.get("/transfers/bitcoin", response_model=list[TransferPair])
+def bitcoin_transfers(request: Request, c: Caller = Depends(caller)):
+    """The pairs proposed for the caller's own accounts, to confirm or reject."""
+    from ..bitcoin import transfers as btcmatch
+
+    with server(request).db.read() as s:
+        return [TransferPair(**btcmatch.describe(s, m)) for m in btcmatch.pending(s, c.id)]
+
+
+class TransferAnswer(Model):
+    confirm: bool
+
+
+@router.post("/transfers/bitcoin/{match_id}", response_model=list[TransferPair])
+def answer_transfer(
+    match_id: str,
+    body: TransferAnswer,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
+    """Confirmed, the coins arrive with the lots they left with; rejected, the pair isn't
+    proposed again."""
+    from .. import washes
+    from ..bitcoin import transfers as btcmatch
+    from ..store.entities.accounts import TransferMatch
+    from .conventions import check
+
+    with server(request).db.tx() as s:
+        m = s.get(TransferMatch, match_id)
+        if m is None or m.deleted or m.ownerId != c.id or m.state != "proposed":
+            raise Problem(404, "not-found", "Not found")
+        check(m, version, {"id": m.id, "version": m.version})
+        if body.confirm:
+            btcmatch.confirm(s, c.id, m)
+            washes.recompute(s, c.id)
+        else:
+            btcmatch.reject(s, m)
+        s.flush()
+        return [TransferPair(**btcmatch.describe(s, x)) for x in btcmatch.pending(s, c.id)]

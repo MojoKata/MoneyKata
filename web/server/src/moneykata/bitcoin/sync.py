@@ -1,8 +1,9 @@
 """Keeping wallets current (requirements S1.6.2): every hour, and when asked, each wallet's
 addresses are read from the explorer or node; the addresses found used extend the derivation
-to keep the gap limit; and each confirmed transaction is recorded once (by its txid) as bitcoin
-received (a transfer in, its basis to be entered) or sent (a transfer out, the network fee
-included). Nothing is sent to the explorer or node but the addresses or the public keys."""
+to keep the gap limit; and each transaction with 6 confirmations is recorded once (by its txid)
+as bitcoin received (a transfer in, its basis to be entered) or sent (a transfer out, with its
+network fee as a sale of its own). A recorded one that leaves the chain is marked, never
+deleted. Nothing is sent to the explorer or node but the addresses or the public keys."""
 
 import datetime as dt
 import logging
@@ -35,6 +36,7 @@ def config(s, secrets_key: bytes | None) -> Config:
         tls=get("bitcoinNodeTls"),
         rpcUser=get("bitcoinRpcUser"),
         password=pw,
+        certSha256=get("bitcoinNodeCert"),
     )
 
 
@@ -94,6 +96,11 @@ def sync_account(server, account_id: str) -> int:
             break
     with server.db.tx() as s:
         made = record(s, account_id, list(txs.values()))
+        mark_gone(s, account_id, list(txs.values()))
+        a = s.get(Account, account_id)
+        from ..bitcoin import transfers as btcmatch
+
+        btcmatch.propose(s, a.ownerId)
         unpriced = (
             made
             and not s.scalars(
@@ -105,6 +112,71 @@ def sync_account(server, account_id: str) -> int:
     if unpriced:
         server.tasks.run_now("prices")  # the first coins held: their price history (S4.4)
     return made
+
+
+CONFIRMATIONS = 6  # recorded once this deep, about an hour (S1.6.2.6)
+
+
+def _price(s, btc_id: str, day: dt.date) -> Decimal | None:
+    from .. import valuation
+
+    p = valuation.prices(s, [btc_id], day).get(btc_id)
+    return p.price if p is not None else None
+
+
+def _fee(s, a, btc, out: Transaction, fee_sats: int, txid: str) -> None:
+    """A network fee paid in bitcoin disposes of its sats (S8.19): a sale of them at the day's
+    price, taken from the lots like any sale, beside a fee of the same amount, so the cash is
+    unchanged. Without a price yet, both wait at 0 for the next sync to value them."""
+    qty = Decimal(fee_sats) / SAT
+    price = _price(s, btc.id, out.date)
+    value = (qty * price).quantize(Decimal("0.01")) if price is not None else Decimal(0)
+    for fit, kind, amount, payee in (
+        (f"btcfee:{txid}", "sell", value, "Network fee: its sats sold"),
+        (f"btcfeecash:{txid}", "fee", -value, "Bitcoin network fee"),
+    ):
+        s.add(
+            Transaction(
+                id=ids.new_id("Txn"),
+                accountId=a.id,
+                date=out.date,
+                kind=kind,
+                amount=amount,
+                payee=payee,
+                instrumentId=btc.id if kind == "sell" else None,
+                quantity=qty if kind == "sell" else None,
+                price=price if kind == "sell" else None,
+                lotMethod=a.lotMethod if kind == "sell" else None,
+                optionTransactionId=out.id,
+                fitId=fit,
+            )
+        )
+
+
+def revalue_fees(s, account_id: str) -> int:
+    """Fees recorded before bitcoin had a price, valued now that it has one."""
+    done = 0
+    rows = s.scalars(
+        select(Transaction).where(
+            Transaction.accountId == account_id,
+            Transaction.fitId.like("btcfee:%"),
+            Transaction.amount == 0,
+            Transaction.deleted == false(),
+        )
+    ).all()
+    for t in rows:
+        price = _price(s, t.instrumentId, t.date)
+        if price is None:
+            continue
+        value = (t.quantity * price).quantize(Decimal("0.01"))
+        t.amount, t.price = value, price
+        cash = s.scalars(
+            select(Transaction).where(Transaction.fitId == "btcfeecash:" + t.fitId[7:])
+        ).first()
+        if cash is not None:
+            cash.amount = -value
+        done += 1
+    return done
 
 
 def record(s, account_id: str, txs: list[sources.Tx]) -> int:
@@ -122,24 +194,53 @@ def record(s, account_id: str, txs: list[sources.Tx]) -> int:
     for t in sorted(txs, key=lambda x: x.confirmedAt or dt.datetime.max.replace(tzinfo=dt.UTC)):
         if t.confirmedAt is None or not t.net or f"btc:{t.txid}" in have:
             continue
-        qty = Decimal(abs(t.net)) / SAT
-        s.add(
-            Transaction(
-                id=ids.new_id("Txn"),
-                accountId=a.id,
-                date=t.confirmedAt.astimezone(zone).date(),
-                kind="transfer-in" if t.net > 0 else "transfer-out",
-                amount=Decimal(0),
-                payee="Received bitcoin" if t.net > 0 else "Sent bitcoin",
-                memo=f"txid {t.txid}" + (f" · network fee {t.fee:,} sats" if t.fee else ""),
-                instrumentId=btc.id,
-                quantity=qty,
-                fitId=f"btc:{t.txid}",
-            )
+        if t.confirmations is not None and t.confirmations < CONFIRMATIONS:
+            continue  # waits until it is deep enough
+        sent = t.net < 0
+        # Sent: what left for others; the fee is a sale of its own (S8.19).
+        sats = abs(t.net) - (t.fee if sent else 0)
+        row = Transaction(
+            id=ids.new_id("Txn"),
+            accountId=a.id,
+            date=t.confirmedAt.astimezone(zone).date(),
+            kind="transfer-out" if sent else "transfer-in",
+            amount=Decimal(0),
+            payee="Sent bitcoin" if sent else "Received bitcoin",
+            memo=f"txid {t.txid}" + (f" · network fee {t.fee:,} sats" if sent and t.fee else ""),
+            instrumentId=btc.id,
+            quantity=Decimal(sats) / SAT,
+            fitId=f"btc:{t.txid}",
         )
+        s.add(row)
+        s.flush()
+        if sent and t.fee:
+            _fee(s, a, btc, row, t.fee, t.txid)
         made += 1
     s.flush()
+    revalue_fees(s, account_id)
     return made
+
+
+def mark_gone(s, account_id: str, txs: list[sources.Tx]) -> int:
+    """A recorded transaction the explorer or node no longer has, after a whole history was
+    read, is marked *no longer on the chain*, never deleted (S1.6.2.7); one back on it is
+    unmarked."""
+    seen = {f"btc:{t.txid}" for t in txs}
+    now = clock.now()
+    marked = 0
+    for r in s.scalars(
+        select(Transaction).where(
+            Transaction.accountId == account_id,
+            Transaction.fitId.like("btc:%"),
+            Transaction.deleted == false(),
+        )
+    ):
+        if r.fitId not in seen and r.offChainAt is None:
+            r.offChainAt = now
+            marked += 1
+        elif r.fitId in seen and r.offChainAt is not None:
+            r.offChainAt = None
+    return marked
 
 
 def sync_all(server, ctx=None) -> str | None:
@@ -160,6 +261,12 @@ def sync_all(server, ctx=None) -> str | None:
             break
         try:
             sync_account(server, account_id)
+        except sources.CertificateChanged as e:
+            # Kept for an admin to confirm, and alerted (S1.6.2.4).
+            with server.db.tx() as s:
+                settings.put(s, "bitcoinNodeCertOffered", e.sha256, None)
+            error = error or str(e)
+            log.warning("bitcoin: %s", e)
         except SourceError as e:
             error = error or str(e)
             log.warning("bitcoin: %s", e)

@@ -586,7 +586,12 @@ function NewBook({ close, rows }) {
   const me = useApi('/profile');
   const p = /** @type {any} */ (me.data);
   const year = new Date().getFullYear();
-  const [f, setF] = useState({ year: String(year - 1), joint: false, fromLastYear: true });
+  const [f, setF] = useState({
+    year: String(year - 1),
+    joint: false,
+    fromLastYear: true,
+    bitcoinFees: 'sale',
+  });
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const spouse = p?.spouse || null;
   const save = useSubmit(async () => {
@@ -594,6 +599,7 @@ function NewBook({ close, rows }) {
       year: Number(f.year),
       filers: [p.id, ...(f.joint && spouse ? [spouse.id] : [])],
       fromLastYear: f.fromLastYear,
+      bitcoinFees: f.bitcoinFees,
     });
     toast(
       out.dependentsLeftOut.length
@@ -625,8 +631,15 @@ function NewBook({ close, rows }) {
           ? "Copies last year's accounts left out or added and its dependents; its received documents become this year's expected ones."
           : 'No book for the year before.'} on=${f.fromLastYear}
           onChange=${set('fromLastYear')} />
-        <${FormError} error=${e} />
-        </${Dialog}>
+        <${Field} label="Bitcoin network fees" id="bitcoin-fees" error=${errAt(e, 'bitcoinFees')}
+          hint="On transfers between your own accounts. A sale of the fee's sats is the common reading.">
+          <${Select} value=${f.bitcoinFees} onChange=${set('bitcoinFees')} options=${[
+            ['sale', 'A sale, in Form 8949'],
+            ['not-taxed', 'Not taxed, as my preparer reads them'],
+          ]} />
+          </${Field}>
+          <${FormError} error=${e} />
+          </${Dialog}>
   `;
 }
 

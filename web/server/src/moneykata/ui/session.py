@@ -37,6 +37,7 @@ class Me(Model):
     timeZone: str
     zone: str
     theme: str
+    bitcoinUnit: str  # btc or sats (S1.6.4)
 
 
 class SessionInfo(Model):
@@ -132,6 +133,7 @@ def info(request: Request, user: User, admin: bool) -> SessionInfo:
             timeZone=user.timeZone,
             zone=timezones.zone_for(user.timeZone),
             theme=user.theme,
+            bitcoinUnit=user.bitcoinUnit,
         ),
         household=house,
         version=srv.version,

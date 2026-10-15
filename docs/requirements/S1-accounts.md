@@ -170,7 +170,8 @@
          `wsh(sortedmulti(k, …))` and `wsh(multi(k, …))`, each key with its origin
          (`[fingerprint/path]xpub…`) and a `/0/*` and `/1/*` or `/<0;1>/*` ending. The
          descriptor's checksum is checked when it has one. A multisig wallet's addresses are
-         derived from all its keys, and only its public keys are ever held. Miniscript
+         derived from all its keys, and only its public keys are ever held. Other forms
+         (`sh(wsh(…))`, a taproot descriptor with scripts) are refused, saying so. Miniscript
          policies beyond these come after the first release (S17.9).
    2. **Where balances and history come from**, set by an admin in Settings › Bitcoin:
       1. a **public explorer** with the Esplora API (mempool.space by default, or
@@ -192,7 +193,8 @@
       4. **An Electrum server's certificate** is trusted on first use: **Test** in Settings ›
          Bitcoin shows its SHA-256 fingerprint, an admin confirms it, and it is kept. A server
          that later presents another certificate is refused, and admins alerted (*the node's
-         certificate changed*), until an admin confirms the new one, as Sparrow does.
+         certificate changed*), until an admin confirms the new one, as Sparrow does. Until
+         one is confirmed, the server is only tested, never read.
       5. **When**: every hour, and at once with the wallet's **Check now**. **Test** in
          Settings › Bitcoin asks the saved explorer or node for the chain's height. A failure
          lasting past the alert threshold alerts admins and each wallet's owner (S12.11); its
@@ -201,8 +203,11 @@
          confirmations** (about an hour); until then it waits. Bitcoin received is a
          **transfer in** of BTC without a basis, to be entered (Taxes lists it as missing)
          unless it is matched to a transfer out of another of the owner's accounts (S1.7.1);
-         bitcoin sent is a **transfer out**, its network fee recorded with it (S8.19). A
-         transfer out that was a sale or a payment is changed to one by its owner. The first
+         bitcoin sent is a **transfer out** of what left for others, and its network fee a
+         sale of the fee's sats at that day's price beside a fee of the same amount, so the
+         cash is unchanged (S8.19); a fee recorded before bitcoin has a price is valued at the
+         next check. A transfer out that was a sale or a payment is changed to one by its
+         owner. The first
          coins held start a price refresh, so the wallet is valued at once.
       7. **A reorganised chain**: a recorded transaction that the explorer or node no longer
          has is never deleted silently. It is marked *no longer on the chain* and the owner
@@ -212,9 +217,10 @@
       and never stores or logs it. The browser clears it from the form as it is typed, before
       anything is sent; the server checks again and its refusal never repeats it.
    4. **Amounts in sats.** Bitcoin is counted in whole **sats** (100,000,000 to the bitcoin),
-      as bitcoin itself counts: a wallet's balance, a transaction's amount and fee, and a
-      lot's quantity are integers, stored and sent as integers (S13.8.2), exact in every
-      client since no amount of bitcoin reaches 2^53 sats. Each user chooses in Profile
+      as bitcoin itself counts: never a fraction of a sat. A wallet's balance is sent as an
+      integer of sats (S13.8.2), exact in every client since no amount of bitcoin reaches
+      2^53 sats; a transaction's or a lot's quantity is kept as an exact decimal of bitcoin
+      with 8 places (S14.3), the same whole number of sats. Each user chooses in Profile
       whether they are shown as **BTC** (`0.12345678 BTC`, the default) or **sats**
       (`12,345,678 sats`);
       the conversion is only in how they are shown. A price is per bitcoin, in dollars.
@@ -222,7 +228,8 @@
    so they count neither as spending nor as income, nor as a buy or sell of cash.
    1. **Bitcoin moved between the owner's accounts** (a wallet and an exchange, or two
       wallets): a transfer out and a transfer in of the same amount less the network fee,
-      within 3 days, are **proposed** as a pair, and the owner confirms or rejects it. Once
+      within 3 days, are **proposed** as a pair, on each account's Overview, and the owner
+      confirms or rejects it; a rejected pair isn't proposed again. Once
       confirmed, the coins arrive with the **lots they left with**: their basis and the day
       each was acquired carry over, the fee aside (S8.19), so nothing is missing a basis and
       nothing is taxed. A transfer in left unmatched stays missing its basis (S8.4).

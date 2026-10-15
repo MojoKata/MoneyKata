@@ -82,9 +82,20 @@ def extend(s: Session, k: WalletKey) -> int:
             s.flush()
             return 1
         return 0
-    xk = bk.extended(k.value)
+    if k.kind == "descriptor":
+        from . import descriptor
+
+        d = descriptor.parse(k.value)
+        chains, address = d.chains, d.address
+    else:
+        xk = bk.extended(k.value)
+        chains = (0, 1)
+
+        def address(chain: int, i: int) -> str:
+            return bk.address_of(xk.child(chain).child(i).key, xk.script)
+
     added = 0
-    for chain in (0, 1):
+    for chain in chains:
         rows = list(
             s.scalars(
                 select(WalletAddress).where(
@@ -94,14 +105,13 @@ def extend(s: Session, k: WalletKey) -> int:
         )
         last_used = max((r.idx for r in rows if r.used), default=-1)
         top = max((r.idx for r in rows), default=-1)
-        branch = xk.child(chain)
         for i in range(top + 1, last_used + k.gapLimit + 1):
             s.add(
                 WalletAddress(
                     id=ids.new_id("WAddr"),
                     accountId=k.accountId,
                     keyId=k.id,
-                    address=bk.address_of(branch.child(i).key, xk.script),
+                    address=address(chain, i),
                     chain=chain,
                     idx=i,
                     createdAt=now,

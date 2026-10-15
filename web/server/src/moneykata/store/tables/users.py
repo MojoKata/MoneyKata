@@ -38,6 +38,8 @@ User = record(
         nullable=False,
     ),
     Column("alertEmails", Text, nullable=False, server_default=text("'daily'")),
+    # How bitcoin amounts are shown to them: BTC or sats (S1.6.4).
+    Column("bitcoinUnit", Text, nullable=False, server_default=text("'btc'")),
     Column("lastSignInAt", UtcTimestamp),
     Column("reactivationAskedAt", UtcTimestamp),
     # Two-step sign-in (S10.1.6): on since this time. Its TOTP seed is a secret (S14.4); the
@@ -52,6 +54,7 @@ User = record(
     Column("remoteId", Text),
     CheckConstraint("theme IN ('dark', 'light', 'system')", name="theme"),
     CheckConstraint("\"alertEmails\" IN ('each', 'daily', 'none')", name="alert_emails"),
+    CheckConstraint("\"bitcoinUnit\" IN ('btc', 'sats')", name="bitcoin_unit"),
     CheckConstraint(
         '"linkId" IS NULL OR ("passwordHash" IS NULL AND "twoStepAt" IS NULL '
         'AND "remoteId" IS NOT NULL)',

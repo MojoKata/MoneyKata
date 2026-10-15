@@ -107,6 +107,7 @@ class Transaction(Record):
     proceedsAdjustment: Decimal | None = None
     optionTransactionId: str | None = None
     createdById: str | None = None
+    offChainAt: dt.datetime | None = None
 
 
 @dataclass(kw_only=True, eq=False)
@@ -159,6 +160,15 @@ class Holding(Record):
     quantity: Decimal
     marketValue: Decimal | None = None
     importId: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class TransferMatch(Record):
+    id: str
+    ownerId: str
+    outId: str
+    inId: str
+    state: str = "proposed"
 
 
 @dataclass(kw_only=True, eq=False)

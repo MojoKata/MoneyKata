@@ -21,11 +21,11 @@ WalletKey = record(
     "WalletKey",
     "WKey",
     Column("accountId", Text, ForeignKey("Account.id"), nullable=False),
-    Column("kind", Text, nullable=False),  # xpub or address
+    Column("kind", Text, nullable=False),  # xpub, descriptor or address
     Column("value", Text, nullable=False),
     Column("script", Text, nullable=False),  # p2pkh, p2sh-p2wpkh, p2wpkh, p2sh, p2wsh, p2tr
     Column("gapLimit", Integer, nullable=False, server_default=text("20")),
-    CheckConstraint("kind IN ('xpub', 'address')", name="kind"),
+    CheckConstraint("kind IN ('xpub', 'descriptor', 'address')", name="kind"),
     CheckConstraint('"gapLimit" BETWEEN 1 AND 1000', name="gapLimit"),
 )
 unique_live(WalletKey, "accountId", "value")

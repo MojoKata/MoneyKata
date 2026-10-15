@@ -1,7 +1,7 @@
 // Who is signed in, and the household, from GET /ui/api/session.
 import { signal } from '@preact/signals';
 import { api } from '../api/client.js';
-import { setZone } from '../app/format.js';
+import { setBitcoinUnit, setZone } from '../app/format.js';
 
 /** @type {import('@preact/signals').Signal<any>} */
 export const session = signal(null);
@@ -13,6 +13,7 @@ export async function loadSession() {
     const info = await api.get('/session');
     session.value = info;
     setZone(info.user.zone);
+    setBitcoinUnit(info.user.bitcoinUnit);
     ended.value = '';
     return info;
   } catch {
@@ -25,7 +26,10 @@ export async function loadSession() {
 /** @param {any} info */
 export function setSession(info) {
   session.value = info;
-  if (info) setZone(info.user.zone);
+  if (info) {
+    setZone(info.user.zone);
+    setBitcoinUnit(info.user.bitcoinUnit);
+  }
 }
 
 /**

@@ -19,6 +19,7 @@ class User(Record):
     theme: str = "dark"
     personId: str
     alertEmails: str = "daily"
+    bitcoinUnit: str = "btc"
     lastSignInAt: dt.datetime | None = None
     reactivationAskedAt: dt.datetime | None = None
     twoStepAt: dt.datetime | None = None

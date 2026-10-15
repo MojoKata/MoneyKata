@@ -36,6 +36,15 @@ class SourceError(TaskError):
     address or an amount."""
 
 
+class CertificateChanged(SourceError):
+    """An Electrum server presented a certificate other than the one trusted (S1.6.2.4), or
+    none is trusted yet: refused until an admin confirms the one it shows."""
+
+    def __init__(self, message: str, sha256: str):
+        super().__init__(message)
+        self.sha256 = sha256
+
+
 @dataclass
 class Tx:
     txid: str
@@ -43,6 +52,7 @@ class Tx:
     net: int = 0  # sats, + into the addresses, − out of them
     fee: int = 0  # sats, when the addresses paid it
     addresses: set[str] = field(default_factory=set)  # ours it touched
+    confirmations: int | None = None  # None: not known, so taken as deep enough
 
 
 @dataclass
@@ -54,6 +64,7 @@ class Config:
     tls: bool = True
     rpcUser: str | None = None
     password: str | None = None
+    certSha256: str | None = None  # an Electrum server's certificate, trusted on first use
 
     def hosts(self) -> tuple[list[str], list[str]]:
         """The hosts to reach, and those named by an admin (a node on the LAN, S13.5)."""
@@ -92,12 +103,13 @@ class Esplora:
     def history(self, addresses: list[str]) -> list[Tx]:
         mine = set(addresses)
         seen: dict[str, Tx] = {}
+        tip = int(self._get("/blocks/tip/height")) if addresses else 0
         for a in addresses:
             page = self._get(f"/address/{a}/txs")
             while True:
                 for t in page:
                     if t["txid"] not in seen:
-                        seen[t["txid"]] = _esplora_tx(t, mine)
+                        seen[t["txid"]] = _esplora_tx(t, mine, tip)
                 confirmed = [t for t in page if t.get("status", {}).get("confirmed")]
                 if len(confirmed) < 25:
                     break
@@ -105,7 +117,7 @@ class Esplora:
         return list(seen.values())
 
 
-def _esplora_tx(t: dict, mine: set[str]) -> Tx:
+def _esplora_tx(t: dict, mine: set[str], tip: int = 0) -> Tx:
     st = t.get("status") or {}
     when = (
         dt.datetime.fromtimestamp(st["block_time"], dt.UTC)
@@ -113,6 +125,8 @@ def _esplora_tx(t: dict, mine: set[str]) -> Tx:
         else None
     )
     out = Tx(t["txid"], when)
+    if st.get("block_height") and tip:
+        out.confirmations = tip - int(st["block_height"]) + 1
     paid = False
     for i in t.get("vin", []):
         p = i.get("prevout") or {}
@@ -170,6 +184,8 @@ class Electrum:
         self.buf = b""
         self.n = 0
         self.raw: dict[str, bytes] = {}
+        self.seen: str | None = None  # the certificate's SHA-256, once connected
+        self.testing = False
 
     def _connect(self):
         try:
@@ -181,6 +197,19 @@ class Electrum:
                 ctx.check_hostname = False
                 ctx.verify_mode = ssl.CERT_NONE
                 s = ctx.wrap_socket(s, server_hostname=self.cfg.host)
+                # Trusted on first use (S1.6.2.4): the one an admin confirmed, or none.
+                seen = hashlib.sha256(s.getpeercert(binary_form=True) or b"").hexdigest()
+                self.seen = seen
+                if not self.testing and seen != (self.cfg.certSha256 or "").lower():
+                    s.close()
+                    raise CertificateChanged(
+                        "The Electrum server's certificate isn't the one trusted: an admin "
+                        "confirms it in Settings › Bitcoin."
+                        if self.cfg.certSha256
+                        else "Confirm the Electrum server's certificate in Settings › Bitcoin "
+                        "first.",
+                        seen,
+                    )
             self.sock = s
             self.call("server.version", "MoneyKata", "1.4")
         except (OSError, net.EgressRefused) as e:
@@ -213,10 +242,17 @@ class Electrum:
             self.sock.close()
 
     def test(self) -> str:
+        self.testing = True
         ver = self.call("server.version", "MoneyKata", "1.4")
         tip = self.call("blockchain.headers.subscribe")
         self.close()
-        return f"{ver[0] if isinstance(ver, list) else ver} answered: block {tip['height']:,}"
+        out = f"{ver[0] if isinstance(ver, list) else ver} answered: block {tip['height']:,}"
+        if self.cfg.tls and self.seen:
+            trusted = self.seen == (self.cfg.certSha256 or "").lower()
+            out += f" · certificate SHA-256 {self.seen}" + (
+                "" if trusted else " (not trusted yet: confirm it)"
+            )
+        return out
 
     def _tx(self, txid: str) -> bytes:
         if txid not in self.raw:
@@ -231,6 +267,7 @@ class Electrum:
             for h in self.call("blockchain.scripthash.get_history", sh):
                 txs[h["tx_hash"]] = h["height"]
         times: dict[int, dt.datetime] = {}
+        tip = self.call("blockchain.headers.subscribe")["height"] if txs else 0
         out = []
         for txid, height in txs.items():
             if height > 0 and height not in times:
@@ -239,6 +276,8 @@ class Electrum:
                     int.from_bytes(header[68:72], "little"), dt.UTC
                 )
             t = Tx(txid, times.get(height) if height > 0 else None)
+            if height > 0:
+                t.confirmations = tip - height + 1
             ins, outs = parse_tx(self._tx(txid))
             spent_in = 0
             for ptxid, idx in ins:
@@ -340,6 +379,7 @@ class Core:
                         else None,
                     ),
                 )
+                t.confirmations = int(e.get("confirmations") or 0)
                 sats = round(e["amount"] * SAT)
                 if e["category"] == "receive":
                     t.net += sats
@@ -364,6 +404,12 @@ def descriptors(key, top: int | None) -> list[tuple[str, int | None]]:
     chains, ranged to the highest index derived."""
     if key.kind == "address":
         return [(f"addr({key.value})", None)]
+    if key.kind == "descriptor":
+        # Each chain apart, as every Core version reads them (S1.6.1.4).
+        from . import descriptor
+
+        d = descriptor.parse(key.value)
+        return [(d.text(f"/{chain}/*"), top or 0) for chain in d.chains]
     raw = bk.b58check_decode(key.value)
     xpub = bk.b58check_encode(bytes.fromhex("0488b21e") + raw[4:])
     inner = {"p2pkh": "pkh({})", "p2sh-p2wpkh": "sh(wpkh({}))", "p2wpkh": "wpkh({})"}[key.script]

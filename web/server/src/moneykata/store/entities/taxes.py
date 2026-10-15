@@ -10,6 +10,7 @@ class TaxBook(Record):
     id: str
     ownerId: str
     year: int
+    bitcoinFees: str = "sale"
 
     @property
     def name(self) -> str:

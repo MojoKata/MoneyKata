@@ -321,7 +321,7 @@ def build(s, b) -> Panels:
         residences=[ResidenceOut(**r.__dict__) for r in panels.residences(s, b)],
         issues=[IssueOut(**i.__dict__) for i in panels.issues(s, b, rows)],
         leftOut=[a.name for a in books.counted(s, b).leftOut],
-        covers=exports.COVERS,
+        covers=exports.covers(b.bitcoinFees),
     )
 
 
@@ -346,7 +346,9 @@ def export_csv(book_id: str, request: Request, c: Caller = Depends(caller)):
     with server(request).db.read() as s:
         b, _ = books.get(s, c.id, book_id)
         rows, _ = _rows(s, b)
-        return _download(exports.csv_8949(rows, b.year), f"form-8949-{b.year}.csv", "text/csv")
+        return _download(
+            exports.csv_8949(rows, b.year, b.bitcoinFees), f"form-8949-{b.year}.csv", "text/csv"
+        )
 
 
 @router.get("/tax-books/{book_id}/exports/moneykata.txf", response_class=Response)

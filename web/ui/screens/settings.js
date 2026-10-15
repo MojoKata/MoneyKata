@@ -779,9 +779,19 @@ function BitcoinSection() {
     res.reload();
     s.reload();
   });
+  const [shown, setShown] = useState(/** @type {string | null} */ (null));
   const test = useSubmit(async () => {
     const r = await api.post('/settings/bitcoin/test');
     toast(r.answer);
+    // An Electrum server's certificate, to confirm (S1.6.2.4).
+    const m = /certificate SHA-256 ([0-9a-f]{64}) \(not trusted yet/.exec(r.answer);
+    setShown(m ? m[1] : null);
+  });
+  const trust = useSubmit(async (/** @type {string} */ sha256) => {
+    await api.post('/settings/bitcoin/certificate', { sha256 });
+    setShown(null);
+    toast('Certificate trusted');
+    res.reload();
   });
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!v || !f) return html`<${Loading} />`;
@@ -853,6 +863,31 @@ function BitcoinSection() {
                 </${Field}>
                 </div>
         `
+        : null}
+      ${f.node === 'electrum' && f.tls
+        ? html`<div class="list-item" data-help="certificate"><span class="grow">Certificate<div
+            class="small dim mono" style=${{ wordBreak: 'break-all' }}>${
+          v.certificate ? `SHA-256 ${v.certificate}` : 'Not trusted yet: Test shows it, to confirm.'
+        }</div></span></div>
+          ${
+          v.certificateOffered || shown
+            ? html`
+              <div class="notice warn" role="alert">
+                <${Icon} name="lock" />
+                <div>${v
+                    .certificateOffered
+                  ? "The server's certificate changed: it is refused until you confirm the new one."
+                  : 'The server presented this certificate. Confirm it only if it is your node.'}
+                            <div class="small mono" style=${{ wordBreak: 'break-all' }}>SHA-256 ${v
+                              .certificateOffered ||
+                              shown}</div><button type="button" class="btn sm mt"
+                            disabled=${trust.busy} onClick=${() =>
+                              trust.run(v.certificateOffered || shown).catch(() => {})}>Trust this
+                            certificate</button></div>
+              </div>
+            `
+            : null
+        }`
         : null}
       <div class=${'notice small' + (v.lastError ? ' bad' : '')} role="status" data-help="checked">
         <${Icon} name=${v.lastError ? 'alert' : 'sync'} /><div>${v.wallets} wallet${v.wallets ===

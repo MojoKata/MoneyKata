@@ -12,7 +12,10 @@ The wallet's extended public keys and addresses, and the addresses watched.
 ## Extended public keys or addresses {#wallet-keys}
 
 An **xpub** (legacy addresses, 1…), **ypub** (nested segwit, 3…) or **zpub** (native segwit,
-bc1q…), or addresses, one a line. Taking a key out stops watching its addresses.
+bc1q…), an **output descriptor** as Sparrow, Nunchuk or Bitcoin Core export it (`pkh`,
+`sh(wpkh)`, `wpkh`, `tr` for taproot, or a `wsh` multisig, each key with its origin and a `/0/*`,
+`/1/*` or `/<0;1>/*` ending, its checksum checked), or addresses, one a line. A multisig wallet's
+addresses come from all its keys. Taking a key out stops watching its addresses.
 
 > Never enter a seed phrase or a private key: the form clears anything that looks like one at
 > once, and MoneyKata never stores or logs it.
@@ -34,3 +37,17 @@ hourly check. Each confirmed transaction is recorded once: bitcoin received as a
 (enter its cost basis from the Transactions tab, or Taxes shows it as missing), and bitcoin sent
 as a transfer out, its network fee included. A transfer out that was a sale or a payment can be
 changed to one.
+
+## What is recorded
+
+Each transaction once it has 6 confirmations, about an hour. Bitcoin received is a transfer in,
+its basis to be entered unless it is matched to a transfer out of another of your accounts; bitcoin
+sent is a transfer out, and its network fee a sale of the fee's sats at that day's price, beside a
+fee of the same amount. A transaction the explorer or node no longer has is marked _no longer on
+the chain_, never deleted: keep it, or delete it.
+
+## Transfers between your accounts
+
+A transfer out of one of your accounts and in to another of the same amount, within 3 days, is
+offered as a pair. **Match them**, and the coins arrive with the lots they left with: the basis and
+the day each was acquired carry over, so nothing is taxed or missing a basis.

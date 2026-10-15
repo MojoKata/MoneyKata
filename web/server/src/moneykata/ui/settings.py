@@ -183,6 +183,8 @@ class BitcoinView(Model):
     wallets: int
     lastRun: dt.datetime | None
     lastError: str | None
+    certificate: str | None  # the Electrum server's, trusted (S1.6.2.4): its SHA-256
+    certificateOffered: str | None  # another one it presented since, waiting to be confirmed
 
 
 class BitcoinPassword(Model):
@@ -216,6 +218,8 @@ def _bitcoin_view(s) -> BitcoinView:
         ),
         lastRun=run.finishedAt if run else None,
         lastError=run.error if run else None,
+        certificate=settings.get(s, "bitcoinNodeCert"),
+        certificateOffered=settings.get(s, "bitcoinNodeCertOffered"),
     )
 
 
@@ -243,6 +247,35 @@ def bitcoin_password(body: BitcoinPassword, request: Request, c: Caller = Depend
             actor=c.id,
             for_admins=True,
             detail={"fields": ["bitcoinPassword"]},
+        )
+        s.flush()
+        return _bitcoin_view(s)
+
+
+class TrustCertificate(Model):
+    sha256: str
+
+
+@router.post("/settings/bitcoin/certificate", response_model=BitcoinView)
+def bitcoin_certificate(body: TrustCertificate, request: Request, c: Caller = Depends(admin)):
+    """An admin confirms the Electrum server's certificate, as Test showed it: it is then the
+    one trusted, and any other refused (S1.6.2.4)."""
+    import re
+
+    sha = body.sha256.strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", sha):
+        from ..errors import refuse
+
+        raise refuse("sha256", "fingerprint-invalid", "The SHA-256 fingerprint Test showed.")
+    with server(request).db.tx() as s:
+        settings.put(s, "bitcoinNodeCert", sha, c.id)
+        settings.put(s, "bitcoinNodeCertOffered", None, c.id)
+        activity.record(
+            s,
+            "settings.changed",
+            actor=c.id,
+            for_admins=True,
+            detail={"fields": ["bitcoinNodeCert"]},
         )
         s.flush()
         return _bitcoin_view(s)

@@ -230,6 +230,9 @@ Transaction = record(
     Column("proceedsAdjustment", Dec),
     Column("optionTransactionId", Text, ForeignKey("Transaction.id")),
     Column("createdById", Text, ForeignKey("User.id")),
+    # A bitcoin transaction the explorer or node no longer has (S1.6.2.7): kept until its
+    # owner keeps or deletes it.
+    Column("offChainAt", UtcTimestamp),
     _in("kind", TXN_KINDS, "kind"),
     CheckConstraint(
         '"dividendType" IS NULL OR "dividendType" IN (\'ordinary\', '
@@ -320,6 +323,20 @@ Anchor = record(
     _in("source", ("running-balance", "ofx", "statement", "typed", "statement-value"), "source"),
     Index("ix_Anchor_account_date", "accountId", "date"),
 )
+
+# A bitcoin transfer out of one of the owner's accounts and in to another, proposed as a pair
+# (S1.7.1); once confirmed, the coins arrive with the lots they left with.
+TransferMatch = record(
+    "TransferMatch",
+    "XfrMt",
+    Column("ownerId", Text, ForeignKey("User.id"), nullable=False),
+    Column("outId", Text, ForeignKey("Transaction.id", ondelete="CASCADE"), nullable=False),
+    Column("inId", Text, ForeignKey("Transaction.id", ondelete="CASCADE"), nullable=False),
+    Column("state", Text, nullable=False, server_default=text("'proposed'")),
+    _in("state", ("proposed", "confirmed", "rejected"), "state"),
+    Index("ix_TransferMatch_owner", "ownerId", "state"),
+)
+unique_live(TransferMatch, "outId", "inId")
 
 # A position as a brokerage statement shows it on its last day (S1.3.3.8.2): checked against
 # what MoneyKata holds then, never written over the lots.

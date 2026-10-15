@@ -291,7 +291,7 @@ def _bip39() -> set[str]:
 
 REFUSAL = (
     "That looks like a {what}. MoneyKata never accepts one, and nothing was saved: enter an "
-    "extended public key (xpub, ypub or zpub) or addresses instead."
+    "extended public key (xpub, ypub or zpub), a public descriptor or addresses instead."
 )
 
 
@@ -301,7 +301,11 @@ def secret_kind(text: str) -> str | None:
     words = text.lower().split()
     if len(words) >= 12 and sum(w in _bip39() for w in words) >= len(words) - 1:
         return "seed phrase"
-    for tok in text.replace(",", " ").split():
+    import re
+
+    if re.search(r"[xyztuv]prv[1-9A-HJ-NP-Za-km-z]{100,}", text):
+        return "extended private key"
+    for tok in re.split(r"[\s,()\[\]/]+", text):
         if len(tok) == 64 and all(c in "0123456789abcdefABCDEF" for c in tok):
             return "private key (64 hex digits)"
         if tok[:4] in ("xprv", "yprv", "zprv", "tprv", "uprv", "vprv"):
@@ -315,7 +319,7 @@ def secret_kind(text: str) -> str | None:
 
 @dataclass
 class Entry:
-    kind: str  # xpub or address
+    kind: str  # xpub, descriptor or address
     value: str
     script: str
 
@@ -328,7 +332,20 @@ def parse(text: str) -> list[Entry]:
         raise Refused("secret-refused", REFUSAL.format(what=what))
     out: list[Entry] = []
     seen = set()
-    for tok in text.replace(",", " ").split():
+    from . import descriptor
+
+    # A descriptor holds commas and is one a line (S1.6.1.4); the rest are tokens.
+    rest = []
+    for line in text.splitlines():
+        if descriptor.looks_like(line):
+            d = descriptor.parse(line)
+            value = d.text()
+            if value not in seen:
+                seen.add(value)
+                out.append(Entry("descriptor", value, d.script))
+        else:
+            rest.append(line)
+    for tok in " ".join(rest).replace(",", " ").split():
         if tok in seen:
             continue
         seen.add(tok)

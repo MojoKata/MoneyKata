@@ -52,6 +52,36 @@ export function quantity(s) {
   return (neg ? '−' : '') + group(whole) + (f ? '.' + f : '');
 }
 
+/** How bitcoin amounts are shown: BTC or sats, the user's choice in Profile (S1.6.4). */
+let btcUnit = 'btc';
+/** @param {string} u */
+export function setBitcoinUnit(u) {
+  btcUnit = u === 'sats' ? 'sats' : 'btc';
+}
+
+/**
+ * A bitcoin amount, as the user chose: "0.12345678 BTC" or "12,345,678 sats". From BTC (a
+ * quantity) or, with `fromSats`, whole sats; exact either way.
+ * @param {import('./dec.js').Dec | string | number | null | undefined} s
+ * @param {boolean} [fromSats]
+ */
+export function bitcoin(s, fromSats = false) {
+  if (s == null) return '—';
+  let sats;
+  if (fromSats) sats = BigInt(String(s));
+  else {
+    const { neg, whole, frac } = parts(String(s));
+    const n = BigInt(whole || '0') * 100000000n + BigInt((frac + '00000000').slice(0, 8));
+    sats = neg ? -n : n;
+  }
+  const neg = sats < 0n;
+  const a = neg ? -sats : sats;
+  if (btcUnit === 'sats') return (neg ? '−' : '') + group(a.toString()) + ' sats';
+  const w = (a / 100000000n).toString();
+  const f = (a % 100000000n).toString().padStart(8, '0');
+  return `${neg ? '−' : ''}${group(w)}.${f} BTC`;
+}
+
 /**
  * A price: dollars with at least two places, more when it has them: "$424.10", "$0.0345".
  * @param {import('./dec.js').Dec | string | null | undefined} s

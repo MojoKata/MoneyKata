@@ -153,10 +153,21 @@ def form_8949(s: Session, book: TaxBook, spouse_accounts: list[Account] | None =
             if d.basis is not None and d.saleId and d.proceeds < d.basis:
                 losses[d.saleId] = losses.get(d.saleId, ZERO) + d.basis - d.proceeds
             rows.append(row)
+    if book.bitcoinFees == "not-taxed":
+        rows = [r for r in rows if not _own_transfer_fee(s, r.saleId)]
     washes_ = _stored_washes(s, book, losses)
     washes_ += _option_reviews(s, rows, counted + (spouse_accounts or []), insts)
     rows += _items(s, counted, first, last)
     return rows, washes_
+
+
+def _own_transfer_fee(s: Session, sale_id: str | None) -> bool:
+    """A network fee's sale (S8.19) on a transfer between the owner's own accounts."""
+    t = s.get(Transaction, sale_id) if sale_id else None
+    if t is None or not (t.fitId or "").startswith("btcfee:") or not t.optionTransactionId:
+        return False
+    out = s.get(Transaction, t.optionTransactionId)
+    return out is not None and out.transferId is not None
 
 
 def _stored_washes(s: Session, book: TaxBook, losses: dict[str, Decimal]) -> list[Wash]:

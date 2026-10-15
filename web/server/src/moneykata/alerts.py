@@ -90,6 +90,49 @@ def price_sources(s: Session, server) -> Iterable[Cause]:
 
 
 @check
+def bitcoin_certificate(s: Session, server) -> Iterable[Cause]:
+    """The Electrum server presented a certificate other than the one trusted (S1.6.2.4):
+    admins confirm it, or find out why it changed."""
+    offered = settings.get(s, "bitcoinNodeCertOffered")
+    if offered and offered != settings.get(s, "bitcoinNodeCert"):
+        yield Cause(
+            key="bitcoin-certificate",
+            kind="node-certificate",
+            title="The bitcoin node's certificate changed",
+            about="it is refused until an admin confirms the new one",
+            user_id=None,
+            link="/ui/settings/bitcoin",
+            fix="Bitcoin settings",
+            icon="lock",
+        )
+
+
+@check
+def bitcoin_off_chain(s: Session, server) -> Iterable[Cause]:
+    """A recorded bitcoin transaction the explorer or node no longer has (S1.6.2.7): its
+    account's owner keeps or deletes it."""
+    from .store.entities.accounts import Account, Transaction
+
+    rows = s.execute(
+        select(Account.id, Account.name, Account.ownerId)
+        .join(Transaction, Transaction.accountId == Account.id)
+        .where(Transaction.offChainAt.is_not(None), Transaction.deleted == false())
+        .distinct()
+    ).all()
+    for account_id, name, owner in rows:
+        yield Cause(
+            key=f"off-chain:{account_id}",
+            kind="off-chain",
+            title=f"{name}: a bitcoin transaction is no longer on the chain",
+            about="keep it, or delete it",
+            user_id=owner,
+            link=f"/ui/accounts/{account_id}/transactions",
+            fix="See it",
+            icon="alert",
+        )
+
+
+@check
 def bitcoin_source(s: Session, server) -> Iterable[Cause]:
     """The bitcoin explorer or node failing for longer than Settings › Alerts allows: admins,
     and each wallet's owner (S1.6.2, S16.16)."""
@@ -476,6 +519,8 @@ _KINDS = {
     "recovery_phrase": {"phrase-check"},
     "accounts": {"statement-overdue", "reconcile-mismatch"},
     "projections_behind": {"projection-behind"},
+    "bitcoin_certificate": {"node-certificate"},
+    "bitcoin_off_chain": {"off-chain"},
 }
 
 

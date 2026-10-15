@@ -80,6 +80,7 @@ class Profile(Model):
     birthDay: int | None
     birthYear: int | None
     alertEmails: str
+    bitcoinUnit: str  # how bitcoin amounts are shown: btc or sats (S1.6.4)
     twoStep: TwoStep
     relations: list[Relation]
     spouse: Spouse | None
@@ -96,6 +97,7 @@ class ProfileChange(Model):
     birthDay: int | None = None
     birthYear: int | None = None
     alertEmails: str | None = None
+    bitcoinUnit: str | None = None
 
 
 class PasswordChange(Model):
@@ -143,6 +145,7 @@ def profile(s, u: User) -> Profile:
         birthDay=me.birthDay,
         birthYear=me.birthYear,
         alertEmails=u.alertEmails,
+        bitcoinUnit=u.bitcoinUnit,
         twoStep=TwoStep(
             on=twostep.is_on(u),
             since=u.twoStepAt,
@@ -232,6 +235,11 @@ def change_profile(
                 )
             u.alertEmails = body.alertEmails
             fields.append("alertEmails")
+        if "bitcoinUnit" in sent:
+            if body.bitcoinUnit not in ("btc", "sats"):
+                raise refuse("bitcoinUnit", "choice-invalid", "BTC or sats.")
+            u.bitcoinUnit = body.bitcoinUnit
+            fields.append("bitcoinUnit")
         if fields:
             activity.record(
                 s,

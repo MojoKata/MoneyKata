@@ -21,6 +21,10 @@ TaxBook = record(
     "TaxBk",
     Column("ownerId", Text, ForeignKey("User.id"), nullable=False),  # who made it
     Column("year", Integer, nullable=False),
+    # Bitcoin network fees on transfers between the owner's own accounts (S8.19): a sale, the
+    # default, or not taxed, as a preparer may read them.
+    Column("bitcoinFees", Text, nullable=False, server_default=text("'sale'")),
+    CheckConstraint("\"bitcoinFees\" IN ('sale', 'not-taxed')", name="bitcoin_fees"),
     Index("ix_TaxBook_owner", "ownerId", "year"),
 )
 

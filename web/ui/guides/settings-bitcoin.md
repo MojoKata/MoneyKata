@@ -28,7 +28,13 @@ past the guard that otherwise keeps it off local addresses.
 ## TLS
 
 An Electrum server's TLS, usually on. Its certificate is usually one it made itself, so it is
-accepted as it is.
+trusted on first use: **Test** shows its SHA-256 fingerprint, and once you confirm it, any other
+certificate is refused, and admins alerted, until you confirm the new one.
+
+## Certificate
+
+The Electrum server's certificate trusted, by its SHA-256 fingerprint. Confirm a new one only if
+you know why it changed, such as the node being set up again.
 
 ## RPC user {#rpc-user}
 

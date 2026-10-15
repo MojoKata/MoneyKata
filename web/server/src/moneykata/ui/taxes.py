@@ -106,6 +106,7 @@ class NewBook(Model):
     year: int
     filers: list[str]
     fromLastYear: bool = True
+    bitcoinFees: str = "sale"  # or not-taxed, on transfers between the owner's accounts
 
 
 @router.post("/tax-books", response_model=NewBookOut, status_code=201)
@@ -128,7 +129,11 @@ def create_book(body: NewBook, request: Request, c: Caller = Depends(caller)):
                 "not-married",
                 "Two filers file together only if married on the last day of the year.",
             )
-        b = TaxBook(id=ids.new_id("TaxBk"), ownerId=c.id, year=body.year)
+        if body.bitcoinFees not in ("sale", "not-taxed"):
+            raise refuse("bitcoinFees", "choice-invalid", "A sale, or not taxed.")
+        b = TaxBook(
+            id=ids.new_id("TaxBk"), ownerId=c.id, year=body.year, bitcoinFees=body.bitcoinFees
+        )
         s.add(b)
         s.flush()
         now = clock.now()
@@ -317,6 +322,7 @@ class Form8615Out(Model):
 
 
 class BookDetail(BookRow):
+    bitcoinFees: str  # network fees on own transfers: sale or not-taxed (S8.19)
     dependents: list[DependentOut]
     form8615: list[Form8615Out]  # dependent children past the year's threshold
     claimedElsewhere: list[str]  # the book's filers claimed on another book of the year
@@ -455,6 +461,7 @@ def detail(s, c: Caller, b: TaxBook, lvl: str) -> BookDetail:
     deps = dependents.listed(s, b)
     return BookDetail(
         **base.model_dump(),
+        bitcoinFees=b.bitcoinFees,
         dependents=[_dependent(d) for d in deps],
         form8615=[
             Form8615Out(**f.__dict__) for f in dependents.form_8615(s, b, deps, cnt.accounts)
@@ -493,6 +500,31 @@ def detail(s, c: Caller, b: TaxBook, lvl: str) -> BookDetail:
 def get_book(book_id: str, request: Request, c: Caller = Depends(caller)):
     with server(request).db.read() as s:
         b, lvl = books.get(s, c.id, book_id)
+        return detail(s, c, b, lvl)
+
+
+class BookChange(Model):
+    bitcoinFees: str
+
+
+@router.patch("/tax-books/{book_id}", response_model=BookDetail)
+def change_book(
+    book_id: str,
+    body: BookChange,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
+    """How the book reads bitcoin network fees on transfers between the owner's accounts
+    (S8.19): a sale, the default, or not taxed, as a preparer may read them."""
+    if body.bitcoinFees not in ("sale", "not-taxed"):
+        raise refuse("bitcoinFees", "choice-invalid", "A sale, or not taxed.")
+    with server(request).db.tx() as s:
+        b, lvl = books.get(s, c.id, book_id, "write")
+        check(b, version, lambda: detail(s, c, b, lvl))
+        b.bitcoinFees = body.bitcoinFees
+        b.updatedAt = clock.now()
+        s.flush()
         return detail(s, c, b, lvl)
 
 

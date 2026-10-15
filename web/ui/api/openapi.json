@@ -1411,6 +1411,28 @@
       "BitcoinView": {
         "additionalProperties": false,
         "properties": {
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
+          "certificateOffered": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificateoffered"
+          },
           "lastError": {
             "anyOf": [
               {
@@ -1453,7 +1475,9 @@
           "password",
           "wallets",
           "lastRun",
-          "lastError"
+          "lastError",
+          "certificate",
+          "certificateOffered"
         ],
         "title": "BitcoinView",
         "type": "object"
@@ -1500,6 +1524,20 @@
         "title": "Body_upload_ui_api_receipts_post",
         "type": "object"
       },
+      "BookChange": {
+        "additionalProperties": false,
+        "properties": {
+          "bitcoinFees": {
+            "title": "Bitcoinfees",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bitcoinFees"
+        ],
+        "title": "BookChange",
+        "type": "object"
+      },
       "BookDetail": {
         "additionalProperties": false,
         "properties": {
@@ -1516,6 +1554,10 @@
             },
             "title": "Addable",
             "type": "array"
+          },
+          "bitcoinFees": {
+            "title": "Bitcoinfees",
+            "type": "string"
           },
           "canWrite": {
             "title": "Canwrite",
@@ -1617,6 +1659,7 @@
           "level",
           "label",
           "version",
+          "bitcoinFees",
           "dependents",
           "form8615",
           "claimedElsewhere",
@@ -9037,6 +9080,10 @@
             ],
             "title": "Avatar"
           },
+          "bitcoinUnit": {
+            "title": "Bitcoinunit",
+            "type": "string"
+          },
           "displayName": {
             "title": "Displayname",
             "type": "string"
@@ -9087,7 +9134,8 @@
           "needsSetup",
           "timeZone",
           "zone",
-          "theme"
+          "theme",
+          "bitcoinUnit"
         ],
         "title": "Me",
         "type": "object"
@@ -9650,6 +9698,11 @@
       "NewBook": {
         "additionalProperties": false,
         "properties": {
+          "bitcoinFees": {
+            "default": "sale",
+            "title": "Bitcoinfees",
+            "type": "string"
+          },
           "filers": {
             "items": {
               "type": "string"
@@ -12120,6 +12173,37 @@
         "title": "Page[TokenOut]",
         "type": "object"
       },
+      "Page_TransferPair_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransferPair"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[TransferPair]",
+        "type": "object"
+      },
       "Page_TrendPoint_": {
         "properties": {
           "items": {
@@ -14092,6 +14176,10 @@
             ],
             "title": "Birthyear"
           },
+          "bitcoinUnit": {
+            "title": "Bitcoinunit",
+            "type": "string"
+          },
           "displayName": {
             "title": "Displayname",
             "type": "string"
@@ -14187,6 +14275,7 @@
           "birthDay",
           "birthYear",
           "alertEmails",
+          "bitcoinUnit",
           "twoStep",
           "relations",
           "spouse",
@@ -14252,6 +14341,17 @@
               }
             ],
             "title": "Birthyear"
+          },
+          "bitcoinUnit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bitcoinunit"
           },
           "displayName": {
             "anyOf": [
@@ -18893,6 +18993,20 @@
         "title": "TokenPassword",
         "type": "object"
       },
+      "TransferAnswer": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm": {
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "TransferAnswer",
+        "type": "object"
+      },
       "TransferLink": {
         "additionalProperties": false,
         "properties": {
@@ -18912,6 +19026,52 @@
           "otherId"
         ],
         "title": "TransferLink",
+        "type": "object"
+      },
+      "TransferPair": {
+        "additionalProperties": false,
+        "properties": {
+          "fromAccount": {
+            "title": "Fromaccount",
+            "type": "string"
+          },
+          "fromDate": {
+            "format": "date",
+            "title": "Fromdate",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "sats": {
+            "title": "Sats",
+            "type": "integer"
+          },
+          "toAccount": {
+            "title": "Toaccount",
+            "type": "string"
+          },
+          "toDate": {
+            "format": "date",
+            "title": "Todate",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "fromAccount",
+          "toAccount",
+          "fromDate",
+          "toDate",
+          "sats",
+          "version"
+        ],
+        "title": "TransferPair",
         "type": "object"
       },
       "TrendPoint": {
@@ -18945,6 +19105,20 @@
           "actual"
         ],
         "title": "TrendPoint",
+        "type": "object"
+      },
+      "TrustCertificate": {
+        "additionalProperties": false,
+        "properties": {
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sha256"
+        ],
+        "title": "TrustCertificate",
         "type": "object"
       },
       "TwoStep": {
@@ -19620,6 +19794,18 @@
             ],
             "title": "Memo"
           },
+          "offChainAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offchainat"
+          },
           "payee": {
             "anyOf": [
               {
@@ -19757,6 +19943,7 @@
           "cleared",
           "reconciled",
           "amountWas",
+          "offChainAt",
           "splits",
           "tags",
           "receipts",
@@ -32023,6 +32210,48 @@
         ]
       }
     },
+    "/ui/api/settings/bitcoin/certificate": {
+      "post": {
+        "description": "An admin confirms the Electrum server's certificate, as Test showed it: it is then the\none trusted, and any other refused (S1.6.2.4).",
+        "operationId": "bitcoin_certificate_ui_api_settings_bitcoin_certificate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrustCertificate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BitcoinView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Bitcoin Certificate",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
     "/ui/api/settings/bitcoin/password": {
       "put": {
         "description": "Bitcoin Core's RPC password is a secret (S14.4): set or removed, never read back.",
@@ -33539,6 +33768,57 @@
         "tags": [
           "taxes"
         ]
+      },
+      "patch": {
+        "description": "How the book reads bitcoin network fees on transfers between the owner's accounts\n(S8.19): a sale, the default, or not taxed, as a preparer may read them.",
+        "operationId": "change_book_ui_api_tax_books__book_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Book",
+        "tags": [
+          "taxes"
+        ]
       }
     },
     "/ui/api/tax-books/{book_id}/accept": {
@@ -34782,6 +35062,49 @@
         ]
       }
     },
+    "/ui/api/transactions/{txn_id}/keep": {
+      "post": {
+        "description": "Keep a bitcoin transaction the explorer or node no longer has: its mark is cleared\n(S1.6.2.7). Deleting it is the usual delete.",
+        "operationId": "keep_off_chain_ui_api_transactions__txn_id__keep_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "txn_id",
+            "required": true,
+            "schema": {
+              "title": "Txn Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TxnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Keep Off Chain",
+        "tags": [
+          "transactions"
+        ]
+      }
+    },
     "/ui/api/transactions/{txn_id}/transfer": {
       "post": {
         "description": "Match a transfer by hand, or undo a match (S1.7).",
@@ -34832,6 +35155,120 @@
         "summary": "Link Transfer",
         "tags": [
           "transactions"
+        ]
+      }
+    },
+    "/ui/api/transfers/bitcoin": {
+      "get": {
+        "description": "The pairs proposed for the caller's own accounts, to confirm or reject.",
+        "operationId": "bitcoin_transfers_ui_api_transfers_bitcoin_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TransferPair_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Bitcoin Transfers",
+        "tags": [
+          "wallets"
+        ]
+      }
+    },
+    "/ui/api/transfers/bitcoin/{match_id}": {
+      "post": {
+        "description": "Confirmed, the coins arrive with the lots they left with; rejected, the pair isn't\nproposed again.",
+        "operationId": "answer_transfer_ui_api_transfers_bitcoin__match_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_id",
+            "required": true,
+            "schema": {
+              "title": "Match Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferAnswer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TransferPair"
+                  },
+                  "title": "Response Answer Transfer Ui Api Transfers Bitcoin  Match Id  Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Answer Transfer",
+        "tags": [
+          "wallets"
         ]
       }
     },

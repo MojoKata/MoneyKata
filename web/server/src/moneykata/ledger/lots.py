@@ -75,6 +75,9 @@ class Replay:
     problems: list[Problem] = field(default_factory=list)
     # Lots an adjusted contract gave up, waiting for its new contract (S3.10).
     carried: dict = field(default_factory=dict)
+    # What each transfer out took with it: (acquired, quantity, basis), by transaction, so a
+    # matched transfer in can open the same lots (S1.7.1).
+    moved: dict = field(default_factory=dict)
 
     def quantity(self, instrument_id: str) -> Decimal:
         return sum((lot.quantity for lot in self.open if lot.instrumentId == instrument_id), ZERO)
@@ -406,6 +409,8 @@ def _consume(
         if avg is not None:
             basis = (avg * take).quantize(CENT)
             lot.basis = (avg * lot.quantity).quantize(CENT)
+        if not realize:
+            out.moved.setdefault(t.id, []).append((lot.acquiredOn, take, basis))
         if realize:
             out.disposals.append(
                 Disposal(

@@ -37,7 +37,7 @@ export function looksSecret(text) {
 
 /** @param {string} what */
 const refusal = (what) =>
-  `That looks like a ${what}. MoneyKata never accepts one, and nothing was saved: enter an extended public key (xpub, ypub or zpub) or addresses instead.`;
+  `That looks like a ${what}. MoneyKata never accepts one, and nothing was saved: enter an extended public key (xpub, ypub or zpub), a public descriptor or addresses instead.`;
 
 /**
  * The keys box and gap limit, in the New account form and the wallet's Settings.
@@ -60,9 +60,10 @@ export function WalletFields({ f, set, e }) {
   return html`
     <${Field} label="Extended public keys or addresses" id="wallet-keys" error=${refused ||
       errAt(e, 'text')}
-      hint="An xpub, ypub or zpub, or addresses, one a line. Public data only.">
+      hint="An xpub, ypub or zpub, a descriptor (wpkh, tr, wsh multisig…), or addresses, one a line. Public data only.">
       <textarea class="in mono" rows="3" value=${f.walletText} onInput=${onText}
-        placeholder="zpub6r…, or bc1q… one a line" spellcheck="false" autocomplete="off"></textarea>
+        placeholder="zpub6r…, wpkh([…]xpub…/<0;1>/*)#…, or bc1q… one a line" spellcheck="false"
+        autocomplete="off"></textarea>
       </${Field}>
       <${Field} label="Gap limit" error=${errAt(e, 'gapLimit')}
         hint="Addresses derived past the last one used. 20 suits most wallets.">
