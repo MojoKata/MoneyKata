@@ -31,8 +31,10 @@ screens built so far, which `web/check` keeps current.
 ## Requirements are a statement, not a changelog
 
 The requirements (`docs/requirements/`) say what MoneyKata is and does, in the present tense.
-They carry no dates of decisions, no "now", "no longer" or "revised", and no record of what
-changed: git holds the history. `docs/schema.md` follows the same rule.
+They carry no dates, versions or status lines, no "now", "no longer", "revised", "proposed"
+or "approved", and no record of what changed: git holds the history. `docs/schema.md` follows
+the same rule. The repository's root README is where repo, build and product status goes,
+also without dates or words of approval.
 
 ## How the requirements are laid out
 

@@ -78,8 +78,8 @@
       (keys and credentials), which stay the owner's.
    3. **People on linked servers**: any of the seven kinds can also be shared with named
       users of a linked server (S11), always **read**. Each server sends its peers its list
-      of active users (display name, username and email), so they can be chosen like local
-      users. Groups are not sent. When a remote user is deactivated, their shares are
+      of active users (display name, username, email, sex and stable id, S11.3), so they can
+      be chosen like local users. Groups are not sent. When a remote user is deactivated, their shares are
       suspended. When the link ends, the shares are removed.
       1. **A remote user is a `User` record** with its `linkId` set, so it appears wherever
          a share is chosen, beside local users, under its server's name. It has no password,

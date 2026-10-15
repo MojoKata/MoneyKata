@@ -5,7 +5,9 @@
    ```
    README.md
    docs/                 requirements/ (README.md and its sections), schema.md, api.md,
-                         link-protocol.md, operations.md, mockups/MoneyKata-mock.html
+                         link-protocol.md, connector-protocol.md, operations.md,
+                         dependencies.md (the register, S17.2.1), test-plan.md (the manual
+                         tests, S17.9.7.8), mockups/MoneyKata-mock.html
    web/
      VERSION  dev.sh  check  pins
      ui/                 index.html, deno.json, app/{main,router,config,hooks,format}.js,
@@ -13,30 +15,50 @@
                          account-types/ (one module per type: fields, icon, help),
                          styles/{tokens,base,components}.css, assets/icons.svg,
                          guides/, vendor/, tests/, mockup/
-     server/             src/moneykata/: main.py, app.py, config.py, listener.py, middleware.py,
-                         static.py, settings.py, ui/ (routes per area), auth/, store/
-                         (tables/, entities/, mapping.py, alembic/), ledger/ (lots, gains, wash sales, corporate
-                         actions), prices/ (one TickerSource per source), bitcoin/ (esplora,
-                         electrum, core), importers/ (ofx, csv, statements), budgets/, projections/, loans/
-                         (schedules, payoff planner), assets/ (items, valuations),
-                         gifts/ (people, occasions, holiday tables), giving/,
-                         taxes/ (8949, txf, limits tables), receipts/ (storage, thumbnails,
-                         ocr/: worker, parser, models/), links/, mail/, dev/
-     install/            Dockerfile, compose.yaml, moneykata.toml, reverse-proxy examples
+     server/             src/moneykata/: main.py, app.py, config.py, runtime.py, listener.py,
+                         middleware.py, static.py, settings.py, tasks.py, alerts.py, mail.py,
+                         mcp.py, ui/ (routes per area), auth/, keys/ (the master key, its
+                         phrase, secrets), store/ (tables/, entities/, repos/, mapping.py,
+                         alembic/), ledger/ (lots, gains, corporate actions), washes.py,
+                         options/, prices/ (one TickerSource per source), bitcoin/ (esplora,
+                         electrum, core, descriptors), importers/ (ofx, csv, statements),
+                         budgets/, projections/, loans/ (schedules, payoff planner), assets/
+                         (items, valuations), education/, people/, gifts/ (occasions, holiday
+                         tables), giving/, taxes/ (8949, txf, limits tables), receipts/
+                         (storage, thumbnails, the reader and its worker, the field parser,
+                         retention), links/, dev/ (dev mode, seed data, the wheel check)
+     install/            Dockerfile, compose.yaml, compose.tls.yaml, moneykata.toml,
+                         proxy/ (reverse-proxy examples)
+   connector/            the MoneyKata Connector (S18): its core, drivers and image
    ```
 
 2. **Server dependencies**, each a ruling, kept short because each runs with the database: fastapi, pydantic,
    hypercorn, sqlalchemy, alembic, argon2-cffi, cryptography (AES-GCM, Ed25519 for links),
    httpx, segno (two-step QR), **Pillow** and **pypdfium2** (thumbnails and receipt reading,
-   S9.5, S9.8), **sqlcipher3** (the wheel that bundles SQLCipher, for linked copies,
-   S11.9), **rapidocr** with **onnxruntime** (receipt reading, S9.8). rapidocr brings
+   S9.5, S9.8), **sqlcipher3** (the wheel that bundles SQLCipher, for the main database and the
+   linked copies, S14.1, S11.9), **rapidocr** with **onnxruntime** (receipt reading, S9.8). rapidocr brings
    numpy, opencv-python-headless, shapely, pyclipper and pyyaml with it, about 100 MB in all;
    the image carries them, and they load only in the receipt worker. **ofxtools** reads OFX
    and QFX files (pure Python, GPL-3.0-only, compatible with MoneyKata's GPLv3). **pi-heif** reads iPhone photos
    (HEIC): it decodes only, so it is smaller than pillow-heif, which also encodes. **numpy** is a direct dependency for projections
    (S6) as well as RapidOCR's.
    Standard library for email (`smtplib`), config (`tomllib`), logging and the command line.
-   Pinned exactly in `uv.lock`, Python 3.12.
+   Pinned exactly in `uv.lock`, Python 3.14 (S17.9.7.1).
+   1. **The dependency register and the egress audit.** `docs/dependencies.md` lists every
+      library the server, the browser app and the build run with: its version, what it is
+      for, why it was chosen, what it could do that MoneyKata must not (a call out of the
+      house above all), with the switch that stops it and where MoneyKata throws it, and
+      when to look at it again. A library that can reach out is marked **egress**, one that
+      sends telemetry **telemetry** as well. **Every change to `uv.lock` or the vendor
+      manifest is followed by an audit** before it is committed: `web/dev.sh audit` scans
+      the installed wheels and the vendored files for URLs and the words of telemetry and
+      update checks, diffs the findings against the register, and runs the server and the
+      receipt worker in a network namespace with no interfaces through a receipt read, a
+      price refresh against the stubs, a backup and a pass of the tasks, failing on any
+      socket opened to a non-loopback address. The register records the hashes of the files
+      it was audited against, and `web/check` fails when they no longer match, which costs
+      nothing on an ordinary run: the audit itself runs when a dependency changes, not on
+      every test cycle.
 3. **The browser app: no build step.** The files in `web/ui` are the files the browser loads.
    1. **Libraries**: Preact (rendering), HTM (JSX-like tagged templates, no `eval`),
       @preact/signals (state), preact-iso (routes and lazy screens), plus the chart library
@@ -106,7 +128,8 @@
 5. **Tests and checks**, all run by `web/check`, with no Node.js: pytest with a throwaway SQLite per test (most of the
    weight: lots, gains, wash sales, option assignment, imports, budgets, projections, sharing,
    links), browser component tests in headless Chromium driven by Playwright for Python, Deno
-   check/lint/fmt, ruff, OpenAPI and typedef drift, mockup drift and the help-guide checks.
+   check/lint/fmt, ruff, OpenAPI and typedef drift, mockup drift, the help-guide checks and
+   the dependency register's hash check (S17.2.1).
    Browser tests use a small in-page runner (`web/ui/tests/run.js`) and a fake API; one
    smoke test drives a running dev server. **Golden files**: a fixture portfolio with known
    8949 rows and TXF output, checked byte for byte. **Receipt reading**: the field parser is
@@ -130,13 +153,15 @@
    made again when it doesn't cover them all; `web/dev.md` describes the setups. Dev mode
    refuses to run as root or on an installed server's
    data directory, and never calls a real provider unless one is configured.
-8. **Packaging: one Docker (OCI) image** holding its own Python and venv, the browser app,
-   RapidOCR's models and the `moneykata` command, running as an unprivileged user (uid
-   10001). It serves on port 37373 and takes three mounts: the **data directory** (database,
+8. **Packaging: one Docker (OCI) image for the server** (the connector has an image of its
+   own, S18.10) holding its own Python and venv, the browser app, RapidOCR's models and the
+   `moneykata` command, running as an unprivileged user (uid 10001). It serves on port 37373 and takes three mounts: the **data directory** (database,
    receipts, linked copies), the **backup directory**, and the **key directory**, read only
    for the server and kept out of the backups (S15.4). `moneykata.toml` is mounted too;
    secrets never come from environment variables. `install/compose.yaml` is the example to
-   start from; it keeps the logs Docker holds to five files of 10 MB. `docs/operations.md`
+   start from; it publishes the plain-HTTP listener on the host's loopback only (the proxy
+   examples reach the service by name) and keeps the logs Docker holds to five files of
+   10 MB. `docs/operations.md`
    is the runbook: installing, upgrading, backups, health, logs, restoring and drills. The image is about 600 MB, most of it the receipt reader (ONNX Runtime,
    OpenCV and the models); the reader's worker takes about 350 MB more while it runs, which
    a host too small for it avoids by turning reading off (S9.8.7).
@@ -144,7 +169,10 @@
       on an amd64 build server with `docker buildx` (arm64 under QEMU emulation). Every
       dependency must install from a published wheel for both (onnxruntime, opencv, numpy,
       pi-heif, sqlcipher3 among them), since compiling under emulation is too slow; a check
-      fails when one has no arm64 wheel.
+      fails when one has no arm64 wheel. The arm64 image's release gate is a smoke run under
+      emulation (start, migrate, `/healthz`, a sign-in, one receipt read); the trial on real
+      hardware, which alone measures the reader's speed there (S9.8.4.5), is in the manual
+      test plan (S17.9.7.8), and a release says whether it was run.
    2. **No registry.** The image is built locally and carried to its host (`docker save` and
       `docker load`), or built on the host itself.
    3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
@@ -153,6 +181,16 @@
    4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
       reverse proxy. A second example runs `tls` mode with a self-signed certificate for
       testing on a local network (S13.3).
+   5. **The base image's updates.** The Dockerfile pins its base by digest, so a rebuild
+      changes nothing until the digest moves, and the image never runs `apt-get upgrade` at
+      build: the same Dockerfile gives the same image. The digest moves with each release,
+      and between releases when Debian or Python publishes a fix for something the image
+      uses (OpenSSL, zlib, libjpeg, expat, SQLite, Python itself): `web/dev.sh base-update`
+      fetches the tag's current digest, writes it into the Dockerfile and the register
+      (`docs/dependencies.md`, with the date and what the move picked up), and prints the
+      Debian packages that changed between the two for the commit message. `web/check`
+      warns, without failing, when the pinned digest is older than 90 days, since the check
+      needs the network and a release shouldn't fail on it.
 9. **Milestones**. The requirements describe the finished product; this is the
    order to build it in. Each milestone ends with `web/check` passing, a Docker image that
    runs, and the generated mockup covering what was built.
@@ -308,11 +346,51 @@
          window, `/link/` as a path, sync oldest to newest with its progress, and Pause for a
          duration with Resume now (S12.13).
       9. **The mockup** generated from the app for these screens, and the Docker image.
-   7. **The first release** follows the milestones, and needs besides: the MoneyKata Connector
-      (S18), bitcoin wallets tried against live nodes (Fulcrum, electrs, Bitcoin Core 27
-      and later, a self-hosted mempool), which the build has no node to try against, and
-      links tried across two real networks (an overlay such as Tailscale, and a forwarded
-      port), not only two servers on one host.
-   8. **After the first release**: learned column positions for statements (S1.3.3.7),
+   7. **Milestone 7**, what the first release still needs, in ten parts. The build has no
+      bitcoin node, arm64 machine, second network or Schwab developer account, so what needs
+      one is built against a mock here and tried for real from the manual test plan
+      (S17.9.7.8):
+      1. **Python 3.14**: `requires-python`, a fresh `uv.lock` with its egress audit
+         (S17.2.1), the image's base, the wheel check and the register, so the connector
+         starts on it too. Every native dependency publishes wheels for it on both
+         architectures, and 3.14 is supported two years longer than 3.12.
+      2. **The connector protocol**: `docs/connector-protocol.md` in the form of the link
+         protocol (pairing from the one-time code, the signed calls, the report, collecting
+         a sealed credential, posting a file, the refusals, the version rule), and the
+         `Connector` and `Connection` tables (`schema.md` §3.2).
+      3. **MoneyKata's side** (S18.4, S18.5): the `/connector/v1/` routes, pairing with its
+         code and re-authentication, Settings › Connector with Pair and Unpair, the two
+         admin alerts and the silent-connector check (S13.4).
+      4. **Connections in the app** (S18.6, S18.7): the account's **Sync using MoneyKata
+         Connector** switch, Profile › Connections, the credential dialog sealing to the
+         connector's key in the browser (X25519 in WebCrypto), the command for typing them
+         on the connector's host, and the owner's alert.
+      5. **The connector core** (S18.1–S18.3): `connector/`, its vault and words, lock and
+         unlock over its socket, pairing, signed calls, the egress allowlist, its image and
+         the `connector` service in `install/compose.yaml` (S18.10), and `operations.md` §8.
+      6. **The Folder driver** (S18.9.1), which needs no credentials and proves the posting
+         path end to end.
+      7. **OFX Direct Connect and Schwab** (S18.9.2, S18.9.3), each built against a mock of
+         its institution: a fake OFX server, and a stub serving recorded shapes of the
+         Trader API's answers. The live Schwab trial is in the test plan.
+      8. **Mocks and the manual test plan**: a fake Esplora, Electrum server and Bitcoin
+         Core RPC speaking the subset MoneyKata uses, for the tests and the generated
+         mockup's recordings; the arm64 image built under QEMU and smoke-run under
+         emulation; and `docs/test-plan.md`, one numbered test per thing the build can't
+         try, each with the environment it needs, its steps and what passing looks like:
+         wallets against Fulcrum, electrs, Bitcoin Core 27 and later and a self-hosted
+         mempool; links over an overlay such as Tailscale and over a forwarded port; the
+         arm64 image on real hardware; the Schwab driver with a real developer account; an
+         install on Proxmox and on TrueNAS (`operations.md` §2.1–2.2); and a restore drill
+         onto a new host. A release says which were run.
+      9. **Hardening**: `web/dev.sh audit` and the register's hash check in `web/check`
+         (S17.2.1), the base image's update process (S13.7.11), and the real receipt
+         fixtures for the reader (S17.5).
+      10. **The mockup** generated from the app for these screens, both images, and
+         `web/check`.
+   8. **The first release** is the seven milestones. The build's branch is committed and
+      pushed part by part, and merges into `main` only once all of it is built and the
+      requirements have their final approval.
+   9. **After the first release**: learned column positions for statements (S1.3.3.7),
       miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of
       [later work](later.md) (L1, L2).

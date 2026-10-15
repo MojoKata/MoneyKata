@@ -73,8 +73,13 @@ _engine = None
 def engine():
     global _engine
     if _engine is None:
+        import onnxruntime
         from rapidocr import RapidOCR
 
+        # ONNX Runtime ships a telemetry client that would upload to Microsoft (its 1DS
+        # collector). Nothing leaves the server but the calls of R3.1, so it is switched off
+        # before the first session is made, whatever the wheel's default.
+        onnxruntime.disable_telemetry_events()
         paths = check_models()
         _engine = RapidOCR(
             params={

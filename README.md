@@ -8,16 +8,17 @@ receipts and tax books, and prepares the numbers a tax return needs. Several peo
 server, and households on other MoneyKata servers can share with named people here, read
 only, in a window of their own.
 
-**Status:** the five milestones (requirements S17.9.1–S17.9.5) are built in `web/`; the gaps
-still open are listed in the requirements' README.
+**Status:** six of the seven milestones (requirements S17.9.1–S17.9.6) are built in `web/`;
+milestone 7 (S17.9.7: the MoneyKata Connector, the mocks and the manual test plan, and the
+hardening) is next. The gaps and the open questions are listed in the requirements' README.
 
 ## Where to start
 
 1. [`docs/requirements/`](docs/requirements/README.md): what MoneyKata is and does, in the
    present tense. Its README holds the decisions (R1), the terminology (R2) and the design
-   principles (R3), and lists the sections S1–S17, the gaps not yet specified (G1, G2, …)
+   principles (R3), and lists the sections S1–S18, the gaps not yet specified (G1, G2, …)
    and the open questions (Q1, Q2, …). S17 has the stack, the layout and the milestones
-   (S17.9: the order to build in).
+   (S17.9: the order to build in); S18 is the MoneyKata Connector, a second service.
 2. [`docs/schema.md`](docs/schema.md): the database conventions: naming, prefixed UUIDv7
    ids, soft deletes and the table prefixes.
 3. [`docs/mockups/MoneyKata-mock.html`](docs/mockups/MoneyKata-mock.html): the clickable
@@ -48,7 +49,9 @@ A Python server (FastAPI under Hypercorn, SQLite encrypted with SQLCipher, SQLAl
 tables mapped onto plain dataclasses, Alembic migrations) and a browser app with no build step
 (Preact, HTM, signals and preact-iso as vendored ES modules under a strict CSP, charts with
 Apache ECharts). Deno type-checks the JavaScript, and Playwright for Python runs the browser
-tests. No Node.js. One Docker image for amd64 and arm64, on port 37373. See requirements S17.
+tests. No Node.js. One Docker image for the server, for amd64 and arm64, on port 37373, and
+one for the connector (S18). See requirements S17; [`docs/dependencies.md`](docs/dependencies.md)
+lists every library with its purpose, its risks and when to look at it again.
 
 ## Development
 

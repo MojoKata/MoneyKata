@@ -46,7 +46,11 @@ follows Backups, and Connector (18), which follows Linked servers:
     its recovery phrase and when, rotation progress and the date the previous key can go, the
     progress of a re-encryption, and anything that cannot be opened. Buttons: **Test** and
     **Re-encrypt**. The master key itself is only ever changed on the host.
-14. **Network**: address ranges allowed to `/ui` and to `/link`.
+14. **Network**: the address ranges allowed to reach each path, one list per line, empty for
+    any: **the app** (`/ui`, and `/mcp` with it: an agent sits where a person's browser does,
+    and its token is already the user's); **linked servers** (`/link`); and **the connector**
+    (`/connector`, S18), the LAN and the overlay by default, so a connector on a laptop away
+    from home (S18.1) needs an admin to widen it. `/healthz` and `/demo` answer any address.
 15. **TLS** (in `tls` mode): the listener's certificate and key.
 16. **Alerts** (S12.11): how long a source may fail before it raises an alert (48 hours
     by default), and the time of the daily summary email (07:00 by default, in each user's

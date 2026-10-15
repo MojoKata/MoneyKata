@@ -164,7 +164,8 @@
        1. **for admins**: a source that has failed for longer than the threshold in Settings
           › Alerts (48 hours by default): the bitcoin explorer or node, a price source, email
           that can't be sent, or a linked server's pulls; a backup that failed;
-          a link's first share waiting for its access key (S11.9.2); and the yearly check of
+          a link's first share waiting for its access key (S11.9.2); the MoneyKata Connector
+          locked, or not heard from for 15 minutes (S18.5); and the yearly check of
           the master key's recovery phrase (S15.6.5), due a year after the phrase was last
           confirmed with `keys verify`, or after the key was made. An admin's alert about someone else's
           account names its owner and source, never the account's name or figures (S10.2);

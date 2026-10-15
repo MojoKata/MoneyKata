@@ -12,8 +12,10 @@ ask it for anything.
    1. **A core** (the vault, the schedule, the pairing, the signed calls to MoneyKata and an
       egress allowlist) and **drivers**, one per institution or method, each fetching what
       its institution offers and turning it into files MoneyKata already imports (S18.8).
-   2. **Small enough to read.** Python with the standard library and at most one pinned,
-      hashed dependency per driver; no import from MoneyKata. Each driver declares the hosts
+   2. **Small enough to read.** Python with the standard library, plus the `cryptography`
+      wheel for the core alone (its Ed25519 and X25519 keys and the vault's AES-GCM, which
+      the standard library doesn't provide) and at most one pinned, hashed dependency per
+      driver; no import from MoneyKata. Each driver declares the hosts
       it talks to, the credentials it needs and what it sends, and a test fails when a driver
       reaches another host or grows past 400 lines, or the core past 600.
 2. **Isolation**: the rules the design rests on.
@@ -50,16 +52,23 @@ ask it for anything.
       new words, and every Connection's credentials are entered again (S18.7).
 4. **Pairing with MoneyKata**, once, as two servers are linked (S11.1).
    1. An admin chooses **Settings › Connector › Pair** in MoneyKata, which shows a one-time
-      **pairing code**: MoneyKata's address, its key's fingerprint and a one-time secret,
-      valid 24 hours.
+      **pairing code**: MoneyKata's address, its link key's fingerprint and a one-time secret,
+      valid 24 hours, in the form of a link code (`mkp1.` and base64url of `{a, f, c}`,
+      `docs/link-protocol.md` §4.1), of which MoneyKata keeps only the secret's hash.
    2. On the connector's host: `docker compose exec connector moneykata-connector pair
       <code>`. The connector makes its **identity key** (Ed25519, for signing) and its
       **sealing key** (X25519, for credentials sent to it, S18.7.1), introduces itself with
-      the code, and both sides show the connector's fingerprint for the admin to compare.
+      the code in one call (`POST /connector/v1/pair`: the code and the two public keys),
+      and both sides show the connector's fingerprint for the admin to compare.
    3. **Every call it makes is signed** with its identity key, with a timestamp and a nonce,
-      as link calls are (S11.1.3), at `/connector/v1/` on MoneyKata's address. MoneyKata
-      keeps only the public keys. One connector is paired with a server at a time: pairing
-      another replaces it, as Unpair would (S18.4.4).
+      as link calls are (S11.1.3), at `/connector/v1/` on MoneyKata's address, and every
+      answer is signed by MoneyKata's link key, so the connector knows it reached the server
+      it paired with. The path carries the protocol's version; a call also names it in a
+      header, and one MoneyKata doesn't speak is refused naming the versions it does, as
+      links are (`docs/link-protocol.md` §5). `docs/connector-protocol.md` states the
+      protocol in the link protocol's form. MoneyKata keeps only the public keys. One
+      connector is paired with a server at a time: pairing another replaces it, as Unpair
+      would (S18.4.4).
    4. **Unpair** (Settings › Connector) refuses its key from then on, stops every Connection,
       and turns every account's sync off; the connector deletes the credentials it held for
       that server.
@@ -68,7 +77,10 @@ ask it for anything.
       the vault.
 5. **Status and alerts.** Every 5 minutes the connector reports, signed: whether it is
    locked, and each Connection's state and last run (*ok, 14 new*; *needs a sign-in*;
-   *failing: the institution refused the password*). MoneyKata shows it and alerts admins
+   *failing: the institution refused the password*) with the institution accounts it found
+   (name and last four digits, S18.6.1). The answer carries what waits for the connector:
+   sealed credentials to collect, by Connection (S18.7.1), and Connections removed
+   (S18.6.4), whose credentials it then deletes. MoneyKata shows the report and alerts admins
    (S12.11):
    1. **the connector is locked**: unlock it on its host;
    2. **the connector hasn't been heard from for 15 minutes**: it is stopped, down, or can't
@@ -97,7 +109,9 @@ ask it for anything.
 7. **Entering credentials**, chosen per Connection.
    1. **Sealed for the connector** (the usual way): the owner types the credentials in
       MoneyKata, and **the browser encrypts them to the connector's sealing key** before
-      anything is sent (an X25519 sealed box). MoneyKata keeps only the ciphertext, which it
+      anything is sent (an X25519 sealed box, made with the browser's own WebCrypto, which
+      current Chrome, Edge, Safari and Firefox provide; a browser without it is offered only
+      the stricter way below). MoneyKata keeps only the ciphertext, which it
       can't open, until the connector collects it on its next report, files it in its vault
       and confirms; MoneyKata then deletes it. A sign-in through the institution's own page
       (OAuth, as Schwab's) works the same way: the connector reports the sign-in address,
@@ -111,7 +125,10 @@ ask it for anything.
       the admin does.
 8. **What drivers send**: files MoneyKata already imports, posted for one account through
    the same import as an upload (S1.3): OFX or QFX, CSV with the account's saved mapping, or
-   a PDF statement. Imports are idempotent, so a repeated post adds nothing. A PDF is kept
+   a PDF statement. Imports are idempotent, so a repeated post adds nothing. A post counts
+   against the upload limit of the Connection's owner (S13.7.5.3); refused for the limit, the
+   connector keeps the file and posts it on a later run, so a backlog (a folder of old
+   statements) arrives over a few hours rather than failing. A PDF is kept
    without reading (S1.3.3.6), or, where MoneyKata reads that kind, waits in the account's
    inbox for its owner to check: nothing read from a PDF is saved unchecked. Every post is
    recorded in Activity as *by MoneyKata Connector, Alice's Schwab login*.

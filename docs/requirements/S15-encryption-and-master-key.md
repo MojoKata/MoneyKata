@@ -158,7 +158,8 @@ what key rotation does.
       2. **back up the new phrase at once** (S15.6), then restart the server;
       3. verify the new phrase (`keys verify`);
       4. **keep the previous key until every backup made before the rotation has been
-         pruned** (the backup retention, S14.6, is 14 days by default), because those
+         pruned** (backup pruning, S14.6, keeps 14 copies by default: two weeks of daily
+         backups, and fewer days when backups are also made by hand), because those
          backups hold the data key wrapped under it. Then remove it from `previous`, delete
          the old key file, and destroy its recovery sheet and password-manager entry.
          Settings names the date after which the previous key is no longer needed.

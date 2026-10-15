@@ -9,8 +9,11 @@ services:
   moneykata:
     image: moneykata:0.1.0
     restart: on-failure:3   # a refused start (exit 78) is not retried in a loop (S13.6)
+    # Plain HTTP in proxy mode, so it is published on the host's loopback only: a proxy on
+    # the host reaches 127.0.0.1:37373, and one in this compose project reaches
+    # moneykata:37373 by name (proxy/) with no published port needed at all.
     ports:
-      - "37373:37373"
+      - "127.0.0.1:37373:37373"
     volumes:
       - ./data:/var/lib/moneykata
       - ./backups:/var/backups/moneykata

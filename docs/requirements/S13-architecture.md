@@ -32,7 +32,10 @@
    loopback, link-local or cloud metadata addresses unless an admin allows one by name; with
    timeouts and response-size ceilings. Email goes through the standard library's SMTP
    client, past the same guard; its host is one an admin named in Settings › Email, so it
-   counts as allowed by name.
+   counts as allowed by name. The guard sees only the server's own clients, not a library's
+   own client or native code, so every dependency is audited for what it could reach on its
+   own, each time a dependency changes (S17.2.1), and any switch that turns such a call off
+   is thrown before the library is first used.
 6. **Stopping**: on SIGTERM the server ends every event stream, lets requests in flight finish
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
    cannot start for a reason only an operator can fix (a config file it can't use, a file
@@ -89,7 +92,9 @@
    10. **TLS** (in `tls` mode): TLS 1.2 and 1.3 only, with the server's default modern cipher
        suites; HTTP/2.
    11. **Supply chain**: Python dependencies pinned with hashes in `uv.lock`; the image built
-       from a pinned base and rebuilt for security updates. Browser libraries are vendored
+       from a base pinned by digest, which moves with each release and between releases when
+       Debian or Python publishes a fix for something the image uses (S17.8.5), since the
+       same digest always gives the same packages. Browser libraries are vendored
        (S17.3.1) and adopted only through one gate, which is what stands against a
        compromised release upstream: a version is taken only after a 14-day cooldown (most
        malicious releases are found and pulled within days), its download must match the

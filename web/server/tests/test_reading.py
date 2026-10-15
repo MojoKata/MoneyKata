@@ -81,6 +81,18 @@ def test_the_shipped_models_are_the_pinned_ones():
     assert set(ocr.check_models()) == {"det", "cls", "rec"}
 
 
+def test_the_engine_switches_onnxruntime_telemetry_off(monkeypatch):
+    """The wheel carries a client that uploads to Microsoft; the reader turns it off before its
+    first session, since nothing leaves the server but the calls of R3.1."""
+    import onnxruntime
+
+    calls = []
+    monkeypatch.setattr(onnxruntime, "disable_telemetry_events", lambda: calls.append(True))
+    monkeypatch.setattr(ocr, "_engine", None)
+    assert ocr.engine() is not None
+    assert calls == [True]
+
+
 def _png(img: Image.Image) -> bytes:
     out = io.BytesIO()
     img.save(out, "PNG")

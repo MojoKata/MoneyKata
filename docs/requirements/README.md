@@ -1,6 +1,6 @@
 # MoneyKata: requirements
 
-Status: **DRAFT** 2026-10-10. MoneyKata is a self-hosted **personal finance server** for a
+MoneyKata is a self-hosted **personal finance server** for a
 household or a small group of people. It holds their accounts (bank, brokerage, crypto
 exchange, self-custody wallets, IRA, Roth IRA, 401(k)), tracks holdings and positions (options
 included), charts portfolios, projects future value, keeps budgets and receipts, and prepares
@@ -24,7 +24,8 @@ gap, `L1` later work and `Q8` an open question.
    holds S1.2), and keeps a summary with a table of them in the form of the one below.
    References do not change.
 3. **A statement, not a changelog.** The requirements say what MoneyKata is and does, in the
-   present tense; git holds their history.
+   present tense, and carry no dates, versions or status of their own; git holds their
+   history, and the repository's README says where the build stands.
 
 **Mockup:** [`../mockups/MoneyKata-mock.html`](../mockups/MoneyKata-mock.html) is the
 clickable mockup. It is one file that opens from disk and sends nothing anywhere. It is
@@ -57,13 +58,23 @@ opens the dialogs.
 
 ## Gaps
 
-Areas named but not yet specified ([gaps.md](gaps.md)).
+Areas named but not yet specified ([gaps.md](gaps.md)), each ranked High, Med or Low.
 
-None open. A new gap takes the next id after G19.
+| Id | Gap | Rank |
+|---|---|---|
+| **G23** | [Real receipt fixtures for the reader](gaps.md#g23-real-receipt-fixtures-for-the-reader--low) | Low |
+
+A new gap takes the next id after G24.
+
+## Open questions
+
+What waits on a decision ([questions.md](questions.md)), each ranked High, Med or Low.
+
+None open. A new question takes the next id after Q18.
 
 ## Later work
 
-Work planned for after the first release ([later.md](later.md), S17.9.8).
+Work planned for after the first release ([later.md](later.md), S17.9.9).
 
 | Id | Item | What it is |
 |---|---|---|
@@ -72,7 +83,7 @@ Work planned for after the first release ([later.md](later.md), S17.9.8).
 
 ## Also here
 
-- [Open questions](questions.md): what waits on a decision.
+- [Open questions](questions.md): what waits on a decision, listed above.
 - [Later work](later.md): what comes after the first release.
 - [Out of scope](out-of-scope.md): what MoneyKata does not do.
 - [Rejected ideas](rejected-ideas.md): ideas weighed and turned down, with the reason.
@@ -170,7 +181,8 @@ The rulings the rest of the requirements apply.
 26. **Account data comes from files the user brings.** Bank, card, brokerage and exchange
     accounts are kept current from files: OFX/QFX and CSV downloads, PDF statements, and
     photos of statements read on the server. There is no bank-aggregation service (S1.3,
-    [rejected ideas](rejected-ideas.md)). **Bitcoin** is the one chain watched, through a public explorer or the household's
+    [rejected ideas](rejected-ideas.md)); the household's own MoneyKata Connector fetches
+    such files for the accounts whose owners turn its sync on (S18). **Bitcoin** is the one chain watched, through a public explorer or the household's
     own node; other coins and exchanges' APIs come later (S1.5, S1.6).
 
 # R2. Terminology
@@ -261,7 +273,9 @@ The rulings the rest of the requirements apply.
    something is shared with it. Price sources and the bitcoin explorer are off until
    configured.
 6. **Never hold the keys to the money.** There are no private keys, seed phrases or trading
-   permissions, and no credentials for a bank or an exchange.
+   permissions, and MoneyKata itself holds no credentials for a bank or an exchange: the
+   sign-ins the MoneyKata Connector keeps live only in its own vault, which MoneyKata can
+   neither open nor ask for (S18.2).
 7. **One store, live on the next request.** There are no caches between the database and a
    request, so a change (a share revoked, a rule edited) applies to the very next one. A record
    is validated as a whole when saved, every change is saved explicitly, and a refusal names

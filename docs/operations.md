@@ -59,8 +59,11 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 3. **Make the master key**: `docker compose run --rm keys-init`. It shows the **recovery
    phrase**, 12 words, and won't finish until you type three of them back. Store the phrase
    as S15.6 says: two copies in two places, one offline, never with the backups.
-4. **Start it**: `docker compose up -d`, then point the reverse proxy at port 37373 and set
-   `trusted_proxies` in `moneykata.toml` to the proxy's addresses. A server with no users
+4. **Start it**: `docker compose up -d`, then point the reverse proxy at it and set
+   `trusted_proxies` in `moneykata.toml` to the proxy's addresses. The listener speaks plain
+   HTTP in `proxy` mode, so the compose file publishes it on the host's loopback only: a
+   proxy running on the host reaches `127.0.0.1:37373`, and one running in the same compose
+   project (`proxy/` is written that way) reaches `moneykata:37373` by name. A server with no users
    makes `admin` with a default password; its first sign-in asks for a new password and an
    email address (S10.1.2).
 
