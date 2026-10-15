@@ -37,12 +37,13 @@ preparer.
    name, who it names and the date it was shared: its name and figures stay inside the
    encrypted linked copy (S11.9). A linked share cannot be re-shared on the other side, not
    even with another link. Each server also sends the other its **list of active users**
-   (display name, username, email and stable id) and its **household name and avatar**
+   (display name, username, email, sex and stable id) and its **household name and avatar**
    (S16.1), at every pull. The receiving server keeps each remote user as a record, updated
    by its id: a new user is added, a changed name, username, email or active flag is updated
    in place, and a user no longer on the list is soft-deleted, and restored if they return.
    When the link ends, its users are soft-deleted. Shares that name a remote user keep
-   pointing at the same record throughout.
+   pointing at the same record throughout. Each remote user is a person here too, for gifts
+   (S10.10.1).
    1. **Each item travels as its screens show it, worked out at the source.** A budget's
       actuals, a giving plan's pace and a tax book's panels are computed from accounts that
       may not be shared themselves. The owner's server sends the figures and the entries
@@ -67,8 +68,8 @@ preparer.
       made per share. They then travel with their dates, amounts, payees and the text read
       from them (S9.8), so the receiving side never runs OCR on them. Without the tick, the
       other side sees only how many receipts a transaction has.
-   2. **Never**: secrets, categorisation rules, groups, gifts for a person linked to a user
-      of that server (S7.8.5), the accounts behind a shared item's figures unless they are
+   2. **Never**: secrets, categorisation rules, groups, gifts for a person who is a user of
+      that server (S7.8.5), the accounts behind a shared item's figures unless they are
       shared too, and anything not shared with someone on that server. Of the source's
       users, only the active-user list (S11.3) crosses. Prices travel only as values already computed, with their
       `as_of` (S4.9).
@@ -82,13 +83,13 @@ preparer.
       far and the sizes what has arrived of what the source said it would send.
    2. **Pause** stops pulling, and answering the peer's pulls, for a **duration** the admin
       types (S12.13), `1d` by default, after which the link resumes on its own; *Resume now*
-      ends it early. A paused link shows when it resumes, and isn't alerted as unreachable. For the linked copy it shows the changes
-   waiting to be applied, when its access key was made and by whom, and whether it is
-   unlocked (by whom, and when it will lock), with *Create the access key* (S11.9.2), *Lock
-   now* and *Reset copy* (S11.9.8). The section also sets **Release linked keys after**
-   (S11.9.4), one hour unused by default.
+      ends it early. A paused link shows when it resumes, and isn't alerted as unreachable.
+   3. **The linked copy**: the changes waiting to be applied, when its access key was made
+      and by whom, and whether it is unlocked (by whom, and when it will lock), with *Create
+      the access key* (S11.9.2), *Lock now* and *Reset copy* (S11.9.8). The section also
+      sets **Release linked keys after** (S11.9.4), one hour unused by default.
 8. **Audit**: each pull is recorded on both sides (who, when, which shares, how much
-   changed). The receiving side records who viewed linked data, as for any account, and
+   changed), and each pause and resume on the side that made it. The receiving side records who viewed linked data, as for any account, and
    every unlock (who), failed unlock, release (unused, Lock now or restart), access key made,
    and reset of a linked copy.
 9. **Linked copies: kept apart and encrypted**. What a link brings in is
@@ -102,7 +103,7 @@ preparer.
       ```
       links/<link-id>/
         shared.db                 SQLCipher: accounts, holdings, positions, transactions,
-                                  series, budgets, people and gifts, giving plans, tax
+                                  series, budgets, gift plans and gifts, giving plans, tax
                                   books, receipt records, the text read from receipts,
                                   thumbnails, and what has been applied
         receipts/<random-id>.mkr  one encrypted file per receipt (S11.9.6)

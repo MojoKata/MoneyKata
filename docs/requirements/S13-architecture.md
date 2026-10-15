@@ -1,14 +1,16 @@
 # S13. Architecture
 
 1. One HTTPS address. `/` redirects to `/ui`. `/ui/*` serves the app and `/ui/api/*` its API.
-   `/link/*` is the linked-server API (S11). `/mcp` is the read-only endpoint for agents
-   (S10.9). `/healthz` is the health check. `/demo` serves the clickable mockup (S12.9) to
+   `/link/*` is the linked-server API (S11). `/connector/v1/*` is where the paired
+   MoneyKata Connector posts its reports and files (S18.4.3). `/mcp` is the read-only
+   endpoint for agents (S10.9). `/healthz` is the health check. `/demo` serves the clickable mockup (S12.9) to
    anyone, without signing in: it holds only sample data, runs in a sandbox with an opaque
    origin, and can reach neither the app's cookie nor its API.
 2. **Authentication**: server-side sessions for `/ui/api` (a random token stored hashed, in an
    HttpOnly, Secure, SameSite=Strict cookie, with an `Origin` check on every change; idle and
-   absolute lifetimes are Settings). Signed peer requests for
-   `/link` (S11.1). Neither is accepted on the other's path.
+   absolute lifetimes are Settings). Signed peer requests for `/link` (S11.1), and the paired
+   connector's signed requests for `/connector` (S18.4.3). None is accepted on another's
+   path; `/mcp` takes only its access tokens (S10.9).
 3. **Port 37373**, on all of the container's interfaces; the host's port mapping and firewall
    decide what reaches it. **Two listener modes**, one switch in `moneykata.toml`:
    **`proxy`**, plain HTTP behind haproxy, Caddy or nginx, which ends TLS (forwarded headers
@@ -21,7 +23,8 @@
 4. **Background tasks** in the server process: price refresh (S4.4), bitcoin wallet reads
    (S1.6), link pulls (S11.4), option expiry (S3.6), backups (S14.6), sending email
    (S16.2), alerts and their daily summary (S12.11), receipt and statement reading (S9.8,
-   S1.3, in its own worker process), and pruning. Recurring transactions are found when
+   S1.3, in its own worker process), the linked copies' sweeper (S11.9.4), and the check for
+   statements overdue (S1.11.7) and a silent connector (S18.5). Recurring transactions are found when
    they are shown (S7.5). Each records its last run and error, which Settings shows.
    They run in a thread pool with per-provider rate limits and never block a request.
 5. **Outbound calls** go through one httpx client with an **egress guard**: only the hosts of
@@ -167,7 +170,8 @@
    8. **Idempotency**: a `POST` that creates may carry `Idempotency-Key`; a repeat within 24
       hours returns the first answer. Imports are idempotent by their content (S1.3).
    9. **Versioning**: `/ui/api` is served with the app and changes with it, so it carries no
-      version; the OpenAPI document states the release. `/mcp` and `/link` are versioned in
-      their own protocol (`docs/link-protocol.md`).
+      version; the OpenAPI document states the release. `/link` is versioned in its protocol
+      (`docs/link-protocol.md`), `/connector` by its path (`/connector/v1/`), and `/mcp` by
+      the protocol version the client and server agree on.
    10. **Visibility**: every read goes through the caller's shares (S10.3) and the soft-delete
        views (`schema.md` §4.2). A list never counts or hints at what the caller can't see.
