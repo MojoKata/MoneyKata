@@ -186,7 +186,7 @@ Records are never removed from the database: they are marked deleted. The except
       link brings in, replaced from each pull.
 
    Activity entries and alerts are never deleted at all: Activity is kept as it was
-   written until it is pruned (§6), and alerts are resolved, then age out of the list
+   written, and alerts are resolved, then age out of the list
    (requirements S12.11).
 
 ## 5. Checks
@@ -202,14 +202,16 @@ A test fails when:
 
 ## 6. Ended records
 
-Database pruning (requirements S14.10) removes records that ended more than seven years ago. When a
-record ended is worked out, never stored, so it follows the records as they change.
+Records are never removed (requirements S14.10). When a record ended decides when the files
+attached to it (receipts, statements) expire under their retention, and so when file pruning
+may remove them. When a record ended is worked out, never stored, so it follows the records
+as they change.
 
-1. **`endedAt`**: each soft-deleting table, and Activity, has a view, `<Table>Ended`, with its keys and
-   `endedAt`: when the record stopped being needed for anything ongoing, or null while it
-   still is. The views are generated from the table declarations, like the
-   `<Table>Effective` views (§4.2), and only database pruning reads them, so their cost never falls
-   on everyday queries.
+1. **`endedAt`**: each table a file can be attached to has a view, `<Table>Ended`, with its
+   keys and `endedAt`: when the record stopped being needed for anything ongoing, or null
+   while it still is. The views are generated from the table declarations, like the
+   `<Table>Effective` views (§4.2), and only file pruning and a file's *Kept until* read
+   them, so their cost never falls on everyday queries.
 2. **Its own end**: declared with the table, as an expression over its own row and the
    rows it is deleted with. A deleted record's own end is the earlier of its declared end and
    its `effectiveDeletedAt`. Without a declared end, a record ends only when it is effectively
@@ -217,7 +219,7 @@ record ended is worked out, never stored, so it follows the records as they chan
 
    | Its own end | Tables |
    |---|---|
-   | never | `Instrument`, `Price` (requirements S4.6), `TaxFigure`, `Setting` while set; `TaxBook` (never pruned, S14.10.5) and with it `Filing`, `EstimatedPayment`, `TaxDocument`, `TaxBookFilers`, `TaxBookAccounts`; `User` (users are made inactive, not deleted, S10.2) |
+   | never | `Instrument`, `Price` (requirements S4.6), `TaxFigure`, `Setting` while set; `TaxBook` and with it `Filing`, `EstimatedPayment`, `TaxDocument`, `TaxBookFilers`, `TaxBookAccounts`; `User` (users are made inactive, not deleted, S10.2) |
    | its date | `Transaction`, `Anchor`, `Holding` (as of), `Reconciliation` (the statement's), `Donation`, `QualifiedExpense`; `Receipt` (its own date, or when it was uploaded) |
    | an event | `Account`: deleted, or closed with nothing in it still open; `Lot`: the sale of its last share; `Import`: its latest transaction's end; `BudgetLine`: the month before a later line for its category starts; `Gift`, given or received: the later of its occasion and its purchase; `Occasion` with a year: its date; `GivingPlan`: the end of its year; `Item`: its sale; `AccessToken`: expiry or revoking; `SignupRequest`: decided, or expired unconfirmed; `Link`: unlinked; `Relationship`: its `to` date |
    | when deleted | `Budget`, `Portfolio`, `Projection`, `AssumptionSet`, `Person`, `GiftPlan`, a `Gift` still an idea or planned, `Organisation`, `PayoffPlan`, `Group`, `Share`, `PriceSource`, `ImportMapping`, `StatementLayout`; a remote `User` with its link |
@@ -231,7 +233,7 @@ record ended is worked out, never stored, so it follows the records as they chan
    |--------------------|--------------------------------------------------|--------|
    | **deleted with**   | the record is deleted with it (`ondelete="CASCADE"`, §4.2) | it ends with its parent, which ends no earlier than it |
    | **keeps ref**      | the record stays and shows the parent, marked deleted | the parent ends no earlier than the record |
-   | **keeps name**     | the record stays and shows the parent's name as it was, marked deleted or closed | each ends on its own; the record keeps a copy of the parent's name beside the key, so a pruned parent still reads right |
+   | **keeps name**     | the record stays and shows the parent's name as it was, marked deleted or closed | each ends on its own; the parent's row stays, deleted, so its name is read from it |
    | **nullifies**      | the record stays and the key is cleared          | each ends on its own |
    | **prevents delete**| deleting the parent is refused while the record exists | each ends on its own |
 
@@ -256,4 +258,4 @@ record ended is worked out, never stored, so it follows the records as they chan
    person alone; gifts bought, given or received keep the person's name (requirements
    S7.8.6).
 5. **Prices** never end (requirements S4.6), and the exceptions of §4.4 are removed on
-   their own schedules, not pruned.
+   their own schedules.
