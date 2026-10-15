@@ -76,6 +76,7 @@ document is the protocol's statement; the code that speaks it is `web/server/src
 | `POST /link/v1/ping` | yes | pending, requested, active, paused | `{protocol, version, state}`: the link's state on the answering side |
 | `POST /link/v1/join` | yes, by the caller's own key | an invitation | answers a link code (section 4.1) |
 | `POST /link/v1/exchange` | yes | active; pending on the joining side | the directories both ways, and the answering side's change for the caller (section 4.3) |
+| `POST /link/v1/next` | yes | active | the next part of a large change the caller is pulling (section 4.4) |
 | `POST /link/v1/deliver` | yes | active | the caller's change for the answering side (section 4.3) |
 | `POST /link/v1/end` | yes | requested, pending, active, paused | the link ended on the calling side |
 
@@ -119,9 +120,14 @@ S10.10.1), used only for gifts.
    change it took from the answering side, and `wantFull` asks for everything (a new or reset
    copy, an overflowed inbox, a change out of sequence).
 3. The answer carries `{…directory, state, version, have, wantFull}` for the other direction,
-   and `change`, the answering side's change for the caller, when there is one.
+   and `change`, the answering side's change for the caller, when there is one, with `more`,
+   how many parts of it are still to come (section 4.4); the caller asks for each with
+   `next`, sending its `have`, until `more` is 0.
 4. The caller then makes its own change for the answering side, from the `have` and
-   `wantFull` in the answer, and sends it with `deliver`, answered with the new `have`.
+   `wantFull` in the answer, and sends it with `deliver`, a part at a time, each answered with
+   the new `have`.
+5. A side whose link is paused refuses with `link-paused`, its message saying until when; the
+   caller waits and doesn't count it as a failure, so no one is alerted.
 
 ### 4.4 Changes
 
@@ -136,6 +142,9 @@ A change brings the receiver from its `have` to now:
 | `removed` | ids of items no longer shared |
 | `docs` | documents added or changed: `itemId`, `path`, `viewer`, `body` |
 | `docsRemoved` | documents gone: `itemId`, `path`, `viewer` |
+| `files` | receipts' files added, when their share includes them: their id, item, type, length, hash, thumbnail and what was read from them; the bytes are fetched on their own |
+| `filesRemoved` | receipts' files gone (unshared, or pruned at the source, S14.10.6) |
+| `progress` | in a large change's parts: `through`, the newest date the parts so far reach; `bytes`, what they hold; `total`, what the whole change holds |
 | `signature` | Ed25519 by the sender's link key over the rest as canonical JSON (keys sorted, no spaces) |
 
 1. The sender works each item out as each person it names would see it, with the code its own
@@ -145,7 +154,13 @@ A change brings the receiver from its `have` to now:
    trends; a tax book and its panels; a projection; a year's giving; a person's gifts.
 2. The sender keeps a hash of each document it last sent, so only what changed travels. A
    receiver whose `have` isn't the sender's last `seq` gets everything.
-3. The receiver checks the signature and that `seq` follows its `have` (or that the change is
+3. **A large change travels in parts**, oldest to newest (S11.4): past 4 MB of documents and
+   files, the first part carries the items and what was removed, and the documents and files
+   follow by the newest date each holds, each part signed and numbered as a change of its own
+   with its `progress`. The copy fills from its earliest records and is usable up to a date
+   while the rest arrives, and the receiver shows how far it has come (*Up to July 2022, 47 MB
+   of 2 GB*). A part missed or out of turn makes the next exchange ask for everything.
+4. The receiver checks the signature and that `seq` follows its `have` (or that the change is
    `full`); otherwise it asks for everything at its next exchange. It keeps each item's id,
    kind, owner's name, date and the people it names in its main database, and seals the
    change whole into the link's copy (S11.9.5), where it is applied, its signature checked

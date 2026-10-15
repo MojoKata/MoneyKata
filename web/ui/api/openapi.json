@@ -12562,6 +12562,18 @@
         "title": "PasswordChange",
         "type": "object"
       },
+      "PauseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "for": {
+            "default": "1d",
+            "title": "For",
+            "type": "string"
+          }
+        },
+        "title": "PauseIn",
+        "type": "object"
+      },
       "Payment": {
         "additionalProperties": false,
         "properties": {
@@ -21805,6 +21817,18 @@
               }
             ]
           },
+          "pausedUntil": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pauseduntil"
+          },
           "peerName": {
             "anyOf": [
               {
@@ -21835,6 +21859,40 @@
             "title": "State",
             "type": "string"
           },
+          "syncBytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syncbytes"
+          },
+          "syncThrough": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syncthrough"
+          },
+          "syncTotal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synctotal"
+          },
           "users": {
             "items": {
               "$ref": "#/components/schemas/RemoteUser"
@@ -21859,6 +21917,10 @@
           "failingSince",
           "createdAt",
           "endedAt",
+          "pausedUntil",
+          "syncThrough",
+          "syncBytes",
+          "syncTotal",
           "users"
         ],
         "title": "LinkOut",
@@ -32592,7 +32654,7 @@
     },
     "/ui/api/settings/links/{link_id}/copy-key": {
       "post": {
-        "description": "Create the access key (S11.9.2.1): 12 words, shown once.",
+        "description": "Create the access key (S11.9.2.1): 12 words, shown once; the password again if given\nover 10 minutes ago (S13.6.2).",
         "operationId": "make_copy_key_ui_api_settings_links__link_id__copy_key_post",
         "parameters": [
           {
@@ -32720,6 +32782,7 @@
     },
     "/ui/api/settings/links/{link_id}/pause": {
       "post": {
+        "description": "Pause for a duration, after which it resumes on its own (S11.7.2).",
         "operationId": "pause_ui_api_settings_links__link_id__pause_post",
         "parameters": [
           {
@@ -32732,6 +32795,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PauseIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -32805,6 +32885,7 @@
     },
     "/ui/api/settings/links/{link_id}/reset-copy": {
       "post": {
+        "description": "The copy deleted and taken again in full; the password again if given over 10 minutes\nago (S13.6.2).",
         "operationId": "reset_copy_ui_api_settings_links__link_id__reset_copy_post",
         "parameters": [
           {

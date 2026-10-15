@@ -12,7 +12,7 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import UtcTimestamp
+from ..types import Day, UtcTimestamp
 from ._base import exception, pairs, record, unique_live
 
 # A link with another server (S11.1). On the inviting side it starts as an invitation (its
@@ -40,6 +40,13 @@ Link = record(
     Column("peerVersion", Text),
     Column("peerProtocol", Integer),
     Column("endedAt", UtcTimestamp),
+    # Paused for a duration: it resumes on its own then (S11.7.2).
+    Column("pausedUntil", UtcTimestamp),
+    # A large change arriving in parts, oldest first (S11.7.1): the newest record's date so far,
+    # and what has arrived of what the source said it would send.
+    Column("syncThrough", Day),
+    Column("syncBytes", Integer),
+    Column("syncTotal", Integer),
     # The linked copy's access key (S11.9.2): its public key only, and who made it when. The
     # copy key itself is never stored.
     Column("copyPublicKey", Text),

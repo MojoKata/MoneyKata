@@ -25,6 +25,10 @@ class Link(Record):
     peerVersion: str | None = None
     peerProtocol: int | None = None
     endedAt: dt.datetime | None = None
+    pausedUntil: dt.datetime | None = None
+    syncThrough: dt.date | None = None
+    syncBytes: int | None = None
+    syncTotal: int | None = None
     copyPublicKey: str | None = None
     copyKeyAt: dt.datetime | None = None
     copyKeyById: str | None = None

@@ -49,7 +49,14 @@ async def verified(request: Request, states=("active",)) -> tuple[Link, signing.
     if link is None:
         raise signing.Refused("not-linked", "This server has no link with yours.")
     if link.state not in states:
-        raise signing.Refused(f"link-{link.state}", f"The link is {link.state} on this side.")
+        until = (
+            f" until {link.pausedUntil:%b %-d, %H:%M} UTC"
+            if link.state == "paused" and link.pausedUntil
+            else ""
+        )
+        raise signing.Refused(
+            f"link-{link.state}", f"The link is {link.state} on this side{until}."
+        )
     return link, caller, body
 
 
@@ -141,6 +148,19 @@ async def end(request: Request):
 
     answer_end(srv, link)
     return answer(srv, {"state": "ended"}, caller.nonce)
+
+
+@router.post("/next")
+async def next_part(request: Request):
+    """The next part of a large change the caller is pulling (S11.4), oldest first."""
+    srv = request.app.state.server
+    try:
+        link, caller, body = await verified(request)
+    except signing.Refused as e:
+        return refusal(request, e)
+    from .manage import answer_next
+
+    return answer(srv, answer_next(srv, link, exactjson.loads(body or b"{}")), caller.nonce)
 
 
 @router.post("/deliver")

@@ -56,7 +56,9 @@ preparer.
    and receipts and documents when the share includes them.
    It is versioned, and only changes travel. A **first full snapshot**, or a large change,
    travels **oldest to newest**, so the copy fills from its earliest records and is usable,
-   up to a date, while the rest arrives. Each change is **signed by the source's link
+   up to a date, while the rest arrives: a change over about **4 MB** comes in parts, each
+   whole records up to a date, which the receiver fetches one after another and applies as
+   each arrives. Each change, and each part, is **signed by the source's link
    key**, so the receiver can check it again when it applies it later. The receiver keeps
    its last copy in the link's encrypted **linked copy** (S11.9) and shows its age (*as of
    2 hours ago*). Pulls run whether or not anyone has unlocked the copy. When the source is

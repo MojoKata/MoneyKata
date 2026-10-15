@@ -22,9 +22,16 @@ A link works when either side can reach the other: each exchange carries both di
 
 Each link shows its state, its fingerprint and MoneyKata version, and when the last exchange
 worked. **Pull now** exchanges at once rather than at the next hour. **Pause** stops this side
-exchanging until **Resume**. **End link** ends it on both sides: the other side learns at once, or
+exchanging for a time you choose; it shows **paused until** then and resumes on its own, or at
+once with **Resume now**. **End link** ends it on both sides: the other side learns at once, or
 at its next call; its users are removed here, and nothing is deleted on the server that shared.
 A server that can't be reached shows **unreachable since** and the reason.
+
+## Syncing {#progress}
+
+A large change, such as the first pull into a new copy, arrives in parts of about 4 MB, oldest
+first, so what has arrived is usable at once. While parts are still coming the link shows the date
+it has reached and how much of the change has arrived.
 
 ## Linked copies {#linked-copies}
 

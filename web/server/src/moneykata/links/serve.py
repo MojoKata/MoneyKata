@@ -7,6 +7,7 @@ answer this server's API gives the person it names, kept by path. The receiving 
 these and never works anything out again (S11.3.1)."""
 
 import hashlib
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from types import SimpleNamespace
@@ -152,6 +153,8 @@ def _paths(srv, it: Item) -> list[tuple[str, callable]]:
         return [
             (f"/budgets/{i}/month", lambda c: budgets.budget_month(i, r, c, None)),
             (f"/budgets/{i}/trends", lambda c: budgets.budget_trends(i, r, c, None, None, 12)),
+            (f"/budgets/{i}/cash-flow", lambda c: budgets.budget_cash_flow(i, r, c, None)),
+            (f"/budgets/{i}/recurring", lambda c: budgets.budget_recurring(i, r, c)),
         ]
     if it.kind == "tax-book":
         return [
@@ -162,7 +165,10 @@ def _paths(srv, it: Item) -> list[tuple[str, callable]]:
         return [(f"/projections/{i}", lambda c: projections.get_projection(i, r, c))]
     if it.kind == "giving-plan":
         year = int(it.name) if it.name.isdigit() else None
-        return [(f"/giving?year={year}", lambda c: giving.get_giving(r, year, c))]
+        return [
+            (f"/giving?year={year}", lambda c: giving.get_giving(r, year, c)),
+            (f"/giving/donations?year={year}", lambda c: giving.list_donations(r, year, c)),
+        ]
     if it.kind == "gift-plan":
         from ..store.entities.education import GiftPlan
 
@@ -307,10 +313,10 @@ def _hash(body) -> str:
     ).hexdigest()
 
 
-def change_for(srv, link_id: str, have: int, full: bool) -> dict | None:
-    """The signed change that brings the peer from its `have` up to now: everything when it
-    asks, or when its sequence isn't the one last sent; else only what changed. None when
-    nothing has."""
+def change_for(srv, link_id: str, have: int, full: bool) -> list[dict]:
+    """The signed changes that bring the peer from its `have` up to now: everything when it
+    asks, or when its sequence isn't the one last sent; else only what changed. Empty when
+    nothing has; more than one when it is large, oldest first (S11.4)."""
     items, docs = work_out(srv, link_id)
     with srv.db.tx() as s:
         link = s.get(Link, link_id)
@@ -336,7 +342,7 @@ def change_for(srv, link_id: str, have: int, full: bool) -> dict | None:
         new_items = [i for i in items if i not in sent_items]
         item_rows = [items[i] for i in sorted(set(new_items) | touched) if i in items]
         if not full and not changed_all and not gone_all and not gone_items and not item_rows:
-            return None
+            return []
         change["items"] = [
             {
                 "id": it.id,
@@ -359,10 +365,68 @@ def change_for(srv, link_id: str, have: int, full: bool) -> dict | None:
         change["files"] = [docs[k] for k in (docs if full else changed_files) if is_file(k)]
         change["filesRemoved"] = [k[1][5:] for k in gone_files]
         change["docsRemoved"] = [{"itemId": k[0], "path": k[1], "viewer": k[2]} for k in gone_docs]
-        link.sentSeq += 1
-        change["seq"] = link.sentSeq
+        parts = split(change)
+        for part in parts:
+            link.sentSeq += 1
+            part["seq"] = link.sentSeq
         s.execute(delete(LinkSent).where(LinkSent.linkId == link_id))
         for (item_id, path, viewer), h in hashes.items():
             s.add(LinkSent(linkId=link_id, itemId=item_id, path=path, viewer=viewer, hash=h))
         own = keys.private_key(s, srv.keys.secrets)
-    return changes.sign(own, change)
+    return [changes.sign(own, part) for part in parts]
+
+
+PART_BYTES = 4 * 1024 * 1024  # a change larger than this travels in parts
+DAY = re.compile(r"\b(\d{4}-\d{2}-\d{2})")
+
+
+def _newest(entry) -> str:
+    """The newest date an entry holds, for sending the oldest first."""
+    found = DAY.findall(exactjson.dumps(entry))
+    return max(found) if found else ""
+
+
+def _size(entry) -> int:
+    return len(exactjson.dumps(entry))
+
+
+def split(change: dict) -> list[dict]:
+    """A large change as parts that travel oldest to newest (S11.4): the first carries the
+    items and what was removed, then the documents and files, each by the newest date it
+    holds, so the copy fills from its earliest records and is usable up to a date while the
+    rest arrives. Each part says how far it reaches and how much of the whole has come."""
+    entries = [("docs", d) for d in change.get("docs") or []] + [
+        ("files", f) for f in change.get("files") or []
+    ]
+    total = sum(_size(e) for _, e in entries) or 1
+    if total <= PART_BYTES:
+        return [change]
+    entries.sort(key=lambda e: _newest(e[1]))
+    head = {k: v for k, v in change.items() if k not in ("docs", "files")}
+    parts: list[dict] = []
+    cur: dict = {**head, "docs": [], "files": []}
+    size = sent = 0
+    through = ""
+    for kind, e in entries:
+        n = _size(e)
+        if (cur["docs"] or cur["files"]) and size + n > PART_BYTES:
+            cur["progress"] = {"through": through or None, "bytes": sent, "total": total}
+            parts.append(cur)
+            cur = {
+                "asOf": change["asOf"],
+                "full": False,
+                "items": [],
+                "removed": [],
+                "docsRemoved": [],
+                "filesRemoved": [],
+                "docs": [],
+                "files": [],
+            }
+            size = 0
+        cur[kind].append(e)
+        size += n
+        sent += n
+        through = max(through, _newest(e))
+    cur["progress"] = {"through": through or None, "bytes": sent, "total": total}
+    parts.append(cur)
+    return parts

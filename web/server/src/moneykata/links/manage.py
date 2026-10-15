@@ -266,8 +266,10 @@ def approve(srv, link_id: str, by: str) -> Link:
     return link
 
 
-def set_state(srv, link_id: str, by: str, state: str) -> Link:
-    """Reject a request, pause, resume or end a link on this side."""
+def set_state(
+    srv, link_id: str, by: str | None, state: str, until: dt.datetime | None = None
+) -> Link:
+    """Reject a request, pause (until a time), resume or end a link on this side."""
     with srv.db.tx() as s:
         link = _get(s, link_id)
         allowed = {
@@ -279,6 +281,7 @@ def set_state(srv, link_id: str, by: str, state: str) -> Link:
             raise LinkError("state-invalid", f"A link that is {link.state} can't be {state}.")
         was = link.state
         link.state = state
+        link.pausedUntil = until if state == "paused" else None
         if state == "ended":
             link.endedAt = clock.now()
             link.codeHash = None
@@ -321,7 +324,11 @@ def exchange(srv, link_id: str) -> None:
             return  # the other side's admin hasn't approved it yet
         with srv.db.tx() as s:
             link = _get(s, link_id)
-            if e.code == "link-ended" or e.code == "not-linked":
+            if e.code == "link-paused":
+                # Paused on the other side: waits, and isn't alerted (S11.7.2).
+                link.lastError = e.message
+                ended = False
+            elif e.code == "link-ended" or e.code == "not-linked":
                 if link.state != "ended":
                     link.state, link.endedAt = "ended", clock.now()
                     end_users(s, link)
@@ -347,10 +354,23 @@ def exchange(srv, link_id: str) -> None:
         return
     if out.get("change"):
         receive.take(srv, link_id, out["change"])
+        # The rest of a large change, part by part, oldest first (S11.4).
+        more = int(out.get("more") or 0)
+        while more > 0:
+            with srv.db.read() as s:
+                got = _get(s, link_id).gotSeq
+            nxt = client.call(srv, address, peer, "/link/v1/next", {"have": got})
+            if not nxt.get("change"):
+                break
+            receive.take(srv, link_id, nxt["change"])
+            more = int(nxt.get("more") or 0)
     mine = serve.change_for(srv, link_id, int(out.get("have") or 0), bool(out.get("wantFull")))
-    if mine is not None:
-        client.call(srv, address, peer, "/link/v1/deliver", {"change": mine})
-        _served(srv, mine)
+    for part in mine:
+        answer = client.call(srv, address, peer, "/link/v1/deliver", {"change": part})
+        if answer.get("have") != part.get("seq"):
+            break  # the peer missed one: its next exchange asks again
+    if mine:
+        _served(srv, mine[0])
 
 
 def _served(srv, change: dict) -> None:
@@ -383,13 +403,32 @@ def answer_exchange(srv, link: Link, body: dict, version: str | None) -> dict:
         }
         active = row.state == "active"
     if active:
-        change = serve.change_for(
+        parts = serve.change_for(
             srv, link.id, int(body.get("have") or 0), bool(body.get("wantFull"))
         )
-        if change is not None:
-            out["change"] = change
-            _served(srv, change)
+        if parts:
+            out["change"] = parts[0]
+            out["more"] = len(parts) - 1
+            # Kept for the peer to ask for, one at a time, while it is pulling.
+            PENDING[link.id] = parts[1:]
+            _served(srv, parts[0])
     return out
+
+
+PENDING: dict[str, list[dict]] = {}  # the parts of a large change still to send, by link
+
+
+def answer_next(srv, link: Link, body: dict) -> dict:
+    """The next part of a large change the peer is pulling, when its `have` is the part
+    before; nothing when it isn't, and its next exchange starts again."""
+    rest = PENDING.get(link.id) or []
+    if not rest or int(body.get("have") or 0) + 1 != rest[0].get("seq"):
+        PENDING.pop(link.id, None)
+        return {"change": None, "more": 0}
+    part = rest.pop(0)
+    if not rest:
+        PENDING.pop(link.id, None)
+    return {"change": part, "more": len(rest)}
 
 
 def answer_deliver(srv, link: Link, body: dict) -> dict:
@@ -413,8 +452,28 @@ def answer_end(srv, link: Link) -> None:
     receive.forget(srv, link.id)
 
 
+def resume_due(srv) -> int:
+    """Links whose pause has run out resume on their own (S11.7.2)."""
+    with srv.db.read() as s:
+        due = list(
+            s.scalars(
+                select(Link.id).where(
+                    Link.deleted == false(),
+                    Link.state == "paused",
+                    Link.pausedUntil.is_not(None),
+                    Link.pausedUntil <= clock.now(),
+                )
+            )
+        )
+    for link_id in due:
+        set_state(srv, link_id, None, "active")
+    return len(due)
+
+
 def exchange_all(srv, ctx=None) -> None:
-    """Every link that exchanges: active ones, and joined ones waiting for approval."""
+    """Every link that exchanges: active ones, and joined ones waiting for approval; a pause
+    that has run out ends first."""
+    resume_due(srv)
     with srv.db.read() as s:
         wanted = list(
             s.scalars(

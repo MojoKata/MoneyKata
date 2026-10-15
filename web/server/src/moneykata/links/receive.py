@@ -63,6 +63,15 @@ def take(srv, link_id: str, change: dict) -> None:
             )
         link.gotSeq = seq
         link.pulledAt = now
+        # A large change arriving in parts (S11.7.1): how far it has come.
+        progress = change.get("progress") or {}
+        if progress and int(progress.get("bytes") or 0) < int(progress.get("total") or 0):
+            through = progress.get("through")
+            link.syncThrough = dt.date.fromisoformat(through) if through else None
+            link.syncBytes = int(progress["bytes"])
+            link.syncTotal = int(progress["total"])
+        else:
+            link.syncThrough = link.syncBytes = link.syncTotal = None
         if full:
             link.needsFull = False
         activity.record(

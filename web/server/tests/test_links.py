@@ -457,3 +457,75 @@ def test_a_share_waiting_for_its_access_key_alerts_the_admins(admins):
     assert "link-key-waiting" in kinds
     cb.post(f"/ui/api/settings/links/{b_id}/copy-key")
     assert "link-key-waiting" not in {x.kind for x in alerts.evaluate(b) if not x.resolvedAt}
+
+
+# ---------- links, the rest (S11.4, S11.7, S12.13)
+
+
+def test_a_pause_lasts_its_duration_and_the_peer_isnt_alerted(admins):
+    import datetime as dt
+
+    from moneykata import clock
+    from moneykata.links import manage
+
+    a, _b, ca, cb, _ = admins
+    a_id, b_id = linked(ca, cb)
+    r = ca.post(f"/ui/api/settings/links/{a_id}/pause", json={"for": "a week"})
+    assert r.json()["code"] == "duration-invalid"
+    out = ca.post(f"/ui/api/settings/links/{a_id}/pause", json={"for": "2d"}).json()
+    assert out["state"] == "paused" and out["pausedUntil"]
+    pulled = cb.post(f"/ui/api/settings/links/{b_id}/pull").json()
+    assert "paused" in pulled["lastError"] and pulled["failingSince"] is None, "not alerted"
+    assert manage.resume_due(a) == 0
+    clock.fix(clock.now() + dt.timedelta(days=2, minutes=1))
+    try:
+        assert manage.resume_due(a) == 1, "it resumes on its own"
+    finally:
+        clock.fix(None)
+    assert links_of(ca)["links"][0]["state"] == "active"
+    # Resume now ends a pause early.
+    ca.post(f"/ui/api/settings/links/{a_id}/pause", json={"for": "1d"})
+    assert ca.post(f"/ui/api/settings/links/{a_id}/resume").json()["pausedUntil"] is None
+
+
+def test_a_large_change_arrives_in_parts_oldest_first(admins, monkeypatch):
+    from moneykata.links import serve
+
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    _a_id, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    ids_ = []
+    for year in (2020, 2023, 2026):
+        acct = alice.post(
+            "/ui/api/accounts", json={"name": f"Account {year}", "type": "checking"}
+        ).json()
+        add(alice, acct["id"], amount="10.00", day=f"{year}-03-02", payee="Opening")
+        alice.put(
+            f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}}
+        )
+        ids_.append(acct["id"])
+    words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
+    seen: list[dict] = []
+    real = serve.split
+
+    def small(change):
+        parts = real(change)
+        seen.extend(parts)
+        return parts
+
+    monkeypatch.setattr(serve, "PART_BYTES", 2000)
+    monkeypatch.setattr(serve, "split", small)
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    assert len(seen) > 2, "a large change travels in parts"
+    throughs = [p["progress"]["through"] for p in seen]
+    assert throughs == sorted(throughs), "oldest to newest"
+    assert seen[-1]["progress"]["bytes"] == seen[-1]["progress"]["total"]
+    side = links_of(cb)["links"][0]
+    assert side["syncTotal"] is None, "all of it arrived"
+    carol = sign_in(b, "carol")
+    carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
+    items, _docs = docs_in(b, b_id)
+    assert set(ids_) <= set(items), "every part applied, in order"

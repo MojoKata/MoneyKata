@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import settings
+from .. import clock, settings
 from ..errors import Problem, refuse
 from ..links import keys, manage
 from ..links.client import LinkError
@@ -70,6 +70,10 @@ class LinkOut(Model):
     failingSince: dt.datetime | None
     createdAt: dt.datetime
     endedAt: dt.datetime | None
+    pausedUntil: dt.datetime | None  # a pause resumes on its own then (S11.7.2)
+    syncThrough: dt.date | None  # a large change arriving: the newest record so far
+    syncBytes: int | None  # and what has arrived
+    syncTotal: int | None  # of what the source said it would send
     users: list[RemoteUser]
     linkedCopy: CopyOut | None = None
     incoming: list[Incoming] = Field(default_factory=list)
@@ -165,6 +169,10 @@ def _out(s, link: Link, srv=None) -> LinkOut:
         failingSince=link.failingSince,
         createdAt=link.createdAt,
         endedAt=link.endedAt,
+        pausedUntil=link.pausedUntil,
+        syncThrough=link.syncThrough,
+        syncBytes=link.syncBytes,
+        syncTotal=link.syncTotal,
         users=[
             RemoteUser(id=u.id, username=u.username, displayName=u.displayName, email=u.email)
             for u in users
@@ -253,9 +261,23 @@ def approve(link_id: str, request: Request, c: Caller = Depends(admin)):
     return _act(request, c, link_id, lambda srv: manage.approve(srv, link_id, c.id))
 
 
+class PauseIn(Model):
+    for_: str = Field("1d", alias="for")  # a duration (S12.13): 1d, 2w 3d, 4h
+
+
 @router.post("/settings/links/{link_id}/pause", response_model=LinkOut)
-def pause(link_id: str, request: Request, c: Caller = Depends(admin)):
-    return _act(request, c, link_id, lambda srv: manage.set_state(srv, link_id, c.id, "paused"))
+def pause(link_id: str, request: Request, body: PauseIn | None = None, c: Caller = Depends(admin)):
+    """Pause for a duration, after which it resumes on its own (S11.7.2)."""
+    from .. import duration
+
+    try:
+        span = duration.parse(body.for_ if body else "1d")
+    except duration.DurationError as e:
+        raise refuse("for", "duration-invalid", str(e)) from None
+    until = clock.now() + span
+    return _act(
+        request, c, link_id, lambda srv: manage.set_state(srv, link_id, c.id, "paused", until)
+    )
 
 
 @router.post("/settings/links/{link_id}/resume", response_model=LinkOut)
@@ -286,10 +308,13 @@ def _copy_problem(e) -> Problem:
 
 @router.post("/settings/links/{link_id}/copy-key", response_model=Words)
 def make_copy_key(link_id: str, request: Request, c: Caller = Depends(admin)):
-    """Create the access key (S11.9.2.1): 12 words, shown once."""
+    """Create the access key (S11.9.2.1): 12 words, shown once; the password again if given
+    over 10 minutes ago (S13.6.2)."""
     from ..links import copies
     from ..links.copy import CopyError
+    from .deps import recent_auth
 
+    recent_auth(c)
     try:
         return Words(words=copies.make_key(server(request), link_id, c.id))
     except CopyError as e:
@@ -305,6 +330,10 @@ def lock_copy(link_id: str, request: Request, c: Caller = Depends(admin)):
 
 @router.post("/settings/links/{link_id}/reset-copy", response_model=LinkOut)
 def reset_copy(link_id: str, request: Request, c: Caller = Depends(admin)):
+    """The copy deleted and taken again in full; the password again if given over 10 minutes
+    ago (S13.6.2)."""
     from ..links import copies
+    from .deps import recent_auth
 
+    recent_auth(c)
     return _act(request, c, link_id, lambda srv: copies.reset(srv, link_id, c.id))

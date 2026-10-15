@@ -2253,6 +2253,11 @@
  */
 
 /**
+ * @typedef {Object} PauseIn
+ * @property {string} [for]
+ */
+
+/**
  * @typedef {Object} Payment
  * @property {(string | null)} [id]
  * @property {number} quarter
@@ -3880,6 +3885,10 @@
  * @property {(string | null)} failingSince
  * @property {string} createdAt
  * @property {(string | null)} endedAt
+ * @property {(string | null)} pausedUntil
+ * @property {(string | null)} syncThrough
+ * @property {(number | null)} syncBytes
+ * @property {(number | null)} syncTotal
  * @property {Array<RemoteUser>} users
  * @property {(CopyOut | null)} [linkedCopy]
  * @property {Array<Incoming>} [incoming]

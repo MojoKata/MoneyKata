@@ -33,6 +33,7 @@ const HUES = /** @type {Record<string, string>} */ ({
 const SCREENS = /** @type {[string, string, string, string[]][]} */ ([
   ['', 'Dashboard', 'dashboard', ['account', 'portfolio', 'budget', 'tax-book', 'projection']],
   ['accounts', 'Accounts', 'bank', ['account']],
+  ['positions', 'Positions', 'candles', ['account']],
   ['portfolios', 'Portfolios', 'pie', ['portfolio']],
   ['transactions', 'Transactions', 'tx', ['account']],
   ['projections', 'Projections', 'trend', ['projection']],
@@ -260,7 +261,10 @@ function Screen({ id, rows, sub, subId, tab }) {
   const of = (/** @type {string} */ k) => rows.filter((r) => r.kind === k);
   if (sub === 'account' && subId) return html`<${Account} base=${base} aid=${subId} tab=${tab} />`;
   if (sub === 'portfolio' && subId) return html`<${Portfolio} pid=${subId} />`;
-  if (sub === 'budget' && subId) return html`<${Budget} bid=${subId} />`;
+  if (sub === 'budget' && subId) {
+    return html`<${Budget} base=${base} bid=${subId} tab=${tab || 'month'} />`;
+  }
+  if (sub === 'positions') return html`<${Positions} rows=${of('account')} />`;
   if (sub === 'tax-book' && subId) {
     return html`<${TaxBook} base=${base} bid=${subId} tab=${tab || 'gains'} />`;
   }
@@ -580,14 +584,30 @@ function Portfolio({ pid }) {
   const p = useApi(`/portfolios/${pid}`);
   const h = useApi(`/portfolios/${pid}/holdings`);
   const r = useList(`/portfolios/${pid}/returns`);
+  const series = useApi(`/portfolios/${pid}/series`, { range: 'All' });
   const pf = /** @type {any} */ (p.data);
   const hold = /** @type {any} */ (h.data);
   const ret = /** @type {any[]} */ (r.data);
   if (p.error) return html`<${Failed} error=${p.error} />`;
   if (!pf) return html`<${Loading} lines=${5} />`;
+  const pts = /** @type {any} */ (series.data)?.points;
   return html`
     <div class="toolbar"><b style=${{ fontSize: '16px' }}>${pf.name}</b><span class="spacer"></span>
       <span style=${{ fontSize: '22px', fontWeight: 650 }}><${Amt} v=${pf.value} /></span></div>
+    ${pts?.length
+      ? html`
+        <div class="card mb">
+          <h3>Value</h3>
+          <${TimeChart} label=${`${pf.name} over time`}
+            series=${[{
+              name: pf.name,
+              color: HUES.teal,
+              area: true,
+              points: pts.map((/** @type {any} */ p) => [p.date, p.value]),
+            }]} />
+        </div>
+      `
+      : null}
     ${ret?.length
       ? html`
         <div class="card">
@@ -649,29 +669,46 @@ function Portfolio({ pid }) {
   `;
 }
 
-/** @param {{ bid: string }} p */
-function Budget({ bid }) {
+/** @param {{ base: string, bid: string, tab: string }} p */
+function Budget({ base, bid, tab }) {
   useGuide('linked-budgets');
+  const tabs = /** @type {[string, string][]} */ ([
+    ['month', 'This month'],
+    ['trends', 'Trends'],
+    ['cash-flow', 'Cash flow'],
+    ['recurring', 'Recurring'],
+  ]);
+  return html`
+    <${Tabs} tabs=${tabs} current=${tab} base=${`${base}/budget/${bid}`} />
+    ${tab === 'trends'
+      ? html`<${BudgetTrends} bid=${bid} />`
+      : tab === 'cash-flow'
+      ? html`<${BudgetFlow} bid=${bid} />`
+      : tab === 'recurring'
+      ? html`<${BudgetRecurring} bid=${bid} />`
+      : html`<${BudgetMonth} bid=${bid} />`}
+  `;
+}
+
+/** @param {{ bid: string }} p */
+function BudgetMonth({ bid }) {
   const res = useApi(`/budgets/${bid}/month`);
   const m = /** @type {any} */ (res.data);
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!m) return html`<${Loading} lines=${6} />`;
   return html`
     <div class="card" style=${{ padding: '4px 8px' }}>
-      <h3 style=${{
-        padding: '8px 8px 0',
-      }}>Month of ${date(m.month)}</h3>
+      <h3 style=${{ padding: '8px 8px 0' }}>Month of ${date(m.month)}</h3>
       <div class="table-wrap">
-        <table
-          class="t">
+        <table class="t">
           <caption class="sr-only">This month</caption>
           <thead>
             <tr>
               <th>Category</th>
-              <th
-                class="num">Planned</th>
+              <th class="num">Planned</th>
               <th class="num">Spent</th>
-              <th class="num">Left</th>
+              <th
+                class="num">Left</th>
             </tr>
           </thead>
           <tbody>${m.rows.map((/** @type {any} */ r) =>
@@ -681,9 +718,9 @@ function Budget({ bid }) {
                 <td class="num">
                   <${Amt} v=${r.planned} />
                 </td>
-                <td class="num">
-                  <${Amt}
-                    v=${r.actual} />
+                <td class="num"
+                >
+                  <${Amt} v=${r.actual} />
                 </td>
                 <td class="num">
                   <${Amt} v=${r.remaining} signed />
@@ -695,6 +732,119 @@ function Budget({ bid }) {
       </div>
     </div>
   `;
+}
+
+/** @param {{ bid: string }} p */
+function BudgetTrends({ bid }) {
+  const res = useList(`/budgets/${bid}/trends`);
+  const rows = /** @type {any[] | null} */ (res.data);
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!rows) return html`<${Loading} lines=${4} />`;
+  return html`
+    <div class="card" style=${{ padding: '4px 8px' }}>
+      <div class="table-wrap">
+        <table
+          class="t">
+          <caption class="sr-only">Planned and spent by month</caption>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="num">Planned</th>
+              <th class="num">Spent</th>
+            </tr>
+          </thead>
+          <tbody>${rows.map((r) =>
+            html`
+              <tr>
+                <td>${date(r.month)}</td>
+                <td class="num">
+                  <${Amt} v=${r.planned} />
+                </td>
+                <td
+                  class="num">
+                  <${Amt} v=${r.actual} />
+                </td>
+              </tr>
+            `
+          )}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+/** @param {{ bid: string }} p */
+function BudgetFlow({ bid }) {
+  const res = useApi(`/budgets/${bid}/cash-flow`);
+  const f = /** @type {any} */ (res.data);
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!f) return html`<${Loading} lines=${4} />`;
+  const side = (/** @type {string} */ title, /** @type {any[]} */ rows) =>
+    html`<div class="card"><h3>${title}</h3>${
+      rows.map((r) =>
+        html`<div class="list-item"><span class="grow">${r.name}</span><${Amt} v=${r.amount} /></div>`
+      )
+    }</div>`;
+  return html`<div class="grid g2">${side(`Income · ${date(f.month)}`, f.sources)}${
+    side('Spending', f.uses)
+  }</div>`;
+}
+
+/** @param {{ bid: string }} p */
+function BudgetRecurring({ bid }) {
+  const res = useList(`/budgets/${bid}/recurring`);
+  const rows = /** @type {any[] | null} */ (res.data);
+  if (res.error) return html`<${Failed} error=${res.error} />`;
+  if (!rows) return html`<${Loading} lines=${4} />`;
+  return html`
+    <div class="card" style=${{ padding: '4px 8px' }}>
+      <div class="table-wrap">
+        <table
+          class="t">
+          <caption class="sr-only">Recurring</caption>
+          <thead>
+            <tr>
+              <th>Payee</th>
+              <th>Every</th>
+              <th
+              >Next</th>
+              <th class="num">Usual</th>
+            </tr>
+          </thead>
+          <tbody>${rows.map((r) =>
+            html`
+              <tr>
+                <td>${r.payee}<div class="small dim">${r.accountName}</div></td>
+                <td>${r.every}</td>
+                <td>${date(r.next)}</td>
+                <td class="num">
+                  <${Amt} v=${r.usual} />
+                </td>
+              </tr>
+            `
+          )}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * What the shared accounts hold, each as its holdings arrived.
+ * @param {{ rows: any[] }} p
+ */
+function Positions({ rows }) {
+  useGuide('linked-positions');
+  const investing = rows.filter((r) => r.row?.investing);
+  if (!investing.length) return html`<${Empty}>No investing account is shared with you.</${Empty}>`;
+  return html`${
+    investing.map((r) =>
+      html`
+        <h3 style=${{ margin: '12px 0 6px' }}>${r.name}</h3>
+        <${Holdings} aid=${r.id} />
+      `
+    )
+  }`;
 }
 
 /** @param {{ base: string, bid: string, tab: string }} p */
@@ -751,6 +901,39 @@ function GivingYear({ year }) {
           <${Amt} v=${g.pledged}
             cents=${false} />
         </div>
+      </div>
+    </div>
+    <${Donations} year=${year} />
+  `;
+}
+
+/** @param {{ year: string }} p */
+function Donations({ year }) {
+  const res = useList('/giving/donations', { year });
+  const rows = /** @type {any[] | null} */ (res.data);
+  if (res.error || !rows?.length) return null;
+  return html`
+    <div class="card mt" style=${{ padding: '4px 8px' }}>
+      <h3 style=${{
+        padding: '8px 8px 0',
+      }}>Donations in ${year}</h3>
+      <div class="table-wrap">
+        <table class="t">
+          <caption class="sr-only"
+          >Donations</caption>
+          <tbody>${rows.map((d) =>
+            html`
+              <tr>
+                <td class="dim">${date(d.date)}</td>
+                <td>${d.organisationName || d.name ||
+                  ''}</td>
+                <td class="num">
+                  <${Amt} v=${d.amount} />
+                </td>
+              </tr>
+            `
+          )}</tbody>
+        </table>
       </div>
     </div>
   `;

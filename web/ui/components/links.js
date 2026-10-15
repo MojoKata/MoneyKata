@@ -5,7 +5,9 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { ago, date } from '../app/format.js';
+import { ago, date, moment } from '../app/format.js';
+import { parseDuration } from '../app/duration.js';
+import { withReauth } from './reauth.js';
 import { Dialog, openDialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, Select } from './fields.js';
@@ -52,14 +54,18 @@ export function LinksSection() {
     s.reload();
   });
   const act = useSubmit(async (/** @type {string} */ id, /** @type {string} */ what) => {
-    const out = await api.post(`/settings/links/${id}/${what}`);
+    const out = await withReauth(() => api.post(`/settings/links/${id}/${what}`));
     toast(
       what === 'pull'
         ? out.lastError ? `Not reached: ${out.lastError}` : 'Exchanged now'
+        : what === 'resume'
+        ? 'Link resumed'
         : `Link ${out.state === 'ended' ? 'ended' : out.state}`,
     );
     res.reload();
   });
+  const pause = (/** @type {any} */ l) =>
+    openDialog(PauseDialog, { link: l }).then((x) => x && res.reload());
   const [armed, setArmed] = useState(/** @type {string | null} */ (null));
   const copyAct = useSubmit(async (/** @type {string} */ id, /** @type {string} */ what) => {
     const out = await api.post(`/settings/links/${id}/${what}`);
@@ -151,7 +157,26 @@ export function LinksSection() {
                     <td><span class=${'pill ' + (l.failingSince ? 'warn' : STATE[l.state][1])}>${l
                         .failingSince
                       ? `unreachable since ${date(l.failingSince)}`
-                      : STATE[l.state][0]}</span>${l.lastError
+                      : l.state === 'paused' && l.pausedUntil
+                      ? `paused until ${moment(l.pausedUntil)}`
+                      : STATE[l.state][0]}</span>${l.syncTotal
+                      ? html`
+                        <div class="small"
+                          data-help="progress">Syncing: up to ${l.syncThrough
+                            ? month(l.syncThrough)
+                            : '…'} (${size(l.syncBytes)} of ${size(l.syncTotal)})<div style=${{
+                            height: '4px',
+                            background: 'var(--border)',
+                            borderRadius: '2px',
+                            marginTop: '3px',
+                          }}><div style=${{
+                            width: `${Math.round((l.syncBytes / l.syncTotal) * 100)}%`,
+                            height: '4px',
+                            background: 'var(--accent)',
+                            borderRadius: '2px',
+                          }}></div></div></div>
+                      `
+                      : null}${l.lastError
                       ? html`<div class="small dim">${l.lastError}</div>`
                       : null}</td>
                     <td class="small dim">${l.state === 'invited'
@@ -181,13 +206,12 @@ export function LinksSection() {
                         }${
                           l.state === 'active'
                             ? html`
-                              <button class="btn sm" onClick=${() =>
-                                act.run(l.id, 'pause')}>Pause</button>
+                              <button class="btn sm" onClick=${() => pause(l)}>Pause…</button>
                             `
                             : l.state === 'paused'
                             ? html`
                               <button class="btn sm" onClick=${() =>
-                                act.run(l.id, 'resume')}>Resume</button>
+                                act.run(l.id, 'resume')}>Resume now</button>
                             `
                             : null
                         }<button class="btn sm danger" onClick=${() =>
@@ -435,7 +459,9 @@ function CopyKey({ close, link }) {
   const [words, setWords] = useState(/** @type {string[] | null} */ (null));
   const [saved, setSaved] = useState(false);
   const make = useSubmit(async () => {
-    setWords((await api.post(`/settings/links/${link.id}/copy-key`)).words);
+    setWords(
+      (await withReauth(() => api.post(`/settings/links/${link.id}/copy-key`))).words,
+    );
   });
   useEffect(() => {
     make.run().catch(() => {});
@@ -468,5 +494,45 @@ function CopyKey({ close, link }) {
           setSaved(e.currentTarget.checked)} /> <span class="grow">I have saved the 12
           words</span></label>
     </${Dialog}>
+  `;
+}
+
+/** "July 2022". @param {string} iso */
+const month = (iso) =>
+  new Date(iso + 'T12:00:00Z').toLocaleString('en-US', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+/**
+ * Pause a link for a duration (S11.7.2, S12.13): it stops pulling and answering, and resumes on
+ * its own after it; Resume now ends it early.
+ * @param {{ close: (v?: any) => void, link: any }} p
+ */
+function PauseDialog({ close, link }) {
+  useDialogGuide('dialog-link-pause');
+  const [span, setSpan] = useState('1d');
+  const go = useSubmit(async () => {
+    const out = await api.post(`/settings/links/${link.id}/pause`, { for: span });
+    toast(`Paused until ${moment(out.pausedUntil)}`);
+    close(out);
+  });
+  const parsed = parseDuration(span);
+  const minutes = 'minutes' in parsed ? parsed.minutes : 0;
+  return html`
+    <${Dialog} title=${`Pause the link with ${link.peerName || 'the other server'}`} close=${close}
+      onSubmit=${() => go.run().catch(() => {})}
+      footer=${html`<button class="btn primary" disabled=${go.busy}>Pause</button>`}>
+      <${Field} label="Pause for" id="pause-for" error=${errAt(go.error, 'for')}
+        hint=${minutes
+          ? `Resumes on its own ${moment(new Date(Date.now() + minutes * 60000).toISOString())}.`
+          : 'A duration: 1d, 2w 3d, 4h.'}>
+        <${Input} value=${span} onInput=${setSpan} placeholder="1d" />
+        </${Field}>
+        <p class="small dim">Nothing is pulled or answered while it is paused, and the other
+        server isn't alerted that this one is unreachable.</p>
+        <${FormError} error=${go.error} shown=${['for']} />
+        </${Dialog}>
   `;
 }
