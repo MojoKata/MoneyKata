@@ -1,0 +1,4 @@
+# The image copies the package and its pins; nothing else matters.
+tests
+**/__pycache__
+**/.pytest_cache

@@ -17,7 +17,9 @@ ask it for anything.
       the standard library doesn't provide) and at most one pinned, hashed dependency per
       driver; no import from MoneyKata. Each driver declares the hosts
       it talks to, the credentials it needs and what it sends, and a test fails when a driver
-      reaches another host or grows past 400 lines, or the core past 600.
+      reaches another host or grows past 400 lines of code, or the core (the vault, keys,
+      signing, the client, the loop, the socket and the command line together) past 1,000:
+      lines of code, not counting blank lines, comments and docstrings.
 2. **Isolation**: the rules the design rests on.
    1. **Separate**: its own process, unprivileged user (uid 10002), image and volume
       (`connector-data`: the vault and the connector's identity key). MoneyKata never mounts

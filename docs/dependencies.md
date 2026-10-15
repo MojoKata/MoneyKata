@@ -83,6 +83,17 @@ for amd64 and arm64 (S17.8.1). *Direct* means named in `pyproject.toml`.
 | Deno | 2.9.7 | type-check, lint and format of the browser app (`web/pins`) | **egress** at `setup` only |
 | python:3.14-slim-bookworm | by digest in the Dockerfile | the image's base | security updates arrive only when the digest moves: with each release and on a Debian or Python fix, by `web/dev.sh base-update` (S17.8.5). Last moved: 2026-10-15, from 3.12 to 3.14 (Docker Hub's build of 2026-10-06) |
 
+## The connector
+
+`connector/requirements.txt`, pinned with hashes for CPython 3.14 on amd64 and arm64; Python
+3.14; the standard library and one dependency (S18.1.2). No driver has a dependency yet.
+
+| Library | Version | Purpose | Decision | Risks | Revisit |
+|---|---|---|---|---|---|
+| cryptography | 50.0.2 | the identity and sealing keys, the vault's AES-GCM, opening sealed credentials | the one library with Ed25519, X25519 and AES-GCM; the standard library has none | none known; with the server's copy | with the server's |
+| cffi, pycparser | 2.1.1, 3.11 | cryptography's binding | come with it | none known | — |
+| python:3.14-slim-bookworm | by digest in `connector/Dockerfile` | the image's base | the same digest as the server's; moved with it (S17.8.5) | as the server's | with the server's |
+
 ## JavaScript (the browser app)
 
 Vendored as npm tarballs under `web/ui/vendor/`, adopted only through `web/dev.sh vendor

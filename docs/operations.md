@@ -190,19 +190,43 @@ and exit code 78. The compose file restarts it three times at most, then leaves 
 ## 8. The MoneyKata Connector
 
 The connector (S18) keeps accounts current from their institutions, holding their credentials
-where MoneyKata can't. It is the `connector` service in `compose.yaml`.
+where MoneyKata can't. It is the `connector` service in `compose.yaml`, from the
+`moneykata-connector` image of the same version (`connector/Dockerfile`, built from
+`connector/`), with a volume of its own, `connector-data`, that MoneyKata never mounts. It
+publishes no port and only calls out: to MoneyKata, and to each driver's institution.
 
-1. **Install it once**: `docker compose run --rm connector init`. It prints **12 words**: save
-   them in the household's password manager. They open the connector's vault, and nothing
-   else can.
-2. **Start it**: `docker compose up -d`. It starts **locked**, and MoneyKata alerts admins
+1. **Build its image** beside MoneyKata's: `docker buildx build -f connector/Dockerfile -t
+   moneykata-connector:0.1.0 connector`, and carry it over as in §2.
+2. **Install it once**: `docker compose run --rm connector init`. It prints **12 words** and
+   won't finish until you type three back: save them in the household's password manager.
+   They open the connector's vault, and nothing else can.
+3. **Start it**: `docker compose up -d`. It starts **locked**, and MoneyKata alerts admins
    until it is unlocked.
-3. **Unlock it after every start** (a restart, an update, the host's reboot):
-   `docker compose exec connector moneykata-connector unlock`, then type the 12 words.
-4. **Pair it**: in MoneyKata, Settings › Connector › Pair shows a code; run
+4. **Unlock it after every start** (a restart, an update, the host's reboot):
+   `docker compose exec connector moneykata-connector unlock`, then type the 12 words. They
+   are never echoed, and never stored.
+5. **Pair it**: in MoneyKata, Settings › Connector › Pair shows a code; run
    `docker compose exec connector moneykata-connector pair <code>` and compare the
-   fingerprints both sides show.
-5. **On another machine** instead (a laptop): run the same image there with its own
-   `connector-data` volume, reaching MoneyKata's address; nothing else changes.
-6. **Lost words**: `moneykata-connector reset` makes a new vault and new words; every
-   Connection's credentials are entered again.
+   fingerprints both sides show. The connector reaches MoneyKata at the address in the code
+   (the public URL, or the link address), so that address must resolve from inside the
+   container: on one host, the compose service name or the host's LAN address, not
+   `localhost`.
+6. **The Folder driver**: mount the folder read only into the connector (the commented line
+   in `compose.yaml`), then start a folder Connection under Profile › Connections naming
+   that path and its rules.
+7. **Credentials typed on the host** (the stricter way, S18.7.2): `docker compose exec
+   connector moneykata-connector connect <connection id>`, which asks for each field without
+   echo and files them in the vault.
+8. **Watching it**: `docker compose exec connector moneykata-connector status` says whether
+   it is paired and locked, when it last reported, and each Connection's state; MoneyKata's
+   Settings › Connector shows the same from its reports, and alerts when the connector is
+   locked or silent for 15 minutes.
+9. **On another machine** instead (a laptop): run the same image there with its own
+   `connector-data` volume, reaching MoneyKata's address, and add where it calls from to
+   Settings › Network › Allowed to connect; nothing else changes.
+10. **Unpair**: Settings › Connector › Unpair in MoneyKata, or `moneykata-connector unpair` on
+    the host; either way the connector deletes the credentials it held for that server.
+11. **Lost words**: `docker compose exec connector moneykata-connector reset` makes a new vault
+    and new words; every Connection's credentials are entered again.
+12. **Its logs** say what it did and what failed, never a credential, an amount or an account
+    number beyond its last four digits: `docker compose logs -f connector`.

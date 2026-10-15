@@ -59,10 +59,34 @@ def test_the_image_makes_the_directories_the_example_config_names():
 
 
 def test_every_compose_service_runs_the_image_of_this_version():
-    tag = f"moneykata:{paths.version()}"
+    tags = {f"moneykata:{paths.version()}", f"moneykata-connector:{paths.version()}"}
     for name, compose in COMPOSE.items():
         for service, spec in compose["services"].items():
-            assert spec["image"] == tag, f"{name}: {service} runs {spec['image']}, not {tag}"
+            assert spec["image"] in tags, f"{name}: {service} runs {spec['image']}"
+        assert compose["services"]["connector"]["image"].startswith("moneykata-connector:")
+
+
+def test_the_connector_service_is_apart_locked_down_and_reaches_nothing_in():
+    """Its own volume that MoneyKata never mounts, no published port, read only, all
+    capabilities dropped (S18.2.1, S18.10); its socket on a tmpfs inside the container."""
+    for name, compose in COMPOSE.items():
+        c = compose["services"]["connector"]
+        assert "ports" not in c and c["restart"] == "unless-stopped", name
+        assert c["read_only"] is True and c["cap_drop"] == ["ALL"], name
+        assert "no-new-privileges:true" in c["security_opt"], name
+        assert any(x.startswith("/run/moneykata-connector:uid=10002") for x in c["tmpfs"]), name
+        mounts = _mounts(c)
+        assert "/var/lib/moneykata-connector" in mounts, name
+        assert mounts["/var/lib/moneykata-connector"][0] == "connector-data", name
+        assert "connector-data" in compose["volumes"], name
+        server = _mounts(compose["services"]["moneykata"])
+        assert not any(h == "connector-data" for h, _ in server.values()), name
+        for h, _ in mounts.values():
+            assert h not in {h2 for h2, _ in server.values()}, f"{name}: a mount shared"
+    dockerfile = (paths.ROOT / "connector" / "Dockerfile").read_text()
+    assert "USER 10002:10002" in dockerfile and "EXPOSE" not in dockerfile
+    assert re.search(r"^ARG PYTHON=python:3\.14-[\w.-]+@sha256:[0-9a-f]{64}$", dockerfile, re.M)
+    assert "--require-hashes" in dockerfile
 
 
 def test_the_server_service_is_locked_down_and_its_key_directory_read_only():

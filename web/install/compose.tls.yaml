@@ -24,6 +24,28 @@ services:
       driver: json-file
       options: { max-size: "10m", max-file: "5" }
 
+  # The MoneyKata Connector (S18.10): a second service with a volume of its own, which
+  # MoneyKata never mounts, and no published port: it only calls out. It starts locked;
+  # install it once with `docker compose run --rm connector init`, and after every start
+  # unlock it with `docker compose exec connector moneykata-connector unlock` (operations.md §8).
+  connector:
+    image: moneykata-connector:0.1.0
+    restart: unless-stopped
+    volumes:
+      - connector-data:/var/lib/moneykata-connector
+      # The Folder driver (S18.9.1): a Downloads folder, mounted read only.
+      # - /home/alice/Downloads:/downloads:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run/moneykata-connector:uid=10002,gid=10002,mode=0700   # its admin socket, inside the container only
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 10s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
   # The key commands, as in compose.yaml.
   keys-init:
     image: moneykata:0.1.0
@@ -44,3 +66,6 @@ services:
       - ./data:/var/lib/moneykata
       - ./keys:/etc/moneykata
       - ./moneykata-tls.toml:/etc/moneykata.toml
+
+volumes:
+  connector-data:
