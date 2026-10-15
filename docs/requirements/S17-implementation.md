@@ -201,7 +201,7 @@
          the field parser, matching, search and Settings › Receipts.
       7. **Statement import** (S1.3.3): bank and card statements, read and checked, with
          their layout learned per institution, and brokerage and plan statements' summary,
-         positions and cash activity (S1.3.3.8); reading trades waits (G8).
+         positions and cash activity (S1.3.3.8); reading trades waits (L1).
       8. **Projections and assumptions** (S6.1–S6.9): Profile › Assumptions, the models,
          scenarios, active projections with tracking, the Dashboard's Plans card, and
          Settings › Tax tables with the contribution limits and the bitcoin models' figures.
@@ -286,5 +286,6 @@
       and later, a self-hosted mempool), which the build has no node to try against, and
       links tried across two real networks (an overlay such as Tailscale, and a forwarded
       port), not only two servers on one host.
-   7. **After the first release**: learned column positions for statements (S1.3.3.7), and
-      miniscript wallet policies beyond the descriptors of S1.6.1.4.
+   7. **After the first release**: learned column positions for statements (S1.3.3.7),
+      miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of
+      [later work](later.md) (L1, L2).

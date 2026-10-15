@@ -12,13 +12,13 @@ portfolios with each other, read-only or read/write, and share read-only with pe
 decisions (R1), the terminology (R2) and the design principles (R3). Each subject has its own
 section file, S1 to S18, listed below. A reference names a part by its id and number:
 `R1.16` is item 16 of the decisions here, `S9.8.7` item 8.7 of the receipts section, `G8` a
-gap and `Q8` an open question.
+gap, `L1` later work and `Q8` an open question.
 
 1. **Lasting ids.** Section ids (S1, S2, …) and their first-level items (`S1.2`) are never
    renumbered or reused: a new section or first-level item takes the next free number, and
    one that is removed leaves its number unused. Deeper items may be renumbered, with every
-   reference updated in the same change. Gaps (G) and questions (Q) keep their ids the same
-   way.
+   reference updated in the same change. Gaps (G), later work (L) and questions (Q) keep
+   their ids the same way.
 2. **Splitting a section.** A section file that grows past 500 lines moves its first-level
    items to files of their own, named by the item's number (`S1-accounts-02-brokerage.md`
    holds S1.2), and keeps a summary with a table of them in the form of the one below.
@@ -59,14 +59,21 @@ opens the dialogs.
 
 Areas named but not yet specified ([gaps.md](gaps.md)).
 
-| Id | Gap | What is missing |
+None open. A new gap takes the next id after G19.
+
+## Later work
+
+Work planned for after the first release ([later.md](later.md), S17.9.7).
+
+| Id | Item | What it is |
 |---|---|---|
-| **G8** | [Reading a brokerage statement's trades](gaps.md#g8-reading-a-brokerage-statements-trades) | buys and sells, options activity and corporate actions on a brokerage statement; until then each is offered to the trade dialog |
-| **G19** | [Other option price sources](gaps.md#g19-other-option-price-sources) | for later: Schwab Trader API through a connector driver, MarketData.app, Massive with a live key, Tradier |
+| **L1** | [Reading a brokerage statement's trades](later.md#l1-reading-a-brokerage-statements-trades) | buys and sells, options activity and corporate actions on a brokerage statement; until then each is offered to the trade dialog |
+| **L2** | [Other option price sources](later.md#l2-other-option-price-sources) | Schwab Trader API through a connector driver, MarketData.app, Massive with a live key, Tradier |
 
 ## Also here
 
 - [Open questions](questions.md): what waits on a decision.
+- [Later work](later.md): what comes after the first release.
 - [Out of scope](out-of-scope.md): what MoneyKata does not do.
 - [Rejected ideas](rejected-ideas.md): ideas weighed and turned down, with the reason.
 

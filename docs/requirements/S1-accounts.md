@@ -72,7 +72,7 @@
          saved until each part is saved or left out. The PDF is kept on each account it
          filled, once.
       6. **Kept without reading**: any statement can be kept on its account as it is, for the
-         record, without its lines being read: a brokerage statement's trades (G8), a
+         record, without its lines being read: a brokerage statement's trades (L1), a
          statement whose layout isn't read, or one the person only wants archived. MoneyKata
          reads its period and institution where it can, for the person to check, and keeps
          the PDF on the account as a receipt (S9) named by its period, as a read statement
@@ -122,7 +122,7 @@
 
          **Not read**: trades (buys and sells), options activity, corporate actions and
          margin detail. Each shows as a line left out, *not read: enter it as a trade*,
-         with its figures filled into the trade dialog (S3) when chosen (G8).
+         with its figures filled into the trade dialog (S3) when chosen (L1).
    4. **bitcoin watch** (self-custody wallets): balances and transactions read by address or
       xpub (S1.6);
    5. **the MoneyKata Connector**: files fetched from the institution by the connector's
