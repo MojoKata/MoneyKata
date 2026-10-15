@@ -26,7 +26,14 @@ DRIVERS = ("folder", "ofx-direct", "schwab")
 # connector gets what it expects. Values are text the owner typed; none is a credential.
 SETTINGS = {
     "folder": {"path": str, "rules": list},
-    "ofx-direct": {"url": str, "org": str, "fid": str, "accountType": str, "accountId": str},
+    "ofx-direct": {
+        "url": str,
+        "org": str,
+        "fid": str,
+        "accountType": str,
+        "accountId": str,
+        "bankId": None,  # the routing number, for bank accounts
+    },
     "schwab": {"appKey": str},
 }
 
@@ -86,6 +93,12 @@ def _check_settings(driver: str, settings: dict) -> dict:
     errors = []
     for key, kind in shape.items():
         v = settings.get(key)
+        if kind is None:  # optional text
+            if v not in (None, "") and (not isinstance(v, str) or len(v) > 500):
+                errors.append(FieldError(f"settings.{key}", "settings-invalid", "Too long."))
+            elif isinstance(v, str) and v.strip():
+                out[key] = v.strip()
+            continue
         if kind is list:
             if v is None:
                 v = []

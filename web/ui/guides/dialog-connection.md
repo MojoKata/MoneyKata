@@ -38,6 +38,11 @@ The institution's OFX organisation name, as the directory lists it.
 
 The institution's OFX id, as the directory lists it.
 
+## Routing number {#ofx-bank-id}
+
+The bank's routing number, which a bank account's OFX request names; a card or an investment
+account has none.
+
 ## Account type {#ofx-account-type}
 
 Checking, savings, credit card or investment, as the OFX server expects it.
@@ -57,6 +62,11 @@ sign-in is.
 **Here, sealed for the connector**: the usual way; your browser encrypts what you type to the
 connector's key, and MoneyKata can't open it. **An admin types it on the connector's host**: the
 stricter way; the dialog shows the command, and MoneyKata never handles the credentials at all.
+
+## App secret {#schwab-app-secret}
+
+Your Schwab app's secret, which the driver signs in with beside the app key. A secret: sealed
+for the connector with the sign-in, never seen by MoneyKata.
 
 ## The address you landed on {#landed}
 

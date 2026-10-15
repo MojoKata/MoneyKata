@@ -240,12 +240,18 @@ class Core:
         if d.needs:
             creds = self.vault.get(c.id)
             if creds is None:
-                c.state, c.message = "new", "waiting for credentials"
+                address = d.sign_in(c.settings)
+                if address and c.sign_in != address:
+                    c.sign_in = address
+                    self.server.call(
+                        f"/connector/v1/connections/{c.id}/sign-in", {"address": address}
+                    )
+                c.state, c.message, c.last_run = "new", "waiting for credentials", time.time()
                 return
         try:
+            self.egress.allow(*d.hosts_for(c.settings))
             r = d.run(c.settings, creds, c.accounts, self.transport)
         except client.EgressRefused as e:
-            r = type("R", (), {})()
             c.state, c.message, c.last_run = "failing", f"refused: {e}", time.time()
             return
         except Exception as e:

@@ -112,7 +112,9 @@ export function ConnectionDialog({ close, connection }) {
     fid: '',
     accountType: 'CHECKING',
     accountId: '',
+    bankId: '',
     appKey: '',
+    appSecret: '',
     how: 'sealed',
     username: '',
     password: '',
@@ -137,6 +139,7 @@ export function ConnectionDialog({ close, connection }) {
           fid: f.fid,
           accountType: f.accountType,
           accountId: f.accountId,
+          bankId: f.bankId,
         }
         : { appKey: f.appKey };
       const out = await api.post('/profile/connections', {
@@ -157,7 +160,7 @@ export function ConnectionDialog({ close, connection }) {
       return;
     }
     const plain = f.driver === 'schwab'
-      ? JSON.stringify({ landed: f.landed })
+      ? JSON.stringify({ appSecret: f.appSecret, landed: f.landed })
       : JSON.stringify({ username: f.username, password: f.password });
     const box = await seal(plain, key, c.id);
     await api.put(`/profile/connections/${c.id}/credential`, { sealed: box });
@@ -243,24 +246,31 @@ export function ConnectionDialog({ close, connection }) {
                     <${Input} value=${f.fid} onInput=${set('fid')} required />
                     </${Field}>
                     </div>
-                    <div class="row">
-                      <${Field} label="Account type" id="ofx-account-type" error=${errAt(
-                        e,
-                        'settings.accountType',
-                      )}>
-                        <${Select} value=${f.accountType} onChange=${set('accountType')}
-                          options=${[['CHECKING', 'Checking'], ['SAVINGS', 'Savings'], [
-                            'CREDITCARD',
-                            'Credit card',
-                          ], ['INVESTMENT', 'Investment']]} />
-                        </${Field}>
-                        <${Field} label="Account number" id="ofx-account-id" error=${errAt(
+                    <${Field} label="Routing number" id="ofx-bank-id" error=${errAt(
+                      e,
+                      'settings.bankId',
+                    )}
+                      hint="For a bank account; a card or an investment account has none.">
+                      <${Input} value=${f.bankId} onInput=${set('bankId')} />
+                      </${Field}>
+                      <div class="row">
+                        <${Field} label="Account type" id="ofx-account-type" error=${errAt(
                           e,
-                          'settings.accountId',
+                          'settings.accountType',
                         )}>
-                          <${Input} value=${f.accountId} onInput=${set('accountId')} required />
+                          <${Select} value=${f.accountType} onChange=${set('accountType')}
+                            options=${[['CHECKING', 'Checking'], ['SAVINGS', 'Savings'], [
+                              'CREDITCARD',
+                              'Credit card',
+                            ], ['INVESTMENT', 'Investment']]} />
                           </${Field}>
-                          </div>
+                          <${Field} label="Account number" id="ofx-account-id" error=${errAt(
+                            e,
+                            'settings.accountId',
+                          )}>
+                            <${Input} value=${f.accountId} onInput=${set('accountId')} required />
+                            </${Field}>
+                            </div>
           `
           : html`
             <${Field} label="App key" id="schwab-app-key" error=${errAt(e, 'settings.appKey')}
@@ -296,10 +306,15 @@ export function ConnectionDialog({ close, connection }) {
                 : 'Once the connector has the app key it reports the sign-in address here; open it, sign in, then paste the address you land on below.'} It lasts seven
               days; you'll be asked again each week.</div>
             </div>
-            <${Field} label="The address you landed on" id="landed" error=${errAt(e, 'sealed')}>
-              <${Input} value=${f.landed} onInput=${set('landed')}
-                placeholder="https://127.0.0.1/?code=…" />
+            <${Field} label="App secret" id="schwab-app-secret"
+              hint="Your Schwab app's secret, sealed for the connector with the sign-in.">
+              <${Input} type="password" value=${f.appSecret} onInput=${set('appSecret')}
+                autocomplete="off" />
               </${Field}>
+              <${Field} label="The address you landed on" id="landed" error=${errAt(e, 'sealed')}>
+                <${Input} value=${f.landed} onInput=${set('landed')}
+                  placeholder="https://127.0.0.1/?code=…" />
+                </${Field}>
           `
           : html`
             <div class="row">

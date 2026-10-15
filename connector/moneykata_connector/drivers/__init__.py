@@ -43,6 +43,14 @@ class Driver:
     needs: tuple[str, ...] = ()  # credential fields
     interval = 24 * 3600  # seconds between runs
 
+    def hosts_for(self, settings: dict) -> tuple[str, ...]:
+        """The hosts this Connection reaches: the declared ones, or one its owner named."""
+        return self.hosts
+
+    def sign_in(self, settings: dict) -> str | None:
+        """An address the owner must sign in at before credentials exist (S18.7.1)."""
+        return None
+
     def run(
         self, settings: dict, credentials: dict | None, accounts: list[Account], http
     ) -> Result:
@@ -51,8 +59,7 @@ class Driver:
 
 def registry() -> dict[str, Driver]:
     from .folder import Folder
+    from .ofx_direct import OfxDirect
+    from .schwab import Schwab
 
-    out = {}
-    for d in (Folder(),):
-        out[d.name] = d
-    return out
+    return {d.name: d for d in (Folder(), OfxDirect(), Schwab())}

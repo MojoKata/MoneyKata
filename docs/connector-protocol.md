@@ -223,11 +223,14 @@ of, `POST /connector/v1/report`:
 
 What each driver posts, and what its `settings` hold (S18.9):
 
-| Driver | Posts | Settings | Credentials |
+| Driver | Posts | Settings | Credentials (sealed, 4.3) |
 |---|---|---|---|
-| `folder` | each file that appears in a watched folder, to the account whose rule its name matches | the folder's path on the connector's host and the rules (`umb-*.pdf` → an account) | none |
-| `ofx-direct` | OFX from the institution's OFX server: transactions and balances | the server's URL, `ORG`, `FID`, the account's type and number | username and password |
-| `schwab` | positions, transactions and balances as OFX | the app key | the OAuth sign-in (4.3.3), renewed weekly |
+| `folder` | each file that appears in a watched folder, to the account whose rule its name matches | `path`, the folder on the connector's host; `rules`, one per line: `umb-*.pdf → 3311`, a file-name pattern and the account's last four digits | none |
+| `ofx-direct` | the OFX statement the institution's OFX server answers with, as it is | `url`, `org`, `fid`, `accountType` (`CHECKING`, `SAVINGS`, `CREDITCARD`, `INVESTMENT`), `accountId`, and `bankId` (the routing number) for a bank account | `{username, password}` |
+| `schwab` | positions, transactions and balances from the Trader API, written as an OFX investment statement, one file per account | `appKey` | `{appSecret, landed}`: the app's secret and the address the owner landed on after signing in; the driver keeps the refresh token in the vault, and asks for a new sign-in when it has run out, after seven days |
+
+A driver's host is the one it declares (`api.schwabapi.com`), or, for OFX Direct Connect,
+the server its owner named in the settings; the egress allowlist refuses every other.
 
 ## 7. Refusals
 
