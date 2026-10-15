@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
+import { date } from '../app/format.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { useTitle } from '../components/frame.js';
 import { Avatar, Failed, Loading } from '../components/bits.js';
@@ -12,7 +13,7 @@ import { Dialog, openDialog } from '../components/dialog.js';
 import { ModelsChart } from '../charts/chart.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { applyTheme, theme } from '../store/prefs.js';
-import { loadSession } from '../store/session.js';
+import { loadSession, session } from '../store/session.js';
 import { AccessTokens } from '../components/tokens.js';
 import { num } from '../app/dec.js';
 
@@ -159,112 +160,189 @@ export default function Profile() {
   `;
 }
 
-/** Who the user is related to (S10.10.6): those entered, and those worked out from them. */
+/** Who the user is related to (S10.10.6): those entered, with their dates, and those worked
+ * out from them. */
 /** @param {{ p: any, reload: () => void }} props */
 function Relations({ p, reload }) {
-  const add = () => openDialog(RelationshipDialog, { me: p.personId }).then(reload);
-  const stored = p.relations.filter((/** @type {any} */ r) => r.stored);
+  const rels = useApi('/relationships', {});
+  const rows = /** @type {any[]} */ ((/** @type {any} */ (rels.data))?.items || []);
+  const again = () => {
+    rels.reload();
+    reload();
+  };
+  const open = (/** @type {any} */ r) =>
+    openDialog(RelationshipDialog, { me: p.personId, r }).then((x) => x && again());
   const worked = p.relations.filter((/** @type {any} */ r) => !r.stored);
-  const row = (/** @type {any} */ r) =>
-    html`
-      <div class="list-item">
-        <div class="grow"><b>${r.name}</b> · ${r.word}</div>
-      </div>
-    `;
+  const word = (/** @type {any} */ r) =>
+    (p.relations.find((/** @type {any} */ x) => x.stored && x.personId === other(r))?.word) ||
+    (r.relation === 'family' && r.label) || r.relation;
+  const other = (/** @type {any} */ r) => r.person1.id === p.personId ? r.person2.id : r.person1.id;
+  const name = (/** @type {any} */ r) =>
+    r.person1.id === p.personId ? r.person2.name : r.person1.name;
   return html`
     <div class="card" data-help="relationships"><h3>Relationships<span class="spacer"></span><button
-      type="button" class="btn sm" onClick=${add}>Add</button></h3>
-      ${stored.length ? stored.map(row) : html`<p class="small dim">None yet.</p>`}
+      type="button" class="btn sm" onClick=${() => open(null)}>Add</button></h3>
+      ${rows.length
+        ? rows.map((/** @type {any} */ r) =>
+          html`
+            <div class=${'list-item' + (r.canChange ? ' click' : '')} onClick=${r.canChange
+              ? () => open(r)
+              : null}>
+              <div class="grow"><b>${name(r)}</b> · ${word(r)}${relDates(r)
+                ? html`<div class="small dim">${relDates(r)}</div>`
+                : null}</div>
+            </div>
+          `
+        )
+        : html`<p class="small dim">None yet.</p>`}
       ${worked.length
         ? html`<div class="small dim" style=${{ margin: '10px 0 4px' }}>Worked out from these</div>
-          ${worked.map(row)}`
+          ${
+          worked.map((/** @type {any} */ r) =>
+            html`
+              <div class="list-item">
+                <div class="grow"><b>${r.name}</b> · ${r.word}</div>
+              </div>
+            `
+          )
+        }`
         : null}
     </div>
   `;
 }
 
-/** @param {{ close: (v?: any) => void, me: string }} props */
-function RelationshipDialog({ close, me }) {
+/** "since Jun 14, 2009", "Jun 14, 2009 – Mar 2, 2015", or how a marriage ended. */
+const relDates = (/** @type {any} */ r) => {
+  const from = r.fromDate ? date(r.fromDate) : '';
+  if (r.endsOn) {
+    const why = r.relation === 'spouse' && !r.toDate ? ' (widowed)' : '';
+    return `${from || 'until'}${from ? ' – ' : ' '}${date(r.endsOn)}${why}`;
+  }
+  return from ? `since ${from}` : '';
+};
+
+const KINDS = /** @type {[string, string][]} */ ([
+  ['spouse', 'Spouse of'],
+  ['couple', 'Couple with'],
+  ['parent-of', 'Parent of'],
+  ['child-of', 'Child of'],
+  ['friend', 'Friend of'],
+  ['colleague', 'Colleague of'],
+  ['family', 'Family of'],
+]);
+
+/** @param {{ close: (v?: any) => void, me: string, r: any }} props */
+function RelationshipDialog({ close, me, r }) {
   useDialogGuide('dialog-relationship');
   const persons = useApi('/persons');
-  const [f, setF] = useState({
-    relation: 'spouse',
-    other: '',
-    fromDate: '',
-    toDate: '',
-    label: '',
-  });
+  const admin = !!session.value?.user?.admin;
+  // A stored relationship, read from the side of the first person shown.
+  const start = () => {
+    if (!r) return { who: me, relation: 'spouse', other: '', fromDate: '', toDate: '', label: '' };
+    const who = r.person1.id === me || r.person2.id === me ? me : r.person1.id;
+    const otherId = who === r.person1.id ? r.person2.id : r.person1.id;
+    const relation = r.relation === 'child'
+      ? (r.person1.id === who ? 'parent-of' : 'child-of')
+      : r.relation;
+    return {
+      who,
+      relation,
+      other: otherId,
+      fromDate: r.fromDate || '',
+      toDate: r.toDate || '',
+      label: r.label || '',
+    };
+  };
+  const [f, setF] = useState(start);
   const set = (/** @type {string} */ k) => (/** @type {any} */ v) => setF({ ...f, [k]: v });
   const save = useSubmit(async () => {
-    // "Child of" runs from the other person to me; the rest from me.
-    const [kind, mine] = f.relation === 'child-of'
+    // "Child of" runs from the other person to the first; the rest from the first.
+    const [kind, first] = f.relation === 'child-of'
       ? ['child', false]
       : f.relation === 'parent-of'
       ? ['child', true]
       : [f.relation, true];
-    await api.post('/relationships', {
-      person1Id: mine ? me : f.other,
-      person2Id: mine ? f.other : me,
+    const body = {
+      person1Id: first ? f.who : f.other,
+      person2Id: first ? f.other : f.who,
       relation: kind,
       label: f.label || null,
       fromDate: f.fromDate || null,
       toDate: f.toDate || null,
-    });
+    };
+    if (r) await api.patch(`/relationships/${r.id}`, body, r.version);
+    else await api.post('/relationships', body);
     toast('Saved');
     close(true);
   });
-  const e = save.error;
-  const list = /** @type {any[]} */ ((/** @type {any} */ (persons.data))?.items || []).filter((
-    /** @type {any} */ x,
-  ) => x.id !== me);
+  const remove = useSubmit(async () => {
+    await api.del(`/relationships/${r.id}`, r.version);
+    toast('Relationship removed');
+    close(true);
+  });
+  const e = save.error || remove.error;
+  const all = /** @type {any[]} */ ((/** @type {any} */ (persons.data))?.items || []);
+  const list = all.filter((/** @type {any} */ x) => x.id !== f.who);
   return html`
-    <${Dialog} title="Add a relationship" close=${close} onSubmit=${() =>
+    <${Dialog} title=${r ? 'A relationship' : 'Add a relationship'} close=${close} onSubmit=${() =>
       save.run().catch(
         () => {},
-      )} footer=${html`<button class="btn primary" disabled=${save.busy}>Add</button>`}>
+      )} footer=${html`${
+      r
+        ? html`
+          <button type="button" class="btn danger" disabled=${remove.busy}
+            onClick=${() => remove.run().catch(() => {})}>Remove</button><span class="spacer"
+          ></span>
+        `
+        : null
+    }<button class="btn primary" disabled=${save.busy}>${r ? 'Save' : 'Add'}</button>`}>
       <p class="small dim" style=${{ marginTop: 0 }}>Mothers, grandparents, cousins and in-laws
-        are worked out from these.</p>
-      <div class="row">
-        <${Field} label="I am the" id="relation" error=${errAt(e, 'relation')}>
-          <${Select} value=${f.relation} onChange=${set('relation')} options=${[
-            ['spouse', 'Spouse of'],
-            ['couple', 'Couple with'],
-            ['parent-of', 'Parent of'],
-            ['child-of', 'Child of'],
-            ['friend', 'Friend of'],
-            ['colleague', 'Colleague of'],
-            ['family', 'Family of'],
-          ]} />
-          </${Field}>
-          <${Field} label="Other person" id="other-person" error=${errAt(e, 'person2Id') ||
-            errAt(e, 'person1Id')}>
-            <${Select} value=${f.other} onChange=${set('other')} options=${[
-              ['', 'Choose…'],
-              ...list.map((/** @type {any} */ x) => [x.id, x.name]),
-            ]} />
+        are worked out from these. A divorce is the marriage's end date.</p>
+      ${admin
+        ? html`
+          <${Field} label="Person" id="person"
+            hint="An admin adds anyone's relationships; others add their own."
+            error=${errAt(e, 'person1Id')}>
+            <${Select} value=${f.who} onChange=${set('who')} options=${all.map((
+              /** @type {any} */ x,
+            ) => [x.id, x.id === me ? `${x.name} (you)` : x.name])} />
             </${Field}>
-            </div>
-            <div class="row">
-              <${Field} label="From" id="from-date" error=${errAt(e, 'fromDate')}>
-                <${Input} type="date" value=${f.fromDate} onInput=${set('fromDate')} />
-                </${Field}>
-                <${Field} label="To" id="to-date" error=${errAt(e, 'toDate')}
-                  hint="Empty while it holds. A death ends a marriage by itself.">
-                  <${Input} type="date" value=${f.toDate} onInput=${set('toDate')} />
-                  </${Field}>
-                  <${Field} label="Label" error=${errAt(e, 'label')} hint="For family: godmother.">
-                    <${Input} value=${f.label} onInput=${set('label')} />
-                    </${Field}>
-                    </div>
-                    <${FormError} error=${e} shown=${[
-                      'relation',
-                      'person1Id',
-                      'person2Id',
-                      'fromDate',
-                      'toDate',
-                      'label',
-                    ]} />
-                    </${Dialog}>
+        `
+        : null}
+      <div class="row">
+        <${Field} label=${f.who === me ? 'I am the' : 'They are the'} id="relation"
+          error=${errAt(e, 'relation')}>
+          <${Select} value=${f.relation} onChange=${set('relation')} options=${KINDS} />
+        </${Field}>
+        <${Field} label="Other person" id="other-person" error=${errAt(e, 'person2Id') ||
+          errAt(e, 'person1Id')}>
+          <${Select} value=${f.other} onChange=${set('other')} options=${[
+            ['', 'Choose…'],
+            ...list.map((/** @type {any} */ x) => [x.id, x.name]),
+          ]} />
+        </${Field}>
+      </div>
+      <div class="row">
+        <${Field} label="From" id="from-date" error=${errAt(e, 'fromDate')}>
+          <${Input} type="date" value=${f.fromDate} onInput=${set('fromDate')} />
+        </${Field}>
+        <${Field} label="To" id="to-date" error=${errAt(e, 'toDate')}
+          hint="Empty while it holds. A death ends a marriage by itself.">
+          <${Input} type="date" value=${f.toDate} onInput=${set('toDate')} />
+        </${Field}>
+        <${Field} label="Label" error=${errAt(e, 'label')} hint="For family: godmother.">
+          <${Input} value=${f.label} onInput=${set('label')} />
+        </${Field}>
+      </div>
+      <${FormError} error=${e} shown=${[
+        'relation',
+        'person1Id',
+        'person2Id',
+        'fromDate',
+        'toDate',
+        'label',
+      ]} />
+    </${Dialog}>
   `;
 }
 

@@ -28,7 +28,7 @@ from ..store.entities.receipts import ReceiptLink
 from ..store.entities.taxes import EstimatedPayment, TaxBook
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
-from . import books
+from . import books, dependents
 
 ZERO = Decimal(0)
 CENT = Decimal("0.01")
@@ -628,6 +628,34 @@ def education_panel(s: Session, book: TaxBook) -> list[EducationRow]:
 
 
 @dataclass
+class Student:
+    """A dependent student (S8.14.5.3): their 1098-T, and the withdrawals from 529s for them."""
+
+    name: str
+    received1098T: bool
+    withdrawals529: Decimal
+
+
+def students(s: Session, book: TaxBook) -> list[Student]:
+    deps = [d for d in dependents.listed(s, book) if d.row.student]
+    if not deps:
+        return []
+    # 1098-Ts name the college, not the student: as many students have theirs as arrived.
+    got = sum(
+        1 for d in books.documents(s, book) if d.direction == "received" and d.form == "1098-T"
+    )
+    taken: dict[str, Decimal] = defaultdict(lambda: ZERO)
+    for a in books.counted(s, book).accounts:
+        if a.type != "529":
+            continue
+        b = education.beneficiary(s, education.plan_of(s, a))
+        w = next((x for x in education.withdrawals(s, a) if x.year == book.year), None)
+        if b is not None and w is not None:
+            taken[b.id] += w.distributions
+    return [Student(d.person.name, i < got, taken[d.person.id]) for i, d in enumerate(deps)]
+
+
+@dataclass
 class GiftTax:
     giver: str
     person: str
@@ -778,6 +806,31 @@ def issues(s: Session, book: TaxBook, rows: list[Row]) -> list[Issue]:
                     f"{r.account}: the sale of {r.description} on {r.sold:%b %-d} has no basis",
                 )
             )
+    # Dependents (S8.14.5): claimed on two books, a filer claimed on another, Form 8615.
+    deps = dependents.listed(s, book)
+    for d in deps:
+        if d.claimedElsewhere:
+            out.append(
+                Issue(
+                    "claimed-twice",
+                    f"{d.person.name} is claimed on another {book.year} tax book too",
+                )
+            )
+    for p in dependents.filers_claimed_elsewhere(s, book):
+        out.append(
+            Issue(
+                "claimed-elsewhere",
+                f"{p.name} is claimed as a dependent on another {book.year} tax book",
+            )
+        )
+    for f in dependents.form_8615(s, book, deps, counted.accounts):
+        out.append(
+            Issue(
+                "form-8615",
+                f"{f.name}'s unearned income of ${f.unearned:,.2f} is above the "
+                f"${f.threshold:,.0f} threshold: Form 8615 may apply",
+            )
+        )
     # Transfers between users' accounts carry a gift's basis over (S8.4).
     ids = {a.id: a for a in counted.accounts}
     first, last = _span(book.year)

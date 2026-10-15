@@ -31,5 +31,13 @@ child's name.
 What last year's filings carried forward: the AGI needed to sign this year's e-filed return,
 capital-loss and charitable carryovers, and the Form 8606 basis.
 
+## Dependents
+
+The people the filers claim this year, each with how they're claimed, the months they lived with
+you, whether a student, and their age on Dec 31. **Also claimed elsewhere** marks someone another
+tax book claims for the same year. A dependent child's unearned income above the year's threshold is
+flagged for Form 8615 (the kiddie tax). A new tax book copies them a year older, and says whom it
+left out as past a qualifying child's age.
+
 MoneyKata gathers what a preparer or tax software needs. It never computes the tax, chooses a filing
 status, or files.

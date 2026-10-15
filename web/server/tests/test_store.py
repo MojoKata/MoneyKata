@@ -489,7 +489,8 @@ def test_restore_refuses_a_changed_backup_or_one_from_a_newer_release(store, key
     made = maintenance.backup(keyed_config, store)
     store.db.dispose()
     manifest = made / "manifest.json"
-    manifest.write_text(manifest.read_text().replace('"revision": "0002"', '"revision": "9999"'))
+    head = f'"revision": "{migrate.head()}"'
+    manifest.write_text(manifest.read_text().replace(head, '"revision": "9999"'))
     with pytest.raises(RefuseStart, match="from a newer MoneyKata"):
         maintenance.restore(keyed_config, made)
     assert keyed_config.db_path.exists()  # nothing was moved

@@ -39,6 +39,8 @@ FIGURES = [
     Figure("rothFrom529", "529 to Roth IRA, lifetime", "money", "Gifts and giving", "IRS"),
     Figure("qcdLimit", "QCD limit", "money", "Gifts and giving", "IRS"),
     Figure("collectablesRate", "Collectables rate (max)", "percent", "Taxes", "IRS"),
+    # A dependent child's unearned income above which Form 8615 applies (S8.14.5.3).
+    Figure("form8615Threshold", "Form 8615 unearned income", "money", "Taxes", "IRS"),
     # The federal return's due date in the following year: month and day (S8.15.3).
     Figure("federalDue", "Federal return due (month, day)", "numbers", "Taxes", "IRS"),
     # A year of college, tuition, fees, room and board, for the education goal (S6.2.2).
@@ -121,6 +123,7 @@ SHIPPED: dict[int, dict] = {
         "rothFrom529": 35000,
         "qcdLimit": 108000,
         "collectablesRate": 28,
+        "form8615Threshold": 2700,
         "federalDue": [4, 15],
         "collegePublic": 26000,
         "collegePrivate": 58000,
@@ -142,6 +145,7 @@ SHIPPED: dict[int, dict] = {
         "rothFrom529": 35000,
         "qcdLimit": 111000,
         "collectablesRate": 28,
+        "form8615Threshold": 2700,
         "federalDue": [4, 15],
         "collegePublic": 27100,
         "collegePrivate": 60300,

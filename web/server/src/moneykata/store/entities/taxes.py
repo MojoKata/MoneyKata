@@ -38,6 +38,25 @@ class TaxBookAccount(SoftDeleted):
 
 
 @dataclass(kw_only=True, eq=False)
+class TaxBookDependent(Record):
+    id: str
+    bookId: str
+    personId: str
+    claimedAs: str
+    months: int = 12
+    student: bool = False
+
+
+@dataclass(kw_only=True, eq=False)
+class TaxDependentAccount(SoftDeleted):
+    dependentId: str
+    accountId: str
+    createdAt: dt.datetime
+    deletedAt: dt.datetime | None = None
+    deletedById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
 class Filing(Record):
     id: str
     bookId: str

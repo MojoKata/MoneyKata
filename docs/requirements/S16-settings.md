@@ -34,8 +34,9 @@ follows Backups, and Connector (18), which follows Linked servers:
     time, the reading queue, and **Re-read all receipts** (S9.8.7).
 11. **Tax tables**: per year, shipped and correctable: contribution limits and thresholds,
     the annual gift exclusion, the 529-to-Roth lifetime limit, the QCD limit, the
-    collectables rate, the shipped college-cost averages (S6.2.2), the bitcoin models'
-    published figures (S6.3.1), and the metal per share of SLV, PPLT and PALL (S4.3).
+    collectables rate, the unearned income above which Form 8615 applies (S8.14.5.3), the
+    shipped college-cost averages (S6.2.2), the bitcoin models' published figures (S6.3.1),
+    and the metal per share of SLV, PPLT and PALL (S4.3).
     A corrected figure is marked, with the shipped value beside it; setting it back to the
     shipped value removes the correction. A year after the latest shipped uses the latest.
     The college-cost averages and the metal per share arrive with the features that use

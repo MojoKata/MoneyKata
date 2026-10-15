@@ -264,14 +264,35 @@ def expected(s: Session, book: TaxBook) -> list[Expected]:
             ):
                 continue
             out.append(Expected(d.form, d.issuer, d.accountId, f"Received in {prev.year}"))
+    # A dependent's documents (S8.14.5.3): a student's 1098-T, and a childcare provider's
+    # statement when childcare was paid for one under 13.
+    from . import dependents
+
+    deps = dependents.listed(s, book)
+    # Last year's 1098-Ts, expected again from their college, stand for the first students.
+    known = sum(e.form == "1098-T" for e in out)
+    for d in [d for d in deps if d.row.student][known:]:
+        out.append(Expected("1098-T", None, None, f"For {d.person.name}: a student"))
+    young = [d.person.name for d in deps if d.under13]
+    if young and dependents.childcare_paid(s, book, [a.id for a in counted(s, book).accounts]):
+        out.append(
+            Expected(
+                "Childcare provider statement",
+                None,
+                None,
+                f"For {' and '.join(young)}: childcare paid",
+            )
+        )
     received = [d for d in documents(s, book) if d.direction == "received"]
     used: set[str] = set()
     for e in out:
         for d in received:
             if d.id in used or d.form != e.form:
                 continue
-            if (e.accountId and d.accountId == e.accountId) or (
-                e.issuer and (d.issuer or "").lower() == e.issuer.lower()
+            if (
+                (e.accountId and d.accountId == e.accountId)
+                or (e.issuer and (d.issuer or "").lower() == e.issuer.lower())
+                or (e.accountId is None and e.issuer is None)
             ):
                 e.document = d
                 used.add(d.id)

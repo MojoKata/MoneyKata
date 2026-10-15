@@ -16,11 +16,12 @@ from ..store.entities.taxes import (
     Filing,
     TaxBook,
     TaxBookAccount,
+    TaxBookDependent,
     TaxBookFiler,
     TaxDocument,
 )
 from ..store.entities.users import User
-from ..taxes import books
+from ..taxes import books, dependents
 from .conventions import Deleted, ExactRoute, Model, Money, check, gone, if_match
 from .deps import Caller, caller, server
 
@@ -40,6 +41,7 @@ RECEIVED_FORMS = (
     "1098",
     "1098-E",
     "1098-T",
+    "Childcare provider statement",
     "1095",
     "K-1",
     "5498",
@@ -96,16 +98,21 @@ def list_books(request: Request, c: Caller = Depends(caller)):
         return [_row(s, b, lvl) for b, lvl in books.visible(s, c.id)]
 
 
+class NewBookOut(BookRow):
+    dependentsLeftOut: list[str]  # last year's, past a qualifying child's age (S8.14.5.4)
+
+
 class NewBook(Model):
     year: int
     filers: list[str]
     fromLastYear: bool = True
 
 
-@router.post("/tax-books", response_model=BookRow, status_code=201)
+@router.post("/tax-books", response_model=NewBookOut, status_code=201)
 def create_book(body: NewBook, request: Request, c: Caller = Depends(caller)):
     """A book for a year and its filers: the caller, alone or with their spouse. With
-    *from last year*, it copies last year's accounts left out or added (S8.14.4)."""
+    *from last year*, it copies last year's accounts left out or added, and its dependents a
+    year older, leaving out and naming those past a qualifying child's age (S8.14.4)."""
     year = clock.today().year
     if not year - 10 <= body.year <= year + 1:
         raise refuse("year", "year-invalid", "A recent tax year.")
@@ -132,11 +139,14 @@ def create_book(body: NewBook, request: Request, c: Caller = Depends(caller)):
                 )
             )
         s.flush()
+        left: list[str] = []
         if body.fromLastYear:
             prev = books.previous(s, b)
             if prev is not None:
                 for acct, on in books.overrides(s, prev).items():
                     s.add(TaxBookAccount(bookId=b.id, accountId=acct, counted=on, createdAt=now))
+                s.flush()
+                left = dependents.carry_over(s, prev, b, now)
         activity.record(
             s,
             "tax-book.created",
@@ -146,7 +156,7 @@ def create_book(body: NewBook, request: Request, c: Caller = Depends(caller)):
             owner=c.id,
         )
         s.flush()
-        return _row(s, b, "owner")
+        return NewBookOut(**_row(s, b, "owner").model_dump(), dependentsLeftOut=left)
 
 
 @router.post("/tax-books/{book_id}/accept", response_model=BookRow)
@@ -282,7 +292,34 @@ class LastYear(Model):
     figures: CarriedView
 
 
+class DependentOut(Model):
+    id: str
+    personId: str
+    name: str
+    relation: str | None  # to the filers on Dec 31: daughter
+    claimedAs: str
+    months: int
+    student: bool
+    age: int | None  # on Dec 31; none without a birth year
+    under17: bool
+    under13: bool
+    agesOut: list[str]
+    claimedElsewhere: bool  # on another book of the year too
+    accountIds: list[str]  # counted accounts in their name
+    version: int
+
+
+class Form8615Out(Model):
+    name: str
+    unearned: Money
+    threshold: Money
+    accounts: list[str]
+
+
 class BookDetail(BookRow):
+    dependents: list[DependentOut]
+    form8615: list[Form8615Out]  # dependent children past the year's threshold
+    claimedElsewhere: list[str]  # the book's filers claimed on another book of the year
     accounts: list[AccountRef]
     leftOut: list[AccountRef]
     addable: list[AccountRef]  # accounts the caller can see, not counted
@@ -292,6 +329,25 @@ class BookDetail(BookRow):
     lastYear: list[LastYear]
     federalDue: dt.date
     canWrite: bool
+
+
+def _dependent(d: "dependents.Dependent") -> DependentOut:
+    return DependentOut(
+        id=d.row.id,
+        personId=d.person.id,
+        name=d.person.name,
+        relation=d.relation,
+        claimedAs=d.row.claimedAs,
+        months=d.row.months,
+        student=d.row.student,
+        age=d.age,
+        under17=d.under17,
+        under13=d.under13,
+        agesOut=d.agesOut,
+        claimedElsewhere=d.claimedElsewhere,
+        accountIds=d.accountIds,
+        version=d.row.version,
+    )
 
 
 def _acct(s, a: Account) -> AccountRef:
@@ -396,8 +452,14 @@ def detail(s, c: Caller, b: TaxBook, lvl: str) -> BookDetail:
         if a.id not in counted_ids and a.id not in {x.id for x in cnt.leftOut}
     ]
     base = _row(s, b, lvl)
+    deps = dependents.listed(s, b)
     return BookDetail(
         **base.model_dump(),
+        dependents=[_dependent(d) for d in deps],
+        form8615=[
+            Form8615Out(**f.__dict__) for f in dependents.form_8615(s, b, deps, cnt.accounts)
+        ],
+        claimedElsewhere=[p.name for p in dependents.filers_claimed_elsewhere(s, b)],
         accounts=[_acct(s, a) for a in cnt.accounts],
         leftOut=[_acct(s, a) for a in cnt.leftOut],
         addable=[_acct(s, a) for a in addable],
@@ -462,6 +524,126 @@ def count_account(
             row.restore()
         s.flush()
         return detail(s, c, b, lvl)
+
+
+# ---- Dependents (S8.14.5) ----
+
+
+class CandidateOut(Model):
+    personId: str
+    name: str
+    relation: str | None
+    age: int | None
+    suggest: str  # how they'd be claimed: qualifying child or relative
+    suggestIfStudent: str  # the same, were they a full-time student
+
+
+@router.get("/tax-books/{book_id}/dependent-candidates", response_model=list[CandidateOut])
+def dependent_candidates(book_id: str, request: Request, c: Caller = Depends(caller)):
+    """The household's people the caller sees, with their relation to the filers on Dec 31
+    and how the family tree suggests claiming them (S8.14.5.1)."""
+    with server(request).db.read() as s:
+        b, _ = books.get(s, c.id, book_id, "write")
+        return [
+            CandidateOut(
+                personId=x.person.id,
+                name=x.person.name,
+                relation=x.relation,
+                age=x.age,
+                suggest=dependents.suggest(x.descendant, x.age, False),
+                suggestIfStudent=dependents.suggest(x.descendant, x.age, True),
+            )
+            for x in dependents.candidates(s, c.id, b)
+        ]
+
+
+class DependentIn(Model):
+    personId: str
+    claimedAs: str = "qualifying child"
+    months: int = 12
+    student: bool = False
+    accountIds: list[str] = Field(default_factory=list)
+
+
+def _dependent_values(s, c: Caller, b: TaxBook, body: DependentIn, row_id: str | None) -> dict:
+    e: list[FieldError] = []
+    if body.claimedAs not in dependents.CLAIMS:
+        e.append(FieldError("claimedAs", "claimed-as-invalid", "Qualifying child or relative."))
+    if not 0 <= body.months <= 12:
+        e.append(FieldError("months", "months-invalid", "From 0 to 12."))
+    if e:
+        raise Problem(422, e[0].code, e[0].message, e)
+    try:
+        p = people.get(s, c.id, body.personId)
+    except Problem:
+        raise refuse("personId", "person-unknown", "One of the household's people.") from None
+    if p.id in dependents.filer_people(s, b):
+        raise refuse("personId", "dependent-filer", "A filer isn't their own dependent.")
+    for d in dependents.of_book(s, b):
+        if d.personId == p.id and d.id != row_id:
+            raise refuse("personId", "dependent-twice", "Already a dependent in this book.")
+    counted = {a.id for a in books.counted(s, b).accounts}
+    if any(i not in counted for i in body.accountIds):
+        raise refuse("accountIds", "account-not-counted", "Accounts this book counts.")
+    return {
+        "personId": p.id,
+        "claimedAs": body.claimedAs,
+        "months": body.months,
+        "student": body.student,
+    }
+
+
+@router.post("/tax-books/{book_id}/dependents", response_model=BookDetail, status_code=201)
+def add_dependent(book_id: str, body: DependentIn, request: Request, c: Caller = Depends(caller)):
+    with server(request).db.tx() as s:
+        b, lvl = books.get(s, c.id, book_id, "write")
+        d = TaxBookDependent(
+            id=ids.new_id("TxDep"), bookId=b.id, **_dependent_values(s, c, b, body, None)
+        )
+        s.add(d)
+        s.flush()
+        dependents.set_accounts(s, d, list(dict.fromkeys(body.accountIds)), clock.now())
+        s.flush()
+        return detail(s, c, b, lvl)
+
+
+def _own_dependent(s, c: Caller, dep_id: str) -> tuple[TaxBookDependent, TaxBook, str]:
+    d = s.get(TaxBookDependent, dep_id)
+    if d is None or d.deleted:
+        raise Problem(404, "not-found", "Not found")
+    b, lvl = books.get(s, c.id, d.bookId, "write")
+    return d, b, lvl
+
+
+@router.patch("/tax-dependents/{dep_id}", response_model=BookDetail)
+def change_dependent(
+    dep_id: str,
+    body: DependentIn,
+    request: Request,
+    c: Caller = Depends(caller),
+    version: int = Depends(if_match),
+):
+    with server(request).db.tx() as s:
+        d, b, lvl = _own_dependent(s, c, dep_id)
+        check(d, version, lambda: detail(s, c, b, lvl))
+        for k, v in _dependent_values(s, c, b, body, d.id).items():
+            setattr(d, k, v)
+        d.updatedAt = clock.now()
+        dependents.set_accounts(s, d, list(dict.fromkeys(body.accountIds)), clock.now())
+        s.flush()
+        return detail(s, c, b, lvl)
+
+
+@router.delete("/tax-dependents/{dep_id}", response_model=Deleted[BookDetail])
+def delete_dependent(
+    dep_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
+):
+    with server(request).db.tx() as s:
+        d, b, lvl = _own_dependent(s, c, dep_id)
+        check(d, version, lambda: detail(s, c, b, lvl))
+        d.mark_deleted(c.id)
+        s.flush()
+        return Deleted[BookDetail](deleted=gone(d), parent=detail(s, c, b, lvl))
 
 
 # ---- Filings (S8.15) ----

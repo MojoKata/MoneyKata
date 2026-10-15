@@ -104,7 +104,6 @@ def add_person(body: PersonIn, request: Request, c: Caller = Depends(caller)):
             id=ids.new_id("Persn"),
             ownerId=c.id,
             private=body.private,
-            diedOn=body.diedOn,
             **values,
         )
         s.add(p)

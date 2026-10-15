@@ -6,7 +6,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Request, Response
 
 from .. import clock
-from ..taxes import books, exports, panels
+from ..taxes import books, dependents, exports, panels
 from .conventions import ExactRoute, Model, Money, Quantity, Ratio
 from .deps import Caller, caller, server
 
@@ -142,6 +142,21 @@ class EducationOut(Model):
     notCovered: Money
 
 
+class DependentAge(Model):
+    name: str
+    relation: str | None
+    age: int | None  # on Dec 31
+    under17: bool
+    under13: bool
+    agesOut: list[str]
+
+
+class StudentOut(Model):
+    name: str
+    received1098T: bool
+    withdrawals529: Money
+
+
 class GiftTaxOut(Model):
     giver: str
     person: str
@@ -179,10 +194,12 @@ class Panels(Model):
     income: IncomeOut
     retirement: RetirementOut
     deductions: list[TagOut]
+    dependents: list[DependentAge]  # in Deductions and credits (S8.14.5.3)
     estimated: list[Quarter]
     lastYearTax: Money | None  # beside the estimated payments
     giving: GivingOut
     education: list[EducationOut]
+    students: list[StudentOut]  # dependent students (S8.14.5.3)
     giftTax: list[GiftTaxOut]
     elections: list[str]
     loans: list[LoanOut]
@@ -255,6 +272,17 @@ def build(s, b) -> Panels:
             basis8606=ret.basis8606,
         ),
         deductions=[TagOut(**t.__dict__) for t in tags],
+        dependents=[
+            DependentAge(
+                name=d.person.name,
+                relation=d.relation,
+                age=d.age,
+                under17=d.under17,
+                under13=d.under13,
+                agesOut=d.agesOut,
+            )
+            for d in dependents.listed(s, b)
+        ],
         estimated=[Quarter(jurisdiction=j, quarter=q, amount=a) for j, q, a in quarters],
         lastYearTax=last_tax,
         giving=GivingOut(
@@ -276,6 +304,7 @@ def build(s, b) -> Panels:
             )
             for e in panels.education_panel(s, b)
         ],
+        students=[StudentOut(**x.__dict__) for x in panels.students(s, b)],
         giftTax=[GiftTaxOut(**g.__dict__) for g in flagged],
         elections=elections,
         loans=[

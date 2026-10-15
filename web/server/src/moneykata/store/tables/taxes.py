@@ -14,7 +14,7 @@ from sqlalchemy import (
 )
 
 from ..types import Day, Dec, UtcTimestamp
-from ._base import pairs, record
+from ._base import pairs, record, unique_live
 
 TaxBook = record(
     "TaxBook",
@@ -41,6 +41,37 @@ TaxBookAccounts = pairs(
     Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
     Column("counted", Boolean, nullable=False),
     PrimaryKeyConstraint("bookId", "accountId"),
+)
+
+# A person the filers claim for the year (S8.14.5): how they are claimed, the months they
+# lived with the filers, and whether a full-time student. MoneyKata doesn't decide who qualifies.
+TaxBookDependent = record(
+    "TaxBookDependent",
+    "TxDep",
+    Column("bookId", Text, ForeignKey("TaxBook.id", ondelete="CASCADE"), nullable=False),
+    Column("personId", Text, ForeignKey("Person.id"), nullable=False),
+    Column("claimedAs", Text, nullable=False),
+    Column("months", Integer, nullable=False, server_default=text("12")),
+    Column("student", Boolean, nullable=False, server_default=text("0")),
+    CheckConstraint(
+        "\"claimedAs\" IN ('qualifying child', 'qualifying relative')", name="claimed_as"
+    ),
+    CheckConstraint("months BETWEEN 0 AND 12", name="months"),
+    Index("ix_TaxBookDependent_bookId", "bookId"),
+)
+unique_live(TaxBookDependent, "bookId", "personId")
+
+# The counted accounts in a dependent's name (a custodial account), for Form 8615 (S8.14.5.3).
+TaxDependentAccounts = pairs(
+    "TaxDependentAccounts",
+    Column(
+        "dependentId",
+        Text,
+        ForeignKey("TaxBookDependent.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
+    PrimaryKeyConstraint("dependentId", "accountId"),
 )
 
 # One return: federal, a state's or a locality's; an amended return names the one it amends.

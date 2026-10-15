@@ -1311,6 +1311,20 @@
             "title": "Canwrite",
             "type": "boolean"
           },
+          "claimedElsewhere": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Claimedelsewhere",
+            "type": "array"
+          },
+          "dependents": {
+            "items": {
+              "$ref": "#/components/schemas/DependentOut"
+            },
+            "title": "Dependents",
+            "type": "array"
+          },
           "expected": {
             "items": {
               "$ref": "#/components/schemas/ExpectedOut"
@@ -1335,6 +1349,13 @@
               "$ref": "#/components/schemas/FilingOut"
             },
             "title": "Filings",
+            "type": "array"
+          },
+          "form8615": {
+            "items": {
+              "$ref": "#/components/schemas/Form8615Out"
+            },
+            "title": "Form8615",
             "type": "array"
           },
           "id": {
@@ -1386,6 +1407,9 @@
           "level",
           "label",
           "version",
+          "dependents",
+          "form8615",
+          "claimedElsewhere",
           "accounts",
           "leftOut",
           "addable",
@@ -1619,6 +1643,59 @@
           "payee"
         ],
         "title": "Candidate",
+        "type": "object"
+      },
+      "CandidateOut": {
+        "additionalProperties": false,
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "personId": {
+            "title": "Personid",
+            "type": "string"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relation"
+          },
+          "suggest": {
+            "title": "Suggest",
+            "type": "string"
+          },
+          "suggestIfStudent": {
+            "title": "Suggestifstudent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "personId",
+          "name",
+          "relation",
+          "age",
+          "suggest",
+          "suggestIfStudent"
+        ],
+        "title": "CandidateOut",
         "type": "object"
       },
       "Carried": {
@@ -2849,6 +2926,197 @@
           "deleted"
         ],
         "title": "Deleted[WithdrawalsView]",
+        "type": "object"
+      },
+      "DependentAge": {
+        "additionalProperties": false,
+        "properties": {
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "agesOut": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Agesout",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relation"
+          },
+          "under13": {
+            "title": "Under13",
+            "type": "boolean"
+          },
+          "under17": {
+            "title": "Under17",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "relation",
+          "age",
+          "under17",
+          "under13",
+          "agesOut"
+        ],
+        "title": "DependentAge",
+        "type": "object"
+      },
+      "DependentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "accountIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accountids",
+            "type": "array"
+          },
+          "claimedAs": {
+            "default": "qualifying child",
+            "title": "Claimedas",
+            "type": "string"
+          },
+          "months": {
+            "default": 12,
+            "title": "Months",
+            "type": "integer"
+          },
+          "personId": {
+            "title": "Personid",
+            "type": "string"
+          },
+          "student": {
+            "default": false,
+            "title": "Student",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "personId"
+        ],
+        "title": "DependentIn",
+        "type": "object"
+      },
+      "DependentOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accountIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accountids",
+            "type": "array"
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "agesOut": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Agesout",
+            "type": "array"
+          },
+          "claimedAs": {
+            "title": "Claimedas",
+            "type": "string"
+          },
+          "claimedElsewhere": {
+            "title": "Claimedelsewhere",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "months": {
+            "title": "Months",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "personId": {
+            "title": "Personid",
+            "type": "string"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relation"
+          },
+          "student": {
+            "title": "Student",
+            "type": "boolean"
+          },
+          "under13": {
+            "title": "Under13",
+            "type": "boolean"
+          },
+          "under17": {
+            "title": "Under17",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "personId",
+          "name",
+          "relation",
+          "claimedAs",
+          "months",
+          "student",
+          "age",
+          "under17",
+          "under13",
+          "agesOut",
+          "claimedElsewhere",
+          "accountIds",
+          "version"
+        ],
+        "title": "DependentOut",
         "type": "object"
       },
       "DocumentOut": {
@@ -4442,6 +4710,46 @@
           "ahead"
         ],
         "title": "Following",
+        "type": "object"
+      },
+      "Form8615Out": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "threshold": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Threshold",
+            "type": "number"
+          },
+          "unearned": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Unearned",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "unearned",
+          "threshold",
+          "accounts"
+        ],
+        "title": "Form8615Out",
         "type": "object"
       },
       "Forms": {
@@ -8669,6 +8977,56 @@
         "title": "NewBook",
         "type": "object"
       },
+      "NewBookOut": {
+        "additionalProperties": false,
+        "properties": {
+          "dependentsLeftOut": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dependentsleftout",
+            "type": "array"
+          },
+          "filers": {
+            "items": {
+              "$ref": "#/components/schemas/Filer"
+            },
+            "title": "Filers",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "level": {
+            "title": "Level",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "year",
+          "filers",
+          "level",
+          "label",
+          "version",
+          "dependentsLeftOut"
+        ],
+        "title": "NewBookOut",
+        "type": "object"
+      },
       "NewBudget": {
         "additionalProperties": false,
         "properties": {
@@ -10006,6 +10364,37 @@
         "title": "Page[BudgetRow]",
         "type": "object"
       },
+      "Page_CandidateOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[CandidateOut]",
+        "type": "object"
+      },
       "Page_Candidate_": {
         "properties": {
           "items": {
@@ -11089,6 +11478,13 @@
             "title": "Deductions",
             "type": "array"
           },
+          "dependents": {
+            "items": {
+              "$ref": "#/components/schemas/DependentAge"
+            },
+            "title": "Dependents",
+            "type": "array"
+          },
           "education": {
             "items": {
               "$ref": "#/components/schemas/EducationOut"
@@ -11179,6 +11575,13 @@
           "scheduleD": {
             "$ref": "#/components/schemas/ScheduleDOut"
           },
+          "students": {
+            "items": {
+              "$ref": "#/components/schemas/StudentOut"
+            },
+            "title": "Students",
+            "type": "array"
+          },
           "washes": {
             "items": {
               "$ref": "#/components/schemas/WashOut"
@@ -11199,10 +11602,12 @@
           "income",
           "retirement",
           "deductions",
+          "dependents",
           "estimated",
           "lastYearTax",
           "giving",
           "education",
+          "students",
           "giftTax",
           "elections",
           "loans",
@@ -11652,6 +12057,10 @@
             "title": "Canchangeperson",
             "type": "boolean"
           },
+          "canMakePrivate": {
+            "title": "Canmakeprivate",
+            "type": "boolean"
+          },
           "diedOn": {
             "anyOf": [
               {
@@ -11682,6 +12091,10 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "isUser": {
+            "title": "Isuser",
+            "type": "boolean"
           },
           "lastGift": {
             "anyOf": [
@@ -11827,6 +12240,8 @@
           "wedding",
           "private",
           "canChangePerson",
+          "canMakePrivate",
+          "isUser",
           "giftBudget",
           "leadDays",
           "notes",
@@ -15940,6 +16355,34 @@
         "title": "StatementRowIn",
         "type": "object"
       },
+      "StudentOut": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "received1098T": {
+            "title": "Received1098T",
+            "type": "boolean"
+          },
+          "withdrawals529": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Withdrawals529",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "received1098T",
+          "withdrawals529"
+        ],
+        "title": "StudentOut",
+        "type": "object"
+      },
       "Suggested": {
         "additionalProperties": false,
         "description": "A field read from the receipt, with how sure the reader was (0–100).",
@@ -18932,6 +19375,18 @@
             ],
             "title": "Birthyear"
           },
+          "diedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diedon"
+          },
           "differentPerson": {
             "default": false,
             "title": "Differentperson",
@@ -18999,9 +19454,15 @@
             "title": "Personid"
           },
           "private": {
-            "default": false,
-            "title": "Private",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Private"
           },
           "sex": {
             "anyOf": [
@@ -30699,7 +31160,7 @@
         ]
       },
       "post": {
-        "description": "A book for a year and its filers: the caller, alone or with their spouse. With\n*from last year*, it copies last year's accounts left out or added (S8.14.4).",
+        "description": "A book for a year and its filers: the caller, alone or with their spouse. With\n*from last year*, it copies last year's accounts left out or added, and its dependents a\nyear older, leaving out and naming those past a qualifying child's age (S8.14.4).",
         "operationId": "create_book_ui_api_tax_books_post",
         "requestBody": {
           "content": {
@@ -30716,7 +31177,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BookRow"
+                  "$ref": "#/components/schemas/NewBookOut"
                 }
               }
             },
@@ -30921,6 +31382,124 @@
           }
         },
         "summary": "Count Account",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/dependent-candidates": {
+      "get": {
+        "description": "The household's people the caller sees, with their relation to the filers on Dec 31\nand how the family tree suggests claiming them (S8.14.5.1).",
+        "operationId": "dependent_candidates_ui_api_tax_books__book_id__dependent_candidates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CandidateOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dependent Candidates",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-books/{book_id}/dependents": {
+      "post": {
+        "operationId": "add_dependent_ui_api_tax_books__book_id__dependents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DependentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Dependent",
         "tags": [
           "taxes"
         ]
@@ -31173,6 +31752,98 @@
           }
         },
         "summary": "Get Panels",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
+    "/ui/api/tax-dependents/{dep_id}": {
+      "delete": {
+        "operationId": "delete_dependent_ui_api_tax_dependents__dep_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dep_id",
+            "required": true,
+            "schema": {
+              "title": "Dep Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_BookDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Dependent",
+        "tags": [
+          "taxes"
+        ]
+      },
+      "patch": {
+        "operationId": "change_dependent_ui_api_tax_dependents__dep_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dep_id",
+            "required": true,
+            "schema": {
+              "title": "Dep Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DependentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Dependent",
         "tags": [
           "taxes"
         ]

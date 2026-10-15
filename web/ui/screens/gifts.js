@@ -326,6 +326,8 @@ function personForm(p) {
           .padStart(2, '0')
       }`.replace(/^-/, '')
       : '',
+    diedOn: p?.diedOn || '',
+    private: !!p?.private,
     giftBudget: p?.giftBudget || '',
     leadDays: String(p?.leadDays ?? 14),
     notes: p?.notes || '',
@@ -372,6 +374,8 @@ function PersonDialog({ close, p }) {
       birthMonth: b?.month ?? null,
       birthDay: b?.day ?? null,
       birthYear: b?.year ?? null,
+      diedOn: f.diedOn || null,
+      private: !p || p.canMakePrivate ? f.private : null,
       giftBudget: clean(f.giftBudget) || null,
       leadDays: Number(f.leadDays) || 0,
       notes: f.notes || null,
@@ -396,7 +400,21 @@ function PersonDialog({ close, p }) {
     toast(p ? 'Saved' : `${out.name} added`);
     close(out);
   });
-  const e = save.error;
+  // Deleting asks twice: the plan only, or the person with it (S7.8.6).
+  const [armed, setArmed] = useState('');
+  const drop = useSubmit(async (/** @type {string} */ what) => {
+    if (armed !== what) {
+      setArmed(what);
+      return;
+    }
+    if (what === 'person') await api.del(`/persons/${p.id}`, p.personVersion);
+    else await api.del(`/people/${p.id}`, p.version);
+    toast(what === 'person' ? `${p.name} deleted` : 'Gift plan deleted');
+    close(true);
+  });
+  const rels = useApi(p ? `/persons/${p.id}/relations` : null, {});
+  const relations = /** @type {any[]} */ ((/** @type {any} */ (rels.data))?.items || []);
+  const e = save.error || drop.error;
   // One person, once (S10.10.3): a name already here shows that person instead.
   const clash = e?.code === 'person-exists' ? e.body?.person : null;
   const ask = useSubmit(async () => {
@@ -427,9 +445,29 @@ function PersonDialog({ close, p }) {
               id: p.planId,
               name: `Gift plan for ${p.name}`,
             })}><${Icon}
-            name="share" /> Share</button><span class="spacer"></span>`
+            name="share" /> Share</button>`
           : null
-      }${canWrite ? html`<button class="btn primary" disabled=${save.busy}>Save</button>` : null}`}>
+      }${
+        p && p.level === 'owner'
+          ? html`
+            <button type="button" class="btn danger" disabled=${drop.busy}
+              onClick=${() => drop.run('plan').catch(() => {})}>${armed === 'plan'
+                ? 'Delete the plan?'
+                : 'Delete plan'}</button>
+          `
+          : null
+      }${
+        p && p.canChangePerson && !p.isUser
+          ? html`
+            <button type="button" class="btn danger" disabled=${drop.busy}
+              onClick=${() => drop.run('person').catch(() => {})}>${armed === 'person'
+                ? `Delete ${p.name} for everyone?`
+                : 'Delete person'}</button>
+          `
+          : null
+      }<span class="spacer"></span>${
+        canWrite ? html`<button class="btn primary" disabled=${save.busy}>Save</button>` : null
+      }`}>
       <fieldset disabled=${!canWrite} style=${{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
         <fieldset disabled=${!ownPerson || !!use} class="card" style=${{
           margin: '0 0 12px',
@@ -459,13 +497,37 @@ function PersonDialog({ close, p }) {
                   errAt(e, 'birthMonth') ||
                   errAt(e, 'birthYear')}
                   hint="2018-10-20, or 10-20 without the year.">
-              <${Input} value=${f.birthday} onInput=${set('birthday')} placeholder="YYYY-MM-DD" />
+                  <${Input} value=${f.birthday} onInput=${set(
+                    'birthday',
+                  )} placeholder="YYYY-MM-DD" />
+                  </${Field}>
+                  </div>
+                  <div class="row">
+                    <${Field} label="Died on" id="died-on" error=${errAt(e, 'diedOn')}
+                      hint="Ends a marriage on that day; their gifts stay in the history.">
+              <${Input} type="date" value=${f.diedOn} onInput=${set('diedOn')} />
             </${Field}>
+            ${!p || p.canMakePrivate
+              ? html`
+                <${SwitchRow} label="Private" hint="Seen only by you and whoever you share them with."
+                  on=${f.private} onChange=${set('private')} />
+              `
+              : null}
           </div>
           <div class="small">${p?.relation
             ? html`<b>${p.relation[0].toUpperCase() + p.relation.slice(1)}</b> to you, worked out
               from relationships.`
             : 'How they’re related to you is worked out from relationships.'}</div>
+          ${relations.length
+            ? html`
+              <div class="small dim" data-help="their-relationships"
+                style=${{
+                  marginTop: '6px',
+                }}>${p.name.split(' ')[0]}'s family and friends: ${relations.map((
+                  /** @type {any} */ r,
+                ) => `${r.name} (${r.label || r.word})`).join(', ')}</div>
+            `
+            : null}
         </fieldset>
         ${clash
           ? html`

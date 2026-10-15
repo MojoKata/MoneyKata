@@ -13,5 +13,6 @@ asked to accept before the book counts their accounts.
 
 ## Start from last year
 
-Copies last year's accounts left out or added, and makes its received documents this year's expected
-ones.
+Copies last year's accounts left out or added and its dependents, a year older, and makes its
+received documents this year's expected ones. A dependent now past a qualifying child's age, and not
+claimed as a relative, is left out and named.

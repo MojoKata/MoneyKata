@@ -296,3 +296,70 @@ def test_a_joint_book_needs_a_marriage_on_the_last_day_or_a_death_that_year(serv
         s.get(Person, b).diedOn = dt.date(2025, 6, 1)
     assert joint(2025).status_code == 201, "widowed in the year: still joint"
     assert joint(2026).status_code == 422
+
+
+def test_a_gift_plans_person_keeps_their_death_and_only_its_creator_makes_them_private(two):
+    alice, bob = two
+    r = alice.post(
+        "/ui/api/people", json={"name": "Ruth Griffin", "sex": "female", "birthYear": 1940}
+    )
+    assert r.status_code == 201, r.text
+    ruth = r.json()
+    assert ruth["canMakePrivate"] and not ruth["isUser"] and not ruth["private"]
+    body = {"name": "Ruth Griffin", "sex": "female", "birthYear": 1940}
+    r = alice.patch(
+        f"/ui/api/people/{ruth['id']}",
+        json={**body, "diedOn": "2030-01-01"},
+        headers={"If-Match": str(ruth["version"])},
+    )
+    assert r.json()["code"] == "died-on-invalid"
+    r = alice.patch(
+        f"/ui/api/people/{ruth['id']}",
+        json={**body, "diedOn": "2026-03-02", "private": True},
+        headers={"If-Match": str(ruth["version"])},
+    )
+    assert r.status_code == 200, r.text
+    assert (r.json()["diedOn"], r.json()["private"]) == ("2026-03-02", True)
+    # Shared with Bob, who plans for her too but may not make her public again.
+    pid = r.json()["id"]
+    bob_id = bob.get("/ui/api/session").json()["user"]["id"]
+    assert (
+        alice.put(f"/ui/api/shares/person/{pid}", json={"users": {bob_id: "read"}}).status_code
+        == 200
+    )
+    r = bob.post("/ui/api/people", json={"personId": pid})
+    assert r.status_code == 201, r.text
+    assert not r.json()["canMakePrivate"]
+    r = bob.patch(
+        f"/ui/api/people/{pid}",
+        json={"personId": pid, "private": False, "notes": "likes tea"},
+        headers={"If-Match": str(r.json()["version"])},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["private"]  # name not given: the person is left as it is
+
+
+def test_a_relationship_is_changed_and_removed_with_its_version(two):
+    alice, bob = two
+    a, b = me(alice), me(bob)
+    r = relate(alice, a, b, "spouse", fromDate="2009-06-14")
+    r2 = alice.patch(
+        f"/ui/api/relationships/{r['id']}",
+        json={
+            "person1Id": a,
+            "person2Id": b,
+            "relation": "spouse",
+            "fromDate": "2009-06-14",
+            "toDate": "2015-03-02",
+        },
+        headers={"If-Match": str(r["version"])},
+    )
+    assert r2.status_code == 200, r2.text
+    assert r2.json()["endsOn"] == "2015-03-02"
+    rows = alice.get("/ui/api/relationships").json()["items"]
+    assert [x["toDate"] for x in rows] == ["2015-03-02"]
+    r3 = alice.delete(
+        f"/ui/api/relationships/{r['id']}", headers={"If-Match": str(r2.json()["version"])}
+    )
+    assert r3.status_code == 200, r3.text
+    assert alice.get("/ui/api/relationships").json()["items"] == []

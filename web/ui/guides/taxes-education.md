@@ -14,6 +14,11 @@ out.
 Each 529's contributions by contributor, the state deduction the owner expects, the year's
 distributions (Form 1099-Q) against the qualified expenses, and the part not covered.
 
+## Dependent students
+
+Each dependent marked a full-time student: whether their 1098-T has arrived, and the 529 withdrawals
+for them this year.
+
 ## Gifts (Form 709) {#form-709}
 
 Each person who received more from a filer than the annual exclusion, in cash gifts and 529

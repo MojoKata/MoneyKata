@@ -48,6 +48,15 @@ const CARRIED = /** @type {[string, string][]} */ ([
   ['basis8606', 'Form 8606 basis'],
   ['charitableCarryover', 'Charitable carryover'],
 ]);
+const CHILD_TYPES = [
+  'checking',
+  'savings',
+  'money-market',
+  'cd',
+  'brokerage',
+  'crypto-exchange',
+  'crypto-wallet',
+];
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,\s]/g, '') : '');
 
 /** @param {{ tab?: string }} p */
@@ -235,8 +244,178 @@ function Summary({ b, done }) {
           show here what this year needs (AGI to sign the e-filed return, carryovers, the 8606
           basis).</p>`}</div>
     </div>
+    <${Dependents} b=${b} done=${done} />
     <p class="small dim mt">MoneyKata gathers what a preparer or tax software needs. It never
       computes the tax, chooses a filing status, or files.</p>
+  `;
+}
+
+/** How old a dependent is on Dec 31, and what that makes them for the credits. */
+const ageLine = (/** @type {any} */ d, /** @type {number} */ year) => {
+  if (d.age == null) return 'Age unknown: no birth year';
+  const marks = [d.under13 && 'under 13', d.under17 && 'under 17'].filter(Boolean);
+  return `Age ${d.age} on Dec 31, ${year}${marks.length ? ': ' + marks.join(' and ') : ''}`;
+};
+
+/** @param {{ b: any, done: (out: any) => void }} p */
+function Dependents({ b, done }) {
+  const open = (/** @type {any} */ d) => openDialog(DependentDialog, { b, d }).then(done);
+  return html`
+    <div
+      class="card mt"><h3 data-help="dependents">Dependents<span class="spacer"></span>${b
+          .canWrite
+        ? html`<button class="btn sm" onClick=${() => open(null)}><${Icon} name="plus" /> Add
+          dependent</button>`
+        : null}</h3>
+      ${b.dependents.length
+        ? b.dependents.map((/** @type {any} */ d) =>
+          html`
+            <div class=${'list-item' + (b.canWrite ? ' click' : '')}
+              onClick=${b.canWrite ? () => open(d) : null}><div class="grow"><b>${d
+                .name}</b><div class="small dim">${[
+                d.relation && d.relation[0].toUpperCase() + d.relation.slice(1),
+                d.claimedAs,
+                `${d.months} month${d.months === 1 ? '' : 's'}`,
+                d.student && 'student',
+              ].filter(Boolean).join(' · ')}${d.agesOut.length
+                ? html`<br />${d.agesOut.join('; ')}`
+                : null}</div></div><span class="small">${ageLine(d, b.year)}</span>${d
+                  .claimedElsewhere
+                ? html`
+                  <span class="pill warn" title="Claimed on another tax book for this year"
+                  >also claimed elsewhere</span>
+                `
+                : null}</div>
+          `
+        )
+        : html`<p class="small dim">No one claimed this year. Add the people you claim: their
+          ages feed the credits panel, and a student's 1098-T is expected.</p>`}
+      ${b.form8615.map((/** @type {any} */ f) =>
+        html`
+          <div class="notice mt">
+            <${Icon} name="alert" />
+            <div>${f.name}'s ${f.accounts.join(
+              ' and ',
+            )} earned ${money(f.unearned)} of unearned income this year, above the ${money(
+              f.threshold,
+            )} threshold: Form 8615 (the kiddie tax) may apply.</div>
+          </div>
+        `
+      )}
+      ${b.claimedElsewhere.map((/** @type {string} */ n) =>
+        html`
+          <div class="notice mt">
+            <${Icon} name="info" />
+            <div>${n} is claimed as a dependent on
+                    another ${b.year} tax book.</div>
+          </div>
+        `
+      )}
+    </div>
+  `;
+}
+
+/** @param {{ close: (out?: any) => void, b: any, d: any }} p */
+function DependentDialog({ close, b, d }) {
+  useDialogGuide('dialog-dependent');
+  const cands = useList(`/tax-books/${b.id}/dependent-candidates`);
+  const list = /** @type {any[] | null} */ (cands.data);
+  const [f, setF] = useState({
+    personId: d?.personId || '',
+    claimedAs: d?.claimedAs || '',
+    months: String(d?.months ?? 12),
+    student: !!d?.student,
+    accountIds: /** @type {string[]} */ (d?.accountIds || []),
+  });
+  const taken = new Set(b.dependents.map((/** @type {any} */ x) => x.personId));
+  const choices = (list || []).filter((c) => !taken.has(c.personId) || c.personId === d?.personId);
+  const chosen = choices.find((c) => c.personId === f.personId);
+  const suggested = chosen ? (f.student ? chosen.suggestIfStudent : chosen.suggest) : '';
+  const claimedAs = f.claimedAs || suggested || 'qualifying child';
+  const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
+  const save = useSubmit(async () => {
+    const body = {
+      personId: f.personId,
+      claimedAs,
+      months: Number(f.months),
+      student: f.student,
+      accountIds: f.accountIds,
+    };
+    const out = d
+      ? await api.patch(`/tax-dependents/${d.id}`, body, d.version)
+      : await api.post(`/tax-books/${b.id}/dependents`, body);
+    toast(d ? 'Dependent saved' : 'Dependent added');
+    close(out);
+  });
+  const remove = useSubmit(async () => {
+    const out = await api.del(`/tax-dependents/${d.id}`, d.version);
+    toast('Dependent removed');
+    close(out.parent);
+  });
+  const e = save.error || remove.error;
+  // Accounts a child's money is kept in: banking, brokerage and crypto, not retirement or loans.
+  const theirs = b.accounts.filter((/** @type {any} */ a) =>
+    CHILD_TYPES.includes(a.type) || f.accountIds.includes(a.id)
+  );
+  const toggle = (/** @type {string} */ id) => (/** @type {boolean} */ on) =>
+    set('accountIds')(on ? [...f.accountIds, id] : f.accountIds.filter((x) => x !== id));
+  return html`
+    <${Dialog} title=${d ? d.name : 'Add a dependent'} close=${close}
+      onSubmit=${() => save.run().catch(() => {})}
+      footer=${html`${
+        d
+          ? html`
+            <button type="button" class="btn danger" disabled=${remove.busy}
+              onClick=${() => remove.run().catch(() => {})}>Remove</button><span class="spacer"
+            ></span>
+          `
+          : null
+      }<button class="btn primary" disabled=${save.busy || !f.personId}>${
+        d ? 'Save' : 'Add'
+      }</button>`}>
+      <div class="row">
+        <${Field} label="Person" id="person" error=${errAt(e, 'personId')}
+          hint="From the household's people. Add someone new on the Gifts screen.">
+          <${Select} value=${f.personId} onChange=${(/** @type {string} */ x) =>
+            setF({ ...f, personId: x, claimedAs: '' })} options=${[
+            ['', list ? 'Choose…' : 'Loading…'],
+            ...choices.map((c) => [
+              c.personId,
+              c.name + (c.relation ? ` · ${c.relation}` : ''),
+            ]),
+          ]} />
+          </${Field}>
+          <${Field} label="Claimed as" id="claimed-as" error=${errAt(e, 'claimedAs')}
+            hint="Suggested from the family tree. As you file it.">
+            <${Select} value=${claimedAs} onChange=${set('claimedAs')} options=${[
+              ['qualifying child', 'Qualifying child'],
+              ['qualifying relative', 'Qualifying relative'],
+            ]} />
+            </${Field}>
+            </div>
+            <div class="row">
+              <${Field} label="Months lived with you" id="months" error=${errAt(e, 'months')}>
+          <${Input} value=${f.months} onInput=${set('months')} inputmode="numeric" />
+        </${Field}>
+        <${SwitchRow} label="Full-time student" hint="This year, for at least five months."
+          on=${f.student} onChange=${set('student')} />
+      </div>
+      ${theirs.length
+        ? html`<div class="field" data-help="accounts-in-their-name" id="x-accounts"><label
+            >Accounts in their name</label>${
+          theirs.map((/** @type {any} */ a) =>
+            html`
+              <${SwitchRow} label=${a.name} hint=${a.ownerName}
+                on=${f.accountIds.includes(a.id)} onChange=${toggle(a.id)} />
+            `
+          )
+        }<div class="hint">Such as a custodial account: its unearned income is checked
+              against the Form 8615 threshold.</div></div>`
+        : null}
+      <p class="small dim">Each dependent's age on Dec 31 shows in the panels: under 17, under 13,
+        and who ages out this year. MoneyKata doesn't decide who qualifies.</p>
+      <${FormError} error=${e} />
+    </${Dialog}>
   `;
 }
 
@@ -416,7 +595,13 @@ function NewBook({ close, rows }) {
       filers: [p.id, ...(f.joint && spouse ? [spouse.id] : [])],
       fromLastYear: f.fromLastYear,
     });
-    toast('Tax book made');
+    toast(
+      out.dependentsLeftOut.length
+        ? `Tax book made. Left out, past a qualifying child's age: ${
+          out.dependentsLeftOut.join(', ')
+        }`
+        : 'Tax book made',
+    );
     close(out);
   });
   const e = save.error;
@@ -437,7 +622,7 @@ function NewBook({ close, rows }) {
           !!spouse}
           disabled=${!spouse} onChange=${set('joint')} />
         <${SwitchRow} label="Start from last year" hint=${has
-          ? "Copies last year's accounts left out or added; its received documents become this year's expected ones."
+          ? "Copies last year's accounts left out or added and its dependents; its received documents become this year's expected ones."
           : 'No book for the year before.'} on=${f.fromLastYear}
           onChange=${set('fromLastYear')} />
         <${FormError} error=${e} />

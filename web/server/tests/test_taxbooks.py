@@ -171,3 +171,143 @@ def test_a_preparer_helps_but_cannot_delete(server, couple):
     assert r.status_code == 200, r.text
     assert dave.post(f"/ui/api/tax-books/{b['id']}/filings", json={}).status_code == 201
     assert dave.delete(f"/ui/api/tax-books/{b['id']}").status_code == 403
+
+
+# ---- Dependents (S8.14.5) ----
+
+
+def person(c, name, sex="female", **kw):
+    r = c.post("/ui/api/persons", json={"name": name, "sex": sex, **kw})
+    assert r.status_code == 201, r.text
+    return r.json()["id"]
+
+
+def child_of(c, parent, kid):
+    r = c.post(
+        "/ui/api/relationships",
+        json={"person1Id": parent, "person2Id": kid, "relation": "child"},
+    )
+    assert r.status_code == 201, r.text
+
+
+def dependent(c, book_id, person_id, **kw):
+    return c.post(f"/ui/api/tax-books/{book_id}/dependents", json={"personId": person_id, **kw})
+
+
+def test_dependents_are_suggested_from_the_family_tree_and_aged_on_dec_31(server, couple):
+    alice, _, a_id, _ = couple
+    pa = alice.get("/ui/api/profile").json()["personId"]
+    carol = person(alice, "Carol Griffin", birthYear=2012, birthMonth=11, birthDay=30)
+    emma = person(alice, "Emma Griffin", birthYear=2018)
+    sam = person(alice, "Sam Griffin", "male", birthYear=2006)
+    gran = person(alice, "Margaret Griffin", birthYear=1950)
+    for kid in (carol, emma, sam):
+        child_of(alice, pa, kid)
+    b = book(alice, 2026, [a_id])
+    cands = {
+        x["name"]: x
+        for x in alice.get(f"/ui/api/tax-books/{b['id']}/dependent-candidates").json()["items"]
+    }
+    assert "Alice" not in cands  # a filer isn't their own dependent
+    assert cands["Carol Griffin"]["relation"] == "daughter"
+    assert cands["Carol Griffin"]["age"] == 14
+    assert cands["Carol Griffin"]["suggest"] == "qualifying child"
+    # Sam is 20: a qualifying child only as a student.
+    assert (cands["Sam Griffin"]["suggest"], cands["Sam Griffin"]["suggestIfStudent"]) == (
+        "qualifying relative",
+        "qualifying child",
+    )
+    assert cands["Margaret Griffin"]["suggest"] == "qualifying relative"
+
+    r = dependent(alice, b["id"], carol, student=True)
+    assert r.status_code == 201, r.text
+    r = dependent(alice, b["id"], emma)
+    d = {x["name"]: x for x in r.json()["dependents"]}
+    assert d["Carol Griffin"]["age"] == 14 and d["Carol Griffin"]["under17"]
+    assert not d["Carol Griffin"]["under13"]
+    assert d["Emma Griffin"]["under13"] and d["Emma Griffin"]["agesOut"] == []
+    assert dependent(alice, b["id"], gran, claimedAs="qualifying relative").status_code == 201
+    assert dependent(alice, b["id"], carol).json()["code"] == "dependent-twice"
+    assert dependent(alice, b["id"], pa).json()["code"] == "dependent-filer"
+    assert dependent(alice, b["id"], emma, months=13).json()["code"] == "months-invalid"
+
+    # Their documents: a student's 1098-T is expected.
+    detail = alice.get(f"/ui/api/tax-books/{b['id']}").json()
+    assert any(e["form"] == "1098-T" and "Carol" in e["why"] for e in detail["expected"])
+    p = alice.get(f"/ui/api/tax-books/{b['id']}/panels").json()
+    assert [x["name"] for x in p["dependents"]] == [
+        "Carol Griffin",
+        "Emma Griffin",
+        "Margaret Griffin",
+    ]
+    assert p["students"] == [{"name": "Carol Griffin", "received1098T": False, "withdrawals529": 0}]
+
+    # Changing and removing one.
+    dep = next(x for x in detail["dependents"] if x["name"] == "Emma Griffin")
+    r = alice.patch(
+        f"/ui/api/tax-dependents/{dep['id']}",
+        json={"personId": emma, "claimedAs": "qualifying child", "months": 6},
+        headers={"If-Match": str(dep["version"])},
+    )
+    assert r.status_code == 200, r.text
+    dep = next(x for x in r.json()["dependents"] if x["name"] == "Emma Griffin")
+    assert dep["months"] == 6
+    r = alice.delete(
+        f"/ui/api/tax-dependents/{dep['id']}", headers={"If-Match": str(dep["version"])}
+    )
+    assert r.status_code == 200, r.text
+    assert "Emma Griffin" not in {x["name"] for x in r.json()["parent"]["dependents"]}
+
+
+def test_a_person_claimed_on_two_books_is_flagged_on_both(server, couple):
+    alice, bob, a_id, b_id = couple
+    kid = person(alice, "Carol Griffin", birthYear=2012)
+    mine = book(alice, 2026, [a_id])
+    theirs = book(bob, 2026, [b_id])
+    assert dependent(alice, mine["id"], kid).status_code == 201
+    r = dependent(bob, theirs["id"], kid)
+    assert r.json()["dependents"][0]["claimedElsewhere"]
+    d = alice.get(f"/ui/api/tax-books/{mine['id']}").json()
+    assert d["dependents"][0]["claimedElsewhere"]
+    issues = alice.get(f"/ui/api/tax-books/{mine['id']}/panels").json()["issues"]
+    assert "Carol Griffin is claimed on another 2026 tax book too" in [i["text"] for i in issues]
+    # A dependent's own book notes that they are claimed on another.
+    pb = bob.get("/ui/api/profile").json()["personId"]
+    assert dependent(alice, mine["id"], pb, claimedAs="qualifying relative").status_code == 201
+    d = bob.get(f"/ui/api/tax-books/{theirs['id']}").json()
+    assert d["claimedElsewhere"] == ["Bob"]
+
+
+def test_a_dependent_childs_unearned_income_past_the_threshold_is_flagged(server, couple):
+    alice, _, a_id, _ = couple
+    kid = person(alice, "Carol Griffin", birthYear=2012)
+    utma = new_account(alice, name="Carol's UTMA", type="brokerage")
+    add(alice, utma["id"], "1900.00", day="2026-03-02", kind="dividend")
+    add(alice, utma["id"], "1010.00", day="2026-06-02", kind="interest")
+    b = book(alice, 2026, [a_id])
+    r = dependent(alice, b["id"], kid, accountIds=["Acct_00000000000000000000000000"])
+    assert r.json()["code"] == "account-not-counted"
+    r = dependent(alice, b["id"], kid, accountIds=[utma["id"]])
+    assert r.status_code == 201, r.text
+    f = r.json()["form8615"]
+    assert f == [
+        {"name": "Carol Griffin", "unearned": 2910, "threshold": 2700, "accounts": ["Carol's UTMA"]}
+    ]
+    issues = alice.get(f"/ui/api/tax-books/{b['id']}/panels").json()["issues"]
+    assert any(i["kind"] == "form-8615" for i in issues)
+
+
+def test_next_years_book_copies_dependents_a_year_older(server, couple):
+    alice, _, a_id, _ = couple
+    carol = person(alice, "Carol Griffin", birthYear=2012)
+    sam = person(alice, "Sam Griffin", "male", birthYear=2007)  # 19 in 2026
+    ruth = person(alice, "Ruth Griffin", birthYear=2003)
+    old = book(alice, 2025, [a_id])
+    assert dependent(alice, old["id"], carol).status_code == 201
+    assert dependent(alice, old["id"], sam).status_code == 201
+    assert dependent(alice, old["id"], ruth, claimedAs="qualifying relative").status_code == 201
+    new = book(alice, 2026, [a_id])
+    assert new["dependentsLeftOut"] == ["Sam Griffin"]
+    d = alice.get(f"/ui/api/tax-books/{new['id']}").json()
+    ages = {x["name"]: x["age"] for x in d["dependents"]}
+    assert ages == {"Carol Griffin": 14, "Ruth Griffin": 23}

@@ -373,6 +373,25 @@ function Deductions({ p }) {
             cents=${false} />; paid in ${p.year} so far: ${money(total, { cents: false })}.</p>`
           : null}</div>
     </div>
+    <div class="card mt"><h3 data-help="dependents-ages">Dependents' ages on Dec 31</h3>${p
+        .dependents.length
+      ? p.dependents.map((/** @type {any} */ d) =>
+        html`
+          <div
+            class="list-item"><div class="grow">${d.name}${d.relation
+              ? html`<span class="dim"> · ${d.relation}</span>`
+              : null}${d.agesOut.length
+              ? html`<div class="small dim">${d.agesOut.join('; ')}</div>`
+              : null}</div><span class="small">${d.age == null
+              ? 'age unknown'
+              : `${d.age}${d.under13 ? ' · under 13' : ''}${
+                d.under17 ? ' · under 17' : ''
+              }`}</span></div>
+        `
+      )
+      : html`<p class="small dim">No dependents in this book: add them on the Summary.</p>`}
+      <p class="small dim">Under 17 for the child tax credit, under 13 for the childcare credit.
+        Whether each one qualifies is the preparer's to decide.</p></div>
   `;
 }
 
@@ -474,7 +493,20 @@ function Education({ p }) {
         )
         : html`<p class="small dim">No 529 plans in this book.</p>`}
         <p class="small dim">The earnings in what isn't covered may be taxable, with a 10%
-          additional tax; the preparer applies the rules with education credits.</p></div>
+          additional tax; the preparer applies the rules with education credits.</p>
+        ${p.students.length
+          ? html`<h4 style=${{ margin: '12px 0 4px' }}>Dependent students</h4>${
+            p.students.map((
+              /** @type {any} */ x,
+            ) =>
+              html`<div class="list-item"><div class="grow">${x.name}<div class="small dim">529
+              withdrawals for them: ${money(x.withdrawals529)}</div></div><span class=${
+                'pill ' +
+                (x.received1098T ? 'ok' : 'warn')
+              }>1098-T ${x.received1098T ? 'received' : 'missing'}</span></div>`
+            )
+          }`
+          : null}</div>
       <div class="card"><h3 data-help="form-709">Gifts (Form 709)</h3>${p.giftTax.length
         ? p.giftTax.map((/** @type {any} */ x) =>
           html`

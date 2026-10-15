@@ -52,7 +52,8 @@ class PersonIn(Model):
     birthMonth: int | None = None
     birthDay: int | None = None
     birthYear: int | None = None
-    private: bool = False
+    diedOn: dt.date | None = None
+    private: bool | None = None  # left as it is when not given
     differentPerson: bool = False  # the same name as someone here, told apart by birth year
     giftBudget: Money | None = None
     leadDays: int = 14
@@ -85,6 +86,8 @@ class PersonOut(Model):
     wedding: dt.date | None  # the start of their marriage, for its anniversary (S7.7.1)
     private: bool
     canChangePerson: bool
+    canMakePrivate: bool  # whoever added them (S10.10.2)
+    isUser: bool
     giftBudget: Money | None
     leadDays: int
     notes: str | None
@@ -188,6 +191,8 @@ def people_view(s, c: Caller) -> list[PersonOut]:
                 wedding=wedding,
                 private=p.private,
                 canChangePerson=people.level(s, c.id, p) == "owner",
+                canMakePrivate=p.ownerId == c.id,
+                isUser=p.id in users,
                 giftBudget=gp.giftBudget,
                 leadDays=gp.leadDays,
                 notes=gp.notes,
@@ -221,6 +226,11 @@ def check_person_fields(body) -> dict:
     year = clock.today().year
     if body.birthYear is not None and not year - 120 <= body.birthYear <= year:
         e.append(FieldError("birthYear", "year-invalid", "A year of birth."))
+    died = getattr(body, "diedOn", None)
+    if died is not None and (
+        died > clock.today() or (body.birthYear is not None and died.year < body.birthYear)
+    ):
+        e.append(FieldError("diedOn", "died-on-invalid", "A day since their birth, not ahead."))
     if e:
         raise Problem(422, e[0].code, e[0].message, e)
     return {
@@ -229,6 +239,7 @@ def check_person_fields(body) -> dict:
         "birthMonth": body.birthMonth,
         "birthDay": body.birthDay,
         "birthYear": body.birthYear,
+        "diedOn": getattr(body, "diedOn", None),
     }
 
 
@@ -339,7 +350,7 @@ def add_person(body: PersonIn, request: Request, c: Caller = Depends(caller)):
                     "not-told-apart",
                     "Give both birth years, different ones, to tell them apart.",
                 )
-            p = Person(id=ids.new_id("Persn"), ownerId=c.id, private=body.private, **values)
+            p = Person(id=ids.new_id("Persn"), ownerId=c.id, private=bool(body.private), **values)
             s.add(p)
             s.flush()
         have = s.scalars(
@@ -383,6 +394,12 @@ def change_person(
                 if "name" in changed or "birthYear" in changed:
                     refuse_clash(s, c, values["name"], values["birthYear"], exclude=p.id)
                 people.change(s, p, changed)
+            if body.private is not None and body.private != p.private:
+                if p.ownerId != c.id:
+                    raise refuse(
+                        "private", "not-creator", "Only whoever added them makes them private."
+                    )
+                people.change(s, p, {"private": body.private})
         s.flush()
         return _one(s, c, p.id)
 

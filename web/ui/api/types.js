@@ -243,6 +243,9 @@
  * @property {string} level
  * @property {string} label
  * @property {number} version
+ * @property {Array<DependentOut>} dependents
+ * @property {Array<Form8615Out>} form8615
+ * @property {Array<string>} claimedElsewhere
  * @property {Array<AccountRef>} accounts
  * @property {Array<AccountRef>} leftOut
  * @property {Array<AccountRef>} addable
@@ -298,6 +301,16 @@
  * @property {string} date
  * @property {import('../app/dec.js').Dec} amount
  * @property {(string | null)} payee
+ */
+
+/**
+ * @typedef {Object} CandidateOut
+ * @property {string} personId
+ * @property {string} name
+ * @property {(string | null)} relation
+ * @property {(number | null)} age
+ * @property {string} suggest
+ * @property {string} suggestIfStudent
  */
 
 /**
@@ -517,6 +530,43 @@
  * @typedef {Object} Deleted_WithdrawalsView_
  * @property {Gone} deleted
  * @property {(WithdrawalsView | null)} [parent]
+ */
+
+/**
+ * @typedef {Object} DependentAge
+ * @property {string} name
+ * @property {(string | null)} relation
+ * @property {(number | null)} age
+ * @property {boolean} under17
+ * @property {boolean} under13
+ * @property {Array<string>} agesOut
+ */
+
+/**
+ * @typedef {Object} DependentIn
+ * @property {string} personId
+ * @property {string} [claimedAs]
+ * @property {number} [months]
+ * @property {boolean} [student]
+ * @property {Array<string>} [accountIds]
+ */
+
+/**
+ * @typedef {Object} DependentOut
+ * @property {string} id
+ * @property {string} personId
+ * @property {string} name
+ * @property {(string | null)} relation
+ * @property {string} claimedAs
+ * @property {number} months
+ * @property {boolean} student
+ * @property {(number | null)} age
+ * @property {boolean} under17
+ * @property {boolean} under13
+ * @property {Array<string>} agesOut
+ * @property {boolean} claimedElsewhere
+ * @property {Array<string>} accountIds
+ * @property {number} version
  */
 
 /**
@@ -765,6 +815,14 @@
  * @property {import('../app/dec.js').Dec} expected
  * @property {import('../app/dec.js').Dec} actual
  * @property {import('../app/dec.js').Dec} ahead
+ */
+
+/**
+ * @typedef {Object} Form8615Out
+ * @property {string} name
+ * @property {import('../app/dec.js').Dec} unearned
+ * @property {import('../app/dec.js').Dec} threshold
+ * @property {Array<string>} accounts
  */
 
 /**
@@ -1470,6 +1528,17 @@
  */
 
 /**
+ * @typedef {Object} NewBookOut
+ * @property {string} id
+ * @property {number} year
+ * @property {Array<Filer>} filers
+ * @property {string} level
+ * @property {string} label
+ * @property {number} version
+ * @property {Array<string>} dependentsLeftOut
+ */
+
+/**
  * @typedef {Object} NewBudget
  * @property {string} name
  * @property {Array<string>} [accountIds]
@@ -1697,6 +1766,14 @@
 /**
  * @typedef {Object} Page_BudgetRow_
  * @property {Array<BudgetRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_CandidateOut_
+ * @property {Array<CandidateOut>} items
  * @property {number} total
  * @property {number} offset
  * @property {number} limit
@@ -1984,10 +2061,12 @@
  * @property {IncomeOut} income
  * @property {RetirementOut} retirement
  * @property {Array<TagOut>} deductions
+ * @property {Array<DependentAge>} dependents
  * @property {Array<Quarter>} estimated
  * @property {(import('../app/dec.js').Dec | null)} lastYearTax
  * @property {GivingOut} giving
  * @property {Array<EducationOut>} education
+ * @property {Array<StudentOut>} students
  * @property {Array<GiftTaxOut>} giftTax
  * @property {Array<string>} elections
  * @property {Array<LoanOut>} loans
@@ -2078,6 +2157,8 @@
  * @property {(string | null)} wedding
  * @property {boolean} private
  * @property {boolean} canChangePerson
+ * @property {boolean} canMakePrivate
+ * @property {boolean} isUser
  * @property {(import('../app/dec.js').Dec | null)} giftBudget
  * @property {number} leadDays
  * @property {(string | null)} notes
@@ -2855,6 +2936,13 @@
  */
 
 /**
+ * @typedef {Object} StudentOut
+ * @property {string} name
+ * @property {boolean} received1098T
+ * @property {import('../app/dec.js').Dec} withdrawals529
+ */
+
+/**
  * A field read from the receipt, with how sure the reader was (0–100).
  * @typedef {Object} Suggested
  * @property {string} value
@@ -3389,7 +3477,8 @@
  * @property {(number | null)} [birthMonth]
  * @property {(number | null)} [birthDay]
  * @property {(number | null)} [birthYear]
- * @property {boolean} [private]
+ * @property {(string | null)} [diedOn]
+ * @property {(boolean | null)} [private]
  * @property {boolean} [differentPerson]
  * @property {(import('../app/dec.js').Dec | null)} [giftBudget]
  * @property {number} [leadDays]

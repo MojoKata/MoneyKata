@@ -70,16 +70,18 @@ produces worksheets and exports. It never files, and says so (R1.16).
        panels, the checklist and a few flags.
        1. **Each** has how they are claimed (*qualifying child* or *qualifying relative*,
           suggested from the family tree: a child or grandchild under 19, or under 24 and a
-          student), the months they lived with the filers, and a *full-time student* tick.
+          student), the months they lived with the filers, a *full-time student* tick, and
+          the accounts the book counts that are in their name (a custodial account).
        2. **One tax book a year**: a person claimed on two tax books for the same year is
-          flagged on both. A dependent can still have a tax book of their own, which notes
-          that they are claimed on another.
+          flagged on both, without saying whose the other is. A dependent can still have a tax
+          book of their own, which notes that they are claimed on another.
        3. **What they feed**: each one's age on Dec 31 in Deductions and credits (S8.7),
           with who is under 17, who is under 13, and who ages out this year; a dependent
           student's 1098-T and 529 withdrawals in Education (S8.10); their expected documents
-          in the checklist (S8.8), such as a 1098-T or a childcare provider's statement; and a
-          dependent child's unearned income in accounts the book counts (S8.14.2) flagged
-          when it passes the year's threshold for Form 8615, from the tax tables (S16.11).
+          in the checklist (S8.8), such as a student's 1098-T or, when childcare was paid for
+          one under 13, a childcare provider's statement; and a dependent child's unearned
+          income (interest, dividends and gains) in the accounts in their name flagged when it
+          passes the year's threshold for Form 8615, from the tax tables (S16.11).
        4. **A new tax book** copies them a year older, and leaves out anyone past a
           qualifying child's age who isn't claimed as a relative, saying whom.
 15. **Filings**: one per return: federal (Form 1040), a state's or a locality's. An

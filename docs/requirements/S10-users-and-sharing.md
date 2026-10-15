@@ -186,6 +186,7 @@
 
        The words follow each person's sex. Adoption and guardianship are *child*. A person
        related in a way the tree can't show is entered as *family* with a label.
-    6. **Shown** on a person's page as their relationships, stored and worked out, and on
-       the Gifts screen as the person's relation to the user (*Emma, your granddaughter*).
-       Profile lists the user's own and adds them (S12.2).
+    6. **Shown** in the person's gift plan as their relationships, stored and worked out,
+       and on the Gifts screen as the person's relation to the user (*Emma, your
+       granddaughter*). Profile lists the user's own with their dates, adds them, and changes
+       or removes them; an admin's dialog also names whose relationship it is (S12.2).

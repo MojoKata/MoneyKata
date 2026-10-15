@@ -17,3 +17,8 @@ year, its transactions, and how many have a receipt attached.
 ## Estimated payments
 
 Each quarter's estimated payment from the filings, beside last year's total tax.
+
+## Dependents' ages on Dec 31 {#dependents-ages}
+
+Each dependent's age at the end of the year: under 17 for the child tax credit, under 13 for the
+childcare credit, and what they age out of this year.

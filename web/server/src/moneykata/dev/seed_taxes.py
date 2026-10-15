@@ -1,7 +1,8 @@
 """Dev mode's tax books (requirements S17.7): Alice and Bob's joint book for last year, its
 federal and state returns accepted with their documents and the figures they carry forward,
 and this year's book started from it; and a loss sale this year bought back in the Roth IRA
-within 30 days, a wash sale for the Capital gains panel."""
+within 30 days, a wash sale for the Capital gains panel. Their daughters are the books'
+dependents."""
 
 import datetime as dt
 import json
@@ -10,7 +11,14 @@ from sqlalchemy import select
 
 from .. import clock, ids
 from ..store.entities.accounts import Account
-from ..store.entities.taxes import Filing, TaxBook, TaxBookFiler, TaxDocument
+from ..store.entities.education import Person
+from ..store.entities.taxes import (
+    Filing,
+    TaxBook,
+    TaxBookDependent,
+    TaxBookFiler,
+    TaxDocument,
+)
 from ..store.repos import ledger as repo
 from .seed_accounts import Book
 
@@ -30,6 +38,19 @@ def seed_taxes(s, people: dict) -> None:
         return b
 
     last, this = book(year - 1), book(year)
+    # Their daughters as dependents in both books (S8.14.5), Carol a student.
+    for b in (last, this):
+        for name, student in (("Carol Griffin", True), ("Emma Griffin", False)):
+            kid = s.scalars(select(Person).where(Person.name == name)).one()
+            s.add(
+                TaxBookDependent(
+                    id=ids.new_id("TxDep"),
+                    bookId=b.id,
+                    personId=kid.id,
+                    claimedAs="qualifying child",
+                    student=student,
+                )
+            )
     federal = Filing(
         id=ids.new_id("Filng"),
         bookId=last.id,

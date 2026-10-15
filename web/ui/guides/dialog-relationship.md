@@ -3,6 +3,10 @@
 How you are related to one of the household's people. You add relationships you are in; an admin
 adds any. Mothers, grandparents, cousins and in-laws are worked out from these.
 
+## Person
+
+For an admin: whose relationship it is. Anyone else adds and changes only their own.
+
 ## I am the {#relation}
 
 Spouse, couple, parent, child, friend, colleague, or family (with a label). At most one spouse at a
@@ -18,8 +22,14 @@ When it began. Optional.
 
 ## To {#to-date}
 
-When it ended; empty while it holds. A death ends a marriage on that day by itself.
+When it ended; empty while it holds. A divorce is the marriage's end date; a death ends a marriage
+on that day by itself. The same two people can marry again: a new relationship.
 
 ## Label
 
 For family: godmother, aunt by marriage.
+
+## Remove
+
+Removes a relationship entered by mistake. One that ended keeps its dates instead, so past years
+show that year's family.

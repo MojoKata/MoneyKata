@@ -98,6 +98,7 @@ def map_all() -> None:
         (acc.PayoffPlan, loans.PayoffPlan),
         (tx.TaxBook, taxes.TaxBook),
         (tx.Filing, taxes.Filing),
+        (tx.TaxBookDependent, taxes.TaxBookDependent),
         (tx.EstimatedPayment, taxes.EstimatedPayment),
         (tx.TaxDocument, taxes.TaxDocument),
         (gv.GivingPlan, giving.GivingPlan),
@@ -140,6 +141,7 @@ def map_all() -> None:
     _map(acc.WalletAddress, wallets.WalletAddress)
     _map(tx.TaxBookFiler, taxes.TaxBookFilers)
     _map(tx.TaxBookAccount, taxes.TaxBookAccounts)
+    _map(tx.TaxDependentAccount, taxes.TaxDependentAccounts)
     _versioned(pj.AssumptionSet, projections.AssumptionSet)
     _versioned(pj.Projection, projections.Projection)
     _versioned(pj.TaxFigure, projections.TaxFigure)
