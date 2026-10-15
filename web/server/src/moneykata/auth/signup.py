@@ -57,8 +57,16 @@ def _waiting_for(s: Db, column, value: str) -> bool:
 
 
 def request(
-    s: Db, svc: Services, display_name: str, username: str, email: str, password: str
+    s: Db,
+    svc: Services,
+    display_name: str,
+    username: str,
+    email: str,
+    password: str,
+    sex: str | None = None,
 ) -> None:
+    from .. import people
+
     on, domains = open_to(s, svc.config.dev)
     if not on:
         raise Problem(403, "signup-off", "Sign-up is not open on this server.")
@@ -80,6 +88,8 @@ def request(
     why = passwords.problem(password, settings.get(s, "passwordMinLength"))
     if why:
         errors.append(FieldError("password", *why))
+    if sex not in people.SEXES:
+        errors.append(FieldError("sex", "sex-invalid", "Female or male."))
     _raise(errors)
     if by_login(s, email) is not None or _waiting_for(s, SignupRequest.email, email):
         # The same answer as a new address; nothing is sent.
@@ -91,6 +101,7 @@ def request(
         username=username,
         email=email,
         passwordHash=passwords.hash_password(password),
+        sex=sex,
         confirmTokenHash=token_hash,
         confirmBy=clock.now() + dt.timedelta(hours=CONFIRM_HOURS),
     )
@@ -174,9 +185,12 @@ def approve(s: Db, svc: Services, by: User, request_id: str, group_ids: list[str
     known = {g.id for g in s.scalars(select(Group).where(Group.deleted == false()))}
     if any(g not in known for g in group_ids):
         raise refuse("groupIds", "group-unknown", "Choose existing groups.")
+    from .. import people
+
     t = clock.now()
     u = User(
         id=ids.new_id("User"),
+        personId=people.for_new_user(s, req.displayName, req.sex, by.id).id,
         username=req.username,
         displayName=req.displayName,
         email=req.email,

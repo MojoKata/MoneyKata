@@ -6,6 +6,10 @@ A new server's first sign-in, with the published default password, leads only he
 
 Shown to the people you share with.
 
+## Sex
+
+Your person's (every user is one): it chooses the words for the family tree.
+
 ## Email address
 
 Where invitations and resets for this account go.

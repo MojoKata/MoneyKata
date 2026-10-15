@@ -30,8 +30,13 @@ User = record(
     Column("avatar", Text),
     Column("timeZone", Text, nullable=False, server_default=text("'auto'")),
     Column("theme", Text, nullable=False, server_default=text("'dark'")),
-    Column("birthYear", Integer),
-    Column("spouseId", Text, ForeignKey("User.id")),
+    # Their person (S10.10.1): name, sex, birthday and relationships.
+    Column(
+        "personId",
+        Text,
+        ForeignKey("Person.id", use_alter=True, name="fk_User_personId_Person"),
+        nullable=False,
+    ),
     Column("alertEmails", Text, nullable=False, server_default=text("'daily'")),
     Column("lastSignInAt", UtcTimestamp),
     Column("reactivationAskedAt", UtcTimestamp),
@@ -67,6 +72,7 @@ Index(
     unique=True,
     sqlite_where=text('NOT deleted AND "linkId" IS NULL'),
 )
+unique_live(User, "personId")
 Index(
     "ux_User_linkId_remoteId",
     User.c.linkId,
@@ -142,6 +148,7 @@ SignupRequest = record(
     Column("username", Text, nullable=False),
     Column("email", Text, nullable=False),
     Column("passwordHash", Text, nullable=False),
+    Column("sex", Text, nullable=False),  # for their person (S10.10.1)
     Column("status", Text, nullable=False, server_default=text("'confirming'")),
     # The emailed link's token, as its hash, until it is opened.
     Column("confirmTokenHash", Text),
@@ -151,6 +158,7 @@ SignupRequest = record(
     Column("decidedById", Text, ForeignKey("User.id")),
     Column("userId", Text, ForeignKey("User.id")),
     CheckConstraint("status IN ('confirming', 'waiting', 'approved', 'rejected')", name="status"),
+    CheckConstraint("sex IN ('male', 'female')", name="sex"),
     Index("ix_SignupRequest_confirmTokenHash", "confirmTokenHash"),
 )
 

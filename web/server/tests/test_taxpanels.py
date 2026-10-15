@@ -22,13 +22,8 @@ def frozen():
 
 @pytest.fixture
 def alice(server, frozen):
-    make_user(server, "alice")
-    c = sign_in(server, "alice")
-    from moneykata.store.entities.users import User
-
-    with server.db.tx() as s:
-        s.query(User).filter_by(username="alice").one().birthYear = 1951
-    return c
+    make_user(server, "alice", born=1951)
+    return sign_in(server, "alice")
 
 
 def book(c):

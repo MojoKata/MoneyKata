@@ -17,6 +17,8 @@ export class ApiError extends Error {
     this.errors = body?.errors || [];
     this.current = body?.current;
     this.errorId = body?.errorId;
+    /** The problem as sent, with anything else it carries (a clash's person). */
+    this.body = body;
   }
 
   /**

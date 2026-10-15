@@ -10,7 +10,7 @@ import { useDialogGuide, useGuide } from '../components/help.js';
 import { Avatar, Chips, Failed, Loading } from '../components/bits.js';
 import { Icon } from '../components/icon.js';
 import { Dialog, openDialog } from '../components/dialog.js';
-import { errAt, Field, FormError, Input, Switch } from '../components/fields.js';
+import { errAt, Field, FormError, Input, Select, Switch } from '../components/fields.js';
 import { toast } from '../components/toast.js';
 
 export default function Users() {
@@ -191,7 +191,7 @@ export default function Users() {
 /** @param {{ close: (v?: any) => void, groups: any[] }} p */
 function NewUser({ close, groups }) {
   useDialogGuide('dialog-new-user');
-  const [f, setF] = useState({ displayName: '', username: '', email: '' });
+  const [f, setF] = useState({ displayName: '', username: '', email: '', sex: '' });
   const [ids, setIds] = useState(/** @type {string[]} */ ([]));
   const set = (/** @type {string} */ k) => (/** @type {string} */ v) => setF({ ...f, [k]: v });
   const save = useSubmit(async () => {
@@ -207,20 +207,32 @@ function NewUser({ close, groups }) {
       <${Field} label="Name" id="display-name" error=${errAt(e, 'displayName')}>
         <${Input} value=${f.displayName} onInput=${set('displayName')} required />
         </${Field}>
-        <div class="row">
-          <${Field} label="Username" error=${errAt(e, 'username')}>
-            <${Input} value=${f.username} onInput=${set('username')} required />
-            </${Field}>
-            <${Field} label="Email address" id="email" error=${errAt(e, 'email')}>
-              <${Input} type="email" value=${f.email} onInput=${set('email')} required />
+        <${Field} label="Sex" error=${errAt(e, 'sex')}>
+          <${Select} value=${f.sex} onChange=${set('sex')} options=${[
+            ['', 'Choose…'],
+            ['female', 'Female'],
+            ['male', 'Male'],
+          ]} />
+          </${Field}>
+          <div class="row">
+            <${Field} label="Username" error=${errAt(e, 'username')}>
+              <${Input} value=${f.username} onInput=${set('username')} required />
               </${Field}>
-              </div>
-              <${GroupPicker} groups=${groups} ids=${ids} setIds=${setIds} error=${errAt(
-                e,
-                'groupIds',
-              )} />
-              <${FormError} error=${e} shown=${['displayName', 'username', 'email', 'groupIds']} />
-              </${Dialog}>
+              <${Field} label="Email address" id="email" error=${errAt(e, 'email')}>
+                <${Input} type="email" value=${f.email} onInput=${set('email')} required />
+                </${Field}>
+                </div>
+                <${GroupPicker} groups=${groups} ids=${ids} setIds=${setIds} error=${errAt(
+                  e,
+                  'groupIds',
+                )} />
+                <${FormError} error=${e} shown=${[
+                  'displayName',
+                  'username',
+                  'email',
+                  'groupIds',
+                ]} />
+                </${Dialog}>
   `;
 }
 

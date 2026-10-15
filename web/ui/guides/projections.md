@@ -77,7 +77,7 @@ Social Security or a pension, from an age, a month. It covers part of each withd
 
 ## For {#beneficiary}
 
-An education goal is for one person: someone on your list of people. Their year of birth gives the
+An education goal is for one person, one of the household's people. Their year of birth gives the
 first year of school.
 
 ## Age school starts {#start-age}

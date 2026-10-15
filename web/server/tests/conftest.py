@@ -150,14 +150,17 @@ def make_user(
     password: str = "a long user passphrase",
     admin: bool = False,
     email: str | None = None,
+    sex: str = "female",
+    born: int | None = None,
 ):
-    """A user who has joined, made straight in the database."""
-    from moneykata import ids
+    """A user who has joined, made straight in the database, with their person."""
+    from moneykata import ids, people
     from moneykata.store.entities.users import User, UserGroup
 
     with srv.db.tx() as s:
         u = User(
             id=ids.new_id("User"),
+            personId=people.make(s, username.title(), sex, birth_year=born).id,
             username=username,
             displayName=username.title(),
             email=email or f"{username}@home.lan",

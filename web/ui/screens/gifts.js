@@ -131,7 +131,7 @@ function People() {
   return html`
     <div class="card" style=${{ padding: '4px 8px' }}>
       <h3 style=${{ padding: '8px 8px 0' }}>People<span class="spacer"></span><button class="btn sm"
-        onClick=${() => open(null)}><${Icon} name="plus" /> Add a person</button></h3>
+        onClick=${() => open(null)}><${Icon} name="plus" /> Add a gift plan</button></h3>
       ${rows.length
         ? html`
           <div class="table-wrap">
@@ -151,8 +151,12 @@ function People() {
                   <tr class="click" tabindex="0" onClick=${() => open(p)} onKeyDown=${(
                     /** @type {KeyboardEvent} */ e,
                   ) => e.key === 'Enter' && open(p)}>
-                    <td style=${{ whiteSpace: 'nowrap' }}><b>${p.name}</b><div class="small dim">${[
-                      p.relationship,
+                    <td style=${{ whiteSpace: 'nowrap' }}><b>${p.name}</b>${p.private
+                      ? html`
+                        <span class="pill">private</span>
+                      `
+                      : null}<div class="small dim">${[
+                      p.relation,
                       p.level === 'owner' ? null : `shared by ${p.ownerName}`,
                     ].filter(Boolean).join(' · ')}</div></td>
                     <td class="small">${p.next
@@ -175,8 +179,9 @@ function People() {
         `
         : html`<${Empty}>No people yet. Add the people you give gifts to, with their dates.</${Empty}>`}
     </div>
-    <p class="small dim">Your people and gifts are yours alone, unless you share a person. A gift
-      for someone who is a user here is never shown to them, even through a share.</p>
+    <p class="small dim">People are the household's; your gift plans and gifts are yours alone,
+      unless you share a plan. A gift for someone who is a user here is never shown to them, even
+      through a share.</p>
   `;
 }
 
@@ -215,7 +220,9 @@ function GiftList() {
                     <td style=${{ whiteSpace: 'nowrap' }}>${g.status === 'received'
                       ? 'From '
                       : ''}${g
-                      .people.map((/** @type {any} */ p) => p.name).join(', ')}</td>
+                      .people.map((/** @type {any} */ p) =>
+                        p.deleted ? `${p.name} (deleted)` : p.name
+                      ).join(', ')}</td>
                     <td class="small" style=${{ whiteSpace: 'nowrap' }}>${g
                       .occasionLabel}${g.occasionYear ? ` ${g.occasionYear}` : ''}</td>
                     <td>${g.description}${g.status === 'received' && g.thankYou
@@ -312,8 +319,7 @@ function Spending() {
 function personForm(p) {
   return {
     name: p?.name || '',
-    relationship: p?.relationship || '',
-    userId: p?.userId || '',
+    sex: p?.sex || '',
     birthday: p?.birthMonth
       ? `${p.birthYear || ''}-${String(p.birthMonth).padStart(2, '0')}-${
         String(p.birthDay)
@@ -350,16 +356,19 @@ function parseDay(s) {
 function PersonDialog({ close, p }) {
   useDialogGuide('dialog-person');
   const hols = useList('/holidays');
-  const me = useApi('/profile');
   const [f, setF] = useState(personForm(p));
+  const [use, setUse] = useState(/** @type {string | null} */ (null));
+  const [apart, setApart] = useState(false);
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const canWrite = !p || p.level !== 'read';
+  const ownPerson = !p || p.canChangePerson;
   const save = useSubmit(async () => {
     const b = f.birthday ? parseDay(f.birthday) : null;
     const body = {
+      personId: use,
+      differentPerson: apart,
       name: f.name,
-      relationship: f.relationship || null,
-      userId: f.userId || null,
+      sex: f.sex || null,
       birthMonth: b?.month ?? null,
       birthDay: b?.day ?? null,
       birthYear: b?.year ?? null,
@@ -388,6 +397,13 @@ function PersonDialog({ close, p }) {
     close(out);
   });
   const e = save.error;
+  // One person, once (S10.10.3): a name already here shows that person instead.
+  const clash = e?.code === 'person-exists' ? e.body?.person : null;
+  const ask = useSubmit(async () => {
+    await api.post(`/persons/${clash.id}/ask-to-share`);
+    toast(`Asked ${clash.createdBy || 'an admin'} to share ${clash.name}`);
+    close();
+  });
   const dated = (/** @type {number} */ i, /** @type {string} */ k) => (/** @type {string} */ x) =>
     set('dated')(
       f.dated.map((/** @type {any} */ o, /** @type {number} */ j) =>
@@ -401,46 +417,87 @@ function PersonDialog({ close, p }) {
         : [...f.holidays, h],
     );
   return html`
-    <${Dialog} title=${p ? p.name : 'Add a person'} wide close=${close} onSubmit=${() =>
-      canWrite && save.run().catch(() => {})}
+    <${Dialog} title=${p ? `Gift plan for ${p.name}` : 'New gift plan'} wide close=${close}
+      onSubmit=${() => canWrite && save.run().catch(() => {})}
       footer=${html`${
         p && p.level === 'owner'
           ? html`<button type="button" class="btn" onClick=${() =>
-            openDialog(ShareDialog, { kind: 'person', id: p.id, name: p.name })}><${Icon}
+            openDialog(ShareDialog, {
+              kind: 'gift-plan',
+              id: p.planId,
+              name: `Gift plan for ${p.name}`,
+            })}><${Icon}
             name="share" /> Share</button><span class="spacer"></span>`
           : null
       }${canWrite ? html`<button class="btn primary" disabled=${save.busy}>Save</button>` : null}`}>
       <fieldset disabled=${!canWrite} style=${{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-        <${Field} label="Name" error=${errAt(e, 'name')}>
-          <${Input} value=${f.name}
-            onInput=${set('name')} required placeholder="Emma Griffin" />
-          </${Field}>
+        <fieldset disabled=${!ownPerson || !!use} class="card" style=${{
+          margin: '0 0 12px',
+          padding: '10px 12px',
+          minWidth: 0,
+        }} data-help="the-person">
+          <div class="small dim">The person, seen by the household${p?.private
+            ? ' (private: only those it is shared with)'
+            : ''}</div>
           <div class="row">
-            <${Field} label="Relationship" error=${errAt(e, 'relationship')}>
-              <${Input}
-                value=${f.relationship} onInput=${set('relationship')}
-                placeholder="daughter, friend…" />
+            <${Field} label="Name" error=${errAt(e, 'name')}>
+              <${Input} value=${f.name}
+                onInput=${(/** @type {string} */ v) => {
+                  setUse(null);
+                  setApart(false);
+                  set('name')(v);
+                }} required placeholder="Emma Griffin" />
               </${Field}>
-              <${Field} label="Linked user" id="linked-user" error=${errAt(e, 'userId')}
-                hint="Gifts for them are never shown to them.">
-                <${Select} value=${f.userId} onChange=${set('userId')} options=${[
-                  ['', 'None'],
-                  ...((/** @type {any} */ (me.data))?.people || []).map((/** @type {any} */ u) => [
-                    u.id,
-                    u.displayName,
-                  ]),
+              <${Field} label="Sex" error=${errAt(e, 'sex')}>
+                <${Select} value=${f.sex} onChange=${set('sex')} options=${[
+                  ['', 'Choose…'],
+                  ['female', 'Female'],
+                  ['male', 'Male'],
                 ]} />
                 </${Field}>
-                </div>
-                <div class="row">
-                  <${Field} label="Birthday" error=${errAt(e, 'birthDay') ||
-                    errAt(e, 'birthMonth') ||
-                    errAt(e, 'birthYear')}
-                    hint="2018-10-20, or 10-20 without the year.">
-                    <${Input} value=${f.birthday} onInput=${set(
-                      'birthday',
-                    )} placeholder="YYYY-MM-DD" />
-                    </${Field}>
+                <${Field} label="Birthday" error=${errAt(e, 'birthDay') ||
+                  errAt(e, 'birthMonth') ||
+                  errAt(e, 'birthYear')}
+                  hint="2018-10-20, or 10-20 without the year.">
+              <${Input} value=${f.birthday} onInput=${set('birthday')} placeholder="YYYY-MM-DD" />
+            </${Field}>
+          </div>
+          <div class="small">${p?.relation
+            ? html`<b>${p.relation[0].toUpperCase() + p.relation.slice(1)}</b> to you, worked out
+              from relationships.`
+            : 'How they’re related to you is worked out from relationships.'}</div>
+        </fieldset>
+        ${clash
+          ? html`
+            <div class="notice" role="status">
+              <${Icon} name="info" />
+              <div><b>${clash
+                .name} is already here</b>${clash.visible
+                ? html`. <button type="button" class="btn sm" onClick=${() => {
+                  setUse(clash.id);
+                  save.setError(null);
+                }}>Use ${clash.name}</button>`
+                : html`
+                  , kept private by ${clash.createdBy || 'someone'}. <button type="button"
+                    class="btn sm" disabled=${ask.busy} onClick=${() =>
+                      ask.run().catch(() => {})}>Ask to share</button>
+                `} <button type="button"
+                          class="btn sm" onClick=${() => setApart(true)}>A different person</button>
+                          ${apart
+                            ? html`<div class="small">Give a birth year above that differs from theirs.</div>`
+                            : null}</div>
+            </div>
+          `
+          : use
+          ? html`
+            <div class="notice">
+              <${Icon} name="info" />
+              <div>A gift plan for ${f
+                .name}, who is already here.</div>
+            </div>
+          `
+          : null}
+        <div class="row">
                     <${Field} label="Yearly gift budget" id="gift-budget" error=${errAt(
                       e,
                       'giftBudget',
@@ -578,6 +635,7 @@ function GiftDialog({ close, gift, start }) {
     const keys = new Map();
     for (const p of chosen) {
       if (p.birthMonth) keys.set('birthday', 'Birthday');
+      if (p.wedding) keys.set('wedding', 'Wedding anniversary');
       for (const o of p.occasions) {
         keys.set(o.kind === 'holiday' ? `holiday:${o.holiday}` : `occasion:${o.id}`, o.label);
       }

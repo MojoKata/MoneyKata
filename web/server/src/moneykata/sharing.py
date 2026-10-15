@@ -21,7 +21,7 @@ LEVELS = ("none", "read", "write")
 
 def item(s: Session, kind: str, item_id: str):
     from .store.entities.budgets import Budget
-    from .store.entities.education import Person
+    from .store.entities.education import GiftPlan, Person
     from .store.entities.giving import GivingPlan
     from .store.entities.projections import Projection
     from .store.entities.taxes import TaxBook
@@ -32,6 +32,7 @@ def item(s: Session, kind: str, item_id: str):
         "budget": Budget,
         "projection": Projection,
         "person": Person,
+        "gift-plan": GiftPlan,
         "giving-plan": GivingPlan,
         "tax-book": TaxBook,
     }.get(kind)
@@ -41,6 +42,15 @@ def item(s: Session, kind: str, item_id: str):
     if obj is None or obj.deleted:
         raise Problem(404, "not-found", "Not found")
     return obj
+
+
+def name_of(s: Session, kind: str, obj) -> str:
+    """What the Share dialog calls an item; a gift plan by its person."""
+    if kind == "gift-plan":
+        from .store.entities.education import Person
+
+        return f"Gift plan for {s.get(Person, obj.personId).name}"
+    return obj.name
 
 
 def grants(s: Session, kind: str, item_id: str) -> list[Share]:

@@ -439,7 +439,7 @@ function Inputs({ x, reload }) {
  *   setF: (f: any) => void, e: any }} p
  */
 function EducationInputs({ f, set, setF, e }) {
-  const people = useList('/people');
+  const people = useList('/persons');
   const list = /** @type {any[]} */ (people.data) || [];
   const who = f.beneficiary ? `${f.beneficiary.kind}:${f.beneficiary.id}` : '';
   return html`
@@ -580,15 +580,18 @@ function NewProjection({ close }) {
   const [name, setName] = useState('');
   const [built, setBuilt] = useState(/** @type {any} */ ({ kind: 'typed', amount: 100000 }));
   const [who, setWho] = useState('me');
-  const people = useList('/people');
+  const people = useList('/persons');
   const [child, setChild] = useState('');
   const save = useSubmit(async () => {
     const p = /** @type {any} */ (me.data);
     const born = p?.birthYear || new Date().getFullYear() - 40;
     const people = [{ name: p?.displayName || 'Me', birthYear: born, retireAge: 65 }];
-    if (who === 'couple' && p?.spouseId) {
-      const spouse = p.people.find((/** @type {any} */ x) => x.id === p.spouseId);
-      people.push({ name: spouse?.displayName || 'Partner', birthYear: born, retireAge: 65 });
+    if (who === 'couple' && p?.spouse) {
+      people.push({
+        name: p.spouse.displayName,
+        birthYear: p.spouse.birthYear || born,
+        retireAge: 65,
+      });
     }
     const year = new Date().getFullYear();
     const inputs = goal === 'retirement'

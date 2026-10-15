@@ -8,7 +8,7 @@ import { api } from '../api/client.js';
 import { useSubmit } from '../app/hooks.js';
 import { ended, setSession } from '../store/session.js';
 import { AuthCard } from '../components/auth.js';
-import { errAt, Field, FormError, Input } from '../components/fields.js';
+import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
 
 export default function SignIn() {
   const { path, route } = useLocation();
@@ -20,7 +20,13 @@ export default function SignIn() {
   const [code, setCode] = useState('');
   const [recovery, setRecovery] = useState(false);
   const [signupOpen, setSignupOpen] = useState(/** @type {any} */ (null));
-  const [form, setForm] = useState({ displayName: '', username: '', email: '', password: '' });
+  const [form, setForm] = useState({
+    displayName: '',
+    username: '',
+    email: '',
+    password: '',
+    sex: '',
+  });
   useEffect(() => {
     api.get('/signup').then(setSignupOpen, () => {});
   }, []);
@@ -126,36 +132,44 @@ export default function SignIn() {
                   'displayName',
                 )} autocomplete="name" required />
                 </${Field}>
-                <${Field} label="Email address" id="email" error=${errAt(signUp.error, 'email')}
-                  hint=${domains.length ? 'Addresses at ' + domains.join(', ') + '.' : undefined}>
-                  <${Input} type="email" value=${form.email} onInput=${set(
-                    'email',
-                  )} autocomplete="email"
-                    required />
+                <${Field} label="Sex" error=${errAt(signUp.error, 'sex')}>
+                  <${Select} value=${form.sex} onChange=${set('sex')} options=${[
+                    ['', 'Choose…'],
+                    ['female', 'Female'],
+                    ['male', 'Male'],
+                  ]} />
                   </${Field}>
-                  <${Field} label="Username" error=${errAt(signUp.error, 'username')}
-                    hint="What you'll sign in with: lowercase letters, digits, dots, dashes or underscores.">
-                    <${Input} value=${form.username} onInput=${set(
-                      'username',
-                    )} autocomplete="username" required />
+                  <${Field} label="Email address" id="email" error=${errAt(signUp.error, 'email')}
+                    hint=${domains.length ? 'Addresses at ' + domains.join(', ') + '.' : undefined}>
+                    <${Input} type="email" value=${form.email} onInput=${set(
+                      'email',
+                    )} autocomplete="email"
+                      required />
                     </${Field}>
-                    <${Field} label="Password" error=${errAt(signUp.error, 'password')}
-                      hint="At least 12 characters; not a common password.">
-                      <${Input} type="password" value=${form.password} onInput=${set('password')}
-                        autocomplete="new-password" required />
-                      </${Field}>
-                      <${FormError} error=${signUp.error} shown=${[
-                        'displayName',
-                        'email',
+                    <${Field} label="Username" error=${errAt(signUp.error, 'username')}
+                      hint="What you'll sign in with: lowercase letters, digits, dots, dashes or underscores.">
+                      <${Input} value=${form.username} onInput=${set(
                         'username',
-                        'password',
-                      ]} />
-                      <button class="btn primary" style=${{
-                        width: '100%',
-                        justifyContent: 'center',
-                      }}
-                        disabled=${signUp.busy}>Ask for an account</button>
-                      </form>
+                      )} autocomplete="username" required />
+                      </${Field}>
+                      <${Field} label="Password" error=${errAt(signUp.error, 'password')}
+                        hint="At least 12 characters; not a common password.">
+                        <${Input} type="password" value=${form.password} onInput=${set('password')}
+                          autocomplete="new-password" required />
+                        </${Field}>
+                        <${FormError} error=${signUp.error} shown=${[
+                          'displayName',
+                          'sex',
+                          'email',
+                          'username',
+                          'password',
+                        ]} />
+                        <button class="btn primary" style=${{
+                          width: '100%',
+                          justifyContent: 'center',
+                        }}
+                          disabled=${signUp.busy}>Ask for an account</button>
+                        </form>
           `}
         <div class="toolbar mt"><button type="button" class="linklike" onClick=${() => {
           setSent(false);

@@ -1,6 +1,6 @@
-"""People (requirements S7.7): someone in a user's life, who need not be a user of the server,
-kept on the owner's own list, with their occasions; and the gifts given them or received from
-them (S7.8). A 529's beneficiary is one of them (S1.8.1)."""
+"""People and their relationships (requirements S10.10), each user's gift plans for them with
+their occasions (S7.7), and the gifts given them or received from them (S7.8). A 529's
+beneficiary is a person (S1.8.1)."""
 
 from sqlalchemy import (
     Boolean,
@@ -14,35 +14,75 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import Dec
-from ._base import pairs, record
+from ..types import Day, Dec
+from ._base import pairs, record, unique_live
 
+# Someone in the household's life: every user is one (User.personId), and so are people who
+# never sign in. Seen by every local user unless `private` (S10.10.2).
 Person = record(
     "Person",
     "Persn",
-    Column("ownerId", Text, ForeignKey("User.id"), nullable=False),
+    # Who added it; none for a user's own person, made with the user.
+    Column("ownerId", Text, ForeignKey("User.id")),
     Column("name", Text, nullable=False),
-    Column("relationship", Text),  # child, parent, sibling, partner, friend, …
-    Column("userId", Text, ForeignKey("User.id")),  # when they are a user of this server
+    Column("sex", Text, nullable=False),
     # The birthday: the year is optional, for their age.
     Column("birthMonth", Integer),
     Column("birthDay", Integer),
     Column("birthYear", Integer),
+    Column("diedOn", Day),
+    Column("private", Boolean, nullable=False, server_default=text("0")),
+    CheckConstraint("sex IN ('male', 'female')", name="sex"),
+    CheckConstraint('"birthMonth" IS NULL OR "birthMonth" BETWEEN 1 AND 12', name="birth_month"),
+    CheckConstraint('"birthDay" IS NULL OR "birthDay" BETWEEN 1 AND 31', name="birth_day"),
+    Index("ix_Person_name", "name"),
+)
+
+# A dated link between two people (S10.10.4). A child runs from the parent (person1) to the
+# child (person2); the others run both ways, with person1Id < person2Id.
+Relationship = record(
+    "Relationship",
+    "Rltn",
+    Column("person1Id", Text, ForeignKey("Person.id"), nullable=False),
+    Column("person2Id", Text, ForeignKey("Person.id"), nullable=False),
+    Column("relation", Text, nullable=False),
+    Column("label", Text),  # family's: godmother
+    Column("fromDate", Day),
+    Column("toDate", Day),  # empty while it holds
+    CheckConstraint(
+        "relation IN ('spouse', 'couple', 'child', 'friend', 'colleague', 'family')",
+        name="relation",
+    ),
+    CheckConstraint('"person1Id" <> "person2Id"', name="two_people"),
+    CheckConstraint('relation = \'child\' OR "person1Id" < "person2Id"', name="ordered"),
+    CheckConstraint(
+        '"toDate" IS NULL OR "fromDate" IS NULL OR "toDate" >= "fromDate"', name="dates"
+    ),
+    Index("ix_Relationship_person2Id", "person2Id"),
+)
+unique_live(Relationship, "person1Id", "person2Id", "relation", "fromDate")
+
+# One user's gift plan for a person (S7.7.1): their budget, lead time and notes, with the
+# holidays and anniversaries they give for.
+GiftPlan = record(
+    "GiftPlan",
+    "GfPln",
+    Column("ownerId", Text, ForeignKey("User.id"), nullable=False),
+    Column("personId", Text, ForeignKey("Person.id", ondelete="CASCADE"), nullable=False),
     Column("giftBudget", Dec),  # a year
     Column("leadDays", Integer, nullable=False, server_default=text("14")),
     Column("notes", Text),
-    CheckConstraint('"birthMonth" IS NULL OR "birthMonth" BETWEEN 1 AND 12', name="birth_month"),
-    CheckConstraint('"birthDay" IS NULL OR "birthDay" BETWEEN 1 AND 31', name="birth_day"),
     CheckConstraint('"leadDays" >= 0', name="lead_days"),
-    Index("ix_Person_ownerId", "ownerId"),
+    Index("ix_GiftPlan_personId", "personId"),
 )
+unique_live(GiftPlan, "ownerId", "personId")
 
-# A dated occasion of a person's: an anniversary, a holiday they get gifts for (its date from
+# A dated occasion in a gift plan: an anniversary, a holiday they get gifts for (its date from
 # the shipped list), or a custom one; each may have its own gift budget (S7.7.1).
 Occasion = record(
     "Occasion",
     "Occsn",
-    Column("personId", Text, ForeignKey("Person.id", ondelete="CASCADE"), nullable=False),
+    Column("giftPlanId", Text, ForeignKey("GiftPlan.id", ondelete="CASCADE"), nullable=False),
     Column("kind", Text, nullable=False),
     Column("name", Text),  # an anniversary's or a custom occasion's
     Column("holiday", Text),  # a shipped holiday's key
@@ -55,7 +95,7 @@ Occasion = record(
     CheckConstraint(
         "kind = 'holiday' OR (month BETWEEN 1 AND 12 AND day BETWEEN 1 AND 31)", name="date"
     ),
-    Index("ix_Occasion_personId", "personId"),
+    Index("ix_Occasion_giftPlanId", "giftPlanId"),
 )
 
 # A gift, from idea to given, for one or more people and an occasion of a year; or one received
@@ -83,7 +123,7 @@ Gift = record(
 GiftPersons = pairs(
     "GiftPersons",
     Column("giftId", Text, ForeignKey("Gift.id", ondelete="CASCADE"), nullable=False),
-    Column("personId", Text, ForeignKey("Person.id", ondelete="CASCADE"), nullable=False),
+    Column("personId", Text, ForeignKey("Person.id"), nullable=False),
     PrimaryKeyConstraint("giftId", "personId"),
     Index("ix_GiftPersons_personId", "personId"),
 )

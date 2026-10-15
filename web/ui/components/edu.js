@@ -31,6 +31,7 @@ export function planForm(p) {
     openedOn: p?.openedOn || '',
     stateDeduction: p?.stateDeduction || '',
     newName: '',
+    newSex: '',
     newBirthYear: '',
   };
 }
@@ -42,9 +43,9 @@ export function planForm(p) {
 export async function planBody(f) {
   let who = f.beneficiary;
   if (who === 'new') {
-    const p = await api.post('/people', {
+    const p = await api.post('/persons', {
       name: f.newName,
-      relationship: 'child',
+      sex: f.newSex || null,
       birthYear: f.newBirthYear ? Number(f.newBirthYear) : null,
     });
     who = `person:${p.id}`;
@@ -66,6 +67,7 @@ export const PLAN_FIELDS = [
   'openedOn',
   'stateDeduction',
   'name',
+  'sex',
   'birthYear',
 ];
 
@@ -74,8 +76,8 @@ export const PLAN_FIELDS = [
  * @param {{ f: any, set: (k: string) => (v: any) => void, e: any }} p
  */
 export function PlanFields({ f, set, e }) {
-  const people = useList('/people');
-  const list = (/** @type {any[]} */ (people.data) || []).filter((p) => p.level === 'owner');
+  const people = useList('/persons');
+  const list = /** @type {any[]} */ (people.data) || [];
   return html`
     <div class="row">
       <${Field} label="Plan state" id="plan-state" error=${errAt(e, 'planState')}>
@@ -86,10 +88,9 @@ export function PlanFields({ f, set, e }) {
           </${Field}>
           </div>
           <${Field} label="Beneficiary" error=${errAt(e, 'beneficiary')}
-            hint="Someone on your list of people. The 529 counts in your net worth, not theirs.">
+            hint="One of the household's people. The 529 counts in your net worth, not theirs.">
       <${Select} value=${f.beneficiary} onChange=${set('beneficiary')} options=${[
         ['', 'Choose…'],
-        ...(f.beneficiary.startsWith('user:') ? [[f.beneficiary, 'A user']] : []),
         ...list.map((p) => [`person:${p.id}`, p.name]),
         ['new', 'Add a person…'],
       ]} /></${Field}>
@@ -99,12 +100,19 @@ export function PlanFields({ f, set, e }) {
           <${Field} label="Their name" id="new-name" error=${errAt(e, 'name')}>
             <${Input} value=${f.newName} onInput=${set('newName')} required />
             </${Field}>
-            <${Field} label="Year of birth" id="new-birth-year" error=${errAt(e, 'birthYear')}
-              hint="When school starts, for the Goal tab.">
-              <${Input} value=${f.newBirthYear} onInput=${set('newBirthYear')}
-                inputmode="numeric" />
+            <${Field} label="Sex" id="new-sex" error=${errAt(e, 'sex')}>
+              <${Select} value=${f.newSex} onChange=${set('newSex')} options=${[
+                ['', 'Choose…'],
+                ['female', 'Female'],
+                ['male', 'Male'],
+              ]} />
               </${Field}>
-              </div>
+              <${Field} label="Year of birth" id="new-birth-year" error=${errAt(e, 'birthYear')}
+                hint="When school starts, for the Goal tab.">
+                <${Input} value=${f.newBirthYear} onInput=${set('newBirthYear')}
+                  inputmode="numeric" />
+                </${Field}>
+                </div>
       `
       : null}
     <div class="row">
@@ -312,7 +320,7 @@ export function Contributions({ a }) {
 
 /** @param {{ a: any, done: () => void }} p */
 function AddContribution({ a, done }) {
-  const people = useList('/people');
+  const people = useList('/persons');
   const accounts = useList('/accounts');
   const [f, setF] = useState({
     date: today(),
@@ -386,7 +394,7 @@ function AddContribution({ a, done }) {
 /** Who an existing deposit came from. */
 /** @param {{ a: any, c: any, done: () => void }} p */
 function Retag({ a, c, done }) {
-  const people = useList('/people');
+  const people = useList('/persons');
   const save = useSubmit(async (/** @type {string} */ who) => {
     await api.put(
       `/contributions/${c.transactionId}`,
@@ -401,7 +409,6 @@ function Retag({ a, c, done }) {
       data-help="from" value=${c.contributor} onChange=${(/** @type {string} */ v) =>
         save.run(v).catch(() => {})} options=${[
         ['owner', a.ownerName],
-        ...(c.contributor.startsWith('user:') ? [[c.contributor, c.name]] : []),
         ...(/** @type {any[]} */ (people.data) || []).map((p) => [`person:${p.id}`, p.name]),
       ]} />
   `;

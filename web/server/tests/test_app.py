@@ -353,7 +353,7 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/budgets", "Edit plan", "dialog-plan"),
         ("/ui/receipts", "Receipt Blue Bottle Coffee", "dialog-receipt"),
         ("/ui/projections", "New projection", "dialog-new-projection"),
-        ("/ui/gifts/people", "Add a person", "dialog-person"),
+        ("/ui/gifts/people", "Add a gift plan", "dialog-person"),
         ("/ui/gifts/gifts", "Add a gift", "dialog-gift"),
         ("/ui/giving/donations", "Record a donation", "dialog-donation"),
         ("/ui/positions/open", "Record an option trade", "dialog-option-trade"),

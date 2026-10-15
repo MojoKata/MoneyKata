@@ -146,6 +146,11 @@
  */
 
 /**
+ * @typedef {Object} Asked
+ * @property {boolean} asked
+ */
+
+/**
  * @typedef {Object} AssumptionsView
  * @property {Object<string, unknown>} figures
  * @property {Array<Array<unknown>>} classes
@@ -193,6 +198,7 @@
  * @property {string} id
  * @property {string} name
  * @property {(number | null)} birthYear
+ * @property {boolean} [deleted]
  */
 
 /**
@@ -1416,6 +1422,13 @@
  */
 
 /**
+ * @typedef {Object} Named
+ * @property {string} id
+ * @property {string} name
+ * @property {boolean} deleted
+ */
+
+/**
  * @typedef {Object} NetWorthSeries
  * @property {Array<GroupPoint>} points
  * @property {Array<string>} groups
@@ -1516,6 +1529,7 @@
  * @property {string} displayName
  * @property {string} username
  * @property {string} email
+ * @property {(string | null)} [sex]
  * @property {Array<string>} [groupIds]
  */
 
@@ -1809,6 +1823,14 @@
  */
 
 /**
+ * @typedef {Object} Page_PersonRow_
+ * @property {Array<PersonRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
  * @typedef {Object} Page_Plan_
  * @property {Array<Plan_Output>} items
  * @property {number} total
@@ -1851,6 +1873,22 @@
 /**
  * @typedef {Object} Page_RecurringRow_
  * @property {Array<RecurringRow>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_RelationOut_
+ * @property {Array<RelationOut>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
+ * @typedef {Object} Page_RelationshipOut_
+ * @property {Array<RelationshipOut>} items
  * @property {number} total
  * @property {number} offset
  * @property {number} limit
@@ -2024,35 +2062,22 @@
  */
 
 /**
- * @typedef {Object} Person
- * @property {string} id
- * @property {string} displayName
- */
-
-/**
- * @typedef {Object} PersonIn
- * @property {string} name
- * @property {(string | null)} [relationship]
- * @property {(string | null)} [userId]
- * @property {(number | null)} [birthMonth]
- * @property {(number | null)} [birthDay]
- * @property {(number | null)} [birthYear]
- * @property {(import('../app/dec.js').Dec | null)} [giftBudget]
- * @property {number} [leadDays]
- * @property {(string | null)} [notes]
- * @property {(Array<OccasionIn> | null)} [occasions]
- */
-
-/**
+ * A gift plan the caller sees, with its person.
  * @typedef {Object} PersonOut
  * @property {string} id
+ * @property {string} planId
  * @property {string} name
- * @property {(string | null)} relationship
+ * @property {string} sex
+ * @property {(string | null)} relation
  * @property {(string | null)} userId
  * @property {(string | null)} userName
  * @property {(number | null)} birthMonth
  * @property {(number | null)} birthDay
  * @property {(number | null)} birthYear
+ * @property {(string | null)} diedOn
+ * @property {(string | null)} wedding
+ * @property {boolean} private
+ * @property {boolean} canChangePerson
  * @property {(import('../app/dec.js').Dec | null)} giftBudget
  * @property {number} leadDays
  * @property {(string | null)} notes
@@ -2063,12 +2088,31 @@
  * @property {string} level
  * @property {string} ownerName
  * @property {number} version
+ * @property {number} personVersion
  */
 
 /**
  * @typedef {Object} PersonRef
  * @property {string} id
  * @property {string} name
+ * @property {boolean} [deleted]
+ */
+
+/**
+ * @typedef {Object} PersonRow
+ * @property {string} id
+ * @property {string} name
+ * @property {string} sex
+ * @property {(number | null)} birthMonth
+ * @property {(number | null)} birthDay
+ * @property {(number | null)} birthYear
+ * @property {(string | null)} diedOn
+ * @property {boolean} private
+ * @property {(string | null)} userId
+ * @property {(string | null)} relation
+ * @property {boolean} canChange
+ * @property {(string | null)} createdBy
+ * @property {number} version
  */
 
 /**
@@ -2205,11 +2249,15 @@
  * @property {string} timeZone
  * @property {string} zone
  * @property {string} theme
+ * @property {string} personId
+ * @property {string} sex
+ * @property {(number | null)} birthMonth
+ * @property {(number | null)} birthDay
  * @property {(number | null)} birthYear
- * @property {(string | null)} spouseId
  * @property {string} alertEmails
  * @property {TwoStep} twoStep
- * @property {Array<Person>} people
+ * @property {Array<Relation>} relations
+ * @property {(Spouse | null)} spouse
  * @property {number} version
  */
 
@@ -2219,8 +2267,10 @@
  * @property {(string | null)} [avatar]
  * @property {(string | null)} [timeZone]
  * @property {(string | null)} [theme]
+ * @property {(string | null)} [sex]
+ * @property {(number | null)} [birthMonth]
+ * @property {(number | null)} [birthDay]
  * @property {(number | null)} [birthYear]
- * @property {(string | null)} [spouseId]
  * @property {(string | null)} [alertEmails]
  */
 
@@ -2418,6 +2468,49 @@
  */
 
 /**
+ * Someone the user is related to (S10.10.6): stored, or worked out from those.
+ * @typedef {Object} Relation
+ * @property {string} personId
+ * @property {string} name
+ * @property {string} word
+ * @property {boolean} stored
+ */
+
+/**
+ * @typedef {Object} RelationOut
+ * @property {string} personId
+ * @property {string} name
+ * @property {string} key
+ * @property {string} word
+ * @property {boolean} stored
+ * @property {(string | null)} label
+ */
+
+/**
+ * @typedef {Object} RelationshipIn
+ * @property {string} person1Id
+ * @property {string} person2Id
+ * @property {string} relation
+ * @property {(string | null)} [label]
+ * @property {(string | null)} [fromDate]
+ * @property {(string | null)} [toDate]
+ */
+
+/**
+ * @typedef {Object} RelationshipOut
+ * @property {string} id
+ * @property {Named} person1
+ * @property {Named} person2
+ * @property {string} relation
+ * @property {(string | null)} label
+ * @property {(string | null)} fromDate
+ * @property {(string | null)} toDate
+ * @property {(string | null)} endsOn
+ * @property {boolean} canChange
+ * @property {number} version
+ */
+
+/**
  * @typedef {Object} RemoteUser
  * @property {string} id
  * @property {string} username
@@ -2598,6 +2691,7 @@
  * @property {string} password
  * @property {string} email
  * @property {(string | null)} [displayName]
+ * @property {(string | null)} [sex]
  */
 
 /**
@@ -2650,6 +2744,7 @@
  * @property {string} username
  * @property {string} email
  * @property {string} password
+ * @property {(string | null)} [sex]
  */
 
 /**
@@ -2731,6 +2826,14 @@
  * @property {(string | null)} [categoryId]
  * @property {import('../app/dec.js').Dec} amount
  * @property {(string | null)} [memo]
+ */
+
+/**
+ * Who the user is married to today, when they are a user here (S10.10.4.3).
+ * @typedef {Object} Spouse
+ * @property {string} id
+ * @property {string} displayName
+ * @property {(number | null)} birthYear
  */
 
 /**
@@ -3278,6 +3381,23 @@
  */
 
 /**
+ * A gift plan, and the person it is for: an existing one (`personId`) or a new one.
+ * @typedef {Object} moneykata__ui__gifts__PersonIn
+ * @property {(string | null)} [personId]
+ * @property {string} [name]
+ * @property {(string | null)} [sex]
+ * @property {(number | null)} [birthMonth]
+ * @property {(number | null)} [birthDay]
+ * @property {(number | null)} [birthYear]
+ * @property {boolean} [private]
+ * @property {boolean} [differentPerson]
+ * @property {(import('../app/dec.js').Dec | null)} [giftBudget]
+ * @property {number} [leadDays]
+ * @property {(string | null)} [notes]
+ * @property {(Array<OccasionIn> | null)} [occasions]
+ */
+
+/**
  * @typedef {Object} moneykata__ui__giving__DocumentIn
  * @property {string} receiptId
  */
@@ -3390,6 +3510,18 @@
  * @property {import('../app/dec.js').Dec} pmi
  * @property {import('../app/dec.js').Dec} fees
  * @property {import('../app/dec.js').Dec} overpayment
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__people__PersonIn
+ * @property {string} name
+ * @property {(string | null)} [sex]
+ * @property {(number | null)} [birthMonth]
+ * @property {(number | null)} [birthDay]
+ * @property {(number | null)} [birthYear]
+ * @property {(string | null)} [diedOn]
+ * @property {boolean} [private]
+ * @property {boolean} [differentPerson]
  */
 
 /**

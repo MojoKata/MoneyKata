@@ -24,7 +24,14 @@ from moneykata.store.tables.receipts import is_search_table
 
 
 def new_user(s, name="alice"):
-    u = User(id=ids.new_id("User"), username=name, displayName=name.title())
+    from moneykata import people
+
+    u = User(
+        id=ids.new_id("User"),
+        personId=people.make(s, name.title(), "female").id,
+        username=name,
+        displayName=name.title(),
+    )
     s.add(u)
     s.flush()
     return u
@@ -381,16 +388,22 @@ def test_revisions_carry_a_database_from_0001_to_head(tmp_path):
     engine = make_engine(tmp_path / "old.db", None)
     stamp = "'2026-10-01 00:00:00'"
     uid, gone = ids.new_id("User"), ids.new_id("User")
+    pa, pb = ids.new_id("Persn"), ids.new_id("Persn")
     aid, iid, tid = ids.new_id("Acct"), ids.new_id("Imprt"), ids.new_id("Txn")
     with engine.connect() as conn:
         command.upgrade(migrate.alembic_config(conn), "0001")
         conn.commit()
         for statement in (
-            'INSERT INTO "User" (id, username, "displayName", version, "createdAt", '
-            f"\"updatedAt\", deleted) VALUES ('{uid}', 'alice', 'Alice', 1, {stamp}, {stamp}, 0)",
-            'INSERT INTO "User" (id, username, "displayName", version, "createdAt", '
-            f'"updatedAt", deleted, "deletedAt", "deletedById") VALUES (\'{gone}\', \'bob\', '
-            f"'Bob', 1, {stamp}, {stamp}, 1, {stamp}, '{uid}')",
+            'INSERT INTO "Person" (id, name, sex, version, "createdAt", "updatedAt", deleted) '
+            f"VALUES ('{pa}', 'Alice', 'female', 1, {stamp}, {stamp}, 0)",
+            'INSERT INTO "Person" (id, name, sex, version, "createdAt", "updatedAt", deleted) '
+            f"VALUES ('{pb}', 'Bob', 'male', 1, {stamp}, {stamp}, 0)",
+            'INSERT INTO "User" (id, "personId", username, "displayName", version, '
+            f"\"createdAt\", \"updatedAt\", deleted) VALUES ('{uid}', '{pa}', 'alice', "
+            f"'Alice', 1, {stamp}, {stamp}, 0)",
+            'INSERT INTO "User" (id, "personId", username, "displayName", version, '
+            f'"createdAt", "updatedAt", deleted, "deletedAt", "deletedById") VALUES '
+            f"('{gone}', '{pb}', 'bob', 'Bob', 1, {stamp}, {stamp}, 1, {stamp}, '{uid}')",
             'INSERT INTO "Account" (id, "ownerId", name, type, version, "createdAt", '
             f"\"updatedAt\", deleted) VALUES ('{aid}', '{uid}', 'Checking', 'checking', 1, "
             f"{stamp}, {stamp}, 0)",

@@ -17,8 +17,7 @@ class User(Record):
     avatar: str | None = None
     timeZone: str = "auto"
     theme: str = "dark"
-    birthYear: int | None = None
-    spouseId: str | None = None
+    personId: str
     alertEmails: str = "daily"
     lastSignInAt: dt.datetime | None = None
     reactivationAskedAt: dt.datetime | None = None
@@ -82,6 +81,7 @@ class SignupRequest(Record):
     username: str
     email: str
     passwordHash: str
+    sex: str
     confirmBy: dt.datetime
     status: str = "confirming"
     confirmTokenHash: str | None = None

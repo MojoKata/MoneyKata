@@ -131,8 +131,12 @@ def ensure_default_admin(s: Db) -> bool:
     """A server with no users gets `admin`, with the published default password."""
     if s.scalar(select(func.count()).select_from(User)) > 0:
         return False
+    from .. import people
+
     u = User(
         id=ids.new_id("User"),
+        # Its sex is asked at the setup step; until then a placeholder (S10.1.2).
+        personId=people.make(s, "Admin", "female").id,
         username=DEFAULT_ADMIN,
         displayName="Admin",
         passwordHash=passwords.hash_password(DEFAULT_PASSWORD),
@@ -154,8 +158,19 @@ def ensure_default_admin(s: Db) -> bool:
     return True
 
 
-def finish_setup(s: Db, user: User, password: str, email: str, display_name: str | None) -> None:
+def finish_setup(
+    s: Db,
+    user: User,
+    password: str,
+    email: str,
+    display_name: str | None,
+    sex: str | None = None,
+) -> None:
+    from .. import people
+
     errors = []
+    if sex is not None and sex not in people.SEXES:
+        errors.append(FieldError("sex", "sex-invalid", "Female or male."))
     min_len = settings.get(s, "passwordMinLength")
     why = passwords.problem(password, min_len)
     if why:
@@ -172,8 +187,12 @@ def finish_setup(s: Db, user: User, password: str, email: str, display_name: str
     user.passwordHash = passwords.hash_password(password)
     user.passwordChangedAt = now()
     user.email = email.strip().lower()
+    me = people.of_user(s, user.id)
     if display_name and display_name.strip():
         user.displayName = display_name.strip()
+        people.change(s, me, {"name": user.displayName})
+    if sex is not None:
+        people.change(s, me, {"sex": sex})
     user.needsSetup = False
     activity.record(
         s,
@@ -277,20 +296,32 @@ def peek_invitation(s: Db, token: str) -> User:
 
 
 def invite(
-    s: Db, svc: Services, by: User, display_name: str, username: str, email: str, groups: list[str]
+    s: Db,
+    svc: Services,
+    by: User,
+    display_name: str,
+    username: str,
+    email: str,
+    groups: list[str],
+    sex: str | None = None,
 ) -> User:
+    from .. import people
+
     username = (username or "").strip().lower()
     errors = (
         _name_problems(display_name)
         + _username_problems(s, username)
         + _email_problems(s, email, None)
     )
+    if sex not in people.SEXES:
+        errors.append(FieldError("sex", "sex-invalid", "Female or male."))
     known = {g.id for g in s.scalars(select(Group).where(Group.deleted == false()))}
     if any(g not in known for g in groups):
         errors.append(FieldError("groupIds", "group-unknown", "Choose existing groups."))
     _raise(errors)
     u = User(
         id=ids.new_id("User"),
+        personId=people.for_new_user(s, display_name.strip(), sex, by.id).id,
         username=username,
         displayName=display_name.strip(),
         email=email.strip().lower(),

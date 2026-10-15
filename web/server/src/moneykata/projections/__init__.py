@@ -133,19 +133,20 @@ def _btc_price(s: Session) -> float | None:
 
 def people_of(s: Session, owner: User, inputs: dict) -> list[dict]:
     """Retirement's people: those listed, else the owner (and their spouse for a couple)."""
+    from .. import people as household
+
+    born = household.birth_year(s, owner.id)
     out = []
     for p in inputs.get("people") or []:
         out.append(
             {
                 "name": p.get("name") or "",
-                "birthYear": int(p.get("birthYear") or owner.birthYear or 1980),
+                "birthYear": int(p.get("birthYear") or born or 1980),
                 "retireAge": int(p.get("retireAge") or 65),
             }
         )
     if not out:
-        out.append(
-            {"name": owner.displayName, "birthYear": owner.birthYear or 1980, "retireAge": 65}
-        )
+        out.append({"name": owner.displayName, "birthYear": born or 1980, "retireAge": 65})
     return out
 
 
@@ -317,14 +318,13 @@ def education_school(s: Session, inputs: dict, year: int) -> dict:
 
     who = inputs.get("beneficiary") or {}
     name, birth = "the beneficiary", None
+    if who.get("kind") == "user":
+        u = s.get(User, who.get("id") or "")
+        who = {"kind": "person", "id": u.personId if u else ""}
     if who.get("kind") == "person":
         person = s.get(Person, who.get("id") or "")
-        if person is not None and not person.deleted:
+        if person is not None:
             name, birth = person.name, person.birthYear
-    elif who.get("kind") == "user":
-        u = s.get(User, who.get("id") or "")
-        if u is not None:
-            name, birth = u.displayName, u.birthYear
     start_age = int(inputs.get("startAge") or 18)
     first = int(inputs.get("firstYear") or 0) or ((birth or year - 10) + start_age)
     basis = inputs.get("costBasis") or "public"

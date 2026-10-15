@@ -1,7 +1,7 @@
-"""Gifts (requirements S7.7, S7.8): people and their occasions, gifts from idea to given and
-those received, the occasions coming up, spending by person, occasion and year, each person's
-history, and the gift-tax flag. People and gifts are their owner's alone unless a person is
-shared; a gift for a person linked to the viewer is never shown to them."""
+"""Gifts (requirements S7.7, S7.8): gift plans and their occasions, gifts from idea to given
+and those received, the occasions coming up, spending by person, occasion and year, each
+person's history, and the gift-tax flag. Gift plans and gifts are their owner's alone unless a
+plan is shared; a gift for the viewer is never shown to them."""
 
 import datetime as dt
 from decimal import Decimal
@@ -9,11 +9,12 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, gifts, ids, receipts
+from .. import access, activity, clock, gifts, ids, people, receipts
 from ..errors import FieldError, Problem, refuse
 from ..gifts import holidays
+from ..people import tree
 from ..store.entities.accounts import Account, Category, Transaction
-from ..store.entities.education import Gift, GiftPerson, Occasion, Person
+from ..store.entities.education import Gift, GiftPerson, GiftPlan, Occasion, Person
 from ..store.entities.users import User
 from .conventions import Deleted, ExactRoute, Model, Money, check, gone, if_match
 from .deps import Caller, caller, server
@@ -23,7 +24,7 @@ from .receipts import row as receipt_row
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["gifts"])
 
 
-# ---- People and their occasions (S7.7) ----
+# ---- Gift plans and their occasions (S7.7) ----
 
 
 class OccasionIn(Model):
@@ -43,16 +44,20 @@ class OccasionOut(OccasionIn):
 
 
 class PersonIn(Model):
-    name: str
-    relationship: str | None = None
-    userId: str | None = None
+    """A gift plan, and the person it is for: an existing one (`personId`) or a new one."""
+
+    personId: str | None = None
+    name: str = ""
+    sex: str | None = None
     birthMonth: int | None = None
     birthDay: int | None = None
     birthYear: int | None = None
+    private: bool = False
+    differentPerson: bool = False  # the same name as someone here, told apart by birth year
     giftBudget: Money | None = None
     leadDays: int = 14
     notes: str | None = None
-    occasions: list[OccasionIn] | None = None  # when given, they replace the person's
+    occasions: list[OccasionIn] | None = None  # when given, they replace the plan's
 
 
 class NextDate(Model):
@@ -64,14 +69,22 @@ class NextDate(Model):
 
 
 class PersonOut(Model):
-    id: str
+    """A gift plan the caller sees, with its person."""
+
+    id: str  # the person's
+    planId: str
     name: str
-    relationship: str | None
-    userId: str | None
+    sex: str
+    relation: str | None  # to the caller: daughter, mother-in-law (S10.10.5)
+    userId: str | None  # when they are a user
     userName: str | None
     birthMonth: int | None
     birthDay: int | None
     birthYear: int | None
+    diedOn: dt.date | None
+    wedding: dt.date | None  # the start of their marriage, for its anniversary (S7.7.1)
+    private: bool
+    canChangePerson: bool
     giftBudget: Money | None
     leadDays: int
     notes: str | None
@@ -81,7 +94,8 @@ class PersonOut(Model):
     lastGift: str | None
     level: str
     ownerName: str
-    version: int
+    version: int  # the plan's
+    personVersion: int
 
 
 class HolidayOut(Model):
@@ -90,11 +104,13 @@ class HolidayOut(Model):
     date: dt.date | None  # this year's
 
 
-def _next(p: Person, occs: list[Occasion], today: dt.date) -> NextDate | None:
+def _next(
+    p: Person, occs: list[Occasion], today: dt.date, wedding: dt.date | None
+) -> NextDate | None:
     ahead = [
         d
         for y in (today.year, today.year + 1)
-        for d in gifts.dates_in(p, occs, y)
+        for d in gifts.dates_in(p, occs, y, wedding)
         if d.date >= today
     ]
     if not ahead:
@@ -132,10 +148,12 @@ def _occasion_out(o: Occasion, today: dt.date) -> OccasionOut:
 
 def people_view(s, c: Caller) -> list[PersonOut]:
     today = clock.today()
-    rows = gifts.visible_people(s, c.id)
-    people = {p.id: p for p, _ in rows}
-    occs = gifts.occasions_of(s, list(people))
-    seen = gifts.visible_gifts(s, c.id, people)
+    plans = gifts.visible_plans(s, c.id)
+    occs = gifts.occasions_of(s, [x.plan.id for x in plans])
+    seen = gifts.visible_gifts(s, c.id)
+    me = s.get(User, c.id)
+    words = tree.relation_to(s, me.personId) if me else {}
+    users = people.users_by_person(s)
     spent: dict[str, Decimal] = {}
     last: dict[str, tuple[int, str]] = {}
     for g, ps in seen:
@@ -148,39 +166,52 @@ def people_view(s, c: Caller) -> list[PersonOut]:
             if g.status == "given" and y >= last.get(pid, (0, ""))[0]:
                 last[pid] = (y, f"{g.description}, {y}")
     out = []
-    for p, lvl in rows:
-        owner = s.get(User, p.ownerId)
-        linked = s.get(User, p.userId) if p.userId else None
+    for x in plans:
+        p, gp = x.person, x.plan
+        owner = s.get(User, gp.ownerId)
+        u = users.get(p.id)
+        rel = words.get(p.id)
+        wedding = gifts.wedding_of(s, p.id)
         out.append(
             PersonOut(
                 id=p.id,
+                planId=gp.id,
                 name=p.name,
-                relationship=p.relationship,
-                userId=p.userId,
-                userName=linked.displayName if linked else None,
+                sex=p.sex,
+                relation=rel.word if rel else None,
+                userId=u.id if u else None,
+                userName=u.displayName if u else None,
                 birthMonth=p.birthMonth,
                 birthDay=p.birthDay,
                 birthYear=p.birthYear,
-                giftBudget=p.giftBudget,
-                leadDays=p.leadDays,
-                notes=p.notes,
-                occasions=[_occasion_out(o, today) for o in occs[p.id]],
-                next=_next(p, occs[p.id], today),
+                diedOn=p.diedOn,
+                wedding=wedding,
+                private=p.private,
+                canChangePerson=people.level(s, c.id, p) == "owner",
+                giftBudget=gp.giftBudget,
+                leadDays=gp.leadDays,
+                notes=gp.notes,
+                occasions=[_occasion_out(o, today) for o in occs[gp.id]],
+                next=_next(p, occs[gp.id], today, wedding),
                 spent=spent.get(p.id, Decimal(0)),
-                lastGift=None if p.userId == c.id else last.get(p.id, (0, None))[1],
-                level=lvl,
+                lastGift=None if me and p.id == me.personId else last.get(p.id, (0, None))[1],
+                level=x.level,
                 ownerName=owner.displayName,
-                version=p.version,
+                version=gp.version,
+                personVersion=p.version,
             )
         )
     return out
 
 
-def _check_person(s, body: PersonIn) -> dict:
+def check_person_fields(body) -> dict:
+    """A person's own fields (S10.10.1): name, sex and birthday."""
     e: list[FieldError] = []
-    name = body.name.strip()
+    name = (body.name or "").strip()
     if not name or len(name) > 80:
         e.append(FieldError("name", "name-invalid", "A name, up to 80 characters."))
+    if body.sex not in people.SEXES:
+        e.append(FieldError("sex", "sex-invalid", "Female or male."))
     if body.birthMonth is not None and not 1 <= body.birthMonth <= 12:
         e.append(FieldError("birthMonth", "month-invalid", "A month, 1 to 12."))
     if body.birthDay is not None and not 1 <= body.birthDay <= 31:
@@ -190,12 +221,48 @@ def _check_person(s, body: PersonIn) -> dict:
     year = clock.today().year
     if body.birthYear is not None and not year - 120 <= body.birthYear <= year:
         e.append(FieldError("birthYear", "year-invalid", "A year of birth."))
+    if e:
+        raise Problem(422, e[0].code, e[0].message, e)
+    return {
+        "name": name,
+        "sex": body.sex,
+        "birthMonth": body.birthMonth,
+        "birthDay": body.birthDay,
+        "birthYear": body.birthYear,
+    }
+
+
+def refuse_clash(s, c: Caller, name: str, birth_year: int | None, exclude=None) -> None:
+    """One person, once (S10.10.3): a name already here shows that person instead."""
+    other = people.clash(s, name, birth_year, exclude)
+    if other is None:
+        return
+    seen = people.level(s, c.id, other) is not None
+    creator = s.get(User, other.ownerId) if other.ownerId else None
+    raise Problem(
+        409,
+        "person-exists",
+        f"{other.name} is already here."
+        + ("" if seen else " Ask to share them, or give both birth years to tell them apart."),
+        [FieldError("name", "person-exists", f"{other.name} is already here.")],
+        extra={
+            "person": {
+                "id": other.id,
+                "name": other.name,
+                "visible": seen,
+                "private": other.private,
+                "createdBy": creator.displayName if creator else None,
+            }
+        },
+    )
+
+
+def _check_plan(body: PersonIn) -> dict:
+    e: list[FieldError] = []
     if body.giftBudget is not None and body.giftBudget < 0:
         e.append(FieldError("giftBudget", "amount-invalid", "Zero or more."))
     if not 0 <= body.leadDays <= 120:
         e.append(FieldError("leadDays", "lead-invalid", "0 to 120 days."))
-    if body.userId and s.get(User, body.userId) is None:
-        e.append(FieldError("userId", "user-unknown", "No such user."))
     for i, o in enumerate(body.occasions or []):
         at = f"occasions.{i}"
         if o.kind == "holiday":
@@ -212,28 +279,18 @@ def _check_person(s, body: PersonIn) -> dict:
             e.append(FieldError(f"{at}.budget", "amount-invalid", "Zero or more."))
     if e:
         raise Problem(422, e[0].code, e[0].message, e)
-    return {
-        "name": name,
-        "relationship": (body.relationship or "").strip() or None,
-        "userId": body.userId or None,
-        "birthMonth": body.birthMonth,
-        "birthDay": body.birthDay,
-        "birthYear": body.birthYear,
-        "giftBudget": body.giftBudget,
-        "leadDays": body.leadDays,
-        "notes": body.notes or None,
-    }
+    return {"giftBudget": body.giftBudget, "leadDays": body.leadDays, "notes": body.notes or None}
 
 
-def _set_occasions(s, p: Person, wanted: list[OccasionIn], user_id: str) -> None:
-    for o in gifts.occasions_of(s, [p.id])[p.id]:
+def _set_occasions(s, gp: GiftPlan, wanted: list[OccasionIn], user_id: str) -> None:
+    for o in gifts.occasions_of(s, [gp.id])[gp.id]:
         o.mark_deleted(user_id)
     for o in wanted:
         holiday = o.kind == "holiday"
         s.add(
             Occasion(
                 id=ids.new_id("Occsn"),
-                personId=p.id,
+                giftPlanId=gp.id,
                 kind=o.kind,
                 name=None if holiday else ((o.name or "").strip() or None),
                 holiday=o.holiday if holiday else None,
@@ -251,7 +308,7 @@ def _one(s, c: Caller, person_id: str) -> PersonOut:
 
 @router.get("/people", response_model=list[PersonOut])
 def list_people(request: Request, c: Caller = Depends(caller)):
-    """The caller's people and those shared with them."""
+    """The caller's gift plans and those shared with them, with their people."""
     with server(request).db.read() as s:
         return people_view(s, c)
 
@@ -267,12 +324,35 @@ def list_holidays(request: Request, c: Caller = Depends(caller)):
 
 @router.post("/people", response_model=PersonOut, status_code=201)
 def add_person(body: PersonIn, request: Request, c: Caller = Depends(caller)):
+    """A gift plan for someone: a person already here, or a new one, added once (S10.10.3)."""
     with server(request).db.tx() as s:
-        values = _check_person(s, body)
-        p = Person(id=ids.new_id("Persn"), ownerId=c.id, **values)
-        s.add(p)
+        plan = _check_plan(body)
+        if body.personId:
+            p = people.get(s, c.id, body.personId)
+        else:
+            values = check_person_fields(body)
+            if not body.differentPerson:
+                refuse_clash(s, c, values["name"], values["birthYear"])
+            elif people.clash(s, values["name"], values["birthYear"]) is not None:
+                raise refuse(
+                    "birthYear",
+                    "not-told-apart",
+                    "Give both birth years, different ones, to tell them apart.",
+                )
+            p = Person(id=ids.new_id("Persn"), ownerId=c.id, private=body.private, **values)
+            s.add(p)
+            s.flush()
+        have = s.scalars(
+            select(GiftPlan).where(
+                GiftPlan.ownerId == c.id, GiftPlan.personId == p.id, GiftPlan.deleted == false()
+            )
+        ).first()
+        if have is not None:
+            raise refuse("personId", "plan-exists", f"You have a gift plan for {p.name}.", 409)
+        gp = GiftPlan(id=ids.new_id("GfPln"), ownerId=c.id, personId=p.id, **plan)
+        s.add(gp)
         s.flush()
-        _set_occasions(s, p, body.occasions or [], c.id)
+        _set_occasions(s, gp, body.occasions or [], c.id)
         s.flush()
         return _one(s, c, p.id)
 
@@ -285,28 +365,39 @@ def change_person(
     c: Caller = Depends(caller),
     version: int = Depends(if_match),
 ):
+    """The gift plan, and the person's own fields when the caller may change them."""
     with server(request).db.tx() as s:
-        p, _ = gifts.person(s, c.id, person_id, "write")
-        check(p, version, lambda: _one(s, c, p.id))
-        for k, v in _check_person(s, body).items():
-            setattr(p, k, v)
-        p.updatedAt = clock.now()
+        x = gifts.plan_for(s, c.id, person_id, "write")
+        gp, p = x.plan, x.person
+        check(gp, version, lambda: _one(s, c, p.id))
+        for k, v in _check_plan(body).items():
+            setattr(gp, k, v)
+        gp.updatedAt = clock.now()
         if body.occasions is not None:
-            _set_occasions(s, p, body.occasions, c.id)
+            _set_occasions(s, gp, body.occasions, c.id)
+        if body.name:
+            values = check_person_fields(body)
+            changed = {k: v for k, v in values.items() if getattr(p, k) != v}
+            if changed:
+                people.get(s, c.id, p.id, "owner")
+                if "name" in changed or "birthYear" in changed:
+                    refuse_clash(s, c, values["name"], values["birthYear"], exclude=p.id)
+                people.change(s, p, changed)
         s.flush()
         return _one(s, c, p.id)
 
 
 @router.delete("/people/{person_id}", response_model=Deleted[None])
-def delete_person(
+def delete_plan(
     person_id: str, request: Request, c: Caller = Depends(caller), version: int = Depends(if_match)
 ):
+    """The caller's gift plan for this person; the person stays (S10.10)."""
     with server(request).db.tx() as s:
-        p, _ = gifts.person(s, c.id, person_id, "owner")
-        check(p, version, lambda: _one(s, c, p.id))
-        p.mark_deleted(c.id)
+        x = gifts.plan_for(s, c.id, person_id, "owner")
+        check(x.plan, version, lambda: _one(s, c, person_id))
+        x.plan.mark_deleted(c.id)
         s.flush()
-        return Deleted[None](deleted=gone(p))
+        return Deleted[None](deleted=gone(x.plan))
 
 
 # ---- Gifts (S7.8) ----
@@ -315,6 +406,7 @@ def delete_person(
 class PersonRef(Model):
     id: str
     name: str
+    deleted: bool = False  # kept by name (S7.8.6)
 
 
 class Paid(Model):
@@ -368,16 +460,14 @@ def _paid(s, t_id: str | None) -> Paid | None:
     return Paid(transactionId=t.id, date=t.date, amount=t.amount, payee=t.payee, accountName=a.name)
 
 
-def _gift_out(s, c: Caller, g: Gift, ps: list[str], people: dict, levels: dict) -> GiftOut:
-    occs = gifts.occasions_of(s, ps)
-    can = g.ownerId == c.id or (
-        bool(ps) and all(access.RANK.get(levels.get(pid, ""), 0) >= 2 for pid in ps)
-    )
+def _gift_out(s, c: Caller, g: Gift, ps: list[str]) -> GiftOut:
+    lvl = gifts.level_on_gift(s, c.id, g, ps)
+    named = [s.get(Person, pid) for pid in ps]
     return GiftOut(
         id=g.id,
-        people=[PersonRef(id=pid, name=people[pid].name) for pid in ps if pid in people],
+        people=[PersonRef(id=p.id, name=p.name, deleted=p.deleted) for p in named if p],
         occasion=g.occasion,
-        occasionLabel=gifts.label_of(g.occasion, [o for v in occs.values() for o in v]),
+        occasionLabel=gifts.label_for_occasion(s, g, ps),
         occasionYear=g.occasionYear,
         description=g.description,
         status=g.status,
@@ -392,24 +482,43 @@ def _gift_out(s, c: Caller, g: Gift, ps: list[str], people: dict, levels: dict) 
             receipt_row(s, r, receipts.level(s, c.id, r) or "read")
             for r in receipts.of_item(s, g.id, "gift")
         ],
-        canWrite=can,
+        canWrite=access.RANK[lvl] >= 2,
         version=g.version,
     )
 
 
 def gifts_view(s, c: Caller, status: str | None = None, person: str | None = None):
-    rows = gifts.visible_people(s, c.id)
-    people = {p.id: p for p, _ in rows}
-    levels = {p.id: lvl for p, lvl in rows}
     out = []
-    for g, ps in gifts.visible_gifts(s, c.id, people):
+    for g, ps in gifts.visible_gifts(s, c.id):
         if status and g.status != status:
             continue
         if person and person not in ps:
             continue
-        out.append(_gift_out(s, c, g, ps, people, levels))
+        out.append(_gift_out(s, c, g, ps))
     order = {k: i for i, k in enumerate(gifts.STATUSES)}
     return sorted(out, key=lambda x: (order[x.status], -(x.occasionYear or 9999), x.description))
+
+
+def _owner_for(s, c: Caller, person_ids: list[str]) -> str:
+    """Whose plan a new gift goes in: the caller's, or for people the caller plans only
+    through someone's shared plan, at write, that plan's owner (S7.8.5)."""
+    owners = None
+    for pid in person_ids:
+        people.get(s, c.id, pid)
+        mine = s.scalars(
+            select(GiftPlan).where(
+                GiftPlan.ownerId == c.id, GiftPlan.personId == pid, GiftPlan.deleted == false()
+            )
+        ).first()
+        if mine is not None:
+            return c.id
+        here = {
+            x.plan.ownerId
+            for x in gifts.visible_plans(s, c.id)
+            if x.person.id == pid and x.level == "write"
+        }
+        owners = here if owners is None else owners & here
+    return next(iter(sorted(owners))) if owners else c.id
 
 
 def _check_gift(s, c: Caller, body: GiftIn) -> dict:
@@ -428,7 +537,7 @@ def _check_gift(s, c: Caller, body: GiftIn) -> dict:
     if e:
         raise Problem(422, e[0].code, e[0].message, e)
     for pid in body.people:
-        gifts.person(s, c.id, pid, "write")
+        people.get(s, c.id, pid)
     if body.transactionId:
         t = s.get(Transaction, body.transactionId)
         if t is None or t.deleted:
@@ -494,7 +603,7 @@ def list_gifts(
 def add_gift(body: GiftIn, request: Request, c: Caller = Depends(caller)):
     with server(request).db.tx() as s:
         values = _check_gift(s, c, body)
-        g = Gift(id=ids.new_id("Gift"), ownerId=c.id, **values)
+        g = Gift(id=ids.new_id("Gift"), ownerId=_owner_for(s, c, body.people), **values)
         s.add(g)
         s.flush()
         _set_people(s, g, body.people, c.id)
@@ -636,9 +745,6 @@ class UpcomingOut(Model):
 @router.get("/gifts/upcoming", response_model=list[UpcomingOut])
 def list_upcoming(request: Request, c: Caller = Depends(caller)):
     with server(request).db.read() as s:
-        rows = gifts.visible_people(s, c.id)
-        people = {p.id: p for p, _ in rows}
-        levels = {p.id: lvl for p, lvl in rows}
         out = []
         for u in gifts.upcoming(s, c.id, clock.today()):
             ps = gifts.people_of_gifts(s, [g.id for g in u.gifts])
@@ -654,7 +760,7 @@ def list_upcoming(request: Request, c: Caller = Depends(caller)):
                     budget=u.date.budget,
                     planned=u.planned,
                     missing=gifts.what_is_missing(u),
-                    gifts=[_gift_out(s, c, g, ps[g.id], people, levels) for g in u.gifts],
+                    gifts=[_gift_out(s, c, g, ps[g.id]) for g in u.gifts],
                 )
             )
         return out

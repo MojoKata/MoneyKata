@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, activity, clock, exactjson, ids, receipts
+from .. import access, activity, clock, exactjson, ids, people, receipts
 from ..errors import FieldError, Problem, refuse
 from ..store.entities.accounts import Account, Transaction
 from ..store.entities.taxes import (
@@ -115,9 +115,12 @@ def create_book(body: NewBook, request: Request, c: Caller = Depends(caller)):
     if len(who) > 2:
         raise refuse("filers", "filers-invalid", "One filer, or two who are married.")
     with server(request).db.tx() as s:
-        me = s.get(User, c.id)
-        if len(who) == 2 and me.spouseId != next(u for u in who if u != c.id):
-            raise refuse("filers", "not-married", "Two filers file together only if married.")
+        if len(who) == 2 and not people.joint_filers(s, who[0], who[1], body.year):
+            raise refuse(
+                "filers",
+                "not-married",
+                "Two filers file together only if married on the last day of the year.",
+            )
         b = TaxBook(id=ids.new_id("TaxBk"), ownerId=c.id, year=body.year)
         s.add(b)
         s.flush()

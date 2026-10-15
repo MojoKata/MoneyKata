@@ -84,6 +84,7 @@ The prefixes of the tables that exist.
 | EdPln  | EducationPlan    | A 529 account's plan: its state, name, beneficiary and opening date.                                  |
 | EstPy  | EstimatedPayment | A filing's estimated tax payment for a quarter, matched to its transaction.                           |
 | Filng  | Filing           | One return in a tax book (federal, state or local), with its progress and result.                     |
+| GfPln  | GiftPlan         | One user's gift plan for a person: holidays, anniversaries, budget, lead time, notes.                 |
 | Gift   | Gift             | A gift to or from a person for an occasion, from idea to given.                                       |
 | Group  | Group            | A named set of users that shares are granted to.                                                      |
 | GvPln  | GivingPlan       | A user's giving target for a year: a percentage of income, or an amount.                              |
@@ -108,6 +109,7 @@ The prefixes of the tables that exist.
 | QExpn  | QualifiedExpense | A qualified education expense a 529's withdrawals are matched with.                                   |
 | Rcpt   | Receipt          | An uploaded file, encrypted on disk, with a date, an amount and what it is attached to.               |
 | Recon  | Reconciliation   | A statement's closing date and balance, ticked off against the transactions.                          |
+| Rltn   | Relationship     | A dated link between two people: spouse, couple, child, friend, colleague, family.                    |
 | Secr   | Secret           | A secret sealed on its own: an API key, a password or a private key.                                  |
 | Sgnup  | SignupRequest    | A person's request for an account, from confirming the email to an admin's decision.                  |
 | Share  | Share            | A grant of an account or portfolio to a user, group or linked server.                                 |
@@ -133,9 +135,7 @@ designed yet. A row moves to §3.1 when its table is.
 |--------|---------------|-----------------------------------------------------------------------------------|
 | Cnctr  | Connector     | The MoneyKata Connector paired with this server: its public keys (S18.4).        |
 | Conn   | Connection    | One sign-in at one institution, kept by the connector, owned by a user (S18.6).   |
-| GfPln  | GiftPlan      | One user's gift plan for a person: holidays, anniversaries, budget, lead time, notes (S7.7). |
 | Postn  | Position      | An instrument held in an account, followed from open to closed.                   |
-| Rltn   | Relationship  | A dated link between two people: spouse, couple, child, friend, colleague, family (S10.10.4). |
 
 ## 4. Soft deletes
 

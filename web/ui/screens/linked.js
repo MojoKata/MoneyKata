@@ -37,7 +37,7 @@ const SCREENS = /** @type {[string, string, string, string[]][]} */ ([
   ['transactions', 'Transactions', 'tx', ['account']],
   ['projections', 'Projections', 'trend', ['projection']],
   ['budgets', 'Budgets', 'target', ['budget']],
-  ['gifts', 'Gifts', 'gift', ['person']],
+  ['gifts', 'Gifts', 'gift', ['gift-plan']],
   ['giving', 'Giving', 'heart', ['giving-plan']],
   ['taxes', 'Taxes', 'tax', ['tax-book']],
   ['receipts', 'Receipts', 'receipt', ['receipts']],
@@ -290,7 +290,7 @@ function Screen({ id, rows, sub, subId, tab }) {
   }
   if (sub === 'projections') return html`<${Projections} rows=${of('projection')} />`;
   if (sub === 'giving') return html`<${Giving} rows=${of('giving-plan')} />`;
-  if (sub === 'gifts') return html`<${Gifts} rows=${of('person')} />`;
+  if (sub === 'gifts') return html`<${Gifts} rows=${of('gift-plan')} />`;
   if (sub === 'receipts') return html`<${Receipts} id=${id} />`;
   return html`<${Dashboard} base=${base} rows=${rows} />`;
 }
@@ -343,7 +343,7 @@ function Dashboard({ base, rows }) {
               ? 'tax-book'
               : r.kind === 'projection'
               ? 'projections'
-              : r.kind === 'person'
+              : r.kind === 'gift-plan'
               ? 'gifts'
               : 'giving'
           }${
@@ -364,7 +364,7 @@ const KIND = /** @type {Record<string, string>} */ ({
   account: 'Account',
   portfolio: 'Portfolio',
   budget: 'Budget',
-  person: 'Gifts for a person',
+  'gift-plan': 'Gift plan',
   'giving-plan': 'Giving plan',
   'tax-book': 'Tax book',
   projection: 'Projection',

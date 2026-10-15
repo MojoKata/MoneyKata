@@ -20,7 +20,7 @@ What was put in.
 
 ## From {#contributor}
 
-You, or a person on your list: a grandparent's contribution is their gift to the beneficiary.
+You, or one of the household's people: a grandparent's contribution is their gift to the beneficiary.
 
 ## Paid from {#from-account}
 

@@ -1,10 +1,12 @@
-"""Dev mode's 529 (requirements S17.7): Alice's daughter Emma and her grandmother Margaret on
-Alice's list of people, Emma's 529 with Alice's monthly contributions, Margaret's five-year
+"""Dev mode's 529 (requirements S17.7): for Alice's daughter Emma, with her grandmother Margaret
+among its contributors: Emma's 529 with Alice's monthly contributions, Margaret's five-year
 election and one from Bob, invested in a fund, and Emma's education projection, active."""
 
 import datetime as dt
 import json
 from decimal import Decimal as D
+
+from sqlalchemy import select
 
 from .. import clock, ids, projections
 from ..prices.stub import walk
@@ -19,26 +21,8 @@ def seed_education(s, people: dict) -> None:
     alice, bob = people["alice"], people["bob"]
     today = clock.today()
     b = Book(s, today)
-    emma = Person(
-        id=ids.new_id("Persn"),
-        ownerId=alice.id,
-        name="Emma Griffin",
-        relationship="child",
-        birthMonth=10,
-        birthDay=20,
-        birthYear=2018,
-        giftBudget=D(600),
-        notes="Loves drawing and horses.",
-    )
-    margaret = Person(
-        id=ids.new_id("Persn"),
-        ownerId=alice.id,
-        name="Margaret Griffin",
-        relationship="grandmother",
-        birthMonth=3,
-        birthDay=14,
-    )
-    s.add_all([emma, margaret])
+    emma = s.scalars(select(Person).where(Person.name == "Emma Griffin")).one()
+    margaret = s.scalars(select(Person).where(Person.name == "Margaret Griffin")).one()
     acct = Account(
         id=ids.new_id("Acct"),
         ownerId=alice.id,
@@ -56,30 +40,29 @@ def seed_education(s, people: dict) -> None:
             accountId=acct.id,
             planState="Utah",
             planName="my529",
-            beneficiaryPersonId=emma.id,
+            beneficiaryId=emma.id,
             openedOn=dt.date(2018, 11, 2),
             stateDeduction=D(2410),
         )
     )
 
-    def give(day, amount, user=None, person=None, five=False):
+    def give(day, amount, person_id=None, five=False):
         t = b.txn(acct, day, amount, "Contribution", kind="deposit")
         s.flush()
-        if user or person or five:
+        if person_id or five:
             s.add(
                 Contribution(
                     id=ids.new_id("Cntrb"),
                     transactionId=t.id,
-                    fromUserId=user.id if user else None,
-                    fromPersonId=person.id if person else None,
+                    fromPersonId=person_id,
                     fiveYear=five,
                 )
             )
         return t
 
     give(dt.date(2018, 11, 2), "12000")
-    give(dt.date(2024, 3, 1), "30000", person=margaret, five=True)
-    give(dt.date(today.year - 1, 12, 20), "2500", user=bob)
+    give(dt.date(2024, 3, 1), "30000", margaret.id, five=True)
+    give(dt.date(today.year - 1, 12, 20), "2500", bob.personId)
     for month in b.months(11):
         if (day := b.day(month, 5)) is not None:
             give(day, "250")

@@ -22,11 +22,15 @@ my529, Bright Start, and so on.
 
 ## Beneficiary
 
-Who a 529 is for: someone on your list of people, or **Add a person…**.
+Who a 529 is for: one of the household's people, or **Add a person…**.
 
 ## Their name {#new-name}
 
 The new person's name.
+
+## Sex {#new-sex}
+
+The new person's: it chooses the words for the family tree, such as daughter or son.
 
 ## Year of birth {#new-birth-year}
 

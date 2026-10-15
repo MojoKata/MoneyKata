@@ -39,6 +39,7 @@ class NewUser(Model):
     displayName: str
     username: str
     email: str
+    sex: str | None = None  # their person's (S10.10.1); required
     groupIds: list[str] = Field(default_factory=list)
 
 
@@ -131,7 +132,14 @@ def create_user(body: NewUser, request: Request, c: Caller = Depends(admin)):
     srv = server(request)
     with srv.db.tx() as s:
         u = accounts.invite(
-            s, srv.services, c.user, body.displayName, body.username, body.email, body.groupIds
+            s,
+            srv.services,
+            c.user,
+            body.displayName,
+            body.username,
+            body.email,
+            body.groupIds,
+            body.sex,
         )
         row = user_row(s, u)
     return JSONResponse(
