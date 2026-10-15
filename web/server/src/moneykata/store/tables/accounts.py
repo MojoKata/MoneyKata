@@ -134,6 +134,11 @@ Account = record(
     Column("statementInterval", Text),
     # A learned interval the owner dismissed, so it isn't proposed again.
     Column("statementIntervalDismissed", Text),
+    # Sync using MoneyKata Connector (S18.6.2): the owner's Connection that keeps this account
+    # current, and which of its institution accounts this is (as the driver names it). The
+    # key is cleared when the Connection goes: its sync turns off (schema.md §6.4).
+    Column("connectionId", Text, ForeignKey("Connection.id")),
+    Column("syncAccount", Text),
     _in("type", ACCOUNT_TYPES, "type"),
     _in("lotMethod", LOT_METHODS, "lot_method"),
     CheckConstraint("mask IS NULL OR (length(mask) = 4 AND mask GLOB '[0-9]*')", name="mask"),

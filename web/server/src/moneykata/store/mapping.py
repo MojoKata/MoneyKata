@@ -8,6 +8,7 @@ from .entities import Record, SoftDeleted, _now
 from .entities import accounts as acc
 from .entities import assets as asx
 from .entities import budgets as bd
+from .entities import connector as cn
 from .entities import education as ed
 from .entities import giving as gv
 from .entities import links as lk
@@ -34,6 +35,7 @@ from .tables import (
     alerts,
     assets,
     budgets,
+    connector,
     core,
     education,
     giving,
@@ -153,6 +155,8 @@ def map_all() -> None:
     _map(sh.CountedAccount, sharing.CountedAccounts)
     _versioned(Setting, core.Setting)
     _versioned(lk.Link, links.Link)
+    _versioned(cn.Connector, connector.Connector)
+    _versioned(cn.Connection, connector.Connection)
     _map(lk.LinkedItem, links.LinkedItem)
     _map(lk.LinkSent, links.LinkSent)
     _map(lk.LinkColour, links.LinkColours)

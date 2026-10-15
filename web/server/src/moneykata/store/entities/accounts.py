@@ -34,6 +34,8 @@ class Account(Record):
     openingDate: dt.date | None = None
     statementInterval: str | None = None
     statementIntervalDismissed: str | None = None
+    connectionId: str | None = None
+    syncAccount: str | None = None
 
 
 @dataclass(kw_only=True, eq=False)

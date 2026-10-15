@@ -6,6 +6,7 @@ from . import (  # noqa: F401 - each adds its tables
     alerts,
     assets,
     budgets,
+    connector,
     core,
     education,
     giving,
