@@ -72,7 +72,7 @@
          saved until each part is saved or left out. The PDF is kept on each account it
          filled, once.
       6. **Kept without reading**: any statement can be kept on its account as it is, for the
-         record, without its lines being read: a brokerage statement (reading one is G8), a
+         record, without its lines being read: a brokerage statement's trades (G8), a
          statement whose layout isn't read, or one the person only wants archived. MoneyKata
          reads its period and institution where it can, for the person to check, and keeps
          the PDF on the account as a receipt (S9) named by its period, as a read statement
@@ -98,6 +98,31 @@
             moved (a new layout) is asked about again.
          4. **Order of the signs**: a running balance, then an explicit sign, then a learned
             column, then the section heading, then the words.
+      8. **Brokerage and plan statements**: a Schwab, Fidelity or Vanguard brokerage
+         statement, or a 401(k) or other plan statement (Empower's layout), read from a PDF's
+         text layer only; a photo or scan of one is kept without reading (S1.3.3.6), since
+         its tables don't survive OCR reliably. The layouts ship as rules for where each
+         section begins, and what a person corrects is learned per institution as for banks
+         (S1.3.3.4). Three parts are read, each checked in the same dialog:
+         1. **The summary**: the starting and ending value, deposits, withdrawals, income
+            and the change in value. The **ending value** becomes a balance anchor on the
+            period's last day (S1.11), or a balance snapshot for an account kept by
+            snapshots (R3.2).
+         2. **The positions** on the last day: symbol (or CUSIP, or a fund's name),
+            quantity, price and market value, a row split over two lines read as one. They
+            become a **holdings check** at that date: each is matched to what MoneyKata
+            holds, and a quantity that differs is shown with the difference, as an anchor
+            shows a cash difference (a missed split, a dropped reinvestment). For an account
+            kept by snapshots, they are its holdings on that date. A cost basis on the
+            statement is shown beside the lots' and never written over them.
+         3. **The cash activity**: deposits, withdrawals, dividends, interest and fees,
+            checked against the summary's figures as bank lines are against their balances,
+            for an account with no OFX, CSV or Connection to carry it. Lines already in the
+            account start left out, so a statement read beside its OFX adds nothing twice.
+
+         **Not read**: trades (buys and sells), options activity, corporate actions and
+         margin detail. Each shows as a line left out, *not read: enter it as a trade*,
+         with its figures filled into the trade dialog (S3) when chosen (G8).
    4. **bitcoin watch** (self-custody wallets): balances and transactions read by address or
       xpub (S1.6);
    5. **the MoneyKata Connector**: files fetched from the institution by the connector's

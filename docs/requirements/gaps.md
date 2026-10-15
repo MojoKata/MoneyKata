@@ -4,11 +4,11 @@ Areas the requirements name but don't yet specify. Each has a lasting id: a gap 
 closed is removed, its text goes into the section it belongs to, and its id is never used
 again. A new gap takes the next number. The [README](README.md#gaps) lists them.
 
-## G8: Statement import beyond bank and card statements
+## G8: Reading a brokerage statement's trades
 
-**What is missing:** reading a brokerage statement's lines: its positions at the period's end (to check holdings against, as balance anchors check cash, S1.11), its cash activity (contributions, dividends, interest, fees) and its trades. Until then a brokerage statement is kept without reading (S1.3.3.6), and OFX and CSV carry a Schwab brokerage account's activity.
+**What is missing:** reading the trades (buys and sells) on a brokerage statement, its options activity and its corporate actions (splits, mergers, spin-offs). A misread quantity or price would corrupt lots and gains, so this waits until the summary, positions and cash activity (S1.3.3.8) have proven themselves; until then each such line is shown as not read, with its figures offered to the trade dialog.
 
-**Touches:** S1.3.
+**Touches:** S1.3.3.8, S3.
 
 ## G12: Adjusted contracts and capital at risk
 

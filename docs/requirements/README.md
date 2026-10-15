@@ -61,7 +61,7 @@ Areas named but not yet specified ([gaps.md](gaps.md)).
 
 | Id | Gap | What is missing |
 |---|---|---|
-| **G8** | [Statement import beyond bank and card statements](gaps.md#g8-statement-import-beyond-bank-and-card-statements) | reading a brokerage statement's positions, cash activity and trades; until then it is kept without reading |
+| **G8** | [Reading a brokerage statement's trades](gaps.md#g8-reading-a-brokerage-statements-trades) | buys and sells, options activity and corporate actions on a brokerage statement; until then each is offered to the trade dialog |
 | **G12** | [Adjusted contracts and capital at risk](gaps.md#g12-adjusted-contracts-and-capital-at-risk) | option contracts adjusted after a split, and capital at risk for spreads and covered calls |
 | **G19** | [Other option price sources](gaps.md#g19-other-option-price-sources) | for later: Schwab Trader API through a connector driver, MarketData.app, Massive with a live key, Tradier |
 

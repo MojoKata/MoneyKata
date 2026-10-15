@@ -200,7 +200,8 @@
       6. **Reading receipts** (S9.8): the worker process, RapidOCR with its shipped models,
          the field parser, matching, search and Settings › Receipts.
       7. **Statement import** (S1.3.3): bank and card statements, read and checked, with
-         their layout learned per institution; the rest of G8 waits.
+         their layout learned per institution, and brokerage and plan statements' summary,
+         positions and cash activity (S1.3.3.8); reading trades waits (G8).
       8. **Projections and assumptions** (S6.1–S6.9): Profile › Assumptions, the models,
          scenarios, active projections with tracking, the Dashboard's Plans card, and
          Settings › Tax tables with the contribution limits and the bitcoin models' figures.
