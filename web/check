@@ -26,6 +26,8 @@ deno() { "$WEB/dev.sh" deno "$@"; }
 
 step "uv.lock matches pyproject.toml" bash -c "cd '$SERVER' && uv lock --check --quiet"
 step "every dependency has amd64 and arm64 wheels" py python -m moneykata.dev.wheels
+step "the dependency register is audited (S17.2.1)" py python -m moneykata.dev.audit check
+step "the base image's age (a warning only)" py python -m moneykata.dev.base check
 step "vendored browser libraries" python3 "$WEB/ui/vendor/vendor.py" extract
 step "ruff" py ruff check src tests ../ui/mockup ../../docs/mockups ../../connector
 step "ruff format" py ruff format --check --quiet src tests ../ui/mockup ../../docs/mockups ../../connector

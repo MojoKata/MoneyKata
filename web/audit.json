@@ -1,0 +1,1124 @@
+{
+  "auditedAt": "2026-10-15",
+  "base": {
+    "digest": "sha256:48b13b003dda20b16f9442b8475aa05fe21bf6579a8c881db92ffb4d8fd20f83",
+    "image": "python:3.14-slim-bookworm",
+    "movedAt": "2026-10-15"
+  },
+  "findings": {
+    "alembic": {
+      "hosts": [
+        "alembic.sqlalchemy.org",
+        "docs.sqlalchemy.org",
+        "www.mssqltips.com"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "annotated-types": {
+      "hosts": [
+        "docs.astropy.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "anyio": {
+      "hosts": [
+        "foss.heptapod.net",
+        "sourceware.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "cffi": {
+      "hosts": [
+        "www.freedesktop.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "cryptography": {
+      "hosts": [
+        "bugzilla.mindrot.org",
+        "cryptography.io",
+        "cs.opensource.google"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "dnspython": {
+      "hosts": [
+        "learn.microsoft.com"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "email-validator": {
+      "hosts": [
+        "news.ycombinator.com",
+        "www.icann.org",
+        "www.rfc-editor.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "fastapi": {
+      "hosts": [
+        "commonmark.org",
+        "fastapi.tiangolo.com",
+        "opentelemetry.io",
+        "sethmlarson.dev",
+        "spdx.dev",
+        "starlette.dev",
+        "swagger.io"
+      ],
+      "inImage": true,
+      "words": [
+        "__init__.py",
+        "_api.py",
+        "_asgi.py",
+        "_runtime.py",
+        "applications.py",
+        "background.py",
+        "routing.py"
+      ]
+    },
+    "flatbuffers": {
+      "hosts": [
+        "en.cppreference.com",
+        "google.github.io"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "h11": {
+      "hosts": [
+        "python-hyper.org",
+        "pythonclock.org",
+        "www.rfc-editor.org"
+      ],
+      "inImage": true,
+      "words": [
+        "_abnf.py"
+      ]
+    },
+    "h2": {
+      "hosts": [
+        "www.rfc-editor.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "hpack": {
+      "hosts": [
+        "www.rfc-editor.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "httpx": {
+      "hosts": [
+        "curl.haxx.se",
+        "domain.tld",
+        "httpbin.org",
+        "other.com",
+        "www.rfc-editor.org",
+        "xn--fiqs8s.icom.museum"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "hypercorn": {
+      "hosts": [],
+      "inImage": true,
+      "words": [
+        "run.py",
+        "utils.py"
+      ]
+    },
+    "id": {
+      "hosts": [
+        "test.audience"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "markdown-it-py": {
+      "hosts": [
+        "jgm.github.io",
+        "mathiasbynens.be",
+        "spec.commonmark.org"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "mdurl": {
+      "hosts": [
+        "foo.com"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "numpy": {
+      "hosts": [
+        "aggregate.ee.engr.uky.edu",
+        "arxiv.org",
+        "brighton-webs.co.uk",
+        "cens.ioc.ee",
+        "data-apis.org",
+        "digitalassets.lib.berkeley.edu",
+        "dmlc.github.io",
+        "docs.scipy.org",
+        "doi.org",
+        "fsf.org",
+        "graphics.stanford.edu",
+        "ipython.org",
+        "j3-fortran.org",
+        "mathworld.wolfram.com",
+        "metacpan.org",
+        "mypy-lang.org",
+        "numpy.org",
+        "people.eecs.berkeley.edu",
+        "personal.math.ubc.ca",
+        "pv.github.io",
+        "scipy.org",
+        "stat.ethz.ch",
+        "web.archive.org",
+        "www.ams.org",
+        "www.brighton-webs.co.uk",
+        "www.cs.hmc.edu",
+        "www.inference.org.uk",
+        "www.itl.nist.gov",
+        "www.math.hmc.edu",
+        "www.math.sci.hiroshima-u.ac.jp",
+        "www.mathworks.com",
+        "www.openblas.net",
+        "www.pcg-random.org",
+        "www.ryanjuckett.com",
+        "www.scipy.org",
+        "www.xyz.edu"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "ofxtools": {
+      "hosts": [
+        "code.activestate.com",
+        "goo.gl",
+        "ofx.chase.com",
+        "realpython.com",
+        "www.sphinx-doc.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "omegaconf": {
+      "hosts": [
+        "omegaconf.cli.dev",
+        "yaml.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "onnxruntime": {
+      "hosts": [
+        "3rdpartysource.microsoft.com",
+        "aka.ms",
+        "arxiv.org",
+        "cupy.dev",
+        "curl.se",
+        "devblogs.nvidia.com",
+        "dmlc.github.io",
+        "docs.nvidia.com",
+        "docs.scipy.org",
+        "download.pytorch.org",
+        "gitlab.arm.com",
+        "hf.co",
+        "huggingface.co",
+        "ieeexplore.ieee.org",
+        "mobile.events.data.microsoft.com",
+        "numpy.org",
+        "nvidia.github.io",
+        "on-demand.gputechconf.com",
+        "onnx.ai",
+        "onnxruntime.ai",
+        "papers.nips.cc",
+        "pytorch.org",
+        "tinyurl.com",
+        "unlicense.org",
+        "web.engr.illinois.edu",
+        "www.microsoft.com",
+        "www.opencompute.org",
+        "www.tensorflow.org"
+      ],
+      "inImage": true,
+      "words": [
+        "ThirdPartyNotices.txt",
+        "__init__.py",
+        "onnxruntime_pybind11_state.cpython-314-x86_64-linux-gnu.so"
+      ]
+    },
+    "opencv-python-headless": {
+      "hosts": [
+        "arxiv.org",
+        "fsf.org",
+        "homepages.inf.ed.ac.uk",
+        "netron.app",
+        "ns.adobe.com",
+        "numpy.org",
+        "onnx.ai",
+        "software.intel.com",
+        "static.aminer.org",
+        "underdestruction.com",
+        "www.freetype.org",
+        "www.gdal.org",
+        "www.ipol.im",
+        "www.learnopencv.com",
+        "www.tensorflow.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "opentelemetry-api": {
+      "hosts": [
+        "httpbin.org",
+        "opentelemetry.io",
+        "pkg.go.dev",
+        "scrapethis.com"
+      ],
+      "inImage": true,
+      "words": [
+        "__init__.py",
+        "_decorator.py",
+        "_envcarrier.py",
+        "_importlib_metadata.py",
+        "_once.py",
+        "_providers.py",
+        "composite.py",
+        "context.py",
+        "contextvars_context.py",
+        "entry_points.txt",
+        "instrument.py",
+        "observation.py",
+        "re.py",
+        "span.py",
+        "status.py",
+        "textmap.py",
+        "tracecontext.py",
+        "types.py"
+      ]
+    },
+    "packaging": {
+      "hosts": [
+        "developer.android.com",
+        "refspecs.linuxfoundation.org",
+        "sourceware.org",
+        "static.docs.arm.com"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "pillow": {
+      "hosts": [
+        "archive.org",
+        "bugs.ghostscript.com",
+        "cyclonedx.org",
+        "dotcolon.net",
+        "download.osgeo.org",
+        "drafts.csswg.org",
+        "exiv2.org",
+        "freetype.org",
+        "harfbuzz.github.io",
+        "ijg.org",
+        "learn.microsoft.com",
+        "libjpeg-turbo.org",
+        "libtiff.gitlab.io",
+        "msdn.microsoft.com",
+        "ns.adobe.com",
+        "oss.sgi.com",
+        "partners.adobe.com",
+        "pngquant.org",
+        "python-pillow.github.io",
+        "savannah.nongnu.org",
+        "spider.wadsworth.org",
+        "web.archive.org",
+        "winprotocoldoc.blob.core.windows.net",
+        "www.adobe.com",
+        "www.cazabon.com",
+        "www.fileformat.info",
+        "www.flipcode.com",
+        "www.graficaobscura.com",
+        "www.jpegcameras.com",
+        "www.littlecms.com",
+        "www.matthewflickinger.com",
+        "www.mia.uni-saarland.de",
+        "www.openjpeg.org",
+        "xcb.freedesktop.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "platformdirs": {
+      "hosts": [
+        "android.stackexchange.com",
+        "brew.sh",
+        "developer.apple.com",
+        "freedesktop.org",
+        "learn.microsoft.com",
+        "specifications.freedesktop.org",
+        "technet.microsoft.com"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "playwright": {
+      "hosts": [
+        "bbc.com",
+        "demo.playwright.dev",
+        "developer.chrome.com",
+        "dog.ceo",
+        "keycode.info",
+        "mozilla.github.io",
+        "peter.sh",
+        "playwright.dev",
+        "w3c.github.io",
+        "www.howtogeek.com",
+        "www.softwareishard.com",
+        "yaml.org"
+      ],
+      "inImage": false,
+      "words": [
+        "_waiter.py"
+      ]
+    },
+    "protobuf": {
+      "hosts": [
+        "protobuf.dev"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "pyasn1": {
+      "hosts": [
+        "www.esat.kuleuven.be",
+        "www.itu.int"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "pyclipper": {
+      "hosts": [
+        "www.angusj.com"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "pycparser": {
+      "hosts": [
+        "eli.thegreenplace.net"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "pydantic": {
+      "hosts": [
+        "docs.pydantic.dev",
+        "errors.pydantic.dev",
+        "foo.com",
+        "nats.io",
+        "pydantic-docs.helpmanual.io",
+        "pydantic.dev",
+        "python-devtools.helpmanual.io",
+        "typing-inspection.pydantic.dev",
+        "www.example",
+        "www.example.xn",
+        "www.rfc-editor.org",
+        "www.xn--80ak6aa92e.com",
+        "www.xudongz.com",
+        "xn--punycode-eja.com",
+        "youtrack.jetbrains.com"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "pydantic_core": {
+      "hosts": [
+        "antonok.com",
+        "bitvecto-rs.github.io",
+        "errors.pydantic.dev",
+        "myrrlyn.net",
+        "rustwasm.github.io",
+        "serde.rs"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "pygments": {
+      "hosts": [
+        "0x10c.com",
+        "aheui.github.io",
+        "alloy.mit.edu",
+        "ampl.com",
+        "angular.io",
+        "arduino.cc",
+        "arturo-lang.io",
+        "asymptote.sf.net",
+        "atom.io",
+        "augeas.net",
+        "awslabs.github.io",
+        "baremessages.org",
+        "berry-lang.github.io",
+        "bford.info",
+        "blackboxframework.org",
+        "blitzbasic.com",
+        "blitzresearch.itch.io",
+        "boa.cs.iastate.edu",
+        "bugs.documentfoundation.org",
+        "caddyserver.com",
+        "capnproto.org",
+        "cc65.github.io",
+        "cel.dev",
+        "ceylon-lang.org",
+        "cfengine.org",
+        "chaiscript.com",
+        "chapel-lang.org",
+        "chardet.feedparser.org",
+        "charm.cs.illinois.edu",
+        "cirru.org",
+        "cjheath.github.io",
+        "claylabs.com",
+        "clean.cs.ru.nl",
+        "clojure.org",
+        "cmake.org",
+        "code.kx.com",
+        "coffeescript.org",
+        "community.sap.com",
+        "cplint.eu",
+        "cran.r-project.org",
+        "crmsh.github.io",
+        "crystal-lang.org",
+        "csound.com",
+        "cssvalues.com",
+        "cucumber.io",
+        "cython.org",
+        "darcs.net",
+        "daringfireball.net",
+        "dart.dev",
+        "dev.mysql.com",
+        "devcenter.heroku.com",
+        "developer.algorand.org",
+        "developer.apple.com",
+        "developer.nvidia.com",
+        "developer.r-project.org",
+        "dlang.org",
+        "doc.qt.io",
+        "docker.io",
+        "docs.aeternity.com",
+        "docs.chromia.com",
+        "docs.enola.dev",
+        "docs.julialang.org",
+        "docs.microsoft.com",
+        "docs.modular.com",
+        "docs.mql4.com",
+        "docs.nvidia.com",
+        "docs.sourcemod.net",
+        "docs.tigergraph.com",
+        "docs.ton.org",
+        "docs.typo3.org",
+        "docs.waves.tech",
+        "docs.yoctoproject.org",
+        "docutils.sourceforge.io",
+        "dotnet.microsoft.com",
+        "drafts.csswg.org",
+        "duelengine.org",
+        "ec-lang.org",
+        "elixir-lang.org",
+        "elm-lang.org",
+        "extempore.moso.com.au",
+        "ezhillang.org",
+        "facebook.github.io",
+        "factorcode.org",
+        "fennel-lang.org",
+        "fishshell.com",
+        "fmwww.bc.edu",
+        "fortran-lang.org",
+        "freefem.org",
+        "frexx.de",
+        "fsharp.org",
+        "futhark-lang.org",
+        "genshi.edgewall.org",
+        "git.sr.ht",
+        "gitlab.gnome.org",
+        "gizmojo.org",
+        "gleam.run",
+        "gnuplot.info",
+        "go.dev",
+        "golo-lang.org",
+        "gosu-lang.github.io",
+        "gpuopen.com",
+        "graphics.pixar.com",
+        "graphql.org",
+        "groovy-lang.org",
+        "haml.info",
+        "handlebarsjs.com",
+        "harelang.org",
+        "haxe.org",
+        "help.adobe.com",
+        "help.gooddata.com",
+        "help.qlik.com",
+        "hpccsystems.com",
+        "httpwg.org",
+        "hylang.org",
+        "inform-fiction.org",
+        "inform7.com",
+        "ioke.org",
+        "iolanguage.com",
+        "isabelle.in.tum.de",
+        "isocpp.org",
+        "janet-lang.org",
+        "jfbillingsley.com",
+        "jinja.palletsprojects.com",
+        "jmespath.org",
+        "jsoftware.com",
+        "json-ld.org",
+        "json5.org",
+        "jsonnet.org",
+        "julialang.org",
+        "juttle.github.io",
+        "kid-templating.org",
+        "kippura.org",
+        "koka-lang.github.io",
+        "kotlinlang.org",
+        "leanprover-community.github.io",
+        "learn.microsoft.com",
+        "lesscss.org",
+        "lighttpd.net",
+        "lilypond.org",
+        "linux.die.net",
+        "lisp-lang.org",
+        "livescript.net",
+        "logtalk.org",
+        "luau-lang.org",
+        "macaulay2.com",
+        "manpages.debian.org",
+        "mathworks.com",
+        "mc-stan.org",
+        "mcmc-jags.sourceforge.io",
+        "mesonbuild.com",
+        "minecraft.wiki",
+        "miniscript.org",
+        "mips.com",
+        "mlochbaum.github.io",
+        "mlton.org",
+        "moinmo.in",
+        "moonscript.org",
+        "msdn.microsoft.com",
+        "nasm.us",
+        "nemerle.org",
+        "neo4j.com",
+        "nestedtext.org",
+        "newspeaklanguage.org",
+        "nginx.net",
+        "nim-lang.org",
+        "nitlanguage.org",
+        "nixos.org",
+        "notmuchmail.org",
+        "numpy.org",
+        "nusmv.fbk.eu",
+        "ocaml.org",
+        "offload.codeplay.com",
+        "ooc-lang.github.io",
+        "opalang.org",
+        "opencobol.add1tocobol.com",
+        "openscad.org",
+        "orgmode.org",
+        "paste.lisp.org",
+        "pastie.caboo.se",
+        "perldoc.perl.org",
+        "phix.x10.mx",
+        "php.net",
+        "pike.lysator.liu.se",
+        "projects.eclipse.org",
+        "prometheus.io",
+        "prql-lang.org",
+        "psysh.org",
+        "ptls.dev",
+        "pugjs.org",
+        "puppet.com",
+        "pygments.org",
+        "pyos.github.io",
+        "python.livinglogic.de",
+        "qlik.com",
+        "racket-lang.org",
+        "reasonml.github.io",
+        "reference.wolfram.com",
+        "relaxng.org",
+        "riverbed.com",
+        "roboconf.github.io",
+        "robotframework.org",
+        "rocq-prover.org",
+        "rpm-software-management.github.io",
+        "rzimmerman.github.io",
+        "sanssecours.github.io",
+        "sass-lang.com",
+        "scalate.fusesource.org",
+        "scalate.github.io",
+        "sel4.systems",
+        "shenlanguage.org",
+        "shex.io",
+        "skarnet.org",
+        "slim-template.github.io",
+        "snowballstem.org",
+        "soliditylang.org",
+        "source.android.com",
+        "specifications.freedesktop.org",
+        "specifications.openehr.org",
+        "spinroot.com",
+        "ssrg.nicta.com.au",
+        "supercollider.github.io",
+        "tact-lang.org",
+        "tango.freedesktop.org",
+        "testanything.org",
+        "texfaq.org",
+        "tiddlywiki.com",
+        "todotxt.com",
+        "toml.io",
+        "ton-blockchain.github.io",
+        "treetop.rubyforge.org",
+        "ttssh2.osdn.jp",
+        "tug.org",
+        "twig.symfony.com",
+        "typst.app",
+        "unicode-org.github.io",
+        "us3.php.net",
+        "vala.dev",
+        "verifpal.com",
+        "virustotal.github.io",
+        "vuejs.org",
+        "web.cs.wpi.edu",
+        "webassembly.github.io",
+        "webassembly.org",
+        "whiley.org",
+        "wiki.archlinux.org",
+        "wiki.debian.org",
+        "wiki.haskell.org",
+        "wiki.portal.chalmers.se",
+        "wiki.secondlife.com",
+        "wiki.xxiivv.com",
+        "wowpedia.fandom.com",
+        "wren.io",
+        "www.adaic.org",
+        "www.adobe.com",
+        "www.ansys.com",
+        "www.antlr.org",
+        "www.apoioinformatica.inf.br",
+        "www.archlinux.org",
+        "www.autohotkey.com",
+        "www.autoitscript.com",
+        "www.bbcbasic.co.uk",
+        "www.bbcode.org",
+        "www.broadcom.com",
+        "www.cappuccino.dev",
+        "www.cheetahtemplate.org",
+        "www.colm.net",
+        "www.compuphase.com",
+        "www.cryptol.net",
+        "www.debian.org",
+        "www.devicetree.org",
+        "www.djangoproject.com",
+        "www.eclipse.org",
+        "www.eiffel.com",
+        "www.embarcadero.com",
+        "www.erlang.org",
+        "www.exelisvis.com",
+        "www.fantom.org",
+        "www.felix-lang.org",
+        "www.fico.com",
+        "www.forth.com",
+        "www.freedesktop.org",
+        "www.fstar-lang.org",
+        "www.gap-system.org",
+        "www.godotengine.org",
+        "www.graphviz.org",
+        "www.haskell.org",
+        "www.idris-lang.org",
+        "www.indusoft.com",
+        "www.itu.int",
+        "www.kernel.org",
+        "www.khronos.org",
+        "www.l3harrisgeospatial.com",
+        "www.lassosoft.com",
+        "www.logilab.org",
+        "www.lua.org",
+        "www.makotemplates.org",
+        "www.maplesoft.com",
+        "www.masonhq.com",
+        "www.masswerk.at",
+        "www.math.ubc.ca",
+        "www.mathworks.com",
+        "www.mcbe-dev.net",
+        "www.mcternan.me.uk",
+        "www.mediawiki.org",
+        "www.modelica.org",
+        "www.modula2.org",
+        "www.monokai.nl",
+        "www.moo.mud.org",
+        "www.mql5.com",
+        "www.mrc-bsu.cam.ac.uk",
+        "www.mupad.com",
+        "www.muppetlabs.com",
+        "www.myghty.org",
+        "www.mysql.com",
+        "www.ncl.ucar.edu",
+        "www.newlisp.org",
+        "www.nordtheme.com",
+        "www.omg.org",
+        "www.openbugs.info",
+        "www.opendylan.org",
+        "www.openehr.org",
+        "www.openldap.org",
+        "www.openpgp.org",
+        "www.openpolicyagent.org",
+        "www.oracle.com",
+        "www.parasail-lang.org",
+        "www.perl.org",
+        "www.php.net",
+        "www.ponylang.io",
+        "www.postgresql.org",
+        "www.povray.org",
+        "www.praat.org",
+        "www.progress.com",
+        "www.purescript.org",
+        "www.r-project.org",
+        "www.r6rs.org",
+        "www.raku.org",
+        "www.rebol.com",
+        "www.red-bean.com",
+        "www.red-lang.org",
+        "www.regressive.org",
+        "www.rexxinfo.org",
+        "www.rfc-base.org",
+        "www.rfc-editor.org",
+        "www.ruby-lang.org",
+        "www.rubydoc.info",
+        "www.sarl.io",
+        "www.scala-lang.org",
+        "www.scheme-reports.org",
+        "www.scilab.org",
+        "www.smalltalk.org",
+        "www.smarty.net",
+        "www.spicelang.com",
+        "www.squid-cache.org",
+        "www.stata.com",
+        "www.swift.org",
+        "www.swig.org",
+        "www.sylabs.io",
+        "www.tads.org",
+        "www.tcl.tk",
+        "www.tcsh.org",
+        "www.terraform.io",
+        "www.thermoscientific.com",
+        "www.thingsdb.net",
+        "www.tsql.info",
+        "www.typescriptlang.org",
+        "www.unicon.org",
+        "www.varnish-software.com",
+        "www.vim.org",
+        "www.visual-prolog.com",
+        "www.vitanuova.com",
+        "www.wavemetrics.com",
+        "www.wolfram.com",
+        "www.workwithcolor.com",
+        "www.x.org",
+        "www.zeek.org",
+        "www2.cs.arizona.edu",
+        "x10-lang.org",
+        "yaml.org",
+        "zephir-lang.com",
+        "ziglang.org"
+      ],
+      "inImage": false,
+      "words": [
+        "_cocoa_builtins.py",
+        "macaulay2.py",
+        "perl.py"
+      ]
+    },
+    "pyjwt": {
+      "hosts": [
+        "www.rfc-editor.org"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "pyopenssl": {
+      "hosts": [
+        "brew.sh",
+        "cryptography.io",
+        "golang.org",
+        "pyopenssl.org"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "pypdfium2": {
+      "hosts": [
+        "casper.beckman.uiuc.edu",
+        "chasen.aist-nara.ac.jp",
+        "crbug.com",
+        "ns.adobe.com",
+        "numpy.org",
+        "www.antigrain.com",
+        "www.freetype.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "pytest": {
+      "hosts": [
+        "bford.info",
+        "bpa.st",
+        "ci.appveyor.com",
+        "conemu.github.io",
+        "docs.microsoft.com",
+        "docs.pytest.org",
+        "pybites.blogspot.be"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "python-multipart": {
+      "hosts": [
+        "www.rfc-editor.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "pyyaml": {
+      "hosts": [
+        "pyyaml.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "rapidocr": {
+      "hosts": [
+        "arxiv.org",
+        "blog.csdn.net",
+        "huggingface.co",
+        "onnxruntime.ai",
+        "paddle-imagenet-models-name.bj.bcebos.com",
+        "rapidai.github.io",
+        "www.modelscope.cn"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "requests": {
+      "hosts": [
+        "domain.tld",
+        "host.name",
+        "httpbin.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "rfc3161-client": {
+      "hosts": [
+        "rust-random.github.io"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "rich": {
+      "hosts": [
+        "docs.microsoft.com",
+        "force-color.org",
+        "pygments.org",
+        "www.oreilly.com",
+        "www.textualize.io",
+        "www.willmcgugan.com"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "ruff": {
+      "hosts": [
+        "doc.servo.org",
+        "docs.astral.sh",
+        "gitlab.redox-os.org",
+        "graham.cool",
+        "knurling.ferrous-systems.com",
+        "lib.rs",
+        "libcst.rtfd.org",
+        "lifthrasiir.github.io",
+        "magiclen.org",
+        "rhysd.github.io",
+        "rust-random.github.io",
+        "serde.rs",
+        "stebalien.com",
+        "tokio.rs"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "securesystemslib": {
+      "hosts": [
+        "developer.hashicorp.com",
+        "docs.aws.amazon.com",
+        "docs.oasis-open.org",
+        "ed25519.cr.yp.to",
+        "learn.microsoft.com",
+        "lists.gnupg.org",
+        "wiki.laptop.org",
+        "www.hyperelliptic.org"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "segno": {
+      "hosts": [
+        "jinja.palletsprojects.com",
+        "research.swtch.com",
+        "strokescribe.com",
+        "www.djangoproject.com"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "shapely": {
+      "hosts": [
+        "cfconventions.org",
+        "cgafaq.info",
+        "geojson.org",
+        "geos.osgeo.org",
+        "ia600900.us.archive.org",
+        "numpy.org",
+        "trac.osgeo.org",
+        "web.archive.org",
+        "www.opengeospatial.org"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "sigstore": {
+      "hosts": [
+        "blog.sigstore.dev",
+        "ctfe.sigstage.dev",
+        "ctfe.sigstore.dev",
+        "docs.sigstore.dev",
+        "fulcio.sigstage.dev",
+        "fulcio.sigstore.dev",
+        "in-toto.io",
+        "log2025-1.rekor.sigstore.dev",
+        "log2025-alpha1.rekor.sigstage.dev",
+        "log2025-alpha2.rekor.sigstage.dev",
+        "log2025-alpha3.rekor.sigstage.dev",
+        "log2026-1.ctfe.sigstage.dev",
+        "oauth2.sigstage.dev",
+        "oauth2.sigstore.dev",
+        "openid.net",
+        "rekor.sigstage.dev",
+        "rekor.sigstore.dev",
+        "sigstore.dev",
+        "slsa.dev",
+        "timestamp.sigstage.dev",
+        "timestamp.sigstore.dev",
+        "tuf-repo-cdn.sigstage.dev",
+        "tuf-repo-cdn.sigstore.dev",
+        "www.rfc-editor.org"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "sqlalchemy": {
+      "hosts": [
+        "alembic.sqlalchemy.org",
+        "asktom.oracle.com",
+        "blogs.oracle.com",
+        "bugs.mysql.com",
+        "community.oracle.com",
+        "database.windows.net",
+        "dev.mysql.com",
+        "docs.microsoft.com",
+        "docs.oracle.com",
+        "docs.sqlalchemy.org",
+        "download.oracle.com",
+        "floo.bar",
+        "forums.mysql.com",
+        "jira.mariadb.org",
+        "magicstack.github.io",
+        "mariadb.com",
+        "msdn.microsoft.com",
+        "neopythonic.blogspot.com",
+        "oracle.github.io",
+        "sqlalche.me",
+        "sqlserverbuilds.blogspot.com",
+        "technet.microsoft.com",
+        "techspot.zzzeek.org",
+        "web.archive.org",
+        "www.freetds.org",
+        "www.gevent.org",
+        "www.mail-archive.com",
+        "www.oracle.com",
+        "www.oracletutorial.com",
+        "www.postgresql.org",
+        "www.psycopg.org",
+        "www.sql-workbench.eu",
+        "www.sqlalchemy.org"
+      ],
+      "inImage": true,
+      "words": [
+        "pyodbc.py",
+        "selectable.py"
+      ]
+    },
+    "starlette": {
+      "hosts": [
+        "sethmlarson.dev",
+        "www.rfc-editor.org"
+      ],
+      "inImage": true,
+      "words": [
+        "opentelemetry.py"
+      ]
+    },
+    "tqdm": {
+      "hosts": [
+        "api.slack.com",
+        "api.telegram.org",
+        "core.telegram.org",
+        "discord.com",
+        "tqdm.github.io"
+      ],
+      "inImage": true,
+      "words": []
+    },
+    "tuf": {
+      "hosts": [
+        "docs.python-requests.org",
+        "theupdateframework.github.io"
+      ],
+      "inImage": false,
+      "words": []
+    },
+    "urllib3": {
+      "hosts": [
+        "cryptography.io",
+        "erickt.github.io",
+        "httpbin.org",
+        "httpwg.org",
+        "twitter.com",
+        "www.pyopenssl.org",
+        "www.rfc-editor.org",
+        "yahoo.com"
+      ],
+      "inImage": true,
+      "words": []
+    }
+  },
+  "hashes": {
+    "manifest.json": "sha256:a2bd3a96d9d4ac5ef7e053ffe5e28181aab94cecbb45914053ccf9b72113ac89",
+    "uv.lock": "sha256:09d64278b1090df357c00a59764e4086e0d94187b18ba061d44c202c3d1324e3"
+  }
+}

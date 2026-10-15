@@ -25,6 +25,11 @@ web/dev.sh <command>
   check        run every check: what CI runs (web/check)
   mail         list the emails dev mode has written
   mocks        fake bitcoin backends (Esplora, Electrum, Core) on local ports
+  audit [--accept]
+               the egress audit after a dependency change: the scan, the
+               no-network run; --accept records it (docs/dependencies.md)
+  base-update [--packages]
+               move the base image's digest to the current one
   mockup       rebuild docs/mockups/MoneyKata-app.html from the app
   help-shots   rebuild the help guides' screenshots from the mockup
   deno [args]  run the pinned Deno
@@ -96,6 +101,22 @@ case "$cmd" in
   mocks)
     # Fake bitcoin backends on local ports (S17.9.7.8); point Settings › Bitcoin at them.
     cd "$SERVER" && exec uv run --frozen python -m moneykata.dev.mocks "$@"
+    ;;
+  audit)
+    # The egress audit (S17.2.1): what the wheels and vendored files could reach, and the
+    # server run with no network. --accept records the scan and the files' hashes.
+    cd "$SERVER"
+    if [[ "${1:-}" == "--accept" ]]; then
+      exec uv run --frozen python -m moneykata.dev.audit accept
+    fi
+    uv run --frozen python -m moneykata.dev.audit scan || true
+    echo
+    echo "== the server with no network (unshare -U -n)"
+    unshare -U -n uv run --frozen pytest -q -m audit tests/test_no_network.py
+    ;;
+  base-update)
+    # Move the base image's digest to the current one (S17.8.5); --packages diffs Debian's.
+    cd "$SERVER" && exec uv run --frozen python -m moneykata.dev.base update "$@"
     ;;
   check)
     exec "$WEB/check" "$@"

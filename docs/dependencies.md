@@ -5,10 +5,9 @@ MoneyKata must not (above all, reach out of the house), and when to look at it a
 requirements set the rules (S17.2 the server's, S17.3.1 the browser's, S13.5 egress); this
 page is the register.
 
-**Audited against:** `web/server/uv.lock` `sha256:—` and `web/ui/vendor/manifest.json`
-`sha256:—` (filled in by `web/dev.sh audit` once milestone 7 part 9 builds it; until then
-the audits are by hand: 2026-10-15 the first pass over every wheel, and the same day the
-re-lock for Python 3.14, which changed no package's version and so added nothing to audit).
+**Audited against:** the hashes of `web/server/uv.lock` and `web/ui/vendor/manifest.json`
+recorded in `web/audit.json` by `web/dev.sh audit --accept`, with what the scan found for each
+package; `web/check` fails when either file no longer matches.
 
 ## The egress audit rule
 
@@ -62,8 +61,10 @@ for amd64 and arm64 (S17.8.1). *Direct* means named in `pyproject.toml`.
 | Library | Version | Pulled by | Risks |
 |---|---|---|---|
 | opencv-python-headless | 5.0.0.93 | rapidocr | native; parses images, but only after Pillow has decoded them; no network code known |
-| requests | 2.34.2 | rapidocr | **egress**: a general HTTP client; nothing in MoneyKata calls it; rapidocr uses it only for a model download that never happens (above) |
-| tqdm | 4.70.1 | rapidocr | progress bars; none |
+| requests, urllib3 | 2.34.2, 2.8.0 | rapidocr | **egress**: a general HTTP client; nothing in MoneyKata calls it; rapidocr uses it only for a model download that never happens (above) |
+| tqdm | 4.70.1 | rapidocr | progress bars; **egress** by name only: its optional notifiers for Slack, Telegram and Discord, which nothing in MoneyKata or rapidocr imports |
+| opentelemetry-api | from `uv.lock` | fastapi | the tracing API alone, which records nothing and sends nothing without an SDK and an exporter, neither of which is installed; its files name telemetry, which is what the audit's word scan flags |
+| email-validator, dnspython | from `uv.lock` | fastapi (its email field types) | dnspython can look up DNS; email validation's deliverability check, which would, is never asked for |
 | omegaconf, pyyaml | 2.4.0, 6.0.3 | rapidocr | config parsing; none |
 | shapely, pyclipper | 2.2.0, 1.4.0 | rapidocr | geometry for text boxes; none |
 | protobuf, flatbuffers | 7.36.2, 25.12.19 | onnxruntime | model file formats; parses only the shipped, hash-checked models |

@@ -66,6 +66,9 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
-markers = ["browser: drives headless Chromium through Playwright"]
+addopts = "-q -m 'not audit'"
+markers = [
+    "browser: drives headless Chromium through Playwright",
+    "audit: the no-network run of web/dev.sh audit (S17.2.1)",
+]
 filterwarnings = ["ignore:Using `httpx` with `starlette.testclient` is deprecated"]
