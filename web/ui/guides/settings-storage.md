@@ -4,6 +4,8 @@ How much the database and the files take, and how long receipt and statement fil
 Records are never removed: only files whose retention has run out, and only when an admin prunes
 them here. Sizes and counts only, never what the files hold.
 
+![Storage](shots/settings-storage.webp)
+
 ## Prune
 
 Opens the files that have expired, by category, to prune: a verified backup first, then the files.

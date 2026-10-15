@@ -54,6 +54,7 @@ SETTINGS = (
     "receipts",
     "tax-tables",
     "backups",
+    "storage",
     "keys",
     "alerts",
 )
@@ -71,6 +72,7 @@ DIALOGS = (
     ("/ui/gifts/gifts", "Add a gift", "dialog-gift"),
     ("/ui/giving/donations", "Record a donation", "dialog-donation"),
     ("/ui/positions/open", "Record an option trade", "dialog-option-trade"),
+    ("/ui/positions/strategies", "An underlying was adjusted…", "dialog-option-adjust"),
     ("/ui/giving/organisations", "Add an organisation", "dialog-organisation"),
     ("/ui/taxes/summary", "New tax book", "dialog-tax-book"),
     ("/ui/taxes/filings", "Add a filing", "dialog-filing"),
@@ -268,6 +270,7 @@ class Recorder:
             "/ui/transactions",
             "/ui/portfolios",
             "/ui/positions/open",
+            "/ui/positions/strategies",
             "/ui/positions/closed",
             "/ui/positions/trades",
             "/ui/positions/gains",

@@ -29,6 +29,7 @@ SETTINGS = (
     "receipts",
     "tax-tables",
     "backups",
+    "storage",
     "keys",
     "alerts",
 )

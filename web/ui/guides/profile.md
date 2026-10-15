@@ -33,6 +33,11 @@ projections.
 
 Whether alerts reach you by email: each one, a daily summary, or none.
 
+## Bitcoin in {#bitcoin-unit}
+
+How amounts of bitcoin are shown to you: **BTC** (0.12345678 BTC) or **sats** (12,345,678 sats).
+They are kept to the sat either way.
+
 ## Relationships
 
 Your spouse, children, friends and colleagues, each from a date and, once over, to a date. Parents,
@@ -101,8 +106,3 @@ College costs rise faster: 5% by default.
 
 For the bitcoin in your projections: your crypto assumption, or a published model. **Compare
 models** shows them side by side with their sources and records. Other coins use the crypto row.
-
-## Bitcoin in {#bitcoin-unit}
-
-How amounts of bitcoin are shown to you: **BTC** (0.12345678 BTC) or **sats** (12,345,678 sats).
-They are kept to the sat either way.

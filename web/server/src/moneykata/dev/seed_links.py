@@ -371,6 +371,21 @@ def _change(alice: str, bob: str) -> dict:
         },
         {
             "itemId": pf,
+            "path": f"/portfolios/{pf}/series?range=All",
+            "viewer": alice,
+            "body": {
+                "points": _months(36, 412880, 351200),
+                "benchmark": "VT",
+                "twr": "17.6",
+                "irr": "17.1",
+                "contributed": "0.00",
+                "growth": "61680.00",
+                "start": "351200.00",
+                "end": "412880.00",
+            },
+        },
+        {
+            "itemId": pf,
             "path": f"/portfolios/{pf}/returns",
             "viewer": alice,
             "body": [

@@ -48,11 +48,11 @@ Deletes it with its transactions, only by its owner. The click asks again first.
 On an account shared with you: whether your net worth includes it. Off by default, so a spouse's
 accounts count once.
 
+{{account-type settings}}
+
 ## Method {#kept-by}
 
 How the account is kept current: from files you import (OFX, QFX or CSV), or by hand.
-
-{{account-type settings}}
 
 ## Statements expected {#statements-expected}
 

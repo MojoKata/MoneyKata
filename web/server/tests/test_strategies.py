@@ -153,6 +153,11 @@ def test_legs_opened_together_are_proposed_grouped_rolled_and_undone(alice):
     assert r.status_code == 200, r.text
     st = r.json()
     assert len(st["legs"]) == 3 and st["realized"] == 100, "the closed leg's P/L stays with it"
+    # Each leg's trade takes the rolled strategy's capital at risk, its return exact.
+    r = alice.get("/ui/api/positions/option-trades")
+    assert r.status_code == 200, r.text
+    [closed] = [x for x in r.json()["items"] if x["closed"]]
+    assert (closed["capitalAtRisk"], closed["returnPct"]) == (470, 21.28)
     assert alice.get("/ui/api/positions/strategies").json()["proposals"] == []
     # Undone: the legs stand alone again.
     r = alice.delete(f"/ui/api/strategies/{st['id']}", headers={"If-Match": f'"{st["version"]}"'})

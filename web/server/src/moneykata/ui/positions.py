@@ -430,7 +430,7 @@ def option_trades(request: Request, c: Caller = Depends(caller)):
             risk = at_open.get((r.accountId, r.instrumentId))
             if risk is not None:
                 r.capitalAtRisk = risk
-                r.returnPct = round(float(r.pl / risk * 100), 2) if r.pl is not None else None
+                r.returnPct = round(r.pl / risk * 100, 2) if r.pl is not None else None
     open_rows = [r for r in out if r.closed is None]
     done = sorted((r for r in out if r.closed is not None), key=lambda r: r.closed, reverse=True)
     return sorted(open_rows, key=lambda r: r.opened, reverse=True) + done

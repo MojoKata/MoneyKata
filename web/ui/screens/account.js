@@ -944,6 +944,7 @@ function Settings({ a, reload }) {
         : BY_TYPE[a.type]?.education
         ? html`
           <div class="grid" style=${{ alignContent: 'start' }}>
+            <${PlanCard} a=${a} />
             <div class="card">
               <h3>Keeping it current</h3>
               <${Field} label="Method" id="kept-by">
@@ -952,7 +953,6 @@ function Settings({ a, reload }) {
                 </${Field}>
                 <${StatementsExpected} a=${a} reload=${reload} />
                 </div>
-                <${PlanCard} a=${a} />
                 </div>
         `
         : physical
