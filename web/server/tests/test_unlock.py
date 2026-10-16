@@ -2,6 +2,7 @@
 and answers only what unlocking needs, until the phrase is entered on the unlock page (or by
 `keys unlock`, which posts the same way); wrong phrases count toward the lockout."""
 
+import datetime as dt
 import os
 
 import pytest
@@ -83,16 +84,18 @@ def test_rotation_through_the_running_server_is_for_loopback_only(locked, master
     assert r.status_code == 503 and r.json()["code"] == "locked"
     assert c.post("/ui/api/unlock", json={"phrase": words}, headers=headers).status_code == 200
     old_fp = c.get("/ui/api/unlock").json()["fingerprint"]
-    b = maintenance.backup(srv.config, srv.store)
+    with srv.maintenance_lock:  # the server's own backup task may be running its first copy
+        b = maintenance.backup(srv.config, srv.store, dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
     listed = c.get("/ui/api/keys/copies").json()["copies"]
-    assert [x["name"] for x in listed] == [b.name] and listed[0]["opens"] == "current"
+    mine = next(x for x in listed if x["name"] == b.name)
+    assert mine["opens"] == "current" and mine["kind"] == "backup"
     r = c.post(
         "/ui/api/keys/rotate",
         json={"phrase": new, "copies": {b.name: "rewrap"}},
         headers=headers,
     )
     assert r.status_code == 200 and r.json()["from"] == old_fp
-    assert r.json()["copies"] == {b.name: "rewrapped"}
+    assert r.json()["copies"][b.name] == "rewrapped"
     assert c.get("/ui/api/unlock").json()["fingerprint"] == r.json()["to"] != old_fp
     with srv.db.read() as s:
         assert "key.rotated" in [a.kind for a in s.query(Activity)]
