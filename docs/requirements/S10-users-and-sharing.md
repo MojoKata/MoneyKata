@@ -3,12 +3,16 @@
 1. **Users, groups and sign-in**:
    1. A user has a unique username, a display name, a unique **email address**, an optional
       avatar, and a password stored as an argon2id hash. They sign in with username or email.
-      The only password rule is a minimum length that admins set (12 by default).
+      The only password rule is a minimum length that admins set (12 by default). A username
+      is 2 to 32 lowercase letters, digits, dots, dashes or underscores, beginning with a
+      letter or digit; usernames and email addresses match without regard to case. A display
+      name is at most 80 characters, an email address at most 254.
    2. **The default admin.** A server with no users creates `admin` with a published default
       password at start. Its first sign-in leads only to a setup step: choose a password, give
       an email address, and give the admin's name and sex (male until then, S10.10.1).
    3. **Invitations.** Admins never set passwords. Creating a user (name, sex, username,
       email, groups) emails an invitation link, and the user chooses their password from it.
+      The link works once, for 7 days; sending a new one ends the one before.
    4. **Sign-up**, when an admin turns it on (it needs SMTP and the public URL, and can be
       limited to email domains): a person gives their name, sex and email, confirms the email,
       and waits on a *waiting for approval* screen until an admin approves or rejects the
@@ -22,7 +26,10 @@
          **Reject** turns it down. An email tells the person either way, and Activity records
          the request and the decision. The request stays as the record of it.
    5. **Password reset** by an emailed link from *Forgot password?*. A changed email address
-      takes effect only when a link sent to the new address is opened.
+      takes effect only when a link sent to the new address is opened. A reset link works
+      once, for an hour, and a new request ends the one before; an email-change link works
+      once, for 24 hours. An admin corrects a user's email address only until the user has
+      joined; after that the user changes it in Profile.
    6. **Two-step sign-in**, optional for everyone: a TOTP code from an authenticator app after
       the password, set up with a QR code; ten recovery codes shown once; and an admin's
       reset as the last resort.
@@ -48,8 +55,8 @@
       inactive user cannot sign in, and cannot be added to a share, here or from a linked
       server; shares they already hold give them nothing while they are inactive. Switching
       it off ends their sessions at once and shows an *account is disabled* screen, from which
-      they can ask to be reactivated (once a week). Users and groups are deactivated rather
-      than deleted.
+      they can ask to be reactivated (once a week), with their username and password. Users
+      and groups are deactivated rather than deleted.
    8. **Groups**: admins make named groups of users. Being an admin is membership of the
       built-in **Admins** group. The last active admin cannot be removed or deactivated.
    9. **Emails** (plain text): invitation, sign-up confirmation and decision, reset,

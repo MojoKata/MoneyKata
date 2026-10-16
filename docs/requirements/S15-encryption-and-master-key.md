@@ -60,9 +60,10 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       there is no key that could reveal them.
    7. **Not encrypted**: the configuration file; the logs, which must never hold amounts,
       names or secrets; the `tls/` pair in the data directory in `tls` mode (S13.3), which
-      protects the listener and not the data; and the **mail folder**, where emails are
+      protects the listener and not the data; the **mail folder**, where emails are
       written while SMTP is not set up (S16.2): each holds a link that is a one-day token,
-      so each file is removed a day after it was written.
+      so each file is removed a day after it was written; and, once SMTP is set up, the
+      **outbox**, where each email waits until it is sent (S16.2).
 2. **No external key service, and no key file.** MoneyKata keeps no master key at all: the
    phrase is entered after every start and held in memory only while it is used. HashiCorp
    Vault, cloud KMSs (AWS, GCP, Azure), HSMs and TPM sealing are **not supported**: on a
@@ -109,7 +110,9 @@ replica holds only the right-hand side, and the whole host can be backed up as i
    5. **The master key id** is the first 16 hex digits of `SHA-256("moneykata key id" ‖ key)`.
       It identifies a key without revealing it. Its short form (`mk-3f9a…c21e`) is the
       **fingerprint** shown in Settings, on the recovery sheet and in the commands below. The
-      wrapped data key records which master key wrapped it.
+      wrapped data key records which master key wrapped it, and names the data key by an id
+      made the same way (`SHA-256("moneykata data key id" ‖ data key)`), so the server knows
+      which copies hold the data key it has without unwrapping them.
    6. **Why three levels**: rotating the master key re-wraps one 32-byte data key and nothing
       else; the database and the files never need re-encrypting for it; the phrase need not
       stay in memory (S15.4.3); and each secret still stands or falls on its own, with
@@ -269,11 +272,13 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       in the dialog, and for each the admin chooses **re-encrypt** (the default: rewritten
       under the new data key after the main job), **delete**, or **leave** (it keeps its old
       data key, which this phrase still opens); a copy under an earlier phrase cannot be
-      rewritten and is left or deleted. **Interrupted** by a stop or a crash, the
-      re-encryption finishes at the next unlock, with the phrase given then; a pending
-      re-encryption under another phrase (a rotation in between) is refused at the unlock
-      by name, and rotation refuses while one is pending. Settings › Key storage shows the
-      progress. It is for when **the data key may have been read**: a memory dump or a
+      rewritten and is left or deleted. The new data key's keyring is written first, beside
+      the keyring, as `keyring.next`, and replaces it when the job ends. **Interrupted** by a
+      stop or a crash, the re-encryption finishes at the next unlock, with the phrase given
+      then; a `keyring.next` the database does not open with is a re-encryption that never
+      began, and is removed. A pending re-encryption under another phrase (a rotation in
+      between) is refused at the unlock by name, and rotation refuses while one is pending.
+      Settings › Key storage shows the progress. It is for when **the data key may have been read**: a memory dump or a
       debugging session on the live server, and **any leak of the recovery phrase**
       (S15.8.1), since a leaked phrase opens the data key in every copy it could have been
       taken with. It closes nothing made before it (S15.7.3).

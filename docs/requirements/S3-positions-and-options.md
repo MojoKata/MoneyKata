@@ -8,7 +8,8 @@
    **expire** (worthless), **assigned** and **exercised**. Each carries contracts, premium per
    share, fees and commission.
 3. **Short options** are negative lots. The premium received is the credit; the gain is
-   realized at close or expiry.
+   realized at close or expiry. Closing trades and expiries take an option's lots oldest
+   first, whatever lot method the account uses for shares.
 4. **Assignment and exercise** close the option lot and open or close stock lots at the
    strike, with the premium folded into the stock's basis or proceeds as the IRS rules for
    that case say: a long call exercised adds its premium to the stock's basis, a short put
@@ -57,7 +58,9 @@
       **Capital at risk** beside their options' market value, counting each option outside a
       strategy as a single leg (S3.9.2). Allocation charts keep market value.
 6. **Expiry** is applied automatically the day after an option expires out of the money by
-   the underlying's closing price. An in-the-money expiry asks the user what happened.
+   the underlying's closing price. An in-the-money expiry asks the user what happened. The
+   close used is the expiry day's, or one up to four days before it; with none that recent,
+   the user is asked too. A close exactly at the strike counts as out of the money.
 7. **Valuation**: an open option's mark is the price source's daily option close where there is
    one (S4.5), otherwise the user's manual mark, otherwise intrinsic value, labelled as such.
 8. **Wash sales**: a loss sale with a purchase of the same or a *substantially identical*

@@ -13,7 +13,8 @@ document is the protocol's statement; the code that speaks it is `web/server/src
    even on the LAN. A peer's TLS certificate may be its own (S13.3): what proves who answered
    is the signature on the answer (section 3), checked against the key the link was made with.
 3. Everything but `hello` is signed, and every answer to a signed call is signed back.
-4. Bodies are JSON, UTF-8, at most 20 MB.
+4. Bodies are JSON, UTF-8, at most 20 MB. A caller waits 10 seconds to connect and 20
+   seconds for each read, and refuses an answer that announces more than 20 MB.
 
 ## 2. Keys and fingerprints
 
@@ -73,12 +74,13 @@ document is the protocol's statement; the code that speaks it is `web/server/src
 
 | Path | Signed | Link states | What it does |
 |---|---|---|---|
-| `GET /link/v1/hello` | no | any | `{protocol, version, fingerprint}`: lets a joining server check the fingerprint in a link code before it sends anything |
+| `GET /link/v1/hello` | no | any | `{protocol, version, fingerprint, key}`, `key` being the link key's public half, whose SHA-256 is the fingerprint: lets a joining server check the fingerprint in a link code before it sends anything |
 | `POST /link/v1/ping` | yes | pending, requested, active, paused | `{protocol, version, state}`: the link's state on the answering side |
 | `POST /link/v1/join` | yes, by the caller's own key | an invitation | answers a link code (section 4.1) |
 | `POST /link/v1/exchange` | yes | active; pending on the joining side | the directories both ways, and the answering side's change for the caller (section 4.3) |
 | `POST /link/v1/next` | yes | active | the next part of a large change the caller is pulling (section 4.4) |
 | `POST /link/v1/deliver` | yes | active | the caller's change for the answering side (section 4.3) |
+| `POST /link/v1/file` | yes | active | `{id}`: one receipt's bytes, as `application/octet-stream`, refused `not-shared` unless a share to that link includes it; the answer's signature takes the bytes' SHA-256 in place of the body's hash, and the caller checks it, and the hash the change carried, before keeping the file |
 | `POST /link/v1/end` | yes | requested, pending, active, paused | the link ended on the calling side |
 
 ### 4.1 Joining
@@ -110,6 +112,9 @@ Every `exchange` carries the sender's directory, and its answer the receiver's:
 
 Only active local users are listed. The receiver keeps each as a remote user by its `id`:
 added, updated in place, soft-deleted when it leaves the list and restored when it returns.
+It keeps a display name of up to 120 characters and a username of up to 64, and a sex other
+than `female` or `male` as `male`; of each item, a kind of up to 20 characters and an owner's
+name of up to 120.
 Each remote user has a person here, with the name and sex the directory gives (requirements
 S10.10.1), used only for gifts.
 
@@ -160,13 +165,17 @@ A change brings the receiver from its `have` to now:
    follow by the newest date each holds, each part signed and numbered as a change of its own
    with its `progress`. The copy fills from its earliest records and is usable up to a date
    while the rest arrives, and the receiver shows how far it has come (*Up to July 2022, 47 MB
-   of 2 GB*). A part missed or out of turn makes the next exchange ask for everything.
+   of 2 GB*). A part missed or out of turn makes the next exchange ask for everything. The
+   source keeps the parts still to send in memory, so after it restarts `next` answers
+   nothing and the caller's next exchange asks for everything.
 4. The receiver checks the signature and that `seq` follows its `have` (or that the change is
    `full`); otherwise it asks for everything at its next exchange. It keeps each item's id,
    kind, owner's name, date and the people it names in its main database, never its `name`
    or any figure, which go only into the sealed change, and seals the change whole into the
    link's copy (S11.9.5), where it is applied, its signature checked again, once the copy is
-   unlocked.
+   unlocked. Until the copy's access key is made (S11.9.2.1), a pull keeps only what the main
+   database holds and drops the change and its files; making the key asks for everything at
+   the next exchange.
 
 ## 5. Versions
 
@@ -202,7 +211,12 @@ says when the call carried a nonce.
 | `replayed` | the nonce was seen from that key in the last two minutes |
 | `not-linked` | the key has no link here |
 | `link-<state>` | the link exists here but its state doesn't allow the call |
+| `not-shared` | a file no share to that link includes |
 | `protocol-unsupported` | the call's protocol isn't one this server answers |
 | `code-used` | a link code was used, expired or withdrawn |
 | `already-linked` | the two servers already have a link |
 | `change-refused` | a delivered change fails its signature check |
+
+A `link-ended` or `not-linked` answer to a signed call ends the link on the calling side, as
+`end` would: its copy, the shares to it and its remote users go. A caller refuses an answer
+that isn't signed as `answer-unsigned`.

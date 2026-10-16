@@ -22,13 +22,17 @@
    listener must read it before any key is entered (S15.1.7). It names the server and
    `localhost`, and the names and addresses listed in `[tls] names`, which are how browsers
    on the network reach it; a change to the list makes it again. A certificate named in
-   `[tls]` lives wherever the admin keeps it.
+   `[tls]` lives wherever the admin keeps it. From a trusted proxy, `X-Forwarded-For`,
+   `X-Forwarded-Proto` and `X-Forwarded-Host` are believed, and the client is the right-most
+   address in `X-Forwarded-For` that is not a trusted proxy. `[server] host` sets the
+   listening address, all interfaces by default.
 4. **Background tasks** in the server process: price refresh (S4.4), bitcoin wallet reads
    (S1.6), link pulls (S11.4), option expiry (S3.6), backups (S14.6), sending email
    (S16.2), alerts and their daily summary (S12.11), receipt and statement reading (S9.8,
    S1.3, in its own worker process), the linked copies' sweeper (S11.9.4), and the check for
-   statements overdue (S1.11.7) and a silent connector (S18.5). Recurring transactions are found when
-   they are shown (S7.5). Each records its last run and error, which Settings shows.
+   statements overdue (S1.11.7) and a silent connector (S18.5), and an hourly prune that
+   removes expired sessions and one-time tokens (`schema.md` §4.4.1). Recurring transactions
+   are found when they are shown (S7.5). Each records its last run and error, which Settings shows.
    They run in a thread pool with per-provider rate limits and never block a request.
 5. **Outbound calls** go through one httpx client with an **egress guard**: only the hosts of
    enabled price sources, the bitcoin explorer or node, the SMTP server, and links; never
@@ -38,7 +42,9 @@
    counts as allowed by name. The guard sees only the server's own clients, not a library's
    own client or native code, so every dependency is audited for what it could reach on its
    own, each time a dependency changes (S17.2.1), and any switch that turns such a call off
-   is thrown before the library is first used.
+   is thrown before the library is first used. Each call connects within 10 seconds and waits
+   at most 20 seconds for each read; an answer that announces more than 20 MB is refused, and
+   the price sources stop reading at 20 MB. SMTP waits 20 seconds.
 6. **Stopping**: on SIGTERM the server ends every event stream, lets requests in flight finish
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
    cannot start for a reason only an operator can fix (a config file it can't use, a missing
@@ -50,7 +56,9 @@
    every other path, `/link`, `/connector` and `/mcp` included, answers 503 `locked` with
    `Retry-After`, until an admin enters the recovery phrase (S15.4.3). What the phrase then
    cannot open (a database from a newer release) is refused at the unlock, with the reason
-   in the log, and the server stays locked.
+   in the log, and the server stays locked. `/healthz` answers 503 `starting` between the
+   unlock and readiness, and `GET /ui/api/unlock` tells anyone who reaches `/ui` whether the
+   server is locked, the fingerprint its keyring is wrapped under, and the version.
 7. **Security policies**. One place for the rules every request
    passes through; other sections refer here.
    1. **Sessions**: a 256-bit random token in a cookie named `mk_session`, `HttpOnly`,
@@ -58,7 +66,10 @@
       and at every change of privilege (two-step passed, made admin), so a token from before
       sign-in never works after it. Idle lifetime 8 hours and absolute 30 days by default
       (Settings › Sign-in and sessions). Signing out, a password change and deactivation end
-      every session of that user at once.
+      every session of that user at once. The cookie's `Max-Age` is the absolute lifetime, so
+      a browser restart keeps the session. After a password change, the browser that made it
+      gets a new session; accepting an invitation signs in, and a reset does not. The new
+      token at a change of privilege starts its own absolute lifetime.
    2. **Re-authentication**: changing the password, the email address or two-step, making an
       access token, creating a linked copy's access key, resetting a linked copy, sharing with
       a linked server, pairing, confirming or unpairing the connector, sealing a Connection's
@@ -68,8 +79,8 @@
       orphan files, opening a written email, and exporting data each need the password again
       if it was last given more than 10 minutes ago.
    3. **Passwords**: argon2id (64 MiB, 3 passes, parallelism 1), the minimum length of
-      S16.5, and no other rules. Checked against a shipped list of the 100,000 most common
-      passwords, which are refused.
+      S16.5, at most 1,024 characters, and no other rules. Checked against a shipped list of
+      the 100,000 most common passwords, which are refused.
    4. **Cross-site requests**: `SameSite=Strict` plus an `Origin` check on every request
       that changes something; a missing or foreign `Origin` is refused with 403. No CORS: the
       API answers only its own origin.
@@ -85,7 +96,9 @@
       4. `/mcp`: 60 calls a minute per token (S10.9.4); `/link`: 60 calls a minute per
          link; `/connector`: 60 calls a minute, its files counted against the upload limit
          above.
-   6. **Request limits**: JSON bodies up to 1 MB, uploads up to the size in Settings
+      5. The counters are held in memory: a restart clears them.
+   6. **Request limits**: JSON bodies up to 1 MB (a linked server's up to 20 MB,
+      `docs/link-protocol.md` §1.4), uploads up to the size in Settings
       (25 MB by default), at most 100 MB of uploads in flight per user, and request headers
       up to 16 KB. Each upload's type is checked from its content, never its name (S9.1).
    7. **Response headers** on every response: the CSP of S17.3.3,

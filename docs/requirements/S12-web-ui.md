@@ -165,7 +165,8 @@
           › Alerts (48 hours by default): the bitcoin explorer or node, a price source, email
           that can't be sent, or a linked server's pulls (a pull refused for a clock more
           than a minute off says *the clocks disagree*, which NTP on one host fixes); a
-          backup that failed;
+          backup that failed; the bitcoin node presenting a certificate other than the one
+          trusted (S1.6.2.4);
           a link's first share waiting for its access key (S11.9.2); the MoneyKata Connector
           locked, not heard from for 15 minutes, or reporting from an address other than the
           one admins know, until one accepts it or unpairs (S18.5); and the yearly check of
@@ -175,8 +176,10 @@
        2. **for an account's owner**: their wallet's explorer or node failing for longer
           than the threshold, an account whose next statement or import is overdue for its
           interval (S1.11.7), naming the statement missing, a reconciliation mismatch
-          left open for 7 days (S1.11), and a Connection that keeps one of their accounts
-          current needing a sign-in or failing (S18.5);
+          left open for 7 days (S1.11), a Connection that keeps one of their accounts
+          current needing a sign-in or failing (S18.5), a recorded wallet transaction the
+          chain has dropped (S1.6.2.7), and an option past its expiry that wasn't settled on
+          its own (S3.6), asking what happened;
        3. **for each user**: a request to share a private person they created (S10.10.3),
           an occasion entering its lead time (S7.7.3), an option
           expiring within a week, a pledge due (S7.9), an active projection falling

@@ -63,11 +63,17 @@ ask it for anything.
 2. **Isolation**: the rules the design rests on.
    1. **Separate**: its own process, unprivileged user (uid 10002), image and volume
       (`connector-data`: the vault and the connector's identity key). MoneyKata never mounts
-      that volume; the connector never mounts MoneyKata's data, keys or backups.
+      that volume; the connector never mounts MoneyKata's data, keys or backups. The volume
+      is `/var/lib/moneykata-connector` (mode 0700): `vault.json`, and `pairing.json` (mode
+      0600: MoneyKata's address and fingerprint, the identity key's private half and the
+      sealing key's public half). The socket is `/run/moneykata-connector/sock` (mode 0600,
+      on a tmpfs). `MONEYKATA_CONNECTOR_DATA`, `MONEYKATA_CONNECTOR_SOCKET` and
+      `MONEYKATA_CONNECTOR_WATCH` move the volume, the socket and the watched folder.
    2. **One way.** The connector only opens connections: to its institutions and to
       MoneyKata. It listens on no network port; its only way in is a Unix socket inside its
       own container, for the commands an admin runs there (S18.3). MoneyKata has nothing to
-      call and no way to ask for a credential.
+      call and no way to ask for a credential. A call it makes follows no redirect (a 3xx
+      answer is a failure, so nothing is sent again elsewhere) and waits at most 60 seconds.
    3. **What each side holds.** MoneyKata holds the connector's public keys and the records
       of S18.6, never a credential. The connector holds the credentials and the sealing
       key's private half, sealed in its vault, and beside the vault an identity key that can
@@ -103,12 +109,23 @@ ask it for anything.
       until three of them, chosen at random, are typed back. The admin keeps the words in the
       household's password manager. They are never stored; the vault key comes from them.
       The vault holds every Connection's credentials with the host each is bound to
-      (S18.7.3), and the sealing key's private half (S18.4.5).
+      (S18.7.3), and the sealing key's private half (S18.4.5); a Schwab Connection's entry
+      also holds the app's secret and its tokens with when they run out. It is one file,
+      `vault.json`: its format's name, the vault's fingerprint, a nonce and the contents,
+      sealed with AES-256-GCM under a key that HKDF-SHA256 derives from the words' 128 bits
+      (label `moneykata connector vault key`), with the fingerprint as associated data. The
+      words are a random key, not a password, so nothing stretches them. Each change seals
+      the whole vault again with a fresh nonce, through a temporary file and a rename. The
+      fingerprint, the first 16 hex digits of `SHA-256("moneykata connector vault" ‖ key)`,
+      is kept in the clear, to tell another vault's words from a damaged file.
    2. **Locked at every start**: the connector starts locked, fetches nothing, and reports
       that it is locked (S18.5). An admin unlocks it with
       `docker compose exec connector moneykata-connector unlock`, which asks for the words
       without echo and hands them to the running connector over its Unix socket; the key
-      stays in memory only. A restart, a crash or the host's reboot locks it again.
+      stays in memory only. A restart, a crash or the host's reboot locks it again. `lock`
+      locks it at once, and `status` says what the connector is doing: whether it is locked
+      and paired, its last report, and each Connection's state; the image's health check
+      runs `status`.
    3. **Wrong words**: the checksum catches most typing slips at once; a phrase that is a
       valid one but not this vault's is refused by the vault's fingerprint. Five wrong
       attempts in a row make the next wait 15 minutes.
@@ -267,13 +284,19 @@ ask it for anything.
    a PDF statement. Imports are idempotent, so a repeated post adds nothing. A post counts
    against the upload limit of the Connection's owner (S13.7.5.3); refused for the limit, the
    connector keeps the file and posts it on a later run, so a backlog (a folder of old
-   statements) arrives over a few hours rather than failing. A PDF is kept
+   statements) arrives over a few hours rather than failing. Files waiting, for the limit or
+   for the pairing's confirmation, are held in memory: after a restart the drivers fetch
+   again, and the import's idempotence drops what arrived before. A file refused for any
+   other reason is dropped, and its Connection shows the refusal. A PDF is kept
    without reading (S1.3.3.6), or, where MoneyKata reads that kind, waits in the account's
    inbox for its owner to check: nothing read from a PDF is saved unchecked. Every post is
    recorded in Activity as *by MoneyKata Connector, Alice's Schwab login*.
 9. **The first drivers**, for the average cases:
    1. **Folder**: watches a folder and posts each statement or export that appears to the
       account its file name matches, by rules the owner sets (`umb-*.pdf` to UMB checking).
+      It looks every 5 minutes, at the folder's own files and not its sub-folders, takes
+      `.ofx`, `.qfx`, `.csv` and `.pdf` files up to 25 MB, skips hidden ones, and posts a
+      file again only when its size or time changes.
       The folder is **the watched folder**, one mount set where the connector runs (a
       Downloads folder, mounted read only at `/watch` in `compose.yaml`), never a path
       MoneyKata names: a Connection's `path` is a folder inside it, relative, with no `..`
@@ -283,10 +306,15 @@ ask it for anything.
       No credentials.
    2. **OFX Direct Connect**: for institutions that still run an OFX server, fetching
       transactions and balances with the sign-in's username and password, bound to the
-      server address the Connection named when they were filed (S18.7.3).
+      server address the Connection named when they were filed (S18.7.3). Once a day, over
+      `https` only, as an OFX 1.0.2 client, it asks for the last 45 days (the Connection's
+      `days`), or 90 while no account matches the Connection's account number; the server's
+      sign-on codes 15500 to 15503 mean *needs a sign-in*.
    3. **Schwab**: Schwab's official Trader API, for positions, transactions and balances,
       posted as OFX. Its sign-in lasts seven days, so the Connection asks for a sign-in
-      every week (S18.5.3).
+      every week (S18.5.3). Once a day it asks for the last 45 days. The app registered at
+      Schwab must name `https://127.0.0.1` as its callback, the address the owner lands on
+      and pastes back (S18.7.1); an access token is used until a minute before it runs out.
 10. **Packaging**: `install/compose.yaml` carries the `connector` service, from the
     `moneykata-connector` image of the same version, `restart: unless-stopped`, read only,
     all capabilities dropped, no published port, its own volume, and the watched folder

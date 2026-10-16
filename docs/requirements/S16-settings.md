@@ -15,27 +15,31 @@ follows Backups, and Connector (18), which follows Linked servers:
    for, subject, when) with **Open**, which shows one, links and all, after the admin's
    password again, so an invitation or reset link can be passed on; each file is removed a
    day after it was written, once its link has expired (S15.1.7). With a host, they go out
-   in the background: an email that can't be sent stays queued and is tried again every five
-   minutes, one the server refuses outright is set aside, and the section shows the queue
-   and the last error.
-3. **Sign-in and sessions**: idle and absolute session lifetimes, and the lockout of an
-   address after failed sign-ins (S13.7.5.1).
+   in the background: each waits in the **outbox** in the data directory, in the clear,
+   until it is sent; an email that can't be sent stays queued and is tried again every five
+   minutes, one the server refuses outright is set aside there and kept, and the section
+   shows the queue and the last error.
+3. **Sign-in and sessions**: idle and absolute session lifetimes (8 hours by default, 1 to
+   168, and 30 days, 1 to 365), and the lockout of an address after failed sign-ins (10
+   failures, 3 to 100, for 15 minutes, 1 to 1,440, S13.7.5.1).
 4. **Sign-up**: on or off (it needs SMTP), optionally limited to email domains.
-5. **Passwords**: the minimum length (12 by default, at least 8).
+5. **Passwords**: the minimum length (12 by default, 8 to 128).
 6. **Prices** (S4.2.3): the enabled sources with their classes, keys, order, last run and
    error; **Add a source**; and the time of the daily refresh (6:00 PM Eastern by default).
 7. **Bitcoin** (S1.6): the explorer or node for self-custody wallets: a public Esplora
    (mempool.space by default, or Blockstream) or the household's own node (its own mempool or
    Esplora by its address; an Electrum server by host, port and TLS; Bitcoin Core by host,
    port, RPC user and password), with when the wallets were last read and a **Test** button.
-8. **Imports** (S1.3): the file types and size accepted for statement import, and whether
-   statements are read on the server (in the receipt reader's worker, S9.8).
+8. **Imports** (S1.3): the file types and size accepted for statement import (25 MB by
+   default, 1 to 200), and whether statements are read on the server (in the receipt
+   reader's worker, S9.8).
 9. **Linked servers** (S11.7): the links, and each linked copy's state: changes waiting, its
    access key (*Create the access key*, made when and by whom), locked or unlocked (by whom,
    and when it will lock), *Lock now* and *Reset copy*, and **Release linked keys after**
-   (one hour unused by default).
-10. **Receipts**: the size limit and allowed types; **Read receipts** on or off, jobs at a
-    time, the reading queue, and **Re-read all receipts** (S9.8.7).
+   (one hour unused by default, 5 minutes to 24 hours).
+10. **Receipts**: the size limit (25 MB by default, 1 to 100) and allowed types; **Read
+    receipts** on or off, jobs at a time (1 by default, at most 4), the reading queue, and
+    **Re-read all receipts** (S9.8.7).
 11. **Tax tables**: per year, shipped and correctable: contribution limits and thresholds,
     the annual gift exclusion, the 529-to-Roth lifetime limit, the QCD limit, the
     collectables rate, the unearned income above which Form 8615 applies (S8.14.5.3), the
@@ -45,10 +49,11 @@ follows Backups, and Connector (18), which follows Linked servers:
     shipped value removes the correction. A year after the latest shipped uses the latest.
     The college-cost averages and the metal per share arrive with the features that use
     them (529s, physical assets).
-12. **Backups**: the time of day and the copies kept, each backup listed with its size and
-    the key it opens with, and **Back up now**; the backup directory is set on the host. The
-    section says what a backup is: the database with its keyring, never the receipt files,
-    which the host backs up with the data directory (S14.6).
+12. **Backups**: the time of day (02:30 by default) and the copies kept (14 by default, 1 to
+    365), each backup listed with its size and the key it opens with, and **Back up now**;
+    the backup directory is set on the host. The section says what a backup is: the
+    database with its keyring, never the receipt files, which the host backs up with the
+    data directory (S14.6).
 13. **Key storage** (S15): read-only. The master key's fingerprint and age, when the phrase
     was last entered, who confirmed the phrase and when, the previous keys, each with how
     many copies on this host still need its phrase and **Forget**, the **copies on this
@@ -68,12 +73,15 @@ follows Backups, and Connector (18), which follows Linked servers:
     `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10` for Tailscale, `::1`,
     `fc00::/7`), so a connector on a laptop away from home (S18.1) needs an admin to widen
     it. The address checked is the client's as the trusted proxy forwards it (S13.3).
-    `/healthz` and `/demo` answer any address.
+    `/healthz` and `/demo` answer any address. An address outside a path's ranges is
+    answered 404, as for what doesn't exist. The ranges are in the database, so while the
+    server is locked they can't be read: the locked screen and the unlock then answer any
+    address that reaches the listener, and the proxy is what limits them.
 15. **TLS** (in `tls` mode): the listener's certificate, the names it covers and when it
     expires, and where its key is (the `tls/` pair in the data directory, or the paths in
     `[tls]`); the key itself is never shown (S13.3).
 16. **Alerts** (S12.11): how long a source may fail before it raises an alert (48 hours
-    by default), and the time of the daily summary email (07:00 by default, in each user's
+    by default, 1 to 336), and the time of the daily summary email (07:00 by default, in each user's
     time zone).
 17. **Storage** (S14.10): the size of the database and of the receipts directory, files
     expired against the rest, the files no record names with **Remove** (S14.6), what

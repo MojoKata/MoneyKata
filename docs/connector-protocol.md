@@ -19,7 +19,7 @@ inside. Requirements S18 defines them in full.
 
 ```
  connector                                                  MoneyKata
-   |  GET  /connector/v1/hello                                 |  unsigned: {protocol, version, fingerprint}
+   |  GET  /connector/v1/hello                                 |  unsigned: {protocol, version, fingerprint, key}
    |---------------------------------------------------------->|
    |  POST /connector/v1/pair {code, sealingKey}               |  once; signed by the new identity key
    |---------------------------------------------------------->|
@@ -118,7 +118,7 @@ inside. Requirements S18 defines them in full.
 
 | Path | Signed | What it does |
 |---|---|---|
-| `GET /connector/v1/hello` | no | `{protocol, version, fingerprint}`: lets a connector check the fingerprint in a pairing code before it sends anything |
+| `GET /connector/v1/hello` | no | `{protocol, version, fingerprint, key}`, `key` being the link key's public half, whose SHA-256 is the fingerprint: lets a connector check the fingerprint in a pairing code before it sends anything |
 | `POST /connector/v1/pair` | by the connector's new identity key | introduces the connector with a pairing code (section 4.1) |
 | `POST /connector/v1/report` | yes | the connector's state every 5 minutes, answered with the work waiting (section 4.2) |
 | `POST /connector/v1/connections/{id}/credential/taken` | yes | the sealed credential was filed in the vault: MoneyKata deletes its copy (section 4.3) |
@@ -305,4 +305,13 @@ says when the call carried a nonce.
 | `account-not-synced` | the account's sync doesn't name this Connection |
 | `mapping-missing` | a CSV for an account with no saved mapping |
 | `file-refused` | the file's content isn't a type MoneyKata imports |
-| `limit` | the owner's upload limit; `Retry-After` says when to try again |
+| `limit` | the owner's upload limit; `Retry-After` says when to try again. Also the 60 calls a minute of section 3.4 |
+| `not-found` | (404) the Connection or account doesn't exist, or isn't this connector's |
+| `address-invalid` | a sign-in address that isn't `https` |
+| `too-large` | (413) a body over 1 MB of JSON, or a file over the upload size |
+| `locked` | (503, unsigned) MoneyKata is locked (S13.6); the connector tries again at its next report |
+
+The connector refuses on its own side, sending nothing further: `not-moneykata` (the address
+doesn't answer `hello` as MoneyKata), `fingerprint-mismatch` (the server's fingerprint isn't the
+code's or the pairing's), `answer-unsigned` (an answer without its signature) and
+`code-invalid` (not a pairing code, or a damaged one).

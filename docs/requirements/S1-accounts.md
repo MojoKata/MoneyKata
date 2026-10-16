@@ -31,7 +31,8 @@
       CSV, with a saved column mapping per institution; and brokers' and exchanges'
       trade-history CSVs. Imports are idempotent: a re-imported file adds only what is new,
       matched by the file's transaction id (an OFX file's `FITID`) or by date, amount and
-      payee;
+      payee. An OFX file holds one account's statement: one with several is refused, asking
+      for one account at a time;
    3. **statement import**: a **PDF statement**, read from its text layer, or a **photo or
       scan** of one, read with RapidOCR as receipts are (S9.8), all on the server. MoneyKata
       finds the statement's period, its transactions and its opening and closing balances,
@@ -114,8 +115,9 @@
             period's last day (S1.11), or a balance snapshot for an account kept by
             snapshots (R3.2). Being cash and holdings together, it is checked on the
             *Reconcile* tab against what the account was worth that day, at that day's
-            prices, within half a percent, apart from the cash anchors. An account kept by
-            snapshots is one kept from statements only, with no trades of its own.
+            prices, within half a percent or $1, whichever is more, apart from the cash
+            anchors. An account kept by snapshots is one kept from statements only, with no
+            trades of its own.
          2. **The positions** on the last day: symbol (or CUSIP, or a fund's name),
             quantity, price and market value, a row split over two lines read as one. They
             become a **holdings check** at that date: each is matched to what MoneyKata
@@ -163,16 +165,18 @@
          Mainnet only: a testnet key or address is refused.
       2. Each chain is derived until the gap limit (1 to 200) of addresses in a row past the
          last used one are unused; when the explorer or node finds one used, more are
-         derived. The account's Settings lists the addresses watched, by chain and index.
+         derived, at most ten rounds in one check, so a long-used wallet fills in over a few
+         hourly checks. The account's Settings lists the addresses watched, by chain and
+         index.
       3. Taking a key or address out of the list stops watching its addresses.
       4. **Descriptors**, as Sparrow, Nunchuk and Bitcoin Core export them: single-key
          `pkh()`, `sh(wpkh())`, `wpkh()` and `tr()` (taproot, BIP 86), and multisig
-         `wsh(sortedmulti(k, …))` and `wsh(multi(k, …))`, each key with its origin
-         (`[fingerprint/path]xpub…`) and a `/0/*` and `/1/*` or `/<0;1>/*` ending. The
-         descriptor's checksum is checked when it has one. A multisig wallet's addresses are
-         derived from all its keys, and only its public keys are ever held. Other forms
-         (`sh(wsh(…))`, a taproot descriptor with scripts) are refused, saying so. Miniscript
-         policies beyond these come after the first release (S17.9).
+         `wsh(sortedmulti(k, …))` and `wsh(multi(k, …))` of at most 15 keys, each key with
+         its origin (`[fingerprint/path]xpub…`) and a `/0/*` and `/1/*` or `/<0;1>/*`
+         ending. The descriptor's checksum is checked when it has one. A multisig wallet's
+         addresses are derived from all its keys, and only its public keys are ever held.
+         Other forms (`sh(wsh(…))`, a taproot descriptor with scripts) are refused, saying
+         so. Miniscript policies beyond these come after the first release (S17.9).
    2. **Where balances and history come from**, set by an admin in Settings › Bitcoin:
       1. a **public explorer** with the Esplora API (mempool.space by default, or
          Blockstream);
@@ -200,9 +204,10 @@
          lasting past the alert threshold alerts admins and each wallet's owner (S12.11); its
          message never names an address or an amount.
       6. **What is recorded**: each transaction once, by its txid, once it has **6
-         confirmations** (about an hour); until then it waits. Bitcoin received is a
-         **transfer in** of BTC without a basis, to be entered (Taxes lists it as missing)
-         unless it is matched to a transfer out of another of the owner's accounts (S1.7.1);
+         confirmations** (about an hour); until then it waits. A transaction its owner
+         deleted is not recorded again. Bitcoin received is a **transfer in** of BTC
+         without a basis, to be entered (Taxes lists it as missing) unless it is matched
+         to a transfer out of another of the owner's accounts (S1.7.1);
          bitcoin sent is a **transfer out** of what left for others, and its network fee a
          sale of the fee's sats at that day's price beside a fee of the same amount, so the
          cash is unchanged (S8.19); a fee recorded before bitcoin has a price is valued at the
@@ -225,7 +230,10 @@
       (`12,345,678 sats`);
       the conversion is only in how they are shown. A price is per bitcoin, in dollars.
 7. **Transfers** between two of a user's accounts are matched (same amount, a few days apart),
-   so they count neither as spending nor as income, nor as a buy or sell of cash.
+   so they count neither as spending nor as income, nor as a buy or sell of cash. Opposite
+   amounts of cash, not trades, in two of the owner's accounts within 4 days of each other
+   are linked as a transfer, the closest in date; when two are equally close, neither is,
+   and the owner links one by hand.
    1. **Bitcoin moved between the owner's accounts** (a wallet and an exchange, or two
       wallets): a transfer out and a transfer in of the same amount less the network fee,
       within 3 days, are **proposed** as a pair, on each account's Overview, and the owner
@@ -256,10 +264,13 @@
       reset, typed when known), the interest method (monthly amortization, or simple
       interest accrued daily, as most car loans use), the scheduled payment, and for a
       mortgage **escrow** (property tax, insurance) and **PMI**. A HELOC has a draw period
-      with interest-only payments, then a repayment period.
+      with interest-only payments, then a repayment period. The term is 1 to 600 months, and
+      the rate 0% to 40%.
    2. **The amortization schedule** is computed from the terms: each payment's interest,
       principal, escrow and remaining balance. It is recomputed when a payment differs
-      from the schedule, the rate resets, or the loan is **recast**.
+      from the schedule, the rate resets, or the loan is **recast**. Interest is rounded half
+      up to the cent, and a balance of less than $1 left by rounding goes with the last
+      payment.
    3. **Payments**: a payment transaction from a bank account (matched as a transfer, S1.7) is
       **split** into principal, interest, escrow, PMI and fees by the schedule. The user can
       correct a split from the servicer's statement. Principal beyond the schedule is

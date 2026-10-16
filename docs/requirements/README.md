@@ -70,7 +70,11 @@ A new gap takes the next id after G24.
 
 What waits on a decision ([questions.md](questions.md)), each ranked High, Med or Low.
 
-None open. A new question takes the next id after Q18.
+| Id | Question | Rank |
+|---|---|---|
+| **Q19** | [The requirements written from the code](questions.md#q19-the-requirements-written-from-the-code--med) | Med |
+
+A new question takes the next id after Q19.
 
 ## Later work
 

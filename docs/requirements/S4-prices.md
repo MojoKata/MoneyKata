@@ -37,9 +37,11 @@
 
 4. **Schedule**: once a day, after the US market close (6:00 PM Eastern by default), a
    background task loads the day's close for every **held or watched** instrument, and
-   backfills history when an instrument is first held. **Refresh prices** does the same on
-   demand. Requests are spread to stay inside each source's limits (Tiingo's 50 an hour
-   means a few hours for a large household). A source that fails falls back to the next one
+   backfills history when an instrument is first held, from a week before its first
+   transaction and at most five years back. SPY, VT and BND are always loaded, as the
+   benchmarks (S5.2.1). **Refresh prices** does the same on demand. Requests are spread to
+   stay inside each source's limits (Tiingo's 50 an hour means a few hours for a large
+   household). A source that fails falls back to the next one
    for that class; Settings shows the last error, and a failure lasting past the alert
    threshold raises an alert (S12.11). Intraday quotes are not fetched.
 5. **Option marks**: the day's close from the source that serves options, else manual or
