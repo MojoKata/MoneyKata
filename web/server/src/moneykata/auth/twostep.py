@@ -94,8 +94,10 @@ def _new_codes(s: Db, user: User) -> list[str]:
     s.execute(delete(RecoveryCode).where(RecoveryCode.userId == user.id))
     codes = []
     for _ in range(RECOVERY_CODES):
-        raw = "".join(secrets.choice(CODE_ALPHABET) for _ in range(10))
-        codes.append(f"{raw[:5]}-{raw[5:]}")
+        # 16 characters of a 31-letter alphabet: about 79 bits, enough that a hash of one
+        # cannot be searched (S10.1.6.2).
+        raw = "".join(secrets.choice(CODE_ALPHABET) for _ in range(16))
+        codes.append("-".join(raw[i : i + 4] for i in range(0, 16, 4)))
         s.add(RecoveryCode(codeHash=digest(_normal(raw)), userId=user.id, createdAt=clock.now()))
     s.flush()
     return codes

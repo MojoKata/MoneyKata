@@ -53,7 +53,8 @@ document is the protocol's statement; the code that speaks it is `web/server/src
 2. The receiver refuses, with the codes in section 7: a call without these headers, a time
    more than **60 seconds** from its own clock, a signature that doesn't verify, a nonce it
    has seen from that key in the last two minutes, and a key it has no link with or whose
-   link is not in a state that allows the call.
+   link is not in a state that allows the call. Both hosts therefore keep their clocks with
+   NTP; a `clock-skew` refusal is named as such on the link's state (S12.11.1.1).
 3. **Answers** are signed the same way: `MK-Link-Time` and `MK-Link-Signature` over
 
    ```
@@ -162,9 +163,10 @@ A change brings the receiver from its `have` to now:
    of 2 GB*). A part missed or out of turn makes the next exchange ask for everything.
 4. The receiver checks the signature and that `seq` follows its `have` (or that the change is
    `full`); otherwise it asks for everything at its next exchange. It keeps each item's id,
-   kind, owner's name, date and the people it names in its main database, and seals the
-   change whole into the link's copy (S11.9.5), where it is applied, its signature checked
-   again, once the copy is unlocked.
+   kind, owner's name, date and the people it names in its main database, never its `name`
+   or any figure, which go only into the sealed change, and seals the change whole into the
+   link's copy (S11.9.5), where it is applied, its signature checked again, once the copy is
+   unlocked.
 
 ## 5. Versions
 

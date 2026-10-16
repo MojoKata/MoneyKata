@@ -21,3 +21,11 @@ it is specified in its section and removed from here; its id is never used again
 - **Tradier** (official, free with an account): delayed chains.
 
 **Touches:** S4.3, S4.5, S18.
+
+## L3: Treasury yields and savings-bond rates
+
+**What it is:** a price source for Treasuries, I bonds and EE bonds from the Treasury's published
+yield curve and savings-bond rates (free official data), with its host named in the egress
+guard (S13.5). Until then they are priced by hand (S4.3), from TreasuryDirect's figures.
+
+**Touches:** S4.3, S13.5, S16.6.

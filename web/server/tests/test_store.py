@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 import os
 import re
 import shutil
@@ -514,8 +515,14 @@ def test_restore_refuses_a_changed_backup_or_one_from_a_newer_release(
     made = maintenance.backup(keyed_config, store)
     store.db.dispose()
     manifest = made / "manifest.json"
+    # A manifest rewritten by hand is refused as not the backup's own (S14.6)...
     head = f'"revision": "{migrate.head()}"'
     manifest.write_text(manifest.read_text().replace(head, '"revision": "9999"'))
+    with pytest.raises(RuntimeError, match="not the one its backup wrote"):
+        maintenance.verify_backup(keyed_config, master_key, made)
+    # ...and one a newer release wrote, signed by it, is refused for its revision.
+    m = json.loads(manifest.read_text())
+    maintenance.write_manifest(manifest, m, store.keys.data_key)
     with pytest.raises(RefuseStart, match="from a newer MoneyKata"):
         maintenance.restore(keyed_config, made, master_key)
     assert keyed_config.db_path.exists()  # nothing was moved

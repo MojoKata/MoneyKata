@@ -44,7 +44,11 @@ replica holds only the right-hand side, and the whole host can be backed up as i
    2. **The receipt files**: each in its own encrypted file (S9.2).
    3. **Secrets, each on its own as well**: every *secret* the server holds so it can act for
       its users: price-source API keys, the bitcoin node's credentials, the SMTP password,
-      and this server's private link key (S11.1).
+      this server's private link key (S11.1), and each user's two-step seed, a seed still
+      being set up included (S14.4). A credential sealed for the connector (S18.7.1) sits in
+      the database as a box only the connector opens. The Electrum server's certificate
+      fingerprint (S1.6.2.4) is not a secret, but its integrity matters, and the encrypted
+      database gives it that.
    4. **Backups**, which are copies of the encrypted database with its keyring (S14.6); the
       receipt files are in the host's own backup of the data directory, encrypted as they
       are.
@@ -91,20 +95,26 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       96-bit nonce. The **associated data** names where the secret belongs: record type, the
       record's stable id, and field. The secret's data key is then wrapped under the secrets
       key. The row stores the ciphertext, its nonce and the wrapped key.
-   4. **Using a secret**: only when a task needs it (a price refresh, a bitcoin wallet read, an email). The
-      server unwraps its data key, decrypts the value, uses it for that one call and discards
-      it. GCM authenticates every step, so a tampered ciphertext, a wrong key, or a ciphertext
-      copied onto another record or field fails to decrypt instead of producing a wrong value.
-      Secrets are encrypted on their own as well as inside the database, so that a database
-      opened for maintenance (S14.7) still shows no secret.
+   4. **Using a secret**: when a task needs it (a price refresh, a bitcoin wallet read, an
+      email, a two-step code checked), the server unwraps its data key, decrypts the value,
+      uses it for that call and discards it; the link key, which signs every link and
+      connector answer, is decrypted for each. GCM authenticates every step, so a tampered
+      ciphertext, a wrong key, or a ciphertext copied onto another record or field fails to
+      decrypt instead of producing a wrong value. Secrets are encrypted on their own as well
+      as inside the database, so that a database opened for maintenance (S14.7) shows no
+      secret in the clear. This is hygiene, not a boundary: the database key and the secrets
+      key both derive from the data key, so whoever can open the database can open every
+      secret with a few more lines; what the layer stops is a mistake, a query or an export
+      that prints a key by accident.
    5. **The master key id** is the first 16 hex digits of `SHA-256("moneykata key id" ‖ key)`.
       It identifies a key without revealing it. Its short form (`mk-3f9a…c21e`) is the
       **fingerprint** shown in Settings, on the recovery sheet and in the commands below. The
       wrapped data key records which master key wrapped it.
    6. **Why three levels**: rotating the master key re-wraps one 32-byte data key and nothing
-      else; the database and the files never need re-encrypting for it; and each secret still
-      stands or falls on its own, with associated data that stops anyone with write access to
-      the database from moving one user's API key onto a record they control.
+      else; the database and the files never need re-encrypting for it; the phrase need not
+      stay in memory (S15.4.3); and each secret still stands or falls on its own, with
+      associated data that keeps a ciphertext on the record and field it was made for, so a
+      copy pasted elsewhere, by a bug or a hand, fails rather than decrypts.
    7. **What a stolen copy gives away**: a copy of the data directory or a backup **without
       the master key** (the recovery phrase) reveals nothing but sizes and dates. With the
       phrase, it reveals everything in that copy. No key is on the host's disk, so a stolen
@@ -181,7 +191,10 @@ replica holds only the right-hand side, and the whole host can be backed up as i
    2. **Keep at least two copies in two places**, at least one of them offline. For example:
       1. the printed sheet in a fire-resistant safe at home or a bank safe-deposit box;
       2. a secure note in the household's password manager (Bitwarden, 1Password, KeePassXC),
-         in a vault that the second person below can also open;
+         in a vault that the second person below can also open. The same manager usually
+         holds the linked copies' words (S11.9.2) and the connector's (S18.3), so one breach
+         of it opens everything: give the phrase a vault of its own there, or let the printed
+         sheet be its first copy;
       3. optionally, a USB stick holding the export encrypted with a passphrase (`age -p` or
          `gpg -c`), stored apart from the first copy.
    3. **Never keep it with the database backups**: not in the same directory, on the same

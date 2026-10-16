@@ -102,7 +102,9 @@
       detail.
    9. **Logging**: no amounts, names of accounts or payees, secrets, tokens or passwords;
       user ids, record ids, routes and outcomes only (R3.8). Sign-ins, failures, lockouts and
-      every admin action are logged and recorded in Activity.
+      every admin action are logged and recorded in Activity. Statement logging (SQLAlchemy's
+      echo, a slow-query log) is never turned on: the database key travels in the `PRAGMA
+      key` statement, and a logged statement would hold it.
    10. **TLS** (in `tls` mode): TLS 1.2 and 1.3 only, with the server's default modern cipher
        suites; HTTP/2.
    11. **Supply chain**: Python dependencies pinned with hashes in `uv.lock`; the image built

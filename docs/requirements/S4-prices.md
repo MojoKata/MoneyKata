@@ -32,7 +32,7 @@
    | Silver, platinum and palladium spot | **SLV**, **PPLT** and **PALL** from CBOE (or Tiingo), divided by each fund's metal per share | free | the metal per share ships with the tax tables (S16.11) and is updated with them; within a fraction of a percent of spot |
    | Options | **CBOE delayed quotes** | none | the JSON behind cboe.com's quote pages: an underlying's whole chain in one answer, 15 minutes delayed, read after the close. Not an official API: CBOE offers it for personal, non-commercial use and may change it, so Settings says so |
    | Options, fallback | **Massive** (formerly Polygon.io), Basic plan | free | end-of-day prices and two years of history; 5 calls a minute, each page of a result counting as one |
-   | Treasuries, I bonds and EE bonds | computed | — | from the Treasury's published yield curve and savings-bond rates, which are free official data |
+   | Treasuries, I bonds and EE bonds | **manual** | — | a value typed from TreasuryDirect's published figures, with its date; a source for the Treasury's yield curve and savings-bond rates comes later (L3) |
    | No free ticker: 529 portfolios, 401(k) collective trusts, individual corporate and municipal bonds | **manual** | — | a value from a statement or an import, or a typed price, with its date. A statement value older than 90 days is marked stale and raises an alert (S12.11) |
 
 4. **Schedule**: once a day, after the US market close (6:00 PM Eastern by default), a

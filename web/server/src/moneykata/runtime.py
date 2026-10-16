@@ -200,6 +200,21 @@ def build(server: Server, master_key: bytes) -> None:
 
     apply_egress(server)
     take_host_events(server)
+    load_copy_folders(server)
+
+
+def load_copy_folders(server: Server) -> None:
+    """Each link's copy folder, by its random name (S11.9.1), for the copies' paths."""
+    from sqlalchemy import select
+
+    from .links import copy as linked
+    from .store.entities.links import Link
+
+    with server.db.read() as s:
+        for link_id, name in s.execute(
+            select(Link.id, Link.copyFolder).where(Link.copyFolder.is_not(None))
+        ):
+            linked.NAMES[link_id] = name
 
 
 def take_host_events(server: Server) -> int:

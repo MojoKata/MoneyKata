@@ -335,7 +335,11 @@ def exchange(srv, link_id: str) -> None:
                     activity.record(s, "link.ended-by-peer", actor=None, for_admins=True)
                 ended = True
             else:
-                link.lastError = e.message
+                # A clock more than a minute off is named as such (S12.11.1.1): the fix is
+                # NTP on one host, not the network.
+                link.lastError = (
+                    f"the clocks disagree: {e.message}" if e.code == "clock-skew" else e.message
+                )
                 link.failingSince = link.failingSince or clock.now()
                 ended = False
         if ended:

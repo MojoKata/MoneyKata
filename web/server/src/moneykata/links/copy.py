@@ -58,8 +58,20 @@ def public_of(copy_key: bytes) -> str:
     return b64(pub)
 
 
+# Each link's copy lives in a folder with a random name, never the link's id, which would
+# date the link on disk (schema.md §2.5). The names come from the Link rows at unlock and from
+# `Copies.create`, which makes them; a link with no name yet falls back to its id.
+NAMES: dict[str, str] = {}
+
+
 def folder(data_dir: Path, link_id: str) -> Path:
-    return data_dir / "links" / link_id
+    return data_dir / "links" / NAMES.get(link_id, link_id)
+
+
+def new_name() -> str:
+    import secrets
+
+    return secrets.token_hex(12)
 
 
 def new_key() -> tuple[bytes, list[str]]:
@@ -144,16 +156,18 @@ class Copies:
         self.open[link_id] = o
         return o
 
-    def create(self, data_dir: Path, link_id: str, user_id: str, at) -> tuple[str, list[str]]:
-        """A new copy key: the copy made empty, then locked, since its maker may not be someone
-        its shares name. Returns its public key and the words, shown once."""
+    def create(self, data_dir: Path, link_id: str, user_id: str, at) -> tuple[str, list[str], str]:
+        """A new copy key: the copy made empty, in a folder with a new random name, then
+        locked, since its maker may not be someone its shares name. Returns its public key,
+        the words, shown once, and the folder's name, for the Link row."""
         key, words = new_key()
         with self.lock:
             self.release(link_id)
             shutil.rmtree(folder(data_dir, link_id), ignore_errors=True)
+            NAMES[link_id] = new_name()
             self._open(data_dir, link_id, key, user_id, at)
             self.release(link_id)
-        return public_of(key), words
+        return public_of(key), words, NAMES[link_id]
 
     def get(self, link_id: str, for_person: bool = True) -> Open | None:
         with self.lock:

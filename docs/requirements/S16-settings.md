@@ -64,8 +64,11 @@ follows Backups, and Connector (18), which follows Linked servers:
 14. **Network**: the address ranges allowed to reach each path, one list per line, empty for
     any: **the app** (`/ui`, and `/mcp` with it: an agent sits where a person's browser does,
     and its token is already the user's); **linked servers** (`/link`); and **the connector**
-    (`/connector`, S18), the LAN and the overlay by default, so a connector on a laptop away
-    from home (S18.1) needs an admin to widen it. `/healthz` and `/demo` answer any address.
+    (`/connector`, S18), by default the private ranges and the overlays' (`127.0.0.0/8`,
+    `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10` for Tailscale, `::1`,
+    `fc00::/7`), so a connector on a laptop away from home (S18.1) needs an admin to widen
+    it. The address checked is the client's as the trusted proxy forwards it (S13.3).
+    `/healthz` and `/demo` answer any address.
 15. **TLS** (in `tls` mode): the listener's certificate, the names it covers and when it
     expires, and where its key is (the `tls/` pair in the data directory, or the paths in
     `[tls]`); the key itself is never shown (S13.3).

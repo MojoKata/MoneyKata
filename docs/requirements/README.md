@@ -80,6 +80,7 @@ Work planned for after the first release ([later.md](later.md), S17.9.9).
 |---|---|---|
 | **L1** | [Reading a brokerage statement's trades](later.md#l1-reading-a-brokerage-statements-trades) | buys and sells, options activity and corporate actions on a brokerage statement; until then each is offered to the trade dialog |
 | **L2** | [Other option price sources](later.md#l2-other-option-price-sources) | Schwab Trader API through a connector driver, MarketData.app, Massive with a live key, Tradier |
+| **L3** | [Treasury yields and savings-bond rates](later.md#l3-treasury-yields-and-savings-bond-rates) | a price source for Treasuries, I bonds and EE bonds from the Treasury's published data; until then they are priced by hand |
 
 ## Also here
 
@@ -264,8 +265,9 @@ The rulings the rest of the requirements apply.
 # R3. Design principles
 
 1. **One server, on the household's own LAN.** All data stays on hardware its users control.
-   The only outbound calls are to price sources, the bitcoin explorer or node, and linked
-   servers that a user or admin set up, and each is visible in Settings (S16).
+   The only outbound calls are to price sources, the bitcoin explorer or node, the SMTP
+   server, and linked servers that a user or admin set up, and each is visible in Settings
+   (S16).
 2. **The ledger is the truth.** Holdings, balances, positions, gains and charts are derived
    from transactions and lots. A **balance snapshot** may stand in for history where none is
    available, such as an opening balance or a 401(k) statement, and it is marked as such.

@@ -269,7 +269,7 @@ def backup(config: Config, store: Store, now: dt.datetime | None = None) -> Path
         "revision": migrate.current(store.db.engine),
         "files": files,
     }
-    (part / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    write_manifest(part / "manifest.json", manifest, store.keys.data_key)
     final = config.backup_dir / name
     os.replace(part, final)
     log.info("backup %s made and verified", name)
@@ -294,14 +294,37 @@ def prune(config: Config, keep: int) -> list[Path]:
     return gone
 
 
+def manifest_mac(manifest: dict, data_key: bytes) -> str:
+    """The manifest's authentication code (S14.6): HMAC-SHA256 under a key derived from the
+    data key, over everything but the code itself, so a backup swapped for an older one, or a
+    manifest rewritten to match a changed file, is caught by whoever holds the phrase."""
+    import hmac
+
+    body = json.dumps({k: v for k, v in manifest.items() if k != "mac"}, sort_keys=True)
+    return hmac.new(
+        master.hkdf(data_key, "moneykata backup manifest"), body.encode(), hashlib.sha256
+    ).hexdigest()
+
+
+def write_manifest(path: Path, manifest: dict, data_key: bytes) -> None:
+    manifest = {k: v for k, v in manifest.items() if k != "mac"}
+    manifest["mac"] = manifest_mac(manifest, data_key)
+    path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+
 def check_backup(path: Path, master_key: bytes) -> None:
-    """A backup is whole and opens with this master key: the restore a check rehearses."""
+    """A backup is whole, its manifest is its own, and it opens with this master key: the
+    restore a check rehearses."""
     manifest = json.loads((path / "manifest.json").read_text())
     for rel, meta in manifest["files"].items():
         if _sha256(path / rel) != meta["sha256"]:
             raise RuntimeError(f"{rel} in {path.name} has changed since the backup")
     ring = master.read_keyring(path / "keyring")
     data_key = master.unwrap(master_key, ring)
+    import hmac
+
+    if not hmac.compare_digest(manifest.get("mac", ""), manifest_mac(manifest, data_key)):
+        raise RuntimeError(f"the manifest of {path.name} is not the one its backup wrote")
     # Opened from a scratch copy: opening sets the journal mode, which rewrites the file's
     # header, and the backup must stay as its manifest describes it.
     with tempfile.TemporaryDirectory() as tmp:

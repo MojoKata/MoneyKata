@@ -34,14 +34,14 @@
    places, enough for wei), through a small SQLAlchemy column type. JSON carries both as exact
    numbers (S13.8.2). Python uses `decimal.Decimal` with a context of 34 digits and rounds
    `HALF_EVEN` except where a tax rule says otherwise. No amount passes through a float.
-4. **Secrets** (price-source keys, the bitcoin node's credentials, the SMTP password, link
-   private keys, two-step sign-in seeds) are encrypted each on its own with AES-256-GCM under a data
-   key of their own, wrapped under a key derived from the master key, with associated data
-   naming the record
-   and field, so a ciphertext copied onto another record fails to decrypt (S15.3). Secrets are
-   decrypted only when used, never logged, and never sent back to the browser: the UI shows
-   a stored secret as *set*, with when and by whom. Passwords, two-step recovery codes, and session,
-   reset and invitation tokens are stored as hashes.
+4. **Secrets** (price-source keys, the bitcoin node's credentials, the SMTP password, the
+   link private key, two-step sign-in seeds, a seed being set up) are encrypted each on its
+   own with AES-256-GCM under a data key of their own, wrapped under the **secrets key**,
+   which derives from the data key (S15.3.3), with associated data naming the record and
+   field, so a ciphertext copied onto another record fails to decrypt. Secrets are decrypted
+   when used, never logged, and never sent back to the browser: the UI shows a stored secret
+   as *set*, with when and by whom. Passwords, two-step recovery codes, and session, reset
+   and invitation tokens are stored as hashes.
 5. **The master key**: 128 random bits that exist only as a 12-word recovery phrase, in the
    admin's keeping, and in the server's memory while it unwraps the data key at each start.
    It is never stored: not on the host, not in the database, not in a backup. S15 covers how
@@ -58,7 +58,10 @@
    a re-encryption runs (S15.7.2), and prunes the oldest beyond the number kept (**backup
    pruning**). `moneykata db backup` makes one at once, and `moneykata db verify-backup`
    checks one (the newest by default) without changing it: every file against the
-   manifest's hashes, and that it opens with the phrase typed, which may be a previous one.
+   manifest's hashes, the manifest against its own authentication code (HMAC-SHA256 under a
+   key derived from the backup's data key, so a backup swapped for an older one or a
+   manifest rewritten to match a changed file is caught by whoever holds the phrase), and
+   that it opens with the phrase typed, which may be a previous one.
    Each backup carries its own keyring, so it opens with the phrase of its day, and a
    rotation re-wraps it (S15.7.1). A restore (S15.6.8) puts the database and keyring back,
    leaves the receipt files where they are, and sets the linked copies aside to be pulled
@@ -66,7 +69,9 @@
    Storage, with **Remove** (S16.17). The restore is documented, and tested by a check.
 7. **Financial data at rest** is encrypted with the rest of the database (S15.1). Ordinary
    SQLite tools can't read it. `moneykata db shell` opens it on the host, with the recovery
-   phrase typed.
+   phrase typed; that it was opened, like every `db` and `keys` command run on the host, is
+   queued in the data directory and recorded in Activity for admins at the next unlock or
+   within a quarter of an hour (S15.4.7).
 8. **Export**: a user can export their own data (accounts, transactions, lots, receipts) as a
    ZIP of CSVs and files, at any time. This is the way out, and the backup a single user can
    keep.

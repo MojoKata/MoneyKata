@@ -163,7 +163,9 @@
     1. **What raises one**:
        1. **for admins**: a source that has failed for longer than the threshold in Settings
           › Alerts (48 hours by default): the bitcoin explorer or node, a price source, email
-          that can't be sent, or a linked server's pulls; a backup that failed;
+          that can't be sent, or a linked server's pulls (a pull refused for a clock more
+          than a minute off says *the clocks disagree*, which NTP on one host fixes); a
+          backup that failed;
           a link's first share waiting for its access key (S11.9.2); the MoneyKata Connector
           locked, or not heard from for 15 minutes (S18.5); and the yearly check of
           the master key's recovery phrase (S15.6.5), due a year after the phrase was last

@@ -31,7 +31,9 @@
          accepted twice. Its seed is a secret (S14.4).
       2. **Turning it on**, in Profile: a QR code and the same key as text, then a code from
          the app to confirm it, and only then is it on. The ten **recovery codes** follow,
-         shown once, to copy or download; only their hashes are kept. Profile shows how many
+         shown once, to copy or download: each 16 characters of a 31-letter alphabet (about
+         79 bits, so a hash of one cannot be searched), written in four groups of four, and
+         taken with any case or spacing; only their hashes are kept. Profile shows how many
          are left, warns at three, and **New recovery codes** replaces them all.
       3. **Signing in**: a right password leads to the code, through a token that lasts
          five minutes; no session exists until the code is right. A recovery code is taken
@@ -51,8 +53,9 @@
    8. **Groups**: admins make named groups of users. Being an admin is membership of the
       built-in **Admins** group. The last active admin cannot be removed or deactivated.
    9. **Emails** (plain text): invitation, sign-up confirmation and decision, reset,
-      email-change confirmation, password changed, two-step turned on or off, reactivated,
-      and alerts (S12.11).
+      email-change confirmation (to the new address) and notice (to the old one, once the
+      change took effect, so a change the person didn't make is noticed), password changed,
+      two-step turned on or off, reactivated, and alerts (S12.11).
       In dev mode they are written to a folder (S17.7).
 2. **Admins are not superusers of money.** An admin manages users, groups and Settings, and
    sees only the accounts and portfolios shared with them. Users are not deleted: a user

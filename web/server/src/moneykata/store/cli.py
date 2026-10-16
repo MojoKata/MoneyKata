@@ -26,14 +26,16 @@ def register(sub) -> None:
 
 
 def _shell(args) -> int:
-    from .maintenance import shell
+    from .maintenance import queue_host_event, shell
 
-    return shell(load(Path(args.config)), read_phrase())
+    config = load(Path(args.config))
+    queue_host_event(config, "db.shell", {})
+    return shell(config, read_phrase())
 
 
 def _backup(args) -> int:
     from .. import settings
-    from .maintenance import backup, open_store, prune
+    from .maintenance import backup, open_store, prune, queue_host_event
 
     config = load(Path(args.config))
     store = open_store(config, read_phrase())
@@ -41,24 +43,27 @@ def _backup(args) -> int:
     with store.db.read() as s:
         keep = settings.get(s, "backupCopies")
     prune(config, keep)
+    queue_host_event(config, "db.backup", {"name": path.name})
     print(path)
     return 0
 
 
 def _verify_backup(args) -> int:
-    from .maintenance import verify_backup
+    from .maintenance import queue_host_event, verify_backup
 
-    path = verify_backup(
-        load(Path(args.config)), read_phrase(), Path(args.path) if args.path else None
-    )
+    config = load(Path(args.config))
+    path = verify_backup(config, read_phrase(), Path(args.path) if args.path else None)
+    queue_host_event(config, "db.verify-backup", {"name": path.name})
     print(f"{path.name}: whole, and opens with that phrase")
     return 0
 
 
 def _restore(args) -> int:
-    from .maintenance import restore
+    from .maintenance import queue_host_event, restore
 
-    aside = restore(load(Path(args.config)), Path(args.path), read_phrase())
+    config = load(Path(args.config))
+    aside = restore(config, Path(args.path), read_phrase())
+    queue_host_event(config, "db.restore", {"name": Path(args.path).name, "aside": aside.name})
     print(f"restored {Path(args.path).name}; what it replaced is in {aside}")
     print("start the server and unlock it: it opens the restored database, migrating it if needed")
     return 0

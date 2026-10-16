@@ -15,8 +15,11 @@ preparer.
    3. Each server then holds the other's **Ed25519 public key**. Every call between them is
       signed with the sender's key over the method, path, body hash, a timestamp and a
       nonce. The receiver refuses a bad signature, a timestamp more than 60 seconds off, and a
-      nonce it has seen. No shared secret ever crosses. The protocol is specified in
-      `docs/link-protocol.md`.
+      nonce it has seen; a refusal for the clock is named as such on the link, since the fix
+      is NTP on one host, not the network (S12.11.1.1). The code's one-time secret crosses
+      once, in the join; what makes the link is the key each side records and the
+      fingerprint the admins compare, and no secret is shared after that. The protocol is
+      specified in `docs/link-protocol.md`.
 2. **Reachability**: links are HTTPS between the servers' **link addresses**: the path
    `/link/` on the server's own address, with no port or address of its own, which a reverse
    proxy can expose apart from `/ui` (`docs/operations.md` shows how). Two LANs need one of:
@@ -103,7 +106,7 @@ preparer.
       directory, `links/<link-id>/`, never in the main database:
 
       ```
-      links/<link-id>/
+      links/<random name>/        named at random, never by the link's id (schema.md §2.5)
         shared.db                 SQLCipher: accounts, holdings, positions, transactions,
                                   series, budgets, gift plans and gifts, giving plans, tax
                                   books, receipt records, the text read from receipts,
@@ -114,9 +117,10 @@ preparer.
 
       The main database holds only what is needed while the copy is locked: the link, the
       shared items' ids, kinds, owner's display name and the people they name (not their
-      names or values), the household's name and avatar, the copy's public key, and the
-      inbox's length and newest `as_of`. File names are random, so the folder shows
-      no names, payees or dates.
+      names or values), the household's name and avatar, the copy's public key, the copy's
+      folder name, and the inbox's length and newest `as_of`. File and folder names are
+      random, so the folder shows no names, payees or dates, and not even when the link was
+      made.
    2. **The access key.** Each linked copy has a random 128-bit **copy key**, shown once as
       **12 words** from the BIP39 English word list (the last word carries a checksum). The
       words are the copy's **access key**.

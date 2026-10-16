@@ -395,7 +395,7 @@ def email_change_confirm(body: Token, request: Request):
     srv = server(request)
     _throttle(request)
     with srv.db.tx() as s:
-        accounts.confirm_email_change(s, body.token)
+        accounts.confirm_email_change(s, body.token, server(request).services)
     return Response(status_code=204)
 
 

@@ -274,6 +274,8 @@ told to use) or a sealed secret in the database (then the listener must read it 
 database is open, which the start order must allow). Decide and write it into S13.3 and
 S15.1.
 
+**Done:** S9.8.4.2 says the file reaches the worker over a pipe, which is what the code does.
+
 ### F11 (Low–Med): receipt plaintext and the reader worker
 
 S9.8.4.2 runs OCR "in a separate worker process", restarted after a crash or a timeout. The
@@ -282,6 +284,10 @@ never touches the disk" for a *linked* receipt only. State that own receipts are
 the worker over a pipe or shared memory, never a temporary file, and that a killed worker
 leaves nothing behind; or, if a temporary file is unavoidable for pypdfium2, that it is in a
 private tmpfs and wiped.
+
+**Done:** 1 is moot (no phrase command exists; host commands queue for Activity), 2 and 4 are
+moot (no config entry, no key file), 3 is written into S13.7.9, 5 lengthens the codes, 6 is in
+S15.6.2, 7 and 9 are reworded, 8 signs manifests, 10 locks the address.
 
 ### F12 (Low): smaller secret-handling points
 
@@ -321,6 +327,9 @@ private tmpfs and wiped.
 
 ## 3. Conflicts between sections
 
+**Done:** every row below is resolved in the sections named, except that C14 is resolved by
+queuing host commands for Activity with no "who", which S15.4.7 says.
+
 | Id | Where | Conflict |
 |---|---|---|
 | C1 | S9.8.5 vs S11.5.1, `link-protocol.md` §4.4 | S9.8.5: the text read from a receipt "never cross[es] a link". S11.5.1: with Include receipts, receipts "travel with … the text read from them, so the receiving side never runs OCR". The protocol's `files` carry "what was read from them". S11 is the intended behaviour; fix S9.8.5. |
@@ -339,6 +348,10 @@ private tmpfs and wiped.
 | C14 | S15.6.5 vs `keys verify` | Settings records "who" confirmed the phrase, but `keys verify` runs in a one-off container with no signed-in user. Say what "who" is (the host account, or a name typed). |
 
 ## 4. Candidate gaps (not yet in `gaps.md`)
+
+**Done:** 1 to 8 by parts 1 to 3; 9 (clocks) in S11.1.3, the protocols and operations; 10 rejected;
+11 in S9.8.4; 12 as later work L3; 13 in S16.14; 14 by the notice to the old address (a
+new-browser notice needs sessions to keep an address, left out); 15 by the host events; 16 moot.
 
 Each would take the next free G id when recorded. Ranked as `gaps.md` ranks.
 

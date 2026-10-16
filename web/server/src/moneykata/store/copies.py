@@ -138,32 +138,42 @@ def remove(c: Copy) -> None:
         shutil.rmtree(c.path)
 
 
-def _write_ring(c: Copy, ring: master.Keyring) -> None:
+def _write_ring(c: Copy, ring: master.Keyring, data_key: bytes) -> None:
     master.write_keyring(c.keyring, ring)
     if c.kind == "backup":
-        _refresh_manifest(c, ring)
+        _refresh_manifest(c, ring, data_key)
 
 
-def _refresh_manifest(c: Copy, ring: master.Keyring) -> None:
-    """A backup's manifest names its keyring's hash and master key: kept true (S14.6)."""
+def _refresh_manifest(c: Copy, ring: master.Keyring, data_key: bytes) -> None:
+    """A backup's manifest names its files' hashes and its master key, signed under its data
+    key: kept true after a re-wrap or a rewrite (S14.6)."""
     import hashlib
+
+    from .maintenance import write_manifest
 
     p = c.path / "manifest.json"
     try:
         m = json.loads(p.read_text())
     except OSError, ValueError:
         return
-    h = hashlib.sha256(c.keyring.read_bytes()).hexdigest()
-    m.setdefault("files", {})["keyring"] = {"bytes": c.keyring.stat().st_size, "sha256": h}
+    files = m.setdefault("files", {})
+    for name in ("keyring", "moneykata.db"):
+        f = c.path / name
+        if f.exists():
+            h = hashlib.sha256()
+            with open(f, "rb") as fh:
+                for chunk in iter(lambda: fh.read(1 << 20), b""):
+                    h.update(chunk)
+            files[name] = {"bytes": f.stat().st_size, "sha256": h.hexdigest()}
     m["masterKey"] = master.fingerprint(ring.master_id)
-    p.write_text(json.dumps(m, indent=2) + "\n")
+    write_manifest(p, m, data_key)
 
 
 def rewrap(c: Copy, data_key: bytes, new_master: bytes, at: dt.datetime) -> None:
     """Re-wrap a copy's keyring under a new master key, with the data key it holds known
     (S15.7.1): the data key the server holds, or one unwrapped with the old phrase."""
     assert c.ring is not None
-    _write_ring(c, master.rotated(c.ring, data_key, new_master, at))
+    _write_ring(c, master.rotated(c.ring, data_key, new_master, at), data_key)
 
 
 def data_key_of(c: Copy, master_key: bytes) -> bytes:
@@ -195,29 +205,7 @@ def reencrypt(c: Copy, master_key: bytes, new_data_key: bytes) -> None:
     ring = master.wrap(
         master_key, new_data_key, c.ring.master_created, master.now(), c.ring.previous
     )
-    _write_ring(c, ring)
-    if c.kind == "backup":
-        _refresh_db_hash(c)
-
-
-def _refresh_db_hash(c: Copy) -> None:
-    import hashlib
-
-    p = c.path / "manifest.json"
-    try:
-        m = json.loads(p.read_text())
-    except OSError, ValueError:
-        return
-    db = c.path / "moneykata.db"
-    h = hashlib.sha256()
-    with open(db, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    m.setdefault("files", {})["moneykata.db"] = {
-        "bytes": db.stat().st_size,
-        "sha256": h.hexdigest(),
-    }
-    p.write_text(json.dumps(m, indent=2) + "\n")
+    _write_ring(c, ring, new_data_key)
 
 
 def can_open(c: Copy, master_key: bytes) -> bool:

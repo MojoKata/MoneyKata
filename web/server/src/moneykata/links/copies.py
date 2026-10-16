@@ -36,10 +36,11 @@ def make_key(srv, link_id: str, by: str) -> list[str]:
             raise CopyError(
                 "key-exists", "This copy has its access key. Reset copy makes a new one."
             )
-    public, words = srv.copies.create(srv.config.data_dir, link_id, by, clock.now())
+    public, words, name = srv.copies.create(srv.config.data_dir, link_id, by, clock.now())
     with srv.db.tx() as s:
         link = _link(s, link_id)
         link.copyPublicKey, link.copyKeyAt, link.copyKeyById = public, clock.now(), by
+        link.copyFolder = name
         link.needsFull = True  # pulls into the copy begin now, with everything
         activity.record(s, "link.copy-key-made", actor=by, for_admins=True)
     return words

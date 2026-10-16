@@ -144,6 +144,9 @@ newer one has migrated: it says so in a `refusing to start:` line (§5.1).
 
 ## 5. Watching it
 
+- **Clocks**: keep the host's clock with NTP (as the connector's host and every linked
+  household do): signed calls between servers and from the connector are refused when the
+  clocks differ by more than a minute, and two-step codes drift with them.
 - **Health**: the image checks itself every 30 seconds (`moneykata health`, which asks
   `/healthz`). `docker compose ps` shows `starting`, `healthy` or `unhealthy`. From outside,
   point an uptime monitor (Uptime Kuma, for example) at `https://<your address>/healthz`: it

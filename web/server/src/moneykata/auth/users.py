@@ -508,14 +508,29 @@ def request_email_change(s: Db, svc: Services, user: User, email: str) -> None:
     )
 
 
-def confirm_email_change(s: Db, token: str) -> User:
+def confirm_email_change(s: Db, token: str, svc: Services | None = None) -> User:
     row = _take(s, token, "email-change")
     user = s.get(User, row.userId)
     if user is None or user.deleted or not user.active:
         raise Problem(404, "link-not-valid", "This link has expired or was already used.")
     _raise(_email_problems(s, row.data or "", user.id))
     s.delete(row)
+    old = user.email
     user.email = row.data
+    if svc is not None and old and old != user.email:
+        # The old address is told (S10.1.9), so a change the person didn't make is noticed.
+        svc.mailer.send(
+            s,
+            Email(
+                old,
+                "Your MoneyKata email address was changed",
+                (
+                    f"Hello {user.displayName},\n\nThe email address for {user.username} on "
+                    f"MoneyKata is now {user.email}. This address no longer receives its "
+                    "emails.\n\nIf you did not make this change, tell an admin at once.\n"
+                ),
+            ),
+        )
     activity.record(
         s,
         "user.email-changed",

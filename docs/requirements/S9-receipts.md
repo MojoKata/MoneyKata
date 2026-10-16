@@ -83,7 +83,10 @@
       1. an upload queues the receipt and answers at once; the receipt shows *Reading…* until
          the job finishes, and the live-updates stream (S12.6) refreshes it;
       2. jobs run **one at a time** (a Setting, 1 by default) in a **separate worker
-         process** with ONNX Runtime limited to 2 threads, a lower CPU priority, a memory cap
+         process**, which gets the decrypted file over a pipe from the server and answers
+         with the lines it read: no temporary file, nothing of the receipt on disk in the
+         clear, and nothing left behind when the worker is killed. ONNX Runtime is limited
+         to 2 threads, a lower CPU priority, a memory cap
          (1.5 GB resident, watched from the server: an address-space limit can't be used,
          since ONNX Runtime and OpenCV map far more than they touch) and a 60-second limit
          per receipt. The worker is restarted after a crash or
@@ -98,8 +101,9 @@
    5. **Stored**: the full text in the database, indexed with SQLite **FTS5**, so the Receipts
       screen searches it (`blue bottle`, `142.18`). Beside it: the suggested fields with their
       confidences, the method (text layer or OCR), and the engine and model versions. Text and
-      fields follow the receipt's sharing (S9.6), never cross a link, and are never written
-      to Activity or the log.
+      fields follow the receipt's sharing (S9.6), cross a link only with the receipt itself,
+      when its share includes receipts (S11.5.1), and are never written to Activity or the
+      log.
    6. **Re-reading**: a receipt's **Read again** button, and in Settings › Receipts **Re-read
       all receipts** (after a model update), queue the jobs again. Only empty or
       OCR-suggested fields are replaced.
