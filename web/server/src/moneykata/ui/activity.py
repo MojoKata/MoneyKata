@@ -118,6 +118,7 @@ TEXT = {
     "link.copy-unlock-failed": "{actor} gave wrong words for a linked copy",
     "link.copy-locked": "{actor} locked a linked copy ({why})",
     "link.copy-reset": "{actor} reset a linked copy",
+    "link.certificate-accepted": "{actor} accepted a linked server's new certificate",
     "mcp.called": "{actor}'s access token {name} read {tool}",
     "wallet.changed": "{actor} changed the keys and addresses {subject} watches",
     "option.settled": "{actor} recorded an option's expiry, assignment or exercise in {subject}",

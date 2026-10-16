@@ -9017,6 +9017,17 @@
             ],
             "title": "Address"
           },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
           "fingerprint": {
             "title": "Fingerprint",
             "type": "string"
@@ -22500,6 +22511,40 @@
             ],
             "title": "Address"
           },
+          "brokenAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brokenat"
+          },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
+          "certificateOffered": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificateoffered"
+          },
           "codeExpiresAt": {
             "anyOf": [
               {
@@ -34204,6 +34249,49 @@
           }
         },
         "summary": "Join",
+        "tags": [
+          "links"
+        ]
+      }
+    },
+    "/ui/api/settings/links/{link_id}/accept-certificate": {
+      "post": {
+        "description": "The certificate the peer presented unannounced, accepted once its fingerprint has been\ncompared with the peer's admin (link-protocol.md §4.5): the password again (S13.7.2).",
+        "operationId": "accept_certificate_ui_api_settings_links__link_id__accept_certificate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Certificate",
         "tags": [
           "links"
         ]

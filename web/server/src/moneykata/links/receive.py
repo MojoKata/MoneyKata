@@ -1,7 +1,8 @@
 """What this server takes from a linked server (requirements S11.3, S11.4, S11.9): a signed
 change, checked, its registry kept in the main database (each item's kind, owner, when it was
-shared and the people here it names, never its name or figures), and the change itself sealed
-into the copy's inbox."""
+shared and the people here it names, never its name or figures), and its sealed part, which
+only the copy's key opens, kept in the copy's inbox as it came, with the receipts it sends,
+sealed by their source."""
 
 import datetime as dt
 import json
@@ -15,8 +16,10 @@ from . import changes
 from .keys import unb64
 
 
-def take(srv, link_id: str, change: dict) -> None:
-    """Take a change from the peer. Out of sequence, the next exchange asks for everything."""
+def take(srv, link_id: str, change: dict, delivered: dict[str, str] | None = None) -> None:
+    """Take a change from the peer. Out of sequence, the next exchange asks for everything.
+    `delivered`: the receipts the peer sent with it (their ids and the names they were kept
+    under); any other it names is fetched."""
     with srv.db.read() as s:
         link = s.get(Link, link_id)
         peer, got = unb64(link.peerKey), link.gotSeq
@@ -27,7 +30,9 @@ def take(srv, link_id: str, change: dict) -> None:
         with srv.db.tx() as s:
             s.get(Link, link_id).needsFull = True
         return
-    names, types = fetch_files(srv, link_id, change)
+    names = dict(delivered or {})
+    missing = [f for f in change.get("fetch") or [] if f not in names]
+    names |= fetch_files(srv, link_id, missing)
     with srv.db.tx() as s:
         link = s.get(Link, link_id)
         local = set(s.scalars(select(User.id).where(User.linkId.is_(None))))
@@ -81,7 +86,7 @@ def take(srv, link_id: str, change: dict) -> None:
             for_admins=True,
             detail={"count": len(change.get("items") or []) + len(change.get("removed") or [])},
         )
-    changes.enqueue(srv, link_id, change, {"fileNames": names, "fileTypes": types})
+    changes.enqueue(srv, link_id, change, {"fileNames": names})
 
 
 def forget(srv, link_id: str) -> None:
@@ -99,58 +104,53 @@ def forget(srv, link_id: str) -> None:
             link.copyPublicKey = link.copyKeyAt = link.copyKeyById = None
 
 
-def fetch_files(srv, link_id: str, change: dict) -> tuple[dict[str, str], dict[str, str]]:
-    """The receipts a change names, streamed from the source and sealed straight into the copy
-    under random names as they arrive (S11.9.5.2, S11.9.6), each checked against the source's
-    signature and the hash the change carries, and its type found from its first bytes, never
-    taken from the change (S11.9.6.5). Nothing is fetched for a copy without its access key: it
-    asks for everything once it has one. Returns each file's name and its type."""
+def fetch_files(srv, link_id: str, file_ids: list[str]) -> dict[str, str]:
+    """The receipts a change names, fetched from the source sealed to this side's copy key and
+    kept as they came, under random names (S11.9.5.2, S11.9.6), each checked against the
+    source's signature over the sealed bytes; what they hold is checked against the change's
+    hash when they are shown. Nothing is fetched for a copy without its access key: it asks
+    for everything once it has one. Returns each file's name."""
     import secrets
 
-    from . import client, sealed
+    from . import client, manage, sealed
     from .copy import folder
 
-    files = change.get("files") or []
     with srv.db.read() as s:
         link = s.get(Link, link_id)
-        public = unb64(link.copyPublicKey) if link.copyPublicKey else None
-        address, peer = link.address, unb64(link.peerKey)
-    if not files or public is None:
-        return {}, {}
+        has_key = bool(link.copyPublicKey)
+        address, peer, pins = link.address, unb64(link.peerKey), manage.pins(link)
+    if not file_ids or not has_key:
+        return {}
     d = folder(srv.config.data_dir, link_id) / "receipts"
     d.mkdir(parents=True, exist_ok=True)
     names: dict[str, str] = {}
-    types: dict[str, str] = {}
-    for f in files:
+    for fid in file_ids:
         name = secrets.token_hex(12) + ".mkr"
         digest: list[str] = []
-        stream = _typed(client.iter_file(srv, address, peer, f["id"], digest), types, f["id"])
+        stream = client.iter_file(srv, address, peer, fid, digest, pins)
         try:
-            sealed.write(d / name, sealed.seal(public, sealed.RECEIPT, link_id, f["id"], stream))
+            sealed.write(d / name, stream)
         except BaseException:
             (d / name).unlink(missing_ok=True)
             (d / (name + ".tmp")).unlink(missing_ok=True)
             raise
-        if not digest or digest[0] != f.get("sha256"):
+        if not digest:
             (d / name).unlink(missing_ok=True)
-            raise changes.ChangeError(f"receipt {f['id']} doesn't match its hash")
-        names[f["id"]] = name
-    return names, types
+            raise changes.ChangeError(f"receipt {fid} came unsigned")
+        names[fid] = name
+    return names
 
 
-def _typed(stream, types: dict[str, str], file_id: str):
-    """The stream passed through, its type found from its first bytes as S9.4 finds a local
-    receipt's: one that isn't a receipt's type is kept as unknown, and never shown."""
-    from ..receipts import sniff
+def keep_delivered(srv, link_id: str, chunks) -> str:
+    """A receipt the peer delivered with its change, sealed by it: kept as it came under a
+    random name until the change that names it arrives."""
+    import secrets
 
-    head = b""
-    for piece in stream:
-        if len(head) < 16:
-            head += piece[: 16 - len(head)]
-            if len(head) >= 16:
-                types[file_id] = sniff(head) or UNKNOWN
-        yield piece
-    types.setdefault(file_id, sniff(head) or UNKNOWN)
+    from . import sealed
+    from .copy import folder
 
-
-UNKNOWN = "application/octet-stream"
+    d = folder(srv.config.data_dir, link_id) / "receipts"
+    d.mkdir(parents=True, exist_ok=True)
+    name = secrets.token_hex(12) + ".mkr"
+    sealed.write(d / name, chunks)
+    return name

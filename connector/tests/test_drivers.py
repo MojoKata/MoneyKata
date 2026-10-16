@@ -23,7 +23,7 @@ class Fake(client.Transport):
         self.answers = answers
         self.calls = []
 
-    def request(self, method, url, headers, body, verify=True):
+    def request(self, method, url, headers, body, pins=None):
         u = urlsplit(url)
         self.egress.check(u.hostname or "")
         self.calls.append((method, url, headers, body))

@@ -60,8 +60,11 @@ class FakeConnector:
             **(headers or {}),
         }
         r = self.client.post(path, content=body, headers=h)
+        # The answer names this connector and this call (protocol §3.3).
+        me = keys.fingerprint(keys.raw_public(self.key.public_key()))
+        asked = signing.Asked(signed.nonce, me, signed.body_hash)
         signing.verify_answer(
-            self.server_key, r.status_code, r.content, signed.nonce, r.headers, scheme=signing.CONN
+            self.server_key, r.status_code, r.content, asked, r.headers, scheme=signing.CONN
         )
         return r
 

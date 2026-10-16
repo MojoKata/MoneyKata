@@ -98,14 +98,27 @@ def smtp_settings(s: Session, secrets_key: bytes) -> Smtp | None:
     )
 
 
+def _vetted(cls, address: str):
+    """An SMTP client that connects to the address the guard checked, while TLS still names
+    and verifies the host (S13.5)."""
+
+    class Vetted(cls):
+        def _get_socket(self, host, port, timeout):
+            return super()._get_socket(address, port, timeout)
+
+    return Vetted
+
+
 def deliver(smtp: Smtp, msg: EmailMessage, guard) -> None:
     """Hand one message to the SMTP server, through the egress guard."""
-    guard.check(smtp.host, smtp.port)
+    address = guard.check(smtp.host, smtp.port)
     context = ssl.create_default_context()
     if smtp.security == "tls":
-        conn = smtplib.SMTP_SSL(smtp.host, smtp.port, timeout=SMTP_TIMEOUT, context=context)
+        conn = _vetted(smtplib.SMTP_SSL, address)(
+            smtp.host, smtp.port, timeout=SMTP_TIMEOUT, context=context
+        )
     else:
-        conn = smtplib.SMTP(smtp.host, smtp.port, timeout=SMTP_TIMEOUT)
+        conn = _vetted(smtplib.SMTP, address)(smtp.host, smtp.port, timeout=SMTP_TIMEOUT)
     with conn:
         conn.ehlo()
         if smtp.security == "starttls":

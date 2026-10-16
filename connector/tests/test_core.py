@@ -114,15 +114,29 @@ def test_signed_calls_and_checked_answers():
     k.public_key().verify(keys.unb64(headers["MK-Conn-Signature"]), msg)
     server = Ed25519PrivateKey.generate()
     t = str(int(time.time()))
-    answer = "\n".join(["MK-CONN-1-ANSWER", "200", signing.body_hash(b"ok"), t, nonce]).encode()
+    me, call = "c" * 64, signing.body_hash(b"{}")
+    answer = "\n".join(
+        ["MK-CONN-1-ANSWER", "200", signing.body_hash(b"ok"), t, nonce, me, call]
+    ).encode()
     good = {"MK-Conn-Time": t, "MK-Conn-Signature": keys.b64(server.sign(answer))}
-    signing.verify_answer(server.public_key().public_bytes_raw(), 200, b"ok", nonce, good)
+    pub = server.public_key().public_bytes_raw()
+    signing.verify_answer(pub, 200, b"ok", nonce, good, me, call)
     with pytest.raises(signing.Refused, match="isn't signed by the server"):
         signing.verify_answer(
-            Ed25519PrivateKey.generate().public_key().public_bytes_raw(), 200, b"ok", nonce, good
+            Ed25519PrivateKey.generate().public_key().public_bytes_raw(),
+            200,
+            b"ok",
+            nonce,
+            good,
+            me,
+            call,
         )
+    # An answer to another caller, or to another request, is refused (protocol §3.3).
+    for who, what in (("d" * 64, call), (me, signing.body_hash(b'{"x":1}'))):
+        with pytest.raises(signing.Refused, match="isn't signed by the server"):
+            signing.verify_answer(pub, 200, b"ok", nonce, good, who, what)
     with pytest.raises(signing.Refused, match="wasn't signed"):
-        signing.verify_answer(server.public_key().public_bytes_raw(), 200, b"ok", nonce, {})
+        signing.verify_answer(pub, 200, b"ok", nonce, {}, me, call)
 
 
 def test_a_box_sealed_to_the_sealing_key_opens_for_its_connection_only():
@@ -237,7 +251,7 @@ def test_a_changed_server_address_sends_nothing_and_asks_for_the_credentials_aga
     sent = []
 
     class Watching(client.Transport):
-        def request(self, method, url, headers, body, verify=True):
+        def request(self, method, url, headers, body, pins=None):
             sent.append(url)
             return client.Answer(200, {}, b"<SONRS><CODE>0</SONRS><ACCTID>1204")
 

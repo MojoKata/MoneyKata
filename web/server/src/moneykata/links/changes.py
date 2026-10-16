@@ -1,13 +1,18 @@
-"""Changes to a linked copy (requirements S11.4, S11.9.5): each signed by its source's link key,
-sealed into the copy's inbox whether or not the copy is unlocked, and applied in order, in one
-transaction, once it is, with every signature checked first.
+"""Changes to a linked copy (requirements S11.4, S11.9.5, link-protocol.md §4.4): each signed by
+its source's link key, its contents sealed by the source to the copy's key, kept in the copy's
+inbox as they came whether or not the copy is unlocked, and applied in order, in one
+transaction, once it is, with every signature checked again first.
 
-A change is JSON: its sequence number at the source (`seq`), its time (`asOf`), whether it
-replaces the whole copy (`full`), and what it adds or removes: `items`, `removed`, `docs`,
-`docsRemoved`, `files` and `filesRemoved`. `signature` is Ed25519 over the rest, as canonical
-JSON (keys sorted, no spaces)."""
+A change is JSON with two parts. The **registry**, which the receiving server keeps in its main
+database: its sequence number at the source (`seq`), its time (`asOf`), whether it replaces the
+whole copy (`full`), the items it adds or changes without their names (`items`), those removed
+(`removed`), how far a large change has come (`progress`) and the ids of the receipts it sends
+(`fetch`). And `sealed`, the rest, which only the copy opens: each item's name, its documents
+and files, and what they remove. `signature` is Ed25519 over the registry and the SHA-256 of
+`sealed`, as canonical JSON (keys sorted, no spaces)."""
 
 import datetime as dt
+import hashlib
 import json
 import re
 
@@ -29,9 +34,49 @@ class ChangeError(Exception):
     pass
 
 
+REGISTRY = ("seq", "asOf", "full", "items", "removed", "progress", "fetch")
+CONTENTS = ("names", "docs", "docsRemoved", "files", "filesRemoved")
+
+
 def _canonical(change: dict) -> bytes:
-    body = {k: v for k, v in change.items() if k != "signature"}
+    body = {k: v for k, v in change.items() if k not in ("signature", "sealed")}
+    if change.get("sealed"):
+        body["sealed"] = hashlib.sha256(unb64(change["sealed"])).hexdigest()
     return exactjson.dumps(body, sort_keys=True, separators=(",", ":")).encode()
+
+
+def seal_part(part: dict, copy_key: bytes | None, direction: str) -> dict:
+    """A change as it travels: its registry in the open, and the rest sealed to the receiving
+    copy's key, or left out when that copy has no key yet."""
+    out = {k: part[k] for k in REGISTRY if k in part}
+    out["items"] = [{k: v for k, v in it.items() if k != "name"} for it in part.get("items") or []]
+    out["fetch"] = [f["id"] for f in part.get("files") or []] if copy_key else []
+    if copy_key:
+        inner = {k: part.get(k) or [] for k in CONTENTS if k != "names"}
+        inner["names"] = {it["id"]: it.get("name") or "" for it in part.get("items") or []}
+        raw = exactjson.dumps(inner, separators=(",", ":")).encode()
+        out["sealed"] = b64(
+            b"".join(sealed.seal(copy_key, sealed.CHANGE, direction, str(part["seq"]), [raw]))
+        )
+    return out
+
+
+def open_part(private, change: dict, direction: str, raw_sealed: bytes) -> dict:
+    """A change's sealed contents, opened with the copy's key, merged with its registry: names
+    back on their items."""
+    import io
+
+    inner = exactjson.loads(
+        b"".join(
+            sealed.open_sealed(
+                private, sealed.CHANGE, direction, str(change.get("seq")), io.BytesIO(raw_sealed)
+            )
+        )
+    )
+    names = inner.get("names") or {}
+    out = {**change, **{k: inner.get(k) or [] for k in CONTENTS if k != "names"}}
+    out["items"] = [{**it, "name": names.get(it["id"], "")} for it in change.get("items") or []]
+    return out
 
 
 def sign(key: Ed25519PrivateKey, change: dict) -> dict:
@@ -57,27 +102,29 @@ def waiting(data_dir, link_id: str) -> list:
 
 
 def enqueue(srv, link_id: str, change: dict, local: dict | None = None) -> bool:
-    """Seal a signed change into the inbox; apply it at once if the copy is unlocked. Returns
-    False when the inbox overflowed and was discarded: the next pull asks for everything."""
+    """Keep a signed change's sealed part in the inbox as it came, beside its registry and
+    what this side added (the random names its receipts were written under); apply it at once
+    if the copy is unlocked. Returns False when the inbox overflowed and was discarded: the
+    next pull asks for everything."""
     with srv.db.read() as s:
         link = s.get(Link, link_id)
-        public = unb64(link.copyPublicKey) if link and link.copyPublicKey else None
-    if public is None:
+        has_key = bool(link and link.copyPublicKey)
+    if not has_key or not change.get("sealed"):
         return True  # no copy yet: nothing is kept until its access key is made
     d = inbox(srv.config.data_dir, link_id)
     d.mkdir(parents=True, exist_ok=True)
     have = waiting(srv.config.data_dir, link_id)
     seq = int(have[-1].stem) + 1 if have else 1
     name = f"{seq:010d}"
-    # The source's signed change, whole, and what this side added: the random names its
-    # receipts were written under.
-    entry = {"change": change, "local": local or {}}
-    raw = exactjson.dumps(entry, separators=(",", ":")).encode()
-    sealed.write(d / f"{name}.mks", sealed.seal(public, sealed.CHANGE, link_id, name, [raw]))
+    registry = {k: v for k, v in change.items() if k != "sealed"}
+    entry = exactjson.dumps({"change": registry, "local": local or {}}, separators=(",", ":"))
+    sealed.write(d / f"{name}.json", [entry.encode()])
+    sealed.write(d / f"{name}.mks", [unb64(change["sealed"])])
     have = waiting(srv.config.data_dir, link_id)
     if len(have) > MAX_CHANGES or sum(p.stat().st_size for p in have) > MAX_BYTES:
         for p in have:
             p.unlink(missing_ok=True)
+            p.with_suffix(".json").unlink(missing_ok=True)
         with srv.db.tx() as s:
             row = s.get(Link, link_id)
             row.needsFull, row.inboxAsOf = True, None
@@ -107,30 +154,30 @@ def apply(srv, link_id: str) -> int:
     files = waiting(srv.config.data_dir, link_id)
     if not files:
         return 0
+    from .keys import direction, fingerprint, public_of
+
     with srv.db.read() as s:
         peer = unb64(s.get(Link, link_id).peerKey)
+        way = direction(fingerprint(peer), fingerprint(public_of(s, srv.keys.secrets)))
     priv = private_key(bytes(o.key))
     changes = []
     try:
         for p in files:
-            with open(p, "rb") as f:
-                raw = b"".join(sealed.open_sealed(priv, sealed.CHANGE, link_id, p.stem, f))
-            entry = exactjson.loads(raw)
-            change, local = (
-                (entry["change"], entry.get("local") or {}) if "change" in entry else (entry, {})
-            )
-            verify(peer, change)
-            changes.append((change, local))
-    except (sealed.SealError, ChangeError, ValueError) as e:
+            entry = exactjson.loads(p.with_suffix(".json").read_bytes())
+            raw = p.read_bytes()
+            change, local = entry["change"], entry.get("local") or {}
+            verify(peer, {**change, "sealed": b64(raw)})
+            changes.append((open_part(priv, change, way, raw), local))
+    except (sealed.SealError, ChangeError, ValueError, KeyError, OSError) as e:
         with srv.db.tx() as s:
             s.get(Link, link_id).lastError = f"A pulled change can't be applied: {e}"
         raise ChangeError(str(e)) from None
     receipts_dir = folder(srv.config.data_dir, link_id) / "receipts"
     with o.engine.begin() as conn:
         for change, local in changes:
-            for name in _apply_one(
-                conn, change, local.get("fileNames") or {}, local.get("fileTypes") or {}
-            ):
+            names = local.get("fileNames") or {}
+            types = {fid: _type_of(priv, way, fid, receipts_dir / n) for fid, n in names.items()}
+            for name in _apply_one(conn, change, names, types):
                 (receipts_dir / name).unlink(missing_ok=True)
             conn.execute(
                 copydb.Applied.insert().prefix_with("OR REPLACE"),
@@ -138,9 +185,24 @@ def apply(srv, link_id: str) -> int:
             )
     for p in files:
         p.unlink(missing_ok=True)
+        p.with_suffix(".json").unlink(missing_ok=True)
     with srv.db.tx() as s:
         s.get(Link, link_id).inboxAsOf = None
     return len(changes)
+
+
+def _type_of(private, way: str, file_id: str, path) -> str:
+    """A linked receipt's type, from its first bytes once the copy opens them, never from what
+    the change calls it (S11.9.6.5); one that isn't a receipt's type is unknown, and never
+    shown."""
+    from ..receipts import sniff
+
+    try:
+        with open(path, "rb") as f:
+            first = next(sealed.open_sealed(private, sealed.RECEIPT, way, file_id, f), b"")
+    except OSError, sealed.SealError:
+        return "application/octet-stream"
+    return sniff(first[:16]) or "application/octet-stream"
 
 
 def _apply_one(conn, c: dict, names: dict[str, str], types: dict[str, str]) -> list[str]:

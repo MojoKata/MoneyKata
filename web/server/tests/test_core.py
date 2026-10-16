@@ -224,3 +224,78 @@ def test_run_now_starts_at_once_once_the_tasks_have_started():
             tasks.stop()
 
     assert asyncio.run(main())
+
+
+@pytest.fixture
+def tls_peer(tmp_path):
+    """A server on loopback with a certificate of its own, answering every request; a long
+    answer is sent chunked, with no length announced."""
+    import socket
+    import ssl
+    import threading
+
+    from moneykata.listener import self_signed
+
+    cert, key = self_signed(tmp_path, ["peer.lan"])
+    ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ctx.load_cert_chain(cert, key)
+    srv = socket.create_server(("127.0.0.1", 0))
+    port = srv.getsockname()[1]
+    stop = threading.Event()
+
+    def serve():
+        srv.settimeout(0.2)
+        while not stop.is_set():
+            try:
+                raw, _ = srv.accept()
+            except TimeoutError:
+                continue
+            try:
+                with ctx.wrap_socket(raw, server_side=True) as tls:
+                    request = tls.recv(65536)
+                    if b"/long" in request:
+                        tls.sendall(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n")
+                        piece = b"x" * 4096
+                        for _ in range(8):
+                            tls.sendall(b"1000\r\n" + piece + b"\r\n")
+                        tls.sendall(b"0\r\n\r\n")
+                    else:
+                        tls.sendall(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok")
+            except OSError, ssl.SSLError:
+                pass
+
+    t = threading.Thread(target=serve, daemon=True)
+    t.start()
+    from cryptography import x509
+    from cryptography.hazmat.primitives.serialization import Encoding
+
+    der = x509.load_pem_x509_certificate(cert.read_bytes()).public_bytes(Encoding.DER)
+    yield port, net.key_fingerprint(der)
+    stop.set()
+    t.join(2)
+    srv.close()
+
+
+def test_a_servers_own_certificate_is_pinned_by_its_key(tls_peer):
+    """S11.1.3, S13.5: the address the guard checked is the one connected to; a certificate of
+    the server's own is accepted only by the key pinned for it, checked before anything is
+    sent; a public check refuses it; and an answer past the ceiling is cut off, chunked or not."""
+    port, fp = tls_peer
+    lookups = []
+
+    def resolver(host, p):
+        lookups.append(host)
+        return ["127.0.0.1"]
+
+    guard = net.Guard(resolver=resolver)
+    guard.allow(["peer.lan"], allowed_by_name=["peer.lan"])
+    url = f"https://peer.lan:{port}/"
+    assert net.Client(guard, pins=[fp]).get(url).text == "ok"
+    assert lookups == ["peer.lan"], "looked up once, by the guard"
+    with pytest.raises(net.CertificateRefused) as e:
+        net.Client(guard, pins=["0" * 64]).get(url)
+    assert e.value.fingerprint == fp
+    with pytest.raises(httpx.ConnectError):
+        net.Client(guard).get(url)  # a public check: no root vouches for it
+    with pytest.raises(net.ResponseTooLarge):
+        net.Client(guard, max_bytes=10_000, pins=[fp]).get(url + "long")

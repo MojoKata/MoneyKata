@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 import httpx
 from fastapi.testclient import TestClient
 
+from moneykata import net
 from moneykata.app import Server, create_app
 from moneykata.auth import users as accounts
 from moneykata.config import Config
@@ -24,6 +25,8 @@ def make_server(tmp_path, name: str) -> Server:
     )
     key = keys_cli.init(cfg, say=lambda _: None, confirm=False)
     srv = Server(config=cfg, store=open_store(cfg, key), ready=True)
+    # The test names resolve to an address on a LAN, as a peer's does (S13.5).
+    srv.guard = net.Guard(resolver=lambda host, port: ["192.0.2.10"])
     with srv.db.tx() as s:
         accounts.ensure_default_admin(s)
         ensure_categories(s)

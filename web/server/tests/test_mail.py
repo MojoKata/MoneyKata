@@ -53,6 +53,10 @@ def smtp(monkeypatch, server):
     FakeSmtp.sent, FakeSmtp.logins, FakeSmtp.fail, FakeSmtp.starttls_done = [], [], None, False
     monkeypatch.setattr(smtplib, "SMTP", FakeSmtp)
     monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSmtp)
+    # The mail server's name resolves on the LAN, and the guard connects to what it found.
+    from moneykata import net
+
+    server.guard = net.Guard(resolver=lambda host, port: ["192.0.2.25"])
     server.guard.allow(["smtp.home.lan"], allowed_by_name=["smtp.home.lan"])
     return FakeSmtp
 

@@ -24,6 +24,9 @@ const KIND = /** @type {Record<string, string>} */ ({
   'tax-book': 'A tax book',
   projection: 'A projection',
 });
+/** A certificate key's fingerprint in groups of four, for two admins to read out. */
+const grouped = (/** @type {string} */ fp) => (fp.match(/.{1,4}/g) || []).join(' ');
+
 const STATE = /** @type {Record<string, [string, string]>} */ ({
   invited: ['invitation', ''],
   requested: ['wants to link', 'info'],
@@ -58,6 +61,8 @@ export function LinksSection() {
     toast(
       what === 'pull'
         ? out.lastError ? `Not reached: ${out.lastError}` : 'Exchanged now'
+        : what === 'accept-certificate'
+        ? 'Its new certificate is accepted'
         : what === 'resume'
         ? 'Link resumed'
         : `Link ${out.state === 'ended' ? 'ended' : out.state}`,
@@ -100,7 +105,9 @@ export function LinksSection() {
         <${Icon} name="info" />
         <div>A link
         carries <b>read-only</b> shares between two MoneyKata servers. This server's key
-        fingerprint: <code>${v.fingerprint}</code></div>
+        fingerprint: <code>${v.fingerprint}</code>${v.certificate
+          ? html`. Its own certificate's key: <code>${grouped(v.certificate)}</code>`
+          : ''}</div>
       </div>
       <form onSubmit=${(/** @type {Event} */ ev) => {
         ev.preventDefault();
@@ -151,11 +158,20 @@ export function LinksSection() {
                           ? html`
                             · <code>${l.fingerprint}</code>
                           `
-                          : ''}${l.peerVersion ? ` · MoneyKata ${l.peerVersion}` : ''}</div></div>
+                          : ''}${l.peerVersion
+                          ? ` · MoneyKata ${l.peerVersion}`
+                          : ''}${l.certificate
+                          ? html`
+                            · certificate <code>${l.certificate}</code>
+                          `
+                          : ''}</div></div>
                       </div>
                     </td>
-                    <td><span class=${'pill ' + (l.failingSince ? 'warn' : STATE[l.state][1])}>${l
-                        .failingSince
+                    <td><span class=${'pill ' +
+                      (l.brokenAt ? 'bad' : l.failingSince ? 'warn' : STATE[l.state][1])}>${l
+                        .brokenAt
+                      ? 'broken'
+                      : l.failingSince
                       ? `unreachable since ${date(l.failingSince)}`
                       : l.state === 'paused' && l.pausedUntil
                       ? `paused until ${moment(l.pausedUntil)}`
@@ -178,6 +194,10 @@ export function LinksSection() {
                       `
                       : null}${l.lastError
                       ? html`<div class="small dim">${l.lastError}</div>`
+                      : null}${l.certificateOffered
+                      ? html`<div class="small" data-help="certificate-changed">Its certificate
+                        changed to <code>${grouped(l.certificateOffered)}</code>. Compare it with
+                        their admin before accepting it.</div>`
                       : null}</td>
                     <td class="small dim">${l.state === 'invited'
                       ? `code valid until ${date(l.codeExpiresAt)}`
@@ -196,15 +216,18 @@ export function LinksSection() {
                             act.run(l.id, 'end')}>Reject</button> <button class="btn sm primary"
                             onClick=${() => act.run(l.id, 'approve')}>Approve</button>
                         `
-                        : html`${
-                          ['active', 'pending'].includes(l.state)
+                        : html`
+                          ${l.certificateOffered
+                            ? html`
+                              <button class="btn sm primary" disabled=${act.busy} onClick=${() =>
+                                act.run(l.id, 'accept-certificate')}>Accept it</button>
+                            `
+                            : null}${['active', 'pending'].includes(l.state)
                             ? html`
                               <button class="btn sm" disabled=${act.busy} onClick=${() =>
                                 act.run(l.id, 'pull')}>Pull now</button>
                             `
-                            : null
-                        }${
-                          l.state === 'active'
+                            : null}${l.state === 'active'
                             ? html`
                               <button class="btn sm" onClick=${() => pause(l)}>Pause…</button>
                             `
@@ -213,19 +236,18 @@ export function LinksSection() {
                               <button class="btn sm" onClick=${() =>
                                 act.run(l.id, 'resume')}>Resume now</button>
                             `
-                            : null
-                        }<button class="btn sm danger" onClick=${() =>
-                          armed === l.id
-                            ? act.run(l.id, 'end').then(() => setArmed(null))
-                            : setArmed(
-                              l.id,
-                            )}>${
-                          armed === l.id
-                            ? 'Click again to end'
-                            : l.state === 'invited'
-                            ? 'Withdraw'
-                            : 'End link'
-                        }</button>`}</div>
+                            : null}<button class="btn sm danger"
+                            onClick=${() =>
+                              armed === l.id
+                                ? act.run(l.id, 'end').then(() => setArmed(null))
+                                : setArmed(
+                                  l.id,
+                                )}>${armed === l.id
+                              ? 'Click again to end'
+                              : l.state === 'invited'
+                              ? 'Withdraw'
+                              : 'End link'}</button>
+                        `}</div>
                     </td>
                   </tr>
                 `

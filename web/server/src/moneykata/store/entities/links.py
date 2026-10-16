@@ -37,6 +37,11 @@ class Link(Record):
     needsFull: bool = False
     sentSeq: int = 0
     gotSeq: int = 0
+    peerCopyKey: str | None = None
+    peerCert: str | None = None
+    peerCertNext: str | None = None
+    peerCertOffered: str | None = None
+    brokenAt: dt.datetime | None = None
 
 
 @dataclass(kw_only=True, eq=False)

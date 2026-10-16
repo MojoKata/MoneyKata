@@ -23,9 +23,9 @@ preparer.
       the join; what makes the link is the key each side records and the fingerprint the admins
       compare, and no secret is shared after that. The connection itself is TLS that each side
       verifies: a public certificate against the system's roots, a certificate of the server's
-      own against the fingerprint its link code carried; a server that changes its
-      certificate's key announces the new one to its peers beforehand, signed with its link
-      key. A signed answer names the caller and the request it answers, so it can't be replayed
+      own against the fingerprint its link code carried; a server whose certificate's key
+      changes announces the new one to its peers, signed with its link key, before its next
+      exchange, and a key a peer wasn't told of waits for its admin to accept it. A signed answer names the caller and the request it answers, so it can't be replayed
       to another. The protocol is specified in `docs/link-protocol.md`.
 2. **Reachability**: links are HTTPS between the servers' **link addresses**: the path
    `/link/` on the server's own address, with no port or address of its own, which a reverse

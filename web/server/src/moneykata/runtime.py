@@ -148,7 +148,8 @@ def register_tasks(server: Server) -> None:
 
         if server.config.stubs:
             return
-
+        # A new certificate key of this server's own, told to the peers first (§4.5).
+        manage.announce_certificate(server)
         manage.exchange_all(server, ctx)
 
     server.tasks.register("links", links, Every(3600), last.get("links"))

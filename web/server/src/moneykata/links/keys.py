@@ -59,3 +59,10 @@ def private_key(s, secrets_key: bytes, by: str | None = None) -> Ed25519PrivateK
 
 def public_of(s, secrets_key: bytes) -> bytes:
     return raw_public(private_key(s, secrets_key).public_key())
+
+
+def direction(sender_fp: str, receiver_fp: str) -> str:
+    """What a sealed change or receipt's associated data names as its link: the sending and
+    receiving servers' fingerprints, which both sides know, so a file sealed for one direction
+    or one link opens for no other."""
+    return f"{sender_fp}>{receiver_fp}"

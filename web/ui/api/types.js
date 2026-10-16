@@ -1529,6 +1529,7 @@
  * @typedef {Object} LinksView
  * @property {string} fingerprint
  * @property {(string | null)} address
+ * @property {(string | null)} [certificate]
  * @property {Array<moneykata__ui__links__LinkOut>} links
  */
 
@@ -4051,6 +4052,9 @@
  * @property {(number | null)} syncBytes
  * @property {(number | null)} syncTotal
  * @property {Array<moneykata__ui__links__RemoteUser>} users
+ * @property {(string | null)} [certificate]
+ * @property {(string | null)} [certificateOffered]
+ * @property {(string | null)} [brokenAt]
  * @property {(moneykata__ui__links__CopyOut | null)} [linkedCopy]
  * @property {Array<Incoming>} [incoming]
  */

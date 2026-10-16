@@ -19,7 +19,7 @@ class Wired(client.Transport):
         super().__init__(egress)
         self.app = app_client
 
-    def request(self, method, url, headers, body, verify=True):
+    def request(self, method, url, headers, body, pins=None):
         from urllib.parse import urlsplit
 
         u = urlsplit(url)

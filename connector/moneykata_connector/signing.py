@@ -31,7 +31,7 @@ def body_hash(body: bytes) -> str:
 
 
 def sign(key: Ed25519PrivateKey, method: str, path: str, body: bytes, server_fp: str):
-    """The headers of a signed call, and its nonce for checking the answer."""
+    """The headers of a signed call, and its nonce for checking the answer, which names it."""
     t = str(int(time.time()))
     nonce = b64(os.urandom(16))
     msg = _lines("MK-CONN-1", method.upper(), path, body_hash(body), t, nonce, server_fp)
@@ -44,7 +44,17 @@ def sign(key: Ed25519PrivateKey, method: str, path: str, body: bytes, server_fp:
     return headers, nonce
 
 
-def verify_answer(server_public: bytes, status: int, body: bytes, nonce: str, headers) -> None:
+def verify_answer(
+    server_public: bytes,
+    status: int,
+    body: bytes,
+    nonce: str,
+    headers,
+    own_fp: str,
+    call_hash: str,
+) -> None:
+    """The answer signed by the server, to this connector and this call (protocol §3.3), so a
+    server's answer to another caller or another request is refused."""
     h = {k.lower(): v for k, v in dict(headers).items()}
     try:
         t = int(h["mk-conn-time"])
@@ -55,7 +65,8 @@ def verify_answer(server_public: bytes, status: int, body: bytes, nonce: str, he
         raise Refused("clock-skew", "The server's clock is more than a minute off.")
     try:
         Ed25519PublicKey.from_public_bytes(server_public).verify(
-            sig, _lines("MK-CONN-1-ANSWER", status, body_hash(body), t, nonce)
+            sig,
+            _lines("MK-CONN-1-ANSWER", status, body_hash(body), t, nonce, own_fp, call_hash),
         )
     except InvalidSignature:
         raise Refused(

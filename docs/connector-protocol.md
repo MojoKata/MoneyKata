@@ -45,8 +45,9 @@ to: the one sealed with it, fixed when it is filed. Requirements S18 defines the
    to its own calls.
 2. **The connector verifies MoneyKata's TLS certificate**: a public one against the system's
    roots, and one that is MoneyKata's own (S13.3) against the fingerprint of its key that the
-   pairing code carried (`t`, section 4.1); a new certificate key is announced beforehand in a
-   report's answer, signed. TLS keeps each message private; the signature on each answer
+   pairing code carried (`t`, section 4.1); while the certificate is MoneyKata's own, every
+   report's answer, signed, carries its key's fingerprint as `certificate`, so a new one is
+   accepted beside the pinned one until it is in use. TLS keeps each message private; the signature on each answer
    (section 3), checked against the link key whose fingerprint the code carried, proves who
    wrote it. The connector follows no redirect, and reads at most 25 MB of an answer.
 3. Everything but `hello` is signed, and every answer to a signed call is signed back.

@@ -75,6 +75,13 @@ class LinkOut(Model):
     syncBytes: int | None  # and what has arrived
     syncTotal: int | None  # of what the source said it would send
     users: list[RemoteUser]
+    # The peer's own TLS certificate (S11.1.3), pinned by its key: four groups of four; None
+    # for a public certificate. One it presented unannounced waits to be accepted, shown whole
+    # for the admins to compare.
+    certificate: str | None = None
+    certificateOffered: str | None = None
+    # The peer answered that it has no link with this one (S11.6).
+    brokenAt: dt.datetime | None = None
     linkedCopy: CopyOut | None = None
     incoming: list[Incoming] = Field(default_factory=list)
 
@@ -82,6 +89,9 @@ class LinkOut(Model):
 class LinksView(Model):
     fingerprint: str  # this server's
     address: str | None  # this server's link address, as peers reach it
+    # This server's own TLS certificate's key, whole, for its admin to read out to a peer's
+    # (link-protocol.md §4.5); None when the certificate is a public one.
+    certificate: str | None = None
     links: list[LinkOut]
 
 
@@ -177,6 +187,9 @@ def _out(s, link: Link, srv=None) -> LinkOut:
             RemoteUser(id=u.id, username=u.username, displayName=u.displayName, email=u.email)
             for u in users
         ],
+        certificate=keys.short(link.peerCert) if link.peerCert else None,
+        certificateOffered=link.peerCertOffered,
+        brokenAt=link.brokenAt,
         linkedCopy=_copy(s, srv, link) if srv is not None else None,
         incoming=_incoming(s, link),
     )
@@ -189,7 +202,10 @@ def _problem(e: LinkError) -> Problem:
 
 @router.get("/settings/links", response_model=LinksView)
 def list_links(request: Request, c: Caller = Depends(admin)):
+    from .. import certs
+
     srv = server(request)
+    own_cert = certs.own_key(srv)
     with srv.db.tx() as s:
         fp = keys.fingerprint(keys.public_of(s, srv.keys.secrets))
         rows = s.scalars(
@@ -198,6 +214,7 @@ def list_links(request: Request, c: Caller = Depends(admin)):
         return LinksView(
             fingerprint=keys.short(fp),
             address=manage.own_address(s),
+            certificate=own_cert,
             links=[_out(s, r, srv) for r in rows],
         )
 
@@ -220,12 +237,14 @@ def join(body: JoinIn, request: Request, c: Caller = Depends(admin)):
         c_ = manage.decode_code(body.code)
     except LinkError as e:
         raise _problem(e) from None
-    # The inviting server's address is named by this admin, so it may be reached.
+    # The inviting server's address may be reached for the join, but it came from the other
+    # server, so it is never exempt from the guard's refusal of loopback, link-local and
+    # metadata addresses (S13.5), except between two dev servers on one machine.
     hosts, named = srv.guard.snapshot()
     from urllib.parse import urlsplit
 
     host = (urlsplit(c_["a"]).hostname or "").lower()
-    srv.guard.allow(hosts | {host}, named | {host})
+    srv.guard.allow(hosts | {host}, named | ({host} if srv.config.dev else set()))
     try:
         link = manage.join(srv, body.code, c.id)
     except LinkError as e:
@@ -319,6 +338,21 @@ def make_copy_key(link_id: str, request: Request, c: Caller = Depends(admin)):
         return Words(words=copies.make_key(server(request), link_id, c.id))
     except CopyError as e:
         raise _copy_problem(e) from None
+
+
+@router.post("/settings/links/{link_id}/accept-certificate", response_model=LinkOut)
+def accept_certificate(link_id: str, request: Request, c: Caller = Depends(admin)):
+    """The certificate the peer presented unannounced, accepted once its fingerprint has been
+    compared with the peer's admin (link-protocol.md §4.5): the password again (S13.7.2)."""
+    from .deps import recent_auth
+
+    recent_auth(c)
+    try:
+        manage.accept_certificate(server(request), link_id, c.id)
+    except LinkError as e:
+        raise _problem(e) from None
+    with server(request).db.read() as s:
+        return _out(s, s.get(Link, link_id), server(request))
 
 
 @router.post("/settings/links/{link_id}/lock", response_model=LinkOut)

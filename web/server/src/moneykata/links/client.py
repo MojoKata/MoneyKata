@@ -1,7 +1,9 @@
 """Calling a linked server (requirements S11.1.3, S11.2): signed requests over HTTPS through
-the egress guard, and their signed answers checked."""
+the egress guard, TLS verified (a public certificate against the system's roots, a server's own
+against the key pinned for it), and their signed answers checked against the call they answer."""
 
 import json
+from urllib.parse import urlsplit, urlunsplit
 
 from .. import exactjson, net
 from . import PROTOCOL, keys, signing
@@ -10,31 +12,77 @@ from . import PROTOCOL, keys, signing
 class LinkError(Exception):
     """The linked server couldn't be reached, or refused: the message says which."""
 
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, offered: str | None = None):
         super().__init__(message)
         self.code = code
         self.message = message
+        # A certificate key the peer presented that isn't the one pinned for it.
+        self.offered = offered
+
+
+def checked_address(address: str) -> str:
+    """A link address as S11.2 has it: `https`, a host, no query or fragment."""
+    try:
+        u = urlsplit((address or "").strip())
+    except ValueError:
+        u = None
+    if u is None or u.scheme != "https" or not u.hostname or u.query or u.fragment:
+        raise LinkError(
+            "address-invalid", "A link address is https://, with a host and nothing after its path."
+        )
+    return urlunsplit((u.scheme, u.netloc, u.path.rstrip("/"), "", ""))
 
 
 def _url(address: str, path: str) -> str:
-    return address.rstrip("/") + path
+    """The base's own path with the call's appended, never the two strings run together."""
+    u = urlsplit(checked_address(address))
+    return urlunsplit((u.scheme, u.netloc, u.path + path, "", ""))
 
 
-def hello(srv, address: str) -> dict:
+def _client(srv, pins) -> net.Client:
+    return net.Client(srv.guard, pins=pins)
+
+
+def _unreachable(address: str, e: Exception) -> LinkError:
+    if isinstance(e, net.CertificateRefused):
+        return LinkError(
+            "certificate-changed",
+            f"{address} presented a certificate key ({keys.short(e.fingerprint)}) other than "
+            "the one this link was made with: its admin can read out the new one.",
+            offered=e.fingerprint,
+        )
+    return LinkError("unreachable", f"{address} didn't answer ({type(e).__name__}).")
+
+
+def _own(srv):
+    with srv.db.tx() as s:
+        own = keys.private_key(s, srv.keys.secrets)
+    return own, keys.fingerprint(keys.raw_public(own.public_key()))
+
+
+def hello(srv, address: str, pins=None) -> dict:
     """The unsigned hello: the peer's protocol, version and fingerprint."""
     try:
-        r = net.Client(srv.guard, verify=False).get(_url(address, "/link/v1/hello"))
+        r = _client(srv, pins).get(_url(address, "/link/v1/hello"))
     except net.httpx.HTTPError as e:
-        raise LinkError("unreachable", f"{address} didn't answer ({type(e).__name__}).") from None
+        raise _unreachable(address, e) from None
     if r.status_code != 200:
         raise LinkError("not-moneykata", f"{address} doesn't answer as a MoneyKata server.")
     return r.json()
 
 
-def call(srv, address: str, peer_key: bytes, path: str, data: dict | None = None) -> dict:
-    """A signed POST to the peer, its answer checked against the peer's key."""
-    with srv.db.tx() as s:
-        own = keys.private_key(s, srv.keys.secrets)
+def call(
+    srv,
+    address: str,
+    peer_key: bytes,
+    path: str,
+    data: dict | None = None,
+    pins=None,
+    seen: list | None = None,
+) -> dict:
+    """A signed POST to the peer, its answer checked against the peer's key and this call.
+    `seen` gets the pinned certificate key the answer came over."""
+    own, own_fp = _own(srv)
     body = exactjson.dumps(data or {}, separators=(",", ":")).encode()
     signed = signing.sign_request(own, "POST", path, body, keys.fingerprint(peer_key))
     headers = {
@@ -44,17 +92,16 @@ def call(srv, address: str, peer_key: bytes, path: str, data: dict | None = None
         "MK-Link-Version": srv.version,
     }
     try:
-        # A peer's certificate is often its own (S13.3): what proves who answered is the
-        # signature on the answer, checked against the key the link was made with.
-        r = net.Client(srv.guard, verify=False).post(
-            _url(address, path), content=body, headers=headers
-        )
+        r = _client(srv, pins).post(_url(address, path), content=body, headers=headers)
     except net.httpx.HTTPError as e:
-        raise LinkError("unreachable", f"{address} didn't answer ({type(e).__name__}).") from None
+        raise _unreachable(address, e) from None
+    asked = signing.Asked(signed.nonce, own_fp, signed.body_hash)
     try:
-        signing.verify_answer(peer_key, r.status_code, r.content, signed.nonce, r.headers)
+        signing.verify_answer(peer_key, r.status_code, r.content, asked, r.headers)
     except signing.Refused as e:
         raise LinkError(e.code, e.message) from None
+    if seen is not None and (key := net.presented(r)):
+        seen.append(key)
     out = exactjson.loads(r.content) if r.content else {}
     if r.status_code >= 400:
         raise LinkError(
@@ -63,14 +110,13 @@ def call(srv, address: str, peer_key: bytes, path: str, data: dict | None = None
     return out
 
 
-def iter_file(srv, address: str, peer_key: bytes, file_id: str, digest_out: list):
-    """One receipt's bytes from the peer, piece by piece as they arrive. When the stream ends,
-    the peer's signature over their SHA-256 is checked, and the digest appended to
+def iter_file(srv, address: str, peer_key: bytes, file_id: str, digest_out: list, pins=None):
+    """One receipt's sealed bytes from the peer, piece by piece as they arrive. When the stream
+    ends, the peer's signature over their SHA-256 is checked, and the digest appended to
     `digest_out`; a bad one raises before the last piece is taken as good."""
     import hashlib
 
-    with srv.db.tx() as s:
-        own = keys.private_key(s, srv.keys.secrets)
+    own, own_fp = _own(srv)
     path = "/link/v1/file"
     body = json.dumps({"id": file_id}, separators=(",", ":")).encode()
     signed = signing.sign_request(own, "POST", path, body, keys.fingerprint(peer_key))
@@ -82,7 +128,7 @@ def iter_file(srv, address: str, peer_key: bytes, file_id: str, digest_out: list
     }
     h = hashlib.sha256()
     try:
-        c = net.Client(srv.guard, verify=False)
+        c = _client(srv, pins)
         with c.stream("POST", _url(address, path), content=body, headers=headers) as r:
             if r.status_code != 200:
                 r.read()
@@ -92,10 +138,45 @@ def iter_file(srv, address: str, peer_key: bytes, file_id: str, digest_out: list
                 yield piece
             answer_headers = r.headers
     except net.httpx.HTTPError as e:
-        raise LinkError("unreachable", f"{address} didn't answer ({type(e).__name__}).") from None
+        raise _unreachable(address, e) from None
     digest = h.hexdigest()
+    asked = signing.Asked(signed.nonce, own_fp, signed.body_hash)
     try:
-        signing.verify_answer(peer_key, 200, b"", signed.nonce, answer_headers, digest=digest)
+        signing.verify_answer(peer_key, 200, b"", asked, answer_headers, digest=digest)
     except signing.Refused as e:
         raise LinkError(e.code, e.message) from None
     digest_out.append(digest)
+
+
+def send_file(srv, address: str, peer_key: bytes, file_id: str, path, digest: str, pins=None):
+    """One receipt, sealed to the peer's copy key, sent ahead of the change that names it: its
+    sealed bytes as the body, read from the file as they go (link-protocol.md §4.3)."""
+    own, own_fp = _own(srv)
+    call_path = "/link/v1/deliver"
+    # Signed over the sealed bytes' hash in place of a body in hand.
+    signed = signing.sign_request_digest(own, "POST", call_path, digest, keys.fingerprint(peer_key))
+    headers = {
+        **signed.headers,
+        "Content-Type": "application/octet-stream",
+        "MK-Link-File": file_id,
+        "MK-Link-Protocol": str(PROTOCOL),
+        "MK-Link-Version": srv.version,
+    }
+
+    def body():
+        with open(path, "rb") as f:
+            while chunk := f.read(1 << 16):
+                yield chunk
+
+    try:
+        r = _client(srv, pins).post(_url(address, call_path), content=body(), headers=headers)
+    except net.httpx.HTTPError as e:
+        raise _unreachable(address, e) from None
+    asked = signing.Asked(signed.nonce, own_fp, digest)
+    try:
+        signing.verify_answer(peer_key, r.status_code, r.content, asked, r.headers)
+    except signing.Refused as e:
+        raise LinkError(e.code, e.message) from None
+    if r.status_code >= 400:
+        out = exactjson.loads(r.content) if r.content else {}
+        raise LinkError(out.get("code", "refused"), out.get("message", "the file was refused"))

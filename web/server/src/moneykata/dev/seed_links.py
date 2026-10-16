@@ -107,20 +107,26 @@ def seed_links(server, s, people: dict) -> None:
             )
         )
     s.flush()
-    _seal(server, link.id, changes.sign(peer, change))
+    way = keys.direction(
+        keys.fingerprint(keys.raw_public(peer.public_key())),
+        keys.fingerprint(keys.raw_public(own.public_key())),
+    )
+    part = changes.seal_part({"seq": 1, **change}, keys.unb64(public_of(DEV_COPY_KEY)), way)
+    _keep(server, link.id, changes.sign(peer, part))
 
 
-def _seal(server, link_id: str, change: dict) -> None:
+def _keep(server, link_id: str, change: dict) -> None:
+    """The change in the copy's inbox as a pull keeps it: its sealed part as it came, beside
+    its registry (link-protocol.md §4.4)."""
     from ..links import sealed
     from ..links.copy import folder
 
     d = folder(server.config.data_dir, link_id) / "inbox"
     d.mkdir(parents=True, exist_ok=True)
-    raw = exactjson.dumps(change, separators=(",", ":")).encode()
-    public = keys.unb64(public_of(DEV_COPY_KEY))
-    sealed.write(
-        d / "0000000001.mks", sealed.seal(public, sealed.CHANGE, link_id, "0000000001", [raw])
-    )
+    registry = {k: v for k, v in change.items() if k != "sealed"}
+    entry = exactjson.dumps({"change": registry, "local": {}}, separators=(",", ":"))
+    sealed.write(d / "0000000001.json", [entry.encode()])
+    sealed.write(d / "0000000001.mks", [keys.unb64(change["sealed"])])
 
 
 def _months(n: int, end: float, start: float) -> list[dict]:

@@ -2,8 +2,9 @@
 (Ed25519) that signs its calls, kept beside the vault so a locked connector can still report,
 and a sealing key (X25519) that credentials are sealed to, whose private half lives in the
 vault (`vault.py`) and whose public half is kept here. With them, the server it is paired
-with: its address and its link key's fingerprint. This file holds nothing that opens a
-credential."""
+with: its address, its link key's fingerprint, and, when its certificate is its own, the
+fingerprint of that certificate's key (and the next one, once announced). This file holds
+nothing that opens a credential."""
 
 import base64
 import hashlib
@@ -38,6 +39,15 @@ class Pairing:
     server_fp: str  # its link key's fingerprint, whole
     identity: Ed25519PrivateKey
     sealing_public: bytes  # the private half is in the vault
+    # MoneyKata's own certificate's key, pinned from the code (None: a public certificate,
+    # verified against the system's roots), and the next one it announced (protocol §1.2).
+    cert: str | None = None
+    cert_next: str | None = None
+
+    def pins(self) -> frozenset[str] | None:
+        if self.cert is None:
+            return None
+        return frozenset(x for x in (self.cert, self.cert_next) if x)
 
     @property
     def identity_public(self) -> bytes:
@@ -58,6 +68,8 @@ def load(path: Path) -> Pairing | None:
         d["serverFingerprint"],
         Ed25519PrivateKey.from_private_bytes(unb64(d["identity"])),
         unb64(d["sealingPublic"]),
+        d.get("certificate"),
+        d.get("certificateNext"),
     )
 
 
@@ -67,9 +79,11 @@ def new_sealing_key() -> tuple[bytes, bytes]:
     return k.private_bytes_raw(), k.public_key().public_bytes_raw()
 
 
-def make(path: Path, address: str, server_fp: str, sealing_public: bytes) -> Pairing:
+def make(
+    path: Path, address: str, server_fp: str, sealing_public: bytes, cert: str | None = None
+) -> Pairing:
     """A new identity key for a new pairing; the old pairing's keys go with it (S18.4.4)."""
-    p = Pairing(address, server_fp, Ed25519PrivateKey.generate(), sealing_public)
+    p = Pairing(address, server_fp, Ed25519PrivateKey.generate(), sealing_public, cert)
     save(path, p)
     return p
 
@@ -83,6 +97,8 @@ def save(path: Path, p: Pairing) -> None:
                 "serverFingerprint": p.server_fp,
                 "identity": b64(p.identity.private_bytes_raw()),
                 "sealingPublic": b64(p.sealing_public),
+                "certificate": p.cert,
+                "certificateNext": p.cert_next,
             },
             f,
         )

@@ -86,7 +86,7 @@ document is the protocol's statement; the code that speaks it is `web/server/src
 | `POST /link/v1/join` | yes, by the caller's own key | an invitation | answers a link code (section 4.1); no directory crosses |
 | `POST /link/v1/exchange` | yes | active; pending on the joining side | the directories both ways, and the answering side's change for the caller (section 4.3) |
 | `POST /link/v1/next` | yes | active | the next part of a large change the caller is pulling (section 4.4) |
-| `POST /link/v1/deliver` | yes | active | the caller's change for the answering side, and its receipts' sealed bytes (section 4.3) |
+| `POST /link/v1/deliver` | yes | active | the caller's change for the answering side; or, before it, one of its receipts, sealed (section 4.3) |
 | `POST /link/v1/file` | yes | active | `{id}`: one of the answering side's receipts, sealed to the caller's copy key (section 4.4), as `application/octet-stream`, refused `not-shared` unless a share to that link includes it; the answer's signature takes the sealed bytes' SHA-256 in place of the body's hash, and the caller checks it, and the hash the change carried, before keeping the file |
 | `POST /link/v1/certificate` | yes | active, paused | `{fingerprint}`: the caller's next TLS certificate key, announced before it is used (section 4.5) |
 | `POST /link/v1/end` | yes | requested, pending, active, paused | the link ended on the calling side |
@@ -146,9 +146,12 @@ S10.10.1), used only for gifts.
    `next`, sending its `have`, until `more` is 0.
 4. The caller then makes its own change for the answering side, from the `have`, `wantFull` and
    `copyKey` in the answer, and sends it with `deliver`, a part at a time, each answered with
-   the new `have`. The caller's receipts for that change travel inside `deliver`, sealed as
-   section 4.4 says, so the answering side never has to call back to fetch them; the caller
-   fetches the answering side's receipts with `file`.
+   the new `have`. The caller's receipts for a part travel in `deliver` calls of their own
+   before it: each one's sealed bytes as the body, `application/octet-stream`, with
+   `MK-Link-File` naming the receipt, the call signed over the sealed bytes' SHA-256 and read as
+   it arrives, never whole in memory; the answering side keeps each as it came until the part
+   that names it arrives, so it never has to call back to fetch them. The caller fetches the
+   answering side's receipts with `file`.
 5. A side whose link is paused refuses data with `link-paused`, its message saying until when;
    the caller waits and doesn't count it as a failure, so no one is alerted. A removal and an
    end still cross a paused link (S11.4).
@@ -167,12 +170,14 @@ the receiving server keeps in its main database while the copy is locked (S11.9.
 | `items` | registry | items added or changed: `id`, `kind`, `ownerName`, `sharedAt`, `viewers` (the receiver's user ids it names), `includeReceipts`, `version` |
 | `removed` | registry | ids of items no longer shared |
 | `progress` | registry | in a large change's parts: `through`, the newest date the parts so far reach; `bytes`, what they hold; `total`, what the whole change holds |
-| `sealed` | sealed | the rest, sealed to the receiver's `copyKey` in the streaming format of S11.9.6 under the label `moneykata link change`, its associated data naming the link and `seq`: each item's `name`; `docs`, documents added or changed (`itemId`, `path`, `viewer`, `body`); `docsRemoved`; `files`, receipts' files added, when their share includes them (their id, item, type, length, hash, thumbnail and what was read from them); and `filesRemoved` (unshared, or pruned at the source, S14.10.6) |
+| `fetch` | registry | the ids of the receipts the part sends, so the receiver can fetch them (or take them from the `deliver` calls before it) while its copy is locked |
+| `sealed` | sealed | the rest, sealed to the receiver's `copyKey` in the streaming format of S11.9.6 under the label `moneykata link change`, its associated data naming the link (the sender's and the receiver's fingerprints, `<sender>><receiver>`, so a change sealed for one direction opens for no other) and `seq`, in unpadded base64url: each item's `name`; `docs`, documents added or changed (`itemId`, `path`, `viewer`, `body`); `docsRemoved`; `files`, receipts' files added, when their share includes them (their id, item, type, length, hash, thumbnail and what was read from them); and `filesRemoved` (unshared, or pruned at the source, S14.10.6) |
 | `signature` | — | Ed25519 by the sender's link key over the registry and the SHA-256 of `sealed`, as canonical JSON (keys sorted, no spaces) |
 
 A receipt's bytes are sealed by the source the same way, under the label `moneykata link
-receipt`, the associated data naming the link and the receipt, and cross in `deliver` or in the
-answer to `file`.
+receipt`, the associated data naming the link (as for a change) and the receipt, and cross in
+`deliver` or in the answer to `file`. The receiver keeps them as they came; its copy opens them
+when they are shown, and its type is found from the bytes then, never from the change.
 
 1. The sender works each item out as each person it names would see it, with the code its own
    screens use (S11.3.1). An item's documents are its row in its list (`path` empty) and what
@@ -201,9 +206,10 @@ answer to `file`.
 ### 4.5 A new certificate
 
 A server whose certificate is its own (S13.3) and whose key changes calls `certificate`,
-signed, on each active or paused link before it serves the new one; the peer keeps the new
-fingerprint beside the old, and accepts either until the next exchange over the new one
-succeeds. A certificate whose key changes unannounced is refused, and the link shows *the
+signed, on each active or paused link as soon as it sees the change, before its next exchange
+(its own listener's certificate is read from its file; a proxy's, by connecting to the server's
+own link address); the peer keeps the new fingerprint beside the old, and accepts either until
+an exchange over the new one succeeds. A certificate whose key changes unannounced is refused, and the link shows *the
 peer's certificate changed* until an admin there accepts the new fingerprint, which the peer's
 admin reads out from their Settings › Linked servers.
 

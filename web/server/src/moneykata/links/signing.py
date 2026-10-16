@@ -14,8 +14,9 @@ over these lines:
 
 The receiver refuses a key it has no link with, a bad signature, a time more than 60 seconds
 off its own, and a nonce it has seen in the last two minutes. The answer is signed the same
-way (`MK-LINK-1-ANSWER`, the status in place of the method and path, and the request's nonce),
-so the caller knows who answered.
+way (`MK-LINK-1-ANSWER`: the status, the answer's body hash, the time, and the request's nonce,
+caller's fingerprint and body hash), so the caller knows who answered, and an answer can't be
+handed on to another caller or another request.
 
 The MoneyKata Connector signs its calls the same way under its own scheme (`MK-Conn-*`
 headers, `MK-CONN-1` labels; docs/connector-protocol.md §3): the `scheme` argument picks
@@ -77,6 +78,16 @@ def body_hash(body: bytes) -> str:
 class Signed:
     headers: dict[str, str]
     nonce: str
+    body_hash: str = ""
+
+
+@dataclass(frozen=True)
+class Asked:
+    """The call an answer answers: its nonce, its caller's fingerprint and its body's hash."""
+
+    nonce: str
+    caller_fp: str
+    body_hash: str
 
 
 def sign_request(
@@ -88,9 +99,22 @@ def sign_request(
     now=None,
     scheme: Scheme = LINK,
 ) -> Signed:
+    return sign_request_digest(key, method, path, body_hash(body), receiver_fp, now, scheme)
+
+
+def sign_request_digest(
+    key: Ed25519PrivateKey,
+    method: str,
+    path: str,
+    digest: str,
+    receiver_fp: str,
+    now=None,
+    scheme: Scheme = LINK,
+) -> Signed:
+    """A call signed over its body's SHA-256, for a body sent as a stream."""
     t = str(int(now if now is not None else time.time()))
     nonce = b64(secrets.token_bytes(16))
-    msg = _lines(scheme.label, method.upper(), path, body_hash(body), t, nonce, receiver_fp)
+    msg = _lines(scheme.label, method.upper(), path, digest, t, nonce, receiver_fp)
     return Signed(
         {
             scheme.h("Key"): b64(raw_public(key.public_key())),
@@ -99,21 +123,42 @@ def sign_request(
             scheme.h("Signature"): b64(key.sign(msg)),
         },
         nonce,
+        digest,
     )
+
+
+def _answer_lines(scheme: Scheme, status, digest: str, t, asked: Asked) -> bytes:
+    return _lines(
+        scheme.label + "-ANSWER", status, digest, t, asked.nonce, asked.caller_fp, asked.body_hash
+    )
+
+
+def asked_of(
+    headers, body: bytes, scheme: Scheme = LINK, digest: str | None = None
+) -> Asked | None:
+    """The call a request's headers make, as its answer names it; None without a nonce."""
+    nonce = headers.get(scheme.lower("nonce"))
+    if not nonce:
+        return None
+    try:
+        caller = fingerprint(unb64(headers.get(scheme.lower("key")) or ""))
+    except ValueError:
+        caller = ""
+    return Asked(nonce, caller, digest or body_hash(body))
 
 
 def sign_answer(
     key: Ed25519PrivateKey,
     status: int,
     body: bytes,
-    nonce: str,
+    asked: Asked,
     now=None,
     digest=None,
     scheme: Scheme = LINK,
 ) -> dict:
     """`digest` signs a body streamed later, by its SHA-256, rather than bytes in hand."""
     t = str(int(now if now is not None else time.time()))
-    msg = _lines(scheme.label + "-ANSWER", status, digest or body_hash(body), t, nonce)
+    msg = _answer_lines(scheme, status, digest or body_hash(body), t, asked)
     return {scheme.h("Time"): t, scheme.h("Signature"): b64(key.sign(msg))}
 
 
@@ -121,7 +166,7 @@ def verify_answer(
     public: bytes,
     status: int,
     body: bytes,
-    nonce: str,
+    asked: Asked,
     headers,
     now=None,
     digest=None,
@@ -137,7 +182,7 @@ def verify_answer(
         raise Refused("clock-skew", f"The {who}'s clock is more than a minute off.")
     try:
         Ed25519PublicKey.from_public_bytes(public).verify(
-            sig, _lines(scheme.label + "-ANSWER", status, digest or body_hash(body), t, nonce)
+            sig, _answer_lines(scheme, status, digest or body_hash(body), t, asked)
         )
     except InvalidSignature:
         raise Refused("bad-signature", f"The answer isn't signed by the {who}.") from None
@@ -177,9 +222,10 @@ def verify_request(
     nonces: Nonces,
     now=None,
     scheme: Scheme = LINK,
+    digest: str | None = None,
 ) -> Caller:
     """The verified caller's key, or Refused. Which link (or connector) it belongs to is the
-    caller's check."""
+    caller's check. `digest`: a body read as a stream, by its SHA-256."""
     who = "A linked server's" if scheme is LINK else "The connector's"
     try:
         public = unb64(headers[scheme.lower("key")])
@@ -192,7 +238,7 @@ def verify_request(
         raise Refused("unsigned", f"{who} call must be signed.")
     if abs((now if now is not None else time.time()) - t) > SKEW:
         raise Refused("clock-skew", "The call's time is more than a minute off this server's.")
-    msg = _lines(scheme.label, method.upper(), path, body_hash(body), t, nonce, own_fp)
+    msg = _lines(scheme.label, method.upper(), path, digest or body_hash(body), t, nonce, own_fp)
     try:
         Ed25519PublicKey.from_public_bytes(public).verify(sig, msg)
     except InvalidSignature, ValueError:

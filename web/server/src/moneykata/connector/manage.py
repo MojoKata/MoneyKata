@@ -31,8 +31,11 @@ def _hash(secret: str) -> str:
     return hashlib.sha256(secret.encode()).hexdigest()
 
 
-def encode_code(address: str, fp: str, secret: str) -> str:
-    raw = json.dumps({"a": address, "f": fp, "c": secret}, separators=(",", ":")).encode()
+def encode_code(address: str, fp: str, secret: str, cert: str | None = None) -> str:
+    """A pairing code (protocol §4.1); `t`, this server's certificate key, only when the
+    certificate is its own, for the connector to pin."""
+    body = {"a": address, "f": fp, "c": secret, **({"t": cert} if cert else {})}
+    raw = json.dumps(body, separators=(",", ":")).encode()
     return "mkp1." + keys.b64(raw)
 
 
@@ -72,6 +75,9 @@ def own_address(s) -> str | None:
 def pair_code(srv, by: str) -> tuple[Connector, str]:
     """Settings › Connector › Pair (S18.4.1): a code shown once, valid 24 hours. A code already
     out is withdrawn by the new one."""
+    from .. import certs
+
+    cert = certs.own_key(srv)
     with srv.db.tx() as s:
         address = own_address(s)
         if not address:
@@ -99,7 +105,7 @@ def pair_code(srv, by: str) -> tuple[Connector, str]:
         s.add(row)
         activity.record(s, "connector.pairing", actor=by, for_admins=True)
         s.flush()
-        return row, encode_code(address, fp, secret)
+        return row, encode_code(address, fp, secret, cert)
 
 
 def _end(s, row: Connector, by: str | None, reason: str) -> None:

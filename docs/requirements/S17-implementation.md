@@ -406,8 +406,7 @@
       2. **Transport**: TLS verified on links and the connector, a certificate of a server's
          own pinned through its code (S11.1, S18.4); signed answers naming the caller and the
          request; only `link-ended` ending a link (S11.6); link changes and receipts sealed end
-         to end to the receiving copy's key, a new link protocol version (S11.4,
-         `docs/link-protocol.md`).
+         to end to the receiving copy's key (S11.4, `docs/link-protocol.md`).
       3. **The reader's sandbox** (S9.8.4.2), with every file a person or the connector brings
          parsed in it.
       4. **Key operations**: the journal, re-encryption only while the server isn't serving,

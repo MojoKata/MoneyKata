@@ -9,6 +9,7 @@ import contextlib
 import datetime as dt
 import hashlib
 import json
+import re
 import secrets
 
 from sqlalchemy import false, select
@@ -61,9 +62,28 @@ def _hash(secret: str) -> str:
     return hashlib.sha256(secret.encode()).hexdigest()
 
 
-def encode_code(address: str, fp: str, secret: str) -> str:
-    raw = json.dumps({"a": address, "f": fp, "c": secret}, separators=(",", ":")).encode()
+def encode_code(address: str, fp: str, secret: str, cert: str | None = None) -> str:
+    """A link code (link-protocol.md §4.1); `t`, the fingerprint of this server's certificate
+    key, only when that certificate is its own."""
+    body = {"a": address, "f": fp, "c": secret, **({"t": cert} if cert else {})}
+    raw = json.dumps(body, separators=(",", ":")).encode()
     return "mkl1." + keys.b64(raw)
+
+
+FINGERPRINT = re.compile(r"[0-9a-f]{64}")
+
+
+def _cert(value) -> str | None:
+    """A certificate key's fingerprint as a code or a peer sends it; anything else is none."""
+    return value if isinstance(value, str) and FINGERPRINT.fullmatch(value) else None
+
+
+def pins(link: Link) -> frozenset[str] | None:
+    """The certificate keys a peer whose certificate is its own may present: the pinned one
+    and the next it announced. None: a public certificate, verified against the system's
+    roots."""
+    have = {x for x in (link.peerCert, link.peerCertNext) if x}
+    return frozenset(have) if have else None
 
 
 def decode_code(code: str) -> dict:
@@ -78,8 +98,115 @@ def decode_code(code: str) -> dict:
     return out
 
 
+def call(srv, link_id: str, path: str, data: dict | None = None) -> dict:
+    """A signed call to a linked server, its TLS checked against the certificate keys pinned
+    for it. One it announced, once presented, becomes the one pinned; one it didn't is kept
+    for an admin to accept, and the link says so (link-protocol.md §4.5)."""
+    with srv.db.read() as s:
+        link = _get(s, link_id)
+        address, peer, pinned = link.address, keys.unb64(link.peerKey), pins(link)
+        announced = link.peerCertNext
+    seen: list[str] = []
+    try:
+        out = client.call(srv, address, peer, path, data, pins=pinned, seen=seen)
+    except LinkError as e:
+        if e.code == "certificate-changed" and e.offered:
+            with srv.db.tx() as s:
+                row = _get(s, link_id)
+                row.peerCertOffered = e.offered
+                row.lastError = e.message
+                row.failingSince = row.failingSince or clock.now()
+        elif e.code == "link-ended" and path != "/link/v1/end":
+            ended_by_peer(srv, link_id)
+        elif e.code == "not-linked":
+            # A peer restored from an older backup, say: broken, for an admin to end or link
+            # again, never ended by an answer that isn't the peer's `link-ended` (S11.6).
+            with srv.db.tx() as s:
+                row = _get(s, link_id)
+                row.brokenAt = row.brokenAt or clock.now()
+                row.lastError = "The other server has no link with this one: end it, or link again."
+                row.failingSince = row.failingSince or clock.now()
+        raise
+    if seen and announced and seen[0] == announced:
+        with srv.db.tx() as s:
+            row = _get(s, link_id)
+            row.peerCert, row.peerCertNext = row.peerCertNext, None
+    return out
+
+
+def ended_by_peer(srv, link_id: str) -> None:
+    """The peer's signed `link-ended`: the link ends here too, its copy, shares and remote
+    users with it (S11.6)."""
+    from . import receive
+
+    with srv.db.tx() as s:
+        row = _get(s, link_id)
+        if row.state == "ended":
+            return
+        row.state, row.endedAt = "ended", clock.now()
+        end_users(s, row)
+        activity.record(s, "link.ended-by-peer", actor=None, for_admins=True)
+    receive.forget(srv, link_id)
+
+
+def accept_certificate(srv, link_id: str, by: str) -> Link:
+    """An admin accepts the certificate key a peer presented unannounced, once they have
+    compared it with the peer's admin (link-protocol.md §4.5)."""
+    with srv.db.tx() as s:
+        link = _get(s, link_id)
+        if not link.peerCertOffered:
+            raise LinkError("no-certificate", "No other certificate is waiting to be accepted.")
+        link.peerCert, link.peerCertNext = link.peerCertOffered, None
+        link.peerCertOffered = None
+        link.lastError = link.failingSince = None
+        activity.record(s, "link.certificate-accepted", actor=by, for_admins=True)
+        return link
+
+
+def announce_certificate(srv) -> int:
+    """This server's own certificate key, when it changed since it was last told to the peers:
+    told to each active or paused link, signed (link-protocol.md §4.5). Returns how many were
+    told."""
+    from .. import certs
+
+    key = certs.own_key(srv)
+    with srv.db.read() as s:
+        told = settings.get(s, "linkCertificate")
+        ids_ = list(
+            s.scalars(
+                select(Link.id).where(Link.deleted == false(), Link.state.in_(("active", "paused")))
+            )
+        )
+    if (key or None) == (told or None):
+        return 0
+    n = 0
+    for link_id in ids_:
+        with contextlib.suppress(LinkError):  # it learns at the next exchange instead
+            call(srv, link_id, "/link/v1/certificate", {"fingerprint": key})
+            n += 1
+    with srv.db.tx() as s:
+        settings.put(s, "linkCertificate", key, None)
+    return n
+
+
+def answer_certificate(srv, link: Link, body: dict) -> dict:
+    """A peer announces its next certificate key; either is accepted until it is in use."""
+    key = _cert(body.get("fingerprint"))
+    with srv.db.tx() as s:
+        row = _get(s, link.id)
+        if key and key != row.peerCert:
+            row.peerCertNext = key
+            if row.peerCertOffered == key:  # presented early: the announcement vouches for it
+                row.peerCert, row.peerCertNext, row.peerCertOffered = key, None, None
+                row.lastError = row.failingSince = None
+    return {"ok": True}
+
+
 def invite(srv, by: str) -> tuple[Link, str]:
     """An invitation: a link waiting for the other server, and the code shown once."""
+    from .. import certs
+
+    cert = certs.own_key(srv)
     with srv.db.tx() as s:
         address = own_address(s)
         if not address:
@@ -102,14 +229,18 @@ def invite(srv, by: str) -> tuple[Link, str]:
         s.add(link)
         activity.record(s, "link.invited", actor=by, for_admins=True)
         s.flush()
-        return link, encode_code(address, fp, secret)
+        return link, encode_code(address, fp, secret, cert)
 
 
 def join(srv, code: str, by: str) -> Link:
     """Answer an invitation: check the inviting server's key against the code, then ask it to
     link. The link waits for that server's admin to approve it."""
+    from .. import certs
+
     c = decode_code(code)
-    hi = client.hello(srv, c["a"])
+    theirs = _cert(c.get("t"))
+    pinned = frozenset([theirs]) if theirs else None
+    hi = client.hello(srv, c["a"], pinned)
     peer = keys.unb64(hi.get("key", ""))
     if keys.fingerprint(peer) != c["f"]:
         raise LinkError(
@@ -133,14 +264,17 @@ def join(srv, code: str, by: str) -> Link:
         ).first():
             raise LinkError("already-linked", "This server already has a link with that one.")
     # No directory crosses before the other side's admin approves (link-protocol.md §4.1).
-    client.call(srv, c["a"], peer, "/link/v1/join", {"code": c["c"], "address": address})
+    mine = certs.own_key(srv)
+    body = {"code": c["c"], "address": address, **({"t": mine} if mine else {})}
+    client.call(srv, c["a"], peer, "/link/v1/join", body, pins=pinned)
     with srv.db.tx() as s:
         link = Link(
             id=ids.new_id("Link"),
             state="pending",
             role="joiner",
-            address=c["a"],
+            address=client.checked_address(c["a"]),
             peerKey=keys.b64(peer),
+            peerCert=theirs,
             peerVersion=hi.get("version"),
             peerProtocol=hi.get("protocol"),
             createdById=by,
@@ -171,10 +305,15 @@ def answer_join(srv, caller_key: bytes, body: dict) -> dict:
             )
         ).first():
             return {"error": ("already-linked", "These two servers are already linked.")}
+        try:
+            address = client.checked_address(str(body.get("address") or ""))
+        except LinkError as e:
+            return {"error": (e.code, e.message)}
         link.state = "requested"
         link.codeHash = None
         link.peerKey = keys.b64(caller_key)
-        link.address = body.get("address")
+        link.address = address
+        link.peerCert = _cert(body.get("t"))
         link.lastOkAt = clock.now()
         s.flush()
         activity.record(s, "link.request-received", actor=None, for_admins=True)
@@ -284,21 +423,22 @@ def set_state(
             end_users(s, link)
         kind = {"paused": "link.paused", "active": "link.resumed", "ended": "link.ended"}[state]
         activity.record(s, kind, actor=by, for_admins=True)
-        address, peer = link.address, link.peerKey
+        peer = link.peerKey
     if state == "ended":
         from . import receive
 
         receive.forget(srv, link_id)
     if state == "ended" and was in ("requested", "pending", "active", "paused") and peer:
         with contextlib.suppress(LinkError):  # else the other side learns at its next call
-            client.call(srv, address, keys.unb64(peer), "/link/v1/end")
+            call(srv, link_id, "/link/v1/end")
     return link
 
 
 def exchange(srv, link_id: str) -> None:
     """One exchange with the peer (S11.2–S11.4), made by whichever side can reach the other:
-    each side's directory for the other's, the peer's change for this side in its answer, and
-    then this side's change for the peer. A refusal saying the link ended there ends it here."""
+    each side's directory and copy key for the other's, the peer's change for this side in its
+    answer, and then this side's change for the peer, its receipts sent ahead of it. Only a
+    signed `link-ended` ends the link here (S11.6)."""
     from ..ui.prices import apply_egress
     from . import receive, serve
 
@@ -311,31 +451,26 @@ def exchange(srv, link_id: str) -> None:
     apply_egress(srv)
     with srv.db.read() as s:
         link = _get(s, link_id)
-        address, peer = link.address, keys.unb64(link.peerKey)
         pending = link.state == "pending"
         # A link not yet approved over there gets no directory (link-protocol.md §4.1).
         mine = {
             **({} if pending else directory(s)),
             "have": link.gotSeq,
             "wantFull": link.needsFull,
+            **({"copyKey": link.copyPublicKey} if link.copyPublicKey else {}),
         }
     try:
-        out = client.call(srv, address, peer, "/link/v1/exchange", mine)
+        out = call(srv, link_id, "/link/v1/exchange", mine)
     except LinkError as e:
-        if e.code == "link-requested":
-            return  # the other side's admin hasn't approved it yet
+        if e.code in ("link-requested", "link-ended"):
+            return  # not approved there yet; or ended, here too now
+        if e.code in ("not-linked", "certificate-changed"):
+            raise  # recorded on the link as it is (S11.6, link-protocol.md §4.5)
         with srv.db.tx() as s:
             link = _get(s, link_id)
             if e.code == "link-paused":
                 # Paused on the other side: waits, and isn't alerted (S11.7.2).
                 link.lastError = e.message
-                ended = False
-            elif e.code == "link-ended" or e.code == "not-linked":
-                if link.state != "ended":
-                    link.state, link.endedAt = "ended", clock.now()
-                    end_users(s, link)
-                    activity.record(s, "link.ended-by-peer", actor=None, for_admins=True)
-                ended = True
             else:
                 # A clock more than a minute off is named as such (S12.11.1.1): the fix is
                 # NTP on one host, not the network.
@@ -343,17 +478,15 @@ def exchange(srv, link_id: str) -> None:
                     f"the clocks disagree: {e.message}" if e.code == "clock-skew" else e.message
                 )
                 link.failingSince = link.failingSince or clock.now()
-                ended = False
-        if ended:
-            receive.forget(srv, link_id)
-            return
         raise
     with srv.db.tx() as s:
         link = _get(s, link_id)
         if link.state == "pending" and out.get("state") == "active":
             link.state = "active"
         link.lastOkAt, link.lastError, link.failingSince = clock.now(), None, None
+        link.brokenAt = None
         link.peerVersion = out.get("version") or link.peerVersion
+        link.peerCopyKey = _copy_key(out.get("copyKey"))
         apply_directory(s, link, out)
         active = link.state == "active"
     if not active:
@@ -368,18 +501,43 @@ def exchange(srv, link_id: str) -> None:
         while more > 0:
             with srv.db.read() as s:
                 got = _get(s, link_id).gotSeq
-            nxt = client.call(srv, address, peer, "/link/v1/next", {"have": got})
+            nxt = call(srv, link_id, "/link/v1/next", {"have": got})
             if not nxt.get("change"):
                 break
             receive.take(srv, link_id, nxt["change"])
             more = int(nxt.get("more") or 0)
     mine = serve.change_for(srv, link_id, int(out.get("have") or 0), bool(out.get("wantFull")))
     for part in mine:
-        answer = client.call(srv, address, peer, "/link/v1/deliver", {"change": part})
+        for fid in part.get("fetch") or []:
+            _deliver_file(srv, link_id, fid)
+        answer = call(srv, link_id, "/link/v1/deliver", {"change": part})
         if answer.get("have") != part.get("seq"):
             break  # the peer missed one: its next exchange asks again
     if mine:
         _served(srv, mine[0])
+
+
+def _copy_key(value) -> str | None:
+    """A peer's copy key as it sends it: 32 bytes, base64url; anything else is none."""
+    try:
+        return value if isinstance(value, str) and len(keys.unb64(value)) == 32 else None
+    except ValueError:
+        return None
+
+
+def _deliver_file(srv, link_id: str, file_id: str) -> None:
+    """One of this side's receipts, sealed to the peer's copy key, sent ahead of the change
+    that names it (link-protocol.md §4.3)."""
+    from . import serve
+
+    path, digest = serve.sealed_receipt(srv, link_id, file_id)
+    with srv.db.read() as s:
+        link = _get(s, link_id)
+        address, peer, pinned = link.address, keys.unb64(link.peerKey), pins(link)
+    try:
+        client.send_file(srv, address, peer, file_id, path, digest, pinned)
+    finally:
+        path.unlink(missing_ok=True)
 
 
 def _served(srv, change: dict) -> None:
@@ -401,7 +559,9 @@ def answer_exchange(srv, link: Link, body: dict, version: str | None) -> dict:
         if row.state == "pending":
             row.state = "active"  # only an approved link calls this way
         row.lastOkAt, row.lastError, row.failingSince = clock.now(), None, None
+        row.brokenAt = None
         row.peerVersion = version or row.peerVersion
+        row.peerCopyKey = _copy_key(body.get("copyKey"))
         apply_directory(s, row, body)
         out = {
             **directory(s),
@@ -409,6 +569,7 @@ def answer_exchange(srv, link: Link, body: dict, version: str | None) -> dict:
             "version": srv.version,
             "have": row.gotSeq,
             "wantFull": row.needsFull,
+            **({"copyKey": row.copyPublicKey} if row.copyPublicKey else {}),
         }
         active = row.state == "active"
     if active:
@@ -442,9 +603,10 @@ def answer_next(srv, link: Link, body: dict) -> dict:
 
 def answer_deliver(srv, link: Link, body: dict) -> dict:
     from . import receive
+    from .routes import DELIVERED
 
     if body.get("change"):
-        receive.take(srv, link.id, body["change"])
+        receive.take(srv, link.id, body["change"], DELIVERED.pop(link.id, None))
     with srv.db.read() as s:
         return {"have": _get(s, link.id).gotSeq}
 

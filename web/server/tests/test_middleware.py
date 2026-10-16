@@ -77,14 +77,16 @@ def test_forwarded_headers_only_from_trusted_proxies(config):
     assert call("192.0.2.1", fwd, ["10.0.0.0/8"]) == {"client": "192.0.2.1", "scheme": "http"}
 
 
-def test_an_outbound_client_passes_its_certificate_check_to_its_transport():
-    """A linked server's own certificate (S11.2): verify=False must reach the transport, which
-    does the TLS; httpx ignores the client's setting once a transport is given."""
+def test_an_outbound_client_always_verifies_tls():
+    """TLS is never turned off (S11.1.3, S13.5): a server's own certificate is pinned instead."""
     import ssl
+
+    import pytest
 
     from moneykata import net
 
-    c = net.Client(net.Guard(), verify=False)
-    ctx = c._transport._pool._ssl_context
-    assert ctx.verify_mode == ssl.CERT_NONE
+    with pytest.raises(TypeError):
+        net.Client(net.Guard(), verify=False)
     assert net.Client(net.Guard())._transport._pool._ssl_context.verify_mode == ssl.CERT_REQUIRED
+    pinned = net.Client(net.Guard(), pins=["ab" * 32])._transport._pool._ssl_context
+    assert pinned.verify_mode == ssl.CERT_NONE, "the key decides, checked after the handshake"

@@ -384,7 +384,57 @@ def change_for(srv, link_id: str, have: int, full: bool) -> list[dict]:
         for (item_id, path, viewer), h in hashes.items():
             s.add(LinkSent(linkId=link_id, itemId=item_id, path=path, viewer=viewer, hash=h))
         own = keys.private_key(s, srv.keys.secrets)
-    return [changes.sign(own, part) for part in parts]
+        # Sealed to the peer's copy key, so only its copy reads what it holds (S11.9.6); with
+        # no copy key yet, only the registry travels.
+        copy_key = keys.unb64(link.peerCopyKey) if link.peerCopyKey else None
+        way = keys.direction(
+            keys.fingerprint(keys.raw_public(own.public_key())),
+            keys.fingerprint(keys.unb64(link.peerKey)),
+        )
+    return [changes.sign(own, changes.seal_part(part, copy_key, way)) for part in parts]
+
+
+def sealed_receipt(srv, link_id: str, receipt_id: str):
+    """One receipt sealed to the peer's copy key, written aside so its sealed bytes can be
+    hashed and signed before they are sent; the caller removes the file once it is sent. The
+    receipt is read through this server's own decryption and is never on disk in the clear.
+    Returns the path and the sealed bytes' SHA-256."""
+    import secrets
+
+    from .. import receipts
+    from ..store.entities.receipts import Receipt
+    from . import sealed
+
+    with srv.db.read() as s:
+        link = s.get(Link, link_id)
+        r = s.get(Receipt, receipt_id)
+        own = keys.public_of(s, srv.keys.secrets)
+        copy_key = keys.unb64(link.peerCopyKey) if link.peerCopyKey else None
+        peer = keys.unb64(link.peerKey)
+    if copy_key is None or r is None:
+        raise changes.ChangeError("the peer's copy has no access key yet")
+    out = srv.config.data_dir / "links-out"
+    out.mkdir(mode=0o700, exist_ok=True)
+    path = out / (secrets.token_hex(12) + ".mkr")
+    way = keys.direction(keys.fingerprint(own), keys.fingerprint(peer))
+    sealed.write(
+        path, sealed.seal(copy_key, sealed.RECEIPT, way, receipt_id, receipts.read_file(srv, r))
+    )
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while chunk := f.read(1 << 16):
+            h.update(chunk)
+    return path, h.hexdigest()
+
+
+def stream_file(path):
+    """A sealed file's bytes, then the file gone."""
+    try:
+        with open(path, "rb") as f:
+            while chunk := f.read(1 << 16):
+                yield chunk
+    finally:
+        path.unlink(missing_ok=True)
 
 
 PART_BYTES = 4 * 1024 * 1024  # a change larger than this travels in parts

@@ -189,8 +189,9 @@ class Electrum:
 
     def _connect(self):
         try:
-            self.guard.check(self.cfg.host, self.cfg.port)
-            s = socket.create_connection((self.cfg.host, self.cfg.port), timeout=20)
+            # To the address the guard checked, never a second lookup (S13.5).
+            address = self.guard.check(self.cfg.host, self.cfg.port)
+            s = socket.create_connection((address, self.cfg.port), timeout=20)
             if self.cfg.tls:
                 # Electrum servers mostly use a certificate they made themselves.
                 ctx = ssl.create_default_context()

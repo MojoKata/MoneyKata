@@ -211,11 +211,14 @@ class BodyLimit:
             return
         headers = {k.lower(): v.decode("latin-1") for k, v in scope["headers"]}
         ctype = headers.get(b"content-type", "")
+        to_link = scope["path"].startswith("/link/")
         limit = (
             self.upload_limit()
+            # A receipt a linked server delivers, sealed (link-protocol.md §4.3).
             if ctype.startswith("multipart/")
+            or (to_link and ctype.startswith("application/octet-stream"))
             else LINK_LIMIT
-            if scope["path"].startswith("/link/")
+            if to_link
             else JSON_LIMIT
         )
         too_large = _send_problem(

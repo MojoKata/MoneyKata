@@ -321,13 +321,18 @@ def file(link_id: str, file_id: str, request: Request, c: Caller = Depends(calle
         if row is None or row.itemId not in _mine_items(conn, c.id):
             raise Problem(404, "not-shared", "That receipt isn't shared with you.")
     from .. import receipts
+    from ..links.keys import direction, fingerprint, public_of, unb64
     from .receipts import _disposition
 
+    with srv.db.read() as s:
+        peer = unb64(s.get(Link, link_id).peerKey)
+        # Sealed by its source to this copy's key (S11.9.6), named for that direction.
+        way = direction(fingerprint(peer), fingerprint(public_of(s, srv.keys.secrets)))
     path = folder(srv.config.data_dir, link_id) / "receipts" / row.fileName
     priv = private_key(bytes(o.key))
     h = hashlib.sha256()
     f = open(path, "rb")  # noqa: SIM115 - closed when the stream ends
-    chunks = sealed.open_sealed(priv, sealed.RECEIPT, link_id, file_id, f)
+    chunks = sealed.open_sealed(priv, sealed.RECEIPT, way, file_id, f)
     try:
         first = next(chunks, b"")
     except sealed.SealError:

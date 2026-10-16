@@ -61,6 +61,18 @@ Link = record(
     # The last change this side sent the peer, and the last one it took from the peer.
     Column("sentSeq", Integer, nullable=False, server_default=text("0")),
     Column("gotSeq", Integer, nullable=False, server_default=text("0")),
+    # The peer's copy key for this link (S11.9.2.2), which this side seals its changes and
+    # receipts to; none until the peer's copy has an access key.
+    Column("peerCopyKey", Text),
+    # The peer's TLS certificate, when it is its own (S11.1.3): its key's fingerprint, pinned
+    # from the link code or the join; the next one, announced; and one it presented without
+    # announcing, waiting for an admin to accept it. None pinned: a public certificate.
+    Column("peerCert", Text),
+    Column("peerCertNext", Text),
+    Column("peerCertOffered", Text),
+    # The peer answered that it has no link with this one (S11.6): broken until an admin ends
+    # it or links again.
+    Column("brokenAt", UtcTimestamp),
     CheckConstraint(
         "state IN ('invited', 'requested', 'pending', 'active', 'paused', 'ended')", name="state"
     ),

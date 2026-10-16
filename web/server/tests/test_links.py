@@ -483,19 +483,27 @@ def test_sharing_with_a_linked_server_needs_the_password_again(admins):
     assert r.status_code == 403 and r.json()["code"] == "reauth-required"
 
 
-def test_a_linked_receipts_type_comes_from_its_bytes():
+def test_a_linked_receipts_type_comes_from_its_bytes(tmp_path):
     """What a source calls a file never decides how it is shown (S11.9.6.5): a page with a
-    script arrives as unknown, a PNG as a PNG, and a thumbnail is kept only as an image."""
+    script is unknown, a PNG a PNG, once the copy opens what its source sealed; and a thumbnail
+    is kept only as an image."""
+    from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
     from test_receipts import png
 
-    from moneykata.links import changes, receive
+    from moneykata.links import changes, sealed
 
-    types: dict[str, str] = {}
-    html = [b"<html><script src=/ui/api/linked/x/files/y>", b"</script></html>"]
-    assert b"".join(receive._typed(iter(html), types, "a")) == b"".join(html)
-    image = png()
-    assert b"".join(receive._typed(iter([image[:5], image[5:]]), types, "b")) == image
-    assert types == {"a": receive.UNKNOWN, "b": "image/png"}
+    copy = X25519PrivateKey.generate()
+    public = copy.public_key().public_bytes_raw()
+    for fid, data, kind in (
+        ("Rcpt_a", b"<html><script src=/ui/api/linked/x/files/y></script></html>", None),
+        ("Rcpt_b", png(), "image/png"),
+    ):
+        path = tmp_path / f"{fid}.mkr"
+        sealed.write(path, sealed.seal(public, sealed.RECEIPT, "s>r", fid, [data]))
+        assert changes._type_of(copy, "s>r", fid, path) == (kind or "application/octet-stream")
+        assert changes._type_of(copy, "r>s", fid, path) == "application/octet-stream", (
+            "sealed for one direction, it opens for no other"
+        )
     assert changes._thumbnail("data:image/webp;base64,AAAA") == "data:image/webp;base64,AAAA"
     for bad in ("javascript:alert(1)", "data:text/html;base64,AAAA", None, 7):
         assert changes._thumbnail(bad) is None
@@ -620,3 +628,134 @@ def test_a_remote_user_is_a_person_of_their_own_until_someone_joins_them(admins)
     ca.post(f"/ui/api/settings/links/{links_of(ca)['links'][0]['id']}/pull")
     with a.db.read() as s:
         assert s.get(Person, plan["id"]).name == "Carol"
+
+
+def test_an_answer_names_its_caller_and_its_call():
+    """link-protocol.md §3.3: a signed answer handed on to another caller, or to another
+    request, is refused."""
+    k = signing.Ed25519PrivateKey.generate()
+    pub = keys.raw_public(k.public_key())
+    asked = signing.Asked("n0nce-n0nce", "a" * 64, signing.body_hash(b"{}"))
+    headers = signing.sign_answer(k, 200, b'{"ok":true}', asked)
+    signing.verify_answer(pub, 200, b'{"ok":true}', asked, headers)
+    for other in (
+        signing.Asked("n0nce-n0nce", "b" * 64, asked.body_hash),
+        signing.Asked("n0nce-n0nce", asked.caller_fp, signing.body_hash(b'{"x":1}')),
+        signing.Asked("another-nonce", asked.caller_fp, asked.body_hash),
+    ):
+        with pytest.raises(signing.Refused) as e:
+            signing.verify_answer(pub, 200, b'{"ok":true}', other, headers)
+        assert e.value.code == "bad-signature"
+
+
+def test_only_link_ended_ends_a_link_and_not_linked_marks_it_broken(admins):
+    """S11.6: a peer restored from an older backup answers `not-linked`; the link is marked
+    broken and alerts admins, and nothing is deleted."""
+    from moneykata import alerts
+    from moneykata.links import manage
+
+    a, b, ca, cb, _ = admins
+    a_id, _b_id = linked(ca, cb)
+    other = keys.b64(keys.raw_public(signing.Ed25519PrivateKey.generate().public_key()))
+    with b.db.tx() as s:  # b has no link with a's key, as an older backup wouldn't
+        s.query(Link).update({Link.peerKey: other})
+    out = ca.post(f"/ui/api/settings/links/{a_id}/pull").json()
+    assert out["state"] == "active" and "no link with this one" in out["lastError"]
+    with a.db.read() as s:
+        assert s.get(Link, a_id).brokenAt is not None
+    alerts.evaluate(a)
+    assert any(x["kind"] == "link-broken" for x in ca.get("/ui/api/alerts").json()["open"])
+    assert manage.pins  # the module is there for what follows
+
+
+def test_what_crosses_a_link_is_sealed_to_the_receiving_copy(admins, monkeypatch):
+    """S11.9.6, link-protocol.md §4.4: in transit, a change shows its registry only; its items'
+    names and figures, and its receipts, open only with the receiving copy's key."""
+    from test_accounts import add
+
+    a, b, ca, cb, wire = admins
+    make_user(b, "carol")
+    _a_id, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post("/ui/api/accounts", json={"name": "Secret Brokerage", "type": "brokerage"})
+    acct = acct.json()
+    add(alice, acct["id"], amount="-1234.56", payee="A very private payee")
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
+    alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}})
+    seen: list[bytes] = []
+    original = wire.client
+
+    def watching(guard=None, **kw):
+        c = original(guard, **kw)
+        post = c.post
+
+        def spy(url, **k):
+            r = post(url, **k)
+            seen.append(r.content)
+            seen.append(k.get("content") or b"")
+            return r
+
+        c.post = spy
+        return c
+
+    from moneykata.links import client as link_client
+
+    monkeypatch.setattr(link_client.net, "Client", watching)
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    wire_bytes = b"".join(x if isinstance(x, bytes) else b"" for x in seen)
+    assert b"Secret Brokerage" not in wire_bytes and b"A very private payee" not in wire_bytes
+    assert b'"sealed"' in wire_bytes, "the change crossed, sealed"
+    carol = sign_in(b, "carol")
+    carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
+    items, _ = docs_in(b, b_id)
+    assert [i.name for i in items.values()] == ["Secret Brokerage"], "the copy opens it"
+
+
+def test_a_peers_own_certificate_is_pinned_announced_and_accepted(admins, monkeypatch):
+    """link-protocol.md §4.5: an announced key is accepted beside the pinned one and becomes
+    the pinned one once in use; one presented unannounced waits for an admin to accept it,
+    after the password again."""
+    from moneykata.links import client as link_client
+    from moneykata.links import manage
+
+    a, _b, ca, cb, _ = admins
+    a_id, _ = linked(ca, cb)
+    old, new, rogue = "aa" * 32, "bb" * 32, "cc" * 32
+    with a.db.tx() as s:
+        s.get(Link, a_id).peerCert = old
+    with a.db.read() as s:
+        assert manage.pins(s.get(Link, a_id)) == {old}
+    with a.db.read() as s:
+        manage.answer_certificate(a, s.get(Link, a_id), {"fingerprint": new})
+    with a.db.read() as s:
+        assert manage.pins(s.get(Link, a_id)) == {old, new}
+    real = link_client.call
+
+    def over(key):
+        def fake(*args, seen=None, **kw):
+            out = real(*args, **kw)
+            if seen is not None:
+                seen.append(key)
+            return out
+
+        return fake
+
+    monkeypatch.setattr(link_client, "call", over(new))
+    manage.call(a, a_id, "/link/v1/ping")
+    with a.db.read() as s:
+        row = s.get(Link, a_id)
+        assert (row.peerCert, row.peerCertNext) == (new, None), "in use: now the pinned one"
+
+    def refused(*args, **kw):
+        raise link_client.LinkError("certificate-changed", "changed", offered=rogue)
+
+    monkeypatch.setattr(link_client, "call", refused)
+    with pytest.raises(link_client.LinkError):
+        manage.call(a, a_id, "/link/v1/ping")
+    shown = next(x for x in links_of(ca)["links"] if x["id"] == a_id)
+    assert shown["certificateOffered"] == rogue and shown["certificate"] == keys.short(new)
+    r = ca.post(f"/ui/api/settings/links/{a_id}/accept-certificate")
+    assert r.status_code == 200 and r.json()["certificate"] == keys.short(rogue)
+    assert r.json()["certificateOffered"] is None

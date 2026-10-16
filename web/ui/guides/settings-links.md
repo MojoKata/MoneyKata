@@ -25,7 +25,22 @@ worked. **Pull now** exchanges at once rather than at the next hour. **Pause** s
 exchanging for a time you choose; it shows **paused until** then and resumes on its own, or at
 once with **Resume now**. **End link** ends it on both sides: the other side learns at once, or
 at its next call; its users are removed here, and nothing is deleted on the server that shared.
-A server that can't be reached shows **unreachable since** and the reason.
+A server that can't be reached shows **unreachable since** and the reason. One that answers it
+has no link with this one (restored from an older backup, say) shows **broken**: end the link, or
+link again. Only the other server ending the link ends it here.
+
+What crosses a link is sealed by the server that sends it to the receiving copy's key, so
+nothing between the two servers, not even a proxy in front of one of them, reads it.
+
+## Its certificate changed {#certificate-changed}
+
+The connection to each server is TLS, checked before anything is sent: a public certificate
+against the system's trusted roots, and a server's own certificate by its key, pinned when the
+link was made. A server whose own certificate's key changes tells its peers first. One that
+presents a key it didn't announce is refused, and the link shows the new key: ask its admin to
+read out **Its own certificate's key** from their Linked servers, compare it, and **Accept it**
+(it asks for your password again). This server's own certificate's key, when it has one of its
+own, is shown at the top of this section.
 
 ## Syncing {#progress}
 

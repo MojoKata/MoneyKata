@@ -62,10 +62,22 @@ class Core:
     def _attach(self, pairing: keys.Pairing) -> None:
         self.pairing = pairing
         self.egress.allow(_host(pairing.address))
-        hi = client.hello(self.transport, pairing.address)
+        hi = client.hello(self.transport, pairing.address, pairing.pins())
         if hi.get("fingerprint") != pairing.server_fp:
             raise ServerError("fingerprint-mismatch", "The server's key isn't the one paired with.")
-        self.server = client.Server(pairing, self.transport, client.server_key(hi))
+        self.server = client.Server(
+            pairing, self.transport, client.server_key(hi), self._certificate
+        )
+
+    def _certificate(self, pinned: str, following: str | None) -> None:
+        """MoneyKata announced its next certificate key, in a signed answer, or started using
+        the one it announced: the pairing keeps the keys it may present (protocol §1.2)."""
+        with self._lock:
+            p = self.pairing
+            if p is None:
+                return
+            p.cert, p.cert_next = pinned, following
+            keys.save(self.data / "pairing.json", p)
 
     def pair(self, code: str) -> str:
         """`moneykata-connector pair <code>` (S18.4.2): check the server's fingerprint against
@@ -75,15 +87,16 @@ class Core:
             raise VaultError("unlock the vault first: the sealing key is kept in it")
         c = decode_code(code)
         self.egress.allow(_host(c["a"]))
-        hi = client.hello(self.transport, c["a"])
+        cert = c.get("t") if isinstance(c.get("t"), str) else None
+        hi = client.hello(self.transport, c["a"], frozenset([cert]) if cert else None)
         if hi.get("fingerprint") != c["f"]:
             raise ServerError(
                 "fingerprint-mismatch",
                 "The server at that address doesn't have the key the code names: nothing sent.",
             )
         private, public = keys.new_sealing_key()
-        pairing = keys.make(self.data / "pairing.json", c["a"], c["f"], public)
-        server = client.Server(pairing, self.transport, client.server_key(hi))
+        pairing = keys.make(self.data / "pairing.json", c["a"], c["f"], public, cert)
+        server = client.Server(pairing, self.transport, client.server_key(hi), self._certificate)
         out = server.call(
             "/connector/v1/pair",
             {"code": code, "sealingKey": keys.b64(public), "version": client.VERSION},

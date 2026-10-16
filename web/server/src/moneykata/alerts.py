@@ -181,6 +181,30 @@ def linked_servers(s: Session, server) -> Iterable[Cause]:
         select(Link).where(Link.deleted == false(), Link.state.in_(("active", "pending")))
     ):
         name = link.peerName or "A linked server"
+        # Both at once, not after the failing threshold: an admin decides each (S11.6, §4.5).
+        if link.brokenAt:
+            yield Cause(
+                key=f"link-broken:{link.id}",
+                kind="link-broken",
+                title=f"{name} has no link with this server",
+                about="restored from an older backup, perhaps · end the link, or link again",
+                link="/ui/settings/links",
+                fix="Linked servers",
+                icon="link",
+                since=link.brokenAt,
+            )
+            continue
+        if link.peerCertOffered:
+            yield Cause(
+                key=f"link-cert:{link.id}",
+                kind="link-certificate",
+                title=f"{name}'s certificate changed",
+                about="compare its new fingerprint with its admin, then accept it",
+                link="/ui/settings/links",
+                fix="Linked servers",
+                icon="link",
+            )
+            continue
         if link.failingSince and link.lastError:
             yield Cause(
                 key=f"link:{link.id}",

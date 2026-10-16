@@ -74,6 +74,14 @@ def _url(v: Any) -> str | None:
     return v.rstrip("/")
 
 
+def _link_url(v: Any) -> str | None:
+    """A link address (S11.2): https, a host, no query or fragment."""
+    out = _url(v)
+    if out is not None and (not out.startswith("https://") or "?" in out or "#" in out):
+        raise Invalid("an https address with no query, such as https://money.example.lan")
+    return out
+
+
 def _domains(v: Any) -> list[str]:
     if not isinstance(v, list) or not all(isinstance(d, str) for d in v):
         raise Invalid("a list of email domains")
@@ -223,7 +231,9 @@ _d("bitcoinNodeCert", "bitcoin", None, _optional_text(64))
 _d("bitcoinNodeCertOffered", "bitcoin", None, _optional_text(64))
 # Linked servers (S16.9, S11): the address peers reach this server's /link at (the public URL
 # when not set), and how long an unlocked linked copy may go unused (S11.9.4)
-_d("linkAddress", "links", None, _url)
+_d("linkAddress", "links", None, _link_url)
+# This server's own certificate key as last told to its peers (link-protocol.md §4.5).
+_d("linkCertificate", "links", None, _optional_text(64))
 _d("linkReleaseMinutes", "links", 60, _int(5, 24 * 60))
 # Network (S16.14): the address ranges allowed to reach each path; empty allows any. /mcp
 # follows the app's; the connector's defaults to the LAN and the overlay (Tailscale's range)

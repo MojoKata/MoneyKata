@@ -17,10 +17,11 @@ router = APIRouter(prefix="/connector/v1", include_in_schema=False)
 STATUS = {"protocol-unsupported": 426, "limit": 429, "not-found": 404}
 
 
-def answer(srv, data: dict, nonce: str, status: int = 200, headers=None) -> Response:
+def answer(srv, data: dict, asked: signing.Asked, status: int = 200, headers=None) -> Response:
+    """Signed to the call it answers: its nonce, the connector and its body (protocol §3.3)."""
     body = exactjson.dumps(data, separators=(",", ":")).encode()
     k, _ = own(srv)
-    signed = signing.sign_answer(k, status, body, nonce, scheme=signing.CONN)
+    signed = signing.sign_answer(k, status, body, asked, scheme=signing.CONN)
     return Response(
         body,
         status_code=status,
@@ -31,14 +32,19 @@ def answer(srv, data: dict, nonce: str, status: int = 200, headers=None) -> Resp
 
 def refusal(request: Request, e: signing.Refused, headers=None) -> Response:
     status = STATUS.get(e.code, 403)
-    nonce = request.headers.get("mk-conn-nonce")
-    if not nonce:
+    call = asked(request)
+    if call is None:
         return JSONResponse(
             {"code": e.code, "message": e.message}, status_code=status, headers=headers
         )
     return answer(
-        request.app.state.server, {"code": e.code, "message": e.message}, nonce, status, headers
+        request.app.state.server, {"code": e.code, "message": e.message}, call, status, headers
     )
+
+
+def asked(request: Request) -> signing.Asked | None:
+    """The call being answered; its body was read when it was verified."""
+    return signing.asked_of(request.headers, getattr(request, "_body", b""), signing.CONN)
 
 
 def _protocol(request: Request) -> int:
@@ -55,8 +61,8 @@ def _protocol(request: Request) -> int:
 async def _signed(request: Request) -> tuple[signing.Caller, bytes, int]:
     """The verified caller and body of a signed call, whoever the caller is."""
     srv = request.app.state.server
-    protocol = _protocol(request)
     body = await request.body()
+    protocol = _protocol(request)
     _, fp = own(srv)
     path = request.url.path + (f"?{request.url.query}" if request.url.query else "")
     caller = signing.verify_request(
@@ -112,14 +118,14 @@ async def pair(request: Request):
     if "error" in out:
         code, message = out["error"]
         return refusal(request, signing.Refused(code, message))
-    return answer(srv, out, caller.nonce)
+    return answer(srv, out, asked(request))
 
 
 @router.post("/report")
 async def report(request: Request):
     srv = request.app.state.server
     try:
-        row, caller, body, protocol = await verified(request)
+        row, _caller, body, protocol = await verified(request)
     except signing.Refused as e:
         return refusal(request, e)
     out = manage.apply_report(
@@ -131,26 +137,32 @@ async def report(request: Request):
         request.client.host if request.client else None,
     )
     srv.tasks.run_now("alerts")
-    return answer(srv, out, caller.nonce)
+    from .. import certs
+
+    # This server's own certificate key, in every answer, so a key the connector hasn't pinned
+    # is announced, signed, before it is in use (protocol §1.2).
+    if key := certs.own_key(srv):
+        out = {**out, "certificate": key}
+    return answer(srv, out, asked(request))
 
 
 @router.post("/connections/{connection_id}/credential/taken")
 async def credential_taken(connection_id: str, request: Request):
     srv = request.app.state.server
     try:
-        row, caller, _, _ = await verified(request)
+        row, _caller, _, _ = await verified(request)
     except signing.Refused as e:
         return refusal(request, e)
     if not manage.credential_taken(srv, row, connection_id):
         return refusal(request, signing.Refused("not-found", "No such Connection."))
-    return answer(srv, {"ok": True}, caller.nonce)
+    return answer(srv, {"ok": True}, asked(request))
 
 
 @router.post("/connections/{connection_id}/sign-in")
 async def sign_in(connection_id: str, request: Request):
     srv = request.app.state.server
     try:
-        row, caller, body, _ = await verified(request)
+        row, _caller, body, _ = await verified(request)
     except signing.Refused as e:
         return refusal(request, e)
     address = str(exactjson.loads(body or b"{}").get("address") or "")
@@ -159,7 +171,7 @@ async def sign_in(connection_id: str, request: Request):
     if not manage.sign_in_address(srv, row, connection_id, address):
         return refusal(request, signing.Refused("not-found", "No such Connection."))
     srv.tasks.run_now("alerts")
-    return answer(srv, {"ok": True}, caller.nonce)
+    return answer(srv, {"ok": True}, asked(request))
 
 
 @router.post("/unpaired")
@@ -168,11 +180,11 @@ async def unpaired(request: Request):
     Unpair would (S18.4.4)."""
     srv = request.app.state.server
     try:
-        _, caller, _, _ = await verified(request)
+        _, _caller, _, _ = await verified(request)
     except signing.Refused as e:
         return refusal(request, e)
     manage.unpair(srv, None, "unpaired-by-connector")
-    return answer(srv, {"state": "ended"}, caller.nonce)
+    return answer(srv, {"state": "ended"}, asked(request))
 
 
 @router.post("/accounts/{account_id}/files")
@@ -183,7 +195,7 @@ async def post_file(account_id: str, request: Request):
 
     srv = request.app.state.server
     try:
-        row, caller, body, _ = await verified(request)
+        row, _caller, body, _ = await verified(request)
     except signing.Refused as e:
         return refusal(request, e)
     if row.confirmedAt is None:
@@ -216,4 +228,4 @@ async def post_file(account_id: str, request: Request):
         return refusal(request, signing.Refused("limit", e.message), {"Retry-After": e.retry_after})
     except files.Refused as e:
         return refusal(request, signing.Refused(e.code, e.message))
-    return answer(srv, out, caller.nonce)
+    return answer(srv, out, asked(request))
