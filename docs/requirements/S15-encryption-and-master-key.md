@@ -54,8 +54,11 @@ replica holds only the right-hand side, and the whole host can be backed up as i
    6. **Hashed, never encrypted**: passwords (argon2id) and session, invitation, reset and
       confirmation tokens (SHA-256 of a random value). They never need to be read back, so
       there is no key that could reveal them.
-   7. **Not encrypted**: the configuration file, and the logs, which must never hold amounts,
-      names or secrets.
+   7. **Not encrypted**: the configuration file; the logs, which must never hold amounts,
+      names or secrets; the `tls/` pair in the data directory in `tls` mode (S13.3), which
+      protects the listener and not the data; and the **mail folder**, where emails are
+      written while SMTP is not set up (S16.2): each holds a link that is a one-day token,
+      so each file is removed a day after it was written.
 2. **No external key service, and no key file.** MoneyKata keeps no master key at all: the
    phrase is entered after every start and held in memory only while it is used. HashiCorp
    Vault, cloud KMSs (AWS, GCP, Azure), HSMs and TPM sealing are **not supported**: on a

@@ -58,6 +58,8 @@ class ConnectorOut(Model):
     locked: bool
     pairedAt: dt.datetime | None
     pairedBy: str | None
+    confirmedAt: dt.datetime | None  # an admin compared the fingerprints (S18.4.3)
+    confirmedBy: str | None
     lastReportAt: dt.datetime | None
     silentForSeconds: int | None  # past the 15 minutes allowed
     connectorVersion: str | None
@@ -114,6 +116,8 @@ def view(s, srv) -> ConnectorOut:
             locked=True,
             pairedAt=None,
             pairedBy=None,
+            confirmedAt=None,
+            confirmedBy=None,
             lastReportAt=None,
             silentForSeconds=None,
             connectorVersion=None,
@@ -121,6 +125,7 @@ def view(s, srv) -> ConnectorOut:
             connections=[],
         )
     by = s.get(User, row.pairedById) if row.pairedById else None
+    confirmed_by = s.get(User, row.confirmedById) if row.confirmedById else None
     silent = manage.silent_for(row)
     connections = s.scalars(
         select(Connection)
@@ -141,6 +146,8 @@ def view(s, srv) -> ConnectorOut:
         locked=row.locked,
         pairedAt=row.pairedAt,
         pairedBy=by.displayName if by else None,
+        confirmedAt=row.confirmedAt,
+        confirmedBy=confirmed_by.displayName if confirmed_by else None,
         lastReportAt=row.lastReportAt,
         silentForSeconds=int(silent.total_seconds()) if silent else None,
         connectorVersion=row.connectorVersion,
@@ -171,6 +178,18 @@ def pair(request: Request, c: Caller = Depends(admin)):
         expiresAt=row.codeExpiresAt,
         command=f"docker compose exec connector moneykata-connector pair {code}",
     )
+
+
+@router.post("/settings/connector/confirm", response_model=ConnectorOut)
+def confirm(request: Request, c: Caller = Depends(admin)):
+    """Confirm (S18.4.3): the admin compared the fingerprint both sides show. Until then the
+    connector gets no sealed credential and posts no file. The password again (S13.7.2)."""
+    recent_auth(c)
+    srv = server(request)
+    if not manage.confirm(srv, c.id):
+        raise Problem(404, "not-found", "No connector is paired.")
+    with srv.db.tx() as s:
+        return view(s, srv)
 
 
 @router.post("/settings/connector/unpair", response_model=ConnectorOut)

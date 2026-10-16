@@ -181,6 +181,13 @@ async def post_file(account_id: str, request: Request):
         row, caller, body, _ = await verified(request)
     except signing.Refused as e:
         return refusal(request, e)
+    if row.confirmedAt is None:
+        return refusal(
+            request,
+            signing.Refused(
+                "not-confirmed", "An admin has not confirmed the pairing yet (S18.4.3)."
+            ),
+        )
     try:
         data, meta = files.parts(request, body)
     except ValueError as e:

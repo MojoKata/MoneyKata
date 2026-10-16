@@ -42,6 +42,7 @@ class ConnectorInfo(Model):
     """What any user needs to start a Connection: whether a connector is paired, and its keys."""
 
     paired: bool
+    confirmed: bool  # an admin compared the fingerprints (S18.4.3); sealing waits for it
     locked: bool
     fingerprint: str | None  # four groups of four
     sealingKey: str | None  # base64url, for sealing in the browser (S18.7.1)
@@ -72,9 +73,12 @@ class ConnectionMade(Model):
 def _info(s) -> ConnectorInfo:
     row = manage.paired(s)
     if row is None:
-        return ConnectorInfo(paired=False, locked=True, fingerprint=None, sealingKey=None)
+        return ConnectorInfo(
+            paired=False, confirmed=False, locked=True, fingerprint=None, sealingKey=None
+        )
     return ConnectorInfo(
         paired=True,
+        confirmed=row.confirmedAt is not None,
         locked=row.locked,
         fingerprint=keys.short(keys.fingerprint(keys.unb64(row.identityKey))),
         sealingKey=row.sealingKey,
@@ -245,10 +249,22 @@ def put_credential(
     connection_id: str, body: Credential, request: Request, c: Caller = Depends(caller)
 ):
     """The credential sealed in the browser (S18.7.1): kept as it is until the connector
-    collects it on its next report. A secret, replaced outright: no version (S13.8.6)."""
+    collects it on its next report. A secret, replaced outright: no version (S13.8.6). The
+    password again (S13.7.2), and only once an admin confirmed the pairing (S18.4.3)."""
+    from .deps import recent_auth
+
+    recent_auth(c)
     if not sealed.looks_sealed(body.sealed) or len(body.sealed) > 20000:
         raise refuse("sealed", "sealed-invalid", "Not a sealed credential.")
     with server(request).db.tx() as s:
+        paired = manage.paired(s)
+        if paired is None or paired.confirmedAt is None:
+            raise refuse(
+                None,
+                "pairing-unconfirmed",
+                "An admin must confirm the connector's pairing before a sign-in is sealed.",
+                409,
+            )
         row = _mine(s, c, connection_id)
         row.sealedCredential = body.sealed
         row.sealedAt = clock.now()

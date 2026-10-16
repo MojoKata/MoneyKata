@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
+import { withReauth } from './reauth.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
 import { canSeal, seal } from '../app/sealed.js';
 import { Dialog, openDialog } from './dialog.js';
@@ -163,7 +164,7 @@ export function ConnectionDialog({ close, connection }) {
       ? JSON.stringify({ appSecret: f.appSecret, landed: f.landed })
       : JSON.stringify({ username: f.username, password: f.password });
     const box = await seal(plain, key, c.id);
-    await api.put(`/profile/connections/${c.id}/credential`, { sealed: box });
+    await withReauth(() => api.put(`/profile/connections/${c.id}/credential`, { sealed: box }));
     toast(`${c.label}: sealed for the connector`);
     close(c);
   });
@@ -205,6 +206,16 @@ export function ConnectionDialog({ close, connection }) {
       <p class="small dim" style=${{ marginTop: 0 }}>A sign-in at one institution, kept by the
         MoneyKata Connector. What you type here is encrypted in your browser for the connector
         before it is sent: MoneyKata can't read it.</p>
+      ${v.paired && !v.confirmed
+        ? html`
+          <div class="notice">
+            <${Icon} name="alert" />
+            <div>An admin has not yet confirmed
+                      that the paired connector is the household's own (Settings › Connector). Until then
+                      no sign-in is sealed for it.</div>
+          </div>
+        `
+        : null}
       ${existing ? null : html`
         <div class="row">
           <${Field} label="Institution" id="driver" error=${errAt(e, 'driver')}>

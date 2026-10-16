@@ -167,10 +167,10 @@ def sign_in(body: SignIn, request: Request):
     guard = srv.sign_in
     login = body.login.strip().lower()
     address = _address(request)
-    locked = guard.locked(login)
+    locked = guard.locked(address)
     if locked:
-        raise too_many(locked, "failed sign-ins for this user")
-    delay = guard.address_delay(address)
+        raise too_many(locked, "failed sign-ins from this address")
+    delay = guard.delay(login, address)
     if delay:
         time.sleep(delay)
     two_step = None
@@ -210,9 +210,9 @@ def sign_in_code(body: TwoStepCode, request: Request):
     with srv.db.tx() as s:
         user = twostep.pending_user(s, body.token)
         login = user.username
-        locked = guard.locked(login)
+        locked = guard.locked(address)
         if locked:
-            raise too_many(locked, "failed sign-ins for this user")
+            raise too_many(locked, "failed sign-ins from this address")
         if not user.active or user.deleted:
             raise Problem(403, "account-disabled", "This account is disabled.")
         how = twostep.check_code(s, srv.keys.secrets, user, body.code)
@@ -225,7 +225,7 @@ def sign_in_code(body: TwoStepCode, request: Request):
                 s, user, "signin" if how == "code" else "signin.recovery-code"
             )
     if how is None:
-        delay = guard.address_delay(address)
+        delay = guard.delay(login, address)
         if delay:
             time.sleep(delay)
         raise refuse("code", "code-wrong", "That code isn't right.", 401)

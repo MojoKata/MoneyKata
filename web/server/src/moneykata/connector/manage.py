@@ -171,6 +171,20 @@ def answer_pair(srv, caller_public: bytes, body: dict, version: str | None, prot
         }
 
 
+def confirm(srv, by: str) -> bool:
+    """Settings › Connector › Confirm (S18.4.3): an admin compared the fingerprints. Only then
+    are sealed credentials handed over and files taken."""
+    with srv.db.tx() as s:
+        row = paired(s)
+        if row is None:
+            return False
+        if row.confirmedAt is None:
+            row.confirmedAt = clock.now()
+            row.confirmedById = by
+            activity.record(s, "connector.confirmed", actor=by, for_admins=True)
+        return True
+
+
 def unpair(srv, by: str | None, reason: str = "unpaired") -> bool:
     """Settings › Connector › Unpair, or the connector's own `unpaired` call."""
     with srv.db.tx() as s:
@@ -263,10 +277,11 @@ def apply_report(srv, row: Connector, body: dict, version: str | None, protocol:
                     "settings": json.loads(c.settings or "{}"),
                     "accounts": _accounts_of(s, c),
                     # A box opens only with the sealing key in the connector's vault, so it
-                    # is handed over only to a connector that reports unlocked (protocol §4.2).
+                    # is handed over only to a connector that reports unlocked, and only
+                    # once an admin confirmed the pairing (protocol §4.2, S18.4.3).
                     "sealed": (
                         {"ciphertext": c.sealedCredential, "sealedAt": c.sealedAt.isoformat()}
-                        if c.sealedCredential and not row.locked
+                        if c.sealedCredential and not row.locked and row.confirmedAt
                         else None
                     ),
                 }

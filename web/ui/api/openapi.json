@@ -2990,6 +2990,10 @@
         "additionalProperties": false,
         "description": "What any user needs to start a Connection: whether a connector is paired, and its keys.",
         "properties": {
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
           "fingerprint": {
             "anyOf": [
               {
@@ -3023,6 +3027,7 @@
         },
         "required": [
           "paired",
+          "confirmed",
           "locked",
           "fingerprint",
           "sealingKey"
@@ -3044,6 +3049,29 @@
               }
             ],
             "title": "Codeexpiresat"
+          },
+          "confirmedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmedat"
+          },
+          "confirmedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmedby"
           },
           "connections": {
             "items": {
@@ -3152,6 +3180,8 @@
           "locked",
           "pairedAt",
           "pairedBy",
+          "confirmedAt",
+          "confirmedBy",
           "lastReportAt",
           "silentForSeconds",
           "connectorVersion",
@@ -12786,6 +12816,37 @@
         "title": "Page[UserRow]",
         "type": "object"
       },
+      "Page_WrittenEmail_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WrittenEmail"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "Page[WrittenEmail]",
+        "type": "object"
+      },
       "Paid": {
         "additionalProperties": false,
         "properties": {
@@ -21488,6 +21549,55 @@
           "words"
         ],
         "title": "Words",
+        "type": "object"
+      },
+      "WrittenEmail": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          },
+          "writtenAt": {
+            "format": "date-time",
+            "title": "Writtenat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "to",
+          "subject",
+          "writtenAt"
+        ],
+        "title": "WrittenEmail",
+        "type": "object"
+      },
+      "WrittenEmailText": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "text"
+        ],
+        "title": "WrittenEmailText",
         "type": "object"
       },
       "YearPct": {
@@ -31489,7 +31599,7 @@
     },
     "/ui/api/profile/connections/{connection_id}/credential": {
       "put": {
-        "description": "The credential sealed in the browser (S18.7.1): kept as it is until the connector\ncollects it on its next report. A secret, replaced outright: no version (S13.8.6).",
+        "description": "The credential sealed in the browser (S18.7.1): kept as it is until the connector\ncollects it on its next report. A secret, replaced outright: no version (S13.8.6). The\npassword again (S13.7.2), and only once an admin confirmed the pairing (S18.4.3).",
         "operationId": "put_credential_ui_api_profile_connections__connection_id__credential_put",
         "parameters": [
           {
@@ -33370,7 +33480,7 @@
     },
     "/ui/api/settings/bitcoin/password": {
       "put": {
-        "description": "Bitcoin Core's RPC password is a secret (S14.4): set or removed, never read back.",
+        "description": "Bitcoin Core's RPC password is a secret (S14.4): set or removed, never read back; the\nadmin's password again (S13.7.2).",
         "operationId": "bitcoin_password_ui_api_settings_bitcoin_password_put",
         "requestBody": {
           "content": {
@@ -33453,6 +33563,28 @@
         ]
       }
     },
+    "/ui/api/settings/connector/confirm": {
+      "post": {
+        "description": "Confirm (S18.4.3): the admin compared the fingerprint both sides show. Until then the\nconnector gets no sealed credential and posts no file. The password again (S13.7.2).",
+        "operationId": "confirm_ui_api_settings_connector_confirm_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Confirm",
+        "tags": [
+          "connector"
+        ]
+      }
+    },
     "/ui/api/settings/connector/pairings": {
       "post": {
         "description": "Pair (S18.4.1): a one-time code, valid 24 hours, shown once; the password again if given\nover 10 minutes ago (S13.7.2).",
@@ -33520,7 +33652,7 @@
     },
     "/ui/api/settings/email/password": {
       "put": {
-        "description": "The SMTP password is a secret (S14.4): set or removed, never read back.",
+        "description": "The SMTP password is a secret (S14.4): the admin's password again (S13.7.2).",
         "operationId": "email_password_ui_api_settings_email_password_put",
         "requestBody": {
           "content": {
@@ -33577,6 +33709,106 @@
           }
         },
         "summary": "Email Test",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/email/written": {
+      "get": {
+        "description": "The emails written to the mail folder while SMTP was not set up (S16.2), newest\nfirst: who they are for and what they say, for an admin to pass a link on.",
+        "operationId": "written_emails_ui_api_settings_email_written_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_WrittenEmail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Written Emails",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/email/written/{name}": {
+      "get": {
+        "description": "One written email, links and all: the password again (S13.7.2), since a link in it is\na token that signs someone in or resets a password.",
+        "operationId": "written_email_ui_api_settings_email_written__name__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrittenEmailText"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Written Email",
         "tags": [
           "settings"
         ]

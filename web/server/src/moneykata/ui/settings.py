@@ -62,6 +62,11 @@ def change_settings(
             errors += p.errors
     if errors:
         raise Problem(422, errors[0].code, errors[0].message, errors)
+    if any(k.startswith("network") for k in clean):
+        # Widening who reaches the app, a link or the connector: the password again (S13.7.2).
+        from .deps import recent_auth
+
+        recent_auth(c)
     srv = server(request)
     with srv.db.tx() as s:
         check_version(version_of(s, Setting), version, lambda: view(s))
@@ -153,8 +158,50 @@ def email_status(request: Request, c: Caller = Depends(admin)):
         return _email_view(srv, s)
 
 
+class WrittenEmail(Model):
+    name: str
+    to: str
+    subject: str
+    writtenAt: dt.datetime
+
+
+class WrittenEmailText(Model):
+    name: str
+    text: str
+
+
+@router.get("/settings/email/written", response_model=list[WrittenEmail])
+def written_emails(request: Request, c: Caller = Depends(admin)):
+    """The emails written to the mail folder while SMTP was not set up (S16.2), newest
+    first: who they are for and what they say, for an admin to pass a link on."""
+    from ..mail import written
+
+    return [
+        WrittenEmail(name=w.name, to=w.to, subject=w.subject, writtenAt=w.at)
+        for w in written(server(request).config)
+    ]
+
+
+@router.get("/settings/email/written/{name}", response_model=WrittenEmailText)
+def written_email(name: str, request: Request, c: Caller = Depends(admin)):
+    """One written email, links and all: the password again (S13.7.2), since a link in it is
+    a token that signs someone in or resets a password."""
+    from ..mail import read_written
+    from .deps import recent_auth
+
+    recent_auth(c)
+    text = read_written(server(request).config, name)
+    if text is None:
+        raise Problem(404, "not-found", "No such email.")
+    return WrittenEmailText(name=name, text=text)
+
+
 @router.put("/settings/email/password", response_model=EmailView)
 def email_password(body: EmailPassword, request: Request, c: Caller = Depends(admin)):
+    """The SMTP password is a secret (S14.4): the admin's password again (S13.7.2)."""
+    from .deps import recent_auth
+
+    recent_auth(c)
     """The SMTP password is a secret (S14.4): set or removed, never read back."""
     from ..mail import SMTP_SECRET
     from ..store.repos import secrets as secret_repo
@@ -232,9 +279,13 @@ def bitcoin_status(request: Request, c: Caller = Depends(admin)):
 
 @router.put("/settings/bitcoin/password", response_model=BitcoinView)
 def bitcoin_password(body: BitcoinPassword, request: Request, c: Caller = Depends(admin)):
-    """Bitcoin Core's RPC password is a secret (S14.4): set or removed, never read back."""
+    """Bitcoin Core's RPC password is a secret (S14.4): set or removed, never read back; the
+    admin's password again (S13.7.2)."""
     from ..bitcoin.sync import PASSWORD
     from ..store.repos import secrets as secret_repo
+    from .deps import recent_auth
+
+    recent_auth(c)
 
     srv = server(request)
     with srv.db.tx() as s:

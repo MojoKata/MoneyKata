@@ -57,6 +57,8 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     view = admin.get("/ui/api/settings/connector").json()
     assert view["state"] == "paired" and view["fingerprint"] == shown
     assert "sealingPublic" in (tmp_path / "data" / "pairing.json").read_text()
+    # Until an admin confirms the fingerprints match, a posted file waits (S18.4.3).
+    assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
     core.vault.lock()
     # A locked connector reports so, and MoneyKata alerts.
     core.tick()

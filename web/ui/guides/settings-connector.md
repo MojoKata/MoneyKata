@@ -19,6 +19,14 @@ both sides show its fingerprint for you to compare. One connector is paired at a
 another replaces it, as Unpair does. Needs your password again when it was given over 10
 minutes ago.
 
+## Confirm {#confirm}
+
+After pairing, compare the fingerprint shown here with the one `moneykata-connector pair`
+printed on the connector's host. If they match, **Confirm**, after your password: only then does
+the connector get sealed sign-ins and post files. If they differ, someone else answered the
+pairing code first: **Unpair**. Until confirmed, people see in the connection dialog that no
+sign-in can be sealed yet.
+
 ## Unpair {#unpair}
 
 Refuses the connector's key from then on, stops every Connection, and turns every account's

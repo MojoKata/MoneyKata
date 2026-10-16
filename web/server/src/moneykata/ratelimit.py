@@ -63,47 +63,57 @@ def too_many(wait: float, what: str) -> Problem:
 
 
 class SignInGuard:
-    """Ten failures in 15 minutes lock that username for 15 minutes and slow that address
-    (S13.7.5.1, S10.1). Lockout length and threshold come from Settings."""
+    """Ten failures in 15 minutes lock the **address** they came from for 15 minutes, and a
+    username that keeps failing is **slowed**, never locked, so nobody can lock an admin out by
+    typing wrong passwords (S13.7.5.1, S10.1). Lockout length and threshold come from
+    Settings."""
 
     def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
         self._clock = clock
-        self._failures: dict[str, deque] = defaultdict(deque)
-        self._locked_until: dict[str, float] = {}
-        self._address = Window(10, 15 * 60, clock)
+        self._failures: dict[str, deque] = defaultdict(deque)  # by address
+        self._by_user: dict[str, deque] = defaultdict(deque)
+        self._locked_until: dict[str, float] = {}  # by address
         self._lock = threading.Lock()
 
-    def locked(self, username: str) -> float:
-        """Seconds the username stays locked, or 0."""
+    def _trim(self, q: deque, now: float) -> None:
+        while q and now - q[0] >= 15 * 60:
+            q.popleft()
+
+    def locked(self, address: str) -> float:
+        """Seconds the address stays locked, or 0."""
         with self._lock:
-            until = self._locked_until.get(username.lower(), 0)
+            until = self._locked_until.get(address, 0)
             left = until - self._clock()
             return left if left > 0 else 0.0
 
-    def address_delay(self, address: str) -> float:
-        """A pause before answering an address that keeps failing."""
-        n = self._address.count(address)
-        return 0.0 if n < 10 else min(5.0, 0.5 * (n - 9))
+    def delay(self, username: str, address: str) -> float:
+        """A pause before answering for a username that keeps failing, from anywhere: half a
+        second per failure past the third, up to five seconds."""
+        with self._lock:
+            q = self._by_user[username.lower()]
+            self._trim(q, self._clock())
+            n = len(q)
+        return 0.0 if n < 3 else min(5.0, 0.5 * (n - 2))
+
+    def succeeded(self, username: str) -> None:
+        """A sign-in: the username's failures are forgotten, so it is no longer slowed."""
+        with self._lock:
+            self._by_user.pop(username.lower(), None)
 
     def failed(
         self, username: str, address: str, threshold: int = 10, lock_minutes: int = 15
     ) -> bool:
-        """Record a failure; True when it locks the username."""
-        self._address.hit(address)
-        key = username.lower()
+        """Record a failure; True when it locks the address."""
         with self._lock:
             now = self._clock()
-            q = self._failures[key]
-            while q and now - q[0] >= 15 * 60:
-                q.popleft()
+            u = self._by_user[username.lower()]
+            self._trim(u, now)
+            u.append(now)
+            q = self._failures[address]
+            self._trim(q, now)
             q.append(now)
             if len(q) >= threshold:
-                self._locked_until[key] = now + lock_minutes * 60
+                self._locked_until[address] = now + lock_minutes * 60
                 q.clear()
                 return True
             return False
-
-    def succeeded(self, username: str) -> None:
-        with self._lock:
-            self._failures.pop(username.lower(), None)
-            self._locked_until.pop(username.lower(), None)

@@ -2,7 +2,8 @@
 
 A sign-in at one institution, kept by the MoneyKata Connector. What you type is encrypted in
 your browser for the connector before it is sent: MoneyKata keeps only what it can't read, until
-the connector collects it, and never shows it back.
+the connector collects it, and never shows it back. Sealing asks for your password again when it
+was given over 10 minutes ago, and waits until an admin has confirmed the connector's pairing.
 
 ## Institution {#driver}
 

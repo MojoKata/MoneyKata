@@ -66,7 +66,7 @@ async def unlock(body: Phrase, request: Request):
         raise Problem(409, "unlocked-already", "MoneyKata is already unlocked.")
     address = request.client.host if request.client else "-"
     guard = srv.sign_in
-    wait = guard.locked(LOGIN)
+    wait = guard.locked(address)
     if wait:
         raise Problem(
             429,
@@ -74,7 +74,7 @@ async def unlock(body: Phrase, request: Request):
             "Too many wrong phrases: try again later.",
             headers={"Retry-After": str(int(wait) + 1)},
         )
-    delay = guard.address_delay(address)
+    delay = guard.delay(LOGIN, address)
     if delay:
         await asyncio.sleep(delay)
     try:

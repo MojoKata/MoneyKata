@@ -1,8 +1,8 @@
 # Email (SMTP)
 
 How MoneyKata sends its emails: invitations, password resets, sign-up links and decisions, alerts.
-Until a host is set, each email is written to the `mail` folder in the data directory instead, where
-an admin can open it.
+Until a host is set, each email is written to the `mail` folder in the data directory instead, in
+the clear, and listed here for an admin to pass its link on.
 
 Emails go out in the background, so nothing waits on the mail server. One that can't be sent stays
 queued and is tried again every five minutes; this section shows the queue and the last error.
@@ -29,7 +29,8 @@ that needs none.
 ## Password {#smtp-password}
 
 Kept encrypted as a secret, used only when sending, and never shown again. Many providers want an
-app password rather than your own.
+app password rather than your own. Your password is asked again when it was given over 10 minutes
+ago.
 
 ## From address {#smtp-from}
 
@@ -39,3 +40,9 @@ the username.
 ## Send a test email
 
 Sends one to your own address now, through the saved settings, and says what failed if it couldn't.
+
+## Written to the mail folder {#written-emails}
+
+The emails written while no host was set, newest first: who each is for, its subject and when.
+**Open** shows one, links and all, after your password: a link in it signs someone in or resets
+a password. Each file is removed a day after it was written, once its link has expired.

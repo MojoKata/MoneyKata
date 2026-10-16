@@ -86,7 +86,7 @@ function Plain({ section }) {
   }, [v]);
   const save = useSubmit(async (/** @type {string[]} */ keys) => {
     const body = Object.fromEntries(keys.map((k) => [k, f[k]]));
-    await api.patch('/settings', body, v.version);
+    await withReauth(() => api.patch('/settings', body, v.version));
     toast('Saved');
     res.reload();
     if (keys.includes('householdName') || keys.includes('householdAvatar')) loadSession();
@@ -529,7 +529,11 @@ function SetKey({ close, src }) {
   useDialogGuide('dialog-source-key');
   const [key, setKey] = useState('');
   const save = useSubmit(async () => {
-    close(await api.patch(`/price-sources/${src.id}`, { apiKey: key, enabled: true }, src.version));
+    close(
+      await withReauth(() =>
+        api.patch(`/price-sources/${src.id}`, { apiKey: key, enabled: true }, src.version)
+      ),
+    );
     toast(`${src.label}'s key is set and the source is on`);
   });
   return html`
@@ -689,7 +693,7 @@ function EmailSection() {
   const save = useSubmit(async () => {
     await api.patch('/settings', f, /** @type {any} */ (s.data)?.version);
     s.reload();
-    if (password) await api.put('/settings/email/password', { password });
+    if (password) await withReauth(() => api.put('/settings/email/password', { password }));
     setPassword('');
     toast('Saved');
     res.reload();
@@ -713,7 +717,7 @@ function EmailSection() {
       <h3>Email (SMTP)</h3>
       <p class="small dim" style=${{ marginTop: '-6px' }}>${values.smtpHost
         ? 'Emails go out through this server.'
-        : 'Until a host is set, emails are written to the mail folder in the data directory.'}</p>
+        : 'Until a host is set, emails are written to the mail folder in the data directory, and listed below for you to pass their links on.'}</p>
       <div class="row">
         <${Field} label="Host" id="smtp-host" error=${errAt(e, 'smtpHost')}>
           <${Input} value=${f.smtpHost} onInput=${set('smtpHost')} placeholder="smtp.example.com" />
@@ -759,6 +763,7 @@ function EmailSection() {
         !values.smtpHost} onClick=${() => test.run().catch(() => {})}>Send a test email</button>
         <span class="spacer"></span>
         <button class="btn primary" disabled=${save.busy}>Save</button></div>
+      ${values.smtpHost ? null : html`<${WrittenEmails} />`}
     </form>
   `;
 }
@@ -817,7 +822,7 @@ function BitcoinSection() {
       bitcoinRpcUser: f.rpcUser || null,
     }, /** @type {any} */ (s.data)?.version);
     s.reload();
-    if (password) await api.put('/settings/bitcoin/password', { password });
+    if (password) await withReauth(() => api.put('/settings/bitcoin/password', { password }));
     setPassword('');
     toast('Saved');
     res.reload();
@@ -1048,6 +1053,40 @@ function opensWith(opens) {
     : opens === 'previous'
     ? 'needs a previous phrase'
     : 'its keyring cannot be read';
+}
+
+/** The emails written to the mail folder while SMTP is not set up (S16.2). */
+function WrittenEmails() {
+  const res = useApi('/settings/email/written', {}, ['task']);
+  const items = /** @type {any} */ (res.data)?.items || [];
+  const open = async (/** @type {any} */ w) => {
+    const out = await withReauth(() => api.get(`/settings/email/written/${w.name}`));
+    openDialog(WrittenEmailDialog, { w, text: out.text });
+  };
+  if (!items.length) return null;
+  return html`<div class="field" data-help="written-emails"><label>Written to the mail folder</label>
+    ${
+    items.map((/** @type {any} */ w) =>
+      html`
+        <div
+          class="list-item"><div class="grow">${w.subject}<div class="small dim">to ${w.to} · ${ago(
+            w.writtenAt,
+          )}</div></div><button type="button" class="btn sm" onClick=${() =>
+            open(w).catch((e) => toast(e.message))}>Open</button></div>
+      `
+    )
+  }
+    <div class="small dim">Each is removed a day after it was written, when its link has expired.</div></div>`;
+}
+
+/** @param {{ close: (v?: any) => void, w: any, text: string }} p */
+function WrittenEmailDialog({ close, w, text }) {
+  useDialogGuide('dialog-written-email');
+  return html`
+    <${Dialog} title=${w.subject} close=${close}>
+      <pre class="small" style=${{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>${text}</pre>
+      </${Dialog}>
+  `;
 }
 
 function Keys() {

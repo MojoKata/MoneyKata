@@ -99,7 +99,12 @@ def test_sign_in_by_username_or_email_with_a_strict_cookie(client, server):
     assert len(token) >= 43
 
 
-def test_wrong_passwords_lock_the_username(client, server):
+def test_wrong_passwords_lock_the_address_and_only_slow_the_username(client, server):
+    """S13.7.5.1: ten failures lock the address they came from, whoever they named; the
+    username is slowed, never locked, so nobody can lock an admin out from afar."""
+    from conftest import ORIGIN
+    from fastapi.testclient import TestClient
+
     make_user(server, "bob")
     for _ in range(9):
         r = client.post("/ui/api/session", json={"login": "bob", "password": "wrong"})
@@ -107,12 +112,18 @@ def test_wrong_passwords_lock_the_username(client, server):
         assert r.json()["code"] == "bad-credentials"
     r = client.post("/ui/api/session", json={"login": "nobody", "password": "wrong"})
     assert r.json()["code"] == "bad-credentials"  # the same answer as a wrong password
-    client.post("/ui/api/session", json={"login": "bob", "password": "wrong"})
+    # The tenth failure from this address locks the address: even the right password waits.
     r = client.post("/ui/api/session", json={"login": "bob", "password": PW})
     assert r.status_code == 429
     assert int(r.headers["retry-after"]) > 800
     assert "signin.locked" in kinds(server)
-    assert kinds(server).count("signin.failed") == 10
+    assert kinds(server).count("signin.failed") == 9  # the tenth is recorded as the lockout
+    # From another address, bob still signs in: the username was slowed, not locked.
+    elsewhere = TestClient(client.app, base_url=ORIGIN, client=("192.168.1.9", 50000))
+    r = elsewhere.post(
+        "/ui/api/session", json={"login": "bob", "password": PW}, headers={"Origin": ORIGIN}
+    )
+    assert r.status_code == 200, r.text
 
 
 def test_sign_out_ends_every_session_of_the_user(server):

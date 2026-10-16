@@ -35,8 +35,8 @@
          are left, warns at three, and **New recovery codes** replaces them all.
       3. **Signing in**: a right password leads to the code, through a token that lasts
          five minutes; no session exists until the code is right. A recovery code is taken
-         in place of the code, once. Wrong codes count toward the same lockout as wrong
-         passwords (S13.7.5).
+         in place of the code, once. Wrong codes count toward the same lockout of the
+         address as wrong passwords (S13.7.5).
       4. **Turning it off** in Profile, or an **admin's reset** in Users (for someone who
          has lost both the app and the codes), removes the seed and the codes; the reset also
          ends that user's sessions. Each, and turning it on, is emailed to the user and

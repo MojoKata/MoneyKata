@@ -12,6 +12,7 @@ import { Icon } from '../components/icon.js';
 import { Dialog, openDialog } from '../components/dialog.js';
 import { errAt, Field, FormError, Input, Select, Switch } from '../components/fields.js';
 import { toast } from '../components/toast.js';
+import { withReauth } from '../components/reauth.js';
 
 export default function Users() {
   useTitle('Users and Groups');
@@ -394,11 +395,13 @@ function GroupDialog({ close, users, group }) {
   const [ids, setIds] = useState(/** @type {string[]} */ (group?.memberIds || []));
   const save = useSubmit(async () => {
     const out = group
-      ? await api.patch(`/groups/${group.id}`, {
-        name: group.builtIn ? undefined : name,
-        active: group.builtIn ? undefined : active,
-        memberIds: ids,
-      }, group.version)
+      ? await withReauth(() =>
+        api.patch(`/groups/${group.id}`, {
+          name: group.builtIn ? undefined : name,
+          active: group.builtIn ? undefined : active,
+          memberIds: ids,
+        }, group.version)
+      )
       : await api.post('/groups', { name, memberIds: ids }, { idempotent: true });
     toast('Saved');
     close(out);

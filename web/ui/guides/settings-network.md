@@ -24,3 +24,6 @@ Where the MoneyKata Connector calls `/connector` from. By default the LAN and th
 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, loopback and the private
 IPv6 range), so a connector beside the server or on the household's overlay works as it is. A
 connector on a laptop away from home needs the range it calls from added here.
+
+Changing any of these asks for your password again when it was given over 10 minutes ago: a
+wider range lets more addresses reach the server.

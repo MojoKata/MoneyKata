@@ -17,9 +17,12 @@
    are trusted only from the configured proxy addresses); or **`tls`**, its own HTTPS
    listener with HTTP/2 (forwarded headers ignored). **`proxy`** is the expected setup.
    **`tls`** is for testing on a local network: given no certificate, the server makes a
-   self-signed one on first start and keeps it in the data directory. It names the server
-   and `localhost`, and the names and addresses listed in `[tls] names`, which are how
-   browsers on the network reach it; a change to the list makes it again.
+   self-signed one on first start and keeps it in the data directory (`tls/`, the key mode
+   0600). The pair is not encrypted: it protects the listener, not the data, and the
+   listener must read it before any key is entered (S15.1.7). It names the server and
+   `localhost`, and the names and addresses listed in `[tls] names`, which are how browsers
+   on the network reach it; a change to the list makes it again. A certificate named in
+   `[tls]` lives wherever the admin keeps it.
 4. **Background tasks** in the server process: price refresh (S4.4), bitcoin wallet reads
    (S1.6), link pulls (S11.4), option expiry (S3.6), backups (S14.6), sending email
    (S16.2), alerts and their daily summary (S12.11), receipt and statement reading (S9.8,
@@ -58,9 +61,12 @@
       every session of that user at once.
    2. **Re-authentication**: changing the password, the email address or two-step, making an
       access token, creating a linked copy's access key, resetting a linked copy, sharing with
-      a linked server, pairing or unpairing the connector, pruning files, and exporting data
-      each need the password again if it was last given more than 10 minutes
-      ago.
+      a linked server, pairing, confirming or unpairing the connector, sealing a Connection's
+      credentials, setting a secret in Settings (the SMTP password, the node's password, a
+      price source's key), changing Settings › Network, changing who is in Admins,
+      re-encrypting, removing a copy or forgetting a previous key, pruning files, removing
+      orphan files, opening a written email, and exporting data each need the password again
+      if it was last given more than 10 minutes ago.
    3. **Passwords**: argon2id (64 MiB, 3 passes, parallelism 1), the minimum length of
       S16.5, and no other rules. Checked against a shipped list of the 100,000 most common
       passwords, which are refused.
@@ -69,8 +75,11 @@
       API answers only its own origin.
    5. **Rate limits**, per client address and per user, answered with 429 and a
       `Retry-After`:
-      1. sign-in, two-step codes and password-reset requests: 10 failures in 15 minutes lock
-         that username for 15 minutes and slow that address (S10.1);
+      1. sign-in, two-step codes, password-reset requests and the unlock (S15.4.3): 10
+         failures in 15 minutes lock **the address they came from** for 15 minutes, whoever
+         they named; a username that keeps failing, from anywhere, is only slowed (half a
+         second per failure past the third, up to five), never locked, so nobody can lock an
+         admin out from afar (S10.1);
       2. linked copies' access keys: S11.9.3.3;
       3. the API: 600 requests a minute per session; uploads: 60 files an hour per user;
       4. `/mcp`: 60 calls a minute per token (S10.9.4); `/link`: 60 calls a minute per

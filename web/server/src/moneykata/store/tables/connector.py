@@ -20,6 +20,10 @@ Connector = record(
     Column("sealingKey", Text),  # its X25519 public key, base64url (S18.7.1)
     Column("pairedAt", UtcTimestamp),
     Column("pairedById", Text, ForeignKey("User.id")),
+    # An admin compared the fingerprints and confirmed the pairing (S18.4.3): until then no
+    # sealed credential is handed over and no file is taken.
+    Column("confirmedAt", UtcTimestamp),
+    Column("confirmedById", Text, ForeignKey("User.id")),
     Column("endedAt", UtcTimestamp),  # unpaired, or replaced by another pairing
     Column("endedById", Text, ForeignKey("User.id")),
     # Its reports (S18.5): the last one, whether it said it was locked, and what it runs.

@@ -26,6 +26,8 @@ def paired(server, admin, client):
         {"code": pair_code(admin), "sealingKey": public, "version": "0.1.0-test"},
     )
     assert r.status_code == 200, r.text
+    # The admin compared the fingerprints (S18.4.3).
+    assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
     return fake
 
 

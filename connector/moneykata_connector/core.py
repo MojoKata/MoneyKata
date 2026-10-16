@@ -300,8 +300,8 @@ class Core:
                 try:
                     out = self._post(c, f)
                 except ServerError as e:
-                    if e.code == "limit":
-                        kept.append(f)  # a later run (S18.8)
+                    if e.code in ("limit", "not-confirmed"):
+                        kept.append(f)  # a later run (S18.8), or once an admin confirms
                     else:
                         c.state, c.message = "failing", f"{f.name}: {e.message}"
                     continue
@@ -309,7 +309,9 @@ class Core:
                 c.last_added = (c.last_added or 0) + int(imported.get("added") or 0)
             c.backlog = kept
             if c.backlog and c.state == "ok":
-                c.message = f"{len(c.backlog)} waiting for the upload limit"
+                c.message = (
+                    f"{len(c.backlog)} waiting: the upload limit, or the pairing's confirmation"
+                )
 
     def _post(self, c: ConnectionState, f: File) -> dict:
         import hashlib

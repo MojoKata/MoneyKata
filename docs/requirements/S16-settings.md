@@ -9,13 +9,17 @@ follows Backups, and Connector (18), which follows Linked servers:
    which always show them as set here, S12.10), public URL (links in emails are built from
    it, never from the request), and the server's time zone, read from the host (S14.9).
 2. **Email (SMTP)**: host, port, security (STARTTLS, TLS or none), username, password (a
-   secret), from address, and **Send a test email**, which sends to the admin at once and
-   says what failed. Until a host is set, emails are written to the mail folder in the data
-   directory. With one, they go out in the background: an email that can't be sent stays
-   queued and is tried again every five minutes, one the server refuses outright is set
-   aside, and the section shows the queue and the last error.
-3. **Sign-in and sessions**: idle and absolute session lifetimes, lockout after failed
-   sign-ins.
+   secret, set with the password again), from address, and **Send a test email**, which
+   sends to the admin at once and says what failed. Until a host is set, emails are written
+   to the mail folder in the data directory, in the clear, and the section lists them (who
+   for, subject, when) with **Open**, which shows one, links and all, after the admin's
+   password again, so an invitation or reset link can be passed on; each file is removed a
+   day after it was written, once its link has expired (S15.1.7). With a host, they go out
+   in the background: an email that can't be sent stays queued and is tried again every five
+   minutes, one the server refuses outright is set aside, and the section shows the queue
+   and the last error.
+3. **Sign-in and sessions**: idle and absolute session lifetimes, and the lockout of an
+   address after failed sign-ins (S13.7.5.1).
 4. **Sign-up**: on or off (it needs SMTP), optionally limited to email domains.
 5. **Passwords**: the minimum length (12 by default, at least 8).
 6. **Prices** (S4.2.3): the enabled sources with their classes, keys, order, last run and
@@ -62,7 +66,9 @@ follows Backups, and Connector (18), which follows Linked servers:
     and its token is already the user's); **linked servers** (`/link`); and **the connector**
     (`/connector`, S18), the LAN and the overlay by default, so a connector on a laptop away
     from home (S18.1) needs an admin to widen it. `/healthz` and `/demo` answer any address.
-15. **TLS** (in `tls` mode): the listener's certificate and key.
+15. **TLS** (in `tls` mode): the listener's certificate, the names it covers and when it
+    expires, and where its key is (the `tls/` pair in the data directory, or the paths in
+    `[tls]`); the key itself is never shown (S13.3).
 16. **Alerts** (S12.11): how long a source may fail before it raises an alert (48 hours
     by default), and the time of the daily summary email (07:00 by default, in each user's
     time zone).
@@ -71,5 +77,6 @@ follows Backups, and Connector (18), which follows Linked servers:
     expires each coming year by category, **Keep statements for** (years, empty for ever),
     each category's **Keep receipts for**, and **Prune**.
 18. **Connector** (S18): pairing with the MoneyKata Connector (**Pair**, the connector's
-    fingerprint, **Unpair**), whether it is locked, its last report, and every Connection's
-    state, owner and accounts, never their credentials.
+    fingerprint, **Confirm** once the fingerprints were compared, who confirmed and when,
+    **Unpair**), whether it is locked, its last report, and every Connection's state, owner
+    and accounts, never their credentials.

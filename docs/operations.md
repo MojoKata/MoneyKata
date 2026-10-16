@@ -274,7 +274,9 @@ publishes no port and only calls out: to MoneyKata, and to each driver's institu
    are never echoed, and never stored.
 5. **Pair it**, with the vault unlocked: in MoneyKata, Settings › Connector › Pair shows a
    code; run `docker compose exec connector moneykata-connector pair <code>` and compare the
-   fingerprints both sides show. Pairing makes the connector's sealing key and files its
+   fingerprints both sides show. If they match, **Confirm** in Settings › Connector: until
+   then the connector gets no sign-in and posts no file. If they differ, someone else
+   answered the code: Unpair. Pairing makes the connector's sealing key and files its
    private half in the vault, so `pair` is refused while the vault is locked. The connector
    reaches MoneyKata at the address in the code (the public URL, or the link address), so
    that address must resolve from inside the container: on one host, the compose service

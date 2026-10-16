@@ -13,8 +13,10 @@ token rides in the link's fragment (#…), which browsers send to no server and 
 import datetime as dt
 import email
 import email.policy
+import itertools
 import logging
 import os
+import re
 import secrets
 import smtplib
 import ssl
@@ -26,7 +28,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from . import settings
+from . import clock, settings
 from .config import Config
 from .errors import refuse
 
@@ -133,6 +135,71 @@ def describe(e: Exception) -> str:
     return str(e) or type(e).__name__
 
 
+# How long a written email stays in the mail folder: the links it carries work for a day at
+# most (S10.1), so a file older than that holds nothing anyone can use (S16.2).
+WRITTEN_KEEP = dt.timedelta(hours=25)
+_counter = itertools.count(1)
+_NAME = re.compile(r"^[0-9]{8}-[0-9]{6}-[0-9]{6}-[0-9a-f]{8}\.eml$")
+
+
+@dataclass
+class Written:
+    name: str
+    to: str
+    subject: str
+    at: dt.datetime
+
+
+def written(config: Config) -> list[Written]:
+    """The emails in the mail folder, newest first, by their headers."""
+    folder = config.mail_dir
+    if not folder.is_dir():
+        return []
+    out = []
+    for path in sorted(folder.glob("*.eml"), reverse=True):
+        try:
+            msg = email.message_from_bytes(
+                path.read_bytes(), _class=EmailMessage, policy=email.policy.default
+            )
+            at = dt.datetime.strptime(path.name[:22], "%Y%m%d-%H%M%S-%f").replace(tzinfo=dt.UTC)
+        except OSError, ValueError:
+            continue
+        out.append(Written(path.name, str(msg["To"] or ""), str(msg["Subject"] or ""), at))
+    return out
+
+
+def read_written(config: Config, name: str) -> str | None:
+    """One written email's text, by the name `written` gave it; nothing for any other name."""
+    if not _NAME.match(name):
+        return None
+    path = config.mail_dir / name
+    try:
+        msg = email.message_from_bytes(
+            path.read_bytes(), _class=EmailMessage, policy=email.policy.default
+        )
+    except OSError:
+        return None
+    return f"To: {msg['To']}\nSubject: {msg['Subject']}\n\n{msg.get_content()}"
+
+
+def expire_written(config: Config, now: dt.datetime | None = None) -> int:
+    """Remove written emails older than their links' life (S16.2); the count removed."""
+    now = now or dt.datetime.now(dt.UTC)
+    folder = config.mail_dir
+    if not folder.is_dir():
+        return 0
+    n = 0
+    for path in folder.glob("*.eml"):
+        try:
+            at = dt.datetime.fromtimestamp(path.stat().st_mtime, dt.UTC)
+            if now - at > WRITTEN_KEEP:
+                path.unlink()
+                n += 1
+        except OSError:
+            continue
+    return n
+
+
 class Mailer:
     def __init__(self, config: Config) -> None:
         self.config = config
@@ -156,8 +223,11 @@ class Mailer:
 
     def _file(self, folder: Path, msg: EmailMessage) -> Path:
         folder.mkdir(mode=0o700, parents=True, exist_ok=True)
-        stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%d-%H%M%S-%f")
-        path = folder / f"{stamp}-{secrets.token_hex(4)}.eml"
+        # Named by the clock, so a frozen one (the generated mockup) names them the same
+        # way every time; the suffix tells two written in one microsecond apart.
+        stamp = clock.now().strftime("%Y%m%d-%H%M%S-%f")
+        suffix = f"{next(_counter):08x}" if clock.frozen() else secrets.token_hex(4)
+        path = folder / f"{stamp}-{suffix}.eml"
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "wb") as f:
             f.write(bytes(msg))

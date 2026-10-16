@@ -281,6 +281,9 @@ def change_group(
         g = _group(s, group_id)
         if g.version != version:
             raise stale(group_row(s, g))
+        if g.builtIn == "admins" and body.memberIds is not None:
+            # Making or unmaking an admin: the password again (S13.7.2).
+            recent_auth(c)
         accounts.update_group(s, c.user, g, body.name, body.active, body.memberIds)
         s.flush()
         return group_row(s, g)

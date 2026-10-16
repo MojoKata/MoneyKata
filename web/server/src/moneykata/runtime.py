@@ -113,8 +113,9 @@ def register_tasks(server: Server) -> None:
     def mail(ctx: TaskContext) -> None:
         """Send what the outbox holds (S16.2): at once when an email is queued, and every five
         minutes for what could not go."""
-        from .mail import smtp_settings
+        from .mail import expire_written, smtp_settings
 
+        expire_written(server.config)
         if not server.services.mailer.waiting():
             return
         with server.db.read() as s:

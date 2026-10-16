@@ -74,6 +74,24 @@ export function ConnectorSection() {
                   <span class="small dim">· version ${v.connectorVersion}</span>
                 `
                 : null}</div>
+          ${v.confirmedAt
+            ? html`
+              <div
+                class="list-item"><span class="grow dim">Confirmed</span>${moment(
+                  v.confirmedAt,
+                )}${v.confirmedBy
+                  ? ` by ${v.confirmedBy}`
+                  : ''} <span class="small dim">· the fingerprints were compared</span></div>
+            `
+            : html`<div class="notice"><${Icon} name="alert" /><div>Compare the fingerprint above with
+                the one <code>moneykata-connector pair</code> printed on the connector's host. If
+                they match, confirm: until then the connector gets no sign-in and posts no file.
+                If they differ, someone else answered the code first: unpair.</div>
+                <button class="btn primary" onClick=${() =>
+              withReauth(() => api.post('/settings/connector/confirm')).then(() => {
+                toast('Pairing confirmed');
+                res.reload();
+              }, (e) => toast(e.message))}>Confirm</button></div>`}
           <div class="list-item"><span class="grow dim">Last report</span>${v.lastReportAt
             ? html`${ago(v.lastReportAt)}${
               v.pairedAt

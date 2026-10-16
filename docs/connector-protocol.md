@@ -144,7 +144,9 @@ inside. Requirements S18 defines them in full.
    every Connection stopped, every account's sync turned off, S18.4.4), and answers
    `{fingerprint, connectorFingerprint, serverName}`. Both sides show the connector's
    fingerprint for the admin to compare; a mismatch means someone else answered the code
-   first, and the admin unpairs.
+   first, and the admin unpairs. Until the admin **confirms** the pairing in Settings
+   (S18.4.2), the pairing is not trusted: reports are answered, but `sealed` is withheld
+   and a file post is refused `not-confirmed`.
 4. The connector then keeps, per server, the address, the fingerprint and its own keys. One
    connector is paired with one server; `moneykata-connector unpair` forgets it and deletes
    every credential it held for it.
@@ -195,8 +197,9 @@ of, `POST /connector/v1/report`:
 
    `connections` is every live Connection for this connector with its driver, settings and
    the accounts whose sync names it, each with the formats MoneyKata takes for it; `sealed`
-   is present while a credential waits (section 4.3) **and the report said `locked: false`**:
-   a locked connector has no sealing key to open it with, so it is not handed one; `removed`
+   is present while a credential waits (section 4.3), **the report said `locked: false`** (a
+   locked connector has no sealing key to open it with) **and an admin confirmed the
+   pairing** (section 4.1); `removed`
    names Connections whose owners removed them or whose accounts all turned sync off, and the
    connector deletes their credentials and never reports them again.
 3. MoneyKata records the report's time, so a connector silent for 15 minutes raises the alert
@@ -243,7 +246,8 @@ of, `POST /connector/v1/report`:
 ```
 
 1. The account must have its sync set to this Connection, and the Connection must belong to
-   the account's owner; otherwise `account-not-synced`.
+   the account's owner; otherwise `account-not-synced`. Until an admin confirmed the pairing,
+   `not-confirmed`: the connector keeps the file for a later run, as for `limit`.
 2. The file goes through the same import as an upload by the owner (S1.3, S18.8): its type is
    checked from its content, imports are idempotent, a PDF is kept without reading or waits in
    the account's inbox, and a CSV uses the account's saved mapping (without one, the post is
@@ -293,6 +297,7 @@ says when the call carried a nonce.
 | `bad-signature` | the signature doesn't match the key, method, path, body, time, nonce and receiver |
 | `replayed` | the nonce was seen from that key in the last two minutes |
 | `not-paired` | the key isn't the paired connector's, or the pairing has ended |
+| `not-confirmed` | an admin has not yet confirmed the pairing (S18.4.2); the file is kept for a later run |
 | `code-used` | the pairing code was used, expired or withdrawn |
 | `protocol-unsupported` | the call's protocol isn't one this server answers |
 | `account-not-synced` | the account's sync doesn't name this Connection |

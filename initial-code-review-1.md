@@ -74,6 +74,11 @@ S15.7.3 (with a timeline of what each step closes) and S15.8 are rewritten aroun
 S16.13, Settings › Key storage, its guide, the mockup, operations §7.1 and rejected idea 17
 follow.
 
+**Done, further** (parts 1 and 2): the master key is the phrase alone, never stored, entered
+after every start; backups are the database with its keyring; every copy carries its keyring
+and is re-wrapped, rewritten, left or deleted at rotation and re-encryption; the copies on the
+host are listed in Settings with how each opens.
+
 **Suggested change.** Rewrite S15.7.3 and S15.8 around what a copy of the data reveals rather
 than around keys: (a) a leaked key or phrase means every prior copy is open, (b) the
 response is revoke, re-encrypt, rotate, purge old copies, in that order, (c) the previous
@@ -179,6 +184,8 @@ admitted in S18.7.1), and steer drivers within what they are pinned to.
    decrypted continuously. Either say so (it is held for the server's lifetime like the
    data keys) or keep the per-call model and say the cost is accepted.
 
+**Decided:** kept as it is; the password is changed at the first sign-in, moments after install.
+
 ### F5 (Med): the default admin's published password
 
 S10.1.2: "A server with no users creates `admin` with a published default password at start."
@@ -189,6 +196,9 @@ early it is a takeover. Standard fix: print a **one-time setup code** in the log
 start (as the refused-start line is read, operations §5.1) and require it on the setup
 screen, or accept sign-in only from loopback until setup is done. Record in S10.1.2 and
 operations §2.4.
+
+**Done:** Settings › Email lists the written emails and opens one after the password again;
+each file is removed a day after it was written; S15.1.7 and S16.2 say the folder is plain.
 
 ### F6 (Med): the mail folder holds live tokens in plain text
 
@@ -202,6 +212,9 @@ S17.9.1.4). Say in S15.1.7 that the mail folder is plain, make the written email
 from Settings › Email (the queue it already shows) rather than from the host, and expire the
 files with their tokens.
 
+**Done:** a pairing is confirmed by an admin in Settings › Connector; until then no sealed
+credential is handed over, no file is taken and no sign-in can be sealed (S18.4.2).
+
 ### F7 (Med): a pairing is live before fingerprints are compared
 
 S18.4.2 and `connector-protocol.md` §4.1.3: both sides show the connector's fingerprint "for
@@ -214,6 +227,9 @@ pairing exists but no credential can be sealed to it and no file is accepted fro
 an admin confirms the fingerprint in Settings › Connector. The same applies, more mildly, to
 a link's approval (S11.1.2), which already has that step.
 
+**Done:** S13.7.2 and the routes now ask for the password again for every secret-bearing
+setting, the sealed credentials, Network, the Admins group, Re-encrypt and the rest.
+
 ### F8 (Med): the re-authentication list is incomplete
 
 S13.7.2 lists the password, email, two-step, access tokens, linked-copy keys and reset,
@@ -223,6 +239,10 @@ credentials** (S18.7.1: the one place a bank password is typed), and every Setti
 stores a secret: the SMTP password (S16.2), the node's RPC password (S16.7), a price source's
 key (S16.6), and the TLS key (S16.15). Also changing Settings › Network (S16.14), which widens
 who can reach the app, and making a user an admin (S10.1.8).
+
+**Done** (part 2): a verified backup first, backups and re-encryption exclude each other,
+pre-upgrade copies carry their keyring, rotation and unlock refuse a pending re-encryption
+under another phrase by name, and the finish-at-next-unlock behaviour is written down.
 
 ### F9 (Med): re-encryption against backups, restores and rotation
 
@@ -240,6 +260,9 @@ say what happens when:
 - the server **crashes** mid-way: the code finishes at next start, which S15.7.2 should say,
   together with "no backup runs while a re-encryption is in progress" and "pre-upgrade and
   before-restore copies made before it no longer open".
+
+**Decided and written:** a plain file in the data directory, mode 0600, which protects the
+listener and not the data (S13.3, S15.1.7, S16.15).
 
 ### F10 (Med): where the TLS private key lives
 
@@ -294,6 +317,7 @@ private tmpfs and wiped.
    instead.
 10. **S13.7.5.1 locks the username** after ten failures, so anyone can lock the admin out
     for 15 minutes at will. Usual answer: lock the address, and slow (not lock) the username.
+    **Done.**
 
 ## 3. Conflicts between sections
 
@@ -331,7 +355,8 @@ Each would take the next free G id when recorded. Ranked as `gaps.md` ranks.
    `connector-protocol.md` §3.2) and TOTP allows one 30-second step (S10.1.6.1). Nothing
    tells operators that the hosts, the connector's laptop included, need NTP, and nothing
    alerts when a peer or the connector is refused for `clock-skew` rather than for being down.
-10. **(Med) The connector after a reboot.** S18.3.2 locks it at every start and S18.5.1
+10. **(Med) The connector after a reboot.** **Decided:** rejected (rejected idea 19); a restart
+    needs a person, for the server as well. S18.3.2 locks it at every start and S18.5.1
     alerts admins; with Schwab's weekly sign-in (S18.9.3) an unattended household loses sync
     silently after a power cut until someone types the words. Decide whether an opt-in
     auto-unlock from a host-held file (with the weaker threat model stated) is offered, and

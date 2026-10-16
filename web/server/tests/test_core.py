@@ -115,10 +115,14 @@ def test_windows_and_sign_in_lockout():
     for _ in range(9):
         assert not g.failed("alice", "10.0.0.5")
     assert g.failed("Alice", "10.0.0.5")
-    assert g.locked("alice") == pytest.approx(15 * 60)
-    assert g.address_delay("10.0.0.5") > 0
+    # The address is locked; the username is only slowed, from any address (S13.7.5.1).
+    assert g.locked("10.0.0.5") == pytest.approx(15 * 60)
+    assert g.locked("10.0.0.6") == 0
+    assert g.delay("alice", "10.0.0.6") == 4.0  # ten failures: half a second past the third
+    g.succeeded("alice")
+    assert g.delay("alice", "10.0.0.6") == 0
     clock[0] += 15 * 60
-    assert g.locked("alice") == 0
+    assert g.locked("10.0.0.5") == 0
 
 
 def test_money_fields_refuse_floats():

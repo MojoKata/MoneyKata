@@ -92,7 +92,39 @@ def paired(server, admin, client):
     fake = FakeConnector(server, client)
     r = fake.pair(pair_code(admin))
     assert r.status_code == 200, r.text
+    # The admin compared the fingerprints (S18.4.3): only then are credentials and files taken.
+    assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
     return fake
+
+
+def test_an_unconfirmed_pairing_gets_no_credential_and_posts_no_file(server, admin, client):
+    """S18.4.3: paired but not confirmed, the connector reports and is answered, but a sealed
+    credential is withheld, a file is refused, and no sign-in can be sealed for it."""
+    fake = FakeConnector(server, client)
+    assert fake.pair(pair_code(admin)).status_code == 200
+    view = admin.get("/ui/api/settings/connector").json()
+    assert view["state"] == "paired" and view["confirmedAt"] is None
+    alice = make_user(server, "alice").id
+    cid = connection(server, alice)
+    aid = account(server, alice, cid)
+    out = fake.call("/connector/v1/report", {"locked": False, "connections": []}).json()
+    assert out["connections"][0]["sealed"] is None
+    r = fake.call(
+        f"/connector/v1/accounts/{aid}/files",
+        raw=b"--x\r\n",
+        headers={"Content-Type": "multipart/form-data; boundary=x"},
+    )
+    assert r.status_code == 403 and r.json()["code"] == "not-confirmed"
+    c = sign_in(server, "alice")
+    assert c.get("/ui/api/connector").json()["confirmed"] is False
+    r = c.put(f"/ui/api/profile/connections/{cid}/credential", json={"sealed": "x" * 100})
+    assert r.status_code == 409 and r.json()["code"] == "pairing-unconfirmed"
+    assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
+    view = admin.get("/ui/api/settings/connector").json()
+    assert view["confirmedAt"] and view["confirmedBy"]
+    out = fake.call("/connector/v1/report", {"locked": False, "connections": []}).json()
+    assert out["connections"][0]["sealed"]["ciphertext"] == "c2VhbGVk"
+    assert "connector.confirmed" in [a.kind for a in activity_rows(server)]
 
 
 def test_pairing_takes_the_code_once_and_records_the_keys(server, admin, client):
@@ -464,3 +496,10 @@ def test_network_ranges_decide_who_reaches_each_path(server, admin):
     assert AddressRanges._allowed("anything", [])
     assert AddressRanges._allowed("100.100.1.1", settings.LAN_AND_OVERLAY)
     assert not AddressRanges._allowed("8.8.8.8", settings.LAN_AND_OVERLAY)
+
+
+def activity_rows(server):
+    from moneykata.store.entities.core import Activity
+
+    with server.db.read() as s:
+        return list(s.query(Activity))

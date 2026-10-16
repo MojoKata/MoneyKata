@@ -277,3 +277,42 @@ def test_sign_up_checks_its_fields_and_domains(admin_client, server, smtp):
 def test_signup_settings_are_off_by_default(server):
     with server.db.read() as s:
         assert settings.get(s, "signupEnabled") is False
+
+
+def test_written_emails_are_listed_for_admins_and_expire(admin_client, server, tmp_path):
+    """S16.2: with no SMTP host, each email is written to the mail folder; Settings › Email
+    lists them, shows one after the password again, and the mail task removes those older
+    than their links' life."""
+    import datetime as dt
+    import os
+
+    from conftest import ORIGIN
+
+    from moneykata import mail, settings
+
+    with server.db.tx() as s:
+        settings.put(s, "publicUrl", ORIGIN, None)
+    make_user(server, "carol")
+    r = admin_client.post(
+        "/ui/api/users",
+        json={
+            "displayName": "Dave",
+            "username": "dave",
+            "email": "dave@example.com",
+            "sex": "male",
+        },
+    )
+    assert r.status_code == 201, r.text
+    listed = admin_client.get("/ui/api/settings/email/written").json()["items"]
+    assert (
+        listed and listed[0]["to"] == "dave@example.com" and "invit" in listed[0]["subject"].lower()
+    )
+    name = listed[0]["name"]
+    r = admin_client.get(f"/ui/api/settings/email/written/{name}")
+    assert r.status_code == 200 and "https://" in r.json()["text"]
+    assert admin_client.get("/ui/api/settings/email/written/../x.eml").status_code in (404, 422)
+    path = server.config.mail_dir / name
+    old = (dt.datetime.now(dt.UTC) - dt.timedelta(hours=26)).timestamp()
+    os.utime(path, (old, old))
+    assert mail.expire_written(server.config) == 1
+    assert admin_client.get("/ui/api/settings/email/written").json()["items"] == []

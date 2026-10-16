@@ -122,7 +122,13 @@ ask it for anything.
       files the sealing key's private half in the vault (so `pair` is refused while the
       vault is locked), introduces itself with the code in one call (`POST
       /connector/v1/pair`: the code and the two public keys), and both sides show the
-      connector's fingerprint for the admin to compare.
+      connector's fingerprint for the admin to compare. **The pairing is not trusted until
+      an admin confirms it** (Settings › Connector › **Confirm**, the password again): a
+      pairing code is a 24-hour bearer secret, and whoever answers it first is paired. Until
+      the confirmation, the connector's reports are taken (so its fingerprint is known), but
+      it is handed no sealed credential, no file it posts is taken (refused `not-confirmed`,
+      and kept for a later run), and no one can seal a sign-in for it; the connection
+      dialog says so. Fingerprints that differ mean someone else answered the code: Unpair.
 
       ```
        admin                MoneyKata                        connector host          connector
@@ -169,8 +175,8 @@ ask it for anything.
    (name and last four digits, S18.6.1). The answer carries what waits for the connector:
    each live Connection with its settings and accounts, sealed credentials to collect, by
    Connection (S18.7.1), **only when the report says the connector is unlocked** (a locked
-   one couldn't open them, S18.4.5), and Connections removed (S18.6.4), whose credentials it
-   then deletes. MoneyKata shows the report and alerts admins (S12.11):
+   one couldn't open them, S18.4.5) **and the pairing is confirmed** (S18.4.2), and
+   Connections removed (S18.6.4), whose credentials it then deletes. MoneyKata shows the report and alerts admins (S12.11):
    1. **the connector is locked**: unlock it on its host;
    2. **the connector hasn't been heard from for 15 minutes**: it is stopped, down, or can't
       reach MoneyKata;
@@ -197,8 +203,9 @@ ask it for anything.
       every Connection's state for admins, never its credentials.
 7. **Entering credentials**, chosen per Connection.
    1. **Sealed for the connector** (the usual way): the owner types the credentials in
-      MoneyKata, and **the browser encrypts them to the connector's sealing key** before
-      anything is sent (an X25519 sealed box, made with the browser's own WebCrypto, which
+      MoneyKata, with their password again (S13.7.2) and only once an admin confirmed the
+      pairing (S18.4.2), and **the browser encrypts them to the connector's sealing key**
+      before anything is sent (an X25519 sealed box, made with the browser's own WebCrypto, which
       current Chrome, Edge, Safari and Firefox provide; a browser without it is offered only
       the stricter way below). MoneyKata keeps only the ciphertext, which it
       can't open, until the connector collects it on its next report, files it in its vault

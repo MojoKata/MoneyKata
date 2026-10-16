@@ -137,8 +137,9 @@ again. Record the time it took.
 Network › Allowed to connect.
 
 1. Run the connector image on the laptop with its own volume; `init`; start; `unlock`; pair
-   with a code from the server. Passing: both fingerprints match; the server shows it paired;
-   `pair` before `unlock` is refused, since the sealing key goes into the vault.
+   with a code from the server. Passing: both fingerprints match; the server shows it paired
+   and, until Confirm is pressed, a folder Connection's files wait; `pair` before `unlock` is
+   refused, since the sealing key goes into the vault.
 2. Run a folder Connection on a folder of downloads on the laptop, mounted at `/watch`, with
    the Connection naming a folder inside it. Passing: each file posts to its account; a path
    of `/` or `..` is refused at the form and, sent anyway, reported *failing* by the

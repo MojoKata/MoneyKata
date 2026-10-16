@@ -536,6 +536,7 @@
  * What any user needs to start a Connection: whether a connector is paired, and its keys.
  * @typedef {Object} ConnectorInfo
  * @property {boolean} paired
+ * @property {boolean} confirmed
  * @property {boolean} locked
  * @property {(string | null)} fingerprint
  * @property {(string | null)} sealingKey
@@ -550,6 +551,8 @@
  * @property {boolean} locked
  * @property {(string | null)} pairedAt
  * @property {(string | null)} pairedBy
+ * @property {(string | null)} confirmedAt
+ * @property {(string | null)} confirmedBy
  * @property {(string | null)} lastReportAt
  * @property {(number | null)} silentForSeconds
  * @property {(string | null)} connectorVersion
@@ -2301,6 +2304,14 @@
  */
 
 /**
+ * @typedef {Object} Page_WrittenEmail_
+ * @property {Array<WrittenEmail>} items
+ * @property {number} total
+ * @property {number} offset
+ * @property {number} limit
+ */
+
+/**
  * @typedef {Object} Paid
  * @property {string} transactionId
  * @property {string} date
@@ -3855,6 +3866,20 @@
 /**
  * @typedef {Object} Words
  * @property {Array<string>} words
+ */
+
+/**
+ * @typedef {Object} WrittenEmail
+ * @property {string} name
+ * @property {string} to
+ * @property {string} subject
+ * @property {string} writtenAt
+ */
+
+/**
+ * @typedef {Object} WrittenEmailText
+ * @property {string} name
+ * @property {string} text
  */
 
 /**

@@ -53,3 +53,6 @@ alerts admins and each wallet's owner.
 ## Test
 
 Asks the saved explorer or node for the chain's height, and says what failed. Save first.
+
+Setting or replacing the node's password asks for your password again when it was given over 10
+minutes ago.
