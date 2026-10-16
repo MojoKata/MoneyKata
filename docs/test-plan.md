@@ -132,9 +132,15 @@ time it took.
 Network › Allowed to connect.
 
 1. Run the connector image on the laptop with its own volume; `init`; start; `unlock`; pair
-   with a code from the server. Passing: both fingerprints match; the server shows it paired.
-2. Run a folder Connection on a folder of downloads on the laptop. Passing: each file posts
-   to its account; the laptop's address outside the allowed ranges is refused (404) until it
-   is added.
+   with a code from the server. Passing: both fingerprints match; the server shows it paired;
+   `pair` before `unlock` is refused, since the sealing key goes into the vault.
+2. Run a folder Connection on a folder of downloads on the laptop, mounted at `/watch`, with
+   the Connection naming a folder inside it. Passing: each file posts to its account; a path
+   of `/` or `..` is refused at the form and, sent anyway, reported *failing* by the
+   connector; the laptop's address outside the allowed ranges is refused (404) until it is
+   added.
 3. Close the laptop for twenty minutes. Passing: admins are alerted *not heard from*; it
    resolves when the laptop is back and reports.
+4. With an OFX Direct Connect Connection working, change its server address in Profile ›
+   Connections. Passing: the next run sends nothing, the Connection reports *needs a
+   sign-in: the server address changed*, and entering the sign-in again makes it run.

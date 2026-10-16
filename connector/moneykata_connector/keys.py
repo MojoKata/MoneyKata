@@ -1,7 +1,9 @@
-"""The connector's keys (requirements S18.4.2, S18.4.5): an identity key (Ed25519) that signs
-its calls and a sealing key (X25519) that credentials are sealed to, made at pairing and kept
-beside the vault, not in it, so a locked connector can still report. With them, the server it
-is paired with: its address and its link key's fingerprint."""
+"""The connector's keys (requirements S18.4.2, S18.4.5), made at pairing: an identity key
+(Ed25519) that signs its calls, kept beside the vault so a locked connector can still report,
+and a sealing key (X25519) that credentials are sealed to, whose private half lives in the
+vault (`vault.py`) and whose public half is kept here. With them, the server it is paired
+with: its address and its link key's fingerprint. This file holds nothing that opens a
+credential."""
 
 import base64
 import hashlib
@@ -35,15 +37,11 @@ class Pairing:
     address: str  # MoneyKata's address, from the pairing code
     server_fp: str  # its link key's fingerprint, whole
     identity: Ed25519PrivateKey
-    sealing: X25519PrivateKey
+    sealing_public: bytes  # the private half is in the vault
 
     @property
     def identity_public(self) -> bytes:
         return self.identity.public_key().public_bytes_raw()
-
-    @property
-    def sealing_public(self) -> bytes:
-        return self.sealing.public_key().public_bytes_raw()
 
     @property
     def fingerprint(self) -> str:
@@ -59,13 +57,19 @@ def load(path: Path) -> Pairing | None:
         d["address"],
         d["serverFingerprint"],
         Ed25519PrivateKey.from_private_bytes(unb64(d["identity"])),
-        X25519PrivateKey.from_private_bytes(unb64(d["sealing"])),
+        unb64(d["sealingPublic"]),
     )
 
 
-def make(path: Path, address: str, server_fp: str) -> Pairing:
-    """New keys for a new pairing; the old pairing's keys go with it (S18.4.4)."""
-    p = Pairing(address, server_fp, Ed25519PrivateKey.generate(), X25519PrivateKey.generate())
+def new_sealing_key() -> tuple[bytes, bytes]:
+    """A sealing key pair as raw bytes: (private, for the vault; public, for MoneyKata)."""
+    k = X25519PrivateKey.generate()
+    return k.private_bytes_raw(), k.public_key().public_bytes_raw()
+
+
+def make(path: Path, address: str, server_fp: str, sealing_public: bytes) -> Pairing:
+    """A new identity key for a new pairing; the old pairing's keys go with it (S18.4.4)."""
+    p = Pairing(address, server_fp, Ed25519PrivateKey.generate(), sealing_public)
     save(path, p)
     return p
 
@@ -78,7 +82,7 @@ def save(path: Path, p: Pairing) -> None:
                 "address": p.address,
                 "serverFingerprint": p.server_fp,
                 "identity": b64(p.identity.private_bytes_raw()),
-                "sealing": b64(p.sealing.private_bytes_raw()),
+                "sealingPublic": b64(p.sealing_public),
             },
             f,
         )

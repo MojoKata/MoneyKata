@@ -1,6 +1,7 @@
 """The connector's loop (requirements S18.5, S18.7, S18.8, docs/connector-protocol.md): every
 5 minutes a signed report to MoneyKata, answered with what waits; sealed credentials collected
-into the vault; each Connection's driver run at its interval; what it fetched posted for its
+into the vault, bound to the host they may be sent to; each Connection's driver run at its
+interval, never against a host its credentials aren't bound to; what it fetched posted for its
 accounts, a post refused for a limit kept for a later run."""
 
 import json
@@ -13,7 +14,7 @@ from pathlib import Path
 from . import client, keys, sealed
 from .client import Egress, ServerError, Transport
 from .drivers import Account, Driver, File, registry
-from .vault import Vault
+from .vault import Vault, VaultError
 
 log = logging.getLogger("connector")
 REPORT_SECONDS = 300
@@ -68,7 +69,10 @@ class Core:
 
     def pair(self, code: str) -> str:
         """`moneykata-connector pair <code>` (S18.4.2): check the server's fingerprint against
-        the code, make the keys, introduce the connector. Returns its fingerprint to compare."""
+        the code, make the keys, introduce the connector. Returns its fingerprint to compare.
+        The vault must be unlocked: the sealing key's private half goes into it (S18.4.5)."""
+        if self.vault.locked:
+            raise VaultError("unlock the vault first: the sealing key is kept in it")
         c = decode_code(code)
         self.egress.allow(_host(c["a"]))
         hi = client.hello(self.transport, c["a"])
@@ -77,22 +81,19 @@ class Core:
                 "fingerprint-mismatch",
                 "The server at that address doesn't have the key the code names: nothing sent.",
             )
-        pairing = keys.make(self.data / "pairing.json", c["a"], c["f"])
+        private, public = keys.new_sealing_key()
+        pairing = keys.make(self.data / "pairing.json", c["a"], c["f"], public)
         server = client.Server(pairing, self.transport, client.server_key(hi))
         out = server.call(
             "/connector/v1/pair",
-            {
-                "code": code,
-                "sealingKey": keys.b64(pairing.sealing_public),
-                "version": client.VERSION,
-            },
+            {"code": code, "sealingKey": keys.b64(public), "version": client.VERSION},
         )
         with self._lock:
             self.pairing, self.server = pairing, server
             self.connections = {}
-            if not self.vault.locked:
-                for cid in self.vault.ids():
-                    self.vault.delete(cid)
+            for cid in self.vault.ids():
+                self.vault.delete(cid)
+            self.vault.keep_sealing_key(private)
         self._wake.set()
         return keys.short(out.get("connectorFingerprint", pairing.fingerprint))
 
@@ -139,13 +140,25 @@ class Core:
         self._wake.set()
 
     def connect(self, connection_id: str, credentials: dict) -> None:
-        """Credentials typed on this host (S18.7.2), straight into the vault."""
+        """Credentials typed on this host (S18.7.2), straight into the vault, bound to the host
+        the Connection's settings name now (S18.7.3), so the Connection must be known here."""
         with self._lock:
-            self.vault.put(connection_id, credentials)
             c = self.connections.get(connection_id)
-            if c:
-                c.state, c.message, c.last_run = "ok", "credentials received", None
+            if c is None and self.server is not None:
+                self.tick()
+                c = self.connections.get(connection_id)
+            if c is None:
+                raise VaultError(
+                    "the connector hasn't heard of that Connection yet: check its id, or try "
+                    "again after its next report"
+                )
+            self.vault.put(connection_id, credentials, self._binds(c))
+            c.state, c.message, c.last_run = "ok", "credentials received", None
         self._wake.set()
+
+    def _binds(self, c: ConnectionState) -> str | None:
+        d = self.drivers.get(c.driver)
+        return d.binds(c.settings) if d else None
 
     def run_forever(self) -> None:
         while not self._stop.is_set():
@@ -219,12 +232,14 @@ class Core:
                 self.connections.pop(cid)
 
     def _collect(self, c: ConnectionState, box: str) -> None:
+        """A sealed credential, opened with the sealing key from the vault and filed bound to
+        the host the Connection's settings name now (S18.7.1, S18.7.3)."""
         try:
-            creds = sealed.open_box(box, self.pairing.sealing, c.id)
+            creds = sealed.open_box(box, self.vault.sealing_key() or b"", c.id)
         except Exception:
             c.state, c.message = "failing", "the credentials were sealed for another connector"
             return
-        self.vault.put(c.id, creds)
+        self.vault.put(c.id, creds, self._binds(c))
         self.server.call(f"/connector/v1/connections/{c.id}/credential/taken")
         c.state, c.message, c.sign_in, c.last_run = "ok", "credentials received", None, None
 
@@ -248,6 +263,17 @@ class Core:
                     )
                 c.state, c.message, c.last_run = "new", "waiting for credentials", time.time()
                 return
+            bound, wanted = self.vault.host(c.id), d.binds(c.settings)
+            if bound != wanted:
+                # The settings now name another host than the one the credentials were
+                # filed for (S18.7.3): nothing is sent until the owner enters them again.
+                self.vault.delete(c.id)
+                c.state, c.last_run = "needs-sign-in", time.time()
+                c.message = (
+                    f"the server address changed from {bound or 'none'} to {wanted or 'none'}: "
+                    "enter the credentials again"
+                )
+                return
         try:
             self.egress.allow(*d.hosts_for(c.settings))
             r = d.run(c.settings, creds, c.accounts, self.transport)
@@ -261,7 +287,7 @@ class Core:
         c.found = r.found or c.found
         c.sign_in = r.sign_in
         if r.credentials is not None:
-            self.vault.put(c.id, r.credentials)
+            self.vault.put(c.id, r.credentials, self.vault.host(c.id))
         if r.sign_in:
             self.server.call(f"/connector/v1/connections/{c.id}/sign-in", {"address": r.sign_in})
         c.backlog.extend(r.files)

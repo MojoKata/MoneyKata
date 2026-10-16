@@ -23,7 +23,10 @@ minutes ago.
 
 Refuses the connector's key from then on, stops every Connection, and turns every account's
 sync off. The connector deletes the credentials it held for this server. Needs your password
-again when it was given over 10 minutes ago.
+again when it was given over 10 minutes ago. Unpair at once when the connector's host or its
+volume is lost or stolen: its identity key is kept outside the vault, so whoever has the copy
+can report as the connector and post files until it is unpaired. The vault itself, with the
+sign-ins and the key that opens sealed credentials, stays closed without the words.
 
 ## Connections {#connections}
 

@@ -67,14 +67,33 @@ def test_the_vault_opens_only_with_its_words_and_waits_after_five_wrong(tmp_path
     assert new != phrase and v.ids() == []
 
 
-def test_keys_are_made_at_pairing_kept_beside_the_vault_and_forgotten(tmp_path):
+def test_keys_are_made_at_pairing_the_sealing_key_in_the_vault_and_forgotten(tmp_path):
     assert keys.load(tmp_path / "pairing.json") is None
-    p = keys.make(tmp_path / "pairing.json", "https://money.lan", "f" * 64)
+    private, public = keys.new_sealing_key()
+    p = keys.make(tmp_path / "pairing.json", "https://money.lan", "f" * 64, public)
     again = keys.load(tmp_path / "pairing.json")
     assert again.identity_public == p.identity_public and again.address == "https://money.lan"
+    assert again.sealing_public == public
     assert keys.short(p.fingerprint).count(" ") == 3
+    # The pairing file holds the public half only (S18.4.5): nothing in it opens a box.
+    text = (tmp_path / "pairing.json").read_text()
+    assert keys.b64(private) not in text and "sealingPublic" in text and '"sealing"' not in text
+    v = vault.Vault(tmp_path / "vault.json")
+    v.create()
+    assert v.sealing_key() is None
+    v.keep_sealing_key(private)
+    assert v.sealing_key() == private and private.hex() not in (tmp_path / "vault.json").read_text()
     keys.forget(tmp_path / "pairing.json")
     assert keys.load(tmp_path / "pairing.json") is None
+
+
+def test_credentials_are_bound_to_the_host_they_were_filed_for(tmp_path):
+    v = vault.Vault(tmp_path / "vault.json")
+    v.create()
+    v.put("Conn_1", {"username": "alice", "password": "pw"}, "ofx.cu.example")
+    v.put("Conn_2", {"appSecret": "s"})
+    assert v.host("Conn_1") == "ofx.cu.example" and v.host("Conn_2") is None
+    assert v.get("Conn_1") == {"username": "alice", "password": "pw"} and v.host("Conn_9") is None
 
 
 def test_signed_calls_and_checked_answers():
@@ -183,7 +202,7 @@ def test_the_core_and_each_driver_stay_small_and_import_nothing_from_moneykata()
 
 
 def test_the_socket_commands_talk_to_the_running_connector(tmp_path):
-    from moneykata_connector.core import Core
+    from moneykata_connector.core import ConnectionState, Core
 
     core = Core(tmp_path, transport=client.Transport(client.Egress()))
     phrase = " ".join(core.vault.create())
@@ -192,10 +211,47 @@ def test_the_socket_commands_talk_to_the_running_connector(tmp_path):
     sock.serve(core, path)
     assert sock.ask(path, {"command": "status"})["locked"] is True
     assert "error" in sock.ask(path, {"command": "unlock", "words": "bad words"})
+    # Pairing needs the vault open: the sealing key goes into it.
+    assert "unlock the vault first" in sock.ask(path, {"command": "pair", "code": "x"})["error"]
     assert sock.ask(path, {"command": "unlock", "words": phrase})["locked"] is False
+    # Credentials typed here are filed for a Connection the connector knows, bound to the
+    # host its settings name (S18.7.3); an unknown one is refused.
+    out = sock.ask(path, {"command": "connect", "id": "Conn_1", "credentials": {"a": "b"}})
+    assert "hasn't heard of that Connection" in out["error"]
+    core.connections["Conn_1"] = ConnectionState(
+        "Conn_1", "ofx-direct", "CU", {"url": "https://ofx.cu.example/x"}, []
+    )
     assert sock.ask(path, {"command": "connect", "id": "Conn_1", "credentials": {"a": "b"}})["ok"]
-    assert core.vault.get("Conn_1") == {"a": "b"}
+    assert core.vault.get("Conn_1") == {"a": "b"} and core.vault.host("Conn_1") == "ofx.cu.example"
     assert sock.ask(path, {"command": "lock"})["locked"] is True
     out = sock.ask(path, {"command": "reset"})
     assert len(out["words"]) == 12 and json.loads((tmp_path / "vault.json").read_text())["format"]
     assert "error" in sock.ask(path, {"command": "nothing"})
+
+
+def test_a_changed_server_address_sends_nothing_and_asks_for_the_credentials_again(tmp_path):
+    """S18.7.3: the host a credential was filed for is the only one it is ever sent to."""
+    from moneykata_connector.core import ConnectionState, Core
+    from moneykata_connector.drivers.ofx_direct import OfxDirect
+
+    sent = []
+
+    class Watching(client.Transport):
+        def request(self, method, url, headers, body, verify=True):
+            sent.append(url)
+            return client.Answer(200, {}, b"<SONRS><CODE>0</SONRS><ACCTID>1204")
+
+    core = Core(tmp_path, transport=Watching(client.Egress()), drivers={"ofx-direct": OfxDirect()})
+    core.vault.create()
+    c = core.connections["Conn_1"] = ConnectionState(
+        "Conn_1", "ofx-direct", "CU", {"url": "https://ofx.cu.example/ofx", "accountId": "1204"}, []
+    )
+    core.vault.put("Conn_1", {"username": "alice", "password": "pw"}, "ofx.cu.example")
+    core._run(c)
+    assert sent == ["https://ofx.cu.example/ofx"] and c.state == "ok"
+    # MoneyKata's next answer names another server: the password never goes there.
+    c.settings = {**c.settings, "url": "https://evil.example/ofx"}
+    core._run(c)
+    assert sent == ["https://ofx.cu.example/ofx"]
+    assert c.state == "needs-sign-in" and "changed from ofx.cu.example to evil.example" in c.message
+    assert core.vault.get("Conn_1") is None, "the old credentials are gone with their binding"

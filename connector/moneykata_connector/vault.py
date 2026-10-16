@@ -1,7 +1,8 @@
-"""The vault (requirements S18.3): every Connection's credentials, sealed with AES-256-GCM
-under a key derived from the 12 words, in one file. It opens only with the words, which are
-never stored: the key stays in memory while the connector is unlocked, and a restart locks it.
-Five wrong attempts in a row make the next wait 15 minutes."""
+"""The vault (requirements S18.3): every Connection's credentials, each bound to the host it
+may be sent to (S18.7.3), and the sealing key that credentials are sealed to (S18.4.5), all
+sealed with AES-256-GCM under a key derived from the 12 words, in one file. It opens only with
+the words, which are never stored: the key stays in memory while the connector is unlocked, and
+a restart locks it. Five wrong attempts in a row make the next wait 15 minutes."""
 
 import hashlib
 import json
@@ -56,7 +57,7 @@ class Vault:
             raise VaultError(f"{self.path} already exists; `reset` replaces it")
         key = os.urandom(16)
         self._key = key
-        self._write({"connections": {}})
+        self._write({"connections": {}, "sealing": None})
         return words.to_words(key)
 
     def reset(self) -> list[str]:
@@ -147,11 +148,20 @@ class Vault:
         os.replace(tmp, self.path)
 
     def get(self, connection_id: str) -> dict | None:
-        return self._read()["connections"].get(connection_id)
+        """The credentials, or None."""
+        entry = self._read()["connections"].get(connection_id)
+        return entry["credentials"] if entry else None
 
-    def put(self, connection_id: str, credentials: dict) -> None:
+    def host(self, connection_id: str) -> str | None:
+        """The host the credentials were bound to when filed (S18.7.3)."""
+        entry = self._read()["connections"].get(connection_id)
+        return entry.get("host") if entry else None
+
+    def put(self, connection_id: str, credentials: dict, host: str | None = None) -> None:
+        """File credentials, bound to the host they may be sent to: a driver with a host of
+        its own binds none."""
         content = self._read()
-        content["connections"][connection_id] = credentials
+        content["connections"][connection_id] = {"credentials": credentials, "host": host}
         self._write(content)
 
     def delete(self, connection_id: str) -> None:
@@ -161,3 +171,16 @@ class Vault:
 
     def ids(self) -> list[str]:
         return sorted(self._read()["connections"])
+
+    # ----- the sealing key -----
+
+    def sealing_key(self) -> bytes | None:
+        """The raw private sealing key, kept in the vault so a stolen volume can't open the
+        boxes sealed to it (S18.4.5); None until a pairing made one."""
+        raw = self._read().get("sealing")
+        return bytes.fromhex(raw) if raw else None
+
+    def keep_sealing_key(self, raw: bytes) -> None:
+        content = self._read()
+        content["sealing"] = raw.hex()
+        self._write(content)

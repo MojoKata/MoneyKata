@@ -38,8 +38,9 @@ services:
     restart: unless-stopped
     volumes:
       - connector-data:/var/lib/moneykata-connector
-      # The Folder driver (S18.9.1): a Downloads folder, mounted read only.
-      # - /home/alice/Downloads:/downloads:ro
+      # The Folder driver (S18.9.1): a Downloads folder, mounted read only at the watched
+      # folder. A folder Connection names a folder inside it; the driver never reads outside.
+      # - /home/alice/Downloads:/watch:ro
     read_only: true
     tmpfs:
       - /tmp

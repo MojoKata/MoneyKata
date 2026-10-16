@@ -15,10 +15,12 @@ all.
 
 A name to tell it apart: *Schwab login*, *Credit union*.
 
-## Folder on the connector's host {#folder-path}
+## Folder inside the watched folder {#folder-path}
 
-The folder the connector watches, mounted read only into it: a Downloads folder, for example.
-Each statement or export that appears is posted to the account its rule names.
+A folder inside the one mounted read only into the connector (its watched folder: a Downloads
+folder, for example), relative to it, such as `alice/umb`; empty means the whole watched
+folder. The connector never reads outside that mount, whatever a path says. Each statement or
+export that appears is posted to the account its rule names.
 
 ## Rules {#folder-rules}
 
@@ -28,7 +30,8 @@ One per line: a file-name pattern and the last four digits of the account it goe
 ## OFX server address {#ofx-url}
 
 The institution's OFX Direct Connect address, from the institution or a directory such as
-ofxhome.com.
+ofxhome.com. The sign-in you seal is bound to this address: the connector sends it there and
+nowhere else, and if the address is changed later the connection asks for the sign-in again.
 
 ## ORG {#ofx-org}
 

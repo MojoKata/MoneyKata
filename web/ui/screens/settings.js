@@ -1084,7 +1084,12 @@ function Keys() {
       ? v.previous.map((/** @type {any} */ p) =>
         html`<span><code>${p.fingerprint}</code> ${
           p.removableAfter
-            ? html`<span class="small dim">· can go after ${date(p.removableAfter)}</span>`
+            ? html`
+              <span
+                class="small dim">· the backup directory's copies made under it are pruned after ${date(
+                  p.removableAfter,
+                )}; copies kept elsewhere are yours to count</span>
+            `
             : null
         }</span>`
       )
@@ -1123,6 +1128,6 @@ function Keys() {
       : setArmed(true)}>${
     v.reencrypting ? 'Re-encrypting…' : armed ? 'Click again to re-encrypt' : 'Re-encrypt'
   }</button>
-      <span class="small dim">A new data key for the database and every secret. Rarely needed.</span></div>
+      <span class="small dim">A new data key for the database, the receipts and every secret. For when the data key may have been read: a memory dump, or a leaked master key beside any copy of the data. It closes nothing made before it.</span></div>
   </div>`;
 }

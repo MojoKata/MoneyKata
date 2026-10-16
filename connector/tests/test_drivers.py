@@ -245,14 +245,14 @@ def test_the_folder_driver_posts_matching_files_once(tmp_path):
     (folder / "umb-2026-09.ofx").write_bytes(b"OFXHEADER:100")
     (folder / "notes.txt").write_bytes(b"x")
     (folder / "chase.csv").write_bytes(b"a,b")
-    d = Folder(tmp_path / "posted.json")
+    d = Folder(tmp_path / "posted.json", root=tmp_path)
     assert parse_rules(["umb-*.pdf → 3311", "umb-*.ofx -> 3311", "bad rule"]) == [
         ("umb-*.pdf", "3311"),
         ("umb-*.ofx", "3311"),
     ]
     accounts = [Account("Acct_1", "Joint ••3311", ["ofx", "statement"])]
     r = d.run(
-        {"path": str(folder), "rules": ["umb-*.pdf → 3311", "umb-*.ofx → 3311"]},
+        {"path": "downloads", "rules": ["umb-*.pdf → 3311", "umb-*.ofx → 3311"]},
         None,
         accounts,
         None,
@@ -262,14 +262,28 @@ def test_the_folder_driver_posts_matching_files_once(tmp_path):
         "umb-2026-09.pdf",
     ]
     assert {f.fmt for f in r.files} == {"ofx", "statement"} and "1 file with no rule" in r.message
-    again = Folder(tmp_path / "posted.json")
+    again = Folder(tmp_path / "posted.json", root=tmp_path)
     assert (
-        again.run({"path": str(folder), "rules": ["umb-*.pdf → 3311"]}, None, accounts, None).files
+        again.run({"path": "downloads", "rules": ["umb-*.pdf → 3311"]}, None, accounts, None).files
         == []
     )
-    assert (
-        d.run({"path": str(folder / "nope"), "rules": []}, None, accounts, None).state == "failing"
-    )
+    assert d.run({"path": "nope", "rules": []}, None, accounts, None).state == "failing"
+    # An empty path is the watched folder itself.
+    assert d.run({"path": "", "rules": []}, None, accounts, None).state == "ok"
+
+
+def test_the_folder_driver_never_leaves_its_watched_folder(tmp_path):
+    """S18.9.1: MoneyKata names a folder inside the mount, never the connector's own files."""
+    root = tmp_path / "watch"
+    root.mkdir()
+    (tmp_path / "secret.ofx").write_bytes(b"OFXHEADER:100")
+    (root / "out").symlink_to(tmp_path)
+    d = Folder(root=root)
+    accounts = [Account("Acct_1", "Joint ••3311", ["ofx"])]
+    for path in (str(tmp_path), "../", "a/../../", "/", "out", "out/x"):
+        r = d.run({"path": path, "rules": ["* → 3311"]}, None, accounts, None)
+        assert r.state == "failing" and "inside the connector's watched folder" in r.message, path
+    assert d.inside("") == root.resolve() and d.inside("sub") == (root / "sub").resolve()
 
 
 def test_every_driver_is_registered_with_its_limits():

@@ -1,8 +1,12 @@
 """Drivers (requirements S18.1.1, S18.8): one per institution or method. Each declares the
 hosts it talks to, the credential fields it needs and how often it runs, and turns what its
-institution offers into files MoneyKata already imports, posted for one account."""
+institution offers into files MoneyKata already imports, posted for one account. A driver whose
+host its owner names (OFX Direct Connect) binds each credential to that host when it is filed
+(S18.7.3), so a changed setting can never send a password elsewhere."""
 
+import os
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -47,6 +51,11 @@ class Driver:
         """The hosts this Connection reaches: the declared ones, or one its owner named."""
         return self.hosts
 
+    def binds(self, settings: dict) -> str | None:
+        """The host a credential is bound to when filed (S18.7.3): the one the owner named,
+        for a driver with no host of its own; None for a driver whose hosts are fixed."""
+        return None
+
     def sign_in(self, settings: dict) -> str | None:
         """An address the owner must sign in at before credentials exist (S18.7.1)."""
         return None
@@ -57,9 +66,14 @@ class Driver:
         raise NotImplementedError
 
 
-def registry() -> dict[str, Driver]:
+WATCH = Path(os.environ.get("MONEYKATA_CONNECTOR_WATCH", "/watch"))
+
+
+def registry(watch: Path | None = None) -> dict[str, Driver]:
+    """Every driver; the Folder driver rooted at the watched folder mounted into the
+    connector (S18.9.1), never at a path MoneyKata names."""
     from .folder import Folder
     from .ofx_direct import OfxDirect
     from .schwab import Schwab
 
-    return {d.name: d for d in (Folder(), OfxDirect(), Schwab())}
+    return {d.name: d for d in (Folder(root=watch or WATCH), OfxDirect(), Schwab())}

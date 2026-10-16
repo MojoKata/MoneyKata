@@ -2,6 +2,8 @@
 sign-ins kept by the connector, credentials sealed in the browser that MoneyKata can't open,
 the account's Sync using MoneyKata Connector switch for its owner alone, and Remove."""
 
+import json
+
 import pytest
 from conftest import make_user, sign_in
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
@@ -11,6 +13,7 @@ from moneykata import ids
 from moneykata.connector import sealed
 from moneykata.links import keys
 from moneykata.store.entities.accounts import Account
+from moneykata.store.entities.connector import Connection
 
 
 @pytest.fixture
@@ -96,6 +99,10 @@ def test_a_user_makes_a_connection_seals_credentials_and_the_connector_collects_
     assert r.status_code == 200 and r.json()["credentialWaiting"] is True
     r = c.put(f"/ui/api/profile/connections/{cid}/credential", json={"sealed": "nope"})
     assert r.status_code == 422
+    # A locked connector can't open a box (its sealing key is in the vault), so it is not
+    # handed one; an unlocked one is (protocol §4.2).
+    out = paired.call("/connector/v1/report", {"locked": True, "connections": []}).json()
+    assert out["connections"][0]["sealed"] is None
     out = paired.call("/connector/v1/report", {"locked": False, "connections": []}).json()
     (conn,) = out["connections"]
     assert conn["id"] == cid and conn["settings"] == {"appKey": "k1"}
@@ -130,11 +137,11 @@ def test_only_the_owner_turns_an_accounts_sync_on_naming_their_own_connection(se
     alice, bob = sign_in(server, "alice"), sign_in(server, "bob")
     cid = alice.post(
         "/ui/api/profile/connections",
-        json={"driver": "folder", "label": "Downloads", "settings": {"path": "/in"}},
+        json={"driver": "folder", "label": "Downloads", "settings": {"path": "in"}},
     ).json()["connection"]["id"]
     bobs = bob.post(
         "/ui/api/profile/connections",
-        json={"driver": "folder", "label": "Downloads", "settings": {"path": "/in"}},
+        json={"driver": "folder", "label": "Downloads", "settings": {"path": "in"}},
     ).json()["connection"]["id"]
     aid = account(server, alice.get("/ui/api/session").json()["user"]["id"])
     a = alice.get(f"/ui/api/accounts/{aid}").json()
@@ -185,12 +192,40 @@ def test_only_the_owner_turns_an_accounts_sync_on_naming_their_own_connection(se
     assert cid in out["removed"] and all(x["id"] != cid for x in out["connections"])
 
 
+def test_a_folder_connection_stays_inside_the_watched_folder(server, paired):
+    """S18.9.1: the path is relative to the folder mounted into the connector; empty is the
+    folder itself; anything that reaches outside it is refused at the field."""
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    for path in ("/downloads", "../x", "a/../../b", "\\\\host\\share"):
+        r = c.post(
+            "/ui/api/profile/connections",
+            json={"driver": "folder", "label": f"D {path}", "settings": {"path": path}},
+        )
+        assert r.status_code == 422 and r.json()["errors"][0]["code"] == "path-outside", path
+    r = c.post(
+        "/ui/api/profile/connections",
+        json={"driver": "folder", "label": "All of it", "settings": {"rules": ["* → 1234"]}},
+    )
+    assert r.status_code == 201, r.text
+    whole = r.json()["connection"]["id"]
+    r = c.post(
+        "/ui/api/profile/connections",
+        json={"driver": "folder", "label": "Sub", "settings": {"path": "alice/umb"}},
+    )
+    assert r.status_code == 201, r.text
+    sub = r.json()["connection"]["id"]
+    with server.db.read() as s:
+        assert json.loads(s.get(Connection, whole).settings) == {"rules": ["* → 1234"]}
+        assert json.loads(s.get(Connection, sub).settings) == {"path": "alice/umb", "rules": []}
+
+
 def test_a_connection_needs_a_paired_connector(server, admin_client):
     make_user(server, "alice")
     c = sign_in(server, "alice")
     assert c.get("/ui/api/connector").json()["paired"] is False
     r = c.post(
         "/ui/api/profile/connections",
-        json={"driver": "folder", "label": "Downloads", "settings": {"path": "/in"}},
+        json={"driver": "folder", "label": "Downloads", "settings": {"path": "in"}},
     )
     assert r.status_code == 409 and r.json()["code"] == "no-connector"

@@ -1,7 +1,8 @@
 """OFX Direct Connect (requirements S18.9.2): institutions that still run an OFX server.
 A statement request signed in with the owner's username and password, answered with an OFX
 statement that MoneyKata imports as it is. The server's address is in the Connection's
-settings, so the host the driver reaches is the one its owner named."""
+settings, so the host the driver reaches is the one its owner named, and the credentials are
+bound to it when they are filed (S18.7.3): a changed address asks for them again."""
 
 import datetime as dt
 import re
@@ -67,6 +68,9 @@ class OfxDirect(Driver):
     def hosts_for(self, settings: dict) -> tuple[str, ...]:
         host = urlsplit(str(settings.get("url") or "")).hostname
         return (host,) if host else ()
+
+    def binds(self, settings: dict) -> str | None:
+        return (urlsplit(str(settings.get("url") or "")).hostname or "").lower() or None
 
     def run(
         self, settings: dict, credentials: dict | None, accounts: list[Account], http

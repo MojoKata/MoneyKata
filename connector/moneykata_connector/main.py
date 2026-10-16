@@ -123,6 +123,7 @@ def cmd_simple(what: str):
 
 
 def cmd_pair(args) -> int:
+    """Needs the vault unlocked: the sealing key the pairing makes goes into it (S18.4.5)."""
     out = _ask({"command": "pair", "code": args.code})
     print(f"paired: this connector's fingerprint is {out['fingerprint']}")
     print("Compare it with what MoneyKata shows under Settings › Connector.")

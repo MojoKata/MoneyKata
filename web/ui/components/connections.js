@@ -217,12 +217,12 @@ export function ConnectionDialog({ close, connection }) {
               </div>
         ${f.driver === 'folder'
           ? html`
-            <${Field} label="Folder on the connector's host" id="folder-path" error=${errAt(
+            <${Field} label="Folder inside the watched folder" id="folder-path" error=${errAt(
               e,
               'settings.path',
             )}
-              hint="Mounted read only into the connector; each file that appears is posted.">
-              <${Input} value=${f.path} onInput=${set('path')} placeholder="/downloads" required />
+              hint="Relative to the folder mounted read only into the connector; empty for all of it. Each file that appears is posted.">
+              <${Input} value=${f.path} onInput=${set('path')} placeholder="alice/umb" />
               </${Field}>
               <${Field} label="Rules" id="folder-rules" error=${errAt(e, 'settings.rules')}
                 hint="One per line: a file-name pattern and the account's last 4 digits, such as umb-*.pdf → 3311.">
@@ -234,7 +234,7 @@ export function ConnectionDialog({ close, connection }) {
           : f.driver === 'ofx-direct'
           ? html`
             <${Field} label="OFX server address" id="ofx-url" error=${errAt(e, 'settings.url')}
-              hint="From the institution, or ofxhome.com.">
+              hint="From the institution, or ofxhome.com. The sign-in is bound to this address: changing it later asks for the sign-in again.">
               <${Input} value=${f.url} onInput=${set('url')} placeholder="https://ofx.example.com/"
                 required />
               </${Field}>

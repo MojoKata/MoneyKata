@@ -45,17 +45,19 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     server, admin, app = money
     downloads = tmp_path / "downloads"
     downloads.mkdir()
-    folder = Folder(tmp_path / "posted.json")
+    folder = Folder(tmp_path / "posted.json", root=tmp_path)
     core = Core(tmp_path / "data", transport=None, drivers={"folder": folder})
     core.transport = Wired(app, core.egress)
     phrase = " ".join(core.vault.create())
-    core.vault.lock()
 
-    # Pair from the code Settings shows; both sides show the same fingerprint.
+    # Pair from the code Settings shows, with the vault unlocked (the sealing key goes into
+    # it); both sides show the same fingerprint.
     code = admin.post("/ui/api/settings/connector/pairings").json()["code"]
     shown = core.pair(code)
     view = admin.get("/ui/api/settings/connector").json()
     assert view["state"] == "paired" and view["fingerprint"] == shown
+    assert "sealingPublic" in (tmp_path / "data" / "pairing.json").read_text()
+    core.vault.lock()
     # A locked connector reports so, and MoneyKata alerts.
     core.tick()
     assert admin.get("/ui/api/settings/connector").json()["locked"] is True
@@ -68,7 +70,7 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
         json={
             "driver": "folder",
             "label": "Downloads",
-            "settings": {"path": str(downloads), "rules": ["umb-*.ofx → 4417"]},
+            "settings": {"path": "downloads", "rules": ["umb-*.ofx → 4417"]},
         },
     ).json()["connection"]
     with server.db.tx() as s:
@@ -90,6 +92,7 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     c.put(f"/ui/api/profile/connections/{conn['id']}/credential", json={"sealed": box})
     core.tick()
     assert core.vault.locked and core.connections[conn["id"]].label == "Downloads"
+    assert c.get("/ui/api/profile/connections").json()["items"][0]["credentialWaiting"] is True
     core.unlock(phrase)
     (downloads / "umb-2026-09.ofx").write_bytes(OFX)
     (downloads / "other-bank.ofx").write_bytes(OFX)

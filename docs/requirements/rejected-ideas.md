@@ -49,3 +49,9 @@ reason.
     files grow 50 to 100 times faster; removing rows saves little, loses history that
     can't be brought back once backups age out, and makes every report add summaries to
     what survived. Only files are pruned, by their retention (S14.10).
+17. **A key per backup**, or any way to close a copy already made, after a master-key leak:
+    re-wrapping each backup's keyring under a key the leaked phrase does not open. Whoever
+    holds the leaked phrase and a copy of the backup as it was already has its data key; a
+    later re-wrap changes only the copy MoneyKata still holds, not theirs. A copy opens with
+    the keys of its day for as long as it exists, so the answer to a leak is to delete the
+    copies, not to re-key them (S15.7.3, S15.8).

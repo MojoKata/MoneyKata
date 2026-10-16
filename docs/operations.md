@@ -187,9 +187,28 @@ and exit code 78. The compose file restarts it three times at most, then leaves 
 - **Check a copy of the phrase**: `docker compose run --rm moneykata keys verify`.
 - **Rotate the master key** (S15.7.1): `docker compose run --rm keys-rotate`, store the new
   phrase, then `docker compose restart moneykata`. Keep the previous key, as
-  `moneykata.toml` lists it, until backup pruning has removed every backup made before the
-  rotation: Settings › Key storage says when.
-- **Re-encrypt the data** (S15.7.2): Settings › Key storage › **Re-encrypt**.
+  `moneykata.toml` lists it, until every copy made before the rotation is gone: backup
+  pruning removes the backup directory's own copies, and Settings › Key storage says when
+  that is done; copies anywhere else (the NAS, the bucket, a snapshot, a copy made by hand)
+  are yours to delete, and open with the previous key until you do.
+- **Re-encrypt the data** (S15.7.2): Settings › Key storage › **Re-encrypt**. For when the
+  data key may have been read: a memory dump, or a leaked master key or phrase (below).
+
+### 7.1 When the key or phrase may have leaked
+
+A leaked key is a leaked copy (S15.8): whoever has the phrase and any backup or copy of
+`data/` made under it has everything in that copy, for ever. In this order:
+
+1. Revoke and reissue every secret at its source: price-source keys, the bitcoin node's
+   password, the SMTP password; unpair the connector and pair it again (§8).
+2. Settings › Key storage › **Re-encrypt**, and wait for it to finish.
+3. `docker compose run --rm keys-rotate`, store the new phrase in two places, restart.
+4. Delete every backup and copy made before step 3, wherever it is: `backups/` (prune by
+   hand: `rm -r backups/moneykata-<date>-*` for the old ones), the NAS or bucket, snapshots
+   and VM images, `data/pre-upgrade/` and `data/before-restore-*/`. A copy you cannot delete
+   is one the finder can read.
+5. Then delete the old key file, its sheet and its password-manager entry, and remove it
+   from `moneykata.toml`.
 
 ## 8. The MoneyKata Connector
 
@@ -209,15 +228,17 @@ publishes no port and only calls out: to MoneyKata, and to each driver's institu
 4. **Unlock it after every start** (a restart, an update, the host's reboot):
    `docker compose exec connector moneykata-connector unlock`, then type the 12 words. They
    are never echoed, and never stored.
-5. **Pair it**: in MoneyKata, Settings › Connector › Pair shows a code; run
-   `docker compose exec connector moneykata-connector pair <code>` and compare the
-   fingerprints both sides show. The connector reaches MoneyKata at the address in the code
-   (the public URL, or the link address), so that address must resolve from inside the
-   container: on one host, the compose service name or the host's LAN address, not
-   `localhost`.
-6. **The Folder driver**: mount the folder read only into the connector (the commented line
-   in `compose.yaml`), then start a folder Connection under Profile › Connections naming
-   that path and its rules.
+5. **Pair it**, with the vault unlocked: in MoneyKata, Settings › Connector › Pair shows a
+   code; run `docker compose exec connector moneykata-connector pair <code>` and compare the
+   fingerprints both sides show. Pairing makes the connector's sealing key and files its
+   private half in the vault, so `pair` is refused while the vault is locked. The connector
+   reaches MoneyKata at the address in the code (the public URL, or the link address), so
+   that address must resolve from inside the container: on one host, the compose service
+   name or the host's LAN address, not `localhost`.
+6. **The Folder driver**: mount the folder read only into the connector at `/watch` (the
+   commented line in `compose.yaml`), then start a folder Connection under Profile ›
+   Connections naming a folder inside it (or nothing, for all of it) and its rules. The
+   connector never reads outside that mount, whatever a Connection names.
 7. **Credentials typed on the host** (the stricter way, S18.7.2): `docker compose exec
    connector moneykata-connector connect <connection id>`, which asks for each field without
    echo and files them in the vault.
@@ -234,3 +255,12 @@ publishes no port and only calls out: to MoneyKata, and to each driver's institu
     and new words; every Connection's credentials are entered again.
 12. **Its logs** say what it did and what failed, never a credential, an amount or an account
     number beyond its last four digits: `docker compose logs -f connector`.
+13. **A lost host or volume** (a stolen laptop, a disk sold with the volume on it): Unpair in
+    MoneyKata at once. The copy holds the identity key, so until then whoever has it can
+    report as the connector and post files; the vault stays closed without the words, so no
+    sign-in and no sealed credential, before or after, opens for them. Then `init` a fresh
+    vault on the new host, pair again, and have each owner enter their sign-ins again.
+14. **A Connection that says *the server address changed***: its OFX server address was
+    edited after the sign-in was filed. The connector sends nothing to the new address until
+    the owner enters the sign-in again under Profile › Connections, which binds it to the new
+    address.

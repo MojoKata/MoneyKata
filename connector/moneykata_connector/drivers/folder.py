@@ -1,7 +1,10 @@
 """The Folder driver (requirements S18.9.1): a folder on the connector's host, mounted read only
-(a Downloads folder), watched for statements and exports. Each file that appears is posted to
-the account its rule names, by the file's name and the account's last four digits:
-`umb-*.pdf → 3311`. No credentials, no hosts: downloading stays by hand, uploading doesn't."""
+into the connector at its watched folder (a Downloads folder), watched for statements and
+exports. Each file that appears is posted to the account its rule names, by the file's name
+and the account's last four digits: `umb-*.pdf → 3311`. No credentials, no hosts: downloading
+stays by hand, uploading doesn't. The root is fixed where the connector runs; a Connection's
+`path` is a folder inside it, so MoneyKata can never point the driver at the connector's own
+files."""
 
 import fnmatch
 import json
@@ -30,10 +33,11 @@ class Folder(Driver):
     needs = ()
     interval = 5 * 60
 
-    def __init__(self, posted: Path | None = None):
+    def __init__(self, posted: Path | None = None, root: Path | None = None):
         # What was posted already, by name, size and time, so a file is posted once (and
         # MoneyKata's import is idempotent besides).
         self.posted_path = posted
+        self.root = root or Path("/watch")
         self._posted: dict[str, list] = self._load()
 
     def _load(self) -> dict[str, list]:
@@ -46,11 +50,23 @@ class Folder(Driver):
         if self.posted_path:
             self.posted_path.write_text(json.dumps(self._posted))
 
+    def inside(self, path: str) -> Path | None:
+        """The folder a Connection names, inside the watched folder, or None when it reaches
+        outside it (an absolute path, `..`, a symlink out)."""
+        rel = Path(path.strip())
+        if rel.is_absolute() or ".." in rel.parts:
+            return None
+        root = self.root.resolve()
+        folder = (root / rel).resolve()
+        return folder if folder == root or folder.is_relative_to(root) else None
+
     def run(
         self, settings: dict, credentials: dict | None, accounts: list[Account], http
     ) -> Result:
-        folder = Path(str(settings.get("path") or ""))
+        folder = self.inside(str(settings.get("path") or ""))
         rules = parse_rules(settings.get("rules") or [])
+        if folder is None:
+            return Result("failing", "the folder must be inside the connector's watched folder")
         if not folder.is_dir():
             return Result("failing", f"the folder {folder} isn't there, or isn't mounted")
         by_last4 = {a.last4: a for a in accounts if a.last4}

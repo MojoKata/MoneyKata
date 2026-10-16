@@ -262,9 +262,11 @@ def apply_report(srv, row: Connector, body: dict, version: str | None, protocol:
                     "label": c.label,
                     "settings": json.loads(c.settings or "{}"),
                     "accounts": _accounts_of(s, c),
+                    # A box opens only with the sealing key in the connector's vault, so it
+                    # is handed over only to a connector that reports unlocked (protocol §4.2).
                     "sealed": (
                         {"ciphertext": c.sealedCredential, "sealedAt": c.sealedAt.isoformat()}
-                        if c.sealedCredential
+                        if c.sealedCredential and not row.locked
                         else None
                     ),
                 }

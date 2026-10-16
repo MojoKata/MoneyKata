@@ -25,7 +25,7 @@ DRIVERS = ("folder", "ofx-direct", "schwab")
 # What each driver's settings hold (docs/connector-protocol.md §6), checked here so the
 # connector gets what it expects. Values are text the owner typed; none is a credential.
 SETTINGS = {
-    "folder": {"path": str, "rules": list},
+    "folder": {"path": None, "rules": list},  # path: inside the watched folder, or empty
     "ofx-direct": {
         "url": str,
         "org": str,
@@ -114,6 +114,18 @@ def _check_settings(driver: str, settings: dict) -> dict:
                 errors.append(FieldError(f"settings.{key}", "settings-invalid", "Too long."))
                 continue
             out[key] = v.strip()
+    if driver == "folder":
+        # A folder inside the connector's watched folder (S18.9.1): relative, no `..`. The
+        # connector checks again; this refusal is for the person at the form.
+        path = out.get("path", "")
+        if path.startswith(("/", "\\")) or ".." in path.replace("\\", "/").split("/"):
+            errors.append(
+                FieldError(
+                    "settings.path",
+                    "path-outside",
+                    "A folder inside the connector's watched folder, or empty for all of it.",
+                )
+            )
     if errors:
         raise Problem(422, errors[0].code, errors[0].message, errors)
     return out
