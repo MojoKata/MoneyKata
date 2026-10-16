@@ -12,53 +12,62 @@
    connector's signed requests for `/connector` (S18.4.3). None is accepted on another's
    path; `/mcp` takes only its access tokens (S10.9).
 3. **Port 37373**, on all of the container's interfaces; the host's port mapping and firewall
-   decide what reaches it. **Two listener modes**, one switch in `moneykata.toml`:
-   **`proxy`**, plain HTTP behind haproxy, Caddy or nginx, which ends TLS (forwarded headers
-   are trusted only from the configured proxy addresses); or **`tls`**, its own HTTPS
-   listener with HTTP/2 (forwarded headers ignored). **`proxy`** is the expected setup.
+   decide what reaches it. **Two listener modes**, one switch in `moneykata.toml`: **`proxy`**,
+   plain HTTP behind haproxy, Caddy or nginx, which ends TLS (forwarded headers are trusted
+   only from the configured proxy addresses, each the proxy's own address and never a whole
+   private range, since anything else in it could pose as the proxy); or **`tls`**, its own
+   HTTPS listener with HTTP/2 (forwarded headers ignored). **`proxy`** is the expected setup.
    **`tls`** is for testing on a local network: given no certificate, the server makes a
    self-signed one on first start and keeps it in the data directory (`tls/`, the key mode
-   0600). The pair is not encrypted: it protects the listener, not the data, and the
-   listener must read it before any key is entered (S15.1.7). It names the server and
-   `localhost`, and the names and addresses listed in `[tls] names`, which are how browsers
-   on the network reach it; a change to the list makes it again. A certificate named in
-   `[tls]` lives wherever the admin keeps it. From a trusted proxy, `X-Forwarded-For`,
-   `X-Forwarded-Proto` and `X-Forwarded-Host` are believed, and the client is the right-most
-   address in `X-Forwarded-For` that is not a trusted proxy. `[server] host` sets the
-   listening address, all interfaces by default.
+   0600). The pair is not encrypted: it protects the listener, not the data, and the listener
+   must read it before any key is entered (S15.1.7). It names the server and `localhost`, and
+   the names and addresses listed in `[tls] names`, which are how browsers on the network reach
+   it; a change to the list makes it again. A certificate named in `[tls]` lives wherever the
+   admin keeps it. From a trusted proxy, `X-Forwarded-For`, `X-Forwarded-Proto` and
+   `X-Forwarded-Host` are believed, and the client is the right-most address in
+   `X-Forwarded-For` that is not a trusted proxy. `[server] host` sets the listening address,
+   all interfaces by default.
 4. **Background tasks** in the server process: price refresh (S4.4), bitcoin wallet reads
-   (S1.6), link pulls (S11.4), option expiry (S3.6), backups (S14.6), sending email
-   (S16.2), alerts and their daily summary (S12.11), receipt and statement reading (S9.8,
-   S1.3, in its own worker process), the linked copies' sweeper (S11.9.4), and the check for
-   statements overdue (S1.11.7) and a silent connector (S18.5), and an hourly prune that
-   removes expired sessions and one-time tokens (`schema.md` §4.4.1). Recurring transactions
-   are found when they are shown (S7.5). Each records its last run and error, which Settings shows.
-   They run in a thread pool with per-provider rate limits and never block a request.
+   (S1.6), link pulls (S11.4), option expiry (S3.6), backups (S14.6), sending email (S16.2),
+   alerts and their daily summary (S12.11), receipt and statement reading (S9.8, S1.3, in its
+   own worker process), the linked copies' sweeper (S11.9.4), and the check for statements
+   overdue (S1.11.7) and a silent connector (S18.5), the events host commands queue, taken
+   every few minutes (S15.4.7), and an hourly prune that removes expired sessions and one-time
+   tokens (`schema.md` §4.4.1). Recurring transactions are found when they are shown (S7.5).
+   Each records its last run and error, which Settings shows. They run in a thread pool with
+   per-provider rate limits and never block a request.
 5. **Outbound calls** go through one httpx client with an **egress guard**: only the hosts of
    enabled price sources, the bitcoin explorer or node, the SMTP server, and links; never
-   loopback, link-local or cloud metadata addresses unless an admin allows one by name; with
-   timeouts and response-size ceilings. Email goes through the standard library's SMTP
-   client, past the same guard; its host is one an admin named in Settings › Email, so it
-   counts as allowed by name. The guard sees only the server's own clients, not a library's
-   own client or native code, so every dependency is audited for what it could reach on its
-   own, each time a dependency changes (S17.2.1), and any switch that turns such a call off
-   is thrown before the library is first used. Each call connects within 10 seconds and waits
-   at most 20 seconds for each read; an answer that announces more than 20 MB is refused, and
-   the price sources stop reading at 20 MB. SMTP waits 20 seconds.
+   loopback, link-local or cloud metadata addresses unless an admin allows one by name, and the
+   only hosts allowed by name are the Email and Bitcoin hosts an admin types in Settings: a
+   link's address, which another server supplies, never is; with timeouts and response-size
+   ceilings. Each call connects to the address the guard checked, never to a second lookup, so
+   a name can't change its answer between the check and the connection. Email goes through the
+   standard library's SMTP client, past the same guard; its host is one an admin named in
+   Settings › Email, so it counts as allowed by name. The guard sees only the server's own
+   clients, not a library's own client or native code, so every dependency is audited for what
+   it could reach on its own, each time a dependency changes (S17.2.1), and any switch that
+   turns such a call off is thrown before the library is first used. Each call connects within
+   10 seconds and waits at most 20 seconds for each read, and every answer is cut off past 20
+   MB, whether or not it announces its length. SMTP waits 20 seconds.
 6. **Stopping**: on SIGTERM the server ends every event stream, lets requests in flight finish
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
-   cannot start for a reason only an operator can fix (a config file it can't use, a missing
-   keyring, a certificate it can't load, a data directory another server is using), it says
-   why in one `refusing to start:` line and exits 78 (`EX_CONFIG`). The example
-   `compose.yaml` restarts it only on failure, three times at most, so a refused start isn't
-   retried in a loop. **A locked start**: with no key anywhere (S15.4), the server comes up
-   **locked**: `/healthz` answers 503 `locked`, `/ui` serves only the locked screen, and
-   every other path, `/link`, `/connector` and `/mcp` included, answers 503 `locked` with
-   `Retry-After`, until an admin enters the recovery phrase (S15.4.3). What the phrase then
-   cannot open (a database from a newer release) is refused at the unlock, with the reason
-   in the log, and the server stays locked. `/healthz` answers 503 `starting` between the
-   unlock and readiness, and `GET /ui/api/unlock` tells anyone who reaches `/ui` whether the
-   server is locked, the fingerprint its keyring is wrapped under, and the version.
+   cannot start for a reason only an operator can fix (a config file it can't use or with a key
+   it doesn't know, a missing or unreadable keyring, a certificate it can't load, a data
+   directory another server is using), it says why in one `refusing to start:` line and exits
+   78 (`EX_CONFIG`). The example `compose.yaml` restarts it only on failure, three times at
+   most, so a refused start isn't retried in a loop. **A locked start**: with no key anywhere
+   (S15.4), the server comes up **locked**: `/healthz` answers 503 `locked`, `/ui` serves only
+   the locked screen, and every other path, `/link`, `/connector` and `/mcp` included, answers
+   503 `locked` with `Retry-After`, until an admin enters the recovery phrase (S15.4.3). What
+   the phrase then cannot open (a database from a newer release) is refused at the unlock, with
+   the reason in the log, and the server stays locked. `/healthz` answers 503 `re-encrypting`
+   while a re-encryption runs at the unlock (S15.7.2) and `starting` between the unlock and
+   readiness, and `GET /ui/api/unlock` tells anyone who reaches `/ui` whether the server is
+   locked, the fingerprint its keyring is wrapped under, and the version. **Host commands**
+   (`keys unlock`, `keys rotate`, `db backup`, S15.4.7) reach the running server over its Unix
+   socket, `/run/moneykata/sock`, in a 0700 directory of the server's account on a tmpfs
+   (`web/.dev/` in dev mode), never over the listener.
 7. **Security policies**. One place for the rules every request
    passes through; other sections refer here.
    1. **Sessions**: a 256-bit random token in a cookie named `mk_session`, `HttpOnly`,
@@ -73,11 +82,12 @@
    2. **Re-authentication**: changing the password, the email address or two-step, making an
       access token, creating a linked copy's access key, resetting a linked copy, sharing with
       a linked server, pairing, confirming or unpairing the connector, sealing a Connection's
-      credentials, setting a secret in Settings (the SMTP password, the node's password, a
-      price source's key), changing Settings › Network, changing who is in Admins,
-      re-encrypting, removing a copy or forgetting a previous key, pruning files, removing
-      orphan files, opening a written email, and exporting data each need the password again
-      if it was last given more than 10 minutes ago.
+      credentials or changing its server's address, setting a secret in Settings (the SMTP
+      password, the node's password, a price source's key), changing the SMTP host or the
+      public URL, changing Settings › Network, changing who is in Admins, re-encrypting,
+      removing a copy (which also asks for the phrase, S16.13) or forgetting a previous key,
+      pruning files, removing orphan files, and opening a written email each need the password
+      again if it was last given more than 10 minutes ago.
    3. **Passwords**: argon2id (64 MiB, 3 passes, parallelism 1), the minimum length of
       S16.5, at most 1,024 characters, and no other rules. Checked against a shipped list of
       the 100,000 most common passwords, which are refused.
@@ -86,38 +96,43 @@
       API answers only its own origin.
    5. **Rate limits**, per client address and per user, answered with 429 and a
       `Retry-After`:
-      1. sign-in, two-step codes, password-reset requests and the unlock (S15.4.3): 10
-         failures in 15 minutes lock **the address they came from** for 15 minutes, whoever
-         they named; a username that keeps failing, from anywhere, is only slowed (half a
-         second per failure past the third, up to five), never locked, so nobody can lock an
-         admin out from afar (S10.1);
+      1. sign-in, two-step codes, re-authentication, the current-password check, a reactivation
+         request and the unlock (S15.4.3): 10 failures in 15 minutes lock **the address they
+         came from** for 15 minutes, whoever they named, and so do 10 password-reset requests;
+         an IPv6 address counts by its /64; a username that keeps failing, from anywhere, is
+         only slowed (half a second per failure past the third, up to five), never locked, so
+         nobody can lock an admin out from afar (S10.1);
       2. linked copies' access keys: S11.9.3.3;
       3. the API: 600 requests a minute per session; uploads: 60 files an hour per user;
-      4. `/mcp`: 60 calls a minute per token (S10.9.4); `/link`: 60 calls a minute per
-         link; `/connector`: 60 calls a minute, its files counted against the upload limit
+      4. `/mcp`: 60 calls a minute per token (S10.9.4); `/link`: 60 calls a minute per link,
+         and calls not yet signed by a known key 60 a minute per address, checked before a body
+         is read; `/connector`: 60 calls a minute, its files counted against the upload limit
          above.
       5. The counters are held in memory: a restart clears them.
    6. **Request limits**: JSON bodies up to 1 MB (a linked server's up to 20 MB,
-      `docs/link-protocol.md` §1.4), uploads up to the size in Settings
-      (25 MB by default), at most 100 MB of uploads in flight per user, and request headers
-      up to 16 KB. Each upload's type is checked from its content, never its name (S9.1).
-   7. **Response headers** on every response: the CSP of S17.3.3,
+      `docs/link-protocol.md` §1.4), uploads up to the size in Settings (25 MB by default), at
+      most 100 MB of uploads in flight per user, and request headers up to 16 KB. Each upload's
+      type is checked from its content, never its name (S9.1), and an upload is held in memory,
+      never spooled to a temporary file.
+   7. **Response headers** on every response, refusals included: the CSP of S17.3.3,
       `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
       `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`,
       `Permissions-Policy` denying camera, microphone, geolocation and payment, and
-      `frame-ancestors 'none'`. In `tls` mode, `Strict-Transport-Security` for a year.
-      Receipt and statement files are served with `Content-Disposition`, their checked type,
-      and a `sandbox` CSP, so a PDF can't run script in the app's origin. `/demo` has a CSP of
-      its own: `sandbox allow-scripts allow-popups`, inline script and style allowed (the
-      mockup is one file), and `connect-src 'none'`.
-   8. **Errors** never include a stack trace, a SQL statement, a path on the host or a
-      secret. Each error carries an id that is also in the log, so an admin can find the
-      detail.
-   9. **Logging**: no amounts, names of accounts or payees, secrets, tokens or passwords;
-      user ids, record ids, routes and outcomes only (R3.8). Sign-ins, failures, lockouts and
-      every admin action are logged and recorded in Activity. Statement logging (SQLAlchemy's
-      echo, a slow-query log) is never turned on: the database key travels in the `PRAGMA
-      key` statement, and a logged statement would hold it.
+      `frame-ancestors 'none'`. In `tls` mode, `Strict-Transport-Security` for a year. Receipt
+      and statement files, a linked household's among them, are served with
+      `Content-Disposition`, their checked type, and a `sandbox` CSP, so a PDF can't run script
+      in the app's origin. `/demo` has a CSP of its own: `sandbox allow-scripts allow-popups`,
+      inline script and style allowed (the mockup is one file), and `connect-src 'none'`.
+   8. **Errors** never include a stack trace, a SQL statement, a path on the host or a secret.
+      Each error carries an id that is also in the log, with its status and code, refusals
+      included, so an admin can find the detail.
+   9. **Logging**: no amounts, names of accounts or payees, secrets, tokens or passwords; user
+      ids, record ids, routes and outcomes only (R3.8). Sign-ins, failures, lockouts and every
+      admin action are logged and recorded in Activity. Statement logging (SQLAlchemy's echo, a
+      slow-query log) is never turned on: the database key travels in the `PRAGMA key`
+      statement, and a logged statement would hold it. The engines hide statement parameters
+      from their errors, so a failed write logs no value, and a linked server's own message is
+      kept in the log, never copied into an alert or an email.
    10. **TLS** (in `tls` mode): TLS 1.2 and 1.3 only, with the server's default modern cipher
        suites; HTTP/2.
    11. **Supply chain**: Python dependencies pinned with hashes in `uv.lock`; the image built
@@ -203,8 +218,9 @@
    7. **Long work** (an import, a statement read, a projection run, a reset copy) answers
       202 with a job resource (`/ui/api/jobs/{id}`: state, progress, result), and the live
       stream announces its end (S12.6).
-   8. **Idempotency**: a `POST` that creates may carry `Idempotency-Key`; a repeat within 24
-      hours returns the first answer. Imports are idempotent by their content (S1.3).
+   8. **Idempotency**: `POST /ui/api/transactions` may carry `Idempotency-Key`; a repeat within
+      24 hours returns the first answer. Every other create comes later ([later
+      work](later.md), L8). Imports are idempotent by their content (S1.3).
    9. **Versioning**: `/ui/api` is served with the app and changes with it, so it carries no
       version; the OpenAPI document states the release. `/link` is versioned in its protocol
       (`docs/link-protocol.md`), `/connector` by its path (`/connector/v1/`), and `/mcp` by

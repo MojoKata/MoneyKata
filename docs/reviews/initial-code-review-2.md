@@ -1074,3 +1074,55 @@ between the finding's remedy and its alternatives, and remove the gap once speci
 5. **K10, K11**: decide the unlock passphrase and the rotation's meaning, and update S15 and its
    mockup together.
 6. The conflicts in one sweep, section by section, then **Q19**'s confirmation of section 7.
+
+## 11. Decisions
+
+The open items were walked through one at a time and each was decided, then approved together.
+What each decision wrote is in the requirements, the protocols, `operations.md`, `later.md`,
+`rejected-ideas.md` and the hand-written mockup; the code follows in milestone 8 (S17.9.8).
+
+1. **K10, the everyday unlock:** the recovery phrase stays the one secret. Phrases are shown and
+   read on the terminal only (`keys init` and `rotate`, the connector's `init` and `reset`); the
+   locked screen's field turns autocorrect, autocapitalize, spellcheck and autocomplete off,
+   masks the words in every desktop browser and keeps its eye toggle; the locked screen and
+   `keys unlock` are equal ways in; `tls` mode looks the same and S15.1.7 says it is for testing.
+   The unlock passphrase is rejected idea 20. There is no phone support yet, so S15.4.2 no
+   longer argues from a phone.
+2. **K11, rotation:** every rotation re-encrypts (S15.7.1, S15.7.3, S15.8).
+3. **K8, admins:** admins are trusted operators (R1.6, S10.2); opening a written email is
+   recorded in Activity for its addressee. Keeping admins out is rejected idea 23. K13 and K14
+   stay, for a stolen admin session.
+4. **K3, transport:** TLS is verified, a certificate of a server's own pinned through its code
+   and renewed by a signed announcement; signed answers name the caller and the request; only
+   `link-ended` ends a link; link changes and receipts are sealed end to end to the receiving
+   copy's key. Since no release has spoken the link protocol, this revises protocol 1 rather
+   than adding a version (`link-protocol.md` §1, §3.3, §4.1–4.5, §7; `connector-protocol.md`).
+5. **K5, K6, K9, re-encryption and restores:** a journal; re-encryption only while the server
+   isn't serving, at an unlock or on the host (Settings › Key storage › **Re-encrypt at the next
+   restart**); a file or secret that won't open is set aside; host commands take the lock; a
+   restore re-wraps the receipts to the backup's key and asks before reviving an earlier phrase;
+   the new-host runbook restores the receipts. Re-encrypting while serving is rejected idea 22.
+6. **P4, the watched folder:** the Folder driver is dropped; what can't be fetched is uploaded by
+   hand (S18.9). Rejected idea 21. K21, P4, C24 and B42's first part go with it.
+7. **Item 9:** pruning stays by hand, a shared file prunable once no live receipt needs it (C3);
+   a written email is kept as long as its link works (C9); eight shareable kinds, *person*
+   among them (C33); a tax book may go to a linked server, read only (C34); no wallet is read
+   until an admin saves Settings › Bitcoin (C36); a shared budget shows the owner's own accounts
+   and an account shared with the owner only if it is shared with the receiver too (C39).
+8. **10a, 10b:** host commands over a Unix socket (K1), and the reader's sandbox (K4), in
+   milestone 8.
+9. **11a, 11b:** Form 8949's digital-asset boxes G to L from 2025 (S8.1, C50); the connector
+   reports every 15 seconds while a sign-in waits (S18.5). Sources are cited in S8.1 and
+   S18.9.2 and kept in `docs/external/`.
+10. **The parts never built (N, C51):** milestone 8 builds N1, N4, N5, N7, N9, N10, N12, N13, N15,
+    N17, N11's sweeper and view audit and N16's problem types; later work L4 to L9 takes N2, N3,
+    N11's rest, N14, N16's `Idempotency-Key` and N6; Settings › TLS (N8) and Settings › Receipts'
+    types are dropped, the listener shown in Settings › Network instead.
+11. **Q19:** A12 becomes an email queue in the database, A26 an expiry decided on the expiry day's
+    close only; A2, A13, A17, A19, A20 and A21 follow the decisions above; A10 and A14 are kept;
+    the other sixteen are confirmed. Q19 is closed.
+12. **Everything else** keeps the remedy this review recommends, with one exception: K23's
+    third point takes its alternative (S11.9.10 no longer claims protection from this server's
+    admin), since item 3 makes admins trusted.
+13. **Order:** these requirement changes first, in one commit, then milestone 8 in its nine
+    parts; `initial-code` merges into `main` after milestone 8 (Q15).

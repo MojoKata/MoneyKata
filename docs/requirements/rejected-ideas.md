@@ -3,13 +3,14 @@
 Ideas that were weighed and turned down, kept so they are not raised again without a new
 reason.
 
-1. **A separate keys process** that alone reads the master key and wraps and unwraps keys over
-   a Unix socket. A compromised web process could then not copy the key, but it costs a
-   second account and a socket, and the web process can already read everything the key
-   protects while it runs. The server's own account reads the key file (S15.4).
-2. **External key services** (HashiCorp Vault, cloud KMSs, HSMs, TPM sealing): another
-   service to run, back up and secure, for little gain over a key file with offline backups
-   (S15.2).
+1. **A separate keys process** that alone holds the data key and wraps and unwraps keys over a
+   Unix socket. A compromised web process could then not copy the key, but it costs a second
+   account and a socket, and the web process can already read everything the key protects while
+   it runs. The phrase is held only during an unlock, and the data key in the server's memory
+   (S15.4.3).
+2. **External key services** (HashiCorp Vault, cloud KMSs, HSMs, TPM sealing): another service
+   to run, back up and secure, for little gain over a phrase entered at each start with its
+   copies kept offline (S15.2).
 3. **Leaving the financial data unencrypted** and relying on disk encryption and encrypted
    backups. Backups leave the house, so the database and receipts are encrypted by MoneyKata
    (S15.1).
@@ -65,3 +66,25 @@ reason.
     a script on the host. It is a key file by another name: whatever can unlock without a
     person is on the disk, in the snapshots and in the replicas. A restart needs a person,
     with the phrase or the vault's words (S15.4.1, S18.3.2).
+20. **An unlock passphrase beside the recovery phrase**: the data key wrapped a second time,
+    under a key stretched from a passphrase an admin chooses, so that restarts use the
+    passphrase and the phrase stays offline. A leaked passphrase plus a copy opens everything,
+    as a leaked phrase does, so a leak costs the same; and every copy of the keyring becomes an
+    offline guessing target only as strong as the passphrase, where today a stolen copy is
+    nothing without 128 random bits. The phrase stays the one secret, typed at the locked
+    screen or on the host, and kept out of logs and browsers (S15.4.2).
+21. **A watched folder for the connector**: a downloads folder mounted into the connector, its
+    new files posted to accounts by name. A driver's job is to push what it fetches from an
+    institution; where nothing can be fetched, the owner downloads on their own desktop, not on
+    the server, and uploads by hand (S1.3, S18.9). A shared folder also hands one user's
+    statements to another's rules.
+22. **Re-encrypting while the server keeps serving**: every receipt read would need to try two
+    keys while the pass runs, and requests would race the rewrite. A re-encryption runs at an
+    unlock, before the server serves, or on the host with the server stopped; a few minutes of
+    downtime at a planned restart suit a household server (S15.7.2).
+23. **Keeping admins out of other users' accounts**, by limiting what Settings › Email can
+    open, showing every admin action on an account to its user at sign-in, or asking a second
+    admin to approve a reset. An admin holds the recovery phrase and the host, so no rule in
+    the app keeps out one who sets out to look; a household with one admin couldn't use a
+    second approval. Admins are trusted operators, and the app keeps others' money off their
+    screens by default (S10.2).

@@ -1,13 +1,15 @@
 # S6. Projections
 
-1. **A projection** asks how money will grow and what it will pay for. It has an owner, a
-   name, a **goal type** (S6.2), what it is **built on**, and whether it is **active**
-   (S6.7). It is shared like an account (S10.3).
+1. **A projection** asks how money will grow and what it will pay for. It has an owner, a name,
+   a **goal type** (S6.2), what it is **built on**, and whether it is **active** (S6.7). It is
+   shared like an account (S10.3): a viewer sees its results, and the values and tracking of
+   only the accounts shared with them.
    1. **Built on** chosen accounts, a portfolio, or a typed amount for a what-if. Built on
       accounts or a portfolio, it starts from their **current values** each time it opens,
       with their *as of*, and from their allocation by asset class.
-   2. **Contributions**: an amount, its frequency, growth per year, and until when. For
-      retirement accounts they are capped by the limits of S1.4.
+   2. **Contributions**: an amount, its frequency, growth per year, and until when. Capping
+      them, for retirement accounts, by the limits of S1.4 comes later ([later work](later.md),
+      L7).
 2. **Goal types.** All three use the same models (S6.4).
    1. **Retirement**, for one person or a **couple**: each person's birth year and
       retirement age, and the accounts that are theirs. After retirement come
@@ -33,19 +35,20 @@
    real estate, metals), general inflation (2.5% by default) and education inflation (5% by
    default). Every projection uses them unless it overrides a figure, so the user's
    projections and the payoff planner (S6.10) agree with each other. Fees per projection.
-   1. **Bitcoin models.** For the bitcoin in what a projection is built on, the user can
-      choose a published model in place of the crypto assumption, in Profile › Assumptions
-      or per projection. Other coins keep the crypto assumption. Each model gives a median
-      path from today's price and a range around it:
+   1. **Bitcoin models.** For the bitcoin in what a projection is built on, the user can choose
+      a published model in place of the crypto assumption, in Profile › Assumptions or per
+      projection. Other coins keep the crypto assumption. Each model gives a median path from
+      today's price, which the crypto assumption's volatility spreads into the Monte Carlo fan,
+      as it does the default's:
 
-      | Model | What it is | Its range |
-      |---|---|---|
-      | **Your assumption** (the default) | log-normal at the crypto return and volatility above | the Monte Carlo fan |
-      | **Power law** (Santostasi) | price = A × (days since the genesis block)^n, n ≈ 5.8 | the fit's spread, about a factor of two either way |
-      | **Log regression** (the "rainbow chart") | a logarithmic curve fitted to the price history | its bands, from the fitted lows to the fitted tops |
-      | **Stock-to-flow** (PlanB) | value from the ratio of supply to new issuance, stepping up at each halving | its published band |
-      | **Saylor, Bitcoin24** (2024) | $3M, $13M and $49M by 2045 (bear, base, bull) | the bear and bull cases |
-      | **ARK Invest** (2030 targets) | $500K, $1.2M and $2.4M by 2030 (bear, base, bull) | the bear and bull cases |
+      | Model | What it is |
+      |---|---|
+      | **Your assumption** (the default) | log-normal at the crypto return and volatility above |
+      | **Power law** (Santostasi) | price = A × (days since the genesis block)^n, n ≈ 5.8 |
+      | **Log regression** (the "rainbow chart") | a logarithmic curve fitted to the price history |
+      | **Stock-to-flow** (PlanB) | value from the ratio of supply to new issuance, stepping up at each halving |
+      | **Saylor, Bitcoin24** (2024) | $3M, $13M and $49M by 2045 (bear, base, bull) |
+      | **ARK Invest** (2030 targets) | $500K, $1.2M and $2.4M by 2030 (bear, base, bull) |
 
       1. **Compare models** shows every model's median path on one chart (log scale) with
          the price history behind it, and a table of each model's figures for 2030, 2035 and
@@ -62,8 +65,8 @@
 4. **Models:**
    1. **deterministic**: future value at a constant rate, in nominal and today's dollars;
    2. **Monte Carlo**: *N* runs (1000 by default) drawing yearly returns from the asset
-      classes' mean and volatility (normal or log-normal; historical bootstrap later), showing
-      the 10th/50th/90th percentile **fan** and the type's answer (S6.2).
+      classes' mean and volatility (log-normal; a historical bootstrap later), showing the
+      10th/50th/90th percentile **fan** and the type's answer (S6.2).
       1. **Each year**, the balance grows by its mix of asset classes' returns, each drawn
          log-normal on its own (correlation between classes is not modelled), less fees;
          contributions are added, rising by their growth, until retirement or the target
@@ -111,8 +114,10 @@
       **Show on my Dashboard** on it, which is off by default, as **Count in my totals** is
       for accounts (S10.7). A linked household's projections show only in its window
       (S12.10).
-9. **The computation runs on the server**, seeded so a scenario's figures are
-   reproducible, and returns percentiles per year. It uses NumPy. The screen states its
+9. **The computation runs on the server**, seeded so a scenario's figures are reproducible, and
+   returns percentiles per year. It uses NumPy, in floats: the one exception to R1.9, since its
+   figures are estimates. Its percentiles are rounded to cents and sent as exact numbers
+   (S13.8.2.1), and the start value and the tracking figures stay exact. The screen states its
    assumptions in full under the chart and says plainly that it is a model, not a forecast.
 10. **Loan payoff planner** (on each loan's *Payoff* tab, S1.9.5). It compares the schedule
     with the user's **overpayment** plans:

@@ -70,21 +70,23 @@ A new gap takes the next id after G24.
 
 What waits on a decision ([questions.md](questions.md)), each ranked High, Med or Low.
 
-| Id | Question | Rank |
-|---|---|---|
-| **Q19** | [The requirements written from the code](questions.md#q19-the-requirements-written-from-the-code--med) | Med |
-
-A new question takes the next id after Q19.
+None open. A new question takes the next id after Q19.
 
 ## Later work
 
-Work planned for after the first release ([later.md](later.md), S17.9.9).
+Work planned for after the first release ([later.md](later.md), S17.9.10).
 
 | Id | Item | What it is |
 |---|---|---|
 | **L1** | [Reading a brokerage statement's trades](later.md#l1-reading-a-brokerage-statements-trades) | buys and sells, options activity and corporate actions on a brokerage statement; until then each is offered to the trade dialog |
 | **L2** | [Other option price sources](later.md#l2-other-option-price-sources) | Schwab Trader API through a connector driver, MarketData.app, Massive with a live key, Tradier |
 | **L3** | [Treasury yields and savings-bond rates](later.md#l3-treasury-yields-and-savings-bond-rates) | a price source for Treasuries, I bonds and EE bonds from the Treasury's published data; until then they are priced by hand |
+| **L4** | [A user's export of their own data](later.md#l4-a-users-export-of-their-own-data) | a ZIP of a user's accounts, transactions, lots and receipts, streamed, after the password again |
+| **L5** | [Portfolio charts beyond value, returns and holdings](later.md#l5-portfolio-charts-beyond-value-returns-and-holdings) | chosen holdings, allocation with a target and rebalancing, income by month, a holding's price chart |
+| **L6** | [More of a linked household's window](later.md#l6-more-of-a-linked-households-window) | positions with gains, loans, physical-asset items, and a tax book's files across a link |
+| **L7** | [Limits checked in projections and giving](later.md#l7-limits-checked-in-projections-and-giving) | contribution caps in projections, and QCD age, limit and source checks |
+| **L8** | [`Idempotency-Key` on every create](later.md#l8-idempotency-key-on-every-create) | beyond `POST /ui/api/transactions` |
+| **L9** | [More price sources](later.md#l9-more-price-sources) | Alpha Vantage as the last stock fallback, CoinGecko for coins Coinbase doesn't list |
 
 ## Also here
 
@@ -114,15 +116,19 @@ The rulings the rest of the requirements apply.
 5. **A dev mode, `moneykata dev`**, runs the whole server from a checkout as the current user.
    It uses a self-signed certificate, writes emails to a folder, uses canned price feeds and
    seed data, and keeps every rule as strict as production (S17.7).
-6. **Users, groups, invitations, sign-up approval, two-step sign-in and deactivation**
-   (S10.1). An admin's extra powers are managing users and groups and the server's
-   Settings. **Admins cannot see other users' money** unless it is shared with them (S10.2).
+6. **Users, groups, invitations, sign-up approval, two-step sign-in and deactivation** (S10.1).
+   An admin's extra powers are managing users and groups and the server's Settings. **Admins
+   are trusted operators**: the app keeps other users' money off their screens unless it is
+   shared with them, but cannot keep out someone who holds the recovery phrase and the host
+   (S10.2).
 7. **Users own accounts.** Any user can create accounts and portfolios and share them with
    users or groups, **read** or **read/write** (S10).
 8. **Linked servers.** Two MoneyKata servers on different LANs can be linked. A link carries
-   **read-only** shares of accounts and portfolios one way, and is never read/write (S11).
+   **read-only** shares of any of the eight shareable kinds (S10.3), each to named people on
+   the other server, both ways, and is never read/write (S11).
 9. **Money is never a float.** Amounts and quantities are decimals end to end: `Decimal` in
-   Python, strings in JSON, and integers or decimal text in SQLite (S14.3).
+   Python, exact number literals in JSON (S13.8.2.1), and integers or decimal text in SQLite
+   (S14.3).
 10. **Prices are delayed, never live.** MoneyKata is not a trading app. It reads end-of-day
     closes from free sources, through pluggable **price sources** (S4).
 11. **Read-only by construction toward institutions.** MoneyKata never moves money, places an
@@ -168,13 +174,13 @@ The rulings the rest of the requirements apply.
     (federal, state, local), each with the forms as filed, the tax authority's letters and
     any amendment. Another user can be given write access to help prepare it (S8.14).
     MoneyKata still prepares worksheets only and never files.
-22. **Owners choose people on other servers**. Linked servers exchange
-    their lists of active users, so an owner shares any of the seven shareable kinds (account,
-    portfolio, budget, person, giving plan, tax book, projection) with named people on another server,
-    as they do with people on their own (S10.3). What a household shares is shown in a
-    **window of its own**, never mixed with this household's data (S12.10). This suits
-    household servers; a server for more than a household would need users to opt in to
-    being listed ([out of scope](out-of-scope.md)).
+22. **Owners choose people on other servers**. Linked servers exchange their lists of active
+    users, so an owner shares any of the eight shareable kinds (account, portfolio, budget,
+    gift plan, giving plan, tax book, projection, person) with named people on another server,
+    as they do with people on their own (S10.3). What a household shares is shown in a **window
+    of its own**, never mixed with this household's data (S12.10). This suits household
+    servers; a server for more than a household would need users to opt in to being listed
+    ([out of scope](out-of-scope.md)).
 23. **US dollars only.** Every account, price, total and report is in USD. There are no
     foreign accounts and no currency conversion (S4.8, [out of scope](out-of-scope.md)).
 24. **Records are soft-deleted.** Deleting marks a record deleted, with when and by whom, and
@@ -210,8 +216,9 @@ The rulings the rest of the requirements apply.
    its realized and unrealized gain or loss. Options are positions (S3).
 8. **Portfolio:** a named set of accounts, or of a part of them (S5), owned by one user and
    charted as one. *All my accounts* is everyone's implicit first portfolio.
-9. **Share:** a grant of one account or portfolio to a user, a group or a linked server, at a
-   **level**: `read` or `write` (S10). A share to a linked server is always `read`.
+9. **Share:** a grant of one item, of the eight kinds of S10.3, to a user, a group or named
+   users of a linked server, at a **level**: `read` or `write` (S10). A share to a linked
+   server's users is always `read`.
 10. **Linked server (peer):** another MoneyKata server this one has a **link** with (S11).
     What a link brings in is kept in that link's **linked copy**, encrypted under its own
     **access key**: 12 generated words that the receiving household keeps. The copy is
@@ -251,8 +258,8 @@ The rulings the rest of the requirements apply.
 21. **MoneyKata Connector (the connector):** the second service that holds institutions'
     credentials in a vault MoneyKata can't open, fetches with its drivers, and pushes what they
     fetch into MoneyKata's import (S18). It is **paired** with one MoneyKata server.
-22. **Driver:** the part of the connector for one institution or method (Schwab, OFX Direct
-    Connect, a watched folder).
+22. **Driver:** the part of the connector for one institution, which fetches from it (Schwab,
+    OFX Direct Connect).
 23. **Connection:** one sign-in at one institution, kept by the connector and owned by the
     user whose sign-in it is; an account's sync names a Connection and the institution
     account it is (S18.6).
@@ -269,16 +276,18 @@ The rulings the rest of the requirements apply.
 # R3. Design principles
 
 1. **One server, on the household's own LAN.** All data stays on hardware its users control.
-   The only outbound calls are to price sources, the bitcoin explorer or node, the SMTP
-   server, and linked servers that a user or admin set up, and each is visible in Settings
-   (S16).
+   The only outbound calls are to price sources, the bitcoin explorer or node, the SMTP server,
+   and linked servers that a user or admin set up, and each is visible in Settings (S16). The
+   MoneyKata Connector, a second service, calls the institutions its Connections name, each
+   Connection's host shown in Settings › Connector (S18).
 2. **The ledger is the truth.** Holdings, balances, positions, gains and charts are derived
    from transactions and lots. A **balance snapshot** may stand in for history where none is
    available, such as an opening balance or a 401(k) statement, and it is marked as such.
 3. **Exact arithmetic.** Decimals everywhere, with rounding only at display or where the tax
    rules say to round (S14.3).
-4. **Least privilege in sharing.** A share grants one account or portfolio, at one level, to
-   whom it names. It is never re-shared. Revoking it ends access on the next request.
+4. **Least privilege in sharing.** A share grants one item, at one level, to whom it names. It
+   is never re-shared. Revoking it ends access on the next request, and on a linked server at
+   its next exchange (S11.4).
 5. **Safe defaults.** A new account is shared with no one. A new link carries nothing until
    something is shared with it. Price sources and the bitcoin explorer are off until
    configured.

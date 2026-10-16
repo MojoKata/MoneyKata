@@ -92,9 +92,10 @@ with `--platform linux/amd64,linux/arm64`.
 
 1. Profile › Connections › New connection: Schwab, the app key. Passing: within five minutes
    the connection says *needs a sign-in* with the sign-in address.
-2. Open it, sign in at Schwab, paste the address you land on and the app secret; Seal and
-   send. Passing: the state turns *ok* within five minutes, listing the account by its last
-   four digits.
+2. Open it, sign in at Schwab, paste the address you land on and the app secret; Seal and send.
+   Passing: the sign-in address showed `api.schwabapi.com` as its host; the state turns *ok*
+   within a minute (the landed address is exchanged within seconds, S18.5), listing the account
+   by its last four digits.
 3. On the brokerage account's Settings, turn on Sync using MoneyKata Connector, choose the
    connection and the account. Passing: within a day (or sooner after the connector's next
    run) positions, the last 45 days of trades and dividends, and the cash balance appear,
@@ -138,13 +139,12 @@ Network › Allowed to connect.
 
 1. Run the connector image on the laptop with its own volume; `init`; start; `unlock`; pair
    with a code from the server. Passing: both fingerprints match; the server shows it paired
-   and, until Confirm is pressed, a folder Connection's files wait; `pair` before `unlock` is
+   and, until Confirm is pressed, no sign-in can be sealed for it; `pair` before `unlock` is
    refused, since the sealing key goes into the vault.
-2. Run a folder Connection on a folder of downloads on the laptop, mounted at `/watch`, with
-   the Connection naming a folder inside it. Passing: each file posts to its account; a path
-   of `/` or `..` is refused at the form and, sent anyway, reported *failing* by the
-   connector; the laptop's address outside the allowed ranges is refused (404) until it is
-   added.
+2. Over a network you don't trust (a café's Wi-Fi), with MoneyKata behind a public certificate,
+   let the connector report. Passing: the reports go through; with a relay in the path that
+   presents another certificate, the connector sends nothing and says why; the laptop's address
+   outside the allowed ranges is refused (404) until it is added.
 3. Close the laptop for twenty minutes. Passing: admins are alerted *not heard from*; it
    resolves when the laptop is back and reports.
 4. With an OFX Direct Connect Connection working, change its server address in Profile ›

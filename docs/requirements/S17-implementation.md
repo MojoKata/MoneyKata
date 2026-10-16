@@ -45,20 +45,20 @@
    Standard library for email (`smtplib`), config (`tomllib`), logging and the command line.
    Pinned exactly in `uv.lock`, Python 3.14 (S17.9.7.1).
    1. **The dependency register and the egress audit.** `docs/dependencies.md` lists every
-      library the server, the browser app and the build run with: its version, what it is
-      for, why it was chosen, what it could do that MoneyKata must not (a call out of the
-      house above all), with the switch that stops it and where MoneyKata throws it, and
-      when to look at it again. A library that can reach out is marked **egress**, one that
-      sends telemetry **telemetry** as well. **Every change to `uv.lock` or the vendor
-      manifest is followed by an audit** before it is committed: `web/dev.sh audit` scans
-      the installed wheels and the vendored files for URLs and the words of telemetry and
-      update checks, diffs the findings against the register, and runs the server and the
-      receipt worker in a network namespace with no interfaces through a receipt read, a
-      price refresh against the stubs, a backup and a pass of the tasks, failing on any
-      socket opened to a non-loopback address. The register records the hashes of the files
-      it was audited against, and `web/check` fails when they no longer match, which costs
-      nothing on an ordinary run: the audit itself runs when a dependency changes, not on
-      every test cycle.
+      library the server, the browser app and the build run with: its version, what it is for,
+      why it was chosen, what it could do that MoneyKata must not (a call out of the house
+      above all), with the switch that stops it and where MoneyKata throws it, and when to look
+      at it again. A library that can reach out is marked **egress**, one that sends telemetry
+      **telemetry** as well. **Every change to `uv.lock` or the vendor manifest is followed by
+      an audit** before it is committed: `web/dev.sh audit` scans the installed wheels and the
+      vendored files for URLs and the words of telemetry and update checks, diffs the findings
+      against the register, and runs the server and the receipt worker in a network namespace
+      with no interfaces through a receipt read, a price refresh against the stubs, a backup
+      and a pass of the tasks, failing on any socket opened to a non-loopback address. The
+      hashes of the files it was audited against are kept beside the register, in
+      `web/audit.json`, and `web/check` fails when they no longer match, which costs nothing on
+      an ordinary run: the audit itself runs when a dependency changes, not on every test
+      cycle.
 3. **The browser app: no build step.** The files in `web/ui` are the files the browser loads.
    1. **Libraries**: Preact (rendering), HTM (JSX-like tagged templates, no `eval`),
       @preact/signals (state), preact-iso (routes and lazy screens), plus the chart library
@@ -137,38 +137,41 @@
    PDFs; skewed, faded, rotated) runs through the real RapidOCR worker against expected date,
    total and merchant, with an accuracy floor that a change must not drop below.
 6. **`web/dev.sh`** is the developer's front door: alone it prints its commands (`setup`,
-   `run`, `test`, `check`, `mail`, `mockup`, `help-shots`, `deno`). `web/pins` holds the
-   versions and hashes of the dev-only downloads (Deno, Playwright's Chromium).
+   `run`, `test`, `check`, `mail`, `mockup`, `help-shots`, `deno`, `vendor`, `audit`,
+   `base-update`, `mocks`). `web/pins` holds the versions and hashes of the dev-only downloads
+   (Deno, Playwright's Chromium).
 7. **Dev mode** (`web/dev.sh run --seed --stubs`, `moneykata dev`) runs the whole server from a
    checkout as the current user, relaxing the surroundings, never the rules: sessions, CSP,
-   encryption and sharing behave as in production. The one exception is the recovery phrase:
-   a dev server makes its key on first run and keeps the phrase in `web/.dev/phrase`, so it
+   encryption and sharing behave as in production. The one exception is the recovery phrase: a
+   dev server makes its key on first run and keeps the phrase in `web/.dev/phrase`, so it
    unlocks itself at every start; its data is throwaway, and an installed server never does
-   this (S15.4). `https://localhost:37373` with a
-   self-signed certificate, `web/.dev/` for data, receipts and mail, seed users
-   (`admin`, `alice`, `bob`, a *Household* group), a year of seeded transactions across every
-   account type, open and closed option positions with an assignment and a wash sale, budgets,
-   two projections, receipts, and a **stub price source** (deterministic random walks,
-   `--stubs`). A second dev server on another port with `--peer` lets links be exercised on
-   one machine. Emails are written to `web/.dev/mail/` and their links printed. A red **DEV**
-   pill shows on every screen. For testing from another machine, `--listen` sets the address
-   it listens on and each `--hostname` adds a name (or address) to its certificate, which is
-   made again when it doesn't cover them all; `web/dev.md` describes the setups. Dev mode
-   refuses to run as root or on an installed server's
-   data directory, and never calls a real provider unless one is configured.
-8. **Packaging: one Docker (OCI) image for the server** (the connector has an image of its
-   own, S18.10) holding its own Python and venv, the browser app, RapidOCR's models and the
+   this (S15.4). `https://localhost:37373` with a self-signed certificate, `web/.dev/` for
+   data, receipts and mail, seed users (`admin`, `alice`, `bob`, a *Household* group), a year
+   of seeded transactions across every account type, open and closed option positions with an
+   assignment and a wash sale, budgets, two projections, receipts, and a **stub price source**
+   (deterministic random walks, `--stubs`). A second dev server on another port with `--peer`
+   lets links be exercised on one machine. Emails are written to `web/.dev/mail/` and their
+   links printed. A red **DEV** pill shows on every screen. For testing from another machine,
+   `--listen` sets the address it listens on and each `--hostname` adds a name (or address) to
+   its certificate, which is made again when it doesn't cover them all; `web/dev.md` describes
+   the setups. Dev mode refuses to run as root, outside a checkout or on an installed server's
+   data directory, and never calls a real provider unless one is configured; the image leaves
+   dev mode's code out.
+8. **Packaging: one Docker (OCI) image for the server** (the connector has an image of its own,
+   S18.10) holding its own Python and venv, the browser app, RapidOCR's models and the
    `moneykata` command, running as an unprivileged user (uid 10001). It serves on port 37373
    and takes two mounts: the **data directory** (database, keyring, receipts, linked copies)
    and the **backup directory**. `moneykata.toml` is mounted too; secrets never come from
-   environment variables, and no key is mounted at all: the master key is the recovery
-   phrase, entered after every start (S15.4). `install/compose.yaml` is the example to
-   start from; it publishes the plain-HTTP listener on the host's loopback only (the proxy
-   examples reach the service by name) and keeps the logs Docker holds to five files of
-   10 MB. `docs/operations.md`
-   is the runbook: installing, upgrading, backups, health, logs, restoring and drills. The image is about 600 MB, most of it the receipt reader (ONNX Runtime,
-   OpenCV and the models); the reader's worker takes about 350 MB more while it runs, which
-   a host too small for it avoids by turning reading off (S9.8.7).
+   environment variables, and no key is mounted at all: the master key is the recovery phrase,
+   entered after every start (S15.4). `install/compose.yaml` is the example to start from; it
+   publishes the plain-HTTP listener on the host's loopback only (the proxy examples reach the
+   service by name), gives the container the host's time zone (`/etc/localtime` and `TZ`,
+   S14.9.2), and keeps the logs Docker holds to five files of 10 MB. The example
+   `moneykata.toml` trusts only the proxy's own address (S13.3). `docs/operations.md` is the
+   runbook: installing, upgrading, backups, health, logs, restoring and drills. The image is
+   about 600 MB, most of it the receipt reader (ONNX Runtime, OpenCV and the models); the
+   reader's worker takes about 350 MB more while it runs, which a host too small for it avoids
+   by turning reading off (S9.8.7).
    1. **Architectures**: one multi-architecture image for **amd64** and **arm64**, both built
       on an amd64 build server with `docker buildx` (arm64 under QEMU emulation). Every
       dependency must install from a published wheel for both (onnxruntime, opencv, numpy,
@@ -180,8 +183,8 @@
    2. **No registry.** The image is built locally and carried to its host (`docker save` and
       `docker load`), or built on the host itself.
    3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
-      on) and **TrueNAS** (a custom app from the compose file). `operations.md` covers
-      both: mounts, the key directory, backups and upgrades.
+      on) and **TrueNAS** (a custom app from the compose file). `operations.md` covers both:
+      mounts, backups and upgrades.
    4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
       reverse proxy. A second example runs `tls` mode with a self-signed certificate for
       testing on a local network (S13.3).
@@ -372,11 +375,11 @@
       5. **The connector core** (S18.1–S18.3): `connector/`, its vault and words, lock and
          unlock over its socket, pairing, signed calls, the egress allowlist, its image and
          the `connector` service in `install/compose.yaml` (S18.10), and `operations.md` §8.
-      6. **The Folder driver** (S18.9.1), which needs no credentials and proves the posting
-         path end to end.
-      7. **OFX Direct Connect and Schwab** (S18.9.2, S18.9.3), each built against a mock of
-         its institution: a fake OFX server, and a stub serving recorded shapes of the
-         Trader API's answers. The live Schwab trial is in the test plan.
+      6. **The posting path** (S18.8), proved end to end with a driver that needs no
+         credentials.
+      7. **OFX Direct Connect and Schwab** (S18.9.1, S18.9.2), each built against a mock of its
+         institution: a fake OFX server, and a stub serving recorded shapes of the Trader API's
+         answers. The live Schwab trial is in the test plan.
       8. **Mocks and the manual test plan**: a fake Esplora, Electrum server and Bitcoin
          Core RPC speaking the subset MoneyKata uses, for the tests and the generated
          mockup's recordings; the arm64 image built under QEMU and smoke-run under
@@ -392,9 +395,47 @@
          fixtures for the reader (S17.5).
       10. **The mockup** generated from the app for these screens, both images, and
          `web/check`.
-   8. **The first release** is the seven milestones. The build's branch is committed and
-      pushed part by part, and merges into `main` only once all of it is built and the
-      requirements have their final approval.
-   9. **After the first release**: learned column positions for statements (S1.3.3.7),
-      miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of
-      [later work](later.md) (L1, L2).
+   8. **Milestone 8**, what the second review of the requirements against the code found the
+      first release still needs, in nine parts:
+      1. **Access**: host commands over the server's Unix socket, and the example's trusted
+         proxy narrowed to the proxy's own address (S13.3, S13.6); a linked household's
+         receipts served as a local receipt is (S11.9.6.5); access tokens made with the
+         password again and stopped by a password change (S10.9.4); the password again on every
+         action of S13.7.2, a secret cleared when its host changes (S16.2, S16.7); and access
+         between users as S7.1.1, S7.9.1, S8.14, S9.6 and S10.10 say.
+      2. **Transport**: TLS verified on links and the connector, a certificate of a server's
+         own pinned through its code (S11.1, S18.4); signed answers naming the caller and the
+         request; only `link-ended` ending a link (S11.6); link changes and receipts sealed end
+         to end to the receiving copy's key, a new link protocol version (S11.4,
+         `docs/link-protocol.md`).
+      3. **The reader's sandbox** (S9.8.4.2), with every file a person or the connector brings
+         parsed in it.
+      4. **Key operations**: the journal, re-encryption only while the server isn't serving,
+         rotation that re-encrypts (S15.7), the restore that re-wraps the receipts (S15.6.8),
+         host commands taking the data directory's lock (S15.4.7), and the unlock's report of
+         what a restored database can't open, re-encryption's progress and restoring a
+         `pre-upgrade/` copy.
+      5. **Figures**: the lots, wash sales, reinvestments, deductions, options from broker
+         files and loan rates the review found wrong, and Form 8949's digital-asset boxes
+         (S8.1).
+      6. **Categorisation and payee rules** (S2.6, S2.7).
+      7. **The rest of what was promised**: symbol changes, spin-offs and mergers (S2.4); the
+         closed-year confirmation (S2.8); a short stock lot from an assignment with no shares
+         (S3.4); `/link`'s rate limits (S13.7.5.4) and uploads in flight (S13.7.6); the
+         orphan-file sweeper and who viewed linked data (S11.8, S11.9.6.6); the recovery-code
+         and new-address emails (S10.1.9); a tax document's file through its tax book and
+         receipts on gifts and donations (S8.16, S9.3); the alerts S12.11.1 lists that aren't
+         raised yet; problem types and codes in the OpenAPI document (S13.8.3); and a separate
+         allowlist for each driver, with its test (S18.1.2).
+      8. **The connector**: the Folder driver taken out (S18.9), the lost-host response
+         (S18.4.4, S18.5.4), the credential bound to the host sealed with it (S18.7.3), the
+         sealing key signed by the identity key, the sign-in host pinned, and the quick
+         exchange of a landed address (S18.5).
+      9. **The rest of the review's findings**, the generated mockup and help shots for what
+         changed, both images, and `web/check`.
+   9. **The first release** is the eight milestones. The build's branch is committed and pushed
+      part by part, and merges into `main` only once all of it is built and the requirements
+      have their final approval.
+   10. **After the first release**: learned column positions for statements (S1.3.3.7),
+       miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of [later
+       work](later.md) (L1 to L9).

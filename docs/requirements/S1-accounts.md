@@ -60,8 +60,8 @@
          the account's reported balance the day before the period, the closing balance its
          balance on the last day (S1.11).
       4. **What is learned per institution** (per owner): the sign of each section heading the
-         person kept, and the first words of lines they left out, which are skipped next
-         time.
+         person kept, and the first words of lines they left out, which are skipped next time.
+         A line left out because it was already in the account (S1.3.3.3) teaches nothing.
       5. **Several accounts in one statement** (a Schwab combined statement, a UMB statement
          with checking and savings): the statement is split where each account's part
          begins, at a header naming the account (*Account Number*, *Account ending*, an
@@ -178,8 +178,9 @@
          Other forms (`sh(wsh(…))`, a taproot descriptor with scripts) are refused, saying
          so. Miniscript policies beyond these come after the first release (S17.9).
    2. **Where balances and history come from**, set by an admin in Settings › Bitcoin:
-      1. a **public explorer** with the Esplora API (mempool.space by default, or
-         Blockstream);
+      1. a **public explorer** with the Esplora API (mempool.space suggested, or Blockstream).
+         No wallet is read until an admin saves Settings › Bitcoin (R3.5), and until then a
+         wallet says it waits for that;
       2. **the household's own node**: its own mempool or Esplora instance, an **Electrum
          server** (Fulcrum, electrs), or **Bitcoin Core** over RPC with a watch-only
          descriptor wallet. An own node keeps the household's addresses private, and is
@@ -215,8 +216,9 @@
          owner. The first
          coins held start a price refresh, so the wallet is valued at once.
       7. **A reorganised chain**: a recorded transaction that the explorer or node no longer
-         has is never deleted silently. It is marked *no longer on the chain* and the owner
-         alerted, to keep or delete it.
+         has is never deleted silently. Once two reads in a row miss it, it is marked *no
+         longer on the chain* and the owner alerted, to keep or delete it; a transaction kept
+         stays kept.
    3. The form **refuses anything that looks like a private key or seed phrase** (WIF, 64
       hex digits, 12 or 24 BIP-39 words, an extended private key such as an xprv), says why,
       and never stores or logs it. The browser clears it from the form as it is typed, before
@@ -319,9 +321,11 @@
     6. **An account's chart** is its items' total value over time. The Items tab lists the
        items with cost basis, value, gain and age, and opens each one with its history,
        notes and documents.
-11. **Reconciliation** keeps an account's balance in step with the institution's, for banking,
-    card, brokerage-cash and loan accounts. For a user who only imports files it is a set of
-    quiet, automatic checks; ticking off transactions by hand is an option.
+11. **Reconciliation** keeps an account's balance in step with the institution's, for every
+    account kept from files or statements: banking, cards, loans, brokerage cash, and the
+    retirement, plan, 529, HSA, DAF and exchange accounts whose statements S1.11.7 expects. For
+    a user who only imports files it is a set of quiet, automatic checks; ticking off
+    transactions by hand is an option.
     1. **Coverage**: each import records the dates it covers. The account's *Reconcile* tab
        shows a timeline of covered and uncovered periods, and flags a **gap** (*nothing
        between Aug 3 and Aug 14*) and an **overlap**.

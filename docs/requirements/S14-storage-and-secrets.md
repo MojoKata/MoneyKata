@@ -14,13 +14,13 @@
       feature modules (`ledger/`, `loans/`, `giving/` and the others), and a test fails when
       their calculation code imports SQLAlchemy.
    3. **Revisions:** each change to the tables is a numbered Alembic revision, generated,
-      reviewed by hand and committed, and a test fails when tables and revisions disagree.
-      At start the server copies the database (verified) into `pre-upgrade/` in the data
+      reviewed by hand and committed, and a test fails when tables and revisions disagree. At
+      the unlock the server copies the database (verified) into `pre-upgrade/` in the data
       directory, keeping the three newest copies, and then migrates it, one revision per
-      transaction. A committed revision is never changed: a change is a new revision.
-      Until the first release, the revisions may be folded into one baseline, keeping at least
-      one revision after it so a test can carry rows written at the baseline through the
-      server's own upgrade.
+      transaction. A committed revision is never changed: a change is a new revision. Until the
+      first release, the revisions may be folded into one baseline, keeping at least one
+      revision after it so a test can carry rows written at the baseline through the server's
+      own upgrade.
    4. **Access:** each table has a repository module. A unit of work is `Database.tx()`
       (`BEGIN IMMEDIATE`) or `Database.read()` (`PRAGMA query_only`, which refuses any
       write). Foreign keys are on, with a 10-second busy timeout.
@@ -46,41 +46,41 @@
    admin's keeping, and in the server's memory while it unwraps the data key at each start.
    It is never stored: not on the host, not in the database, not in a backup. S15 covers how
    it is made, entered, protected and rotated.
-6. **Backups**: daily and verified, of the database **with its keyring, and nothing else**,
-   to a directory set on the host; the time of day and the number of copies kept are
-   Settings. **The host backs up the filesystem**, the data directory with its receipt
-   files, linked copies and keyring included (by snapshots, a replication or any backup
-   tool); a backup here exists so that the live database file the host picks up has a
-   coherent, verified twin beside it. Receipt files are never copied into a backup: they
-   are written once and never changed, which the host's backup already protects. The
-   backup directory therefore belongs inside what the host backs up, not on a disk apart.
-   The server makes and verifies (`PRAGMA integrity_check`) the copies itself, never while
-   a re-encryption runs (S15.7.2), and prunes the oldest beyond the number kept (**backup
-   pruning**). `moneykata db backup` makes one at once, and `moneykata db verify-backup`
-   checks one (the newest by default) without changing it: every file against the
-   manifest's hashes, the manifest against its own authentication code (HMAC-SHA256 under a
-   key derived from the backup's data key, so a backup swapped for an older one or a
-   manifest rewritten to match a changed file is caught by whoever holds the phrase), and
-   that it opens with the phrase typed, which may be a previous one.
-   Each backup carries its own keyring, so it opens with the phrase of its day, and a
-   rotation re-wraps it (S15.7.1). A restore (S15.6.8) puts the database and keyring back,
-   leaves the receipt files where they are, and sets the linked copies aside to be pulled
-   again (S11.9.9); files the restored database does not name are counted in Settings ›
+6. **Backups**: daily and verified, of the database **with its keyring, and nothing else**, to
+   a directory set on the host; the time of day and the number of copies kept are Settings.
+   **The host backs up the filesystem**, the data directory with its receipt files, linked
+   copies and keyring included (by snapshots, a replication or any backup tool); a backup here
+   exists so that the live database file the host picks up has a coherent, verified twin beside
+   it. Receipt files are never copied into a backup: the host's backup protects them, each
+   written once and rewritten only by a re-encryption (S15.7.2). The backup directory therefore
+   belongs inside what the host backs up, not on a disk apart. The server makes and verifies
+   (`PRAGMA integrity_check`) the copies itself, never while a re-encryption runs (S15.7.2),
+   and prunes the oldest beyond the number kept (**backup pruning**). `moneykata db backup`
+   makes one at once, through the running server or, with the server stopped, on its own
+   (S15.4.7), and `moneykata db verify-backup` checks one (the newest by default) without
+   changing it: every file against the manifest's hashes, the manifest against its own
+   authentication code (HMAC-SHA256 under a key derived from the backup's data key, so a backup
+   swapped for an older one or a manifest rewritten to match a changed file is caught by
+   whoever holds the phrase), that the time the manifest records matches the backup's name (it
+   shows that time, and refuses a backup renamed as another), and that it opens with the phrase
+   typed, which may be a previous one. Each backup carries its own keyring, so it opens with
+   the phrase of its day, and a rotation re-encrypts it (S15.7.1). A restore (S15.6.8) puts the
+   database and keyring back, leaves the receipt files where they are (re-wrapped to the
+   backup's key when a re-encryption came between), and sets the linked copies aside to be
+   pulled again (S11.9.9); files the restored database does not name are counted in Settings ›
    Storage, with **Remove** (S16.17). The restore is documented, and tested by a check.
 7. **Financial data at rest** is encrypted with the rest of the database (S15.1). Ordinary
    SQLite tools can't read it. `moneykata db shell` opens it on the host, with the recovery
    phrase typed; that it was opened, like every `db` and `keys` command run on the host, is
    queued in the data directory and recorded in Activity for admins at the next unlock or
    within a quarter of an hour (S15.4.7).
-8. **Export**: a user can export their own data (accounts, transactions, lots, receipts) as a
-   ZIP of CSVs and files, at any time. This is the way out, and the backup a single user can
-   keep.
+8. **Export** of a user's own data comes after the first release ([later work](later.md), L4).
 9. **Times and dates.**
    1. **Every timestamp is stored in UTC** (`deletedAt`, a session's start, an alert's
       opening, a price's `as_of`), and shown in the viewer's time zone.
-   2. **Each user's time zone** is set in Profile: **Auto**, the server's time zone (from
-      the host, shown in Settings › General), or a zone they choose by name
-      (`America/Denver`).
+   2. **Each user's time zone** is set in Profile: **Auto**, the server's time zone (from the
+      host, which gives the container its `/etc/localtime` and `TZ`, S17.8; shown in Settings ›
+      General), or a zone they choose by name (`America/Denver`).
    3. **Calendar dates have no time zone**: a transaction's date, a statement's period, a
       birthday and a due date are dates as the institution or the user wrote them, never
       shifted.
@@ -120,15 +120,15 @@
        expired, expiring later and kept for ever, and a **bar for each coming year** of what
        expires in it, by category. Sizes are the files' sizes on disk; the section shows
        sizes and counts only, never what the files hold.
-    5. **Prune 1,284 files (2.1 GB)** names what has expired. It previews them by category,
-       any of which can be unticked, asks the admin to type the count to confirm, and their
+    5. **Prune 1,284 files (2.1 GB)** names what has expired. It previews them by category, any
+       of which can be unticked, asks the admin to type the count to confirm, and their
        password again if given over 10 minutes ago (S13.7.2), removes the files, and records
-       the file pruning in Activity with its counts. No backup is made first: a backup holds
-       no files (S14.6). A file several receipts share is removed once none of them needs
-       it, and the same file uploaded again after it is a new receipt with its file. Each
-       record keeps its row, amounts and links, and shows *File pruned Jan 3, 2034*. A
-       pruned file survives only in the host's own backups of the data directory, for as
-       long as the host keeps them.
+       the file pruning in Activity with its counts. No backup is made first: a backup holds no
+       files (S14.6). A file several receipts share is removed once no live receipt needs it (a
+       deleted one doesn't count), and the same file uploaded again after it is a new receipt
+       with its file. Each record keeps its row, amounts and links, and shows *File pruned Jan
+       3, 2034* once its file is gone. A pruned file survives only in the host's own backups of
+       the data directory, for as long as the host keeps them.
     6. **Linked copies follow their source.** File pruning never touches a linked copy
        (S11.9): a file the source prunes leaves the copy at its next pull, and the copy keeps
        nothing longer than its source does.

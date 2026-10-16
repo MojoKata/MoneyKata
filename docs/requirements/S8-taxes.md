@@ -5,9 +5,15 @@ S8.14), what a preparer or tax software needs. It
 produces worksheets and exports. It never files, and says so (R1.16).
 
 1. **Realized gains and losses**: every sale and closed option in taxable accounts, as **Form
-   8949** rows (description, acquired, sold, proceeds, cost basis, adjustment code and
-   amount, gain or loss), split into short- and long-term and by the box (A/B/C, D/E/F) that
-   the broker's basis reporting determines, with **Schedule D** totals.
+   8949** rows (description, acquired, sold, proceeds, cost basis, adjustment code and amount,
+   gain or loss), split into short- and long-term and by the box that the broker's basis
+   reporting determines, with **Schedule D** totals. Securities go in A, B or C (short-term)
+   and D, E or F (long-term). From tax year 2025, digital assets have boxes of their own, and
+   never C or F: G, H or I short-term and J, K or L long-term, for basis reported to the IRS on
+   a Form 1099-DA, basis not reported, and no 1099-DA at all; a self-custody wallet's sales go
+   in I or L. Years before 2025 put them in A to F. Sources: the [2025 Form
+   8949](https://www.irs.gov/pub/irs-pdf/f8949.pdf) and [its
+   instructions](https://www.irs.gov/pub/irs-pdf/i8949.pdf), kept in `docs/external/`.
 2. **Exports**: Form 8949 CSV, **TXF** (which TurboTax and others import), and a PDF summary
    for a preparer. Each export says what it covers and what it does not.
 3. **Wash sales** found (S3.8), with the disallowed amounts and the replacement lots, and
@@ -54,17 +60,21 @@ produces worksheets and exports. It never files, and says so (R1.16).
     couple filing separately has two.
     1. **Filers**: one user, or two who are spouses (S10.10.4) on the last day of the year, or
        of whom one died during it. Creating a tax book names the year and the filers. A user
-       named as a filer by someone else accepts before the tax book counts their accounts.
+       named as a filer by someone else accepts before the tax book counts their accounts or
+       shows anything from their year before.
     2. **Accounts counted**: the filers' own accounts, each counted once even when the filers
-       share it with each other. The owner can add an account they can see (a custodial
-       account in a child's name) or leave one out, and the panels say what was left out.
-    3. **Helping**: the filers hold the tax book as its owners. Anyone else sees it only
-       through a share to users and groups, never to a linked server (S10.3). A user who helps
-       prepare the return, such as a grown child or a preparer with an account here, gets
-       **write**: they can edit filings, attach documents and resolve issues, but not delete
-       the tax book or change its sharing.
+       share it with each other. A filer can add an account they can see (a custodial account
+       in a child's name) or leave one out, and the panels say what was left out. An added
+       account counts only while the filer who added it can still see it.
+    3. **Helping**: the filers hold the tax book as its owners, and any of them changes its
+       sharing. Anyone else sees it only through a share: to users and groups, or, read only,
+       to named people on a linked server, such as a preparer with a server of their own
+       (S10.3.3). A user who helps prepare the return, such as a grown child or a preparer with
+       an account here, gets **write**: they can edit filings, attach documents and resolve
+       issues, but not add accounts, delete the tax book or change its sharing.
     4. **New tax book** copies the filers, accounts and dependents from the year before, and
-       turns last year's received documents into this year's expected ones (S8.16).
+       turns last year's received documents into this year's expected ones (S8.16), once every
+       filer of the new book has accepted it.
     5. **Dependents**: the people the filers claim for the year, chosen from the household's
        people (S10.10). MoneyKata doesn't decide who qualifies (S8.18); dependents feed the
        panels, the checklist and a few flags.

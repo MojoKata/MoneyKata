@@ -24,10 +24,9 @@
    | US stocks and ETFs, benchmarks (VT, SPY) | **CBOE delayed quotes** | none | anything listed on an exchange: daily closes back to 2010 for a backfill, and the day's close from the quote once the market has closed (4:15 PM Eastern); a symbol it doesn't list goes to the next source. Not an official API, for personal, non-commercial use |
    | Fallback for stocks and ETFs | **Tiingo** | free | 500 symbols a month, 50 requests an hour, 1,000 a day; for personal use |
    | Mutual funds | **Tiingo** | free | daily NAVs, posted around midnight Eastern; CBOE doesn't list them |
-   | Last fallback | **Alpha Vantage** | free | 25 requests a day, so only when the others fail |
    | Money-market funds | none | — | held at $1.00, shown as such |
    | Crypto, major coins | **Coinbase** public prices | none | |
-   | Crypto, other coins | **CoinGecko** Demo plan | free | about 10,000 calls a month; attribution required, shown in Settings and on charts that use it |
+   | Crypto, other coins | **manual** | — | a typed price, with its date; a source for them comes later (L9) |
    | Gold spot | **PAXG** (a token backed by one troy ounce of gold), from Coinbase | none | tracks spot closely; a proxy |
    | Silver, platinum and palladium spot | **SLV**, **PPLT** and **PALL** from CBOE (or Tiingo), divided by each fund's metal per share | free | the metal per share ships with the tax tables (S16.11) and is updated with them; within a fraction of a percent of spot |
    | Options | **CBOE delayed quotes** | none | the JSON behind cboe.com's quote pages: an underlying's whole chain in one answer, 15 minutes delayed, read after the close. Not an official API: CBOE offers it for personal, non-commercial use and may change it, so Settings says so |
@@ -70,3 +69,6 @@
    currency is priced by hand.
 9. **Linked servers never call price sources for each other.** A peer's shared data carries its
    own values and their `as_of` (S11.5).
+10. **A typed price** is its typer's: it values their own accounts, and another user's only
+    when they type one too. Where an instrument has no stored close, a holding is valued from
+    the viewer's own trades in it, never from another user's.

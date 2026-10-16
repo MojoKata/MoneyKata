@@ -68,13 +68,14 @@
    abbreviated in charts only ($1.2M), never in tables.
 5. **Every value derived from a price** shows its age on hover, and the header shows the last
    price refresh with a dot that turns amber when prices are stale (S4.7).
-6. **Live updates**: the frame keeps one Server-Sent Events stream open (`GET
-   /ui/api/events`). It carries fingerprints and counts, never data: prices refreshed, an
-   import finished, a statement read, a share received or removed, a linked pull done, a
-   background task finished (a backup, a re-encryption), a sign-up request (for admins), a new alert, the badges' counts (Alerts among them), and the server's version. A screen whose data changed reloads it through
-   its usual routes. The stream never extends the session, ends after a few minutes (the
-   browser reconnects), and takes the page to sign-in or *account is disabled* when the
-   session ends.
+6. **Live updates**: the frame keeps one Server-Sent Events stream open (`GET /ui/api/events`).
+   It carries fingerprints and counts, never data: prices refreshed, an import finished, a
+   statement read, a share received or removed, a linked pull done, a background task finished
+   (a backup, a re-encryption), a sign-up request (for admins), a new alert (its count, never
+   its title), the badges' counts (Alerts among them), and the server's version. A screen whose
+   data changed reloads it through its usual routes. The stream never extends the session, ends
+   after a few minutes (the browser reconnects), and takes the page to sign-in or *account is
+   disabled* when the session ends.
 7. **Help pane**, on every screen:
    1. **F1** toggles it. While it is closed, a dim quarter-circle with a question mark sits in
       the page's top right corner, and grows into a green circle on hover ("Show help (F1)").
@@ -145,13 +146,15 @@
           colour is never the only sign;
        3. a **header strip**: *griffin-parents · read only · synced 41 min ago · unlocked by
           Alice at 14:05 · Lock now*;
-       4. the screens for the kinds shared with you, **every screen and tab of each**, as
-          its owner sees them but read only: Dashboard (only what is shared with you),
-          Accounts, Portfolios, Positions, Transactions, Projections (with their charts),
-          Budgets (with cash flow and recurring payments), Gifts, Giving (with its months and
-          organisations), Taxes and Receipts. The source sends what each screen needs
-          (S11.3.1). The navigation lists only the kinds you have something from. There is
-          no Settings, Profile, Watchlist, import, sharing or editing;
+       4. the screens for the kinds shared with you, **every screen and tab of each**, as its
+          owner sees them but read only: Dashboard (only what is shared with you), Accounts,
+          Portfolios, Positions (an account's holdings), Transactions, Projections (with their
+          charts), Budgets (with cash flow and recurring payments), Gifts, Giving (with its
+          months and organisations), Taxes and Receipts. The source sends what each screen
+          needs (S11.3.1). Positions with their gains and option trades, a loan's view and a
+          physical-asset account's items come later ([later work](later.md), L6). The
+          navigation lists only the kinds you have something from. There is no Settings,
+          Profile, Watchlist, import, sharing or editing;
        5. the user tile shows you, the local user, *viewing griffin-parents*.
     4. **Locked**: the window shows only the household's name and avatar and the request for
        the access key (S11.9.3). If the copy locks while the window is open, the window
@@ -161,34 +164,38 @@
 11. **Alerts** tell someone that something needs them. Activity records what happened; an
     alert asks for an action.
     1. **What raises one**:
-       1. **for admins**: a source that has failed for longer than the threshold in Settings
-          › Alerts (48 hours by default): the bitcoin explorer or node, a price source, email
-          that can't be sent, or a linked server's pulls (a pull refused for a clock more
-          than a minute off says *the clocks disagree*, which NTP on one host fixes); a
-          backup that failed; the bitcoin node presenting a certificate other than the one
-          trusted (S1.6.2.4);
-          a link's first share waiting for its access key (S11.9.2); the MoneyKata Connector
-          locked, not heard from for 15 minutes, or reporting from an address other than the
-          one admins know, until one accepts it or unpairs (S18.5); and the yearly check of
-          the master key's recovery phrase (S15.6.5), due a year after the phrase was last
-          confirmed with `keys verify`, or after the key was made. An admin's alert about someone else's
-          account names its owner and source, never the account's name or figures (S10.2);
-       2. **for an account's owner**: their wallet's explorer or node failing for longer
-          than the threshold, an account whose next statement or import is overdue for its
-          interval (S1.11.7), naming the statement missing, a reconciliation mismatch
-          left open for 7 days (S1.11), a Connection that keeps one of their accounts
-          current needing a sign-in or failing (S18.5), a recorded wallet transaction the
-          chain has dropped (S1.6.2.7), and an option past its expiry that wasn't settled on
-          its own (S3.6), asking what happened;
-       3. **for each user**: a request to share a private person they created (S10.10.3),
-          an occasion entering its lead time (S7.7.3), an option
-          expiring within a week, a pledge due (S7.9), an active projection falling
-          behind (S6.7.5), and budget alerts when they come (S7.6).
-    2. **One alert per cause.** The alerts task looks at every cause every 15 minutes, and
-       at once after any other background task ends. A failing source raises one alert, not one per attempt. It
-       stays **open** while the cause lasts and is **resolved** by itself when the cause
-       clears (the source answers again). A user can **dismiss** an open alert for themselves.
-       Resolved alerts stay listed for 90 days.
+       1. **for admins**: a source that has failed for longer than the threshold in Settings ›
+          Alerts (48 hours by default): the bitcoin explorer or node, a price source, email
+          that can't be sent, or a linked server's pulls (a pull refused for a clock more than
+          a minute off says *the clocks disagree*, which NTP on one host fixes); a backup that
+          failed; the bitcoin node presenting a certificate other than the one trusted
+          (S1.6.2.4); a link's first share waiting for its access key (S11.9.2), and a link
+          marked broken (S11.6); the MoneyKata Connector locked, not heard from for 15 minutes,
+          or reporting from an address other than the one admins know, until one accepts it or
+          unpairs (S18.5), and a Connection needing a sign-in or failing; the yearly check of
+          the master key's recovery phrase (S15.6.5), due a year after the phrase last opened
+          the keyring, by an unlock or `keys verify`, or after the key was made; and the master
+          key's rotation, due after the period Settings › Key storage sets (S15.8.4). An
+          admin's alert about someone else's account names its owner and source, never the
+          account's name or figures (S10.2);
+       2. **for an account's owner**: their wallet's explorer or node failing for longer than
+          the threshold, an account whose next statement or import is overdue for its interval
+          (S1.11.7), naming the statement missing, a reconciliation mismatch left open for 7
+          days (S1.11), a Connection that keeps one of their accounts current needing a sign-in
+          or failing (S18.5), a recorded wallet transaction the chain has dropped (S1.6.2.7),
+          an option past its expiry that wasn't settled on its own (S3.6), asking what
+          happened, and a holding valued from a statement more than 90 days old (S4.3);
+       3. **for each user**: a request to share a private person they created, which goes to
+          its creator and to the admins (S10.10.3), an occasion entering its lead time
+          (S7.7.3), an option expiring within a week, a pledge due (S7.9), an active projection
+          falling behind (S6.7.5), and budget alerts when they come (S7.6).
+    2. **One alert per cause.** The alerts task looks at every cause every 15 minutes, and at
+       once after any other background task ends but the linked copies' sweeper, reading in one
+       transaction and writing only what changed. A failing source raises one alert, not one
+       per attempt, and a check that fails leaves its alerts as they were. It stays **open**
+       while the cause lasts and is **resolved** by itself when the cause clears (the source
+       answers again). A user can **dismiss** an open alert for themselves. Resolved alerts
+       stay listed for 90 days.
     3. **The Alerts screen** lists open alerts first, newest first, then resolved ones. Each
        shows what it is about, since when, a link to the place to fix it, and **Dismiss**.
        Opening the screen marks the user's alerts as seen.
@@ -217,11 +224,14 @@
     spaces between them: `1d`, `90m`, `2w 3d 4h`, `2w3d`. It is read by one helper on each side
     (`app/duration.js`, `moneykata/duration.py`), which refuses anything else and says why, and
     shown back the same way, so `2w 3d 4h` reads as typed.
-14. **The locked screen** (S13.6, S15.4.3). While the server holds no key, every address
-    under `/ui` shows one screen outside the frame, in the card the sign-in screens use: the
-    server has started and holds no key, with a field for the 12 words of the recovery
-    phrase (hidden as a password is, with the eye button, S12.1.3) and **Unlock**, and a line
-    naming the host command that does the same. A wrong phrase is refused at the field;
-    after the lockout of S13.7.5.1 the screen says how long to wait. Once unlocked, the
-    screen gives way to sign-in. A page open when the server restarts lands on it at its
-    next request, as it lands on sign-in when a session ends (S12.6).
+14. **The locked screen** (S13.6, S15.4.3). While the server holds no key, every address under
+    `/ui` shows one screen outside the frame, in the card the sign-in screens use: the server
+    has started and holds no key, with a field for the 12 words of the recovery phrase and
+    **Unlock**, and a line naming the host command that does the same. The field is masked in
+    every supported browser, with the eye button to show it (S12.1.3), and turns off the
+    browser's autocorrect, autocapitalize, spellcheck and autocomplete, so nothing learns or
+    keeps the words. While a re-encryption runs at the unlock (S15.7.2), the screen shows its
+    progress, and gives way to sign-in when it is done. A wrong phrase is refused at the field;
+    after the lockout of S13.7.5.1 the screen says how long to wait. Once unlocked, the screen
+    gives way to sign-in. A page open when the server restarts lands on it at its next request,
+    as it lands on sign-in when a session ends (S12.6).

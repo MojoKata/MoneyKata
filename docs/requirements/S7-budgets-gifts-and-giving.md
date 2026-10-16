@@ -3,8 +3,10 @@
 1. **Budgets are per user, or per group** (a household budget a group shares at `write`).
    A budget covers chosen accounts and is monthly by default, or yearly per category.
    1. **Shared like an account** (S10.3): its owner chooses its accounts, shares it, and
-      deletes it; a `write` share also changes its plan. Its actuals count every
-      transaction in its accounts, whoever can see them.
+      deletes it; a `write` share also changes its plan. Its actuals count every transaction in
+      its accounts. Its receivers see the figures from the owner's own accounts, and from an
+      account shared with the owner only if that account is shared with them too, so a budget
+      never passes on an account someone else shared (R3.4).
    2. **The plan holds from a month on.** A change applies from the month it is made in,
       so past months keep the plan they had; a category taken out of the plan stops from
       that month. A plan line on a parent category counts its children with it.
@@ -50,10 +52,11 @@
       on the Dashboard (*Emma's birthday in 9 days, no gift yet*), and an occasion entering
       its lead time raises an alert (S12.11).
 8. **Gifts.**
-   1. **A gift** is for one or more people and an occasion (and its year): a description,
-      a **status** (*idea*, *planned*, *bought*, *given*), its cost, where it was bought, a
-      link, notes, and receipts (S9). A cost is linked to its transaction, or typed. One
-      purchase can be split across several gifts.
+   1. **A gift** is for one or more people and an occasion (and its year): a description, a
+      **status** (*idea*, *planned*, *bought*, *given*), its cost, where it was bought, a link,
+      notes, and receipts (S9). A cost is linked to its transaction, which needs write on its
+      account and is recorded in Activity, or typed. One purchase can be split across several
+      gifts.
    2. **Ideas** are gifts without a date: a running list per person, to pick from when an
       occasion comes.
    3. **Gifts received** can be recorded too (from whom, for what), with a **thank-you
@@ -74,18 +77,21 @@
       contributions, S1.8.2) above the annual exclusion is flagged for Form 709 (S8.11).
 9. **Charitable giving.**
    1. **A giving plan** per year, per user or per group (as budgets are): a **target** as a
-      **percentage of income** (10% by default when one is set), or a fixed amount.
+      **percentage of income** (10% by default when one is set), or a fixed amount. It counts
+      its owner's accounts only: sharing it shows them, and never reads the accounts of those
+      it is shared with.
    2. **Income**, for the percentage, is one of: the year's transactions in *Income*
       categories (take-home pay, the default), a typed **gross income** (from a W-2 or a pay
       stub), or a typed estimate of AGI. The plan says which it uses.
-   3. **Donations** come from transactions categorised under *Giving* (tax tag
-      *charitable*, S7.2), or are recorded directly: the organisation, date, amount, and
-      **type**: cash (card, cheque, transfer), **goods** (with their fair market value),
-      **appreciated securities** (shares from a lot, S2.2: no gain is realized, and the
-      deduction is the market value when held over a year, otherwise the basis), a
-      **qualified charitable distribution** from an IRA (from age 70½, up to the year's limit
-      in the tax tables), a **contribution to a donor-advised fund**, or a **grant** from
-      one.
+   3. **Donations** come from transactions categorised under *Giving* (tax tag *charitable*,
+      S7.2), or are recorded directly: the organisation, date, amount, and **type**: cash
+      (card, cheque, transfer), **goods** (with their fair market value), **appreciated
+      securities** (shares from a lot, S2.2: no gain is realized, and the deduction is the
+      market value when held over a year, otherwise the lesser of the market value and the
+      basis), a **qualified charitable distribution** from an IRA (from age 70½, up to the
+      year's limit in the tax tables; checking the age, the limit and that it came from an IRA
+      comes later, [later work](later.md), L7), a **contribution to a donor-advised fund**, or
+      a **grant** from one.
    4. **What counts toward the target**: everything that left the user's hands, with a DAF
       counted when it is funded (the default) or when it grants, as the plan chooses. A DAF
       contribution is never counted twice.

@@ -1,6 +1,6 @@
 # Later work
 
-Work planned for after the first release (S17.9.9), with what is already known about it. Each
+Work planned for after the first release (S17.9.10), with what is already known about it. Each
 item has a lasting id (L1, L2, …), kept as gaps' and questions' are. When an item is taken up,
 it is specified in its section and removed from here; its id is never used again. The
 [README](README.md#later-work) lists them.
@@ -27,5 +27,57 @@ it is specified in its section and removed from here; its id is never used again
 **What it is:** a price source for Treasuries, I bonds and EE bonds from the Treasury's published
 yield curve and savings-bond rates (free official data), with its host named in the egress
 guard (S13.5). Until then they are priced by hand (S4.3), from TreasuryDirect's figures.
+
+**Touches:** S4.3, S13.5, S16.6.
+
+## L4: A user's export of their own data
+
+**What it is:** a user exports their own data (accounts, transactions, lots, receipts) as a ZIP
+of CSVs and files, at any time: the way out, and the backup a single user can keep. Built as a
+job that streams the ZIP to the response, receipts decrypted on the way and never written to a
+temporary file, after the password again (S13.7.2).
+
+**Touches:** S14.8, S13.7.2.
+
+## L5: Portfolio charts beyond value, returns and holdings
+
+**What it is:** a portfolio of chosen holdings of its accounts; **allocation** (donut and
+treemap) by asset class, account type (taxable, deferred, free), sector, region and single
+holding, against an optional **target allocation**, with the drift and a rebalancing suggestion
+(what to buy or sell, preferring the tax-advantaged accounts); **income**: dividends and
+interest by month, trailing twelve months, and forecast; and a **holding's detail**: a price
+chart (line, or candles from daily OHLC where available) with the user's buys and sells marked.
+
+**Touches:** S5.1, S5.2, S4.
+
+## L6: More of a linked household's window
+
+**What it is:** in a linked household's window (S12.10), positions with their gains and option
+trades, a loan's view with its payoff plans, and a physical-asset account's items; and a tax
+book's document files crossing a link with Include receipts (S11.5.1).
+
+**Touches:** S11.3.1, S11.5.1, S12.10.3.4.
+
+## L7: Limits checked in projections and giving
+
+**What it is:** a projection's contributions to retirement accounts capped by the limits of
+S1.4, and a qualified charitable distribution checked for the giver's age (70½), the year's
+limit and that it came from an IRA (S7.9.3), both from the tax tables (S16.11).
+
+**Touches:** S6.1.2, S7.9.3.
+
+## L8: `Idempotency-Key` on every create
+
+**What it is:** every `POST` that creates honours `Idempotency-Key`, a repeat within 24 hours
+returning the first answer, as `POST /ui/api/transactions` does (S13.8.8).
+
+**Touches:** S13.8.8.
+
+## L9: More price sources
+
+**What it is:** **Alpha Vantage** (free key, 25 requests a day) as the last fallback for stocks
+and ETFs, and **CoinGecko** (Demo plan, about 10,000 calls a month, attribution shown in
+Settings and on the charts that use it) for coins Coinbase doesn't list. Until then such coins
+are priced by hand (S4.3).
 
 **Touches:** S4.3, S13.5, S16.6.

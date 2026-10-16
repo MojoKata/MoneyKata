@@ -8,13 +8,15 @@
    **expire** (worthless), **assigned** and **exercised**. Each carries contracts, premium per
    share, fees and commission.
 3. **Short options** are negative lots. The premium received is the credit; the gain is
-   realized at close or expiry. Closing trades and expiries take an option's lots oldest
-   first, whatever lot method the account uses for shares.
-4. **Assignment and exercise** close the option lot and open or close stock lots at the
-   strike, with the premium folded into the stock's basis or proceeds as the IRS rules for
-   that case say: a long call exercised adds its premium to the stock's basis, a short put
-   assigned subtracts its premium from it, a short call assigned adds its premium to the
-   proceeds. The resulting stock lots link back to the option.
+   realized at close or expiry, and is short-term however long the option was open (IRC
+   §1234(b)). Closing trades and expiries take an option's lots oldest first, whatever lot
+   method the account uses for shares.
+4. **Assignment and exercise** close the option lot and open or close stock lots at the strike,
+   with the premium folded into the stock's basis or proceeds as the IRS rules for that case
+   say: a long call exercised adds its premium to the stock's basis, a short put assigned
+   subtracts its premium from it, a short call assigned adds its premium to the proceeds. The
+   resulting stock lots link back to the option, and deleting the assignment or exercise
+   deletes its stock trade with it, after asking.
 5. **Strategies**: legs held together (a covered call, a vertical spread, an iron condor)
    are grouped and shown as one. Grouping is a label: lots, gains, wash sales and taxes stay
    per leg.
@@ -57,10 +59,10 @@
       legs and these figures, and the proposals; an investing account and a portfolio show
       **Capital at risk** beside their options' market value, counting each option outside a
       strategy as a single leg (S3.9.2). Allocation charts keep market value.
-6. **Expiry** is applied automatically the day after an option expires out of the money by
-   the underlying's closing price. An in-the-money expiry asks the user what happened. The
-   close used is the expiry day's, or one up to four days before it; with none that recent,
-   the user is asked too. A close exactly at the strike counts as out of the money.
+6. **Expiry** is applied automatically the day after an option expires out of the money by the
+   underlying's closing price. An in-the-money expiry asks the user what happened. The close
+   used is the expiry day's; without it, the user is asked too. A close exactly at the strike
+   counts as out of the money.
 7. **Valuation**: an open option's mark is the price source's daily option close where there is
    one (S4.5), otherwise the user's manual mark, otherwise intrinsic value, labelled as such.
 8. **Wash sales**: a loss sale with a purchase of the same or a *substantially identical*
@@ -77,10 +79,12 @@
       A partial replacement disallows the loss in proportion: 4 shares bought back of 10
       sold disallow 4/10 of the loss.
    3. The disallowed loss is taken off the sale's realized loss and added to the replacement
-      shares' basis, and their holding period starts that many days earlier: the sold
-      shares' days held carry over. Holdings, unrealized gain, the Closed tab (a **W** with
-      the amount) and the later sale of those shares all use the adjusted basis and date.
-      Where only some of a lot replaces, that part is split into its own lot.
+      shares' basis, and their holding period starts that many days earlier: the sold shares'
+      days held carry over. Holdings, unrealized gain, the Closed tab (a **W** with the amount)
+      and the later sale of those shares all use the adjusted basis and date. Where only some
+      of a lot replaces, that part is split into its own lot. **A replacement in an IRA or a
+      Roth IRA** is the exception: the loss is disallowed for good, with no basis added to the
+      replacement (Rev. Rul. 2008-5).
    4. The household's wash sales are worked out again whenever a trade in it is added,
       changed, deleted or imported, so a later purchase that replaces an earlier loss, or a
       deleted one that no longer does, takes effect at once.
@@ -110,9 +114,10 @@
     large special dividend, the OCC adjusts its open options. The lot carries over to the
     adjusted contract: no sale, and no wash sale.
     1. **A whole-number split** (2:1, 4:1) is applied with the stock's split (S2.4), in the
-       account the split is recorded or imported in: contracts × the ratio, strike ÷ the
-       ratio, the basis spread over the new contracts. The old contract ends. Deleting the
-       split undoes it. A reverse split, not a whole number, is adjusted as below.
+       account the split is recorded or imported in: contracts × the ratio, strike ÷ the ratio
+       rounded to the thousandth, as the OCC prints it, the basis spread over the new
+       contracts. The old contract ends. Deleting the split undoes it. A reverse split, not a
+       whole number, is adjusted as below.
     2. **Any other adjustment** gives the contract a new root (AAPL becomes *AAPL1*), keeps
        its strike, and changes its **deliverable**: shares other than 100 (150 for a 3:2
        split), shares and cash, or shares of two companies. Recording the corporate action

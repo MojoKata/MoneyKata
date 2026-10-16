@@ -1,19 +1,18 @@
 # The connector protocol
 
-How the MoneyKata Connector talks to the MoneyKata server it is paired with (requirements
-S18). This document is the protocol's statement; the code that speaks it is
-`web/server/src/moneykata/connector/` on the server's side and `connector/core/` on the
-connector's. It follows the link protocol (`link-protocol.md`) wherever the two do the same
-thing, so one reading covers both.
+How the MoneyKata Connector talks to the MoneyKata server it is paired with (requirements S18).
+This document is the protocol's statement; the code that speaks it is
+`web/server/src/moneykata/connector/` on the server's side and `connector/moneykata_connector/`
+on the connector's. It follows the link protocol (`link-protocol.md`) wherever the two do the
+same thing, so one reading covers both.
 
 **Terms.** The **identity key** (Ed25519) signs the connector's calls and is kept beside its
 vault; the **sealing key** (X25519) is what a browser seals a credential to, its public half
-held by MoneyKata and its private half kept in the vault; a **sealed box** is such a
-credential as MoneyKata stores and hands over, unable to open it; the **vault** is the
-connector's encrypted file of credentials and the sealing key, open only while the connector is
+held by MoneyKata and its private half kept in the vault; a **sealed box** is such a credential
+as MoneyKata stores and hands over, unable to open it; the **vault** is the connector's
+encrypted file of credentials and the sealing key, open only while the connector is
 **unlocked** with its words; a credential's **bound host** is the one host it may ever be sent
-to, fixed when it is filed; the **watched folder** is the one mount the Folder driver reads
-inside. Requirements S18 defines them in full.
+to: the one sealed with it, fixed when it is filed. Requirements S18 defines them in full.
 
 **The calls at a glance.**
 
@@ -44,9 +43,12 @@ inside. Requirements S18 defines them in full.
    file, to `/connector/v1/` on MoneyKata's address, the one in the pairing code. MoneyKata
    never calls the connector; everything the connector must learn comes back in the answers
    to its own calls.
-2. MoneyKata's TLS certificate may be its own (S13.3): what proves who answered is the
-   signature on the answer (section 3), checked against the link key whose fingerprint the
-   pairing code carried.
+2. **The connector verifies MoneyKata's TLS certificate**: a public one against the system's
+   roots, and one that is MoneyKata's own (S13.3) against the fingerprint of its key that the
+   pairing code carried (`t`, section 4.1); a new certificate key is announced beforehand in a
+   report's answer, signed. TLS keeps each message private; the signature on each answer
+   (section 3), checked against the link key whose fingerprint the code carried, proves who
+   wrote it. The connector follows no redirect, and reads at most 25 MB of an answer.
 3. Everything but `hello` is signed, and every answer to a signed call is signed back.
 4. JSON bodies are UTF-8, at most 1 MB; a file post is multipart, the file up to the upload
    size in Settings (S13.7.6).
@@ -77,7 +79,7 @@ inside. Requirements S18 defines them in full.
    | `MK-Conn-Time` | Unix seconds |
    | `MK-Conn-Nonce` | 16 random bytes, base64url |
    | `MK-Conn-Signature` | Ed25519 over the lines below, base64url |
-   | `MK-Conn-Protocol` | the protocol version the call speaks (section 7) |
+   | `MK-Conn-Protocol` | the protocol version the call speaks (section 5) |
    | `MK-Conn-Version` | the connector's version, for Settings › Connector to show |
 
    The signed text is these lines, joined by `\n`:
@@ -94,10 +96,10 @@ inside. Requirements S18 defines them in full.
 
    For a multipart post the body hash is over the raw request body as sent. Naming the
    receiver's fingerprint means a call can't be replayed against another server.
-2. MoneyKata refuses, with the codes in section 8: a call without these headers, a time more
-   than **60 seconds** from its own clock, a signature that doesn't verify, a nonce it has
-   seen from that key in the last two minutes, a key that isn't the paired connector's, and a
-   paired connector whose pairing has ended.
+2. MoneyKata refuses, with the codes in section 7: a call without these headers, a time more
+   than **60 seconds** from its own clock, a signature that doesn't verify, a nonce it has seen
+   from that key in the last two minutes, a key that isn't the paired connector's, and a paired
+   connector whose pairing has ended.
 3. **Answers** are signed the same way: `MK-Conn-Time` and `MK-Conn-Signature` over
 
    ```
@@ -106,10 +108,13 @@ inside. Requirements S18 defines them in full.
    <SHA-256 of the body, hex>
    <time>
    <the call's nonce>
+   <the connector's fingerprint>
+   <SHA-256 of the call's body, hex>
    ```
 
-   The connector refuses an answer that isn't signed by the key the pairing code named, so a
-   server pretending to be MoneyKata gets nothing past it: no report, no file, and no sealed
+   The connector refuses an answer that isn't signed by the key the pairing code named, or that
+   names another caller or another request. With TLS verified (section 1.2), a server
+   pretending to be MoneyKata gets nothing past it: no report, no file, and no sealed
    credential is ever sent to it. Refusals are signed too when the call carried a nonce.
 4. Rate: 60 calls a minute (S13.7.5.4); a file post also counts against the upload limit of the
    Connection's owner (S18.8).
@@ -129,32 +134,37 @@ inside. Requirements S18 defines them in full.
 ### 4.1 Pairing
 
 1. An admin's **Pair** (Settings › Connector) makes a pairing code: `mkp1.` and unpadded
-   base64url of `{"a": address, "f": fingerprint, "c": secret}`, as a link code is
-   (`link-protocol.md` §4.1). MoneyKata keeps only the SHA-256 of the secret and the code's
-   expiry (24 hours); a code works once. Making a code needs the admin's password again
-   (S13.7.2).
+   base64url of `{"a": address, "f": fingerprint, "c": secret, "t": certificate}`, as a link
+   code is (`link-protocol.md` §4.1), `t` present when MoneyKata's certificate is its own.
+   MoneyKata keeps only the SHA-256 of the secret and the code's expiry (24 hours); a code
+   works once. Making a code needs the admin's password again (S13.7.2).
 2. `moneykata-connector pair <code>`, run with the vault unlocked (it is refused otherwise,
-   since the sealing key's private half goes into the vault), calls `hello` at the address
-   and refuses to go on unless the key it answers with has the code's fingerprint. It makes a
-   new identity key and a new sealing key, then calls `pair`, signed by the identity key, with
-   `{code, sealingKey, version, protocol}`. MoneyKata has no pairing with that key yet, so
-   the signature only proves the caller holds the key it sends, and the secret proves it was
-   given the code.
+   since the sealing key's private half goes into the vault), connects to the address,
+   verifying TLS as section 1.2 says, calls `hello` and refuses to go on unless the key it
+   answers with hashes to the code's fingerprint; it keeps that key with the pairing. It makes
+   a new identity key and a new sealing key, then calls `pair`, signed by the identity key,
+   with `{code, sealingKey, sealingSignature, version, protocol}`, `sealingSignature` being the
+   identity key's signature over the sealing key, which browsers check before sealing (section
+   4.3). The new pairing is written only once `pair` succeeds, so a refused one leaves any
+   earlier pairing as it was. MoneyKata has no pairing with that key yet, so the signature only
+   proves the caller holds the key it sends, and the secret proves it was given the code.
 3. MoneyKata records the two public keys, ends any connector paired before (as Unpair does:
    every Connection stopped, every account's sync turned off, S18.4.4), and answers
-   `{fingerprint, connectorFingerprint, serverName}`. Both sides show the connector's
-   fingerprint for the admin to compare; a mismatch means someone else answered the code
-   first, and the admin unpairs. Until the admin **confirms** the pairing in Settings
-   (S18.4.2), the pairing is not trusted: reports are answered, but `sealed` is withheld
-   and a file post is refused `not-confirmed`.
-4. The connector then keeps, per server, the address, the fingerprint and its own keys. One
-   connector is paired with one server; `moneykata-connector unpair` forgets it and deletes
-   every credential it held for it.
+   `{fingerprint, serverName}`. Both sides show the connector's fingerprint for the admin to
+   compare, each working it out from the identity key itself, never from what the other says; a
+   mismatch means someone else answered the code first, and the admin unpairs. Until the admin
+   **confirms** the pairing in Settings (S18.4.2), the pairing is not trusted: reports are
+   answered, but `sealed` is withheld and a file post is refused `not-confirmed`.
+4. The connector then keeps, per server, the address, the fingerprint, MoneyKata's key and its
+   own keys. One connector is paired with one server; `moneykata-connector unpair` forgets it
+   and deletes every credential it held for it, as a signed `not-paired` answer from MoneyKata
+   makes it do (S18.4.4).
 
 ### 4.2 Reports
 
-Every 5 minutes, and at once after an unlock, a run or a change the connector wants to tell
-of, `POST /connector/v1/report`:
+Every 5 minutes, at once after an unlock, a run or a change the connector wants to tell of, and
+every 15 seconds for up to 10 minutes while a Connection waits for a sign-in (so the address an
+owner pastes back is exchanged within seconds), `POST /connector/v1/report`:
 
 ```json
 {
@@ -195,33 +205,36 @@ of, `POST /connector/v1/report`:
    }
    ```
 
-   `connections` is every live Connection for this connector with its driver, settings and
-   the accounts whose sync names it, each with the formats MoneyKata takes for it; `sealed`
-   is present while a credential waits (section 4.3), **the report said `locked: false`** (a
-   locked connector has no sealing key to open it with) **and an admin confirmed the
-   pairing** (section 4.1); `removed`
-   names Connections whose owners removed them or whose accounts all turned sync off, and the
+   `connections` is every live Connection for this connector with its driver, settings and the
+   accounts whose sync names it, each with the formats MoneyKata takes for it; `sealed` is
+   present while a credential waits (section 4.3), **the report said `locked: false`** (a
+   locked connector has no sealing key to open it with) **and an admin confirmed the pairing**
+   (section 4.1); `removed` names Connections whose owners removed them (S18.6.4), and the
    connector deletes their credentials and never reports them again.
 3. MoneyKata records the report's time, so a connector silent for 15 minutes raises the alert
-   of S18.5.2, and shows `locked` as S18.5.1 says. It records the address the report came
-   from as well: the first is taken as the connector's; a report from another address is
-   still answered but alerts admins until one accepts the new address or unpairs (S18.5.4).
+   of S18.5.2, and shows `locked` as S18.5.1 says. It records the address the report came from
+   as well: the first is taken as the connector's; a report from another address is still
+   answered but alerts admins until one accepts the new address or unpairs (S18.5.4), whichever
+   address reports after it.
 
 ### 4.3 Credentials
 
 1. **Sealed in the browser** (S18.7.1): the owner's browser fetches the connector's sealing key
-   (`GET /ui/api/connector`, with its fingerprint shown), seals the credentials as an X25519
-   sealed box (an ephemeral X25519 key, HKDF-SHA256 over the exchange with the label
-   `moneykata connector credential` and the Connection's id as salt, AES-256-GCM with a random
-   96-bit nonce; the box is the ephemeral public key, the nonce and the ciphertext, base64url)
-   and sends the box to `PUT /ui/api/connections/{id}/credential`. MoneyKata stores the box as
-   it is and hands it to the connector in the next report's answer.
-2. The connector opens the box with the sealing key from its vault, files the credentials in
-   the vault under the Connection's id **bound to the host the Connection's settings name at
-   that moment** (section 6), and calls `credential/taken` with `{sealedAt}`; MoneyKata
-   deletes the box. A box the connector can't open (sealed to an earlier sealing key) is
-   reported as the Connection `failing` with *the credentials were sealed for another
-   connector*, and the owner is asked to enter them again.
+   with its signature by the identity key (`GET /ui/api/connector`, the identity key's
+   fingerprint shown), checks the signature, and seals `{credentials, host, sealedAt}`, the
+   host being the one the dialog shows the owner, as an X25519 sealed box (an ephemeral X25519
+   key, HKDF-SHA256 over the exchange with the label `moneykata connector credential` and the
+   Connection's id as salt, AES-256-GCM with a random 96-bit nonce; the box is the ephemeral
+   public key, the nonce and the ciphertext, base64url), and sends the box to `PUT
+   /ui/api/connections/{id}/credential`. MoneyKata stores the box as it is and hands it to the
+   connector in the next report's answer.
+2. The connector opens the box with the sealing key from its vault, refuses it when its host
+   isn't the one the Connection's settings name or when it is older than the credential it
+   holds, files the credentials in the vault under the Connection's id **bound to the host
+   sealed with them** (section 6), and calls `credential/taken` with `{sealedAt}`; MoneyKata
+   deletes that box, and only that one. A box the connector can't open (sealed to an earlier
+   sealing key) is reported as the Connection `failing` with *the credentials were sealed for
+   another connector*, and the owner is asked to enter them again.
 3. **The bound host** (S18.7.3): before each run, the connector compares the bound host with
    the host the settings name now. If they differ it sends nothing, deletes the credential, and
    reports the Connection as `needs-sign-in` with *the server address changed from A to B:
@@ -229,14 +242,17 @@ of, `POST /connector/v1/report`:
    change to `settings` can therefore send a stored credential anywhere but where its owner
    entered it for.
 4. **A sign-in through the institution's page** (OAuth, as Schwab's): the driver calls
-   `sign-in` with `{address}`, the institution's sign-in address for this Connection; MoneyKata
-   shows it to the owner under Profile › Connections. The owner opens it, signs in, and pastes
-   the address they land on into the same credential dialog, which seals it as in 4.3.1; the
-   driver reads the code from it and completes the sign-in.
+   `sign-in` with `{address}`, the institution's sign-in address for this Connection, with a
+   random `state` in it; MoneyKata takes it only on the driver's own sign-in host (refusing
+   another with `address-invalid`) and shows it, with that host, to the owner under Profile ›
+   Connections. The owner opens it, signs in, and pastes the address they land on into the same
+   credential dialog, which seals it as in 4.3.1; the driver checks its `state`, reads the code
+   from it and completes the sign-in at its next report, within seconds (section 4.2).
 5. **Typed on the connector's host** (S18.7.2): `moneykata-connector connect <connection id>`
-   asks for the credentials there and files them in the vault, bound as in 4.3.3 to the host
-   the Connection's settings name, which the connector must have heard of in a report (it
-   reports first when it hasn't); nothing crosses the wire but the next report's state.
+   shows the host the Connection's settings name, asks the admin to confirm it, asks for the
+   credentials there and files them in the vault bound to that host; the connector must have
+   heard of the Connection in a report (it reports first when it hasn't); nothing crosses the
+   wire but the next report's state.
 
 ### 4.4 Files
 
@@ -276,15 +292,14 @@ What each driver posts, and what its `settings` hold (S18.9):
 
 | Driver | Posts | Settings | Credentials (sealed, 4.3) |
 |---|---|---|---|
-| `folder` | each file that appears in the folder named, inside the watched folder, to the account whose rule its name matches | `path`, a folder inside the watched folder, relative to it, empty for the whole of it (an absolute path, `..` or a link out is refused by MoneyKata at the form and by the connector as *failing*); `rules`, one per line: `umb-*.pdf → 3311`, a file-name pattern and the account's last four digits | none |
 | `ofx-direct` | the OFX statement the institution's OFX server answers with, as it is | `url`, `org`, `fid`, `accountType` (`CHECKING`, `SAVINGS`, `CREDITCARD`, `INVESTMENT`), `accountId`, and `bankId` (the routing number) for a bank account | `{username, password}`, bound to the host of `url` when filed (4.3.3) |
 | `schwab` | positions, transactions and balances from the Trader API, written as an OFX investment statement, one file per account | `appKey` | `{appSecret, landed}`: the app's secret and the address the owner landed on after signing in; the driver keeps the refresh token in the vault, and asks for a new sign-in when it has run out, after seven days. Bound to no host: the driver's is fixed |
 
-A driver's host is the one it declares (`api.schwabapi.com`), or, for OFX Direct Connect,
-the server its owner named in the settings **when the credentials were filed**; the egress
-allowlist refuses every other, and a changed `url` asks for the credentials again (4.3.3).
-The watched folder is set where the connector runs (`MONEYKATA_CONNECTOR_WATCH`, `/watch` by
-default, the mount in `compose.yaml`), never by MoneyKata.
+A driver's host is the one it declares (`api.schwabapi.com`), or, for OFX Direct Connect, the
+server its owner named in the settings **and sealed with the credentials**; the egress
+allowlist, kept per driver run, refuses every other, and loopback, link-local and cloud
+metadata addresses with them, and a changed `url` asks for the credentials again (4.3.3). An
+institution with nothing to fetch from has no driver: its files are uploaded by hand (S18.9).
 
 ## 7. Refusals
 
@@ -307,7 +322,7 @@ says when the call carried a nonce.
 | `file-refused` | the file's content isn't a type MoneyKata imports |
 | `limit` | the owner's upload limit; `Retry-After` says when to try again. Also the 60 calls a minute of section 3.4 |
 | `not-found` | (404) the Connection or account doesn't exist, or isn't this connector's |
-| `address-invalid` | a sign-in address that isn't `https` |
+| `address-invalid` | a sign-in address that isn't on the driver's own sign-in host |
 | `too-large` | (413) a body over 1 MB of JSON, or a file over the upload size |
 | `locked` | (503, unsigned) MoneyKata is locked (S13.6); the connector tries again at its next report |
 
