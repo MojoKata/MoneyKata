@@ -120,6 +120,19 @@ def test_a_card_statement_is_turned_to_the_accounts_side():
     assert st.rows[0].date == dt.date(2026, 8, 31) and st.difference == 0
 
 
+def test_a_cards_cr_and_dr_are_the_accounts_side_already():
+    # B20: a payment marked CR is money in, turned once, never twice.
+    st = parse(
+        CARD.replace("PAYMENT THANK YOU -1,203.11", "PAYMENT THANK YOU 1,203.11 CR"), card=True
+    )
+    assert [r.amount for r in st.rows] == [
+        Decimal("-142.18"),
+        Decimal("1203.11"),
+        Decimal("-700.32"),
+    ]
+    assert st.difference == 0
+
+
 def test_a_statement_that_does_not_add_up_says_by_how_much():
     st = parse(UMB.replace("09/22 DUKE ENERGY 188.40\n", ""))
     assert st.difference == Decimal("-188.40")

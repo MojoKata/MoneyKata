@@ -194,6 +194,11 @@
             ],
             "title": "Capitalatrisk"
           },
+          "capitalAtRiskUnlimited": {
+            "default": false,
+            "title": "Capitalatriskunlimited",
+            "type": "boolean"
+          },
           "change": {
             "anyOf": [
               {
@@ -9244,9 +9249,9 @@
           },
           "rate": {
             "examples": [
-              1234.5
+              7.3125
             ],
-            "format": "money",
+            "format": "decimal",
             "title": "Rate",
             "type": "number"
           },
@@ -9404,6 +9409,18 @@
             "title": "Days",
             "type": "integer"
           },
+          "heldFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heldfrom"
+          },
           "longTerm": {
             "title": "Longterm",
             "type": "boolean"
@@ -9419,6 +9436,7 @@
         },
         "required": [
           "acquiredOn",
+          "heldFrom",
           "quantity",
           "basis",
           "days",
@@ -14064,6 +14082,10 @@
                   "type": "string"
                 },
                 {
+                  "examples": [
+                    1234.5
+                  ],
+                  "format": "money",
                   "type": "number"
                 }
               ],
@@ -14081,6 +14103,10 @@
                   "type": "string"
                 },
                 {
+                  "examples": [
+                    1234.5
+                  ],
+                  "format": "money",
                   "type": "number"
                 }
               ],
@@ -14351,6 +14377,11 @@
               }
             ],
             "title": "Capitalatrisk"
+          },
+          "capitalAtRiskUnlimited": {
+            "default": false,
+            "title": "Capitalatriskunlimited",
+            "type": "boolean"
           },
           "cash": {
             "examples": [
@@ -16802,9 +16833,9 @@
           },
           "rate": {
             "examples": [
-              1234.5
+              7.3125
             ],
-            "format": "money",
+            "format": "decimal",
             "title": "Rate",
             "type": "number"
           }
@@ -16826,9 +16857,9 @@
           },
           "rate": {
             "examples": [
-              1234.5
+              7.3125
             ],
-            "format": "money",
+            "format": "decimal",
             "title": "Rate",
             "type": "number"
           }
@@ -19448,9 +19479,9 @@
           },
           "rate": {
             "examples": [
-              1234.5
+              6.875
             ],
-            "format": "money",
+            "format": "decimal",
             "title": "Rate",
             "type": "number"
           },
@@ -19609,9 +19640,9 @@
           },
           "rate": {
             "examples": [
-              1234.5
+              6.875
             ],
-            "format": "money",
+            "format": "decimal",
             "title": "Rate",
             "type": "number"
           },
@@ -23673,6 +23704,17 @@
             "title": "Account",
             "type": "string"
           },
+          "across": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Across"
+          },
           "contributed": {
             "examples": [
               1234.5
@@ -23711,6 +23753,14 @@
           "owner": {
             "title": "Owner",
             "type": "string"
+          },
+          "personTotal": {
+            "examples": [
+              1234.5
+            ],
+            "format": "money",
+            "title": "Persontotal",
+            "type": "number"
           }
         },
         "required": [
@@ -23719,6 +23769,8 @@
           "owner",
           "contributed",
           "limit",
+          "personTotal",
+          "across",
           "over",
           "note"
         ],
@@ -37049,7 +37101,7 @@
     },
     "/ui/api/transactions/{txn_id}/both-real": {
       "post": {
-        "description": "Two identical rows on one day: the answer *both real* is kept (S1.11.5).",
+        "description": "Two identical rows on one day, or two a file gave one id: the answer *both real* is\nkept (S1.11.5).",
         "operationId": "both_real_ui_api_transactions__txn_id__both_real_post",
         "parameters": [
           {

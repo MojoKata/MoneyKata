@@ -66,6 +66,9 @@ export function Strategies() {
     Dec.sum(
       open.filter((/** @type {any} */ x) => x[k] != null).map((/** @type {any} */ x) => dec(x[k])),
     );
+  // One strategy's unlimited risk makes the total unlimited, never left out of it (S3.5.5).
+  const risk = (/** @type {string} */ k) =>
+    open.some((/** @type {any} */ x) => x[k] == null) ? money(null) : money(String(total(k)));
   return html`
     ${v.proposals.map((/** @type {any} */ p) =>
       html`
@@ -164,16 +167,8 @@ export function Strategies() {
                           )} signed cents=${false} />
                         </td>
                         <td colspan="3"></td>
-                        <td class="num">
-                          <${Amt} v=${String(
-                            total('capitalAtRiskNow'),
-                          )} cents=${false} />
-                        </td>
-                        <td class="num">
-                          <${Amt} v=${String(
-                            total('capitalAtRiskAtOpen'),
-                          )} cents=${false} />
-                        </td>
+                        <td class="num">${risk('capitalAtRiskNow')}</td>
+                        <td class="num">${risk('capitalAtRiskAtOpen')}</td>
                         <td></td>
                       </tr>
                     </tfoot>

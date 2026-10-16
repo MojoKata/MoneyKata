@@ -37,7 +37,8 @@
    projections and the payoff planner (S6.10) agree with each other. Fees per projection.
    1. **Bitcoin models.** For the bitcoin in what a projection is built on, the user can choose
       a published model in place of the crypto assumption, in Profile › Assumptions or per
-      projection. Other coins keep the crypto assumption. Each model gives a median path from
+      projection. Other coins keep the crypto assumption; a typed amount names no coins, so
+      its crypto is taken as bitcoin. Each model gives a median path from
       today's price, which the crypto assumption's volatility spreads into the Monte Carlo fan,
       as it does the default's:
 

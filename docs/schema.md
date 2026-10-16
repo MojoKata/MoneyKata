@@ -90,7 +90,7 @@ The prefixes of the tables that exist.
 | Gift   | Gift             | A gift to or from a person for an occasion, from idea to given.                                       |
 | Group  | Group            | A named set of users that shares are granted to.                                                      |
 | GvPln  | GivingPlan       | A user's giving target for a year: a percentage of income, or an amount.                              |
-| HdChk  | HoldingCheck     | A position a brokerage statement shows on its last day, checked against what is held then.           |
+| HdChk  | HoldingCheck     | A position a brokerage statement or file shows on a day, checked against what is held then.          |
 | Hold   | Holding          | What an account holds of one instrument at a point in time.                                           |
 | Imprt  | Import           | One file imported into an account, with the dates it covers.                                          |
 | Imprv  | Improvement      | An improvement to a property, added to its cost basis.                                                |

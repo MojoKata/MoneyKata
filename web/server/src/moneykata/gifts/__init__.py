@@ -368,16 +368,26 @@ def spending(s: Session, user_id: str, year: int) -> Spending:
     from ..store.entities.accounts import Account
     from ..store.entities.education import EducationPlan
 
+    # Every 529 of the user's counts, whether or not its beneficiary has a gift plan; a
+    # five-year election is a fifth of it in each of its five years.
     for plan in s.scalars(
-        select(EducationPlan).where(
-            EducationPlan.beneficiaryId.in_(list(plans)), EducationPlan.deleted == false()
+        select(EducationPlan)
+        .join(Account, Account.id == EducationPlan.accountId)
+        .where(
+            Account.ownerId == user_id,
+            Account.deleted == false(),
+            EducationPlan.deleted == false(),
         )
     ):
-        a = s.get(Account, plan.accountId)
-        if a is None or a.deleted or a.ownerId != user_id:
+        if me is not None and plan.beneficiaryId == me.personId:
             continue
+        a = s.get(Account, plan.accountId)
         for r in education.contributions(s, a):
-            if r.contributor == "owner" and r.date.year == year and not r.fiveYear:
+            if r.contributor != "owner":
+                continue
+            if r.fiveYear and r.date.year <= year <= r.date.year + 4:
+                money[plan.beneficiaryId] += (r.amount / 5).quantize(Decimal("0.01"))
+            elif not r.fiveYear and r.date.year == year:
                 money[plan.beneficiaryId] += r.amount
     limit = Decimal(str(taxtables.figures(s, year)["giftExclusion"]))
     return Spending(

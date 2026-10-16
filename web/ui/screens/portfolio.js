@@ -243,8 +243,9 @@ function Holdings({ p }) {
                   <td
                     class="num">
                     <${Amt} v=${h.optionsValue} />
-                    <div class="small dim">at risk <${Amt}
-                                v=${h.capitalAtRisk} /></div>
+                    <div class="small dim">at risk ${h.capitalAtRiskUnlimited
+                      ? 'unlimited'
+                      : html`<${Amt} v=${h.capitalAtRisk} />`}</div>
                   </td>
                   <td colspan="3"></td>
                 </tr>

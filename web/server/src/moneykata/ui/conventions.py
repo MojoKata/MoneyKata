@@ -81,6 +81,32 @@ def _ratio_out(d: Decimal) -> str:
     return exactjson.mark(exactjson.text(d.normalize() if d == d.to_integral_value() else d))
 
 
+def _rate_in(places: int):
+    def check(v: Any) -> Decimal:
+        if isinstance(v, float):
+            raise ValueError("rates are exact: send the number as written, never through a float")
+        if type(v) is Decimal:
+            return v
+        return money.parse(v, places=places)
+
+    return check
+
+
+# A loan's yearly rate in percent, as a note states it: three places (6.875), and four for an
+# ARM's reset, which an index and a margin can carry (S1.9.1).
+Rate = Annotated[
+    Decimal,
+    BeforeValidator(_rate_in(3)),
+    PlainSerializer(_ratio_out, return_type=str, when_used="json"),
+    WithJsonSchema({"type": "number", "format": "decimal", "examples": [6.875]}),
+]
+ResetRate = Annotated[
+    Decimal,
+    BeforeValidator(_rate_in(4)),
+    PlainSerializer(_ratio_out, return_type=str, when_used="json"),
+    WithJsonSchema({"type": "number", "format": "decimal", "examples": [7.3125]}),
+]
+
 # A share or rate the server works out for display (a percentage, a factor, years): an exact
 # number like the rest, never a binary float.
 Ratio = Annotated[

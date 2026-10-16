@@ -186,8 +186,8 @@ function Detail({ id, reloadList }) {
             }%`
           ).join(', ')}), log-normal, each class on its own; inflation ${r.assumptions
             .inflation}%; fees ${x.inputs.fees ??
-            0.1}% a year.${r.bitcoinModel !== 'assumption' && r.weights.crypto
-            ? ` Bitcoin follows the ${r.bitcoinModel} model, a model others publish.`
+            0.1}% a year.${r.bitcoinModel !== 'assumption' && num(r.bitcoinShare ?? 0) > 0
+            ? ` Bitcoin follows the ${r.bitcoinModel} model, a model others publish; other coins keep the crypto assumption.`
             : ''} Seeded (${r.seed}), so the same inputs give the same figures.</p>
       </div>
       <div class="grid" style=${{ alignContent: 'start' }}>

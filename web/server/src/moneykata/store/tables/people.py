@@ -14,7 +14,7 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import Day, Dec, UtcTimestamp
+from ..types import Cents, Day, UtcTimestamp
 from ._base import pairs, record, unique_live
 
 # Someone in the household's life: every user is one (User.personId), and so are people who
@@ -73,7 +73,7 @@ GiftPlan = record(
     "GfPln",
     Column("ownerId", Text, ForeignKey("User.id"), nullable=False),
     Column("personId", Text, ForeignKey("Person.id", ondelete="CASCADE"), nullable=False),
-    Column("giftBudget", Dec),  # a year
+    Column("giftBudget", Cents),  # a year
     Column("leadDays", Integer, nullable=False, server_default=text("14")),
     Column("notes", Text),
     CheckConstraint('"leadDays" >= 0', name="lead_days"),
@@ -93,7 +93,7 @@ Occasion = record(
     Column("month", Integer),
     Column("day", Integer),
     Column("year", Integer),  # an anniversary's first year, for its count
-    Column("budget", Dec),
+    Column("budget", Cents),
     CheckConstraint("kind IN ('anniversary', 'holiday', 'custom')", name="kind"),
     CheckConstraint("(kind = 'holiday') = (holiday IS NOT NULL)", name="holiday"),
     CheckConstraint(
@@ -112,7 +112,7 @@ Gift = record(
     Column("occasionYear", Integer),
     Column("description", Text, nullable=False),
     Column("status", Text, nullable=False, server_default=text("'idea'")),
-    Column("cost", Dec),
+    Column("cost", Cents),
     Column("transactionId", Text, ForeignKey("Transaction.id", ondelete="SET NULL")),
     Column("store", Text),  # where it was bought
     Column("link", Text),

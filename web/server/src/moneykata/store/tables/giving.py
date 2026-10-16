@@ -3,7 +3,7 @@ organisations given to, and donations of every type."""
 
 from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Index, Integer, Text, text
 
-from ..types import Day, Dec
+from ..types import Cents, Day, Dec
 from ._base import record
 
 # A year's giving plan, a user's own or shared with a group as budgets are (S7.9.1).
@@ -14,11 +14,11 @@ GivingPlan = record(
     Column("year", Integer, nullable=False),
     Column("targetKind", Text, nullable=False, server_default=text("'percent'")),
     Column("percent", Dec),  # of income
-    Column("amount", Dec),  # a fixed target
+    Column("amount", Cents),  # a fixed target
     # The income the percentage is of: income transactions (take-home), or a typed gross
     # income or AGI estimate.
     Column("incomeBasis", Text, nullable=False, server_default=text("'take-home'")),
-    Column("income", Dec),
+    Column("income", Cents),
     # A donor-advised fund counts toward the target when it is funded, or when it grants.
     Column("dafCounted", Text, nullable=False, server_default=text("'funded'")),
     CheckConstraint("\"targetKind\" IN ('percent', 'amount')", name="target_kind"),
@@ -37,7 +37,7 @@ Organisation = record(
     # Gifts to it are deductible: a 501(c)(3) charity, not a campaign or a person.
     Column("deductible", Boolean, nullable=False, server_default=text("1")),
     Column("causes", Text, nullable=False, server_default=text("'[]'")),  # JSON list of tags
-    Column("pledge", Dec),  # an amount promised each pledgeEvery
+    Column("pledge", Cents),  # an amount promised each pledgeEvery
     Column("pledgeEvery", Text),
     Column("notes", Text),
     CheckConstraint(
@@ -55,7 +55,7 @@ Donation = record(
     Column("date", Day, nullable=False),
     Column("kind", Text, nullable=False),
     # What it is worth: cash given, goods' fair market value, shares' market value.
-    Column("amount", Dec, nullable=False),
+    Column("amount", Cents, nullable=False),
     Column("description", Text),  # goods given
     Column("transactionId", Text, ForeignKey("Transaction.id", ondelete="SET NULL")),
     Column("dafAccountId", Text, ForeignKey("Account.id")),  # the fund, for its kinds
@@ -64,7 +64,7 @@ Donation = record(
     Column("fromAccountId", Text, ForeignKey("Account.id")),
     Column("instrumentId", Text, ForeignKey("Instrument.id")),
     Column("quantity", Dec),
-    Column("basis", Dec),
+    Column("basis", Cents),
     Column("longTerm", Boolean),
     Column("acknowledged", Boolean, nullable=False, server_default=text("0")),
     Column("granted", Boolean),  # a grant's: paid by the fund, else pending

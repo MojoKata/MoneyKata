@@ -16,7 +16,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 TEXT_LAYER_CHARS = 20
-MAX_PAGES = 3
+MAX_PAGES = 3  # a receipt's
+STATEMENT_PAGES = 30  # a scanned statement's, each page read in turn within its time limit
 LONG_SIDE = 2000
 DPI = 300
 THREADS = 2
@@ -160,7 +161,7 @@ def text_layer(data: bytes) -> list[str] | None:
     return [ln.strip() for t in texts for ln in t.splitlines() if ln.strip()]
 
 
-def read(data: bytes, media_type: str) -> Read:
+def read(data: bytes, media_type: str, pages: int = MAX_PAGES) -> Read:
     from PIL import Image
 
     Image.MAX_IMAGE_PIXELS = 40_000_000
@@ -172,12 +173,13 @@ def read(data: bytes, media_type: str) -> Read:
             return Read(lines, "text", "pypdfium2 text layer")
         pdf = pdfium.PdfDocument(data)
         try:
-            pages = [
-                pdf[i].render(scale=DPI / 72).to_pil() for i in range(min(len(pdf), MAX_PAGES))
-            ]
+            # Rendered one at a time, so a long statement holds one page in memory.
+            lines = _ocr(
+                pdf[i].render(scale=DPI / 72).to_pil() for i in range(min(len(pdf), pages))
+            )
         finally:
             pdf.close()
-        return Read(_ocr(pages), "ocr", engine_name())
+        return Read(lines, "ocr", engine_name())
     try:
         import pi_heif
 

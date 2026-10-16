@@ -251,3 +251,45 @@ def test_engine_withdrawals_run_the_money_out():
     )
     r = engine.run(plan)
     assert r.lasted == 0.0 and r.percentiles[50][5] == 0.0 and r.percentiles[50][4] == 20000
+
+
+def test_a_bitcoin_model_drives_the_bitcoin_only():
+    # B14: of the crypto, the model drives the bitcoin's part; other coins keep the crypto
+    # assumption.
+    base = dict(
+        start=100_000.0,
+        weights={"crypto": 1.0},
+        returns={"crypto": 0.0},
+        vols={"crypto": 0.0},
+        inflation=0.0,
+        fees=0.0,
+        first_year=2026,
+        years=2,
+        crypto_path=[2.0, 2.0],
+    )
+    all_btc = engine._expected_return(engine.Plan(**base, bitcoin_share=1.0))
+    half = engine._expected_return(engine.Plan(**base, bitcoin_share=0.5))
+    assert list(all_btc) == [1.0, 1.0] and list(half) == [0.5, 0.5]
+
+
+def test_every_year_a_book_may_cover_has_its_own_figures(admin_client):
+    # B17: a book ten years back takes that year's figures, never 2025's; a past year lists
+    # its tax figures only.
+    t = admin_client.get("/ui/api/settings/tax-tables", params={"year": 2016}).json()
+    assert t["year"] == 2016 and 2016 in t["years"]
+    rows = {r["key"]: r["value"] for r in t["rows"]}
+    assert rows["iraLimit"] == 5500 and rows["giftExclusion"] == 14000
+    assert "collegePublic" not in rows and "btcArk2030" not in rows
+    r = admin_client.put(
+        "/ui/api/settings/tax-tables", json={"year": 2016, "values": {"collegePublic": 1}}
+    )
+    assert r.status_code == 422 and r.json()["errors"][0]["code"] == "figure-not-of-year"
+
+
+def test_the_tracking_floor_is_a_minimum_width():
+    # B22: a narrow band widens to 2% of its median; a wide one is left as it is.
+    from moneykata.projections import widened
+
+    D = Decimal
+    assert widened(D(100), D(100), D(100)) == (D(98), D(100), D(102))
+    assert widened(D(80), D(100), D(120)) == (D(80), D(100), D(120))

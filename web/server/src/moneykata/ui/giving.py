@@ -12,6 +12,7 @@ from sqlalchemy import select
 
 from .. import access, activity, clock, exactjson, giving, ids, receipts
 from ..errors import FieldError, Problem, refuse
+from ..ledger.lots import long_term as held_long
 from ..store.entities.accounts import Category, Instrument, Lot, LotPick, Transaction
 from ..store.entities.giving import Donation, GivingPlan, Organisation
 from ..store.entities.receipts import ReceiptLink
@@ -463,7 +464,7 @@ def _shares_given(s, c: Caller, body: DonationIn, to: str) -> dict:
         if open_lot.basis is not None
         else None
     )
-    long_term = (body.date - lot.acquiredOn).days > 365
+    long_term = held_long(lot.acquiredOn, body.date)  # S3.1's one anniversary rule
     value = body.amount
     if value is None:
         from .. import valuation

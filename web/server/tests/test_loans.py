@@ -38,6 +38,31 @@ def test_the_level_payment_and_its_first_split():
     assert p.overpayment == 0
 
 
+def test_pmi_ends_at_78_percent_of_the_original_value():
+    # B21: not charged to payoff; the schedule drops it once the balance is 78% of the value.
+    t = mortgage_terms(pmi=D(90), originalValue=D(360000))  # 78% is 280,800
+    rows = L.schedule(t, [], [], dt.date(2025, 1, 15))
+    charged = [r for r in rows if r.pmi]
+    assert charged and rows[-1].pmi == 0
+    assert all(r.balance > D(280800) for r in charged)
+    assert next(r for r in rows if not r.pmi).balance <= D(280800)
+    assert L.split_for(t, [], [], dt.date(2025, 2, 1), D("1888.65")).pmi == D(90)
+
+
+def test_a_payment_typed_in_the_loans_account_is_split_by_the_schedule(server, frozen):
+    # B21: not wholly principal; and its interest counts as the loan's interest on Taxes.
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    loan = new_account(c, name="Home", type="mortgage")
+    c.put(
+        f"/ui/api/accounts/{loan['id']}/loan",
+        json={"principal": "300000", "startDate": "2026-01-01", "termMonths": 360, "rate": "6"},
+    )
+    add(c, loan["id"], "1798.65", "2026-02-01", kind="deposit")
+    v = c.get(f"/ui/api/accounts/{loan['id']}/loan").json()
+    assert v["balance"] == "299701.35" and v["interestPaid"] == "1500.00"
+
+
 def test_an_overpayment_pays_it_off_sooner():
     t = mortgage_terms()
     plain, extra = [], []
@@ -165,6 +190,27 @@ def test_terms_are_checked(server, frozen):
         json={"principal": "-1", "startDate": "2026-01-01", "termMonths": 0, "rate": "99"},
     )
     assert {e["field"] for e in r.json()["errors"]} == {"principal", "termMonths", "rate"}
+
+
+def test_a_rate_as_the_note_states_it(server, frozen):
+    # B6: three places for the rate (6.875%), four for an ARM's reset; more are refused.
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    loan = new_account(c, name="Home", type="mortgage")
+    terms = {"principal": "300000", "startDate": "2026-01-01", "termMonths": 360}
+    reset = [{"date": "2031-01-01", "rate": "7.3125"}]
+    r = c.put(
+        f"/ui/api/accounts/{loan['id']}/loan", json=terms | {"rate": "6.875", "resets": reset}
+    )
+    assert r.status_code == 200, r.text
+    v = r.json()
+    assert v["terms"]["rate"] == "6.875" and v["terms"]["resets"][0]["rate"] == "7.3125"
+    assert v["rate"] == "6.875" and v["terms"]["computedPayment"] == "1970.79"
+    r = c.put(
+        f"/ui/api/accounts/{loan['id']}/loan",
+        json=terms | {"rate": "6.8755", "version": v["terms"]["version"]},
+    )
+    assert r.status_code == 422 and "rate" in r.text
 
 
 # ---- The payoff planner (S6.10) ----

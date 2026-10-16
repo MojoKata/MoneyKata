@@ -11,7 +11,9 @@ from .panels import Row, ScheduleD
 COVERS = (
     "Every sale and closed option in the tax book's taxable accounts and each physical asset "
     "sold, with wash sales found across the filers' accounts and a spouse's. Not covered: "
-    "anything in accounts left out of the book."
+    "anything in accounts left out of the book. The TXF file has no field for a digital "
+    "asset's box (G to L) or for the C and L codes, so it leaves those rows out: enter them "
+    "from the CSV."
 )
 # TXF's codes for Form 8949, by box (format V042).
 TXF_CODE = {"A": 321, "B": 711, "C": 712, "D": 323, "E": 713, "F": 714}
@@ -74,9 +76,14 @@ def _txf_date(d: dt.date | None) -> str:
     return d.strftime("%m/%d/%Y") if d else "VARIOUS"
 
 
+def in_txf(r: Row) -> bool:
+    """TXF (V042) carries boxes A to F and the wash-sale adjustment, nothing else."""
+    return r.box in TXF_CODE and r.code in ("", "W")
+
+
 def txf(rows: list[Row], today: dt.date) -> str:
     lines = ["V042", "AMoneyKata", f"D{today:%m/%d/%Y}", "^"]
-    for r in sorted(rows, key=lambda r: (r.box, r.sold)):
+    for r in sorted((r for r in rows if in_txf(r)), key=lambda r: (r.box, r.sold)):
         lines += [
             "TD",
             f"N{TXF_CODE[r.box]}",

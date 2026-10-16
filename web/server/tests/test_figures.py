@@ -120,3 +120,25 @@ def test_key_storage_and_backups_for_admins(admin_client, server):
     maintenance.backup(server.config, server.store)
     b = admin_client.get("/ui/api/settings/backups").json()
     assert len(b["backups"]) == 1 and b["backups"][0]["masterKey"] == ks["fingerprint"]
+
+
+def test_a_portfolio_keeps_a_deleted_account_up_to_its_deletion(server):
+    # B22: the past keeps it (R3.10); from its deletion on it counts nothing, and its leaving
+    # is no loss.
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    ids = []
+    for name, mask in (("Kept", "1111"), ("Closed", "2222")):
+        a = new_account(c, name=name, mask=mask, openingBalance="0.00", openingDate="2026-06-30")
+        add(c, a["id"], "1000.00", "2026-07-01", kind="deposit")
+        ids.append(a)
+    p = c.post(
+        "/ui/api/portfolios", json={"name": "Both", "accountIds": [x["id"] for x in ids]}
+    ).json()
+    gone = c.get(f"/ui/api/accounts/{ids[1]['id']}").json()
+    r = c.delete(f"/ui/api/accounts/{gone['id']}", headers={"If-Match": str(gone["version"])})
+    assert r.status_code == 200, r.text
+    s = c.get(f"/ui/api/portfolios/{p['id']}/series", params={"range": "1Y"}).json()
+    by_day = {x["date"]: x["value"] for x in s["points"]}
+    assert by_day["2026-08-01"] == "2000.00"
+    assert s["end"] == "1000.00" and s["growth"] == "0.00"

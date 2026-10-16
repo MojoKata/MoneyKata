@@ -13,7 +13,7 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import Day, Dec, UtcTimestamp
+from ..types import Cents, Day, Dec, UtcTimestamp
 from ._base import pairs, record, unique_live
 
 TaxBook = record(
@@ -101,7 +101,7 @@ Filing = record(
     Column("filedOn", Day),
     Column("confirmation", Text),
     Column("resultKind", Text),  # refund, owed, none
-    Column("resultAmount", Dec),
+    Column("resultAmount", Cents),
     Column("resultTransactionId", Text, ForeignKey("Transaction.id", ondelete="SET NULL")),
     # Figures next year needs, typed from the return as filed (S8.17), as JSON.
     Column("carried", Text, nullable=False, server_default=text("'{}'")),

@@ -48,6 +48,40 @@ def test_ofx_brokerage_trades_positions_and_securities():
     assert p.balances == [(dt.date(2026, 9, 30), D("2317.40"))]
 
 
+def test_ofx_option_trades_and_their_ends():
+    # B5: OPTBUYTYPE and OPTSELLTYPE give the four option trades, CLOSUREOPT the option's end;
+    # a contract is named by its OCC ticker, or by the terms OPTINFO gives.
+    p = ofx.read((FIX / "options.ofx").read_bytes())
+    assert p.securities["AAPL260918P150"].symbol == "AAPL260918P00150000"
+    assert p.securities["MSFT261218C480"].symbol == "MSFT261218C00480000"
+    assert p.securities["MSFT261218C480"].multiplier == 100
+    got = [(r.kind, r.quantity, r.amount) for r in p.rows if r.security]
+    assert got == [
+        ("sell-to-open", D(2), D("598.70")),
+        ("buy-to-open", D(1), D("-520.65")),
+        ("sell-to-close", D(1), D("699.35")),
+        ("buy", D(200), D("-30000.10")),
+        ("assign", D(2), D(0)),
+    ]
+    assert p.rows[-1].relFitId == "A1"
+
+
+def test_csv_option_rows_are_contracts():
+    data = (
+        b"Date,Action,Symbol,Quantity,Price,Fees & Comm,Amount\n"
+        b"08/03/2026,Sell to Open,AAPL 09/18/2026 150.00 P,2,3.00,1.30,598.70\n"
+        b"09/18/2026,Assigned,AAPL 09/18/2026 150.00 P,2,,,\n"
+        b"09/18/2026,Buy,AAPL,200,150.00,,-30000.00\n"
+    )
+    p = csvfile.read(data, csvfile.propose(data)["mapping"])
+    assert [r.kind for r in p.rows] == ["sell-to-open", "assign", "buy"]
+    assert p.rows[0].security == "AAPL260918P00150000"
+    assert p.securities["AAPL260918P00150000"].instrumentClass == "option"
+    plain = data.replace(b"Sell to Open", b"Sell")
+    with pytest.raises(ReadError, match="is an option"):
+        csvfile.read(plain, csvfile.propose(plain)["mapping"])
+
+
 def test_not_ofx_is_refused():
     with pytest.raises(ReadError):
         ofx.read(b"OFXHEADER:100\n<OFX><nonsense")
@@ -61,6 +95,28 @@ Posted Date,Description,Debit,Credit,Balance
 09/03/2026,KROGER #123,142.18,,"3,977.82"
 09/05/2026,CAFE,(4.50),,"3,973.32"
 """
+
+
+def test_a_newest_first_csv_is_read_oldest_first():
+    # B18: each day's last running balance is its latest row's, not its first in the file.
+    from moneykata.ledger import balances
+
+    data = (
+        b"Date,Description,Amount,Balance\n"
+        b"2026-09-02,Lunch,-12.00,968.00\n"
+        b"2026-09-02,Coffee,-5.00,980.00\n"
+        b"2026-09-01,Groceries,-15.00,985.00\n"
+    )
+    p = csvfile.read(data, csvfile.propose(data)["mapping"])
+    assert [r.payee for r in p.rows] == ["Groceries", "Coffee", "Lunch"]
+
+    class T:
+        def __init__(self, i, r):
+            self.date, self.runningBalance, self.amount = r.date, r.runningBalance, r.amount
+            self.createdAt, self.id = i, str(i)
+
+    pts = balances.points([], [T(i, r) for i, r in enumerate(p.rows)])
+    assert [(d.day, b) for d, b, _, _ in pts] == [(1, D("985.00")), (2, D("968.00"))]
 
 
 def test_csv_proposal_finds_the_header_and_columns():

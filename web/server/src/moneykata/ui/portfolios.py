@@ -100,6 +100,26 @@ def seen_accounts(s, user_id: str, p: Portfolio | None) -> list[Account]:
     return sorted(out, key=lambda a: a.name)
 
 
+def with_deleted(s, user_id: str, p: Portfolio | None, accounts: list[Account]) -> list[Account]:
+    """For a portfolio's past figures: also the viewer's own accounts in it that were deleted,
+    which count up to their deletion (R3.10)."""
+    if p is None:
+        ids = list(
+            s.scalars(
+                select(Account.id).where(Account.ownerId == user_id, Account.deletedAt.is_not(None))
+            )
+        )
+    else:
+        ids = member_ids(s, p.id)
+    have = {a.id for a in accounts}
+    gone = [
+        a
+        for a in (s.get(Account, i) for i in ids if i not in have)
+        if a is not None and a.deleted and a.ownerId == user_id
+    ]
+    return accounts + gone
+
+
 def value_of(s, accounts: list[Account], day: dt.date | None = None) -> Decimal:
     total = Decimal(0)
     for a in accounts:
@@ -345,6 +365,7 @@ class PortfolioHoldings(Model):
     total: Money
     optionsValue: Money | None  # its options' market value
     capitalAtRisk: Money | None  # beside it (S3.5.6)
+    capitalAtRiskUnlimited: bool = False  # an open strategy's risk is unlimited
 
 
 def _target(s, c: Caller, portfolio_id: str) -> tuple[Portfolio | None, list[Account], str]:
@@ -366,7 +387,8 @@ def portfolio_series(
     period's time- and money-weighted returns (S5.2.1, S5.2.3)."""
     today = figures.today()
     with server(request).db.read() as s:
-        _, accounts, bench = _target(s, c, portfolio_id)
+        p, accounts, bench = _target(s, c, portfolio_id)
+        accounts = with_deleted(s, c.id, p, accounts)
         first = figures.first_day(range, today, figures.earliest(s, accounts))
         comb = figures.combine(s, accounts, first, today, figures.step_for(first, today))
         values = comb.values
@@ -439,14 +461,17 @@ def portfolio_holdings(portfolio_id: str, request: Request, c: Caller = Depends(
         _, accounts, _ = _target(s, c, portfolio_id)
         by: dict[str, dict] = {}
         cash = Decimal(0)
-        opts = risk = Decimal(0)
+        opts = Decimal(0)
+        risk: Decimal | None = Decimal(0)
+        any_open = False
         for a in accounts:
             led = repo.load(s, a)
             cash += led.balance()
             if not atypes.investing(a.type):
                 continue
-            v, r = strat.risk_of_account(s, led)
-            opts, risk = opts + v, risk + r
+            v, r, held = strat.risk_of_account(s, led)
+            opts, any_open = opts + v, any_open or held
+            risk = None if risk is None or r is None else risk + r
             for pos in valuation.positions(s, led):
                 h = by.setdefault(
                     pos.instrumentId,
@@ -502,6 +527,7 @@ def portfolio_holdings(portfolio_id: str, request: Request, c: Caller = Depends(
             holdings=out,
             cash=cash,
             total=total,
-            optionsValue=opts if opts or risk else None,
-            capitalAtRisk=risk if opts or risk else None,
+            optionsValue=opts if any_open else None,
+            capitalAtRisk=risk if any_open else None,
+            capitalAtRiskUnlimited=any_open and risk is None,
         )

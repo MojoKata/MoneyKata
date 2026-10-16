@@ -266,8 +266,13 @@ def parse(
                     amount, confidence = delta, 97
             last_balance = balance
         if confidence < 97:
-            if _explicit(amounts[0] if len(values) == 1 else amounts[-2]):
+            text = amounts[0] if len(values) == 1 else amounts[-2]
+            if _explicit(text):
                 confidence = 92
+                # CR and DR say the account's side already (a card's payment is a credit);
+                # a minus or brackets are the statement's own, turned once below.
+                if text.strip().upper().endswith(("CR", "DR")):
+                    owed_side = False
             elif section_sign:
                 amount, confidence, owed_side = abs(amount) * section_sign, 88, False
             else:

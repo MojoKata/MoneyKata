@@ -240,8 +240,27 @@ class Book:
             d = self.first.get(lot.instrumentId)
             self.first[lot.instrumentId] = min(d, lot.acquiredOn) if d else lot.acquiredOn
         self.disposals = rp.disposals
+        # The last day anything happened to each instrument: a position at zero closed then,
+        # by a sale, an expiry, an assignment or an exercise alike (S3.5.2).
+        self.last: dict[str, dt.date] = {}
+        for t in ledger.transactions:
+            if t.instrumentId and (
+                t.instrumentId not in self.last or t.date > self.last[t.instrumentId]
+            ):
+                self.last[t.instrumentId] = t.date
         self.marks = {p.instrumentId: p for p in valuation.positions(s, ledger)}
         self._prices: dict[tuple[str, dt.date], Decimal | None] = {}
+        self._held: dict[dt.date, dict] = {}
+
+    def held_on(self, day: dt.date) -> dict[str, tuple[Decimal, Decimal]]:
+        """Each instrument's quantity and basis at the end of a day."""
+        if day not in self._held:
+            from ..ledger import holdingcheck
+
+            self._held[day] = {
+                k: (q, b or ZERO) for k, (q, b) in holdingcheck.held_on(self.ledger, day).items()
+            }
+        return self._held[day]
 
     def price(self, instrument_id: str, day: dt.date) -> Decimal | None:
         key = (instrument_id, day)
@@ -251,17 +270,20 @@ class Book:
         return self._prices[key]
 
 
-def leg(book: Book, row: StrategyLeg, opened: dt.date, today: dt.date) -> Leg | None:
+def leg(
+    book: Book, row: StrategyLeg, opened: dt.date, today: dt.date, held: dict | None = None
+) -> Leg | None:
+    """A leg now, or, given `held` (the positions at the end of a day), as it was then."""
     s = book.s
     inst = s.get(Instrument, row.instrumentId)
     if inst is None:
         return None
-    qty, basis = book.open.get(row.instrumentId, (ZERO, ZERO))
+    qty, basis = (held if held is not None else book.open).get(row.instrumentId, (ZERO, ZERO))
     closes = [
         d for d in book.disposals if d.instrumentId == row.instrumentId and d.soldOn >= opened
     ]
     realized = sum((d.gain or ZERO for d in closes), ZERO)
-    closed_on = max((d.soldOn for d in closes), default=None) if qty == 0 else None
+    closed_on = max(book.last.get(row.instrumentId, opened), opened) if qty == 0 else None
     oc = contract_of(s, row.instrumentId) if inst.instrumentClass == "option" else None
     if oc is None:
         # Shares: the leg's part of the position, valued at the opening day's price.
@@ -338,6 +360,17 @@ def view(book: Book, st: Strategy, today: dt.date | None = None) -> View:
         if all(v is not None for v in known)
         else None
     )
+    # At open: the legs it opened with, as they were at the end of that day (S3.5.5).
+    held = book.held_on(st.openedOn)
+    at_open = [
+        x
+        for x in (
+            leg(book, r, st.openedOn, st.openedOn, held)
+            for r in legs_of(s, st)
+            if r.addedOn <= st.openedOn
+        )
+        if x is not None
+    ]
     kind = shape(legs, st.cashSecured)
     under = s.get(Instrument, st.underlyingId)
     closed = (
@@ -356,7 +389,7 @@ def view(book: Book, st: Strategy, today: dt.date | None = None) -> View:
         sum((x.realized for x in legs), ZERO),
         figures(legs),
         None if closed else capital_at_risk(at_prices(book, legs, today), st.marginRequirement),
-        capital_at_risk(at_prices(book, legs, st.openedOn), st.marginRequirement),
+        capital_at_risk(at_prices(book, at_open, st.openedOn), st.marginRequirement),
         closed,
     )
 
@@ -498,26 +531,32 @@ def proposals(s: Session, account, book: Book) -> list[Proposal]:
     return out
 
 
-def risk_of_account(s: Session, ledger, book: Book | None = None) -> tuple[Decimal, Decimal]:
+def risk_of_account(
+    s: Session, ledger, book: Book | None = None
+) -> tuple[Decimal, Decimal | None, bool]:
     """An investing account's options' market value, and their capital at risk now: each
-    strategy's, and each option outside one as a single leg (S3.9.2)."""
+    strategy's, and each option outside one as a single leg (S3.9.2); then whether anything
+    is open at all. The risk is None, *unlimited*, when an open strategy's is."""
     book = book or Book(s, ledger)
     value = ZERO
-    risk = ZERO
+    risk: Decimal | None = ZERO
+    any_open = False
     in_strategies: set[str] = set()
     for st in of_account(s, ledger.account.id):
         v = view(book, st)
         in_strategies |= {x.instrumentId for x in v.legs}
-        if v.riskNow is not None and v.closedOn is None:
-            risk += v.riskNow
+        if v.closedOn is None and any(x.open and x.option for x in v.legs):
+            any_open = True
+            risk = None if risk is None or v.riskNow is None else risk + v.riskNow
     for iid, (qty, basis) in book.open.items():
         oc = contract_of(s, iid)
         if oc is None or not qty:
             continue
+        any_open = True
         mark = book.marks.get(iid)
         if mark is not None and mark.value is not None:
             value += mark.value
-        if iid in in_strategies:
+        if iid in in_strategies or risk is None:
             continue
         risk += basis if qty > 0 else (oc.strike * oc.multiplier * -qty).quantize(CENT)
-    return value, risk
+    return value, risk, any_open

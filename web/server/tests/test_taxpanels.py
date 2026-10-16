@@ -172,3 +172,34 @@ def test_a_replacement_covers_only_its_own_shares(alice):
     p = panels(alice, book(alice))
     total = sum(float(w["disallowed"]) for w in p["washes"])
     assert total == 400.0, "8 of the 15 shares' 750 loss: 50 a share"
+
+
+def test_shares_from_an_assigned_put_are_flagged_never_a_replacement(alice):
+    # B8: the loss isn't washed by shares an assignment bought; the preparer is asked to look.
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    add(alice, brk["id"], "100000.00", "2026-01-02", kind="deposit")
+    trade(alice, brk["id"], "2026-08-03", "buy", "100", "500", "MSFT")
+    trade(alice, brk["id"], "2026-09-01", "sell", "100", "450", "MSFT")  # a 5,000 loss
+    put = {
+        "action": "sell-to-open",
+        "underlying": "MSFT",
+        "right": "put",
+        "strike": "455",
+        "expiry": "2026-09-18",
+        "contracts": "1",
+        "premium": "4.00",
+        "fees": "0",
+    }
+    r = alice.post(f"/ui/api/accounts/{brk['id']}/options", json={**put, "date": "2026-08-20"})
+    assert r.status_code == 201, r.text
+    held = alice.get("/ui/api/positions", params={"kind": "options"}).json()["open"][0]
+    r = alice.post(
+        f"/ui/api/accounts/{brk['id']}/options/{held['instrumentId']}/settle",
+        json={"how": "assign", "date": "2026-09-18"},
+    )
+    assert r.status_code == 201, r.text
+    p = panels(alice, book(alice))
+    [w] = p["washes"]
+    assert w["review"] and w["disallowed"] == "0.00", w
+    [loss] = [r for r in p["rows"] if r["description"] == "100 MSFT"]
+    assert loss["code"] == "" and loss["gain"] == "-5000.00"

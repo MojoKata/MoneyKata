@@ -8,9 +8,10 @@ from decimal import Decimal
 from sqlalchemy import false, func, or_, select
 from sqlalchemy.orm import Session
 
-from ... import activity, ids
+from ... import activity, ids, money
 from ...importers.parsed import ParsedFile
 from ...ledger import balances, lots, transfers
+from ...ledger import types as atypes
 from ...ledger.categories import DEFAULTS
 from ..db import live
 from ..entities.accounts import (
@@ -18,6 +19,7 @@ from ..entities.accounts import (
     Anchor,
     Category,
     Holding,
+    HoldingCheck,
     Import,
     Instrument,
     Lot,
@@ -231,7 +233,7 @@ def _option(s: Session, account: Account, sec, result) -> Instrument | None:
     """An option the file names by its OCC ticker, made a contract (S3.2). A root ending in a
     digit is an adjusted contract (S3.10.3): linked to the adjusted contract already here, or,
     when the account still holds the contract it adjusts, named in a warning to adjust it."""
-    from ..options import adjust, contract, contract_of, symbol
+    from ...options import adjust, contract, contract_of, symbol
 
     for text in (sec.symbol, sec.name, sec.key):
         occ = adjust.parse_occ(text or "")
@@ -241,7 +243,7 @@ def _option(s: Session, account: Account, sec, result) -> Instrument | None:
         return None
     root, expiry, right, strike = occ
     if not adjust.ADJUSTED_ROOT.match(root):
-        inst, _ = contract(s, root, right, strike, expiry)
+        inst, _ = contract(s, root, right, strike, expiry, sec.multiplier or 100)
         return inst
     name = symbol(root, expiry, right, strike)
     here = s.scalars(
@@ -285,32 +287,51 @@ def apply_import(
     s.flush()
     result = Applied(imp.id, coveredFrom=parsed.coveredFrom, coveredTo=parsed.coveredTo)
     instruments: dict[str, Instrument] = {}
+    crypto = atypes.GROUPS.get(account.type) == "crypto"
     for key, sec in parsed.securities.items():
         found = _option(s, account, sec, result) if sec.instrumentClass == "option" else None
-        instruments[key] = found or instrument(
-            s, sec.symbol, sec.name, sec.instrumentClass, sec.cusip
-        )
+        # What an exchange's or a wallet's file trades is crypto, whatever the file calls it.
+        cls = "crypto" if crypto and sec.instrumentClass == "other" else sec.instrumentClass
+        instruments[key] = found or instrument(s, sec.symbol, sec.name, cls, sec.cusip)
 
     existing = s.scalars(
         select(Transaction).where(
             Transaction.accountId == account.id, Transaction.deleted == false()
         )
     ).all()
+    # What is here already, by the file's id, and by date, amount and payee for the rows
+    # without one. A FITID a file repeats is another row, kept as its second (`id#2`), and
+    # both are duplicate suspects (S1.11.5).
     by_fit = {x.fitId: x for x in existing if x.fitId}
+    before = set(by_fit)
+    seen: dict[str, int] = {}
     loose: dict[tuple, list[Transaction]] = {}
     for x in existing:
         if not x.fitId:
             loose.setdefault(_loose_key(x.date, x.amount, x.payeeRaw), []).append(x)
 
+    # An option's end in the file is settled after the trades that opened it, and the stock
+    # trade the broker reports with an assignment or exercise is the one settling makes.
+    legs = _stock_legs(s, parsed.rows, instruments)
+    held_back = {id(r) for r in legs.values()}
+    ends: list = []
     added: list[Transaction] = []
     for row in parsed.rows:
         inst = instruments.get(row.security) if row.security else None
+        if row.fitId:
+            seen[row.fitId] = seen.get(row.fitId, 0) + 1
+            if seen[row.fitId] > 1:
+                row.fitId = f"{row.fitId}#{seen[row.fitId]}"
         found = by_fit.get(row.fitId) if row.fitId else None
-        if found is None and not row.fitId:
+        if found is None:
+            # A row typed by hand or brought by a file without ids is the same row.
             bucket = loose.get(_loose_key(row.date, row.amount, row.payee))
             found = bucket.pop(0) if bucket else None
+            if found is not None and row.fitId:
+                found.fitId = row.fitId
         if found is not None:
-            if found.amount != row.amount:
+            # Compared in cents, as stored: a file's sub-cent digits change nothing.
+            if money.to_cents(found.amount) != money.to_cents(row.amount):
                 found.amountWas, found.amount = found.amount, row.amount
                 result.changed += 1
             else:
@@ -318,53 +339,29 @@ def apply_import(
             if row.runningBalance is not None:
                 found.runningBalance = row.runningBalance
             continue
-        txn = Transaction(
-            id=ids.new_id("Txn"),
-            accountId=account.id,
-            date=row.date,
-            kind=row.kind,
-            amount=row.amount,
-            payee=_payee(row.payee),
-            payeeRaw=row.payee,
-            memo=row.memo,
-            instrumentId=inst.id if inst else None,
-            quantity=row.quantity,
-            price=row.price,
-            fees=row.fees,
-            dividendType=row.dividendType,
-            splitRatio=row.splitRatio,
-            importId=imp.id,
-            fitId=row.fitId,
-            runningBalance=row.runningBalance,
-            createdById=user_id,
-            contributionYear=row.date.year
-            if row.kind == "deposit" and _retirement(account)
-            else None,
-        )
-        s.add(txn)
-        s.flush()
-        if inst and row.kind in ("buy", "reinvest", "transfer-in") and row.quantity:
-            s.add(
-                Lot(
-                    id=ids.new_id("Lot"),
-                    accountId=account.id,
-                    instrumentId=inst.id,
-                    transactionId=txn.id,
-                    acquiredOn=row.date,
-                    quantity=row.quantity,
-                    costBasis=-row.amount if row.kind != "transfer-in" else None,
-                    basisMissing=row.kind == "transfer-in",
-                )
+        if row.kind in OPTION_ENDS:
+            ends.append(row)
+            continue
+        if id(row) in held_back:
+            continue
+        added.append(_add_row(s, account, user_id, imp, row, inst))
+    s.flush()
+    for row in ends:
+        leg = legs.get(id(row))
+        if leg is not None and leg.fitId in before:
+            # Its stock trade came in with an earlier file, so settling would make it twice.
+            result.warnings.append(
+                f"{instruments[row.security].symbol} on {row.date:%b %-d, %Y}: its stock trade "
+                "was imported before. Delete that trade, then settle the option on Positions."
             )
-        if row.fitId:
-            by_fit[row.fitId] = txn
-        added.append(txn)
+            continue
+        added += _settle(s, account, user_id, imp, row, instruments, leg, result)
     result.added = len(added)
     s.flush()
     # A whole-number split imported takes the account's open options with it (S3.10.1).
     splits = [t for t in added if t.kind == "split" and t.instrumentId and t.splitRatio]
     if splits:
-        from ..options import adjust
+        from ...options import adjust
 
         for t in splits:
             adjust.with_split(s, user_id, account, t)
@@ -394,11 +391,45 @@ def apply_import(
                     importId=imp.id,
                 )
             )
+    # The file's positions: the holdings of an account kept by snapshots, and otherwise a
+    # holdings check on Reconcile, the lots changing only through transactions (S1.3.3.8.2).
+    s.flush()
+    checked = parsed.positions and not lots.kept_by_snapshots(
+        s.scalars(
+            select(Transaction).where(
+                Transaction.accountId == account.id, Transaction.deleted == false()
+            )
+        ).all(),
+        s.scalars(select(Lot).where(Lot.accountId == account.id, Lot.deleted == false())).all(),
+    )
     for pos in parsed.positions:
         inst = instruments.get(pos.security)
         if inst is None:
             result.warnings.append("a position names a security the file doesn't describe")
             continue
+        if (
+            checked
+            and not s.scalars(
+                select(HoldingCheck).where(
+                    HoldingCheck.accountId == account.id,
+                    HoldingCheck.instrumentId == inst.id,
+                    HoldingCheck.asOf == pos.asOf,
+                    HoldingCheck.deleted == false(),
+                )
+            ).first()
+        ):
+            s.add(
+                HoldingCheck(
+                    id=ids.new_id("HdChk"),
+                    accountId=account.id,
+                    asOf=pos.asOf,
+                    label=(inst.symbol or inst.name or "")[:200],
+                    importId=imp.id,
+                    instrumentId=inst.id,
+                    quantity=pos.quantity,
+                    marketValue=pos.marketValue,
+                )
+            )
         if not s.scalars(
             select(Holding).where(
                 Holding.accountId == account.id,
@@ -444,6 +475,133 @@ def apply_import(
     return result
 
 
+OPTION_ENDS = ("expire", "assign", "exercise")
+
+
+def _add_row(s: Session, account: Account, user_id: str, imp: Import, row, inst) -> Transaction:
+    txn = Transaction(
+        id=ids.new_id("Txn"),
+        accountId=account.id,
+        date=row.date,
+        kind=row.kind,
+        amount=row.amount,
+        payee=_payee(row.payee),
+        payeeRaw=row.payee,
+        memo=row.memo,
+        instrumentId=inst.id if inst else None,
+        quantity=row.quantity,
+        price=row.price,
+        fees=row.fees,
+        dividendType=row.dividendType,
+        splitRatio=row.splitRatio,
+        importId=imp.id,
+        fitId=row.fitId,
+        runningBalance=row.runningBalance,
+        createdById=user_id,
+        lotMethod=account.lotMethod if row.kind in lots.DISPOSALS else None,
+        contributionYear=row.date.year if row.kind == "deposit" and _retirement(account) else None,
+    )
+    s.add(txn)
+    s.flush()
+    if inst and row.kind in ("buy", "reinvest", "transfer-in") and row.quantity:
+        s.add(
+            Lot(
+                id=ids.new_id("Lot"),
+                accountId=account.id,
+                instrumentId=inst.id,
+                transactionId=txn.id,
+                acquiredOn=row.date,
+                quantity=row.quantity,
+                costBasis=-row.amount if row.kind != "transfer-in" else None,
+                basisMissing=row.kind == "transfer-in",
+            )
+        )
+    return txn
+
+
+def _stock_legs(s: Session, rows: list, instruments: dict) -> dict[int, object]:
+    """For each assignment or exercise in a file, the stock trade the broker reports with it:
+    the one its RELFITID names, or else a buy or sell of the underlying that day, of the
+    contracts' shares, on the side the option's end makes."""
+    from ...options import contract_of
+
+    trades = [r for r in rows if r.kind in ("buy", "sell") and r.security]
+    by_fit = {r.fitId: r for r in trades if r.fitId}
+    out: dict[int, object] = {}
+    taken: set[int] = set()
+    for row in rows:
+        if row.kind not in ("assign", "exercise"):
+            continue
+        leg = by_fit.get(row.relFitId) if row.relFitId else None
+        inst = instruments.get(row.security) if row.security else None
+        c = contract_of(s, inst.id) if inst is not None else None
+        if leg is None and c is not None and row.quantity:
+            buys = (row.kind == "exercise") == (c.right == "call")
+            leg = next(
+                (
+                    r
+                    for r in trades
+                    if id(r) not in taken
+                    and r.date == row.date
+                    and r.kind == ("buy" if buys else "sell")
+                    and instruments[r.security].id == c.underlyingId
+                    and r.quantity == row.quantity * c.multiplier
+                ),
+                None,
+            )
+        if leg is not None and id(leg) not in taken:
+            out[id(row)] = leg
+            taken.add(id(leg))
+    return out
+
+
+def _settle(s, account, user_id, imp, row, instruments, leg, result) -> list[Transaction]:
+    """An option's end from a file, settled as Positions settles one (S3.4): the premium goes
+    into the stock's basis or proceeds, and the broker's own stock trade, when the file has
+    it, gives its cash and its id. One that can't be settled is named in a warning."""
+    from ...errors import Problem
+    from ...options import settle
+
+    inst = instruments.get(row.security) if row.security else None
+    word = {"expire": "expired", "assign": "assigned", "exercise": "exercised"}[row.kind]
+    try:
+        if inst is None:
+            raise Problem(422, "not-an-option", "The file doesn't describe the option.")
+        made = settle(
+            s,
+            user_id,
+            account,
+            inst,
+            "expired" if row.kind == "expire" else row.kind,
+            row.date,
+            row.quantity,
+        )
+    except Problem as e:
+        name = inst.symbol if inst is not None else "An option"
+        result.warnings.append(
+            f"{name} {word} on {row.date:%b %-d, %Y} wasn't recorded: {e.detail} Settle it on "
+            "Positions."
+        )
+        if leg is None:
+            return []
+        return [_add_row(s, account, user_id, imp, leg, instruments.get(leg.security))]
+    end = made[0]
+    end.fitId, end.importId, end.memo = row.fitId, imp.id, row.memo
+    stock = next((t for t in made[1:] if t.kind in ("buy", "sell")), None)
+    if leg is not None and stock is not None:
+        # The broker's cash, fees included, in place of the strike's: a buy's fees go into
+        # the lot's basis; a sale's come off its proceeds through its amount.
+        diff = leg.amount - stock.amount
+        stock.amount, stock.fees, stock.fitId = leg.amount, leg.fees, leg.fitId
+        stock.importId = imp.id
+        if stock.kind == "buy" and diff:
+            lot = s.scalars(select(Lot).where(Lot.transactionId == stock.id)).first()
+            if lot is not None and lot.costBasis is not None:
+                lot.costBasis -= diff
+    s.flush()
+    return made
+
+
 def txns_made(s: Session, import_id: str) -> list[Transaction]:
     return list(
         s.scalars(
@@ -455,7 +613,7 @@ def txns_made(s: Session, import_id: str) -> list[Transaction]:
 
 
 def _loose_key(day: dt.date, amount: Decimal, payee: str | None) -> tuple:
-    return (day, amount, (payee or "").strip().lower())
+    return (day, money.to_cents(amount), (payee or "").strip().lower())
 
 
 def _payee(raw: str | None) -> str | None:

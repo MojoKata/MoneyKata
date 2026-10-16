@@ -138,8 +138,9 @@ def value_on(item: Item, d: Detail, day: dt.date, spot: Decimal | None) -> Decim
         return v.value
     if item.valuation == "depreciation" and item.depreciationRate:
         years = Decimal((day - item.acquiredOn).days) / Decimal("365.25")
-        factor = float(1 - item.depreciationRate / 100) ** float(years)
-        return (item.costBasis * Decimal(str(factor))).quantize(CENT)
+        # A decimal power, to 34 digits: no amount passes through a float (S14.3).
+        factor = max(1 - item.depreciationRate / 100, Decimal(0)) ** years
+        return (item.costBasis * factor).quantize(CENT)
     return basis(item, d, day)
 
 

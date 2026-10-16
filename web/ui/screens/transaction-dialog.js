@@ -161,7 +161,9 @@ export function TransactionDialog({ close, txn, start, accounts, accountId }) {
             ? html`
               <button type="button" class="btn danger" disabled=${remove.busy}
                 onClick=${() => (armed ? remove.run().catch(() => {}) : setArmed(true))}>${armed
-                  ? 'Click again to delete'
+                  ? (['assign', 'exercise'].includes(txn.kind)
+                    ? 'Click again to delete it and its stock trade'
+                    : 'Click again to delete')
                   : 'Delete'}</button>
             `
             : null}

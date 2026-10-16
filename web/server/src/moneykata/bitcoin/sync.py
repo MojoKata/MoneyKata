@@ -197,24 +197,29 @@ def record(s, account_id: str, txs: list[sources.Tx]) -> int:
         if t.confirmations is not None and t.confirmations < CONFIRMATIONS:
             continue  # waits until it is deep enough
         sent = t.net < 0
-        # Sent: what left for others; the fee is a sale of its own (S8.19).
-        sats = abs(t.net) - (t.fee if sent else 0)
+        # Sent: what left for others; the fee is a sale of its own (S8.19). In a transaction
+        # others put inputs into too (a coinjoin), the wallet's share of the fee is at most
+        # what it put in net, never the whole transaction's (S1.6.2.6).
+        fee = min(t.fee, -t.net) if sent else 0
+        sats = abs(t.net) - fee
+        share = " (this wallet's share)" if fee < t.fee else ""
         row = Transaction(
             id=ids.new_id("Txn"),
             accountId=a.id,
             date=t.confirmedAt.astimezone(zone).date(),
             kind="transfer-out" if sent else "transfer-in",
             amount=Decimal(0),
-            payee="Sent bitcoin" if sent else "Received bitcoin",
-            memo=f"txid {t.txid}" + (f" · network fee {t.fee:,} sats" if sent and t.fee else ""),
+            payee=("Sent bitcoin" if sats else "Network fee") if sent else "Received bitcoin",
+            memo=f"txid {t.txid}" + (f" · network fee {fee:,} sats{share}" if fee else ""),
             instrumentId=btc.id,
             quantity=Decimal(sats) / SAT,
+            lotMethod=a.lotMethod if sent else None,
             fitId=f"btc:{t.txid}",
         )
         s.add(row)
         s.flush()
-        if sent and t.fee:
-            _fee(s, a, btc, row, t.fee, t.txid)
+        if fee:
+            _fee(s, a, btc, row, fee, t.txid)
         made += 1
     s.flush()
     revalue_fees(s, account_id)

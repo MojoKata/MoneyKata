@@ -7,11 +7,12 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import Field
-from sqlalchemy import false, func, or_, select, type_coerce
+from sqlalchemy import and_, false, func, or_, select, type_coerce
 from sqlalchemy.orm import Session
 
 from .. import access, activity, clock, ids, washes
 from ..errors import FieldError, Problem, refuse
+from ..ledger import lots
 from ..ledger import types as atypes
 from ..store.entities.accounts import (
     Account,
@@ -522,7 +523,7 @@ def _set_tags(s: Session, t: Transaction, user_id: str, tags: list[str]) -> None
             row.mark_deleted(user_id, now)
 
 
-def _instrument(s: Session, body: TxnIn) -> str | None:
+def _instrument(s: Session, body: TxnIn, account: Account) -> str | None:
     if body.instrumentId:
         inst = s.get(Instrument, body.instrumentId)
         if inst is None or inst.deleted:
@@ -532,7 +533,9 @@ def _instrument(s: Session, body: TxnIn) -> str | None:
         symbol = body.symbol.strip().upper()
         if not symbol or len(symbol) > 32:
             raise refuse("symbol", "symbol-invalid", "Enter a symbol such as VTI.")
-        return repo.instrument(s, symbol, None, "equity").id
+        # A coin typed in a crypto account is crypto, with the 8949 boxes of its own (S8.1).
+        crypto = atypes.GROUPS.get(account.type) == "crypto"
+        return repo.instrument(s, symbol, None, "crypto" if crypto else "equity").id
     return None
 
 
@@ -548,7 +551,7 @@ def create_transaction(body: TxnIn, request: Request, c: Caller = Depends(caller
         a, level = access.account(s, c.id, body.accountId, "write")
         investing = atypes.investing(a.type)
         _raise(_check(s, body, body.kind, investing))
-        inst_id = _instrument(s, body)
+        inst_id = _instrument(s, body, a)
         if body.kind in ("buy", "sell", "reinvest", "transfer-in", "transfer-out") and (
             not inst_id or not body.quantity
         ):
@@ -573,7 +576,7 @@ def create_transaction(body: TxnIn, request: Request, c: Caller = Depends(caller
             fees=body.fees,
             dividendType=body.dividendType,
             splitRatio=body.splitRatio,
-            lotMethod=a.lotMethod if body.kind == "sell" else None,
+            lotMethod=a.lotMethod if body.kind in lots.DISPOSALS else None,
             contributionYear=body.contributionYear
             if body.contributionYear
             else (body.date.year if body.kind == "deposit" and atypes.retirement(a.type) else None),
@@ -687,6 +690,9 @@ def change_transaction(
                 if getattr(t, f) != value:
                     setattr(t, f, value)
                     changed.append(f)
+        if "kind" in changed:
+            # Made a sale: the account's method now is the one in force for it (S2.3).
+            t.lotMethod = (t.lotMethod or a.lotMethod) if t.kind in lots.DISPOSALS else None
         if "amount" in changed or "date" in changed:
             repo.unlink_transfer(s, t)
             t.amountWas = None
@@ -734,6 +740,23 @@ def delete_transaction(
             from ..options import adjust
 
             adjust.undo(s, c.id, t)
+        end = s.get(Transaction, t.optionTransactionId) if t.optionTransactionId else None
+        if end is not None and end.kind in ("assign", "exercise") and not end.deleted:
+            raise refuse(
+                None,
+                "made-by-an-assignment",
+                f"This trade came with the {'assignment' if end.kind == 'assign' else 'exercise'}"
+                f" of {end.payee or 'an option'}: delete that, and this goes with it.",
+            )
+        if t.kind in ("assign", "exercise"):
+            # Its stock trades and the deliverable's cash go with it (S3.4); the dialog asks.
+            for leg in s.scalars(
+                select(Transaction).where(
+                    Transaction.optionTransactionId == t.id, Transaction.deleted == false()
+                )
+            ):
+                repo.unlink_transfer(s, leg)
+                leg.mark_deleted(c.id)
         repo.unlink_transfer(s, t)
         t.mark_deleted(c.id)
         if t.instrumentId:
@@ -812,18 +835,20 @@ def link_transfer(txn_id: str, body: TransferLink, request: Request, c: Caller =
 
 @router.post("/transactions/{txn_id}/both-real", response_model=TxnOut)
 def both_real(txn_id: str, request: Request, c: Caller = Depends(caller)):
-    """Two identical rows on one day: the answer *both real* is kept (S1.11.5)."""
+    """Two identical rows on one day, or two a file gave one id: the answer *both real* is
+    kept (S1.11.5)."""
     with server(request).db.tx() as s:
         t = s.get(Transaction, txn_id)
         if t is None or t.deleted:
             raise Problem(404, "not-found", "Not found")
         a, level = access.account(s, c.id, t.accountId, "write")
+        base = (t.fitId or "").rpartition("#")[0] or t.fitId
+        same = and_(Transaction.date == t.date, Transaction.amount == t.amount)
+        if base:
+            same = or_(same, Transaction.fitId == base, Transaction.fitId.like(f"{base}#%"))
         for twin in s.scalars(
             select(Transaction).where(
-                Transaction.accountId == t.accountId,
-                Transaction.date == t.date,
-                Transaction.amount == t.amount,
-                Transaction.deleted == false(),
+                Transaction.accountId == t.accountId, same, Transaction.deleted == false()
             )
         ):
             twin.duplicateAnswer = "both-real"

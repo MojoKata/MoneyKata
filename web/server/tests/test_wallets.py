@@ -215,6 +215,21 @@ def test_a_sync_records_each_transaction_once_and_extends_the_gap(server, alice,
     assert held["cost"] is None, "coins received carry no basis until it is entered"
 
 
+def test_a_coinjoins_fee_is_the_wallets_share_never_the_whole(server, alice):
+    # B13: others' inputs paid most of the 12,000-sat fee; the wallet put in 1,500 net, so its
+    # share is 1,500, and nothing else left it.
+    from moneykata.store.entities.accounts import Transaction
+
+    w = new_account(alice, name="Mixer", type="crypto-wallet")
+    with server.db.tx() as s:
+        sync.record(s, w["id"], [sources.Tx("f" * 64, T2, -1_500, 12_000, {FIRST})])
+    with server.db.read() as s:
+        rows = {t.kind: t for t in s.query(Transaction).filter_by(accountId=w["id"])}
+    assert rows["transfer-out"].quantity == 0 and rows["transfer-out"].payee == "Network fee"
+    assert str(rows["sell"].quantity) == "0.000015"
+    assert "this wallet's share" in rows["transfer-out"].memo
+
+
 def test_a_failing_source_says_what_to_fix_without_naming_an_address(server, alice, monkeypatch):
     w = new_account(alice, name="Cold storage", type="crypto-wallet")
     alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB})

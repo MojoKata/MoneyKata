@@ -307,11 +307,12 @@ def _institution_key(account: Account, st) -> str:
 def _read(srv, job: Job, data: bytes, media: str) -> tuple[list[str], str] | None:
     """The statement's lines, read in a worker process as receipts are; None when it can't be
     read (the job is then failed)."""
-    from ..receipts.reading import Worker
+    from ..receipts import ocr
+    from ..receipts.reading import STATEMENT_TIME_LIMIT, Worker
 
     worker = Worker()
     try:
-        outcome = worker.read(data, media)
+        outcome = worker.read(data, media, STATEMENT_TIME_LIMIT, ocr.STATEMENT_PAGES)
     finally:
         worker.stop()
     if outcome[0] != "ok":

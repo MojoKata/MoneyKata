@@ -298,6 +298,34 @@ def test_ofx_import_is_idempotent_and_reconciles(server):
     assert len(imports) == 3 and imports[0]["userName"] == "Alice"
 
 
+def test_reimports_match_by_cents_by_row_and_keep_a_repeated_id(server):
+    # B19: a file's sub-cent digits change nothing; a row with a FITID matches one typed by
+    # hand; a FITID the file repeats is two rows, flagged as duplicate suspects.
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    a = new_account(c)
+    add(c, a["id"], "-142.18", "2026-09-03", payee="KROGER #123")
+    data = (FIX / "bank.ofx").read_bytes()
+    job = upload(c, a["id"], "statement.qfx", data)
+    assert job["result"]["added"] == 4 and job["result"]["matched"] == 1, job
+    fine = data.replace(b"<TRNAMT>3120.00", b"<TRNAMT>3120.004")
+    assert upload(c, a["id"], "fine.qfx", fine)["result"]["changed"] == 0
+    repeat = data.replace(b"<FITID>20260910-1", b"<FITID>20260903-1")
+    b = new_account(c, name="Second", mask="9999")
+    first = upload(c, b["id"], "repeat.qfx", repeat)["result"]
+    assert first["added"] == 5
+    assert upload(c, b["id"], "repeat.qfx", repeat)["result"]["added"] == 0
+    from moneykata.ledger import reconcile
+    from moneykata.store.entities.accounts import Account
+    from moneykata.store.repos import ledger as repo
+
+    with server.db.read() as s:
+        txns = repo.load(s, s.get(Account, b["id"])).transactions
+        groups = reconcile.duplicates(txns)
+        fits = sorted(t.fitId for t in txns if t.id in groups[0])
+    assert len(groups) == 1 and fits == ["20260903-1", "20260903-1#2"]
+
+
 def test_typed_balance_mismatch_and_adjustment(server):
     make_user(server, "alice")
     c = sign_in(server, "alice")
@@ -336,6 +364,96 @@ def test_brokerage_ofx_makes_holdings(server):
     assert vti["symbol"] == "VTI" and vti["quantity"] == "15.0"
     assert vti["priceSource"] == "statement" and vti["value"] == "4500.00"
     assert h["cash"] == "2317.40"
+
+
+def test_option_trades_and_an_assignment_from_a_brokers_file(server):
+    # B5: OFX option trades are the four option trades, and an assignment is settled with the
+    # broker's own stock trade, its premium in the shares' basis; a re-import adds nothing.
+    from moneykata.store.entities.accounts import Account, Instrument, Transaction
+    from moneykata.store.repos import ledger as repo
+
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    a = new_account(c, name="Brokerage", type="brokerage", institution="Example Brokerage")
+    data = (FIX / "options.ofx").read_bytes()
+    job = upload(c, a["id"], "options.ofx", data)
+    assert job["state"] == "done", job
+    assert not job["result"].get("warnings"), job
+    with server.db.read() as s:
+        rows = s.query(Transaction).filter_by(accountId=a["id"]).all()
+        kinds = sorted(t.kind for t in rows)
+        assert kinds == sorted(
+            ["deposit", "sell-to-open", "buy-to-open", "sell-to-close", "assign", "buy"]
+        )
+        buy = next(t for t in rows if t.kind == "buy")
+        assert buy.fitId == "A1" and buy.amount == Decimal("-30000.10") and buy.optionTransactionId
+        replay = repo.load(s, s.get(Account, a["id"])).replay()
+        aapl = next(x for x in replay.open if x.quantity == 200)
+        assert s.get(Instrument, aapl.instrumentId).symbol == "AAPL"
+        assert aapl.basis == Decimal("29401.40")  # the strike and its fee, less the put's credit
+        assert sum(x.quantity for x in replay.open if x is not aapl) == 0
+        call = [d for d in replay.disposals if d.proceeds == Decimal("699.35")]
+        assert len(call) == 1 and call[0].basis == Decimal("520.65")
+    again = upload(c, a["id"], "options.ofx", data)
+    assert again["result"]["added"] == 0
+
+
+def test_a_sale_keeps_the_lot_method_in_force_when_it_was_made(server):
+    # B7: an imported sale records the account's method; changing the method later applies to
+    # the sales after it, never rewriting the ones before.
+    from moneykata.store.entities.accounts import Transaction
+
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    a = new_account(c, name="Brokerage", type="brokerage", institution="Example Brokerage")
+    upload(c, a["id"], "brokerage.ofx", (FIX / "brokerage.ofx").read_bytes())
+    with server.db.read() as s:
+        sale = s.query(Transaction).filter_by(accountId=a["id"], kind="sell").one()
+        assert sale.lotMethod == "fifo"
+    before = c.get(f"/ui/api/accounts/{a['id']}/holdings").json()["holdings"][0]["costBasis"]
+    assert before == "3951.00"  # five of the $250 lot sold first, FIFO
+    acct = c.get(f"/ui/api/accounts/{a['id']}").json()
+    r = c.patch(
+        f"/ui/api/accounts/{a['id']}",
+        json={"lotMethod": "lifo"},
+        headers={"If-Match": str(acct["version"])},
+    )
+    assert r.status_code == 200, r.text
+    h = c.get(f"/ui/api/accounts/{a['id']}/holdings").json()["holdings"][0]
+    assert h["costBasis"] == before  # the sale before the change is as it was
+    add(c, a["id"], "1500.00", "2026-10-05", kind="sell", symbol="VTI", quantity="5", price="300")
+    h = c.get(f"/ui/api/accounts/{a['id']}/holdings").json()["holdings"][0]
+    assert h["costBasis"] == "2600.50"  # the later sale takes five of the newest lot
+
+
+def test_a_files_positions_are_a_check_on_reconcile(server):
+    # B9: positions the trades don't explain show as a difference; the lots stay as they are.
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    a = new_account(c, name="Brokerage", type="brokerage", institution="Example Brokerage")
+    data = (FIX / "brokerage.ofx").read_bytes().replace(b"<UNITS>15<", b"<UNITS>20<")
+    upload(c, a["id"], "brokerage.ofx", data)
+    vti = c.get(f"/ui/api/accounts/{a['id']}/holdings").json()["holdings"][0]
+    assert vti["quantity"] == "15.0"
+    r = c.get(f"/ui/api/accounts/{a['id']}/reconcile").json()
+    assert r["holdingChecksAsOf"] == "2026-09-30"
+    line = r["holdingChecks"][0]
+    assert line["symbol"] == "VTI" and line["difference"] == 5 and not line["ok"]
+
+
+def test_a_split_in_a_brokers_file_is_imported(server):
+    # The split's options step took a path that didn't exist, failing the whole import.
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    a = new_account(c, name="Brokerage", type="brokerage", institution="Example Brokerage")
+    split = (
+        b"<SPLIT><INVTRAN><FITID>SP1<DTTRADE>20260901</INVTRAN><SECID><UNIQUEID>922908769"
+        b"<UNIQUEIDTYPE>CUSIP</SECID><SUBACCTSEC>CASH<OLDUNITS>15<NEWUNITS>30<NUMERATOR>2"
+        b"<DENOMINATOR>1</SPLIT>\n</INVTRANLIST>"
+    )
+    data = (FIX / "brokerage.ofx").read_bytes().replace(b"</INVTRANLIST>", split)
+    job = upload(c, a["id"], "brokerage.ofx", data)
+    assert job["state"] == "done", job
 
 
 def test_csv_import_asks_for_a_mapping_once(server):

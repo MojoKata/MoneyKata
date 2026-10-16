@@ -46,6 +46,7 @@ class Plan:
         default_factory=list
     )  # (from index, a year, inflates)
     crypto_path: list[float] | None = None  # yearly growth ratios of a bitcoin model
+    bitcoin_share: float = 1.0  # of the crypto, the part the model drives
     runs: int = RUNS
     seed: int = 0
 
@@ -84,11 +85,15 @@ def _returns(plan: Plan, rng, runs: int) -> np.ndarray:
             continue
         mean, vol = plan.returns.get(cls, 0.0), plan.vols.get(cls, 0.0)
         if cls == "crypto" and plan.crypto_path is not None:
-            # The model's median growth each year, spread by the crypto volatility.
+            # The bitcoin: the model's median growth each year, spread by the crypto
+            # volatility; other coins keep the crypto assumption (S6.3.1).
             ratios = np.array(plan.crypto_path[: plan.years])
             s2 = np.log(1 + vol**2)
             noise = np.exp(rng.normal(-s2 / 2, np.sqrt(s2), (runs, plan.years)))
-            drawn = ratios[None, :] * noise - 1
+            share = plan.bitcoin_share
+            drawn = share * (ratios[None, :] * noise - 1)
+            if share < 1:
+                drawn = drawn + (1 - share) * _lognormal(rng, mean, vol, (runs, plan.years))
         else:
             drawn = _lognormal(rng, mean, vol, (runs, plan.years))
         total += w * drawn
@@ -99,7 +104,9 @@ def _expected_return(plan: Plan) -> np.ndarray:
     out = np.zeros(plan.years)
     for cls, w in plan.weights.items():
         if cls == "crypto" and plan.crypto_path is not None:
-            out += w * (np.array(plan.crypto_path[: plan.years]) - 1)
+            share = plan.bitcoin_share
+            model = np.array(plan.crypto_path[: plan.years]) - 1
+            out += w * (share * model + (1 - share) * plan.returns.get(cls, 0.0))
         else:
             out += w * plan.returns.get(cls, 0.0)
     return out

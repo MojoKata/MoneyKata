@@ -80,6 +80,10 @@ class ContributionOut(Model):
     owner: str
     contributed: Money
     limit: Money | None
+    # What the person put in all their accounts under the same limit (S8.6), and which those
+    # are; `over` holds that total against the limit.
+    personTotal: Money
+    across: str | None
     over: bool
     note: str
 
@@ -264,7 +268,19 @@ def build(s, b) -> Panels:
         ),
         retirement=RetirementOut(
             contributions=[
-                ContributionOut(**c.__dict__, over=c.limit is not None and c.contributed > c.limit)
+                ContributionOut(
+                    account=c.account,
+                    kind=c.kind,
+                    owner=c.owner,
+                    contributed=c.contributed,
+                    limit=c.limit,
+                    personTotal=c.personTotal,
+                    across=panels.GROUP_LABELS.get(c.group)
+                    if c.personTotal != c.contributed
+                    else None,
+                    over=c.limit is not None and c.personTotal > c.limit,
+                    note=c.note,
+                )
                 for c in ret.contributions
             ],
             distributions=[Amount(label=k, amount=v) for k, v in ret.distributions],

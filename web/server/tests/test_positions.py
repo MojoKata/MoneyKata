@@ -93,7 +93,8 @@ def test_a_wash_sale_moves_the_loss_into_the_replacement_lot(server, alice):
     held = next(r for r in v["open"] if r["symbol"] == "AAPL")
     assert held["cost"] == "820.00", "620 paid and the 200 disallowed"
     lot = held["lots"][0]
-    assert lot["acquiredOn"] == "2025-03-20", "the sold shares' 457 days carried over"
+    assert lot["acquiredOn"] == "2026-06-20", "acquired, and taken in order, by the day bought"
+    assert lot["heldFrom"] == "2025-03-20", "the sold shares' 457 days carried over, for the term"
     assert lot["longTerm"]
     # Selling the replacement in the IRA undoes nothing; deleting the buy removes the wash.
     items = alice.get("/ui/api/transactions", params={"account": ira["id"]}).json()["items"]

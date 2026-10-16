@@ -155,12 +155,11 @@ def _still_seen(s: Session, a: Account, adder: str | None, who: list[str]) -> bo
 
 def federal_due(s: Session, year: int) -> dt.date:
     """The federal return's due date for a tax year, from the tax tables (the following
-    year's April 15), moved to the next weekday."""
+    year's April 15), moved past a weekend or a legal holiday (Emancipation Day among them)."""
+    from .dates import next_business_day
+
     month, day = taxtables.figures(s, year)["federalDue"]
-    due = dt.date(year + 1, int(month), int(day))
-    while due.weekday() >= 5:
-        due += dt.timedelta(days=1)
-    return due
+    return next_business_day(dt.date(year + 1, int(month), int(day)))
 
 
 def filings(s: Session, book: TaxBook) -> list[Filing]:

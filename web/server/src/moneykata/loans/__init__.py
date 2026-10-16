@@ -28,6 +28,7 @@ from ..store.entities.accounts import Account, Category, Loan, Split, Transactio
 
 ZERO = Decimal(0)
 CENT = Decimal("0.01")
+PMI_ENDS = Decimal("0.78")
 TYPES = ("mortgage", "heloc", "auto-loan", "student-loan", "personal-loan", "loan")
 # The split's parts, by the shipped category each is filed under.
 PARTS = {
@@ -114,6 +115,13 @@ class Terms:
     def escrow(self) -> Decimal:
         return self.escrowTax + self.escrowInsurance
 
+    def pmi_due(self, owed: Decimal) -> Decimal:
+        """PMI while anything is owed, until the balance reaches 78% of the original value,
+        when it ends by itself (S1.9.5)."""
+        if owed <= 0 or (self.originalValue and owed <= self.originalValue * PMI_ENDS):
+            return ZERO
+        return self.pmi
+
 
 def terms_of(row: Loan) -> Terms:
     return Terms(
@@ -187,19 +195,27 @@ def history(s: Session, account: Account) -> tuple[list[Payment], list[tuple[dt.
             select(Split).where(Split.transactionId.in_(ids), Split.deleted == false())
         ):
             splits.setdefault(sp.transactionId, []).append(sp)
-    payments, draws = [], []
+    row = loan_of(s, account)
+    terms = terms_of(row) if row is not None else None
+    payments: list[Payment] = []
+    draws: list[tuple[dt.date, Decimal]] = []
     for t in txns:
         if t.amount < 0:
             draws.append((t.date, -t.amount))
             continue
-        p = Payment(t.date, t.amount, transactionId=t.id)
         parts = splits.get(t.id)
         if parts:
+            p = Payment(t.date, t.amount, transactionId=t.id)
             for sp in parts:
                 part = by_part.get(keys.get(sp.categoryId or "", ""), "principal")
                 setattr(p, part, getattr(p, part) + sp.amount)
+        elif terms is not None:
+            # However it arrived (a transfer matched from the bank, an import, a row typed in
+            # the loan's account), a payment is split by the schedule (S1.9.3).
+            p = split_for(terms, payments, draws, t.date, t.amount)
+            p.transactionId = t.id
         else:
-            p.principal = t.amount
+            p = Payment(t.date, t.amount, principal=t.amount, transactionId=t.id)
         payments.append(p)
     return payments, draws
 
@@ -224,7 +240,7 @@ def split_for(t: Terms, payments: list[Payment], draws, day: dt.date, amount: De
     else:
         interest = cents(owed * rate / 12)
     escrow_tax, escrow_ins = t.escrowTax, t.escrowInsurance
-    pmi = t.pmi if owed > 0 else ZERO
+    pmi = t.pmi_due(owed)
     rest = amount - interest - escrow_tax - escrow_ins - pmi
     if rest < 0:
         # Less than the interest and escrow: what there is pays them, in that order.
@@ -349,7 +365,7 @@ def schedule(
             # The last payment takes what rounding left over.
             principal = owed
         owed -= principal
-        pmi = t.pmi if owed > 0 else ZERO
+        pmi = t.pmi_due(owed)
         rows.append(
             Row(
                 day,
@@ -396,7 +412,7 @@ def summary(t: Terms, payments: list[Payment], draws, today: dt.date) -> tuple[S
             balance=owed,
             rate=t.rate_on(today),
             payment=pi,
-            total=pi + t.escrow + (t.pmi if owed > 0 else ZERO),
+            total=pi + t.escrow + t.pmi_due(owed),
             nextDate=ahead[0].date if ahead else None,
             payoffDate=(
                 ahead[-1].date if ahead else (payments[-1].date if payments and owed == 0 else None)

@@ -55,6 +55,16 @@ def recompute(s: Session, user_id: str) -> int:
         i.id: i.instrumentClass
         for i in s.scalars(select(Instrument).where(Instrument.instrumentClass.in_(CLASSES)))
     }
+    # Shares that came through an option (a put assigned, a call exercised) are never taken
+    # as a replacement: the rules leave that to the preparer, flagged for review (S3.8.5.3).
+    through_options = set(
+        s.scalars(
+            select(Transaction.id).where(
+                Transaction.accountId.in_(list(by_id)),
+                Transaction.kind.in_(("assign", "exercise")),
+            )
+        )
+    )
     buys: dict[str, list[_Buy]] = {}
     for t in s.scalars(
         select(Transaction).where(
@@ -64,20 +74,17 @@ def recompute(s: Session, user_id: str) -> int:
             Transaction.instrumentId.in_(list(classes)),
         )
     ):
-        if t.quantity:
+        if t.quantity and t.optionTransactionId not in through_options:
             buys.setdefault(t.instrumentId, []).append(_Buy(t, abs(t.quantity)))
     lot_txn = {
         lot.id: lot.transactionId
         for lot in s.scalars(select(Lot).where(Lot.accountId.in_(list(by_id))))
     }
-    losses = []
-    for a in accounts:
-        if atypes.TAX.get(a.type) != "taxable" or not atypes.investing(a.type):
-            continue
-        for d in repo.load(s, a, raw=True).replay().disposals:
-            if d.instrumentId in classes and d.gain is not None and d.gain < 0 and d.saleId:
-                losses.append((a, d))
-    losses.sort(key=lambda x: x[1].soldOn)
+    ledgers = [
+        repo.load(s, a, raw=True)
+        for a in accounts
+        if atypes.TAX.get(a.type) == "taxable" and atypes.investing(a.type)
+    ]
     from . import people
 
     spouse_on: dict[tuple[str, dt.date], str | None] = {}
@@ -90,18 +97,52 @@ def recompute(s: Session, user_id: str) -> int:
             spouse_on[(seller, day)] = people.spouse_user_on(s, seller, day)
         return spouse_on[(seller, day)] == buyer
 
-    made = 0
+    # A deferred loss moves into its replacement's basis, so selling that at a loss can defer
+    # it again: the losses are found on the replay with the wash sales so far applied, again
+    # and again, until nothing changes (S3.8.3, S3.8.4).
     now = clock.now()
+    rows: list[WashSale] = []
+    for _ in range(ROUNDS):
+        found = _round(ledgers, rows, classes, buys, lot_txn, by_id, counts, now)
+        if _same(found, rows):
+            break
+        rows = found
+    for w in rows:
+        s.add(w)
+    s.flush()
+    return len(rows)
+
+
+ROUNDS = 12
+
+
+def _same(a: list[WashSale], b: list[WashSale]) -> bool:
+    key = lambda w: (w.saleId, w.replacementId, w.quantity, w.disallowed, w.heldFrom)  # noqa: E731
+    return sorted(map(key, a)) == sorted(map(key, b))
+
+
+def _round(ledgers, rows, classes, buys, lot_txn, by_id, counts, now) -> list[WashSale]:
+    losses = []
+    for led in ledgers:
+        ids_ = {t.id for t in led.transactions}
+        led.washes = [w for w in rows if w.saleId in ids_ or w.replacementId in ids_]
+        for d in led.replay().disposals:
+            raw = d.raw_gain
+            if d.instrumentId in classes and raw is not None and raw < 0 and d.saleId:
+                losses.append((led.account, d))
+    losses.sort(key=lambda x: x[1].soldOn)
+    remaining = {id(b): b.remaining for group in buys.values() for b in group}
+    out = []
     for a, d in losses:
         own = lot_txn.get(d.lotId) if d.lotId else None
         left = d.quantity
-        loss = -d.gain
+        loss = -d.raw_gain
         for b in sorted(
             buys.get(d.instrumentId, []), key=lambda b: abs((b.txn.date - d.soldOn).days)
         ):
             if left <= 0:
                 break
-            if abs((b.txn.date - d.soldOn).days) > DAYS or b.remaining <= 0:
+            if abs((b.txn.date - d.soldOn).days) > DAYS or remaining[id(b)] <= 0:
                 continue
             if not counts(a.ownerId, by_id[b.txn.accountId].ownerId, d.soldOn):
                 continue
@@ -109,10 +150,11 @@ def recompute(s: Session, user_id: str) -> int:
                 continue
             if own is None and b.txn.date == d.acquiredOn and b.txn.accountId == a.id:
                 continue  # the shares that were sold
-            take = min(left, b.remaining)
-            b.remaining -= take
+            take = min(left, remaining[id(b)])
+            remaining[id(b)] -= take
             left -= take
-            s.add(
+            held_from = d.heldFrom or d.acquiredOn
+            out.append(
                 WashSale(
                     id=ids.new_id("WashS"),
                     ownerId=a.ownerId,
@@ -120,13 +162,11 @@ def recompute(s: Session, user_id: str) -> int:
                     replacementId=b.txn.id,
                     quantity=take,
                     disallowed=(loss * take / d.quantity).quantize(CENT),
-                    heldFrom=b.txn.date - (d.soldOn - d.acquiredOn),
+                    heldFrom=b.txn.date - (d.soldOn - held_from),
                     createdAt=now,
                 )
             )
-            made += 1
-    s.flush()
-    return made
+    return out
 
 
 def for_users(s: Session, user_ids: list[str], first: dt.date, last: dt.date) -> list[WashSale]:

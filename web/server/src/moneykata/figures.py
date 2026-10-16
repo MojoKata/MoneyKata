@@ -46,8 +46,19 @@ def combine(
     flow: dict[dt.date, Decimal] = {}
     for a in accounts:
         led = repo.load(s, a)
-        by[a.id] = valuation.series(s, led, atypes.investing(a.type), first, last, step)
-        for d, v in perf.flows(led.transactions).items():
+        series = valuation.series(s, led, atypes.investing(a.type), first, last, step)
+        flows = perf.flows(led.transactions)
+        gone = a.deletedAt.date() if getattr(a, "deletedAt", None) else None
+        if gone is not None:
+            # A deleted account counts up to its deletion (R3.10); its value then leaves as a
+            # withdrawal would, so the portfolio's returns don't take it as a loss.
+            before = [(d, v) for d, v in series if d < gone]
+            series = before + [(d, ZERO) for d, v in series if d >= gone]
+            flows = {d: v for d, v in flows.items() if d < gone}
+            if before and before[-1][1] and first <= gone <= last:
+                flows[gone] = flows.get(gone, ZERO) - before[-1][1]
+        by[a.id] = series
+        for d, v in flows.items():
             flow[d] = flow.get(d, ZERO) + v
     days = sorted({d for series in by.values() for d, _ in series})
     totals = {d: ZERO for d in days}

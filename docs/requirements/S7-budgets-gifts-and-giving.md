@@ -74,7 +74,9 @@
       spending, and show the person as *Emma (deleted)* (R3.10). Ideas and planned gifts
       for that person alone are deleted with them; a shared idea loses only that person.
    7. **Gift-tax flag**: money given to one person in a year (cash gifts, and 529
-      contributions, S1.8.2) above the annual exclusion is flagged for Form 709 (S8.11).
+      contributions to any of the user's 529s, whether or not the beneficiary has a gift
+      plan, a five-year election counting a fifth in each of its years, S1.8.2) above the
+      annual exclusion is flagged for Form 709 (S8.11).
 9. **Charitable giving.**
    1. **A giving plan** per year, per user or per group (as budgets are): a **target** as a
       **percentage of income** (10% by default when one is set), or a fixed amount. It counts

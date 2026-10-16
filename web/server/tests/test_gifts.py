@@ -230,6 +230,25 @@ def test_money_given_above_the_exclusion_is_flagged(alice):
     ]
 
 
+def test_a_529_counts_with_no_gift_plan_and_an_election_over_its_five_years(alice):
+    # B16: the beneficiary has no gift plan; the owner's five-year election of 100,000 in 2024
+    # is 20,000 in each of 2024-2028, over the 2026 exclusion.
+    leo = alice.post("/ui/api/people", json={"name": "Leo Griffin", "sex": "male"}).json()
+    acct = new_account(alice, name="Leo's 529", type="529")
+    alice.put(
+        f"/ui/api/accounts/{acct['id']}/plan529",
+        json={"beneficiary": {"kind": "person", "id": leo["id"]}},
+    )
+    r = alice.post(
+        f"/ui/api/accounts/{acct['id']}/contributions",
+        json={"date": "2024-03-01", "amount": "100000", "fiveYear": True},
+    )
+    assert r.status_code == 201, r.text
+    sp = alice.get("/ui/api/gifts/spending?year=2026").json()
+    assert [(f["person"]["id"], f["given"]) for f in sp["flagged"]] == [(leo["id"], "20000.00")]
+    assert alice.get("/ui/api/gifts/spending?year=2029").json()["flagged"] == []
+
+
 def test_received_gifts_and_thank_yous(alice):
     gran = person(alice, name="Margaret Griffin")
     g = gift(alice, people=[gran["id"]], description="Scarf", status="received", thankYou=True)

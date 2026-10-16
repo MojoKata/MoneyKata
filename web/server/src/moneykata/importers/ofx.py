@@ -7,7 +7,7 @@ from decimal import Decimal
 
 from ofxtools.Parser import OFXTree
 
-from .parsed import ParsedFile, Position, ReadError, Row, Security
+from .parsed import ParsedFile, Position, ReadError, Row, Security, occ, occ_symbol
 
 BANK_KINDS = {
     "INT": "interest",
@@ -41,6 +41,14 @@ SEC_CLASSES = {
     "OPTINFO": "option",
     "OTHERINFO": "other",
 }
+# The four option trades and an option's three ends (S3.2-S3.4).
+OPTION_TRADES = {
+    "BUYTOOPEN": "buy-to-open",
+    "BUYTOCLOSE": "buy-to-close",
+    "SELLTOOPEN": "sell-to-open",
+    "SELLTOCLOSE": "sell-to-close",
+}
+OPTION_ENDS = {"EXPIRE": "expire", "ASSIGN": "assign", "EXERCISE": "exercise"}
 
 
 def looks_like_ofx(head: bytes) -> bool:
@@ -129,19 +137,38 @@ def _securities(ofx, out: ParsedFile) -> None:
         return
     if not seclist:
         return
+    tickers = {
+        s.secinfo.secid.uniqueid: (s.secinfo.ticker or "").strip().upper() for s in ofx.securities
+    }
     for s in ofx.securities:
         info = s.secinfo
         cls = SEC_CLASSES.get(type(s).__name__, "other")
         if cls == "mutual-fund" and info.secname and "money market" in info.secname.lower():
             cls = "money-market"
         cusip = info.secid.uniqueid if info.secid.uniqueidtype == "CUSIP" else None
+        symbol = (info.ticker or "").strip().upper() or None
+        multiplier = None
+        if cls == "option":
+            # A contract by its OCC ticker, or, when the file's ticker isn't one, by the terms
+            # OPTINFO gives: the underlying it names, the right, the strike and the expiry.
+            symbol = occ_symbol(symbol) or occ_symbol(info.secname) or _occ_of(s, tickers) or symbol
+            multiplier = int(s.shperctrct) if getattr(s, "shperctrct", None) else None
         out.securities[info.secid.uniqueid] = Security(
             key=info.secid.uniqueid,
-            symbol=(info.ticker or "").strip().upper() or None,
+            symbol=symbol,
             name=info.secname,
             instrumentClass=cls,
             cusip=cusip,
+            multiplier=multiplier,
         )
+
+
+def _occ_of(s, tickers: dict[str, str]) -> str | None:
+    under = getattr(s, "secid", None)
+    root = tickers.get(under.uniqueid) if under is not None else None
+    if not root or s.opttype not in ("CALL", "PUT") or not s.strikeprice or not s.dtexpire:
+        return None
+    return occ(root, _day(s.dtexpire), s.opttype[0], s.strikeprice)
 
 
 def _investment(st, out: ParsedFile, dates: dict) -> None:
@@ -171,7 +198,8 @@ def _inv_rows(t, dates: dict) -> list[Row]:
         return []
     if row.kind != "reinvest":
         return [row]
-    # A reinvestment is a dividend plus a buy (S2.5).
+    # A reinvestment is a dividend plus a buy (S2.5): the dividend row carries the income, and
+    # the buy carries none, so the income panel counts it once.
     income = Row(
         date=row.date,
         kind="dividend",
@@ -179,8 +207,9 @@ def _inv_rows(t, dates: dict) -> list[Row]:
         fitId=f"{row.fitId}-in",
         memo=row.memo,
         security=row.security,
-        dividendType=row.dividendType,
+        dividendType=row.dividendType or "ordinary",
     )
+    row.dividendType = None
     return [income, row]
 
 
@@ -202,6 +231,25 @@ def _inv_row(t, dates: dict) -> Row | None:
     sec = getattr(t, "secid", None)
     key = sec.uniqueid if sec is not None else None
     fees = (getattr(t, "commission", None) or Decimal(0)) + (getattr(t, "fees", None) or Decimal(0))
+    if name in ("BUYOPT", "SELLOPT"):
+        return Row(
+            kind=OPTION_TRADES[t.optbuytype if name == "BUYOPT" else t.optselltype],
+            amount=t.total,
+            security=key,
+            quantity=abs(t.units),
+            price=t.unitprice,
+            fees=fees or None,
+            **base,
+        )
+    if name == "CLOSUREOPT":
+        return Row(
+            kind=OPTION_ENDS[t.optaction],
+            amount=Decimal(0),
+            security=key,
+            quantity=abs(t.units),
+            relFitId=t.relfitid,
+            **base,
+        )
     if name.startswith("BUY"):
         return Row(
             kind="buy",

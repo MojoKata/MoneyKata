@@ -106,7 +106,7 @@ class Cboe(TickerSource):
         import json
 
         try:
-            return json.loads(body).get("data")
+            return json.loads(body, parse_float=Decimal).get("data")
         except ValueError, AttributeError:
             raise SourceError(f"{self.label} answered with something that is not JSON") from None
 

@@ -358,3 +358,20 @@ def test_a_helper_edits_but_never_changes_what_the_book_counts(server, couple):
     assert r.status_code == 403 and r.json()["code"] == "filers-only"
     r = gail.post(f"/ui/api/tax-books/{b['id']}/filings", json={"form": "Form 1040"})
     assert r.status_code == 201, r.text
+
+
+def test_a_due_date_skips_weekends_and_legal_holidays():
+    # B22: Emancipation Day (April 16, as observed) moves the return's due date, as in 2017,
+    # 2018, 2022 and 2023.
+    import datetime as dt
+
+    from moneykata.taxes.dates import next_business_day
+
+    got = [next_business_day(dt.date(y, 4, 15)) for y in (2017, 2018, 2022, 2023, 2026)]
+    assert got == [
+        dt.date(2017, 4, 18),
+        dt.date(2018, 4, 17),
+        dt.date(2022, 4, 18),
+        dt.date(2023, 4, 18),
+        dt.date(2026, 4, 15),
+    ]

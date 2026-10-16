@@ -7,6 +7,21 @@
 2. **Option transactions:** *buy to open*, *sell to open*, *buy to close*, *sell to close*,
    **expire** (worthless), **assigned** and **exercised**. Each carries contracts, premium per
    share, fees and commission.
+   1. **From a broker's file**: an OFX file's option trades (`BUYOPT`, `SELLOPT`) are the four
+      trades by their `OPTBUYTYPE` and `OPTSELLTYPE`, and its `CLOSUREOPT` is the option's
+      end by its `OPTACTION`. A contract is named by its OCC ticker, or by the underlying,
+      right, strike and expiry its `OPTINFO` gives. A CSV's option is read from its symbol
+      (`AAPL  260918P00150000`, `AAPL 09/18/2026 150.00 P`, `-AAPL260918P150`), and its row
+      must say whether it opens or closes (*Buy to Open*, *Sell to Close*) or how it ended
+      (*Expired*, *Assigned*, *Exercised*): a plain buy or sell of an option refuses the file,
+      naming the row.
+   2. **An assignment or exercise in a file** is settled as one recorded by hand (S3.4), after
+      the trades that opened it. The stock trade the broker lists with it (the one its
+      `RELFITID` names, or a buy or sell of the underlying that day, of the contracts'
+      shares) becomes the stock trade of S3.4, with the broker's cash and fees, so the shares
+      aren't counted twice. One that can't be settled (the account holds none of the option,
+      or its stock trade came with an earlier file) is named in the import's warnings, to be
+      settled on Positions.
 3. **Short options** are negative lots. The premium received is the credit; the gain is
    realized at close or expiry, and is short-term however long the option was open (IRC
    §1234(b)). Closing trades and expiries take an option's lots oldest first, whatever lot
@@ -15,8 +30,10 @@
    with the premium folded into the stock's basis or proceeds as the IRS rules for that case
    say: a long call exercised adds its premium to the stock's basis, a short put assigned
    subtracts its premium from it, a short call assigned adds its premium to the proceeds. The
-   resulting stock lots link back to the option, and deleting the assignment or exercise
-   deletes its stock trade with it, after asking.
+   premium is worked out from the option's lots each time the account's figures are, so a
+   corrected opening trade follows through. The resulting stock lots link back to the option,
+   and deleting the assignment or exercise deletes its stock trade with it, after asking; the
+   stock trade alone isn't deleted.
 5. **Strategies**: legs held together (a covered call, a vertical spread, an iron condor)
    are grouped and shown as one. Grouping is a label: lots, gains, wash sales and taxes stay
    per leg.
@@ -29,7 +46,8 @@
    2. **Rolls**: a leg closed and another opened on the same underlying the same day is
       offered to stay in the group, or turned down. A strategy keeps its history (its legs,
       its rolls and its P/L from open to close, closed legs included); it opened when its
-      first leg did, and closes when its last option leg does.
+      first leg did, and closes when its last option leg does, however it ends: closed,
+      expired, assigned or exercised.
    3. **The shapes recognised** (anything else is *Custom*): long call, long put, short call
       (naked), short put (*cash-secured* is the owner's tick); covered call, protective put,
       collar; bull and bear call spreads and put spreads; long and short straddles and
@@ -52,9 +70,11 @@
       Each row is the strategy's max loss at expiry where that is finite, which is how a
       short put without the *cash-secured* tick, a long straddle or a butterfly are counted
       too; a calendar or diagonal risks its net debit, or the margin typed.
-      *Now* uses today's prices; *at open* uses those of the day the strategy opened, and
+      *Now* uses today's prices; *at open* uses the legs the strategy opened with, as they
+      were at the end of that day and at its prices, whatever is rolled or closed later, and
       is what a strategy's **return on capital at risk** is worked on. The shares' cost basis
-      shows on their own leg.
+      shows on their own leg. An unlimited risk counts as such: a total with one in it is
+      *unlimited*, never the sum of the rest.
    6. **Where it shows**: Positions has a **Strategies** tab listing each strategy with its
       legs and these figures, and the proposals; an investing account and a portfolio show
       **Capital at risk** beside their options' market value, counting each option outside a

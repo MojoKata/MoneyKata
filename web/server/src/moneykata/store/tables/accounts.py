@@ -232,7 +232,7 @@ Transaction = record(
     # Assignment and exercise (S3.4): a stock sale's proceeds take the option's premium (an
     # assigned call's credit added, an exercised put's premium taken off), and the stock trade
     # names the option's assignment or exercise it came from.
-    Column("proceedsAdjustment", Dec),
+    Column("proceedsAdjustment", Cents),
     Column("optionTransactionId", Text, ForeignKey("Transaction.id")),
     Column("createdById", Text, ForeignKey("User.id")),
     # A bitcoin transaction the explorer or node no longer has (S1.6.2.7): kept until its

@@ -31,8 +31,13 @@
       CSV, with a saved column mapping per institution; and brokers' and exchanges'
       trade-history CSVs. Imports are idempotent: a re-imported file adds only what is new,
       matched by the file's transaction id (an OFX file's `FITID`) or by date, amount and
-      payee. An OFX file holds one account's statement: one with several is refused, asking
-      for one account at a time;
+      payee, amounts compared in cents as stored. A row whose id isn't here yet still matches,
+      by date, amount and payee, a row that has none (one typed by hand, or from a file
+      without ids), which takes the id. An id a file repeats is another row, kept beside the
+      first and flagged with it as a duplicate suspect (S1.11.5). An OFX file holds one account's statement: one with several is refused, asking
+      for one account at a time. A broker's file's positions are a **holdings check** on that
+      day, as a statement's are (S1.3.3.8.2): the lots change only through transactions. For an
+      account kept by snapshots (R3.2), with no trades of its own, they are its holdings;
    3. **statement import**: a **PDF statement**, read from its text layer, or a **photo or
       scan** of one, read with RapidOCR as receipts are (S9.8), all on the server. MoneyKata
       finds the statement's period, its transactions and its opening and closing balances,
@@ -52,9 +57,12 @@
          *Withdrawals*, *Checks Paid*, *Purchases*, *Payments and Credits*), else from its
          words, and is then marked as guessed. Summary and daily-balance sections are left
          out. A card statement's figures are what is owed, and are turned to the account's
-         side.
+         side once; `CR` and `DR` already name the account's side (a payment is a credit),
+         and are not turned.
       2. **Reading** uses the receipt reader's worker (S9.8.4): a text layer when the PDF has
-         one, else OCR. Settings › Imports can turn statement reading off.
+         one, else OCR of every page, one at a time, up to 30 pages within five minutes (a
+         receipt's three pages and one minute are too few for a statement). Settings ›
+         Imports can turn statement reading off.
       3. **Checking**: the period, both balances and each line can be corrected, and a line
          left out; lines already in the account start left out. The opening balance becomes
          the account's reported balance the day before the period, the closing balance its
@@ -211,7 +219,9 @@
          to a transfer out of another of the owner's accounts (S1.7.1);
          bitcoin sent is a **transfer out** of what left for others, and its network fee a
          sale of the fee's sats at that day's price beside a fee of the same amount, so the
-         cash is unchanged (S8.19); a fee recorded before bitcoin has a price is valued at the
+         cash is unchanged (S8.19). In a transaction others put inputs into too (a coinjoin),
+         the wallet's share of the fee is at most what it put in less what came back to it,
+         never the whole transaction's, and the memo says it is a share; a fee recorded before bitcoin has a price is valued at the
          next check. A transfer out that was a sale or a payment is changed to one by its
          owner. The first
          coins held start a price refresh, so the wallet is valued at once.
@@ -267,14 +277,18 @@
       interest accrued daily, as most car loans use), the scheduled payment, and for a
       mortgage **escrow** (property tax, insurance) and **PMI**. A HELOC has a draw period
       with interest-only payments, then a repayment period. The term is 1 to 600 months, and
-      the rate 0% to 40%.
+      the rate 0% to 40%, to three decimal places as a note states it (6.875%); a reset's
+      rate takes four, as an index plus a margin can give (7.3125%).
    2. **The amortization schedule** is computed from the terms: each payment's interest,
       principal, escrow and remaining balance. It is recomputed when a payment differs
       from the schedule, the rate resets, or the loan is **recast**. Interest is rounded half
       up to the cent, and a balance of less than $1 left by rounding goes with the last
       payment.
    3. **Payments**: a payment transaction from a bank account (matched as a transfer, S1.7) is
-      **split** into principal, interest, escrow, PMI and fees by the schedule. The user can
+      **split** into principal, interest, escrow, PMI and fees by the schedule, as is every
+      payment into the loan however it arrives (imported, or typed in the loan's account): one
+      with no split of its own is split by the schedule whenever the loan's figures are
+      worked out, never counted wholly as principal. The user can
       correct a split from the servicer's statement. Principal beyond the schedule is
       recorded as an **overpayment**. Bank transactions of the last 90 days within 2% of the
       payment, not yet a transfer and not filed under another category, are offered on the
@@ -286,7 +300,7 @@
       date and still to pay, principal paid this year, the schedule, and the **payoff
       planner** (S6.10). A mortgage linked to a `real-estate` item shows the **equity** and the
       **loan-to-value**, and when PMI can be dropped (on request at 80% of the original
-      value; automatically at 78%).
+      value; automatically at 78%, when the schedule stops charging it).
    6. **Taxes**: mortgage interest, points and PMI (Form 1098), and student-loan interest
       (Form 1098-E) appear in Taxes (S8.12).
 10. **Physical assets.** A physical-asset account (`precious-metals`, `collectables`,
@@ -330,8 +344,9 @@
        shows a timeline of covered and uncovered periods, and flags a **gap** (*nothing
        between Aug 3 and Aug 14*) and an **overlap**.
     2. **Balance anchors**: a balance the institution reported, on a date, from (in order of
-       preference) a CSV's **running-balance column** (every row is then an anchor), an
-       OFX file's ledger balance, a statement's closing balance (S1.3.3), or a balance the
+       preference) a CSV's **running-balance column** (every row is then an anchor, a day's
+       balance being its last row's; a newest-first file, told by its dates, is read from the
+       bottom up), an OFX file's ledger balance, a statement's closing balance (S1.3.3), or a balance the
        user **types** from the institution's site. When an account's next statement or
        import is overdue (S1.11.7), it asks for one.
     3. **The check**: at each anchor, MoneyKata's balance for that day is compared with the
@@ -344,7 +359,8 @@
        shows as such in the account and in Activity. An account with an open mismatch is
        marked in Accounts, and raises an alert after 7 days (S12.11).
     5. **Duplicate suspects** are flagged, never merged silently: two identical rows on one
-       day ask *both real?* the first time, and the answer is kept.
+       day, or two rows a file gave the same id, ask *both real?* the first time, and the
+       answer is kept.
     6. **Ticking off** (optional, for accounts kept by hand): pick a statement's closing date
        and balance, tick transactions as cleared until the difference is zero, and the period
        is marked **reconciled**. Editing a transaction inside a reconciled period asks first.

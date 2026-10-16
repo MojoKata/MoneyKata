@@ -137,20 +137,21 @@ def plan_outcomes(
             first_lump,
         )
     # The same money invested on the days it would have been paid, until the plan's payoff.
-    monthly = (1 + expected_return / 100) ** (1 / 12) - 1
+    # In decimals, as every amount is (S14.3): the return compounded monthly.
+    growth = (1 + Decimal(str(expected_return)) / 100) ** (Decimal(1) / 12)
     end = planned.payoffDate or today
-    value, contributed = 0.0, ZERO
+    value, contributed = ZERO, ZERO
     for r in planned.rows:
         if r.past or not r.overpayment:
             continue
         months = (end.year - r.date.year) * 12 + end.month - r.date.month
-        value += float(r.overpayment) * (1 + monthly) ** months
+        value += r.overpayment * growth**months
         contributed += r.overpayment
     return Result(
         schedule=base,
         plan=planned,
         recast=recast,
-        invested=Invested(expected_return, contributed, cents(Decimal(str(value)))),
+        invested=Invested(expected_return, contributed, cents(value)),
     )
 
 

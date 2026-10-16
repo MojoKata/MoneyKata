@@ -83,14 +83,23 @@ class Check:
 
 
 def duplicates(transactions: list) -> list[list[str]]:
-    """Identical rows on one day, not yet answered *both real* (S1.11.5)."""
+    """Identical rows on one day, and rows a file gave the same id (a FITID it repeated), not
+    yet answered *both real* (S1.11.5)."""
     groups: dict[tuple, list] = {}
     for t in transactions:
         if t.duplicateAnswer == "both-real":
             continue
         key = (t.date, t.amount, (t.payee or t.payeeRaw or "").lower(), t.instrumentId)
         groups.setdefault(key, []).append(t.id)
-    return [ids for ids in groups.values() if len(ids) > 1]
+        fit = getattr(t, "fitId", None)
+        if fit:
+            base, _, n = fit.rpartition("#")
+            groups.setdefault(("fitId", base if base and n.isdigit() else fit), []).append(t.id)
+    out: list[list[str]] = []
+    for ids in groups.values():
+        if len(ids) > 1 and ids not in out:
+            out.append(ids)
+    return out
 
 
 def first_parting(start: balances.Opening, transactions: list) -> str | None:

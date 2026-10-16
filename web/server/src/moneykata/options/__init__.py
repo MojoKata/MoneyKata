@@ -80,19 +80,6 @@ def cash(action: str, contracts: Decimal, premium: Decimal, fees: Decimal, mult:
 # ---------- expiry, assignment and exercise (S3.4, S3.6) ----------
 
 
-def open_basis(replay, instrument_id: str, contracts: Decimal) -> tuple[Decimal, Decimal | None]:
-    """The open quantity and the basis that goes with this many contracts (a short position's
-    basis is its credit, negative)."""
-    lots = [x for x in replay.open if x.instrumentId == instrument_id and x.quantity]
-    held = sum((x.quantity for x in lots), Decimal(0))
-    if not held:
-        return held, None
-    if any(x.basis is None for x in lots):
-        return held, None
-    total = sum((x.basis for x in lots), Decimal(0))
-    return held, (total * contracts / abs(held)).quantize(CENT)
-
-
 def settle(s: Session, user_id: str, account, inst, how: str, day: dt.date, contracts=None):
     """Record an option's end: expired, assigned (a short one) or exercised (a long one). An
     assignment or exercise also makes the stock trade at the strike, with the premium folded
@@ -114,7 +101,6 @@ def settle(s: Session, user_id: str, account, inst, how: str, day: dt.date, cont
         raise refuse("how", "short-exercise", "A short option is assigned, not exercised.")
     if how == "assign" and held > 0:
         raise refuse("how", "long-assign", "A long option is exercised, not assigned.")
-    _, basis = open_basis(replay, inst.id, n)
     made = []
     end = Transaction(
         id=ids.new_id("Txn"),
@@ -141,12 +127,13 @@ def settle(s: Session, user_id: str, account, inst, how: str, day: dt.date, cont
     given = Decimal(0)
     for i, (under, per, weight) in enumerate(parts):
         shares = per * n
-        # The strike, the premium and the deliverable's cash are spread over its parts by
-        # their value that day (S3.10.4); the last takes what rounding leaves.
+        # The strike and the deliverable's cash are spread over its parts by their value
+        # that day (S3.10.4); the last takes what rounding leaves. The premium goes into the
+        # basis or proceeds as the account is replayed, so an edit to the opening trade
+        # follows through (S3.4).
         last = i == len(parts) - 1
         cash = paid - given if last else (paid * weight).quantize(CENT)
         given += cash
-        prem = None if basis is None else (basis * weight).quantize(CENT)
         extra_part = (extra * weight).quantize(CENT)
         stock = Transaction(
             id=ids.new_id("Txn"),
@@ -163,15 +150,12 @@ def settle(s: Session, user_id: str, account, inst, how: str, day: dt.date, cont
             optionTransactionId=end.id,
             createdById=user_id,
         )
-        if not buys:
-            # A short call's credit adds to the proceeds; a long put's premium comes off them;
-            # cash the deliverable carries goes with the shares.
-            stock.proceedsAdjustment = -(prem or Decimal(0)) - extra_part
+        if not buys and extra_part:
+            stock.proceedsAdjustment = -extra_part  # cash the deliverable carries goes with it
         s.add(stock)
         s.flush()
         if buys:
-            # A long call's premium adds to the basis; a short put's credit comes off it; cash
-            # the deliverable brings comes off it too.
+            # Cash the deliverable brings comes off the basis.
             s.add(
                 Lot(
                     id=ids.new_id("Lot"),
@@ -180,7 +164,7 @@ def settle(s: Session, user_id: str, account, inst, how: str, day: dt.date, cont
                     transactionId=stock.id,
                     acquiredOn=day,
                     quantity=shares,
-                    costBasis=cash + (prem or Decimal(0)) - extra_part,
+                    costBasis=cash - extra_part,
                     basisMissing=False,
                 )
             )

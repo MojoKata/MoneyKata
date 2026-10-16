@@ -127,14 +127,43 @@ def test_splits_return_of_capital_and_problems():
     assert r.disposals[-1].basis is None
 
 
-def test_a_snapshot_stands_in_for_missing_history():
+def test_return_of_capital_over_every_lot_and_its_excess_a_gain():
+    # B10: a lot without a basis keeps its share; what exceeds a lot's basis is a gain, held
+    # as long as the lot.
+    b1, l1 = buy(d(2024, 1, 5), 10, 100)
+    t2 = Txn(d(2025, 3, 5), "transfer-in", D(0), "VTI", D(10))
+    l2 = Lot(f"L{t2.id}", "VTI", t2.date, D(10), None, t2.id, basisMissing=True)
+    roc = Txn(d(2025, 7, 2), "return-of-capital", D(300), "VTI")
+    r = lots.replay("fifo", [b1, t2, roc], [l1, l2], [], [])
+    first, second = sorted(r.open, key=lambda x: x.acquiredOn)
+    assert first.basis == 0 and second.basis is None
+    (gain,) = r.disposals
+    assert gain.proceeds == D(50) and gain.basis == 0 and gain.quantity == 0
+    assert gain.acquiredOn == d(2024, 1, 5) and gain.longTerm
+    l2.costBasis, l2.basisMissing = D(1000), False  # its basis entered: its share applies
+    r = lots.replay("fifo", [b1, t2, roc], [l1, l2], [], [])
+    assert sorted(x.basis for x in r.open) == [0, D(850)]
+
+
+def test_a_snapshot_is_the_holdings_only_of_an_account_kept_by_snapshots():
+    # B9: in an account with trades of its own, a file's positions are a check and change no
+    # lot; an account with none is kept by its snapshots, which stand in for its history.
     txns, lots_ = book()
     r = lots.replay("fifo", txns, lots_, [], [Snap("VTI", d(2025, 9, 30), D(45))])
+    assert not any(x.standIn for x in r.open) and r.quantity("VTI") == D(30)
+    assert r.problems == []
+    r = lots.replay("fifo", [], [], [], [Snap("VTI", d(2025, 9, 30), D(45))])
     stand = [x for x in r.open if x.standIn]
-    assert stand and stand[0].quantity == D(15) and stand[0].basisMissing
+    assert stand and stand[0].quantity == D(45) and stand[0].basisMissing
     assert r.problems[0].kind == "history-missing"
-    r = lots.replay("fifo", txns, lots_, [], [Snap("VTI", d(2025, 9, 30), D(30))])
-    assert r.problems == [] and r.quantity("VTI") == D(30)
+    r = lots.replay(
+        "fifo",
+        [],
+        [],
+        [],
+        [Snap("VTI", d(2025, 9, 30), D(45)), Snap("VTI", d(2025, 12, 31), D(40))],
+    )
+    assert r.quantity("VTI") == D(40)
 
 
 @dataclass

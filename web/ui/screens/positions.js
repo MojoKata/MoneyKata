@@ -209,7 +209,9 @@ function Open({ rows, reload }) {
                                         l.quantity,
                                       )} bought ${date(
                                         l.acquiredOn,
-                                      )} · ${l.days} days · ${l.longTerm
+                                      )}${l.heldFrom
+                                        ? ` · held from ${date(l.heldFrom)} (a wash sale)`
+                                        : ''} · ${l.days} days · ${l.longTerm
                                         ? 'long term'
                                         : 'short term'}</span>${l.basis
                                         ? html`<${Amt} v=${l.basis} />`

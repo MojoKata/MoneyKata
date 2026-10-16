@@ -122,7 +122,7 @@ def _out(a, v: strat.View, level: str) -> StrategyOut:
         expiryKnown=v.figures.expiryKnown,
         capitalAtRiskNow=v.riskNow,
         capitalAtRiskAtOpen=v.riskAtOpen,
-        returnPct=round(float(v.pl / v.riskAtOpen * 100), 2)
+        returnPct=(v.pl / v.riskAtOpen * 100).quantize(Decimal("0.01"))
         if v.pl is not None and v.riskAtOpen
         else None,
         cashSecured=st.cashSecured,

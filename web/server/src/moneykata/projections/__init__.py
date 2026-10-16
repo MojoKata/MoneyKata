@@ -32,7 +32,8 @@ BOND = re.compile(
     r"\b(bond|treasury|aggregate|income|fixed)\b|^(BND|AGG|BNDX|SCHZ|VBTLX|FXNAX)$", re.I
 )
 REIT = re.compile(r"\b(reit|real estate)\b|^(VNQ|SCHH|VGSLX)$", re.I)
-SLACK = 0.02
+SLACK = Decimal("0.02")
+CENTS = Decimal("0.01")
 BTC = re.compile(r"^(BTC|XBT)\b", re.I)
 
 
@@ -67,6 +68,13 @@ class BuiltOn:
     label: str
     bitcoin: Decimal  # the value held in bitcoin, which a bitcoin model can follow
 
+    @property
+    def bitcoin_share(self) -> float:
+        """Bitcoin's part of the crypto: a bitcoin model drives it, the crypto assumption the
+        rest (S6.3.1)."""
+        crypto = self.weights.get("crypto", 0) * float(self.value) if self.value > 0 else 0
+        return min(1.0, float(self.bitcoin) / crypto) if crypto else 0.0
+
 
 def built_on(s: Session, user_id: str, spec: dict) -> BuiltOn:
     """Its accounts' current values and their mix by asset class; or a typed amount with the
@@ -76,12 +84,14 @@ def built_on(s: Session, user_id: str, spec: dict) -> BuiltOn:
         amount = Decimal(str(spec.get("amount", 0)))
         mix = spec.get("allocation") or {"usStocks": 60, "bonds": 40}
         total = sum(mix.values()) or 1
+        # A what-if names no coins: its crypto is taken as bitcoin, for a bitcoin model.
+        crypto = Decimal(str(mix.get("crypto", 0))) / Decimal(str(total))
         return BuiltOn(
             amount,
             {k: v / total for k, v in mix.items()},
             [],
             f"a typed {amount:,.0f}",
-            Decimal(0),
+            (amount * crypto).quantize(Decimal("0.01")),
         )
     if kind == "portfolio":
         from ..ui.portfolios import seen_accounts
@@ -228,7 +238,7 @@ def prepare(s: Session, p: Projection, viewer: str) -> Prepared:
         last_part = 1.0
     btc_now = _btc_price(s) or 100_000.0
     crypto_path = None
-    if model not in ("assumption", None) and base.weights.get("crypto"):
+    if model not in ("assumption", None) and base.bitcoin > 0:
         prices = bitcoin.median_path(
             model, taxtables.figures(s, year), btc_now, list(range(year, year + years + 1))
         )
@@ -252,6 +262,7 @@ def prepare(s: Session, p: Projection, viewer: str) -> Prepared:
         withdrawal=withdrawal,
         income=income,
         crypto_path=crypto_path,
+        bitcoin_share=base.bitcoin_share,
         runs=int(inputs.get("runs", engine.RUNS)),
         seed=engine.seed_of(p.id, inputs, str(base.value)),
     )
@@ -269,16 +280,17 @@ def compute(s: Session, p: Projection, viewer: str) -> dict:
         "percentiles": {str(k): v for k, v in result.percentiles.items()},
         "real": {str(k): v for k, v in result.real.items()},
         "expected": result.expected,
-        "start": float(prep.base.value),
+        "start": prep.base.value,  # exact, as the tracking figures are (S6.9)
         "builtOnLabel": prep.base.label,
         "weights": prep.base.weights,
         "assumptions": prep.figures,
         "bitcoinModel": prep.model,
+        "bitcoinShare": prep.base.bitcoin_share,
         "runs": plan.runs,
         "seed": plan.seed,
         "scenarios": {},
     }
-    if prep.model in ("saylor", "ark") and prep.base.weights.get("crypto"):
+    if prep.model in ("saylor", "ark") and prep.base.bitcoin > 0:
         out["scenarios"] = engine.scenario_paths(
             plan, prep.model, taxtables.figures(s, plan.first_year), _btc_price(s) or 100_000.0
         )
@@ -423,6 +435,13 @@ def _on_baseline(base: dict, start: dt.date, day: dt.date) -> tuple[float, float
     return at(base["p10"]), at(base["p50"]), at(base["p90"])
 
 
+def widened(lo: Decimal, mid: Decimal, hi: Decimal) -> tuple[Decimal, Decimal, Decimal]:
+    """Day-to-day noise isn't a plan going wrong: the band is never narrower than 2% of its
+    median either way, a floor on its width, never a margin added to a wide one (S6.7.3)."""
+    floor = abs(mid) * SLACK
+    return min(lo, mid - floor), mid, max(hi, mid + floor)
+
+
 def tracking(s: Session, p: Projection, viewer: str, upto: dt.date | None = None) -> dict | None:
     """The actual balance of what it is built on since the baseline, against the band, and
     whether it is on track, ahead or behind (on the last day given: the alert checks it as of
@@ -433,7 +452,7 @@ def tracking(s: Session, p: Projection, viewer: str, upto: dt.date | None = None
     spec = json.loads(p.builtOn)
     start = p.baselineAt.date()
     today = upto or clock.today()
-    points: list[tuple[dt.date, float]] = []
+    points: list[tuple[dt.date, Decimal]] = []
     if spec.get("kind", "typed") == "typed":
         return {"status": "untracked", "points": [], "baseline": base, "since": start.isoformat()}
     on = built_on(s, p.ownerId, spec)
@@ -444,22 +463,23 @@ def tracking(s: Session, p: Projection, viewer: str, upto: dt.date | None = None
             s, repo.load(s, a), atypes.investing(a.type), start, today, step
         ):
             totals[day] = totals.get(day, Decimal(0)) + value
+    # The actual balances stay exact (S6.9); the band is the model's, to the cent.
     for day in sorted(totals):
         if day >= start:
-            points.append((day, float(totals[day])))
+            points.append((day, totals[day]))
     status = "on track"
     # The baseline grows from the balance the day it was set; prices that arrive later that
     # day move the start, so the band is anchored on the first actual balance.
-    first = base["p50"][0] if base["p50"] else 0
-    scale = points[0][1] / first if points and first > 0 and points[0][1] > 0 else 1.0
-    band = [(d, *(v * scale for v in _on_baseline(base, start, d))) for d, _ in points]
+    first = Decimal(repr(base["p50"][0])) if base["p50"] else Decimal(0)
+    scale = points[0][1] / first if points and first > 0 and points[0][1] > 0 else Decimal(1)
+    band = []
+    for d, _ in points:
+        lo, mid, hi = widened(*(Decimal(repr(v)) * scale for v in _on_baseline(base, start, d)))
+        band.append((d, lo.quantize(CENTS), mid.quantize(CENTS), hi.quantize(CENTS)))
     if points:
-        _, lo, mid, hi = band[-1]
-        # Day-to-day noise isn't a plan going wrong: the band is never narrower than 2% of
-        # its median either way.
-        slack = abs(mid) * SLACK
+        _, lo, _, hi = band[-1]
         value = points[-1][1]
-        status = "behind" if value < lo - slack else "ahead" if value > hi + slack else "on track"
+        status = "behind" if value < lo else "ahead" if value > hi else "on track"
     return {
         "status": status,
         "points": [(d.isoformat(), v) for d, v in points],

@@ -214,7 +214,7 @@ export function LoanSummary({ a, reload }) {
           name="plus" /> Record a payment</button>`
       : null}</h3>
       <div class="list-item"><span class="grow dim">Owed</span><${Amt} v=${v.balance} /></div>
-      <div class="list-item"><span class="grow dim">Rate</span>${dec(v.rate).round(3)}% ${t
+      <div class="list-item"><span class="grow dim">Rate</span>${String(dec(v.rate))}% ${t
           .resets.length
         ? 'adjustable'
         : 'fixed'}<span class="small dim">${'\u00a0'}· ${METHODS.find(([k]) => k === t.method)?.[1]

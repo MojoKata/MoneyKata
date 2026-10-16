@@ -20,6 +20,7 @@ from .conventions import (
     ExactRoute,
     Loose,
     Model,
+    Money,
     Ratio,
     check,
     check_version,
@@ -113,8 +114,8 @@ def detail(s, c_id: str, p: Projection, level: str) -> ProjectionDetail:
     return ProjectionDetail(
         **base.model_dump(),
         inputs=json.loads(p.inputs),
-        result=result,
-        tracking=projections.tracking(s, p, c_id),
+        result=exactjson.marked(result),
+        tracking=exactjson.marked(projections.tracking(s, p, c_id)),
         baselineAt=p.baselineAt,
     )
 
@@ -409,8 +410,8 @@ class Plan(Model):
     goal: str
     status: str | None
     headline: str
-    actual: list[tuple[str, float]]
-    baseline: list[tuple[str, float]]
+    actual: list[tuple[str, Money]]  # exact, as the tracking is (S6.9)
+    baseline: list[tuple[str, Money]]
     sharedBy: str | None
     builtOn: dict
 
@@ -547,7 +548,7 @@ def _tables(s, year: int) -> TaxTables:
                 shipped=shipped.get(f.key),
                 corrected=f.key in changed,
             )
-            for f in taxtables.FIGURES
+            for f in taxtables.of_year(year)
         ],
     )
 
@@ -569,6 +570,9 @@ def put_tax_tables(
     errors = []
     clean = {}
     for k, v in body.values.items():
+        if k in taxtables.BY_KEY and k not in taxtables.SHIPPED[body.year]:
+            errors.append(FieldError(k, "figure-not-of-year", "That year doesn't ship it."))
+            continue
         try:
             clean[k] = taxtables.check(k, v)
         except taxtables.Invalid as e:

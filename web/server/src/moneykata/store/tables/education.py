@@ -3,7 +3,7 @@ came from, and the qualified expenses its withdrawals are matched with."""
 
 from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Index, Integer, Text, text
 
-from ..types import Day, Dec
+from ..types import Cents, Day, Dec
 from ._base import record, unique_live
 
 EducationPlan = record(
@@ -14,7 +14,7 @@ EducationPlan = record(
     Column("planName", Text),  # my529, Bright Start…
     Column("beneficiaryId", Text, ForeignKey("Person.id")),  # a person (S10.10)
     Column("openedOn", Day),
-    Column("stateDeduction", Dec),  # what the owner expects a year, typed (S8.18)
+    Column("stateDeduction", Cents),  # what the owner expects a year, typed (S8.18)
 )
 unique_live(EducationPlan, "accountId")
 

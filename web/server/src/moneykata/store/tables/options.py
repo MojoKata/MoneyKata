@@ -30,7 +30,7 @@ OptionContract = record(
     # What a contract delivers when adjusted, as JSON: [{"instrumentId", "shares"}], with the
     # cash; none: the multiplier's shares of its underlying.
     Column("deliverable", Text),
-    Column("deliverableCash", Dec),
+    Column("deliverableCash", Cents),
     CheckConstraint("\"right\" IN ('call', 'put')", name="right"),
     CheckConstraint("strike > 0", name="strike"),
     CheckConstraint("multiplier > 0", name="multiplier"),
@@ -75,7 +75,7 @@ WashSale = exception(
     Column("saleId", Text, ForeignKey("Transaction.id", ondelete="CASCADE"), nullable=False),
     Column("replacementId", Text, ForeignKey("Transaction.id", ondelete="CASCADE"), nullable=False),
     Column("quantity", Dec, nullable=False),  # replacement shares used
-    Column("disallowed", Dec, nullable=False),
+    Column("disallowed", Cents, nullable=False),
     Column("heldFrom", Day, nullable=False),  # the replacement's holding period starts here
     Column("createdAt", UtcTimestamp, nullable=False),
     prefix="WashS",

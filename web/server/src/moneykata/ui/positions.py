@@ -26,7 +26,9 @@ KINDS = {
 
 
 class LotOut(Model):
-    acquiredOn: dt.date
+    acquiredOn: dt.date  # the day bought
+    # A wash sale's replacement: held from the sold shares' purchase, for the term (S3.8.4).
+    heldFrom: dt.date | None
     quantity: Quantity
     basis: Money | None
     days: int
@@ -97,11 +99,9 @@ class PositionsView(Model):
 
 
 def _long_term(acquired: dt.date, day: dt.date) -> bool:
-    try:
-        anniversary = acquired.replace(year=acquired.year + 1)
-    except ValueError:
-        anniversary = acquired.replace(year=acquired.year + 1, day=28)
-    return day > anniversary
+    from ..ledger.lots import long_term
+
+    return long_term(acquired, day)
 
 
 def _term(flags: list[bool]) -> str:
@@ -164,7 +164,7 @@ def gather(s, c: Caller, kind: str = "all"):
             p = positions.get(iid)
             value = p.value if p is not None else None
             gain = value - cost if value is not None and cost is not None else None
-            flags = [_long_term(lot.acquiredOn, today) for lot in lots]
+            flags = [_long_term(lot.heldFrom or lot.acquiredOn, today) for lot in lots]
             extra = {}
             oc = options.contract_of(s, iid) if inst.instrumentClass == "option" else None
             if oc is not None:
@@ -194,13 +194,14 @@ def gather(s, c: Caller, kind: str = "all"):
                     else None,
                     realized=realized[iid],
                     term=_term(flags),
-                    days=(today - lots[0].acquiredOn).days,
+                    days=(today - (lots[0].heldFrom or lots[0].acquiredOn)).days,
                     lots=[
                         LotOut(
                             acquiredOn=lot.acquiredOn,
+                            heldFrom=lot.heldFrom,
                             quantity=lot.quantity,
                             basis=lot.basis,
-                            days=(today - lot.acquiredOn).days,
+                            days=(today - (lot.heldFrom or lot.acquiredOn)).days,
                             longTerm=f,
                         )
                         for lot, f in zip(lots, flags, strict=True)
@@ -353,6 +354,7 @@ class OptionTradeRow(Model):
 
 
 OPTION_KINDS = ("buy-to-open", "sell-to-open", "buy-to-close", "sell-to-close")
+PCT = Decimal("0.01")
 ENDS = ("expire", "assign", "exercise", "option-adjust")
 
 
@@ -430,7 +432,7 @@ def option_trades(request: Request, c: Caller = Depends(caller)):
             risk = at_open.get((r.accountId, r.instrumentId))
             if risk is not None:
                 r.capitalAtRisk = risk
-                r.returnPct = round(r.pl / risk * 100, 2) if r.pl is not None else None
+                r.returnPct = (r.pl / risk * 100).quantize(PCT) if r.pl is not None else None
     open_rows = [r for r in out if r.closed is None]
     done = sorted((r for r in out if r.closed is not None), key=lambda r: r.closed, reverse=True)
     return sorted(open_rows, key=lambda r: r.opened, reverse=True) + done
@@ -473,5 +475,5 @@ def _trade_row(a, inst, oc, trade, last: Transaction | None, value) -> OptionTra
         value=value if last is None else None,
         pl=pl,
         capitalAtRisk=risk,
-        returnPct=round(float(pl / risk * 100), 2) if pl is not None and risk else None,
+        returnPct=(pl / risk * 100).quantize(PCT) if pl is not None and risk else None,
     )

@@ -57,6 +57,7 @@
  * @property {(string | null)} statementIntervalProposal
  * @property {(import('../app/dec.js').Dec | null)} optionsValue
  * @property {(import('../app/dec.js').Dec | null)} capitalAtRisk
+ * @property {boolean} [capitalAtRiskUnlimited]
  * @property {(string | null)} connectionId
  * @property {(string | null)} syncAccount
  */
@@ -1584,6 +1585,7 @@
 /**
  * @typedef {Object} LotOut
  * @property {string} acquiredOn
+ * @property {(string | null)} heldFrom
  * @property {import('../app/dec.js').Dec} quantity
  * @property {(import('../app/dec.js').Dec | null)} basis
  * @property {number} days
@@ -2556,6 +2558,7 @@
  * @property {import('../app/dec.js').Dec} total
  * @property {(import('../app/dec.js').Dec | null)} optionsValue
  * @property {(import('../app/dec.js').Dec | null)} capitalAtRisk
+ * @property {boolean} [capitalAtRiskUnlimited]
  */
 
 /**
@@ -4225,6 +4228,8 @@
  * @property {string} owner
  * @property {import('../app/dec.js').Dec} contributed
  * @property {(import('../app/dec.js').Dec | null)} limit
+ * @property {import('../app/dec.js').Dec} personTotal
+ * @property {(string | null)} across
  * @property {boolean} over
  * @property {string} note
  */

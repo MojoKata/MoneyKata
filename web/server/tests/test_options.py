@@ -2,6 +2,7 @@
 their gains at close or expiry."""
 
 import datetime as dt
+from decimal import Decimal as D
 
 import pytest
 from conftest import make_user, sign_in
@@ -162,6 +163,30 @@ def test_a_short_put_assigned_folds_the_credit_into_the_stock_basis(alice):
         ).status_code
         == 422
     )
+
+
+def test_an_assignment_follows_its_opening_trade_and_goes_with_its_stock_trade(server, alice):
+    # B12: the premium is folded in at replay, so a change to the opening trade (a re-import
+    # with a corrected amount) follows through; deleting the assignment deletes its stock trade.
+    from moneykata.store.entities.accounts import Transaction
+
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    sold = opt(alice, brk["id"], "sell-to-open", "2026-09-02", "6.40", fees="0").json()
+    put = _held(alice, brk["id"], "MSFT 20NOV26 480 P")
+    end, stock = alice.post(
+        f"/ui/api/accounts/{brk['id']}/options/{put['instrumentId']}/settle",
+        json={"how": "assign", "date": "2026-11-20"},
+    ).json()
+    with server.db.tx() as s:
+        s.get(Transaction, sold["id"]).amount = D("700.00")
+    assert _held(alice, brk["id"], "MSFT")["cost"] == "47300.00"
+    r = alice.delete(f"/ui/api/transactions/{end['id']}", headers={"If-Match": str(end["version"])})
+    assert r.status_code == 200, r.text
+    assert _held(alice, brk["id"], "MSFT") is None
+    assert _held(alice, brk["id"], "MSFT 20NOV26 480 P") is not None
+    items = alice.get("/ui/api/transactions", params={"accountId": brk["id"]}).json()["items"]
+    assert stock["id"] not in {t["id"] for t in items}
+    assert end["id"] not in {t["id"] for t in items}
 
 
 def test_a_short_call_assigned_adds_its_credit_to_the_proceeds(alice):

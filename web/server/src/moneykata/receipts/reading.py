@@ -36,6 +36,7 @@ from . import parser
 log = logging.getLogger("moneykata.receipts")
 
 TIME_LIMIT = 60
+STATEMENT_TIME_LIMIT = 300  # a scanned statement's every page, at about 10 s a page
 MEMORY_CAP = 1536 * 1024 * 1024
 FIELDS = ("date", "amount", "payee")
 
@@ -139,9 +140,13 @@ class Worker:
             return {"error": str(out["error"])[:300]}
         return out
 
-    def read(self, data: bytes, media: str, limit: float = TIME_LIMIT) -> tuple:
-        """A receipt or statement read: ("ok", lines, method, engine), or ("error", why)."""
-        out = self.call("read", data, limit, media=media)
+    def read(
+        self, data: bytes, media: str, limit: float = TIME_LIMIT, pages: int | None = None
+    ) -> tuple:
+        """A receipt or statement read: ("ok", lines, method, engine), or ("error", why). A
+        statement asks for more pages than a receipt's three, with a longer limit."""
+        extra = {"pages": pages} if pages else {}
+        out = self.call("read", data, limit, media=media, **extra)
         if "error" in out:
             return ("error", out["error"])
         lines, method, engine = out.get("lines"), out.get("method"), out.get("engine")

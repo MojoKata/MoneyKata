@@ -1,6 +1,7 @@
 """Lots and gains (requirements S2.2, S2.3): replaying an account's transactions consumes its
-lots by the lot method in force at each sale. A holding snapshot from a broker's file stands
-in for history that is missing, marked as such (R3.2)."""
+lots by the lot method in force at each sale. A holding snapshot from a broker's file is the
+holdings of an account kept by snapshots (R3.2), with stand-in lots marked as such; in an
+account with trades of its own it is a check, and changes no lot (S1.3.3.8.2)."""
 
 import datetime as dt
 from dataclasses import dataclass, field
@@ -18,6 +19,9 @@ class OpenLot:
     quantity: Decimal
     basis: Decimal | None  # what remains of the cost basis; None while it is missing
     standIn: bool = False  # made from a holding snapshot, not a transaction
+    # A wash sale's replacement (S3.8.4): held from the sold shares' purchase, for the term
+    # only; the lot is still acquired, and taken in order, by the day it was bought.
+    heldFrom: dt.date | None = None
 
     @property
     def basisMissing(self) -> bool:
@@ -40,6 +44,9 @@ class Disposal:
     basis: Decimal | None
     method: str
     adjustment: Decimal = ZERO  # a wash sale's disallowed loss, added back (code W, S3.8)
+    heldFrom: dt.date | None = None  # a replacement's tacked holding period (S3.8.4)
+    written: bool = False  # a written option closed: short-term whatever its days (S3.3)
+    standIn: bool = False  # from a lot a snapshot stood in for: when it was bought is unknown
 
     @property
     def gain(self) -> Decimal | None:
@@ -48,13 +55,27 @@ class Disposal:
         return (self.proceeds - self.basis + self.adjustment).quantize(CENT)
 
     @property
+    def raw_gain(self) -> Decimal | None:
+        """The gain before this sale's own wash-sale adjustment."""
+        if self.basis is None:
+            return None
+        return (self.proceeds - self.basis).quantize(CENT)
+
+    @property
     def longTerm(self) -> bool:
-        """Held more than a year (S3.1)."""
-        try:
-            anniversary = self.acquiredOn.replace(year=self.acquiredOn.year + 1)
-        except ValueError:  # 29 February
-            anniversary = self.acquiredOn.replace(year=self.acquiredOn.year + 1, day=28)
-        return self.soldOn > anniversary
+        """Held more than a year (S3.1), from the tacked day for a wash sale's replacement; a
+        written option's gain is short-term however long it was open (IRC §1234(b), S3.3)."""
+        return not self.written and long_term(self.heldFrom or self.acquiredOn, self.soldOn)
+
+
+def long_term(acquired: dt.date, sold: dt.date) -> bool:
+    """Held more than a year: sold after the anniversary of the day acquired (S3.1), the one
+    rule for every holding period, shares, coins, items and donations alike."""
+    try:
+        anniversary = acquired.replace(year=acquired.year + 1)
+    except ValueError:  # 29 February
+        anniversary = acquired.replace(year=acquired.year + 1, day=28)
+    return sold > anniversary
 
 
 @dataclass
@@ -78,6 +99,11 @@ class Replay:
     # What each transfer out took with it: (acquired, quantity, basis), by transaction, so a
     # matched transfer in can open the same lots (S1.7.1).
     moved: dict = field(default_factory=dict)
+    # An assignment's or exercise's stock trades, by the option's end, and the premium each
+    # takes into its basis or proceeds once the end is replayed (S3.4); None while the
+    # option's basis is missing.
+    legs: dict = field(default_factory=dict)
+    premium: dict = field(default_factory=dict)
 
     def quantity(self, instrument_id: str) -> Decimal:
         return sum((lot.quantity for lot in self.open if lot.instrumentId == instrument_id), ZERO)
@@ -111,6 +137,11 @@ def _take(lot: OpenLot, qty: Decimal) -> Decimal | None:
     return basis
 
 
+def kept_by_snapshots(transactions: list, lots: list) -> bool:
+    """No trades of its own: no transaction in an instrument, and no lot typed on its own."""
+    return not any(t.instrumentId for t in transactions) and all(x.transactionId for x in lots)
+
+
 def replay(
     account_method: str,
     transactions: list,
@@ -118,9 +149,16 @@ def replay(
     picks: list,
     snapshots: list,
     washes: list = (),
+    by_snapshots: bool | None = None,
 ) -> Replay:
     """Transactions, lots (acquisitions), specific-identification picks and holding
-    snapshots of one account, as entities; returns the open lots, disposals and problems."""
+    snapshots of one account, as entities; returns the open lots, disposals and problems.
+    The snapshots count only for an account kept by them (`by_snapshots`, worked out from
+    the transactions and lots when not given)."""
+    if by_snapshots is None:
+        by_snapshots = kept_by_snapshots(transactions, lots)
+    if not by_snapshots:
+        snapshots = []
     lots_by_txn: dict[str, list] = {}
     for lot in lots:
         if lot.transactionId:
@@ -130,19 +168,26 @@ def replay(
         picks_by_sale.setdefault(p.saleId, []).append(p)
 
     events: list[tuple] = []
+    ends = {t.id for t in transactions if t.kind in ("assign", "exercise")}
     for t in transactions:
-        events.append((t.date, 0, t.createdAt, t.id, "txn", t))
+        # An assignment's stock trades come after it on its day, to take its premium.
+        leg = getattr(t, "optionTransactionId", None) in ends
+        events.append((t.date, 1 if leg else 0, t.createdAt, t.id, "txn", t))
     for lot in lots:
         if not lot.transactionId:
             events.append((lot.acquiredOn, 0, lot.createdAt, lot.id, "lot", lot))
     for h in snapshots:
-        events.append((h.asOf, 1, h.createdAt, h.id, "snapshot", h))  # at the day's end
+        events.append((h.asOf, 2, h.createdAt, h.id, "snapshot", h))  # at the day's end
     events.sort(key=lambda e: e[:4])
 
     replaced: dict[str, list] = {}
     for w in washes:
         replaced.setdefault(w.replacementId, []).append(w)
     out = Replay()
+    for t in transactions:
+        end = getattr(t, "optionTransactionId", None)
+        if end and t.kind in ("buy", "sell"):
+            out.legs.setdefault(end, []).append(t)
     for _, _, _, _, what, obj in events:
         if what == "lot":
             out.open.append(
@@ -188,10 +233,11 @@ def _replacement(out: Replay, before: int, rows: list) -> None:
                 OpenLot(
                     lot.lotId,
                     lot.instrumentId,
-                    row.heldFrom,
+                    lot.acquiredOn,
                     take,
                     None if share is None else share + row.disallowed,
                     lot.standIn,
+                    row.heldFrom,
                 )
             )
             break
@@ -237,6 +283,15 @@ def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -
                         None if lot.basisMissing else lot.costBasis,
                     )
                 )
+            if t.id in out.premium:
+                # A long call's premium adds to the shares' basis; a short put's credit comes
+                # off it (S3.4). The stock trade's lots are the last ones made.
+                prem = out.premium.pop(t.id)
+                for lot in out.open[-len(made) :]:
+                    share = (
+                        None if prem is None else (prem * lot.quantity / t.quantity).quantize(CENT)
+                    )
+                    lot.basis = None if share is None or lot.basis is None else lot.basis + share
         elif t.quantity:
             basis = -t.amount if t.kind != "transfer-in" and t.amount else None
             out.open.append(OpenLot(None, t.instrumentId, t.date, t.quantity, basis))
@@ -250,17 +305,52 @@ def _transaction(out: Replay, t, account_method: str, made: list, picks: list) -
             if t.kind == "sell"
             else ZERO
         )
+        # A short call's credit adds to the proceeds; a long put's premium comes off them.
+        proceeds -= out.premium.pop(t.id, None) or ZERO
         _consume(out, t, qty, method, proceeds, picks, realize=t.kind == "sell")
     elif t.kind == "split" and t.splitRatio:
         for lot in out.open:
             if lot.instrumentId == t.instrumentId:
                 lot.quantity *= t.splitRatio
     elif t.kind == "return-of-capital":
-        held = [lot for lot in out.open if lot.instrumentId == t.instrumentId and lot.basis]
-        total = sum((lot.quantity for lot in held), ZERO)
-        for lot in held:
-            cut = (t.amount * lot.quantity / total).quantize(CENT) if total else ZERO
-            lot.basis = max(ZERO, lot.basis - cut)
+        _return_of_capital(out, t)
+
+
+def _return_of_capital(out: Replay, t) -> None:
+    """Spread over every lot held, by quantity (S2.4), the last taking what rounding leaves. A
+    lot without a basis keeps its share, which applies once its basis is entered (the replay
+    works it out again); what exceeds a lot's basis is a capital gain, held as long as the lot
+    (IRS Pub. 550, nondividend distributions)."""
+    held = [x for x in out.open if x.instrumentId == t.instrumentId and x.quantity > 0]
+    total = sum((x.quantity for x in held), ZERO)
+    amount = abs(t.amount or ZERO)
+    if not total or not amount:
+        return
+    given = ZERO
+    for i, lot in enumerate(held):
+        cut = (
+            amount - given if i == len(held) - 1 else (amount * lot.quantity / total).quantize(CENT)
+        )
+        given += cut
+        if lot.basis is None:
+            continue
+        excess = cut - lot.basis
+        lot.basis = max(ZERO, lot.basis - cut)
+        if excess > 0:
+            out.disposals.append(
+                Disposal(
+                    t.id,
+                    lot.lotId,
+                    t.instrumentId,
+                    lot.acquiredOn,
+                    t.date,
+                    ZERO,
+                    excess,
+                    ZERO,
+                    "return-of-capital",
+                    heldFrom=lot.heldFrom,
+                )
+            )
 
 
 def _adjust(out: Replay, t) -> None:
@@ -282,6 +372,11 @@ def _adjust(out: Replay, t) -> None:
                 lot.standIn,
             )
         )
+
+
+# What consumes lots by a method: the method in force when it was made is recorded on it
+# (S2.3), so a later change of the account's method leaves it as it was.
+DISPOSALS = ("sell", "transfer-out")
 
 
 # Option trades (S3.2, S3.3): a long contract is a lot like a share's; a short one is a
@@ -311,8 +406,10 @@ def _option(out: Replay, t, picks: list) -> None:
         _cover(out, t, qty, t.amount)
     elif t.kind in ("assign", "exercise"):
         # The contract ends without a gain of its own: its premium goes into the stock's basis
-        # or proceeds, on the stock trade made with it (S3.4).
+        # or proceeds, on the stock trades made with it (S3.4), worked out here so an edit to
+        # the opening trade follows through.
         left = qty
+        premium: Decimal | None = ZERO
         for lot in sorted(
             (x for x in out.open if x.instrumentId == t.instrumentId and x.quantity),
             key=lambda x: x.acquiredOn,
@@ -320,10 +417,15 @@ def _option(out: Replay, t, picks: list) -> None:
             if left <= 0:
                 break
             take = min(left, abs(lot.quantity))
-            if lot.basis is not None:
-                lot.basis -= (lot.basis * take / abs(lot.quantity)).quantize(CENT)
+            if lot.basis is None:
+                premium = None
+            else:
+                part = (lot.basis * take / abs(lot.quantity)).quantize(CENT)
+                lot.basis -= part
+                premium = None if premium is None else premium + part
             lot.quantity += take if lot.quantity < 0 else -take
             left -= take
+        _spread_premium(out, t.id, premium)
     elif t.kind == "expire":
         # Worthless: what is left of the long lots is lost; the short lots keep their credit.
         longs = sum(
@@ -334,6 +436,26 @@ def _option(out: Replay, t, picks: list) -> None:
             _consume(out, t, min(qty, longs), "fifo", ZERO, picks, realize=True)
         else:
             _cover(out, t, qty, ZERO)
+
+
+def _spread_premium(out: Replay, end_id: str, premium: Decimal | None) -> None:
+    """The premium over the end's stock trades, by their cash (S3.10.4); the last takes what
+    rounding leaves."""
+    legs = out.legs.get(end_id, [])
+    total = sum((abs(x.amount) for x in legs), ZERO)
+    given = ZERO
+    for i, leg in enumerate(legs):
+        if premium is None:
+            out.premium[leg.id] = None
+            continue
+        last = i == len(legs) - 1
+        share = (
+            premium - given
+            if last or not total
+            else (premium * abs(leg.amount) / total).quantize(CENT)
+        )
+        given += share
+        out.premium[leg.id] = share
 
 
 def _cover(out: Replay, t, qty: Decimal, proceeds: Decimal) -> None:
@@ -359,7 +481,16 @@ def _cover(out: Replay, t, qty: Decimal, proceeds: Decimal) -> None:
         lot.quantity += take
         out.disposals.append(
             Disposal(
-                t.id, lot.lotId, t.instrumentId, lot.acquiredOn, t.date, take, share, basis, "fifo"
+                t.id,
+                lot.lotId,
+                t.instrumentId,
+                lot.acquiredOn,
+                t.date,
+                take,
+                share,
+                basis,
+                "fifo",
+                written=True,
             )
         )
     if left > 0:
@@ -391,10 +522,18 @@ def _consume(
         if take > 0:
             plan.append((lot, take))
             left -= take
-    avg = None
     if method == "average" and held and all(lot.basis is not None for lot in held):
+        # Average cost (S2.3): at each sale every share held is re-based to the pool's average,
+        # so later sales take the same average, however the earlier ones fell.
         pool = sum((lot.quantity for lot in held), ZERO)
-        avg = sum((lot.basis for lot in held), ZERO) / pool if pool else None
+        whole = sum((lot.basis for lot in held), ZERO)
+        given = ZERO
+        for i, lot in enumerate(held):
+            if i == len(held) - 1:
+                lot.basis = whole - given
+            else:
+                lot.basis = (whole * lot.quantity / pool).quantize(CENT)
+                given += lot.basis
     used = (
         method
         if method in ("fifo", "lifo", "hifo", "average")
@@ -406,9 +545,6 @@ def _consume(
         share = proceeds - allotted if last else (proceeds * take / total).quantize(CENT)
         allotted += share
         basis = _take(lot, take)
-        if avg is not None:
-            basis = (avg * take).quantize(CENT)
-            lot.basis = (avg * lot.quantity).quantize(CENT)
         if not realize:
             out.moved.setdefault(t.id, []).append((lot.acquiredOn, take, basis))
         if realize:
@@ -423,6 +559,8 @@ def _consume(
                     share,
                     basis,
                     used,
+                    heldFrom=lot.heldFrom,
+                    standIn=lot.standIn,
                 )
             )
     if left > 0:

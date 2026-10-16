@@ -12,7 +12,7 @@ import io
 import re
 from decimal import Decimal, InvalidOperation
 
-from .parsed import ParsedFile, ReadError, Row, Security
+from .parsed import ParsedFile, ReadError, Row, Security, occ_symbol
 
 DATE_FORMATS = [
     "%m/%d/%Y",
@@ -255,18 +255,33 @@ def read(data: bytes, mapping: dict) -> ParsedFile:
         except ReadError as e:
             raise ReadError(f"Row {n}: {e}") from None
         symbol = (cell(r, "symbol") or "").upper() or None
+        option = occ_symbol(symbol) if mapping.get("symbol") else None
+        symbol = option or symbol
         kind = (
             _kind(cell(r, "action"), value)
             if mapping.get("symbol")
             else ("deposit" if value > 0 else "withdrawal")
         )
+        if option:
+            # An option is a contract (S3.2): its row says whether it opens or closes, or how
+            # it ended; a plain buy or sell can't say which, so it is refused by name.
+            kind = _option_kind(cell(r, "action"))
+            if kind is None:
+                raise ReadError(
+                    f"Row {n}: {symbol} is an option, and its action doesn't say whether it "
+                    "opens or closes (Buy to Open, Sell to Close, Expired, Assigned). Record "
+                    "it on Positions, or fix the file's action."
+                )
         if (
             symbol
             and symbol not in out.securities
             and kind not in ("deposit", "withdrawal", "fee", "transfer")
         ):
             out.securities[symbol] = Security(
-                key=symbol, symbol=symbol, name=None, instrumentClass="other"
+                key=symbol,
+                symbol=symbol,
+                name=None,
+                instrumentClass="option" if option else "other",
             )
         out.rows.append(
             Row(
@@ -283,8 +298,24 @@ def read(data: bytes, mapping: dict) -> ParsedFile:
                 runningBalance=running,
             )
         )
+    # A newest-first export (most banks') is read oldest first, so each day's last running
+    # balance is its last row's (S1.11.2), and rows go in in the order they happened.
+    if len(out.rows) > 1 and out.rows[0].date > out.rows[-1].date:
+        out.rows.reverse()
     out.cover()
     return out
+
+
+def _option_kind(action: str | None) -> str | None:
+    a = " ".join((action or "").lower().replace("-", " ").split())
+    for word, kind in (("expire", "expire"), ("assign", "assign"), ("exercise", "exercise")):
+        if word in a:
+            return kind
+    side = (
+        "buy" if ("buy" in a or "bought" in a) else "sell" if ("sell" in a or "sold" in a) else None
+    )
+    end = "open" if "open" in a else "close" if "clos" in a else None
+    return f"{side}-to-{end}" if side and end else None
 
 
 def _kind(action: str | None, value: Decimal) -> str:

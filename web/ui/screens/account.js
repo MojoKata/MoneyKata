@@ -151,8 +151,9 @@ function Details({ a }) {
           : null}
         ${a.optionsValue != null
           ? html`<div class="list-item"><span class="grow dim" data-help="capital-at-risk">Options ·
-              capital at risk</span><span><${Amt} v=${a.optionsValue} /> · <${Amt}
-              v=${a.capitalAtRisk} /></span></div>`
+              capital at risk</span><span><${Amt} v=${a.optionsValue} /> · ${
+            a.capitalAtRiskUnlimited ? 'unlimited' : html`<${Amt} v=${a.capitalAtRisk} />`
+          }</span></div>`
           : null}
         <div class="list-item"><span class="grow dim">Tax treatment</span>${a.tax || '—'}</div>
         <div class="list-item"><span class="grow dim">Opening balance</span><span><${Amt} v=${a

@@ -153,11 +153,13 @@ def test_legs_opened_together_are_proposed_grouped_rolled_and_undone(alice):
     assert r.status_code == 200, r.text
     st = r.json()
     assert len(st["legs"]) == 3 and st["realized"] == 100, "the closed leg's P/L stays with it"
-    # Each leg's trade takes the rolled strategy's capital at risk, its return exact.
+    # Each leg's trade takes the strategy's capital at risk at open, as it was at open (the
+    # 540/530 spread, not the rolled one: B12), its return exact.
+    assert st["capitalAtRiskAtOpen"] == 920
     r = alice.get("/ui/api/positions/option-trades")
     assert r.status_code == 200, r.text
     [closed] = [x for x in r.json()["items"] if x["closed"]]
-    assert (closed["capitalAtRisk"], closed["returnPct"]) == (470, 21.28)
+    assert (closed["capitalAtRisk"], closed["returnPct"]) == (920, 10.87)
     assert alice.get("/ui/api/positions/strategies").json()["proposals"] == []
     # Undone: the legs stand alone again.
     r = alice.delete(f"/ui/api/strategies/{st['id']}", headers={"If-Match": f'"{st["version"]}"'})
@@ -194,3 +196,33 @@ def test_a_short_call_against_shares_is_proposed_as_a_covered_call(alice):
         "strategies"
     ]
     assert st["shape"] == "Covered call" and st["credit"] == 412
+
+
+def test_a_strategy_closes_by_any_outcome_and_unlimited_risk_is_said_so(alice):
+    # B12: a short straddle with no margin typed risks an unlimited amount, and the account
+    # says so; assigned, its last leg closes it.
+    a = new_account(alice, type="brokerage")["id"]
+    for right, premium in (("call", "3.00"), ("put", "2.50")):
+        r = option(alice, a, "sell-to-open", "2026-10-02", premium, right=right, fees="0")
+        assert r.status_code == 201, r.text
+    [p] = alice.get("/ui/api/positions/strategies").json()["proposals"]
+    assert p["shape"] == "Short straddle"
+    r = alice.post(
+        "/ui/api/strategies",
+        json={"accountId": a, "legs": [{"instrumentId": x["instrumentId"]} for x in p["legs"]]},
+    )
+    [st] = r.json()["strategies"]
+    assert st["capitalAtRiskNow"] is None and st["capitalAtRiskAtOpen"] is None
+    acct = alice.get(f"/ui/api/accounts/{a}").json()
+    assert acct["capitalAtRiskUnlimited"] and acct["capitalAtRisk"] is None
+    _, put = sorted(p["legs"], key=lambda x: x["symbol"])
+    r = option(alice, a, "buy-to-close", "2026-10-09", "1.00", right="call", fees="0")
+    assert r.status_code == 201, r.text
+    r = alice.post(
+        f"/ui/api/accounts/{a}/options/{put['instrumentId']}/settle",
+        json={"how": "assign", "date": "2026-10-12"},
+    )
+    assert r.status_code == 201, r.text
+    [st] = alice.get("/ui/api/positions/strategies").json()["strategies"]
+    assert st["closedOn"] == "2026-10-12"
+    assert alice.get(f"/ui/api/accounts/{a}").json()["capitalAtRiskUnlimited"] is False

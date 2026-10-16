@@ -283,7 +283,10 @@ function Retirement({ p }) {
                     <td>${c.account}<div class="small dim">${c.kind}</div></td>
                     <td>${c.owner}</td>
                     <td class="num">
-                      <${Amt} v=${c.contributed} />
+                      <${Amt} v=${c.contributed} />${c.across
+                        ? html`<div class="small dim">${html`<${Amt} v=${c.personTotal} />`}
+                          across their ${c.across}</div>`
+                        : null}
                     </td>
                     <td class="num">${c.limit
                       ? html`<${Amt} v=${c.limit} cents=${false} />`

@@ -26,11 +26,13 @@ calendar or diagonal shows its P/L only, as its outcome rests on volatility.
 ## At risk now {#at-risk-now}
 
 Capital at risk at today's prices: the most the strategy can lose at expiry. For a strategy whose
-loss has no limit, the broker's margin requirement you type, or _unlimited_.
+loss has no limit, the broker's margin requirement you type, or _unlimited_, and then the total is
+unlimited too.
 
 ## At open {#at-open}
 
-Capital at risk at the prices of the day the strategy opened; its return is worked on this.
+Capital at risk for the legs the strategy opened with, at the prices of that day, whatever was
+rolled or closed since; its return is worked on this.
 
 ## Group legs
 

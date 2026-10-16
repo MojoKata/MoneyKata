@@ -48,7 +48,7 @@ In months: 360 for a 30-year mortgage, 60 for a five-year car loan.
 
 ## Interest rate
 
-The note rate, not the APR.
+The note rate, not the APR, to three places as the note states it (6.875%).
 
 ## Interest method
 

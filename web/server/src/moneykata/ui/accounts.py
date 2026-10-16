@@ -16,6 +16,7 @@ from .. import access, activity, clock, exactjson, ids, valuation
 from ..errors import FieldError, Problem, refuse
 from ..ledger import expected, holdingcheck, reconcile
 from ..ledger import types as atypes
+from ..ledger.lots import long_term
 from ..store.entities.accounts import (
     Account,
     Anchor,
@@ -77,6 +78,7 @@ class AccountDetail(AccountRow):
     statementIntervalProposal: str | None  # learned from what arrives, not yet accepted
     optionsValue: Money | None  # an investing account's options' market value
     capitalAtRisk: Money | None  # beside it (S3.5.6)
+    capitalAtRiskUnlimited: bool = False
     # Sync using MoneyKata Connector (S18.6.2): the owner's Connection and which of its
     # institution accounts this is; shown to the owner only.
     connectionId: str | None
@@ -388,13 +390,14 @@ def row(
 
 def _options_risk(s, a, ledger) -> dict:
     if not atypes.investing(a.type):
-        return {"optionsValue": None, "capitalAtRisk": None}
+        return {"optionsValue": None, "capitalAtRisk": None, "capitalAtRiskUnlimited": False}
     from ..options import strategies as strat
 
-    value, risk = strat.risk_of_account(s, ledger)
-    if not value and not risk:
-        return {"optionsValue": None, "capitalAtRisk": None}
-    return {"optionsValue": value, "capitalAtRisk": risk}
+    value, risk, any_open = strat.risk_of_account(s, ledger)
+    if not any_open:
+        return {"optionsValue": None, "capitalAtRisk": None, "capitalAtRiskUnlimited": False}
+    # Unlimited (a naked call with no margin typed) is said so, never left out (S3.5.5).
+    return {"optionsValue": value, "capitalAtRisk": risk, "capitalAtRiskUnlimited": risk is None}
 
 
 def imports_of(s, account_id: str) -> list[Import]:
@@ -550,6 +553,11 @@ def change_account(
                 detail={"fields": changed},
             )
         s.flush()
+        if "lotMethod" in changed:
+            # Sales keep the method recorded on them; the wash sales are worked out again (S2.3).
+            from .. import washes
+
+            washes.recompute(s, a.ownerId)
         return row(s, a, level, context(s, c.id, [a.id]), detail=True)
 
 
@@ -636,7 +644,7 @@ def account_holdings(account_id: str, request: Request, c: Caller = Depends(call
                             basis=x.basis,
                             basisMissing=x.basisMissing,
                             standIn=x.standIn,
-                            longTerm=(clock.today() - x.acquiredOn).days > 365,
+                            longTerm=long_term(x.heldFrom or x.acquiredOn, clock.today()),
                         )
                         for x in sorted(lots, key=lambda x: x.acquiredOn)
                     ],

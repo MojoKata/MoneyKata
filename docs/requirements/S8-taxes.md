@@ -11,7 +11,11 @@ produces worksheets and exports. It never files, and says so (R1.16).
    and D, E or F (long-term). From tax year 2025, digital assets have boxes of their own, and
    never C or F: G, H or I short-term and J, K or L long-term, for basis reported to the IRS on
    a Form 1099-DA, basis not reported, and no 1099-DA at all; a self-custody wallet's sales go
-   in I or L. Years before 2025 put them in A to F. Sources: the [2025 Form
+   in I or L. Years before 2025 put them in A to F. What a crypto account holds (an exchange's
+   or a wallet's) is a digital asset, whether typed or imported. A written option's row has
+   the premium received as its proceeds and what closing it cost as its basis, dated from its
+   opening to its close; a row's acquired date is *VARIOUS* only when a snapshot stood in for
+   the lot's history (R3.2). Sources: the [2025 Form
    8949](https://www.irs.gov/pub/irs-pdf/f8949.pdf) and [its
    instructions](https://www.irs.gov/pub/irs-pdf/i8949.pdf), kept in `docs/external/`.
 2. **Exports**: Form 8949 CSV, **TXF** (which TurboTax and others import), and a PDF summary
@@ -100,8 +104,10 @@ produces worksheets and exports. It never files, and says so (R1.16).
        chooses it);
     2. who prepared it, and how it was sent (e-file or paper);
     3. its **progress** (not started, in progress, filed, accepted or rejected), the due date
-       (federal from Settings › Tax tables, others typed), an **extension** (date filed, new
-       due date), the date filed, and the confirmation or submission number;
+       (federal from Settings › Tax tables, moved past a Saturday, a Sunday or a legal
+       holiday, federal or the District of Columbia's Emancipation Day as observed, IRC
+       §7503; others typed), an **extension** (date filed, new due date), the date filed,
+       and the confirmation or submission number;
     4. the **result**: the refund or the amount owed, matched to the transaction that paid or
        received it, and any overpayment applied to the next year;
     5. the **estimated payments** for its jurisdiction, by quarter, matched to transactions

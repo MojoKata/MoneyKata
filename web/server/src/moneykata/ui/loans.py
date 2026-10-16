@@ -23,7 +23,18 @@ from ..store.entities.accounts import (
     Transaction,
 )
 from ..store.entities.assets import Item
-from .conventions import Deleted, ExactRoute, Model, Money, Ratio, check, gone, if_match
+from .conventions import (
+    Deleted,
+    ExactRoute,
+    Model,
+    Money,
+    Rate,
+    Ratio,
+    ResetRate,
+    check,
+    gone,
+    if_match,
+)
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["loans"])
@@ -31,7 +42,7 @@ router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["loans"])
 
 class Reset(Model):
     date: dt.date
-    rate: Money
+    rate: ResetRate
 
 
 class Recast(Model):
@@ -43,7 +54,7 @@ class TermsIn(Model):
     principal: Money
     startDate: dt.date
     termMonths: int
-    rate: Money
+    rate: Rate
     method: str = "amortized"
     payment: Money | None = None
     escrowTax: Money | None = None
@@ -58,7 +69,7 @@ class TermsIn(Model):
 
 class ResetView(Model):
     date: dt.date
-    rate: Money
+    rate: ResetRate
 
 
 class RecastView(Model):
@@ -71,7 +82,7 @@ class TermsOut(Model):
     principal: Money
     startDate: dt.date
     termMonths: int
-    rate: Money
+    rate: Rate
     method: str
     payment: Money | None
     escrowTax: Money | None
@@ -131,7 +142,7 @@ class Following(Model):
 class LoanView(Model):
     terms: TermsOut | None
     balance: Money
-    rate: Money
+    rate: ResetRate
     payment: Money
     total: Money
     nextDate: dt.date | None

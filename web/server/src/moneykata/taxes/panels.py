@@ -12,6 +12,7 @@ from sqlalchemy import Integer, cast, false, func, select
 from sqlalchemy.orm import Session
 
 from .. import assets, education, gifts, giving, loans, people
+from ..ledger import lots
 from ..ledger import types as atypes
 from ..projections import taxtables
 from ..store.entities.accounts import (
@@ -91,6 +92,26 @@ class Wash:
     review: bool = False  # options on the same underlying: for the preparer to decide
 
 
+# Digital assets' basis reporting on Form 1099-DA: brokers report the gross proceeds of sales
+# from 2025, and the basis of what was acquired from 2026 and held with them (i8949, 2025).
+DIGITAL_BOXES_FROM = 2025
+DIGITAL_BASIS_FROM = dt.date(2026, 1, 1)
+
+
+def box_of(long_term: bool, inst_class: str, account_type: str, acquired, year: int) -> str:
+    """A sale's 8949 box (S8.1). From 2025 a digital asset has boxes of its own, never C or F:
+    G/J with its basis on a 1099-DA, H/K without, I/L with no 1099-DA (a self-custody
+    wallet's). Before, it goes in A to F as a security would."""
+    crypto = inst_class == "crypto"
+    if crypto and year >= DIGITAL_BOXES_FROM:
+        if account_type == "crypto-wallet":
+            return "L" if long_term else "I"
+        if acquired is not None and acquired >= DIGITAL_BASIS_FROM:
+            return "J" if long_term else "G"
+        return "K" if long_term else "H"
+    return _box(long_term, not crypto, _covered(inst_class, acquired) if acquired else False)
+
+
 def _box(long_term: bool, reported: bool, covered: bool) -> str:
     """The 8949 box the broker's reporting decides: basis reported (A/D), not reported
     (B/E), or no 1099-B at all (C/F)."""
@@ -134,17 +155,23 @@ def form_8949(s: Session, book: TaxBook, spouse_accounts: list[Account] | None =
                 continue
             inst = insts.get(d.instrumentId) or s.get(Instrument, d.instrumentId)
             insts[inst.id] = inst
-            crypto = inst.instrumentClass == "crypto"
+            proceeds, basis = d.proceeds, d.basis
+            if d.written and d.basis is not None:
+                # A written option: the premium received is the proceeds and what closing it
+                # cost the basis, both as paid (IRS Pub. 550, options).
+                proceeds, basis = -d.basis, -d.proceeds
             row = Row(
-                description=f"{_qty(d.quantity)} {inst.symbol}",
-                acquired=d.acquiredOn if d.lotId else None,
+                description=f"{inst.symbol} return of capital over basis"
+                if d.method == "return-of-capital"
+                else f"{_qty(d.quantity)} {inst.symbol}",
+                acquired=None if d.standIn else d.acquiredOn,  # VARIOUS when unknown
                 sold=d.soldOn,
-                proceeds=d.proceeds,
-                basis=d.basis,
+                proceeds=proceeds,
+                basis=basis,
                 code="W" if d.adjustment else "",
                 adjustment=d.adjustment,
                 longTerm=d.longTerm,
-                box=_box(d.longTerm, not crypto, _covered(inst.instrumentClass, d.acquiredOn)),
+                box=box_of(d.longTerm, inst.instrumentClass, a.type, d.acquiredOn, book.year),
                 account=a.name,
                 saleId=d.saleId,
                 instrumentId=inst.id,
@@ -225,18 +252,30 @@ def _option_reviews(s: Session, rows: list[Row], accounts: list[Account], insts)
                 )
             ]
             kinds = ("buy-to-open",)
-        if not targets or not ids_:
+        if not ids_:
             continue
+        near = (
+            Transaction.accountId.in_(list(ids_)),
+            Transaction.deleted == false(),
+            Transaction.date >= r.sold - dt.timedelta(days=WASH_DAYS),
+            Transaction.date <= r.sold + dt.timedelta(days=WASH_DAYS),
+        )
         hit = s.scalars(
             select(Transaction).where(
-                Transaction.accountId.in_(list(ids_)),
-                Transaction.instrumentId.in_(targets),
-                Transaction.kind.in_(kinds),
-                Transaction.deleted == false(),
-                Transaction.date >= r.sold - dt.timedelta(days=WASH_DAYS),
-                Transaction.date <= r.sold + dt.timedelta(days=WASH_DAYS),
+                *near, Transaction.instrumentId.in_(targets), Transaction.kind.in_(kinds)
             )
         ).first()
+        if hit is None and inst.instrumentClass != "option":
+            # The stock bought back through an option: a put assigned, a call exercised.
+            ends = select(Transaction.id).where(Transaction.kind.in_(("assign", "exercise")))
+            hit = s.scalars(
+                select(Transaction).where(
+                    *near,
+                    Transaction.instrumentId == inst.id,
+                    Transaction.kind == "buy",
+                    Transaction.optionTransactionId.in_(ends),
+                )
+            ).first()
         if hit is not None:
             out.append(
                 Wash(
@@ -278,7 +317,7 @@ def _items(s: Session, accounts: list[Account], first: dt.date, last: dt.date) -
         d = assets.details(s, [it])[it.id]
         basis = assets.basis(it, d, it.soldOn)
         proceeds = it.proceeds - (it.saleFees or ZERO)
-        long_term = (it.soldOn - it.acquiredOn).days > 365
+        long_term = lots.long_term(it.acquiredOn, it.soldOn)
         collectable = assets.is_collectable(a.type, it)
         gain = proceeds - basis
         code, adj = ("C" if collectable else ""), ZERO
@@ -400,6 +439,11 @@ class Contribution:
     contributed: Decimal
     limit: Decimal | None
     note: str
+    # A limit is a person's, across their accounts of its kind (S8.6): what they put in all of
+    # them, which the limit is held against.
+    personTotal: Decimal = ZERO
+    group: str = ""
+    ownerId: str = ""
 
 
 @dataclass
@@ -418,6 +462,19 @@ class Retirement:
     distributions: list[tuple[str, Decimal]]
     rmds: list[Rmd]
     basis8606: Decimal | None
+
+
+# Which accounts share one limit: a person's IRAs, traditional and Roth; their 401(k) and
+# 403(b) deferrals; a 457(b) has a limit of its own; and an HSA.
+LIMIT_GROUPS = {
+    "ira": "ira",
+    "roth-ira": "ira",
+    "401k": "deferral",
+    "403b": "deferral",
+    "457b": "457b",
+    "hsa": "hsa",
+}
+GROUP_LABELS = {"ira": "IRAs", "deferral": "401(k) and 403(b) deferrals", "457b": "457(b)s"}
 
 
 def retirement(s: Session, book: TaxBook) -> Retirement:
@@ -472,7 +529,16 @@ def retirement(s: Session, book: TaxBook) -> Retirement:
             note = "the family limit; self-only is lower"
         if put or limit:
             contributions.append(
-                Contribution(a.name, atypes.LABELS[a.type], owner.displayName, put, limit, note)
+                Contribution(
+                    a.name,
+                    atypes.LABELS[a.type],
+                    owner.displayName,
+                    put,
+                    limit,
+                    note,
+                    group=LIMIT_GROUPS.get(a.type, a.type),
+                    ownerId=owner.id,
+                )
             )
         taken = (
             s.scalar(
@@ -490,7 +556,7 @@ def retirement(s: Session, book: TaxBook) -> Retirement:
         )
         if taken:
             distributions.append((a.name, -Decimal(str(taken))))
-        rmd_age = int(figures["rmdAge"])
+        rmd_age = Decimal(str(figures["rmdAge"]))  # 70½ until 2019
         if age and age >= rmd_age and a.type in ("ira", "401k", "403b", "457b") and age in UNIFORM:
             from .. import valuation
 
@@ -507,6 +573,11 @@ def retirement(s: Session, book: TaxBook) -> Retirement:
                     (bal / Decimal(str(factor))).quantize(CENT),
                 )
             )
+    totals: dict[tuple[str, str], Decimal] = defaultdict(lambda: ZERO)
+    for c in contributions:
+        totals[(c.ownerId, c.group)] += c.contributed
+    for c in contributions:
+        c.personTotal = totals[(c.ownerId, c.group)]
     basis = None
     for f, figs in books.carried_from_last_year(s, book):
         if f.jurisdiction == "federal" and figs.get("basis8606"):
@@ -555,9 +626,11 @@ def deductions(s: Session, book: TaxBook) -> tuple[list[TagTotal], list[tuple[st
             )
         ).all()
         by_id = {t.id: t for t in txns}
+        loan_accounts = [a for a in books.counted(s, book).accounts if loans.is_loan(a.type)]
+        in_loans = {a.id for a in loan_accounts}
         amounts: list[tuple[str, str, Decimal]] = []
         for t in txns:
-            if t.categoryId in cats:
+            if t.categoryId in cats and t.accountId not in in_loans:
                 amounts.append((t.id, cats[t.categoryId].taxTag, -t.amount))
         for sp in s.scalars(
             select(Split).where(
@@ -566,7 +639,21 @@ def deductions(s: Session, book: TaxBook) -> tuple[list[TagTotal], list[tuple[st
                 Split.categoryId.in_(list(cats)),
             )
         ):
-            amounts.append((sp.transactionId, cats[sp.categoryId].taxTag, sp.amount))
+            # A split counts as its transaction does (S8.7): a spending split is negative, as
+            # spending is, and counts positive.
+            if by_id[sp.transactionId].accountId not in in_loans:
+                amounts.append((sp.transactionId, cats[sp.categoryId].taxTag, -sp.amount))
+        # A loan's payments, each split by the schedule however it arrived (S1.9.3): the
+        # parts filed under a tax-tagged category (the interest) count.
+        tagged = {c.builtIn: c.taxTag for c in cats.values() if c.builtIn}
+        for a in loan_accounts:
+            for pay in loans.history(s, a)[0]:
+                if not first <= pay.date <= last:
+                    continue
+                for part, key in loans.PARTS.items():
+                    amount = getattr(pay, part)
+                    if amount and key in tagged:
+                        amounts.append((pay.transactionId or "", tagged[key], amount))
         with_receipts = set(
             s.scalars(
                 select(ReceiptLink.itemId).where(

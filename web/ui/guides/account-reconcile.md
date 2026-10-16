@@ -47,6 +47,6 @@ cash and holdings at that day's prices. Within half a percent counts as a match.
 
 ## Holdings check {#holdings-check}
 
-The latest brokerage statement's positions against what MoneyKata holds on its last day. A
-quantity that differs is shown with the difference: a missed split, a reinvestment or a buy not
-entered yet.
+The positions of the latest brokerage statement or broker's file against what MoneyKata holds
+that day. A quantity that differs is shown with the difference: a missed split, a reinvestment
+or a buy not entered yet. Positions never change the lots; a transaction does.

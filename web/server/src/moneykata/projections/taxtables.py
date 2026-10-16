@@ -109,7 +109,41 @@ _BTC = {
     "btcArk2030": [500_000, 1_200_000, 2_400_000],
 }
 
+# The figures of a tax year, for every year a tax book may cover (ten back, S8.14): the IRS's
+# limits and thresholds as they were. 2019's and 2020's returns were due on the postponed
+# dates; the 60-63 catch-up starts in 2025 (before, it is the usual one); a 529 rolled over to
+# a Roth from 2024; the RMD age was 70½ until 2019.
+_PAST = (
+    # year, IRA, catch-up, 401(k), catch-up, 60-63, HSA self, family, RMD age, gift
+    # exclusion, 529 to Roth, QCD, Form 8615, federal due
+    (2016, 5500, 1000, 18000, 6000, 6000, 3350, 6750, 70.5, 14000, 0, 100000, 2100, [4, 15]),
+    (2017, 5500, 1000, 18000, 6000, 6000, 3400, 6750, 70.5, 14000, 0, 100000, 2100, [4, 15]),
+    (2018, 5500, 1000, 18500, 6000, 6000, 3450, 6900, 70.5, 15000, 0, 100000, 2100, [4, 15]),
+    (2019, 6000, 1000, 19000, 6000, 6000, 3500, 7000, 70.5, 15000, 0, 100000, 2200, [7, 15]),
+    (2020, 6000, 1000, 19500, 6500, 6500, 3550, 7100, 72, 15000, 0, 100000, 2200, [5, 17]),
+    (2021, 6000, 1000, 19500, 6500, 6500, 3600, 7200, 72, 15000, 0, 100000, 2200, [4, 15]),
+    (2022, 6000, 1000, 20500, 6500, 6500, 3650, 7300, 72, 16000, 0, 100000, 2300, [4, 15]),
+    (2023, 6500, 1000, 22500, 7500, 7500, 3850, 7750, 73, 17000, 0, 100000, 2500, [4, 15]),
+    (2024, 7000, 1000, 23000, 7500, 7500, 4150, 8300, 73, 18000, 35000, 105000, 2600, [4, 15]),
+)
+_KEYS = (
+    "iraLimit",
+    "iraCatchUp",
+    "k401Deferral",
+    "k401CatchUp",
+    "k401CatchUp6063",
+    "hsaSelf",
+    "hsaFamily",
+    "rmdAge",
+    "giftExclusion",
+    "rothFrom529",
+    "qcdLimit",
+    "form8615Threshold",
+    "federalDue",
+)
+
 SHIPPED: dict[int, dict] = {
+    **{row[0]: {**dict(zip(_KEYS, row[1:], strict=True)), "collectablesRate": 28} for row in _PAST},
     2025: {
         "iraLimit": 7000,
         "iraCatchUp": 1000,
@@ -167,10 +201,20 @@ def _year(year: int) -> int:
     return year if year in SHIPPED else (known[-1] if year > known[-1] else known[0])
 
 
+def of_year(year: int) -> list[Figure]:
+    """The figures a year ships: a past tax year has its tax figures only; the college costs,
+    the metal per share and the bitcoin models start with the years that use them."""
+    return [f for f in FIGURES if f.key in SHIPPED[_year(year)]]
+
+
 def figures(s: Session, year: int | None = None) -> dict[str, object]:
-    """A year's figures, with any admin's corrections."""
+    """A year's figures, with any admin's corrections. A figure a past year doesn't ship (one
+    only today's figures need) is the earliest year's that has it."""
     y = _year(year or clock.today().year)
-    out = dict(SHIPPED[y])
+    out = {
+        **{k: v for later in sorted(SHIPPED, reverse=True) for k, v in SHIPPED[later].items()},
+        **SHIPPED[y],
+    }
     for row in s.scalars(
         select(TaxFigure).where(TaxFigure.year == y, TaxFigure.deleted == false())
     ):

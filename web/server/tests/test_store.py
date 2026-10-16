@@ -783,3 +783,96 @@ def test_an_offline_backup_needs_the_server_stopped_and_changes_nothing(
         conn.exec_driver_sql("PRAGMA query_only = 1")
         conn.exec_driver_sql('DELETE FROM "User"')
     st.db.dispose()
+
+
+def test_0017_writes_money_in_cents_and_leaves_the_premium_to_the_replay(tmp_path):
+    """B23 and B12: decimal text becomes integer cents; a stock trade settled before keeps the
+    strike's cash, its premium worked out at replay; a sale made before records its method."""
+    from alembic import command
+
+    def insert(conn, table: str, **values) -> None:
+        values |= {"createdAt": "2026-10-01 00:00:00", "updatedAt": "2026-10-01 00:00:00"}
+        names = ", ".join(f'"{k}"' for k in values)
+        marks = ", ".join("?" for _ in values)
+        conn.exec_driver_sql(
+            f'INSERT INTO "{table}" ({names}) VALUES ({marks})', tuple(values.values())
+        )
+
+    engine = make_engine(tmp_path / "old.db", None)
+    uid, pid, aid = ids.new_id("User"), ids.new_id("Persn"), ids.new_id("Acct")
+    inst, lot, loan = ids.new_id("Instr"), ids.new_id("Lot"), ids.new_id("Loan")
+    end, buy, end2, sell = (ids.new_id("Txn") for _ in range(4))
+    with engine.connect() as conn:
+        command.upgrade(migrate.alembic_config(conn), "0016")
+        conn.commit()
+        insert(conn, "Person", id=pid, name="A", sex="female")
+        insert(conn, "User", id=uid, personId=pid, username="a", displayName="A")
+        insert(conn, "Account", id=aid, ownerId=uid, name="B", type="brokerage", lotMethod="lifo")
+        insert(conn, "Instrument", id=inst, symbol="MSFT", instrumentClass="equity")
+        day = "2026-09-18"
+        insert(conn, "Transaction", id=end, accountId=aid, date=day, kind="assign", amount=0)
+        insert(
+            conn,
+            "Transaction",
+            id=buy,
+            accountId=aid,
+            date=day,
+            kind="buy",
+            amount=-4800000,
+            instrumentId=inst,
+            quantity="100",
+            optionTransactionId=end,
+        )
+        # Settled before: the put's $640 credit taken off the lot's basis.
+        insert(
+            conn,
+            "Lot",
+            id=lot,
+            accountId=aid,
+            instrumentId=inst,
+            transactionId=buy,
+            acquiredOn=day,
+            quantity="100",
+            costBasis=4736000,
+        )
+        insert(conn, "Transaction", id=end2, accountId=aid, date=day, kind="assign", amount=0)
+        insert(
+            conn,
+            "Transaction",
+            id=sell,
+            accountId=aid,
+            date=day,
+            kind="sell",
+            amount=4800000,
+            instrumentId=inst,
+            quantity="100",
+            optionTransactionId=end2,
+            proceedsAdjustment="640.00",
+        )
+        insert(
+            conn,
+            "Loan",
+            id=loan,
+            accountId=aid,
+            principal="300000.50",
+            startDate="2026-01-01",
+            termMonths=360,
+            rate="6.875",
+        )
+        conn.commit()
+
+    assert migrate.upgrade(engine, tmp_path / "old.db", None, None)
+
+    with engine.connect() as conn:
+        q = conn.exec_driver_sql
+        assert tuple(q(f"SELECT principal, rate FROM \"Loan\" WHERE id = '{loan}'").one()) == (
+            30000050,
+            "6.875",
+        )
+        assert q(f'SELECT "costBasis" FROM "Lot" WHERE id = \'{lot}\'').scalar_one() == 4800000
+        row = q(
+            f'SELECT "proceedsAdjustment", "lotMethod" FROM "Transaction" WHERE id = \'{sell}\''
+        )
+        assert tuple(row.one()) == (None, "lifo")
+        assert q("PRAGMA foreign_key_check").fetchall() == []
+    engine.dispose()

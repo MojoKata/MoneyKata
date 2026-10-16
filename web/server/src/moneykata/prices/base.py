@@ -95,7 +95,8 @@ class TickerSource(ABC):
         import json
 
         try:
-            return json.loads(body)
+            # Prices as the source wrote them, never through a float (S14.3).
+            return json.loads(body, parse_float=Decimal)
         except ValueError:
             raise SourceError(f"{self.label} answered with something that is not JSON") from None
 

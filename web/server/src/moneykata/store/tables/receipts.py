@@ -14,7 +14,7 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import Day, Dec, UtcTimestamp
+from ..types import Cents, Day, UtcTimestamp
 from ._base import pairs, record
 
 Receipt = record(
@@ -30,7 +30,7 @@ Receipt = record(
     Column("fileId", Text, nullable=False),
     Column("thumbnail", LargeBinary),
     Column("date", Day),
-    Column("amount", Dec),
+    Column("amount", Cents),
     Column("payee", Text),
     Column("notes", Text),
     Column("tags", Text, nullable=False, server_default=text("'[]'")),

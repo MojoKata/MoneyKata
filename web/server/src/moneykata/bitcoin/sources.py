@@ -20,6 +20,7 @@ import json
 import socket
 import ssl
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 from .. import net
 from ..tasks import TaskError
@@ -95,7 +96,9 @@ class Esplora:
             raise SourceError(f"{self.base} asked to slow down (429); it is tried again later.")
         if r.status_code >= 400:
             raise SourceError(f"{self.base} answered {r.status_code}.")
-        return r.json() if "json" in r.headers.get("content-type", "") else r.text
+        if "json" in r.headers.get("content-type", ""):
+            return json.loads(r.text, parse_float=Decimal)
+        return r.text
 
     def test(self) -> str:
         return f"Esplora answered: block {int(self._get('/blocks/tip/height')):,}"
@@ -233,7 +236,7 @@ class Electrum:
         except OSError as e:
             raise SourceError(f"The Electrum server stopped answering: {e}") from None
         line, self.buf = self.buf.split(b"\n", 1)
-        out = json.loads(line)
+        out = json.loads(line, parse_float=Decimal)
         if out.get("error"):
             raise SourceError(f"The Electrum server refused {method}: {out['error']}")
         return out.get("result")
@@ -325,7 +328,8 @@ class Core:
         if r.status_code == 401:
             raise SourceError("Bitcoin Core refused the RPC user or password.")
         try:
-            out = r.json()
+            # Amounts in BTC, read as decimals: a float would lose a satoshi (S14.3).
+            out = json.loads(r.text, parse_float=Decimal)
         except ValueError:
             raise SourceError(f"Bitcoin Core answered {r.status_code}.") from None
         if out.get("error"):

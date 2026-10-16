@@ -305,4 +305,5 @@ def _positions_on(ledger, day: dt.date) -> dict[str, Decimal]:
         ],
         ledger.picks,
         [h for h in ledger.snapshots if h.asOf <= day],
+        by_snapshots=lot_replay.kept_by_snapshots(ledger.transactions, ledger.lots),
     ).positions()
