@@ -543,9 +543,11 @@ def _record(s, c: Caller, body: DonationIn) -> Donation:
     if e:
         raise Problem(422, e[0].code, e[0].message, e)
     org = None
+    plan, lvl = giving.plan_for(s, c.id, body.date.year)
+    # Recorded in the plan the caller writes to: its owner's giving (S7.9.1).
+    owner = plan.ownerId if plan is not None and lvl == "write" else c.id
     if body.organisationId:
         org = s.get(Organisation, body.organisationId)
-        plan, _ = giving.plan_for(s, c.id, body.date.year)
         if org is None or org.deleted or org.ownerId not in giving.givers(s, plan, c.id):
             raise refuse("organisationId", "organisation-unknown", "Choose an organisation.")
     fund = None
@@ -590,7 +592,7 @@ def _record(s, c: Caller, body: DonationIn) -> Donation:
     elif body.kind == "daf-grant" and fund is not None:
         out = _txn(s, c, fund.id, body.date, "withdrawal", -values["amount"], to)
         values["transactionId"] = out.id
-    d = Donation(id=ids.new_id("Dnatn"), ownerId=c.id, **values)
+    d = Donation(id=ids.new_id("Dnatn"), ownerId=owner, **values)
     s.add(d)
     s.flush()
     return d
@@ -682,7 +684,7 @@ def attach_acknowledgement(
     """The organisation's written acknowledgement, kept as a receipt: it is then received."""
     with server(request).db.tx() as s:
         d = _own(s, c, donation_id)
-        r, _ = receipts.get(s, c.id, body.receiptId)
+        r = receipts.to_attach(s, c.id, body.receiptId)
         if s.get(ReceiptLink, (r.id, "donation", d.id)) is None:
             s.add(
                 ReceiptLink(

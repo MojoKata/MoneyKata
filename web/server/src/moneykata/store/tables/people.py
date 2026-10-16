@@ -14,7 +14,7 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import Day, Dec
+from ..types import Day, Dec, UtcTimestamp
 from ._base import pairs, record, unique_live
 
 # Someone in the household's life: every user is one (User.personId), and so are people who
@@ -49,6 +49,10 @@ Relationship = record(
     Column("label", Text),  # family's: godmother
     Column("fromDate", Day),
     Column("toDate", Day),  # empty while it holds
+    # A spouse's confirmations, by each of the two (S10.10.4): until both are set, the marriage
+    # counts for gifts only. Empty for the other relations.
+    Column("confirmed1At", UtcTimestamp),
+    Column("confirmed2At", UtcTimestamp),
     CheckConstraint(
         "relation IN ('spouse', 'couple', 'child', 'friend', 'colleague', 'family')",
         name="relation",

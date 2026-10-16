@@ -1,7 +1,8 @@
 # New access token
 
 A token for an AI assistant or another tool that speaks MCP. It reads, never changes, and only what
-you choose here.
+you choose here. Making one asks for your password again if you gave it over 10 minutes ago, and
+emails you; changing or resetting your password revokes every token.
 
 ## Token name
 

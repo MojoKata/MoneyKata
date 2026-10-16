@@ -10,6 +10,7 @@ import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, Select } from './fields.js';
 import { Failed, Loading } from './bits.js';
 import { Icon } from './icon.js';
+import { withReauth } from './reauth.js';
 import { toast } from './toast.js';
 
 const endpoint = () => `${location.origin}/mcp`;
@@ -86,12 +87,14 @@ function NewToken({ close }) {
     })),
   ];
   const save = useSubmit(async () => {
-    const made = await api.post('/profile/tokens', {
-      name: f.name,
-      scope: f.scope,
-      days: Number(f.days),
-      items: items.filter((i) => picked[i.kind + i.id]).map((i) => ({ kind: i.kind, id: i.id })),
-    });
+    const made = await withReauth(() =>
+      api.post('/profile/tokens', {
+        name: f.name,
+        scope: f.scope,
+        days: Number(f.days),
+        items: items.filter((i) => picked[i.kind + i.id]).map((i) => ({ kind: i.kind, id: i.id })),
+      })
+    );
     close(made);
   });
   const e = save.error;

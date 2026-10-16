@@ -69,6 +69,12 @@ class NextDate(Model):
     turns: int | None
 
 
+class RemoteUser(Model):
+    id: str
+    name: str
+    server: str
+
+
 class PersonOut(Model):
     """A gift plan the caller sees, with its person."""
 
@@ -88,6 +94,8 @@ class PersonOut(Model):
     canChangePerson: bool
     canMakePrivate: bool  # whoever added them (S10.10.2)
     isUser: bool
+    # Remote users who may be this person, to join to them (S10.10.1).
+    sameAs: list[RemoteUser]
     giftBudget: Money | None
     leadDays: int
     notes: str | None
@@ -149,6 +157,15 @@ def _occasion_out(o: Occasion, today: dt.date) -> OccasionOut:
     )
 
 
+def _remote(s, u: User) -> RemoteUser:
+    from ..store.entities.links import Link
+
+    link = s.get(Link, u.linkId)
+    return RemoteUser(
+        id=u.id, name=u.displayName, server=(link.peerName or link.address or "") if link else ""
+    )
+
+
 def people_view(s, c: Caller) -> list[PersonOut]:
     today = clock.today()
     plans = gifts.visible_plans(s, c.id)
@@ -193,6 +210,7 @@ def people_view(s, c: Caller) -> list[PersonOut]:
                 canChangePerson=people.level(s, c.id, p) == "owner",
                 canMakePrivate=p.ownerId == c.id,
                 isUser=p.id in users,
+                sameAs=[_remote(s, r) for r in people.may_join(s, c.id, p)],
                 giftBudget=gp.giftBudget,
                 leadDays=gp.leadDays,
                 notes=gp.notes,
@@ -427,7 +445,7 @@ class PersonRef(Model):
 
 
 class Paid(Model):
-    transactionId: str
+    transactionId: str | None  # None when its account isn't shared with the viewer
     date: dt.date
     amount: Money
     payee: str | None
@@ -469,11 +487,20 @@ class GiftOut(Model):
     version: int
 
 
-def _paid(s, t_id: str | None) -> Paid | None:
+NOT_SHARED = "an account not shared"
+
+
+def _paid(s, t_id: str | None, viewer: str) -> Paid | None:
+    """What a gift was paid with; an account the viewer can't see is named as such, and its
+    transaction is left out (S11.5.2)."""
     t = s.get(Transaction, t_id) if t_id else None
     if t is None or t.deleted:
         return None
     a = s.get(Account, t.accountId)
+    if access.account_level(s, viewer, a) is None:
+        return Paid(
+            transactionId=None, date=t.date, amount=t.amount, payee=None, accountName=NOT_SHARED
+        )
     return Paid(transactionId=t.id, date=t.date, amount=t.amount, payee=t.payee, accountName=a.name)
 
 
@@ -489,7 +516,7 @@ def _gift_out(s, c: Caller, g: Gift, ps: list[str]) -> GiftOut:
         description=g.description,
         status=g.status,
         cost=g.cost,
-        paid=_paid(s, g.transactionId),
+        paid=_paid(s, g.transactionId, c.id),
         store=g.store,
         link=g.link,
         notes=g.notes,
@@ -538,7 +565,7 @@ def _owner_for(s, c: Caller, person_ids: list[str]) -> str:
     return next(iter(sorted(owners))) if owners else c.id
 
 
-def _check_gift(s, c: Caller, body: GiftIn) -> dict:
+def _check_gift(s, c: Caller, body: GiftIn, current: str | None = None) -> dict:
     e: list[FieldError] = []
     desc = body.description.strip()
     if not desc:
@@ -555,11 +582,12 @@ def _check_gift(s, c: Caller, body: GiftIn) -> dict:
         raise Problem(422, e[0].code, e[0].message, e)
     for pid in body.people:
         people.get(s, c.id, pid)
-    if body.transactionId:
+    if body.transactionId and body.transactionId != current:
+        # Linking a purchase may recategorise it under Gifts: write on its account (P7).
         t = s.get(Transaction, body.transactionId)
         if t is None or t.deleted:
             raise refuse("transactionId", "not-found", "No such transaction.")
-        access.account(s, c.id, t.accountId, "read")
+        access.account(s, c.id, t.accountId, "write")
     return {
         "occasion": body.occasion or None,
         "occasionYear": body.occasionYear if body.occasion else None,
@@ -601,6 +629,23 @@ def _categorise(s, t_id: str | None) -> None:
         t.categoryId = cat.id
 
 
+def _linked(s, c: Caller, before: str | None, after: str | None) -> None:
+    """A purchase newly linked to a gift: put under Gifts when uncategorised, and recorded."""
+    if not after or after == before:
+        return
+    _categorise(s, after)
+    t = s.get(Transaction, after)
+    a = s.get(Account, t.accountId)
+    activity.record(
+        s,
+        "gift.purchase-linked",
+        actor=c.id,
+        subject_kind="account",
+        subject_id=a.id,
+        owner=a.ownerId,
+    )
+
+
 def _gift_for(s, c: Caller, gift_id: str) -> GiftOut:
     return next(x for x in gifts_view(s, c) if x.id == gift_id)
 
@@ -624,7 +669,7 @@ def add_gift(body: GiftIn, request: Request, c: Caller = Depends(caller)):
         s.add(g)
         s.flush()
         _set_people(s, g, body.people, c.id)
-        _categorise(s, g.transactionId)
+        _linked(s, c, None, g.transactionId)
         s.flush()
         activity.record(s, "gift.saved", actor=c.id, owner=c.id)
         return _gift_for(s, c, g.id)
@@ -653,11 +698,16 @@ def change_gift(
     with server(request).db.tx() as s:
         g = _editable(s, c, gift_id)
         check(g, version, lambda: _gift_for(s, c, g.id))
-        for k, v in _check_gift(s, c, body).items():
+        before = g.transactionId
+        values = _check_gift(s, c, body, before)
+        hidden = _paid(s, before, c.id)
+        if not values["transactionId"] and hidden is not None and hidden.transactionId is None:
+            values["transactionId"] = before  # a purchase they can't see stays linked
+        for k, v in values.items():
             setattr(g, k, v)
         g.updatedAt = clock.now()
         _set_people(s, g, body.people, c.id)
-        _categorise(s, g.transactionId)
+        _linked(s, c, before, g.transactionId)
         s.flush()
         return _gift_for(s, c, g.id)
 
@@ -684,7 +734,7 @@ def attach_receipt(gift_id: str, body: DocumentIn, request: Request, c: Caller =
 
     with server(request).db.tx() as s:
         g = _editable(s, c, gift_id)
-        r, _ = receipts.get(s, c.id, body.receiptId)
+        r = receipts.to_attach(s, c.id, body.receiptId)
         if s.get(ReceiptLink, (r.id, "gift", g.id)) is None:
             s.add(
                 ReceiptLink(
@@ -710,9 +760,12 @@ class Purchase(Model):
 
 @router.get("/gifts/purchases", response_model=list[Purchase])
 def purchases(request: Request, c: Caller = Depends(caller)):
-    """Recent spending, to link a gift's cost to its transaction: the last 90 days."""
+    """Recent spending, to link a gift's cost to its transaction: the last 90 days, in the
+    accounts the caller writes to, since linking may recategorise it."""
     with server(request).db.read() as s:
-        accts = {a.id: a for a, _ in access.visible_accounts(s, c.id)}
+        accts = {
+            a.id: a for a, lvl in access.visible_accounts(s, c.id) if lvl in ("owner", "write")
+        }
         if not accts:
             return []
         cats = {x.id: x.name for x in s.scalars(select(Category))}

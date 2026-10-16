@@ -353,7 +353,7 @@ def delete_receipt(
 def attach(receipt_id: str, body: Attach, request: Request, c: Caller = Depends(caller)):
     srv = server(request)
     with srv.db.tx() as s:
-        r, _ = receipts.get(s, c.id, receipt_id)
+        r = receipts.to_attach(s, c.id, receipt_id, "transactionId")
         receipts.attach(s, c.id, r, body.transactionId)
         t = s.get(Transaction, body.transactionId)
         activity.record(

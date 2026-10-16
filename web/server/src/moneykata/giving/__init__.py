@@ -58,11 +58,11 @@ def plan_for(s: Session, user_id: str, year: int) -> tuple[GivingPlan | None, st
 
 
 def givers(s: Session, plan: GivingPlan | None, user_id: str) -> list[str]:
-    """Whose giving a plan counts: its owner and everyone it is shared with, as a household
-    budget counts its members' spending."""
+    """Whose giving a plan counts: its owner's alone. Sharing a plan shows it, and never reads
+    the accounts of those it is shared with (S7.9.1)."""
     if plan is None:
         return [user_id]
-    return list(access.holders(s, "giving-plan", plan.id, plan.ownerId))
+    return [plan.ownerId]
 
 
 @dataclass

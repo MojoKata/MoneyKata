@@ -6,9 +6,12 @@ Yours alone unless you share it.
 ## The person {#the-person}
 
 Name, sex and birthday belong to the person, seen by the whole household unless whoever added them
-keeps them private. Only the person (when they sign in here), whoever added them or an admin changes
-them. How they're related to you is worked out from relationships. Gifts for someone who uses this
-server are never shown to them, even through a share.
+keeps them private. Once they sign in here, only they and an admin change them; until then, whoever
+added them or an admin. How they're related to you is worked out from relationships. Gifts for
+someone who uses this server are never shown to them, even through a share.
+
+A user of a linked server is a person of their own here. When one has this person's name, the plan
+offers **Join them**: joined, that user is this person, which stays as private as it was.
 
 ## Name
 

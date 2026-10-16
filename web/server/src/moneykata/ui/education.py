@@ -470,7 +470,7 @@ def attach_receipt(
 ):
     with server(request).db.tx() as s:
         e, a, lvl = _expense(s, c, expense_id)
-        r, _ = receipts.get(s, c.id, body.receiptId)
+        r = receipts.to_attach(s, c.id, body.receiptId)
         receipts.attach_item(s, c.id, r, e, "expense")
         return withdrawals_view(s, c, a, lvl)
 

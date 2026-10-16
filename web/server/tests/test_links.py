@@ -155,6 +155,8 @@ def links_of(c):
 
 
 def test_an_invitation_is_joined_approved_and_each_side_sees_the_others_users(admins):
+    from moneykata.store.entities.education import Person
+
     a, b, ca, cb, _ = admins
     make_user(a, "alice")
     make_user(b, "carol")
@@ -168,7 +170,10 @@ def test_an_invitation_is_joined_approved_and_each_side_sees_the_others_users(ad
     assert joined.json()["fingerprint"] == links_of(ca)["fingerprint"]
     req = links_of(ca)["links"][0]
     assert req["state"] == "requested" and req["fingerprint"] == links_of(cb)["fingerprint"]
-    assert {u["username"] for u in req["users"]} == {"admin", "carol"}
+    # Nothing of either household crosses before the approval (S10.10.1, P5).
+    assert req["users"] == [] and links_of(cb)["links"][0]["users"] == []
+    with a.db.read() as s:
+        assert s.query(Person).filter(Person.name == "Carol").count() == 0
     again = cb.post("/ui/api/settings/links/join", json={"code": code})
     assert again.status_code == 422 and again.json()["code"] in ("code-used", "already-linked")
     r = ca.post(f"/ui/api/settings/links/{req['id']}/approve")
@@ -176,6 +181,7 @@ def test_an_invitation_is_joined_approved_and_each_side_sees_the_others_users(ad
     b_side = links_of(cb)["links"][0]
     assert b_side["state"] == "active", "told at once by the approval's exchange"
     assert {u["username"] for u in b_side["users"]} == {"admin", "alice"}
+    assert {u["username"] for u in links_of(ca)["links"][0]["users"]} == {"admin", "carol"}
     assert b_side["householdName"]
     # Remote users never sign in, and stay out of Users and Groups.
     assert all(u["username"] != "carol" for u in ca.get("/ui/api/users").json()["items"])
@@ -431,6 +437,17 @@ def test_receipts_cross_only_when_included_and_open_through_decryption(admins):
     assert len(on_disk) == 1 and image[:64] not in on_disk[0].read_bytes()
     got = carol.get(f"/ui/api/linked/{b_id}/files/{files[0]['id']}")
     assert got.status_code == 200 and got.content == image
+    # Served as a local receipt is (S11.9.6.5, S13.7.7): its type from its bytes, in a sandbox.
+    assert got.headers["content-type"] == "image/png"
+    assert got.headers["content-security-policy"] == "sandbox"
+    assert got.headers["content-disposition"].startswith("inline")
+    assert got.headers["x-content-type-options"] == "nosniff"
+    assert "no-store" in got.headers["cache-control"]
+    # A type the bytes don't bear out is never served, whatever the copy's row says.
+    with b.copies.get(b_id).engine.begin() as conn:
+        conn.execute(copydb.File.update().values(contentType="text/html"))
+    got = carol.get(f"/ui/api/linked/{b_id}/files/{files[0]['id']}")
+    assert got.status_code == 415 and got.json()["code"] == "receipt-type"
     # Not included any more: the receipt and its sealed file go.
     alice.put(
         f"/ui/api/shares/account/{acct['id']}",
@@ -439,6 +456,49 @@ def test_receipts_cross_only_when_included_and_open_through_decryption(admins):
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
     assert carol.get(f"/ui/api/linked/{b_id}/files").json()["items"] == []
     assert list(sealed_dir.glob("*.mkr")) == []
+
+
+def test_sharing_with_a_linked_server_needs_the_password_again(admins):
+    """S13.7.2: a share that sends more across a link, and Include receipts turned on."""
+    from conftest import stale
+
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    a_id, _b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post("/ui/api/accounts", json={"name": "IRA", "type": "ira"}).json()
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    stale(a)
+    share = f"/ui/api/shares/account/{acct['id']}"
+    r = alice.put(share, json={"users": {carol_here["id"]: "read"}})
+    assert r.status_code == 403 and r.json()["code"] == "reauth-required"
+    pw = "a long user passphrase"
+    assert alice.post("/ui/api/session/reauth", json={"password": pw}).status_code == 204
+    assert alice.put(share, json={"users": {carol_here["id"]: "read"}}).status_code == 200
+    stale(a)
+    # The same share saved again asks nothing; its receipts turned on do.
+    assert alice.put(share, json={"users": {carol_here["id"]: "read"}}).status_code == 200
+    r = alice.put(share, json={"users": {carol_here["id"]: "read"}, "receipts": {a_id: True}})
+    assert r.status_code == 403 and r.json()["code"] == "reauth-required"
+
+
+def test_a_linked_receipts_type_comes_from_its_bytes():
+    """What a source calls a file never decides how it is shown (S11.9.6.5): a page with a
+    script arrives as unknown, a PNG as a PNG, and a thumbnail is kept only as an image."""
+    from test_receipts import png
+
+    from moneykata.links import changes, receive
+
+    types: dict[str, str] = {}
+    html = [b"<html><script src=/ui/api/linked/x/files/y>", b"</script></html>"]
+    assert b"".join(receive._typed(iter(html), types, "a")) == b"".join(html)
+    image = png()
+    assert b"".join(receive._typed(iter([image[:5], image[5:]]), types, "b")) == image
+    assert types == {"a": receive.UNKNOWN, "b": "image/png"}
+    assert changes._thumbnail("data:image/webp;base64,AAAA") == "data:image/webp;base64,AAAA"
+    for bad in ("javascript:alert(1)", "data:text/html;base64,AAAA", None, 7):
+        assert changes._thumbnail(bad) is None
 
 
 def test_a_share_waiting_for_its_access_key_alerts_the_admins(admins):
@@ -529,3 +589,34 @@ def test_a_large_change_arrives_in_parts_oldest_first(admins, monkeypatch):
     carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
     items, _docs = docs_in(b, b_id)
     assert set(ids_) <= set(items), "every part applied, in order"
+
+
+def test_a_remote_user_is_a_person_of_their_own_until_someone_joins_them(admins):
+    """S10.10.1 (P5): a linked server's user never takes over a person here by its name; one
+    who may change that person joins them, and its privacy stays as it was."""
+    from moneykata.store.entities.education import Person
+    from moneykata.store.entities.users import User
+
+    a, b, ca, cb, _ = admins
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    plan = alice.post(
+        "/ui/api/people", json={"name": "Carol", "sex": "female", "private": True}
+    ).json()
+    make_user(b, "carol")
+    linked(ca, cb)
+    with a.db.read() as s:
+        carol = s.query(User).filter(User.username == "carol", User.linkId.is_not(None)).one()
+        assert carol.personId != plan["id"], "not joined by name"
+        assert s.get(Person, plan["id"]).private
+    row = next(p for p in alice.get("/ui/api/people").json()["items"] if p["id"] == plan["id"])
+    assert [r["id"] for r in row["sameAs"]] == [carol.id]
+    r = alice.post(f"/ui/api/persons/{plan['id']}/join", json={"userId": carol.id})
+    assert r.status_code == 200, r.text
+    with a.db.read() as s:
+        assert s.get(User, carol.id).personId == plan["id"]
+        assert s.get(Person, plan["id"]).private, "joining never changes whether it is private"
+    # Exchanges keep the joined person's name as it is here.
+    ca.post(f"/ui/api/settings/links/{links_of(ca)['links'][0]['id']}/pull")
+    with a.db.read() as s:
+        assert s.get(Person, plan["id"]).name == "Carol"

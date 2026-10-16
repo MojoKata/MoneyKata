@@ -266,7 +266,11 @@ def test_wash_sales_count_the_spouse_on_the_day_of_the_sale(server, two):
         return next(r for r in v["closed"] if r["symbol"] == "AAPL")["realized"]
 
     assert realized() == "-500.00", "not married: Bob's buy is his own"
-    relate(alice, a, b, "spouse", fromDate="2026-07-01")
+    made = relate(alice, a, b, "spouse", fromDate="2026-07-01")
+    assert made["confirmed"] is False and [w["id"] for w in made["waitingFor"]] == [b]
+    assert not made["canConfirm"]
+    assert alice.post(f"/ui/api/relationships/{made['id']}/confirm").status_code == 403
+    assert bob.post(f"/ui/api/relationships/{made['id']}/confirm").json()["confirmed"] is True
     assert realized() == "-500.00", "married after the sale"
     rel = alice.get("/ui/api/relationships").json()["items"][0]
     r = alice.patch(
@@ -275,6 +279,11 @@ def test_wash_sales_count_the_spouse_on_the_day_of_the_sale(server, two):
         headers={"If-Match": f'"{rel["version"]}"'},
     )
     assert r.status_code == 200, r.text
+    assert r.json()["confirmed"] is False, "a changed marriage is confirmed again"
+    assert realized() == "-500.00", "Alice alone can't make Bob's trades hers"
+    waiting = bob.get("/ui/api/relationships").json()["items"][0]
+    assert waiting["canConfirm"]
+    assert bob.post(f"/ui/api/relationships/{rel['id']}/confirm").status_code == 200
     assert realized() == "0.00", "married on the day: the whole loss is disallowed"
 
 
@@ -283,11 +292,13 @@ def test_a_joint_book_needs_a_marriage_on_the_last_day_or_a_death_that_year(serv
     a, b = me(alice), me(bob)
     a_id = alice.get("/ui/api/session").json()["user"]["id"]
     b_id = bob.get("/ui/api/session").json()["user"]["id"]
-    relate(alice, a, b, "spouse", fromDate="2009-06-14", toDate="2025-06-01")
+    made = relate(alice, a, b, "spouse", fromDate="2009-06-14", toDate="2025-06-01")
 
     def joint(year):
         return alice.post("/ui/api/tax-books", json={"year": year, "filers": [a_id, b_id]})
 
+    assert joint(2024).status_code == 422, "not yet confirmed by Bob"
+    assert bob.post(f"/ui/api/relationships/{made['id']}/confirm").status_code == 200
     assert joint(2024).status_code == 201
     assert joint(2025).status_code == 422, "divorced before the year ended"
     with server.db.tx() as s:
@@ -363,3 +374,32 @@ def test_a_relationship_is_changed_and_removed_with_its_version(two):
     )
     assert r3.status_code == 200, r3.text
     assert alice.get("/ui/api/relationships").json()["items"] == []
+
+
+def test_a_person_who_becomes_a_user_is_theirs_to_change(server, two):
+    """S10.10.2 (P5): whoever made a person before they were invited no longer changes them."""
+    from moneykata.auth import users as accounts
+    from moneykata.store.entities.users import User
+
+    alice, _ = two
+    made = alice.post("/ui/api/persons", json={"name": "Dana Ortiz", "sex": "female"})
+    assert made.status_code == 201, made.text
+    person = made.json()
+    assert person["canChange"]
+    from moneykata import settings
+
+    with server.db.tx() as s:  # invited under the same name, she becomes that person
+        settings.put(s, "publicUrl", "https://money.home.lan", None)
+        admin = s.query(User).filter(User.username == "admin").one()
+        dana = accounts.invite(
+            s, server.services, admin, "Dana Ortiz", "dana", "dana@home.lan", [], "female"
+        )
+        assert dana.personId == person["id"]
+    mine = next(p for p in alice.get("/ui/api/persons").json()["items"] if p["id"] == person["id"])
+    assert not mine["canChange"]
+    r = alice.patch(
+        f"/ui/api/persons/{person['id']}",
+        json={"name": "Dana Ortiz", "sex": "female", "birthYear": 1990},
+        headers={"If-Match": f'"{mine["version"]}"'},
+    )
+    assert r.status_code == 403

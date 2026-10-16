@@ -113,10 +113,14 @@ def hypercorn_config(config: Config) -> HypercornConfig:
     return hc
 
 
-async def run(app, config: Config, on_stop: Callable[[], Awaitable[None]]) -> None:
+async def run(app, config: Config, on_stop: Callable[[], Awaitable[None]], host_app=None) -> None:
     """Serve until SIGTERM or SIGINT. The first signal ends the event streams (on_stop) and lets
-    requests in flight finish for up to 5 seconds; a second one stops at once."""
+    requests in flight finish for up to 5 seconds; a second one stops at once. The host
+    commands' app, when given, is served on its Unix socket beside the listener (host.py)."""
+    from . import host
+
     hc = hypercorn_config(config)
+    host_hc = host.hypercorn_config(config) if host_app is not None else None
     stopping = asyncio.Event()
     loop = asyncio.get_running_loop()
     first: list[float] = []
@@ -141,7 +145,13 @@ async def run(app, config: Config, on_stop: Callable[[], Awaitable[None]]) -> No
         await on_stop()
 
     try:
-        await serve(app, hc, shutdown_trigger=trigger)
+        if host_hc is None:
+            await serve(app, hc, shutdown_trigger=trigger)
+        else:
+            await asyncio.gather(
+                serve(app, hc, shutdown_trigger=trigger),
+                serve(host_app, host_hc, shutdown_trigger=stopping.wait),
+            )
     except OSError as e:
         if e.errno == errno.EADDRINUSE:
             raise RefuseStart(f"port {config.port} is already in use") from None

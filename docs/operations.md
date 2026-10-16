@@ -76,8 +76,10 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    (S13.3): anything else in the range could pose as the proxy. The listener speaks plain HTTP
    in `proxy` mode, so the compose file publishes it on the host's loopback only. A proxy in
    the same compose project (`proxy/` is written that way) reaches `moneykata:37373` by name
-   and has an address of its own to trust, which is the setup to prefer: a proxy on the host
-   reaches `127.0.0.1:37373` from the Docker bridge's gateway, as every other process on the
+   and has an address of its own to trust, which is the setup to prefer: the compose file fixes
+   the project's range at `172.30.37.0/24` and gives its commented-out proxy `172.30.37.10`,
+   the address the example `moneykata.toml` trusts. A proxy on the host reaches
+   `127.0.0.1:37373` from the bridge's gateway, `172.30.37.1`, as every other process on the
    host does. The compose file gives the container the host's time zone (`/etc/localtime` and
    `TZ`), which backups and daily emails follow.
 5. **Unlock it**: it starts locked. Open the app and enter the phrase on the locked screen,

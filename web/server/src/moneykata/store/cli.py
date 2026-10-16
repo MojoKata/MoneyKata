@@ -34,10 +34,23 @@ def _shell(args) -> int:
 
 
 def _backup(args) -> int:
-    from .. import settings
+    """Through the running server when it is up, over its socket (S15.4.7); with the phrase
+    typed when it is stopped."""
+    from .. import host, settings
+    from ..config import RefuseStart
     from .maintenance import backup, open_store, prune, queue_host_event
 
     config = load(Path(args.config))
+    try:
+        with host.client(config, timeout=600) as c:
+            r = c.post("/host/backup")
+    except host.NotRunning:
+        r = None
+    if r is not None:
+        if r.status_code != 200:
+            raise RefuseStart(f"the server refused the backup: {host.detail(r)}")
+        print(r.json()["path"])
+        return 0
     store = open_store(config, read_phrase())
     path = backup(config, store)
     with store.db.read() as s:

@@ -13,7 +13,7 @@ from ..store.entities.accounts import Account
 from ..store.entities.sharing import CountedAccount, Share
 from ..store.entities.users import Group, User, UserGroup
 from .conventions import ExactRoute, Model, check_version, if_match, version_of
-from .deps import Caller, caller, server
+from .deps import Caller, caller, recent_auth, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["sharing"])
 Kind = Literal[
@@ -191,12 +191,32 @@ def _owner_only(s, c: Caller, kind: str, item_id: str) -> None:
         from .. import people
 
         lvl = people.level(s, c.id, obj)
+    elif kind == "tax-book":  # its filers hold it as its owners, and any changes its sharing
+        from ..taxes import books
+
+        lvl = books.level(s, c.id, obj)
     else:
         lvl = access.level_of(s, c.id, kind, obj.ownerId, obj.id, obj.deleted)
     if lvl is None:
         raise Problem(404, "not-found", "Not found")
     if lvl != "owner":
         raise Problem(403, "owner-only", "Only the owner changes who this is shared with.")
+
+
+def _reaches_a_link(s, kind: str, item_id: str, body: ShareSave) -> bool:
+    """Whether this save sends more to a linked server: one of its users given a share they
+    didn't have, or Include receipts turned on for it (S13.7.2)."""
+    current = {g.userId: g for g in sharing.grants(s, kind, item_id) if g.userId}
+    linked = {}
+    for uid in set(body.users) | set(current):
+        u = s.get(User, uid)
+        if u is not None and u.linkId:
+            linked[uid] = u.linkId
+    for uid, lvl in body.users.items():
+        if uid in linked and lvl != "none" and uid not in current:
+            return True
+    receipts_before = {linked[u] for u, g in current.items() if u in linked and g.includeReceipts}
+    return any(on and link not in receipts_before for link, on in body.receipts.items())
 
 
 @router.get("/shares/{kind}/{item_id}", response_model=ShareView)
@@ -224,6 +244,8 @@ def save_shares(
             version,
             lambda: view(s, c.user, kind, item_id),
         )
+        if _reaches_a_link(s, kind, item_id, body):
+            recent_auth(c)
         change = sharing.save(
             s,
             c.user,

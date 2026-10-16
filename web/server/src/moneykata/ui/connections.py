@@ -37,6 +37,9 @@ SETTINGS = {
     "schwab": {"appKey": str},
 }
 
+# The setting that names the institution's server, for the drivers that have one.
+ADDRESS = {"ofx-direct": "url"}
+
 
 class ConnectorInfo(Model):
     """What any user needs to start a Connection: whether a connector is paired, and its keys."""
@@ -227,6 +230,11 @@ def change_connection(
         if body.settings is not None:
             settings = _check_settings(row.driver, body.settings)
             text = json.dumps(settings, sort_keys=True)
+            where = ADDRESS.get(row.driver)
+            if where and settings.get(where) != json.loads(row.settings or "{}").get(where):
+                from .deps import recent_auth
+
+                recent_auth(c)  # where its credentials go: the password again (S13.7.2)
             if text != row.settings:
                 row.settings = text
                 changed.append("settings")

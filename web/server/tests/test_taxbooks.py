@@ -34,6 +34,8 @@ def couple(server, frozen):
         json={"person1Id": pa, "person2Id": pb, "relation": "spouse", "fromDate": "2009-06-14"},
     )
     assert r.status_code == 201, r.text
+    # Bob confirms the marriage from his Profile (S10.10.4).
+    assert bob.post(f"/ui/api/relationships/{r.json()['id']}/confirm").status_code == 200
     return alice, bob, a_id, b_id
 
 
@@ -311,3 +313,48 @@ def test_next_years_book_copies_dependents_a_year_older(server, couple):
     d = alice.get(f"/ui/api/tax-books/{new['id']}").json()
     ages = {x["name"]: x["age"] for x in d["dependents"]}
     assert ages == {"Carol Griffin": 14, "Ruth Griffin": 23}
+
+
+def test_last_years_book_waits_for_every_filer_and_an_added_account_for_its_adder(server, couple):
+    """S8.14.1, S8.14.2, S8.14.4 (P1): a book naming Bob shows nothing of his year before, and
+    copies nothing from it, until he accepts; an account he added counts while he sees it."""
+    alice, bob, a_id, b_id = couple
+    kid = new_account(alice, name="Emma's custodial", type="brokerage")
+    alice.put(f"/ui/api/shares/account/{kid['id']}", json={"users": {b_id: "read"}})
+    last = book(bob, 2025, [b_id])
+    r = bob.put(f"/ui/api/tax-books/{last['id']}/accounts/{kid['id']}", json={"counted": True})
+    assert [a["name"] for a in r.json()["accounts"]] == ["Emma's custodial"]
+    # Alice names Bob; until he accepts, the book has nothing of his 2025.
+    joint = book(alice, 2026, [a_id, b_id], fromLastYear=True)
+    from moneykata.store.entities.taxes import TaxBook, TaxBookAccount
+
+    with server.db.read() as s:
+        assert s.query(TaxBookAccount).filter_by(bookId=joint["id"]).count() == 0
+        assert s.get(TaxBook, joint["id"]).fromLastYear
+    assert bob.post(f"/ui/api/tax-books/{joint['id']}/accept").status_code == 200
+    with server.db.read() as s:
+        copied = s.query(TaxBookAccount).filter_by(bookId=joint["id"]).one()
+        assert copied.accountId == kid["id"] and copied.addedById == b_id
+        assert not s.get(TaxBook, joint["id"]).fromLastYear
+    # Bob's added account counts in his own 2025 book only while he can see it.
+    alice.put(f"/ui/api/shares/account/{kid['id']}", json={"users": {b_id: "none"}})
+    d = bob.get(f"/ui/api/tax-books/{last['id']}").json()
+    assert "Emma's custodial" not in [a["name"] for a in d["accounts"]]
+
+
+def test_a_helper_edits_but_never_changes_what_the_book_counts(server, couple):
+    """S8.14.3 (P7): write lets a helper edit filings, not add accounts; any filer shares it."""
+    alice, bob, a_id, b_id = couple
+    make_user(server, "gail")
+    gail = sign_in(server, "gail")
+    g_id = gail.get("/ui/api/session").json()["user"]["id"]
+    acct = new_account(gail, name="Gail's", type="brokerage")
+    b = book(alice, 2026, [a_id, b_id])
+    bob.post(f"/ui/api/tax-books/{b['id']}/accept")
+    # Bob, a filer who didn't make it, changes its sharing.
+    r = bob.put(f"/ui/api/shares/tax-book/{b['id']}", json={"users": {g_id: "write"}})
+    assert r.status_code == 200, r.text
+    r = gail.put(f"/ui/api/tax-books/{b['id']}/accounts/{acct['id']}", json={"counted": True})
+    assert r.status_code == 403 and r.json()["code"] == "filers-only"
+    r = gail.post(f"/ui/api/tax-books/{b['id']}/filings", json={"form": "Form 1040"})
+    assert r.status_code == 201, r.text

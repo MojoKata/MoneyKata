@@ -99,6 +99,18 @@ class Change:
     alsoShared: int = 0
 
 
+def _may_share(s: Session, by: User, kind: str, obj) -> bool:
+    """The owner shares an item; a tax book's accepted filers all hold it as its owners
+    (S8.14.3)."""
+    if obj.ownerId == by.id:
+        return True
+    if kind == "tax-book":
+        from .taxes import books
+
+        return books.level(s, by.id, obj) == "owner"
+    return False
+
+
 def save(
     s: Session,
     by: User,
@@ -110,7 +122,7 @@ def save(
     receipts: dict[str, bool] | None = None,
 ) -> Change:
     obj = item(s, kind, item_id)
-    if obj.ownerId != by.id:
+    if not _may_share(s, by, kind, obj):
         raise Problem(403, "owner-only", "Only the owner changes who this is shared with.")
     errors: list[FieldError] = []
     for uid, lvl in users.items():

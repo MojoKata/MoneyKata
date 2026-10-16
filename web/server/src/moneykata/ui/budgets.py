@@ -123,11 +123,11 @@ class RecurringRow(Model):
     changed: bool
 
 
-def _accounts_of(s, b: Budget) -> list[str]:
-    return budgets.account_ids(s, b)
+def _accounts_of(s, b: Budget, viewer: str | None = None) -> list[str]:
+    return budgets.account_ids(s, b, viewer)
 
 
-def shape(s, b: Budget, level: str) -> BudgetRow:
+def shape(s, b: Budget, level: str, viewer: str | None = None) -> BudgetRow:
     owner = s.get(User, b.ownerId)
     shared = len(access.holders(s, "budget", b.id, b.ownerId)) - 1 if level == "owner" else 0
     return BudgetRow(
@@ -136,7 +136,7 @@ def shape(s, b: Budget, level: str) -> BudgetRow:
         ownerId=b.ownerId,
         ownerName=owner.displayName,
         level=level,
-        accountIds=_accounts_of(s, b),
+        accountIds=_accounts_of(s, b, viewer),
         sharedWith=shared,
         version=b.version,
     )
@@ -193,7 +193,7 @@ def _month(value: str | None) -> dt.date:
 @router.get("/budgets", response_model=list[BudgetRow])
 def list_budgets(request: Request, c: Caller = Depends(caller)):
     with server(request).db.read() as s:
-        return [shape(s, b, lvl) for b, lvl in access.visible_budgets(s, c.id)]
+        return [shape(s, b, lvl, c.id) for b, lvl in access.visible_budgets(s, c.id)]
 
 
 @router.post("/budgets", response_model=BudgetRow, status_code=201)
@@ -208,7 +208,7 @@ def create_budget(body: NewBudget, request: Request, c: Caller = Depends(caller)
             s, "budget.created", actor=c.id, subject_kind="budget", subject_id=b.id, owner=c.id
         )
         s.flush()
-        out = shape(s, b, "owner")
+        out = shape(s, b, "owner", c.id)
     return JSONResponse(
         out.model_dump(mode="json"),
         status_code=201,
@@ -227,7 +227,7 @@ def change_budget(
     with server(request).db.tx() as s:
         b, lvl = access.budget(s, c.id, budget_id, "write")
         if b.version != version:
-            raise stale(shape(s, b, lvl))
+            raise stale(shape(s, b, lvl, c.id))
         _raise(_check(s, b.ownerId, body))
         fields = []
         if body.name is not None and body.name.strip() != b.name:
@@ -250,7 +250,7 @@ def change_budget(
                 detail={"fields": fields},
             )
         s.flush()
-        return shape(s, b, lvl)
+        return shape(s, b, lvl, c.id)
 
 
 @router.delete("/budgets/{budget_id}", response_model=Deleted[None])
@@ -259,7 +259,7 @@ def delete_budget(
 ):
     with server(request).db.tx() as s:
         b, lvl = access.budget(s, c.id, budget_id, "owner")
-        check(b, version, lambda: shape(s, b, lvl))
+        check(b, version, lambda: shape(s, b, lvl, c.id))
         b.mark_deleted(c.id)
         activity.record(
             s, "budget.deleted", actor=c.id, subject_kind="budget", subject_id=b.id, owner=c.id
@@ -274,7 +274,7 @@ def budget_month(
 ):
     with server(request).db.read() as s:
         b, lvl = access.budget(s, c.id, budget_id)
-        m = budgets.month_view(s, b, _month(month), clock.today())
+        m = budgets.month_view(s, b, _month(month), clock.today(), c.id)
         return MonthView(
             month=m.month,
             rows=[MonthRow(**r.__dict__) for r in m.rows],
@@ -303,7 +303,7 @@ def set_plan(
     month = budgets.month_of(body.month)
     with server(request).db.tx() as s:
         b, lvl = access.budget(s, c.id, budget_id, "write")
-        check(b, version, lambda: shape(s, b, lvl))
+        check(b, version, lambda: shape(s, b, lvl, c.id))
         cats = {x.id: x for x in s.scalars(select(Category).where(Category.deleted == false()))}
         errors = []
         seen = set()
@@ -374,7 +374,7 @@ def budget_cash_flow(
     with server(request).db.read() as s:
         b, _ = access.budget(s, c.id, budget_id)
         m = _month(month)
-        f = budgets.cash_flow(s, b, m)
+        f = budgets.cash_flow(s, b, m, c.id)
         return CashFlow(
             month=m,
             sources=[Flow(name=n, amount=a) for n, a in f["sources"]],
@@ -397,7 +397,7 @@ def budget_trends(
         b, _ = access.budget(s, c.id, budget_id)
         return [
             TrendPoint(month=m, planned=p, actual=a)
-            for m, p, a in budgets.trends(s, b, _month(month), category, months)
+            for m, p, a in budgets.trends(s, b, _month(month), category, months, c.id)
         ]
 
 
@@ -406,7 +406,7 @@ def budget_recurring(budget_id: str, request: Request, c: Caller = Depends(calle
     """Found in the last 15 months of the budget's accounts each time it is asked."""
     with server(request).db.read() as s:
         b, _ = access.budget(s, c.id, budget_id)
-        accts = budgets.account_ids(s, b)
+        accts = budgets.account_ids(s, b, c.id)
         today = clock.today()
         txns = s.scalars(
             select(Transaction).where(

@@ -320,16 +320,49 @@ def file(link_id: str, file_id: str, request: Request, c: Caller = Depends(calle
         row = conn.execute(select(copydb.File).where(copydb.File.c.id == file_id)).first()
         if row is None or row.itemId not in _mine_items(conn, c.id):
             raise Problem(404, "not-shared", "That receipt isn't shared with you.")
+    from .. import receipts
+    from .receipts import _disposition
+
     path = folder(srv.config.data_dir, link_id) / "receipts" / row.fileName
     priv = private_key(bytes(o.key))
+    h = hashlib.sha256()
+    f = open(path, "rb")  # noqa: SIM115 - closed when the stream ends
+    chunks = sealed.open_sealed(priv, sealed.RECEIPT, link_id, file_id, f)
+    try:
+        first = next(chunks, b"")
+    except sealed.SealError:
+        f.close()
+        raise Problem(500, "receipt-unreadable", "The receipt's file can't be opened.") from None
+    # Its type found from its bytes, when it arrived and again now, as a local receipt's is
+    # (S9.4, S11.9.6.5): anything else is never served, whatever the source called it.
+    kind = receipts.sniff(first[:16])
+    if kind is None or kind != row.contentType:
+        f.close()
+        raise Problem(415, "receipt-type", "That file isn't a receipt MoneyKata can show.")
+    h.update(first)
+    meta = json.loads(row.meta or "{}")
+    headers = {
+        "Content-Disposition": _disposition(str(meta.get("fileName") or "receipt")),
+        "Content-Security-Policy": "sandbox",
+        "Cache-Control": "private, no-store",
+    }
 
-    def stream():
-        h = hashlib.sha256()
-        with open(path, "rb") as f:
-            for chunk in sealed.open_sealed(priv, sealed.RECEIPT, link_id, file_id, f):
+    def rest():
+        try:
+            for chunk in chunks:
                 h.update(chunk)
                 yield chunk
+        finally:
+            f.close()
         if h.hexdigest() != row.sha256:
             raise sealed.SealError("the receipt is not the one its source sent")
 
-    return StreamingResponse(stream(), media_type=row.contentType)
+    if kind == "image/heic":
+        data = first + b"".join(rest())
+        return Response(receipts.as_jpeg(data), media_type="image/jpeg", headers=headers)
+
+    def body():
+        yield first
+        yield from rest()
+
+    return StreamingResponse(body(), media_type=kind, headers=headers)

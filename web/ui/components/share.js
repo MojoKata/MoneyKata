@@ -11,6 +11,7 @@ import { FormError, Seg, Switch } from './fields.js';
 import { Avatar, Loading, Tile } from './bits.js';
 import { Icon } from './icon.js';
 import { toast } from './toast.js';
+import { withReauth } from './reauth.js';
 
 const LEVELS =
   /** @type {[string, string][]} */ ([['none', 'None'], ['read', 'Read'], ['write', 'Write']]);
@@ -40,12 +41,15 @@ export function ShareDialog({ close, kind, id, name }) {
     });
   }, [kind, id]);
   const save = useSubmit(async (/** @type {boolean} */ too = false) => {
-    const out = await api.put(`/shares/${kind}/${id}`, {
-      users,
-      groups,
-      receipts,
-      shareAccountsToo: too,
-    }, view?.version ?? 0);
+    // Sharing with a linked server asks for the password again (S13.7.2).
+    const out = await withReauth(() =>
+      api.put(`/shares/${kind}/${id}`, {
+        users,
+        groups,
+        receipts,
+        shareAccountsToo: too,
+      }, view?.version ?? 0)
+    );
     if (too && out.alsoShared) {
       setView(out.view);
       toast(`${out.alsoShared} account${out.alsoShared === 1 ? '' : 's'} shared at read`);

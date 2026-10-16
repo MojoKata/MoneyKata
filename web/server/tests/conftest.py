@@ -21,6 +21,7 @@ def config(tmp_path) -> Config:
         mode="proxy",
         data_dir=tmp_path / "data",
         backup_dir=tmp_path / "backups",
+        socket_path=tmp_path / "run" / "sock",
     )
 
 
@@ -195,3 +196,16 @@ def sign_in(srv, username: str, password: str = "a long user passphrase") -> Tes
     r = c.post("/ui/api/session", json={"login": username, "password": password})
     assert r.status_code == 200, r.text
     return c
+
+
+def stale(srv) -> None:
+    """Every session's password last given 11 minutes ago, past re-authentication's 10."""
+    import datetime as dt
+
+    from sqlalchemy import select
+
+    from moneykata.store.entities.users import Session
+
+    with srv.db.tx() as s:
+        for row in s.scalars(select(Session)):
+            row.authAt -= dt.timedelta(minutes=11)

@@ -13,6 +13,8 @@ from typing import Literal
 
 DEFAULT_PORT = 37373
 DEFAULT_CONFIG = Path("/etc/moneykata.toml")
+# Where host commands reach the running server (S13.6): a tmpfs of the server's account.
+DEFAULT_SOCKET = Path("/run/moneykata/sock")
 
 
 class RefuseStart(Exception):
@@ -35,6 +37,7 @@ class Config:
     path: Path | None = None
     mail_folder: Path | None = None
     cert_names: tuple[str, ...] = ()  # more names for the self-signed certificate
+    socket_path: Path = DEFAULT_SOCKET
 
     @property
     def db_path(self) -> Path:

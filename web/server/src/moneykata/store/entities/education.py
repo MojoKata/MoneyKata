@@ -27,6 +27,8 @@ class Relationship(Record):
     label: str | None = None
     fromDate: dt.date | None = None
     toDate: dt.date | None = None
+    confirmed1At: dt.datetime | None = None
+    confirmed2At: dt.datetime | None = None
 
 
 @dataclass(kw_only=True, eq=False)

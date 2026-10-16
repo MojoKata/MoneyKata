@@ -1442,11 +1442,6 @@
  */
 
 /**
- * @typedef {Object} JoinIn
- * @property {string} code
- */
-
-/**
  * @typedef {Object} KeepIn
  * @property {(string | null)} [periodStart]
  * @property {(string | null)} [periodEnd]
@@ -2315,7 +2310,7 @@
 
 /**
  * @typedef {Object} Paid
- * @property {string} transactionId
+ * @property {(string | null)} transactionId
  * @property {string} date
  * @property {import('../app/dec.js').Dec} amount
  * @property {(string | null)} payee
@@ -2441,6 +2436,7 @@
  * @property {boolean} canChangePerson
  * @property {boolean} canMakePrivate
  * @property {boolean} isUser
+ * @property {Array<moneykata__ui__gifts__RemoteUser>} sameAs
  * @property {(import('../app/dec.js').Dec | null)} giftBudget
  * @property {number} leadDays
  * @property {(string | null)} notes
@@ -2940,16 +2936,11 @@
  * @property {(string | null)} fromDate
  * @property {(string | null)} toDate
  * @property {(string | null)} endsOn
+ * @property {(boolean | null)} confirmed
+ * @property {Array<Named>} waitingFor
+ * @property {boolean} canConfirm
  * @property {boolean} canChange
  * @property {number} version
- */
-
-/**
- * @typedef {Object} RemoteUser
- * @property {string} id
- * @property {string} username
- * @property {string} displayName
- * @property {(string | null)} email
  */
 
 /**
@@ -3004,13 +2995,6 @@
  * @property {import('../app/dec.js').Dec} used
  * @property {import('../app/dec.js').Dec} eligible
  * @property {import('../app/dec.js').Dec} available
- */
-
-/**
- * @typedef {Object} RotateIn
- * @property {string} phrase
- * @property {(string | null)} [oldPhrase]
- * @property {Object<string, string>} [copies]
  */
 
 /**
@@ -3971,6 +3955,13 @@
  */
 
 /**
+ * @typedef {Object} moneykata__ui__gifts__RemoteUser
+ * @property {string} id
+ * @property {string} name
+ * @property {string} server
+ */
+
+/**
  * @typedef {Object} moneykata__ui__giving__DocumentIn
  * @property {string} receiptId
  */
@@ -4034,6 +4025,11 @@
  */
 
 /**
+ * @typedef {Object} moneykata__ui__links__JoinIn
+ * @property {string} code
+ */
+
+/**
  * @typedef {Object} moneykata__ui__links__LinkOut
  * @property {string} id
  * @property {string} state
@@ -4054,9 +4050,17 @@
  * @property {(string | null)} syncThrough
  * @property {(number | null)} syncBytes
  * @property {(number | null)} syncTotal
- * @property {Array<RemoteUser>} users
+ * @property {Array<moneykata__ui__links__RemoteUser>} users
  * @property {(moneykata__ui__links__CopyOut | null)} [linkedCopy]
  * @property {Array<Incoming>} [incoming]
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__links__RemoteUser
+ * @property {string} id
+ * @property {string} username
+ * @property {string} displayName
+ * @property {(string | null)} email
  */
 
 /**
@@ -4102,6 +4106,11 @@
  * @property {import('../app/dec.js').Dec} pmi
  * @property {import('../app/dec.js').Dec} fees
  * @property {import('../app/dec.js').Dec} overpayment
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__people__JoinIn
+ * @property {string} userId
  */
 
 /**

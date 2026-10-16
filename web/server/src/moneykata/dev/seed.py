@@ -147,9 +147,17 @@ def seed_family(s, people: dict[str, User]) -> None:
             b.personId if isinstance(b, User) else b.id,
         )
         x, y = (x, y) if relation == "child" or x < y else (y, x)
+        # The household's marriages, confirmed by both (S10.10.4).
+        both = clock.now() if relation == "spouse" else None
         s.add(
             Relationship(
-                id=ids.new_id("Rltn"), person1Id=x, person2Id=y, relation=relation, fromDate=since
+                id=ids.new_id("Rltn"),
+                person1Id=x,
+                person2Id=y,
+                relation=relation,
+                fromDate=since,
+                confirmed1At=both,
+                confirmed2At=both,
             )
         )
 

@@ -44,6 +44,7 @@ def dev_config(
         data_dir=base / "data",
         backup_dir=base / "backups",
         mail_folder=base / "mail",
+        socket_path=base / "run" / "sock",
         dev=True,
         stubs=stubs,
     )

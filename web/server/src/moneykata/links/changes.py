@@ -9,6 +9,7 @@ JSON (keys sorted, no spaces)."""
 
 import datetime as dt
 import json
+import re
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -127,7 +128,9 @@ def apply(srv, link_id: str) -> int:
     receipts_dir = folder(srv.config.data_dir, link_id) / "receipts"
     with o.engine.begin() as conn:
         for change, local in changes:
-            for name in _apply_one(conn, change, local.get("fileNames") or {}):
+            for name in _apply_one(
+                conn, change, local.get("fileNames") or {}, local.get("fileTypes") or {}
+            ):
                 (receipts_dir / name).unlink(missing_ok=True)
             conn.execute(
                 copydb.Applied.insert().prefix_with("OR REPLACE"),
@@ -140,7 +143,7 @@ def apply(srv, link_id: str) -> int:
     return len(changes)
 
 
-def _apply_one(conn, c: dict, names: dict[str, str]) -> list[str]:
+def _apply_one(conn, c: dict, names: dict[str, str], types: dict[str, str]) -> list[str]:
     """Apply one change; returns the sealed files it leaves unnamed, to delete."""
     gone: list[str] = []
     if c.get("full"):
@@ -202,14 +205,25 @@ def _apply_one(conn, c: dict, names: dict[str, str]) -> list[str]:
                 "id": f["id"],
                 "itemId": f["itemId"],
                 "fileName": names[f["id"]],
-                "contentType": f.get("contentType") or "application/octet-stream",
+                # Found from its bytes as it arrived, never the type the change names.
+                "contentType": types.get(f["id"], "application/octet-stream"),
                 "length": int(f.get("length") or 0),
                 "sha256": f["sha256"],
-                "thumbnail": f.get("thumbnail"),
+                "thumbnail": _thumbnail(f.get("thumbnail")),
                 "meta": json.dumps(f.get("meta") or {}),
             },
         )
     return [g for g in gone if g not in names.values()]
+
+
+THUMBNAIL = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*")
+
+
+def _thumbnail(value) -> str | None:
+    """A thumbnail from the source, kept only as an image's data URL (S11.9.6.5)."""
+    if isinstance(value, str) and len(value) < 1_000_000 and THUMBNAIL.fullmatch(value):
+        return value
+    return None
 
 
 def orphans(srv, link_id: str) -> int:

@@ -24,6 +24,8 @@ TaxBook = record(
     # Bitcoin network fees on transfers between the owner's own accounts (S8.19): a sale, the
     # default, or not taxed, as a preparer may read them.
     Column("bitcoinFees", Text, nullable=False, server_default=text("'sale'")),
+    # Made from last year's book: what it copies waits until every filer has accepted (S8.14.4).
+    Column("fromLastYear", Boolean, nullable=False, server_default=text("0")),
     CheckConstraint("\"bitcoinFees\" IN ('sale', 'not-taxed')", name="bitcoin_fees"),
     Index("ix_TaxBook_owner", "ownerId", "year"),
 )
@@ -44,6 +46,8 @@ TaxBookAccounts = pairs(
     Column("bookId", Text, ForeignKey("TaxBook.id", ondelete="CASCADE"), nullable=False),
     Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
     Column("counted", Boolean, nullable=False),
+    # The filer who added it: an added account counts only while they can see it (S8.14.2).
+    Column("addedById", Text, ForeignKey("User.id")),
     PrimaryKeyConstraint("bookId", "accountId"),
 )
 

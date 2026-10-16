@@ -247,6 +247,20 @@ def get(s: Session, user_id: str, receipt_id: str, need: str = "read") -> tuple[
     return r, lvl
 
 
+def to_attach(s: Session, user_id: str, receipt_id: str, field: str = "receiptId") -> Receipt:
+    """A receipt this user may attach to something: its owner's, or one they write to through
+    what it is attached to. A read share shows a receipt and attaches it nowhere (S9.6)."""
+    r, lvl = get(s, user_id, receipt_id)
+    if lvl not in ("owner", "write"):
+        raise refuse(
+            field,
+            "receipt-read-only",
+            "That receipt is shared with you to read: it can't be attached to anything else.",
+            403,
+        )
+    return r
+
+
 def visible(s: Session, user_id: str) -> list[tuple[Receipt, str]]:
     """The user's own receipts, and those attached to transactions in accounts they read."""
     own = s.scalars(

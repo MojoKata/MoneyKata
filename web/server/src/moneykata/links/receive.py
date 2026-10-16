@@ -27,7 +27,7 @@ def take(srv, link_id: str, change: dict) -> None:
         with srv.db.tx() as s:
             s.get(Link, link_id).needsFull = True
         return
-    names = fetch_files(srv, link_id, change)
+    names, types = fetch_files(srv, link_id, change)
     with srv.db.tx() as s:
         link = s.get(Link, link_id)
         local = set(s.scalars(select(User.id).where(User.linkId.is_(None))))
@@ -81,7 +81,7 @@ def take(srv, link_id: str, change: dict) -> None:
             for_admins=True,
             detail={"count": len(change.get("items") or []) + len(change.get("removed") or [])},
         )
-    changes.enqueue(srv, link_id, change, {"fileNames": names})
+    changes.enqueue(srv, link_id, change, {"fileNames": names, "fileTypes": types})
 
 
 def forget(srv, link_id: str) -> None:
@@ -99,11 +99,12 @@ def forget(srv, link_id: str) -> None:
             link.copyPublicKey = link.copyKeyAt = link.copyKeyById = None
 
 
-def fetch_files(srv, link_id: str, change: dict) -> dict[str, str]:
+def fetch_files(srv, link_id: str, change: dict) -> tuple[dict[str, str], dict[str, str]]:
     """The receipts a change names, streamed from the source and sealed straight into the copy
     under random names as they arrive (S11.9.5.2, S11.9.6), each checked against the source's
-    signature and the hash the change carries. Nothing is fetched for a copy without its
-    access key: it asks for everything once it has one."""
+    signature and the hash the change carries, and its type found from its first bytes, never
+    taken from the change (S11.9.6.5). Nothing is fetched for a copy without its access key: it
+    asks for everything once it has one. Returns each file's name and its type."""
     import secrets
 
     from . import client, sealed
@@ -115,14 +116,15 @@ def fetch_files(srv, link_id: str, change: dict) -> dict[str, str]:
         public = unb64(link.copyPublicKey) if link.copyPublicKey else None
         address, peer = link.address, unb64(link.peerKey)
     if not files or public is None:
-        return {}
+        return {}, {}
     d = folder(srv.config.data_dir, link_id) / "receipts"
     d.mkdir(parents=True, exist_ok=True)
     names: dict[str, str] = {}
+    types: dict[str, str] = {}
     for f in files:
         name = secrets.token_hex(12) + ".mkr"
         digest: list[str] = []
-        stream = client.iter_file(srv, address, peer, f["id"], digest)
+        stream = _typed(client.iter_file(srv, address, peer, f["id"], digest), types, f["id"])
         try:
             sealed.write(d / name, sealed.seal(public, sealed.RECEIPT, link_id, f["id"], stream))
         except BaseException:
@@ -133,4 +135,22 @@ def fetch_files(srv, link_id: str, change: dict) -> dict[str, str]:
             (d / name).unlink(missing_ok=True)
             raise changes.ChangeError(f"receipt {f['id']} doesn't match its hash")
         names[f["id"]] = name
-    return names
+    return names, types
+
+
+def _typed(stream, types: dict[str, str], file_id: str):
+    """The stream passed through, its type found from its first bytes as S9.4 finds a local
+    receipt's: one that isn't a receipt's type is kept as unknown, and never shown."""
+    from ..receipts import sniff
+
+    head = b""
+    for piece in stream:
+        if len(head) < 16:
+            head += piece[: 16 - len(head)]
+            if len(head) >= 16:
+                types[file_id] = sniff(head) or UNKNOWN
+        yield piece
+    types.setdefault(file_id, sniff(head) or UNKNOWN)
+
+
+UNKNOWN = "application/octet-stream"

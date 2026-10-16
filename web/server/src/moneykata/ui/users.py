@@ -127,10 +127,21 @@ def list_users(request: Request, c: Caller = Depends(admin)):
         return [user_row(s, u) for u in users]
 
 
+def _admin_change(s, c: Caller, wanted: list[str] | None, user_id: str | None = None) -> None:
+    """Making someone an admin, or no longer one, needs the password again (S13.7.2)."""
+    if wanted is None:
+        return
+    admins = accounts.admins_group(s).id
+    now = bool(user_id) and admins in accounts.group_ids(s, user_id)
+    if (admins in wanted) != now:
+        recent_auth(c)
+
+
 @router.post("/users", response_model=UserRow, status_code=201)
 def create_user(body: NewUser, request: Request, c: Caller = Depends(admin)):
     srv = server(request)
     with srv.db.tx() as s:
+        _admin_change(s, c, body.groupIds)
         u = accounts.invite(
             s,
             srv.services,
@@ -161,6 +172,7 @@ def change_user(
         u = _user(s, user_id)
         if u.version != version:
             raise stale(user_row(s, u))
+        _admin_change(s, c, body.groupIds, u.id)
         accounts.update_user(s, c.user, u, body.displayName, body.email)
         if body.groupIds is not None:
             accounts.set_user_groups(s, c.user, u, body.groupIds)
@@ -235,6 +247,7 @@ def signup_requests(request: Request, c: Caller = Depends(admin)):
 def approve_signup(request_id: str, body: Approval, request: Request, c: Caller = Depends(admin)):
     srv = server(request)
     with srv.db.tx() as s:
+        _admin_change(s, c, body.groupIds)
         u = signup.approve(s, srv.services, c.user, request_id, body.groupIds)
         row = user_row(s, u)
         admins = accounts.admin_ids(s)

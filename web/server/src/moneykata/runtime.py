@@ -276,6 +276,9 @@ async def start(config: Config, seed: bool = False) -> int:
     server = Server(config=config)
     server.unlocking = asyncio.Lock()
     app = create_app(server)
+    from .host import create_host_app
+
+    host_app = create_host_app(server)
     server.events.bind(asyncio.get_running_loop())
     if dev_key is not None:
         await unlock(server, dev_key, seed=seed)
@@ -298,7 +301,7 @@ async def start(config: Config, seed: bool = False) -> int:
         "" if server.store is not None else ": locked until the recovery phrase is entered",
     )
     try:
-        await listener.run(app, config, on_stop)
+        await listener.run(app, config, on_stop, host_app)
     finally:
         if server.store is not None:
             server.db.dispose()

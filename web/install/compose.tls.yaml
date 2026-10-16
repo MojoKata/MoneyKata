@@ -16,6 +16,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+      - /run/moneykata:uid=10001,gid=10001,mode=0700   # where host commands reach it (S13.6)
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s

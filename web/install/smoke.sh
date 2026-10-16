@@ -38,10 +38,12 @@ cp "$ROOT/web/install/moneykata.toml" "$WORK/"
 MOUNTS=(-v "$WORK/data:/var/lib/moneykata" -v "$WORK/backups:/var/backups/moneykata"
   -v "$WORK/moneykata.toml:/etc/moneykata.toml:ro")
 LOCKED=(--read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true)
+# The server's host-command socket (S13.6), on a tmpfs of its account as compose.yaml has it.
+SOCK=(--tmpfs /run/moneykata:uid=10001,gid=10001,mode=0700)
 
 echo "== the server: a refused start without a keyring (exit 78)"
 set +e
-docker run --rm "${PF[@]}" "${LOCKED[@]}" "${MOUNTS[@]}" "moneykata:$TAG" >/dev/null 2>&1
+docker run --rm "${PF[@]}" "${LOCKED[@]}" "${SOCK[@]}" "${MOUNTS[@]}" "moneykata:$TAG" >/dev/null 2>&1
 [[ $? -eq 78 ]] || { echo "FAILED: expected exit 78"; exit 1; }
 set -e
 echo "== the server: the keyring and its phrase (never stored)"
@@ -52,7 +54,7 @@ from moneykata.keys import cli, phrase
 key = cli.init(load(Path("/etc/moneykata.toml")), say=lambda _: None, confirm=False)
 print(" ".join(phrase.to_words(key)))')"
 echo "== the server: start locked, unlock, health, sign-in, stop"
-docker run -d --name mk-smoke "${PF[@]}" "${LOCKED[@]}" "${MOUNTS[@]}" \
+docker run -d --name mk-smoke "${PF[@]}" "${LOCKED[@]}" "${SOCK[@]}" "${MOUNTS[@]}" \
   -p 127.0.0.1:37399:37373 "moneykata:$TAG" >/dev/null
 for i in $(seq 1 240); do
   code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:37399/healthz || true)"

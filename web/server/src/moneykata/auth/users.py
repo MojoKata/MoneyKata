@@ -461,6 +461,9 @@ def _set_password(s: Db, svc: Services, user: User, password: str, kind: str) ->
     user.passwordHash = passwords.hash_password(password)
     user.passwordChangedAt = now()
     sessions.end_all(s, user.id)
+    from .. import tokens
+
+    revoked = tokens.revoke_all(s, user.id)
     activity.record(
         s,
         kind,
@@ -478,8 +481,10 @@ def _set_password(s: Db, svc: Services, user: User, password: str, kind: str) ->
                 "Your MoneyKata password was changed",
                 (
                     f"Hello {user.displayName},\n\nThe password for {user.username} was "
-                    "just changed, and every session was signed out. If you didn't do this, "
-                    "ask an admin to reset your account.\n"
+                    "just changed, and every session was signed out"
+                    + (f" and its {revoked} access tokens revoked" if revoked > 1 else "")
+                    + (" and its access token revoked" if revoked == 1 else "")
+                    + ". If you didn't do this, ask an admin to reset your account.\n"
                 ),
             ),
         )

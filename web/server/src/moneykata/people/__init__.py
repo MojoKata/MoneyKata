@@ -51,6 +51,56 @@ def for_new_user(s: Session, name: str, sex: str, by: str | None = None) -> Pers
     return make(s, name, sex, by)
 
 
+def _bare(s: Session, person_id: str) -> bool:
+    """A person nothing here names yet: no gift plan, gift or relationship."""
+    from ..store.entities.education import GiftPerson, GiftPlan
+
+    return not any(
+        s.scalars(q.limit(1)).first()
+        for q in (
+            select(GiftPlan.id).where(GiftPlan.personId == person_id, GiftPlan.deleted == false()),
+            select(GiftPerson.giftId).where(
+                GiftPerson.personId == person_id, GiftPerson.deleted == false()
+            ),
+            select(Relationship.id).where(
+                or_(Relationship.person1Id == person_id, Relationship.person2Id == person_id),
+                Relationship.deleted == false(),
+            ),
+        )
+    )
+
+
+def may_join(s: Session, user_id: str, p: Person) -> list[User]:
+    """The remote users who may be this person (S10.10.1): of the same name, with a person of
+    their own that nothing names yet; offered to someone who may change this one, a person
+    who isn't a user."""
+    if p.deleted or user_of(s, p.id) is not None or level(s, user_id, p) != "owner":
+        return []
+    out = []
+    for u in s.scalars(
+        select(User).where(
+            User.linkId.is_not(None),
+            User.deleted == false(),
+            func.lower(User.displayName) == p.name.lower(),
+        )
+    ):
+        own = s.get(Person, u.personId)
+        if own is not None and own.id != p.id and own.ownerId is None and _bare(s, own.id):
+            out.append(u)
+    return out
+
+
+def join(s: Session, user_id: str, p: Person, remote: User) -> None:
+    """A remote user joined to a person here, by someone who may change that person; the
+    person stays as private as it was, and the remote user's own person goes."""
+    if remote not in may_join(s, user_id, p):
+        raise Problem(409, "cannot-join", "That user can't be joined to this person.")
+    own = s.get(Person, remote.personId)
+    remote.personId = p.id
+    s.flush()
+    own.mark_deleted(user_id)
+
+
 def of_user(s: Session, user_id: str) -> Person | None:
     u = s.get(User, user_id)
     return s.get(Person, u.personId) if u is not None else None
@@ -87,10 +137,15 @@ def level(s: Session, user_id: str, p: Person, r: access.Reach | None = None) ->
     u = s.get(User, user_id)
     if u is None or u.linkId is not None:
         return None
-    if p.id == u.personId or (p.ownerId == user_id) or is_admin(s, user_id):
+    if p.id == u.personId or is_admin(s, user_id):
         return "owner"
+    # Once they are a user here, a person is changed by that user (and admins) alone; until
+    # then, and for a linked server's user, who never signs in here, by whoever added them
+    # (S10.10.2).
     mine = user_of(s, p.id)
     if mine is not None and mine.id == user_id:
+        return "owner"
+    if (mine is None or mine.linkId is not None) and p.ownerId == user_id:
         return "owner"
     if not p.private:
         return "read"
@@ -208,30 +263,64 @@ def other(r: Relationship, person_id: str) -> str:
     return r.person2Id if r.person1Id == person_id else r.person1Id
 
 
-def spouse_on(s: Session, person_id: str, day: dt.date) -> str | None:
+def confirmed(r: Relationship) -> bool:
+    """A marriage both people have confirmed (S10.10.4); other relations need no confirming."""
+    return r.relation != "spouse" or (r.confirmed1At is not None and r.confirmed2At is not None)
+
+
+def may_confirm(s: Session, user_id: str, person_id: str) -> bool:
+    """A spouse confirms their own side, from their own Profile; an admin confirms for a person
+    who isn't a user."""
+    me = of_user(s, user_id)
+    if me is not None and me.id == person_id:
+        return True
+    u = user_of(s, person_id)
+    return (u is None or u.linkId is not None) and is_admin(s, user_id)
+
+
+def confirm(s: Session, user_id: str, r: Relationship, fresh: bool = False) -> bool:
+    """The sides of a marriage this user may confirm, confirmed now; `fresh` (the marriage is new
+    or changed) clears the others first. Whether either side changed."""
+    if r.relation != "spouse":
+        r.confirmed1At = r.confirmed2At = None
+        return False
+    if fresh:
+        r.confirmed1At = r.confirmed2At = None
+    now = clock.now()
+    changed = False
+    if r.confirmed1At is None and may_confirm(s, user_id, r.person1Id):
+        r.confirmed1At, changed = now, True
+    if r.confirmed2At is None and may_confirm(s, user_id, r.person2Id):
+        r.confirmed2At, changed = now, True
+    return changed
+
+
+def spouse_on(s: Session, person_id: str, day: dt.date, confirmed_only: bool = False) -> str | None:
     for r in live_relationships(s, [person_id]):
-        if r.relation == "spouse" and holds_on(s, r, day):
+        if r.relation == "spouse" and holds_on(s, r, day) and (confirmed(r) or not confirmed_only):
             return other(r, person_id)
     return None
 
 
 def spouse_user_on(s: Session, user_id: str, day: dt.date) -> str | None:
+    """The local user married to this one on a day, by a marriage both confirmed: for wash
+    sales and tax books, which an unconfirmed marriage never reaches (S10.10.4)."""
     me = of_user(s, user_id)
     if me is None:
         return None
-    sp = spouse_on(s, me.id, day)
+    sp = spouse_on(s, me.id, day, confirmed_only=True)
     u = user_of(s, sp) if sp else None
     return u.id if u is not None and u.linkId is None else None
 
 
 def spouse_users_ever(s: Session, user_id: str) -> set[str]:
-    """Every local user ever married to this one."""
+    """Every local user ever married to this one, by a marriage both confirmed."""
     me = of_user(s, user_id)
     if me is None:
         return set()
     out = set()
     for r in live_relationships(s, [me.id]):
-        if r.relation == "spouse":
+        if r.relation == "spouse" and confirmed(r):
             u = user_of(s, other(r, me.id))
             if u is not None and u.linkId is None:
                 out.add(u.id)
@@ -239,12 +328,13 @@ def spouse_users_ever(s: Session, user_id: str) -> set[str]:
 
 
 def joint_filers(s: Session, user_a: str, user_b: str, year: int) -> bool:
-    """Spouses on the last day of the year, or married until one of them died in it."""
+    """Spouses on the last day of the year, or married until one of them died in it, by a
+    marriage both confirmed (S8.14.1)."""
     a, b = of_user(s, user_a), of_user(s, user_b)
     if a is None or b is None:
         return False
     for r in live_relationships(s, [a.id]):
-        if r.relation != "spouse" or other(r, a.id) != b.id:
+        if r.relation != "spouse" or other(r, a.id) != b.id or not confirmed(r):
             continue
         if holds_on(s, r, dt.date(year, 12, 31)):
             return True

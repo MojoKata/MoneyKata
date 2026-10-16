@@ -75,31 +75,82 @@ def test_ten_wrong_phrases_lock_the_unlock_out(locked):
     assert r.status_code == 429 and r.headers["retry-after"]
 
 
-def test_rotation_through_the_running_server_is_for_loopback_only(locked, master_key):
+def test_rotation_and_backups_go_over_the_host_socket_only(locked, master_key):
+    """Host commands reach the running server over its Unix socket (S13.6); the listener has
+    no route for them, whatever address a request claims to come from."""
+    from moneykata.host import create_host_app
+
     srv, c = locked
-    headers = {"Origin": ORIGIN}
+    host = TestClient(create_host_app(srv), base_url="http://host")
     words = " ".join(phrase.to_words(master_key))
     new = " ".join(phrase.to_words(os.urandom(16)))
-    r = c.post("/ui/api/keys/rotate", json={"phrase": new}, headers=headers)
+    r = host.post("/host/keys/rotate", json={"phrase": new})
     assert r.status_code == 503 and r.json()["code"] == "locked"
-    assert c.post("/ui/api/unlock", json={"phrase": words}, headers=headers).status_code == 200
-    old_fp = c.get("/ui/api/unlock").json()["fingerprint"]
+    r = host.post("/host/unlock", json={"phrase": words})
+    assert r.status_code == 200 and r.json()["locked"] is False, r.text
+    old_fp = host.get("/host/unlock").json()["fingerprint"]
     with srv.maintenance_lock:  # the server's own backup task may be running its first copy
         b = maintenance.backup(srv.config, srv.store, dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
-    listed = c.get("/ui/api/keys/copies").json()["copies"]
+    listed = host.get("/host/keys/copies").json()["copies"]
     mine = next(x for x in listed if x["name"] == b.name)
     assert mine["opens"] == "current" and mine["kind"] == "backup"
-    r = c.post(
-        "/ui/api/keys/rotate",
-        json={"phrase": new, "copies": {b.name: "rewrap"}},
-        headers=headers,
-    )
+    r = host.post("/host/keys/rotate", json={"phrase": new, "copies": {b.name: "rewrap"}})
     assert r.status_code == 200 and r.json()["from"] == old_fp
     assert r.json()["copies"][b.name] == "rewrapped"
     assert c.get("/ui/api/unlock").json()["fingerprint"] == r.json()["to"] != old_fp
+    r = host.post("/host/backup")
+    assert r.status_code == 200 and (srv.config.backup_dir / r.json()["name"]).is_dir()
     with srv.db.read() as s:
-        assert "key.rotated" in [a.kind for a in s.query(Activity)]
-    # From anywhere but loopback it does not exist.
-    far = TestClient(c.app, base_url=ORIGIN, client=("192.168.1.9", 50000))
-    r = far.post("/ui/api/keys/rotate", json={"phrase": new}, headers=headers)
-    assert r.status_code == 404
+        kinds = [a.kind for a in s.query(Activity)]
+    assert "key.rotated" in kinds and "db.backup" in kinds
+    # The listener has none of it: not from loopback, not with a forged forwarding header.
+    forged = {"Origin": ORIGIN, "X-Forwarded-For": "127.0.0.1"}
+    for path in ("/ui/api/keys/rotate", "/ui/api/keys/copies", "/host/keys/rotate"):
+        assert c.post(path, json={"phrase": new}, headers=forged).status_code in (404, 405)
+
+
+def test_keys_unlock_hands_the_phrase_over_the_socket(locked, master_key):
+    """`moneykata keys unlock` against a server serving its host socket (S15.4.2): the socket
+    is the server account's alone, and the phrase never crosses the network."""
+    import asyncio
+    import stat
+    import threading
+
+    from hypercorn.asyncio import serve
+
+    from moneykata import host
+    from moneykata.keys import cli as keys_cli
+
+    srv, _ = locked
+    said: list[str] = []
+    assert keys_cli.unlock(srv.config, ask=lambda _: "x", say=said.append) == 1  # not a phrase
+    words = " ".join(phrase.to_words(master_key))
+    assert keys_cli.unlock(srv.config, ask=lambda _: words, say=said.append) == 1
+    assert "no socket" in said[-1]
+    stop = threading.Event()
+    loop = asyncio.new_event_loop()
+
+    async def until_stopped():
+        await asyncio.to_thread(stop.wait)
+
+    hc = host.hypercorn_config(srv.config)
+    t = threading.Thread(
+        target=lambda: loop.run_until_complete(
+            serve(host.create_host_app(srv), hc, shutdown_trigger=until_stopped)
+        ),
+        daemon=True,
+    )
+    t.start()
+    try:
+        for _ in range(100):
+            if srv.config.socket_path.exists():
+                break
+            threading.Event().wait(0.05)
+        assert stat.S_IMODE(srv.config.socket_path.stat().st_mode) == 0o600
+        assert stat.S_IMODE(srv.config.socket_path.parent.stat().st_mode) == 0o700
+        assert keys_cli.unlock(srv.config, ask=lambda _: words, say=said.append) == 0, said
+        assert said[-1].startswith("unlocked: mk-") and srv.store is not None
+        assert keys_cli._running(srv.config) is True
+    finally:
+        stop.set()
+        t.join(10)

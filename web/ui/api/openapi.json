@@ -8566,20 +8566,6 @@
         "title": "JobOut",
         "type": "object"
       },
-      "JoinIn": {
-        "additionalProperties": false,
-        "properties": {
-          "code": {
-            "title": "Code",
-            "type": "string"
-          }
-        },
-        "required": [
-          "code"
-        ],
-        "title": "JoinIn",
-        "type": "object"
-      },
       "KeepIn": {
         "additionalProperties": false,
         "properties": {
@@ -12903,8 +12889,15 @@
             "title": "Payee"
           },
           "transactionId": {
-            "title": "Transactionid",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactionid"
           }
         },
         "required": [
@@ -13664,6 +13657,13 @@
             ],
             "title": "Relation"
           },
+          "sameAs": {
+            "items": {
+              "$ref": "#/components/schemas/moneykata__ui__gifts__RemoteUser"
+            },
+            "title": "Sameas",
+            "type": "array"
+          },
           "sex": {
             "title": "Sex",
             "type": "string"
@@ -13732,6 +13732,7 @@
           "canChangePerson",
           "canMakePrivate",
           "isUser",
+          "sameAs",
           "giftBudget",
           "leadDays",
           "notes",
@@ -16516,6 +16517,21 @@
             "title": "Canchange",
             "type": "boolean"
           },
+          "canConfirm": {
+            "title": "Canconfirm",
+            "type": "boolean"
+          },
+          "confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed"
+          },
           "endsOn": {
             "anyOf": [
               {
@@ -16580,6 +16596,13 @@
           "version": {
             "title": "Version",
             "type": "integer"
+          },
+          "waitingFor": {
+            "items": {
+              "$ref": "#/components/schemas/Named"
+            },
+            "title": "Waitingfor",
+            "type": "array"
           }
         },
         "required": [
@@ -16591,46 +16614,13 @@
           "fromDate",
           "toDate",
           "endsOn",
+          "confirmed",
+          "waitingFor",
+          "canConfirm",
           "canChange",
           "version"
         ],
         "title": "RelationshipOut",
-        "type": "object"
-      },
-      "RemoteUser": {
-        "additionalProperties": false,
-        "properties": {
-          "displayName": {
-            "title": "Displayname",
-            "type": "string"
-          },
-          "email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Email"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "username": {
-            "title": "Username",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "username",
-          "displayName",
-          "email"
-        ],
-        "title": "RemoteUser",
         "type": "object"
       },
       "Reset": {
@@ -16909,38 +16899,6 @@
           "available"
         ],
         "title": "RolloverOut",
-        "type": "object"
-      },
-      "RotateIn": {
-        "additionalProperties": false,
-        "properties": {
-          "copies": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "title": "Copies",
-            "type": "object"
-          },
-          "oldPhrase": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Oldphrase"
-          },
-          "phrase": {
-            "title": "Phrase",
-            "type": "string"
-          }
-        },
-        "required": [
-          "phrase"
-        ],
-        "title": "RotateIn",
         "type": "object"
       },
       "Sale": {
@@ -22114,6 +22072,30 @@
         "title": "PersonIn",
         "type": "object"
       },
+      "moneykata__ui__gifts__RemoteUser": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "server": {
+            "title": "Server",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "server"
+        ],
+        "title": "RemoteUser",
+        "type": "object"
+      },
       "moneykata__ui__giving__DocumentIn": {
         "additionalProperties": false,
         "properties": {
@@ -22490,6 +22472,20 @@
         "title": "CopyOut",
         "type": "object"
       },
+      "moneykata__ui__links__JoinIn": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "JoinIn",
+        "type": "object"
+      },
       "moneykata__ui__links__LinkOut": {
         "additionalProperties": false,
         "properties": {
@@ -22701,7 +22697,7 @@
           },
           "users": {
             "items": {
-              "$ref": "#/components/schemas/RemoteUser"
+              "$ref": "#/components/schemas/moneykata__ui__links__RemoteUser"
             },
             "title": "Users",
             "type": "array"
@@ -22730,6 +22726,42 @@
           "users"
         ],
         "title": "LinkOut",
+        "type": "object"
+      },
+      "moneykata__ui__links__RemoteUser": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "email"
+        ],
+        "title": "RemoteUser",
         "type": "object"
       },
       "moneykata__ui__loans__PlanIn": {
@@ -23003,6 +23035,20 @@
           "overpayment"
         ],
         "title": "SplitOut",
+        "type": "object"
+      },
+      "moneykata__ui__people__JoinIn": {
+        "additionalProperties": false,
+        "properties": {
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId"
+        ],
+        "title": "JoinIn",
         "type": "object"
       },
       "moneykata__ui__people__PersonIn": {
@@ -27183,7 +27229,7 @@
     },
     "/ui/api/gifts/purchases": {
       "get": {
-        "description": "Recent spending, to link a gift's cost to its transaction: the last 90 days.",
+        "description": "Recent spending, to link a gift's cost to its transaction: the last 90 days, in the\naccounts the caller writes to, since linking may recategorise it.",
         "operationId": "purchases_ui_api_gifts_purchases_get",
         "parameters": [
           {
@@ -29368,74 +29414,6 @@
         ]
       }
     },
-    "/ui/api/keys/copies": {
-      "get": {
-        "description": "The copies on this host, for `keys rotate` to ask about (S15.7.1). Loopback only.",
-        "operationId": "copies_for_rotation_ui_api_keys_copies_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Copies For Rotation Ui Api Keys Copies Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Copies For Rotation",
-        "tags": [
-          "unlock"
-        ]
-      }
-    },
-    "/ui/api/keys/rotate": {
-      "post": {
-        "description": "`moneykata keys rotate` against the running server: the new phrase's key wraps the data\nkey the server holds; the keyring is written with the old key recorded; each copy on the\nhost is re-wrapped, deleted or left as chosen. From loopback only (S15.4.4).",
-        "operationId": "rotate_ui_api_keys_rotate_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RotateIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Rotate Ui Api Keys Rotate Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Rotate",
-        "tags": [
-          "unlock"
-        ]
-      }
-    },
     "/ui/api/linked": {
       "get": {
         "description": "The households that share something with you (S12.10.1); none share nothing.",
@@ -30509,6 +30487,59 @@
           }
         },
         "summary": "Ask To Share",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/ui/api/persons/{person_id}/join": {
+      "post": {
+        "description": "A remote user is this person (S10.10.1): confirmed by someone who may change it.",
+        "operationId": "join_person_ui_api_persons__person_id__join_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/moneykata__ui__people__JoinIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Join Person",
         "tags": [
           "people"
         ]
@@ -33121,6 +33152,49 @@
         ]
       }
     },
+    "/ui/api/relationships/{rel_id}/confirm": {
+      "post": {
+        "description": "A spouse confirms the marriage from their own Profile, or an admin for a person who\nisn't a user (S10.10.4); once both have, it counts for wash sales and tax books.",
+        "operationId": "confirm_relationship_ui_api_relationships__rel_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rel_id",
+            "required": true,
+            "schema": {
+              "title": "Rel Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm Relationship",
+        "tags": [
+          "people"
+        ]
+      }
+    },
     "/ui/api/session": {
       "delete": {
         "description": "Signing out ends every session of the user at once (S13.7.1).",
@@ -34101,7 +34175,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/JoinIn"
+                "$ref": "#/components/schemas/moneykata__ui__links__JoinIn"
               }
             }
           },

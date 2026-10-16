@@ -10,7 +10,8 @@ queued and is tried again every five minutes; this section shows the queue and t
 ## Host {#smtp-host}
 
 The mail server's name, such as your email provider's SMTP server or a relay on your network.
-MoneyKata reaches only this host for email.
+MoneyKata reaches only this host for email. Changing it asks for your password again and clears
+the stored SMTP password, so it is never sent to the new host: type it again for that host.
 
 ## Port {#smtp-port}
 

@@ -42,6 +42,28 @@ def view(s) -> SettingsView:
     )
 
 
+# Settings whose change redirects a secret or a link (S13.7.2); Network's are all of them too.
+REAUTH = {"smtpHost", "publicUrl"}
+
+
+def _clear_moved_secrets(s, changed: list[str]) -> list[str]:
+    """A stored password belongs to its host: a new host clears it, to be entered again for
+    that host, so it is never sent to whoever runs the new one (S16.2, S16.7)."""
+    from ..bitcoin.sync import PASSWORD
+    from ..mail import SMTP_SECRET
+    from ..store.repos import secrets as secret_repo
+
+    cleared = []
+    for key, secret, name in (
+        ("smtpHost", SMTP_SECRET, "smtpPassword"),
+        ("bitcoinNodeHost", PASSWORD, "bitcoinPassword"),
+    ):
+        if key in changed and secret_repo.info(s, *secret) is not None:
+            secret_repo.remove(s, *secret)
+            cleared.append(name)
+    return cleared
+
+
 @router.get("/settings", response_model=SettingsView)
 def get_settings(request: Request, c: Caller = Depends(admin)):
     with server(request).db.read() as s:
@@ -62,14 +84,19 @@ def change_settings(
             errors += p.errors
     if errors:
         raise Problem(422, errors[0].code, errors[0].message, errors)
-    if any(k.startswith("network") for k in clean):
-        # Widening who reaches the app, a link or the connector: the password again (S13.7.2).
-        from .deps import recent_auth
-
-        recent_auth(c)
     srv = server(request)
     with srv.db.tx() as s:
         check_version(version_of(s, Setting), version, lambda: view(s))
+        if any(
+            k in REAUTH or k.startswith("network")
+            for k, v in clean.items()
+            if settings.get(s, k) != v
+        ):
+            # Who reaches the app, a link or the connector, and where a secret or a link is
+            # sent: the password again (S13.7.2).
+            from .deps import recent_auth
+
+            recent_auth(c)
         # Sign-up sends links by email: it needs SMTP and the public URL (S10.1.4).
         after = {
             k: clean.get(k, settings.get(s, k)) for k in ("signupEnabled", "smtpHost", "publicUrl")
@@ -87,13 +114,14 @@ def change_settings(
         changed = [k for k, v in clean.items() if settings.get(s, k) != v]
         for k in changed:
             settings.put(s, k, clean[k], c.id)
+        cleared = _clear_moved_secrets(s, changed)
         if changed:
             activity.record(
                 s,
                 "settings.changed",
                 actor=c.id,
                 for_admins=True,
-                detail={"fields": sorted(changed)},
+                detail={"fields": sorted(changed + cleared)},
             )
         s.flush()
         out = view(s)
@@ -190,9 +218,26 @@ def written_email(name: str, request: Request, c: Caller = Depends(admin)):
     from .deps import recent_auth
 
     recent_auth(c)
-    text = read_written(server(request).config, name)
+    srv = server(request)
+    text = read_written(srv.config, name)
     if text is None:
         raise Problem(404, "not-found", "No such email.")
+    # Recorded for the person it is addressed to, as its owner (S10.2, S16.2).
+    from ..auth.users import by_login
+
+    head = dict(
+        line.split(": ", 1) for line in text.split("\n\n", 1)[0].splitlines() if ": " in line
+    )
+    with srv.db.tx() as s:
+        to = by_login(s, head.get("To", "").strip())
+        activity.record(
+            s,
+            "email.opened",
+            actor=c.id,
+            owner=to.id if to else None,
+            for_admins=True,
+            detail={"subject": head.get("Subject", ""), "to": head.get("To", "")},
+        )
     return WrittenEmailText(name=name, text=text)
 
 

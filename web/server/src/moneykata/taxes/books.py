@@ -125,8 +125,32 @@ def counted(s: Session, book: TaxBook) -> Counted:
     kept = [a for a in own if over.get(a.id, True)]
     left = [a for a in own if not over.get(a.id, True)]
     added = [i for i, on in over.items() if on and i not in {a.id for a in own}]
-    extra = [a for a in (s.get(Account, i) for i in added) if a is not None and not a.deleted]
-    return Counted(kept + extra, left, added)
+    adders = _adders(s, book)
+    extra = [
+        a
+        for a in (s.get(Account, i) for i in added)
+        if a is not None and not a.deleted and _still_seen(s, a, adders.get(a.id), who)
+    ]
+    return Counted(kept + extra, left, [a.id for a in extra])
+
+
+def _adders(s: Session, book: TaxBook) -> dict[str, str | None]:
+    return {
+        o.accountId: o.addedById
+        for o in s.scalars(
+            select(TaxBookAccount).where(
+                TaxBookAccount.bookId == book.id, TaxBookAccount.deleted == false()
+            )
+        )
+    }
+
+
+def _still_seen(s: Session, a: Account, adder: str | None, who: list[str]) -> bool:
+    """An added account counts only while the filer who added it can still see it, and only
+    while they are an accepted filer (S8.14.2); one copied without its adder needs an accepted
+    filer who can."""
+    seers = [adder] if adder else who
+    return any(u in who and access.account_level(s, u, a) is not None for u in seers)
 
 
 def federal_due(s: Session, year: int) -> dt.date:
@@ -300,8 +324,16 @@ def expected(s: Session, book: TaxBook) -> list[Expected]:
     return out
 
 
+def accepted(s: Session, book: TaxBook) -> bool:
+    """Whether every filer named has accepted the book."""
+    return all(f.acceptedAt is not None for f in filers(s, book))
+
+
 def previous(s: Session, book: TaxBook) -> TaxBook | None:
-    """Last year's book of the same filers (or one of them)."""
+    """Last year's book of the same filers (or one of them), once every filer of this one has
+    accepted it: nothing of a filer's year before shows until they have (S8.14.1)."""
+    if not accepted(s, book):
+        return None
     mine = {f.userId for f in filers(s, book)}
     for b in s.scalars(
         select(TaxBook)

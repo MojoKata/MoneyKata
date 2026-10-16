@@ -19,7 +19,8 @@ Your own instance's API: `http://umbrel.local:3006/api`, for example.
 ## Node address {#node-host}
 
 The node's host name or address on your network. Naming it here lets MoneyKata reach it there,
-past the guard that otherwise keeps it off local addresses.
+past the guard that otherwise keeps it off local addresses. Changing it clears the node's stored
+password, so it is never sent to the new host.
 
 ## Node port {#node-port}
 

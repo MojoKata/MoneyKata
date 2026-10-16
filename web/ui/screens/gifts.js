@@ -412,9 +412,16 @@ function PersonDialog({ close, p }) {
     toast(what === 'person' ? `${p.name} deleted` : 'Gift plan deleted');
     close(true);
   });
+  // A linked server's user who is this person, joined once someone who may change it says so
+  // (S10.10.1).
+  const join = useSubmit(async (/** @type {any} */ r) => {
+    await api.post(`/persons/${p.id}/join`, { userId: r.id });
+    toast(`${r.name} on ${r.server} is ${p.name} here`);
+    close(true);
+  });
   const rels = useApi(p ? `/persons/${p.id}/relations` : null, {});
   const relations = /** @type {any[]} */ ((/** @type {any} */ (rels.data))?.items || []);
-  const e = save.error || drop.error;
+  const e = save.error || drop.error || join.error;
   // One person, once (S10.10.3): a name already here shows that person instead.
   const clash = e?.code === 'person-exists' ? e.body?.person : null;
   const ask = useSubmit(async () => {
@@ -468,6 +475,16 @@ function PersonDialog({ close, p }) {
       }<span class="spacer"></span>${
         canWrite ? html`<button class="btn primary" disabled=${save.busy}>Save</button>` : null
       }`}>
+      ${(p?.sameAs || []).map((/** @type {any} */ r) =>
+        html`<div class="notice" role="status" key=${r.id} style=${{
+          marginBottom: '12px',
+        }}><${Icon}
+          name="link" /><div class="grow">
+          ${r.name} on ${r.server} may be ${p.name}. Joined, the linked server's user is this
+          person here, and ${p.name} stays as private as now.</div><button type="button"
+            class="btn sm" disabled=${join.busy} onClick=${() =>
+          join.run(r).catch(() => {})}>Join them</button></div>`
+      )}
       <fieldset disabled=${!canWrite} style=${{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
         <fieldset disabled=${!ownPerson || !!use} class="card" style=${{
           margin: '0 0 12px',

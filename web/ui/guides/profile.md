@@ -43,7 +43,8 @@ They are kept to the sat either way.
 Your spouse, children, friends and colleagues, each from a date and, once over, to a date. Parents,
 grandparents, cousins and in-laws are worked out from them. Your spouse on the day of a sale counts
 for **wash sales** (a loss sale with a purchase of the same thing within 30 days either side), and
-your spouse on the last day of a year for a joint tax book. Click one to change its dates, such as a
+your spouse on the last day of a year for a joint tax book, once you have both confirmed the
+marriage: one your spouse entered shows **Confirm** here. Click one to change its dates, such as a
 divorce's, or to remove it.
 
 ## New email address

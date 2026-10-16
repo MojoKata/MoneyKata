@@ -631,7 +631,7 @@ def attach_document(item_id: str, body: DocumentIn, request: Request, c: Caller 
     appraisal, a certificate, a title."""
     with server(request).db.tx() as s:
         it, a, lvl = _item(s, c, item_id, "write")
-        r, _ = receipts.get(s, c.id, body.receiptId)
+        r = receipts.to_attach(s, c.id, body.receiptId)
         receipts.attach_item(s, c.id, r, it)
         return detail(s, c, it, a, lvl)
 

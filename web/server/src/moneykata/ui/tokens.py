@@ -10,9 +10,9 @@ from sqlalchemy import false, select
 
 from .. import access, activity, clock, tokens
 from ..errors import FieldError, Problem, refuse
-from ..store.entities.users import AccessToken
+from ..store.entities.users import AccessToken, User
 from .conventions import Deleted, ExactRoute, Model, check, gone, if_match
-from .deps import Caller, caller, server
+from .deps import Caller, caller, recent_auth, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["tokens"])
 
@@ -88,6 +88,7 @@ def list_tokens(request: Request, c: Caller = Depends(caller)):
 
 @router.post("/profile/tokens", response_model=TokenMade, status_code=201)
 def make_token(body: NewToken, request: Request, c: Caller = Depends(caller)):
+    recent_auth(c)  # the password again (S13.7.2)
     e: list[FieldError] = []
     name = body.name.strip()
     if not 1 <= len(name) <= 60:
@@ -109,6 +110,7 @@ def make_token(body: NewToken, request: Request, c: Caller = Depends(caller)):
             items.append({"kind": i.kind, "id": i.id})
         t, secret = tokens.make(s, c.id, name, body.scope, items, body.days)
         activity.record(s, "token.created", actor=c.id, owner=c.id, detail={"name": name})
+        tokens.tell_made(s, server(request).services, s.get(User, c.id), t)
         return TokenMade(token=_out(t, names), secret=secret)
 
 

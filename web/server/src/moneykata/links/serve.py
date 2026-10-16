@@ -230,14 +230,25 @@ def work_out(srv, link_id: str) -> tuple[dict[str, Item], dict[tuple[str, str, s
                 docs[(it.id, "", viewer)] = rows[it.kind][it.id]
             for path, fn in _paths(srv, it):
                 try:
-                    docs[(it.id, path, viewer)] = _document(fn(c))
+                    doc = _document(fn(c))
                 except Problem:
                     continue  # this person can't read this part: it isn't sent
+                if it.kind == "gift-plan" and not it.includeReceipts:
+                    doc = _without_documents(doc)
+                docs[(it.id, path, viewer)] = doc
     for it in items.values():
         if it.kind == "account" and it.includeReceipts:
             for f in receipt_files(srv, it.id):
                 docs[(it.id, f"file:{f['id']}", "")] = f
     return items, docs
+
+
+def _without_documents(doc):
+    """A gift's documents (their names, notes and links) stay home without Include receipts
+    (S11.5.1)."""
+    if isinstance(doc, dict) and isinstance(doc.get("items"), list):
+        return {**doc, "items": [{**g, "documents": []} for g in doc["items"]]}
+    return doc
 
 
 def receipt_files(srv, account_id: str) -> list[dict]:

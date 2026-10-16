@@ -18,7 +18,7 @@ from ..store.entities.prices import Price, PriceSource
 from ..store.entities.users import User
 from ..store.repos import secrets as secret_repo
 from .conventions import Deleted, ExactRoute, Model, Quantity, check, gone, if_match, stale
-from .deps import Caller, admin, caller, server
+from .deps import Caller, admin, caller, recent_auth, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["prices"])
 
@@ -223,6 +223,8 @@ def change_source(
 ):
     srv = server(request)
     sent = body.model_fields_set
+    if "apiKey" in sent and body.apiKey is not None:
+        recent_auth(c)  # a secret set: the password again (S13.7.2)
     with srv.db.tx() as s:
         src = s.get(PriceSource, source_id)
         if src is None or src.deleted or src.name not in SOURCES:

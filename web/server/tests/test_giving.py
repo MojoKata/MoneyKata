@@ -226,3 +226,21 @@ def test_qcds_goods_and_what_they_need(alice):
     assert not p["deductible"] and not p["needsAck"]
     notes = alice.get("/ui/api/giving").json()["notes"]
     assert any("Form 8283" in n for n in notes) and any("appraisal" in n for n in notes)
+
+
+def test_a_shared_plan_counts_its_owners_accounts_only(server, alice):
+    """S7.9.1 (P2): sharing her plan with Bob shows it to him, and never reads his money."""
+    make_user(server, "bob")
+    bob = sign_in(server, "bob")
+    b_id = bob.get("/ui/api/session").json()["user"]["id"]
+    plan = alice.put("/ui/api/giving/plan", json={"year": 2026, "percent": "10"}).json()
+    alice.put(f"/ui/api/shares/giving-plan/{plan['id']}", json={"users": {b_id: "read"}})
+    mine = new_account(alice, name="Alice's checking")
+    his = new_account(bob, name="Bob's checking")
+    add(alice, mine["id"], "9000.00", "2026-01-02", categoryId=_cat(alice, "Salary"))
+    add(bob, his["id"], "7000.00", "2026-01-02", categoryId=_cat(bob, "Salary"))
+    add(bob, his["id"], "-500.00", "2026-03-01", payee="Food Bank", categoryId=_cat(bob, "Giving"))
+    v = alice.get("/ui/api/giving").json()
+    assert v["income"] == "9000.00" and v["given"] == "0.00"
+    assert alice.get("/ui/api/giving/donations").json()["items"] == []
+    assert bob.get("/ui/api/giving").json()["income"] == "9000.00", "he sees her plan"

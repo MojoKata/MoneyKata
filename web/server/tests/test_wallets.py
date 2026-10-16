@@ -368,6 +368,9 @@ def test_settings_bitcoin_keeps_the_password_secret_and_tests_the_source(server,
     server.config = dataclasses.replace(server.config, stubs=True)
     r = c.post("/ui/api/settings/bitcoin/test")
     assert r.status_code == 200 and "answered" in r.json()["answer"]
+    # A new host clears the password, so it is never sent there (S16.7).
+    assert c.patch("/ui/api/settings", json={"bitcoinNodeHost": "192.168.1.30"}).status_code == 200
+    assert c.get("/ui/api/settings/bitcoin").json()["password"] is None
 
 
 # ---------- the rest (S1.6.2.4, S1.6.2.7, S1.7.1)

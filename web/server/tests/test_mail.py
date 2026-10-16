@@ -310,9 +310,44 @@ def test_written_emails_are_listed_for_admins_and_expire(admin_client, server, t
     name = listed[0]["name"]
     r = admin_client.get(f"/ui/api/settings/email/written/{name}")
     assert r.status_code == 200 and "https://" in r.json()["text"]
+    # Opening one is recorded for the person it is addressed to (S10.2).
+    from moneykata.store.entities.core import Activity
+    from moneykata.store.entities.users import User
+
+    with server.db.read() as s:
+        dave = s.query(User).filter_by(username="dave").one()
+        opened = s.query(Activity).filter_by(kind="email.opened").one()
+        assert opened.ownerId == dave.id and opened.forAdmins
     assert admin_client.get("/ui/api/settings/email/written/../x.eml").status_code in (404, 422)
     path = server.config.mail_dir / name
     old = (dt.datetime.now(dt.UTC) - dt.timedelta(hours=26)).timestamp()
     os.utime(path, (old, old))
     assert mail.expire_written(server.config) == 1
     assert admin_client.get("/ui/api/settings/email/written").json()["items"] == []
+
+
+def test_a_new_smtp_host_needs_the_password_again_and_clears_the_old_password(
+    admin_client, server, smtp
+):
+    """S16.2, S13.7.2: the stored password belongs to its host, so it never goes to a new one."""
+    from conftest import stale
+
+    from moneykata.mail import SMTP_SECRET
+    from moneykata.store.repos import secrets as secret_repo
+
+    set_up_smtp(admin_client)
+    stale(server)
+    r = admin_client.patch("/ui/api/settings", json={"smtpHost": "smtp.elsewhere.example"})
+    assert r.status_code == 403 and r.json()["code"] == "reauth-required"
+    # The same host saved again, and other fields, ask nothing.
+    r = admin_client.patch("/ui/api/settings", json={"smtpHost": "smtp.home.lan", "smtpPort": 465})
+    assert r.status_code == 200, r.text
+    r = admin_client.patch("/ui/api/settings", json={"publicUrl": "https://elsewhere.example"})
+    assert r.status_code == 403
+    r = admin_client.post("/ui/api/session/reauth", json={"password": "a long admin passphrase"})
+    assert r.status_code == 204
+    r = admin_client.patch("/ui/api/settings", json={"smtpHost": "smtp.elsewhere.example"})
+    assert r.status_code == 200, r.text
+    with server.db.read() as s:
+        assert secret_repo.info(s, *SMTP_SECRET) is None
+    assert admin_client.get("/ui/api/settings/email").json()["password"] is None

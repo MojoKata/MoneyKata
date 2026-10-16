@@ -691,7 +691,7 @@ function EmailSection() {
     }
   }, [values]);
   const save = useSubmit(async () => {
-    await api.patch('/settings', f, /** @type {any} */ (s.data)?.version);
+    await withReauth(() => api.patch('/settings', f, /** @type {any} */ (s.data)?.version));
     s.reload();
     if (password) await withReauth(() => api.put('/settings/email/password', { password }));
     setPassword('');
@@ -719,7 +719,8 @@ function EmailSection() {
         ? 'Emails go out through this server.'
         : 'Until a host is set, emails are written to the mail folder in the data directory, and listed below for you to pass their links on.'}</p>
       <div class="row">
-        <${Field} label="Host" id="smtp-host" error=${errAt(e, 'smtpHost')}>
+        <${Field} label="Host" id="smtp-host" error=${errAt(e, 'smtpHost')}
+          hint="Changing it asks for your password again and clears the password below: type it again for the new host.">
           <${Input} value=${f.smtpHost} onInput=${set('smtpHost')} placeholder="smtp.example.com" />
           </${Field}>
           <${Field} label="Port" id="smtp-port" error=${errAt(e, 'smtpPort')}>
@@ -807,20 +808,22 @@ function BitcoinSection() {
   }, [values]);
   const save = useSubmit(async () => {
     const esplora = ['mempool', 'blockstream', 'esplora'].includes(f.node);
-    await api.patch('/settings', {
-      bitcoinSource: esplora ? 'esplora' : f.node,
-      bitcoinEsploraUrl: f.node === 'mempool'
-        ? MEMPOOL
-        : f.node === 'blockstream'
-        ? BLOCKSTREAM
-        : f.node === 'esplora'
-        ? f.url
-        : values.bitcoinEsploraUrl,
-      bitcoinNodeHost: f.host || null,
-      bitcoinNodePort: f.port,
-      bitcoinNodeTls: f.tls,
-      bitcoinRpcUser: f.rpcUser || null,
-    }, /** @type {any} */ (s.data)?.version);
+    await withReauth(() =>
+      api.patch('/settings', {
+        bitcoinSource: esplora ? 'esplora' : f.node,
+        bitcoinEsploraUrl: f.node === 'mempool'
+          ? MEMPOOL
+          : f.node === 'blockstream'
+          ? BLOCKSTREAM
+          : f.node === 'esplora'
+          ? f.url
+          : values.bitcoinEsploraUrl,
+        bitcoinNodeHost: f.host || null,
+        bitcoinNodePort: f.port,
+        bitcoinNodeTls: f.tls,
+        bitcoinRpcUser: f.rpcUser || null,
+      }, /** @type {any} */ (s.data)?.version)
+    );
     s.reload();
     if (password) await withReauth(() => api.put('/settings/bitcoin/password', { password }));
     setPassword('');
@@ -883,7 +886,7 @@ function BitcoinSection() {
         ? html`
           <div class="row">
             <${Field} label="Node address" id="node-host" error=${errAt(e, 'bitcoinNodeHost')}
-              hint="Allowed through the egress guard because it is named here.">
+              hint="Allowed through the egress guard because it is named here. Changing it clears the node’s stored password.">
               <${Input} value=${f.host} onInput=${set('host')} placeholder="192.168.1.20" />
               </${Field}>
               <${Field} label="Node port" id="node-port" error=${errAt(e, 'bitcoinNodePort')}>

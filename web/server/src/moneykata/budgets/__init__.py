@@ -39,22 +39,31 @@ def month_end(month: dt.date) -> dt.date:
     return add_months(month, 1) - dt.timedelta(days=1)
 
 
-def account_ids(s: Session, budget: Budget) -> list[str]:
-    """The budget's accounts, less any loan: a loan's payments are counted at the bank."""
+def account_ids(s: Session, budget: Budget, viewer: str | None = None) -> list[str]:
+    """The budget's accounts, less any loan: a loan's payments are counted at the bank. For a
+    receiver (`viewer`), the owner's own accounts, and one shared with the owner only if it is
+    shared with them too, so a budget never passes on an account someone else shared (S7.1.1)."""
+    from .. import access
     from ..loans import TYPES
     from ..store.entities.accounts import Account
 
-    return list(
-        s.scalars(
-            select(BudgetAccount.accountId)
-            .join(Account, Account.id == BudgetAccount.accountId)
-            .where(
-                BudgetAccount.budgetId == budget.id,
-                BudgetAccount.deleted == false(),
-                Account.type.not_in(TYPES),
-            )
+    rows = s.scalars(
+        select(Account)
+        .join(BudgetAccount, BudgetAccount.accountId == Account.id)
+        .where(
+            BudgetAccount.budgetId == budget.id,
+            BudgetAccount.deleted == false(),
+            Account.type.not_in(TYPES),
         )
-    )
+    ).all()
+    if viewer is None or viewer == budget.ownerId:
+        return [a.id for a in rows]
+    reach = access.reach(s, viewer)
+    return [
+        a.id
+        for a in rows
+        if a.ownerId == budget.ownerId or access.account_level(s, viewer, a, reach) is not None
+    ]
 
 
 @dataclass
@@ -196,9 +205,11 @@ def _state(planned: Decimal, actual: Decimal) -> str:
     return "near" if actual >= planned * WARN_AT else "under"
 
 
-def month_view(s: Session, budget: Budget, month: dt.date, today: dt.date) -> Month:
+def month_view(
+    s: Session, budget: Budget, month: dt.date, today: dt.date, viewer: str | None = None
+) -> Month:
     tr = tree(s)
-    accts = account_ids(s, budget)
+    accts = account_ids(s, budget, viewer)
     every = lines(s, budget)
     now = in_force(every, month)
     totals = amounts(s, accts, month, month_end(month))
@@ -311,11 +322,11 @@ def _monthly(
 # ---------- the other tabs (S7.4) ----------
 
 
-def cash_flow(s: Session, budget: Budget, month: dt.date) -> dict:
+def cash_flow(s: Session, budget: Budget, month: dt.date, viewer: str | None = None) -> dict:
     """Income by category into spending by top-level category, and what was left: the
     month's Sankey."""
     tr = tree(s)
-    totals = amounts(s, account_ids(s, budget), month, month_end(month))
+    totals = amounts(s, account_ids(s, budget, viewer), month, month_end(month))
     sources: dict[str, Decimal] = defaultdict(lambda: ZERO)
     uses: dict[str, Decimal] = defaultdict(lambda: ZERO)
     for cid, amt in totals.items():
@@ -339,12 +350,17 @@ def cash_flow(s: Session, budget: Budget, month: dt.date) -> dict:
 
 
 def trends(
-    s: Session, budget: Budget, last_month: dt.date, category: str | None, months: int = 12
+    s: Session,
+    budget: Budget,
+    last_month: dt.date,
+    category: str | None,
+    months: int = 12,
+    viewer: str | None = None,
 ) -> list[tuple[dt.date, Decimal, Decimal]]:
     """For each of the last months: planned and actual spending, for one category (with its
     children) or every expense category."""
     tr = tree(s)
-    accts = account_ids(s, budget)
+    accts = account_ids(s, budget, viewer)
     every = lines(s, budget)
     out = []
     first = add_months(last_month, -(months - 1))

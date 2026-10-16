@@ -132,7 +132,11 @@ def create_book(body: NewBook, request: Request, c: Caller = Depends(caller)):
         if body.bitcoinFees not in ("sale", "not-taxed"):
             raise refuse("bitcoinFees", "choice-invalid", "A sale, or not taxed.")
         b = TaxBook(
-            id=ids.new_id("TaxBk"), ownerId=c.id, year=body.year, bitcoinFees=body.bitcoinFees
+            id=ids.new_id("TaxBk"),
+            ownerId=c.id,
+            year=body.year,
+            bitcoinFees=body.bitcoinFees,
+            fromLastYear=body.fromLastYear,
         )
         s.add(b)
         s.flush()
@@ -144,14 +148,7 @@ def create_book(body: NewBook, request: Request, c: Caller = Depends(caller)):
                 )
             )
         s.flush()
-        left: list[str] = []
-        if body.fromLastYear:
-            prev = books.previous(s, b)
-            if prev is not None:
-                for acct, on in books.overrides(s, prev).items():
-                    s.add(TaxBookAccount(bookId=b.id, accountId=acct, counted=on, createdAt=now))
-                s.flush()
-                left = dependents.carry_over(s, prev, b, now)
+        left = _from_last_year(s, b, now)
         activity.record(
             s,
             "tax-book.created",
@@ -162,6 +159,34 @@ def create_book(body: NewBook, request: Request, c: Caller = Depends(caller)):
         )
         s.flush()
         return NewBookOut(**_row(s, b, "owner").model_dump(), dependentsLeftOut=left)
+
+
+def _from_last_year(s, b: TaxBook, now: dt.datetime) -> list[str]:
+    """What a new book copies from last year's (S8.14.4): its accounts added or left out, and
+    its dependents a year older, once every filer has accepted the new book; until then it
+    waits. The names of the dependents it left out."""
+    if not b.fromLastYear or not books.accepted(s, b):
+        return []
+    b.fromLastYear = False
+    prev = books.previous(s, b)
+    if prev is None:
+        return []
+    for o in s.scalars(
+        select(TaxBookAccount).where(
+            TaxBookAccount.bookId == prev.id, TaxBookAccount.deleted == false()
+        )
+    ):
+        s.add(
+            TaxBookAccount(
+                bookId=b.id,
+                accountId=o.accountId,
+                counted=o.counted,
+                addedById=o.addedById,
+                createdAt=now,
+            )
+        )
+    s.flush()
+    return dependents.carry_over(s, prev, b, now)
 
 
 @router.post("/tax-books/{book_id}/accept", response_model=BookRow)
@@ -177,6 +202,8 @@ def accept(book_id: str, request: Request, c: Caller = Depends(caller)):
         if f is None:
             raise Problem(404, "not-found", "Not found")
         f.acceptedAt = f.acceptedAt or clock.now()
+        s.flush()
+        _from_last_year(s, b, clock.now())
         s.flush()
         return _row(s, b, "owner")
 
@@ -539,7 +566,9 @@ def count_account(
     """Add an account the caller can see (a custodial account in a child's name), or leave
     one of the filers' own out (S8.14.2)."""
     with server(request).db.tx() as s:
-        b, lvl = books.get(s, c.id, book_id, "write")
+        b, lvl = books.get(s, c.id, book_id, "read")
+        if lvl != "owner":  # a helper edits filings, never what the book counts (S8.14.3)
+            raise Problem(403, "filers-only", "Only its filers add or leave out accounts.")
         access.account(s, c.id, account_id)
         row = s.get(TaxBookAccount, (b.id, account_id))
         if body.counted is None:
@@ -548,11 +577,16 @@ def count_account(
         elif row is None:
             s.add(
                 TaxBookAccount(
-                    bookId=b.id, accountId=account_id, counted=body.counted, createdAt=clock.now()
+                    bookId=b.id,
+                    accountId=account_id,
+                    counted=body.counted,
+                    addedById=c.id,
+                    createdAt=clock.now(),
                 )
             )
         else:
             row.counted = body.counted
+            row.addedById = c.id
             row.restore()
         s.flush()
         return detail(s, c, b, lvl)
@@ -875,7 +909,7 @@ def _doc_values(s, c: Caller, b: TaxBook, body: DocumentIn) -> dict:
     if body.accountId:
         access.account(s, c.id, body.accountId)
     if body.receiptId:
-        receipts.get(s, c.id, body.receiptId)
+        receipts.to_attach(s, c.id, body.receiptId)
     return {
         "direction": body.direction,
         "form": body.form.strip(),

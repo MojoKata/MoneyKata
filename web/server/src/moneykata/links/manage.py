@@ -132,14 +132,8 @@ def join(srv, code: str, by: str) -> Link:
             )
         ).first():
             raise LinkError("already-linked", "This server already has a link with that one.")
-        mine = directory(s)
-    out = client.call(
-        srv,
-        c["a"],
-        peer,
-        "/link/v1/join",
-        {"code": c["c"], "address": address, **mine},
-    )
+    # No directory crosses before the other side's admin approves (link-protocol.md §4.1).
+    client.call(srv, c["a"], peer, "/link/v1/join", {"code": c["c"], "address": address})
     with srv.db.tx() as s:
         link = Link(
             id=ids.new_id("Link"),
@@ -154,7 +148,6 @@ def join(srv, code: str, by: str) -> Link:
         )
         s.add(link)
         s.flush()
-        apply_directory(s, link, out)
         activity.record(s, "link.requested", actor=by, for_admins=True)
         return link
 
@@ -184,9 +177,9 @@ def answer_join(srv, caller_key: bytes, body: dict) -> dict:
         link.address = body.get("address")
         link.lastOkAt = clock.now()
         s.flush()
-        apply_directory(s, link, body)
         activity.record(s, "link.request-received", actor=None, for_admins=True)
-        return directory(s)
+        # Nothing of either household crosses until the admin approves (S10.10.1).
+        return {}
 
 
 def apply_directory(s, link: Link, payload: dict) -> None:
@@ -207,12 +200,13 @@ def apply_directory(s, link: Link, payload: dict) -> None:
         seen.add(rid)
         u = have.get(rid)
         name = str(r.get("displayName") or r.get("username") or "?")[:120]
-        # A remote user's person is filled from its server, for gifts (S10.10.1).
+        # A remote user's person is its own, filled from its server, for gifts; it is joined
+        # to a person here only when someone who may change that one confirms it (S10.10.1).
         sex = r.get("sex") if r.get("sex") in people.SEXES else "male"
         if u is None:
             u = User(
                 id=ids.new_id("User"),
-                personId=people.for_new_user(s, name, sex).id,
+                personId=people.make(s, name, sex).id,
                 username=str(r.get("username") or rid)[:64],
                 displayName=name,
                 email=r.get("email"),
@@ -224,7 +218,9 @@ def apply_directory(s, link: Link, payload: dict) -> None:
             continue
         u.username = str(r.get("username") or u.username)[:64]
         u.displayName = str(r.get("displayName") or u.displayName)[:120]
-        people.change(s, s.get(Person, u.personId), {"name": u.displayName, "sex": sex})
+        p = s.get(Person, u.personId)
+        if p is not None and p.ownerId is None:  # its own person, never one joined to it here
+            people.change(s, p, {"name": u.displayName, "sex": sex})
         u.email = r.get("email")
         u.active = True
         if u.deleted:
@@ -316,7 +312,13 @@ def exchange(srv, link_id: str) -> None:
     with srv.db.read() as s:
         link = _get(s, link_id)
         address, peer = link.address, keys.unb64(link.peerKey)
-        mine = {**directory(s), "have": link.gotSeq, "wantFull": link.needsFull}
+        pending = link.state == "pending"
+        # A link not yet approved over there gets no directory (link-protocol.md §4.1).
+        mine = {
+            **({} if pending else directory(s)),
+            "have": link.gotSeq,
+            "wantFull": link.needsFull,
+        }
     try:
         out = client.call(srv, address, peer, "/link/v1/exchange", mine)
     except LinkError as e:
@@ -356,6 +358,9 @@ def exchange(srv, link_id: str) -> None:
         active = link.state == "active"
     if not active:
         return
+    if pending:
+        # Approved there: this side's directory goes now, with the first exchange proper.
+        return exchange(srv, link_id)
     if out.get("change"):
         receive.take(srv, link_id, out["change"])
         # The rest of a large change, part by part, oldest first (S11.4).

@@ -196,7 +196,9 @@ function NewUser({ close, groups }) {
   const [ids, setIds] = useState(/** @type {string[]} */ ([]));
   const set = (/** @type {string} */ k) => (/** @type {string} */ v) => setF({ ...f, [k]: v });
   const save = useSubmit(async () => {
-    const u = await api.post('/users', { ...f, groupIds: ids }, { idempotent: true });
+    const u = await withReauth(() =>
+      api.post('/users', { ...f, groupIds: ids }, { idempotent: true })
+    );
     toast(`Invitation sent to ${u.email}`);
     close(u);
   });
@@ -246,7 +248,9 @@ function SignupRequest({ r, groups, done }) {
   const [group, setGroup] = useState('');
   const decide = useSubmit(async (/** @type {boolean} */ yes) => {
     if (yes) {
-      await api.post(`/signup-requests/${r.id}/approve`, { groupIds: group ? [group] : [] });
+      await withReauth(() =>
+        api.post(`/signup-requests/${r.id}/approve`, { groupIds: group ? [group] : [] })
+      );
       toast(`${r.displayName} can sign in now`);
     } else {
       await api.post(`/signup-requests/${r.id}/reject`);
@@ -303,7 +307,7 @@ function EditUser({ close, user, groups }) {
     }
     const body = /** @type {Record<string, any>} */ ({ displayName, groupIds: ids });
     if (user.invited) body.email = email;
-    close(await api.patch(`/users/${user.id}`, body, user.version));
+    close(await withReauth(() => api.patch(`/users/${user.id}`, body, user.version)));
     toast('Saved');
   });
   if (resetting) {

@@ -1,5 +1,6 @@
 """`moneykata keys …` (requirements S15.4, S15.6, S15.7): run on the host as one-off
-containers of the same image, or, for `unlock`, against the server running on this host. The
+containers of the same image, or, for `unlock` and `rotate`, against the server running on
+this host, over its Unix socket (host.py). The
 master key is the recovery phrase: every command that needs it asks for it, and none writes
 it anywhere. What a command did is queued for Activity (`maintenance.queue_host_event`), since
 a one-off container cannot open the database without the phrase."""
@@ -154,20 +155,21 @@ def pending_reencrypt(config: Config) -> Path:
     return config.keyring_path.with_name(config.keyring_path.name + ".next")
 
 
-def _base(config: Config) -> str:
-    scheme = "https" if config.mode == "tls" else "http"
-    return f"{scheme}://127.0.0.1:{config.port}"
-
-
 def _running(config: Config) -> bool:
-    """Whether the server is up and unlocked on this host's loopback."""
-    import httpx
+    """Whether the server is up on this host and unlocked, asked over its socket (S13.6). One
+    that is up and locked refuses the command: unlock it, or stop it to work offline."""
+    from .. import host
 
     try:
-        r = httpx.get(f"{_base(config)}/ui/api/unlock", verify=False, timeout=5)  # noqa: S501
-    except httpx.HTTPError:
+        with host.client(config, timeout=5) as c:
+            r = c.get("/host/unlock")
+    except host.NotRunning:
         return False
-    return r.status_code == 200 and r.json().get("locked") is False
+    if r.status_code == 200 and r.json().get("locked"):
+        raise RefuseStart(
+            "the server is running and locked: unlock it first (`keys unlock`), or stop it"
+        )
+    return r.status_code == 200
 
 
 CHOICES = {"r": "rewrap", "d": "delete", "l": "leave", "": "rewrap"}
@@ -267,46 +269,44 @@ def rotate(
 def _rotate_online(
     config: Config, ask: Ask, say: Say, ask_hidden: Ask, all_copies: str | None
 ) -> tuple[str, str]:
-    import httpx
+    from .. import host
 
-    base = _base(config)
-    # This container's own listener on loopback; its certificate may be self-signed.
-    r = httpx.get(f"{base}/ui/api/keys/copies", verify=False, timeout=30)  # noqa: S501
-    if r.status_code != 200:
-        raise RefuseStart(f"the server refused: {r.json().get('detail', r.text)}")
-    found = r.json()["copies"]
-    choices = ask_copies(found, ask, say, all_copies)
-    old_words = None
-    needs_old = [c for c in found if choices.get(c["name"]) == "rewrap" and c["opens"] != "current"]
-    if needs_old:
-        say(
-            f"\n{len(needs_old)} of those hold an earlier data key: re-wrapping them needs the "
-            "current phrase. Type it, or press Enter to leave them as they are."
+    with host.client(config, timeout=600) as c:
+        r = c.get("/host/keys/copies")
+        if r.status_code != 200:
+            raise RefuseStart(f"the server refused: {host.detail(r)}")
+        found = r.json()["copies"]
+        choices = ask_copies(found, ask, say, all_copies)
+        old_words = None
+        needs_old = [
+            c for c in found if choices.get(c["name"]) == "rewrap" and c["opens"] != "current"
+        ]
+        if needs_old:
+            say(
+                f"\n{len(needs_old)} of those hold an earlier data key: re-wrapping them needs "
+                "the current phrase. Type it, or press Enter to leave them as they are."
+            )
+            old_words = ask_hidden("current recovery phrase (Enter to skip): ").strip() or None
+            if old_words:
+                try:
+                    phrase.from_words(old_words)
+                except phrase.PhraseError as e:
+                    raise RefuseStart(f"not a valid phrase: {e}") from None
+        new_key = master.new_master()
+        say(sheet(new_key, config.name, dt.date.today()))
+        say("\nType back three of the words to show they are written down.")
+        if not confirm_three(new_key, ask, say):
+            raise RefuseStart("the words were not confirmed; the key was not rotated")
+        r = c.post(
+            "/host/keys/rotate",
+            json={
+                "phrase": " ".join(phrase.to_words(new_key)),
+                "oldPhrase": old_words,
+                "copies": choices,
+            },
         )
-        old_words = ask_hidden("current recovery phrase (Enter to skip): ").strip() or None
-        if old_words:
-            try:
-                phrase.from_words(old_words)
-            except phrase.PhraseError as e:
-                raise RefuseStart(f"not a valid phrase: {e}") from None
-    new_key = master.new_master()
-    say(sheet(new_key, config.name, dt.date.today()))
-    say("\nType back three of the words to show they are written down.")
-    if not confirm_three(new_key, ask, say):
-        raise RefuseStart("the words were not confirmed; the key was not rotated")
-    r = httpx.post(
-        f"{base}/ui/api/keys/rotate",
-        json={
-            "phrase": " ".join(phrase.to_words(new_key)),
-            "oldPhrase": old_words,
-            "copies": choices,
-        },
-        headers={"Origin": base},
-        verify=False,  # noqa: S501
-        timeout=600,
-    )
     if r.status_code != 200:
-        raise RefuseStart(f"the server refused the rotation: {r.json().get('detail', r.text)}")
+        raise RefuseStart(f"the server refused the rotation: {host.detail(r)}")
     out = r.json()
     _said_rotated(say, out["from"], out["to"], out.get("copies") or {})
     return out["from"], out["to"]
@@ -330,9 +330,9 @@ def _said_rotated(say: Say, old_fp: str, new_fp: str, outcomes: dict[str, str]) 
 
 
 def unlock(config: Config, ask: Ask = _hidden, say: Say = _say) -> int:
-    """`moneykata keys unlock` (S15.4.3): the phrase handed to the server running on this
-    host, over its own listener on loopback, the way the unlock page hands it over."""
-    import httpx
+    """`moneykata keys unlock` (S15.4.2): the phrase handed to the server running on this
+    host over its Unix socket, never the network, to the same unlock as the locked screen's."""
+    from .. import host
 
     words = ask("recovery phrase (12 words): ")
     try:
@@ -340,24 +340,16 @@ def unlock(config: Config, ask: Ask = _hidden, say: Say = _say) -> int:
     except phrase.PhraseError as e:
         say(f"refused: not a valid phrase: {e}")
         return 1
-    base = _base(config)
     try:
-        # This container's own listener on loopback; its certificate may be self-signed.
-        r = httpx.post(
-            f"{base}/ui/api/unlock",
-            json={"phrase": words},
-            headers={"Origin": base},
-            verify=False,  # noqa: S501
-            timeout=300,
-        )
-    except httpx.HTTPError as e:
-        say(f"refused: the server isn't answering on {base}: {e}")
+        with host.client(config, timeout=300) as c:
+            r = c.post("/host/unlock", json={"phrase": words})
+    except host.NotRunning as e:
+        say(f"refused: {e}")
         return 1
     if r.status_code == 200:
         say(f"unlocked: {r.json().get('fingerprint', '')}")
         return 0
-    detail = r.json().get("detail", r.text) if r.headers.get("content-type") else r.text
-    say(f"refused: {detail}")
+    say(f"refused: {host.detail(r)}")
     return 1
 
 

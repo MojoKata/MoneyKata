@@ -7,6 +7,7 @@ import { date } from '../app/format.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { useTitle } from '../components/frame.js';
 import { Avatar, Failed, Loading } from '../components/bits.js';
+import { Icon } from '../components/icon.js';
 import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
 import { toast } from '../components/toast.js';
 import { Dialog, openDialog } from '../components/dialog.js';
@@ -183,6 +184,16 @@ function Relations({ p, reload }) {
   };
   const open = (/** @type {any} */ r) =>
     openDialog(RelationshipDialog, { me: p.personId, r }).then((x) => x && again());
+  // A marriage counts for wash sales and tax books once both have confirmed it (S10.10.4).
+  const confirm = async (/** @type {any} */ r) => {
+    try {
+      await api.post(`/relationships/${r.id}/confirm`);
+      toast('Confirmed');
+      again();
+    } catch (e) {
+      toast(/** @type {any} */ (e).message);
+    }
+  };
   const worked = p.relations.filter((/** @type {any} */ r) => !r.stored);
   const word = (/** @type {any} */ r) =>
     (p.relations.find((/** @type {any} */ x) => x.stored && x.personId === other(r))?.word) ||
@@ -199,9 +210,21 @@ function Relations({ p, reload }) {
             <div class=${'list-item' + (r.canChange ? ' click' : '')} onClick=${r.canChange
               ? () => open(r)
               : null}>
-              <div class="grow"><b>${name(r)}</b> · ${word(r)}${relDates(r)
-                ? html`<div class="small dim">${relDates(r)}</div>`
+              <div class="grow"><b>${name(r)}</b> · ${word(r)}${relDates(r) ||
+                  r.confirmed !== null
+                ? html`<div class="small dim">${
+                  [relDates(r), confirmation(r)].filter(Boolean)
+                    .join(' · ')
+                }</div>`
                 : null}</div>
+              ${r.canConfirm
+                ? html`<button type="button" class="btn sm primary" onClick=${(
+                  /** @type {Event} */ ev,
+                ) => {
+                  ev.stopPropagation();
+                  confirm(r);
+                }}>Confirm</button>`
+                : null}
             </div>
           `
         )
@@ -221,6 +244,14 @@ function Relations({ p, reload }) {
     </div>
   `;
 }
+
+/** A marriage's confirmations: by both, or whom it waits for. */
+const confirmation = (/** @type {any} */ r) => {
+  if (r.confirmed === null || r.confirmed === undefined) return '';
+  if (r.confirmed) return 'confirmed by both · used for wash sales and joint tax books';
+  const who = r.waitingFor.map((/** @type {any} */ x) => x.name).join(' and ');
+  return `waiting for ${who} to confirm · counts for gifts only until then`;
+};
 
 /** "since Jun 14, 2009", "Jun 14, 2009 – Mar 2, 2015", or how a marriage ended. */
 const relDates = (/** @type {any} */ r) => {
@@ -345,6 +376,17 @@ function RelationshipDialog({ close, me, r }) {
           <${Input} value=${f.label} onInput=${set('label')} />
         </${Field}>
       </div>
+      ${f.relation === 'spouse'
+        ? html`
+          <div class="notice">
+            <${Icon} name="info" />
+            <div>A spouse is used for wash sales on
+                    the date of each sale, and for a joint tax book on the last day of its year, once both
+                    people have confirmed it: the other confirms from their own Profile. Until then the
+                    marriage counts for gifts only.</div>
+          </div>
+        `
+        : null}
       <${FormError} error=${e} shown=${[
         'relation',
         'person1Id',

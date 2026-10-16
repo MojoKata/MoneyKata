@@ -465,3 +465,39 @@ def test_a_sign_in_from_a_new_address_is_emailed(client, server):
     assert "signin.new-address" in kinds(server)
     far.post("/ui/api/session", json={"login": "gil", "password": PW}, headers={"Origin": ORIGIN})
     assert len(mails(server)) == 1  # now a known address
+
+
+def test_making_an_admin_needs_the_password_again(admin_client, server):
+    """S13.7.2: changing who is in Admins, whichever route does it."""
+    from conftest import stale
+
+    from moneykata.auth import users as accounts
+
+    with server.db.read() as s:
+        admins = accounts.admins_group(s).id
+    make_user(server, "ivy")
+    listed = admin_client.get("/ui/api/users").json()["items"]
+    ivy = next(u for u in listed if u["username"] == "ivy")
+    stale(server)
+    # A change that leaves Admins alone asks nothing.
+    r = admin_client.patch(
+        f"/ui/api/users/{ivy['id']}", json={"displayName": "Ivy L."}, headers={"If-Match": "1"}
+    )
+    assert r.status_code == 200, r.text
+    r = admin_client.patch(
+        f"/ui/api/users/{ivy['id']}",
+        json={"groupIds": [admins]},
+        headers={"If-Match": str(r.json()["version"])},
+    )
+    assert r.status_code == 403 and r.json()["code"] == "reauth-required"
+    r = admin_client.post(
+        "/ui/api/users",
+        json={
+            "displayName": "Jo",
+            "username": "jo",
+            "email": "jo@home.lan",
+            "sex": "female",
+            "groupIds": [admins],
+        },
+    )
+    assert r.status_code == 403 and r.json()["code"] == "reauth-required"

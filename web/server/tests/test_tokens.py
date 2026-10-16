@@ -95,3 +95,37 @@ def test_someone_elses_token_cant_be_revoked(server, alice):
     bob = sign_in(server, "bob")
     assert bob.delete(f"/ui/api/profile/tokens/{t['id']}").status_code == 404
     assert bob.get("/ui/api/profile/tokens").json()["items"] == []
+
+
+def test_making_a_token_needs_the_password_again_and_is_emailed(server, alice):
+    """S13.7.2 and S10.1.9: someone with a minute at an unlocked browser can't make one."""
+    from sqlalchemy import select
+    from test_users import PW, mails
+
+    from moneykata.store.entities.users import Session
+
+    with server.db.tx() as s:
+        s.scalars(select(Session)).one().authAt -= dt.timedelta(minutes=11)
+    r = alice.post("/ui/api/profile/tokens", json={"name": "Stale"})
+    assert r.status_code == 403 and r.json()["code"] == "reauth-required"
+    assert alice.post("/ui/api/session/reauth", json={"password": PW}).status_code == 204
+    assert alice.post("/ui/api/profile/tokens", json={"name": "Fresh"}).status_code == 201
+    told = mails(server)[-1]
+    assert told["To"] == "alice@home.lan" and told["Subject"] == "An access token was made"
+    assert '"Fresh"' in told.get_content()
+
+
+def test_a_password_change_or_reset_stops_every_token(server, alice):
+    """S10.9.4: a token outlives neither."""
+    from test_users import PW, mails
+
+    secret = alice.post("/ui/api/profile/tokens", json={"name": "Laptop"}).json()["secret"]
+    r = alice.post(
+        "/ui/api/profile/password",
+        json={"currentPassword": PW, "newPassword": "another long passphrase"},
+    )
+    assert r.status_code in (200, 204), r.text
+    with server.db.read() as s:
+        assert tokens.find(s, secret) is None
+    assert alice.get("/ui/api/profile/tokens").json()["items"] == []
+    assert "access token revoked" in mails(server)[-1].get_content()

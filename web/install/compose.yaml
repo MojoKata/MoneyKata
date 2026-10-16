@@ -23,12 +23,23 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+      - /run/moneykata:uid=10001,gid=10001,mode=0700   # where host commands reach it (S13.6)
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s
     logging:                # Docker keeps the logs; these bound them (operations.md)
       driver: json-file
       options: { max-size: "10m", max-file: "5" }
+
+  # A reverse proxy in this project (proxy/ has Caddy, nginx and haproxy configurations)
+  # reaches moneykata:37373 by name, from the one fixed address that trusted_proxies in
+  # moneykata.toml names (S13.3):
+  # proxy:
+  #   image: caddy:2
+  #   ports: ["443:443"]
+  #   volumes: ["./proxy/Caddyfile:/etc/caddy/Caddyfile:ro"]
+  #   networks:
+  #     default: { ipv4_address: 172.30.37.10 }
 
   # The MoneyKata Connector (S18.10): a second service with a volume of its own, which
   # MoneyKata never mounts, and no published port: it only calls out. It starts locked;
@@ -55,3 +66,11 @@ services:
 
 volumes:
   connector-data:
+
+# A fixed range, so that the proxy's address above is known. A proxy on the host itself reaches
+# 127.0.0.1:37373 from the bridge's gateway, 172.30.37.1, as every process on the host does.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.37.0/24

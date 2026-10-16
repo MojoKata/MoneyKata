@@ -11,6 +11,7 @@ class TaxBook(Record):
     ownerId: str
     year: int
     bitcoinFees: str = "sale"
+    fromLastYear: bool = False
 
     @property
     def name(self) -> str:
@@ -34,6 +35,7 @@ class TaxBookAccount(SoftDeleted):
     accountId: str
     counted: bool
     createdAt: dt.datetime
+    addedById: str | None = None
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
 

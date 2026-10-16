@@ -1,7 +1,7 @@
 """Access tokens for the MCP endpoint (requirements S10.9.1): made by a user for themself, shown
 once as `mkt_<id>.<secret>`, kept as a hash of the secret, and good until they expire, are
-revoked, or their user is made inactive. A token reads what its user can see, or only the
-accounts and portfolios chosen for it."""
+revoked, their user is made inactive, or their user's password is changed or reset (S10.9.4).
+A token reads what its user can see, or only the accounts and portfolios chosen for it."""
 
 import datetime as dt
 import hashlib
@@ -40,6 +40,42 @@ def make(
     s.add(t)
     s.flush()
     return t, f"{PREFIX}{t.id.removeprefix('Token_')}.{secret}"
+
+
+def revoke_all(s: Session, user_id: str) -> int:
+    """A password changed or reset stops every token of its user (S10.9.4)."""
+    from sqlalchemy import false, select
+
+    rows = list(
+        s.scalars(
+            select(AccessToken).where(AccessToken.userId == user_id, AccessToken.deleted == false())
+        )
+    )
+    for t in rows:
+        t.mark_deleted(user_id)
+    return len(rows)
+
+
+def tell_made(s: Session, svc, user: User, t: AccessToken) -> None:
+    """Making a token is emailed, as the other account-security changes are (S10.1.9)."""
+    from . import settings
+    from .mail import Email
+
+    if not user.email:
+        return
+    svc.mailer.send(
+        s,
+        Email(
+            user.email,
+            "An access token was made",
+            (
+                f'Hello {user.displayName},\n\nAn access token named "{t.name}" was just made '
+                f"for {user.username} on {settings.get(s, 'serverName')}. It lets an agent read "
+                f"what you can see until {t.expiresAt:%b %-d, %Y}.\n\nIf you didn't make it, "
+                "revoke it in Profile › Access tokens, change your password, and tell an admin.\n"
+            ),
+        ),
+    )
 
 
 def find(s: Session, raw: str) -> tuple[AccessToken, User] | None:

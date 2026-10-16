@@ -164,6 +164,24 @@ class Asked(Model):
     asked: bool
 
 
+class JoinIn(Model):
+    userId: str  # the remote user who is this person
+
+
+@router.post("/persons/{person_id}/join", response_model=PersonRow)
+def join_person(person_id: str, body: JoinIn, request: Request, c: Caller = Depends(caller)):
+    """A remote user is this person (S10.10.1): confirmed by someone who may change it."""
+    with server(request).db.tx() as s:
+        p = people.get(s, c.id, person_id, "owner")
+        remote = s.get(User, body.userId)
+        if remote is None or remote.linkId is None:
+            raise Problem(404, "not-found", "Not found")
+        people.join(s, c.id, p, remote)
+        activity.record(s, "person.joined", actor=c.id, owner=c.id)
+        s.flush()
+        return _row(s, c, p.id)
+
+
 @router.post("/persons/{person_id}/ask-to-share", response_model=Asked)
 def ask_to_share(person_id: str, request: Request, c: Caller = Depends(caller)):
     """Ask whoever added a private person, and the admins, to share them (S10.10.3)."""
@@ -243,6 +261,11 @@ class RelationshipOut(Model):
     fromDate: dt.date | None
     toDate: dt.date | None
     endsOn: dt.date | None  # its end, or for a marriage the first death
+    # A marriage's confirmations (S10.10.4): None for the other relations; until both, it
+    # counts for gifts only. canConfirm: this user may confirm a side still waiting.
+    confirmed: bool | None
+    waitingFor: list[Named]
+    canConfirm: bool
     canChange: bool
     version: int
 
@@ -253,6 +276,15 @@ def _named(s, person_id: str) -> Named:
 
 
 def _rel_out(s, c: Caller, r: Relationship) -> RelationshipOut:
+    waiting = (
+        [
+            _named(s, pid)
+            for pid, at in ((r.person1Id, r.confirmed1At), (r.person2Id, r.confirmed2At))
+            if at is None
+        ]
+        if r.relation == "spouse"
+        else []
+    )
     return RelationshipOut(
         id=r.id,
         person1=_named(s, r.person1Id),
@@ -262,6 +294,9 @@ def _rel_out(s, c: Caller, r: Relationship) -> RelationshipOut:
         fromDate=r.fromDate,
         toDate=r.toDate,
         endsOn=people.ended_on(s, r),
+        confirmed=people.confirmed(r) if r.relation == "spouse" else None,
+        waitingFor=waiting,
+        canConfirm=any(people.may_confirm(s, c.id, w.id) for w in waiting),
         canChange=people.may_relate(s, c.id, r.person1Id, r.person2Id),
         version=r.version,
     )
@@ -337,6 +372,7 @@ def add_relationship(body: RelationshipIn, request: Request, c: Caller = Depends
             relation=body.relation,
         )
         _apply(s, c, r, body)
+        people.confirm(s, c.id, r, fresh=True)
         s.add(r)
         s.flush()
         _rewash(s, (r.relation, r.person1Id, r.person2Id))
@@ -367,10 +403,38 @@ def change_relationship(
         r = _editable(s, c, rel_id)
         check(r, version, lambda: _rel_out(s, c, r))
         before = (r.relation, r.person1Id, r.person2Id)
+        dates = (r.fromDate, r.toDate)
         _apply(s, c, r, body)
+        # A marriage changed in any way is confirmed again by the other (S10.10.4).
+        changed = before != (r.relation, r.person1Id, r.person2Id) or dates != (
+            r.fromDate,
+            r.toDate,
+        )
+        people.confirm(s, c.id, r, fresh=changed)
         r.updatedAt = clock.now()
         s.flush()
         _rewash(s, before, (r.relation, r.person1Id, r.person2Id))
+        return _rel_out(s, c, r)
+
+
+@router.post("/relationships/{rel_id}/confirm", response_model=RelationshipOut)
+def confirm_relationship(rel_id: str, request: Request, c: Caller = Depends(caller)):
+    """A spouse confirms the marriage from their own Profile, or an admin for a person who
+    isn't a user (S10.10.4); once both have, it counts for wash sales and tax books."""
+    with server(request).db.tx() as s:
+        r = s.get(Relationship, rel_id)
+        if r is None or r.deleted:
+            raise Problem(404, "not-found", "Not found")
+        for i in (r.person1Id, r.person2Id):
+            people.get(s, c.id, i)
+        if r.relation != "spouse":
+            raise Problem(409, "not-a-marriage", "Only a marriage is confirmed.")
+        if not people.confirm(s, c.id, r):
+            raise Problem(403, "not-yours-to-confirm", "Only the other spouse confirms this.")
+        r.updatedAt = clock.now()
+        s.flush()
+        _rewash(s, (r.relation, r.person1Id, r.person2Id))
+        activity.record(s, "relationship.confirmed", actor=c.id, owner=c.id)
         return _rel_out(s, c, r)
 
 

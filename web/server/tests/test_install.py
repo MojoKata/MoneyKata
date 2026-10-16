@@ -111,6 +111,28 @@ def test_the_server_service_is_locked_down_and_mounts_no_key():
                 assert "keys" not in str(v), f"{name}: no key directory exists any more"
 
 
+def test_host_commands_have_their_socket_and_the_proxy_is_trusted_alone():
+    """Host commands reach the server over a Unix socket on a tmpfs of its account (S13.6), and
+    the example trusts the proxy's own address, never a range anything else could share
+    (S13.3)."""
+    import ipaddress
+
+    folder = str(config.DEFAULT_SOCKET.parent)
+    for name, compose in COMPOSE.items():
+        tmpfs = compose["services"]["moneykata"]["tmpfs"]
+        assert f"{folder}:uid={SERVER_UID},gid={SERVER_UID},mode=0700" in tmpfs, name
+    assert EXAMPLE.trusted_proxies
+    subnet = ipaddress.ip_network(
+        COMPOSE["compose.yaml"]["networks"]["default"]["ipam"]["config"][0]["subnet"]
+    )
+    for net in EXAMPLE.trusted_proxies:
+        assert net.num_addresses == 1 and net.network_address in subnet, net
+    assert (
+        f"ipv4_address: {EXAMPLE.trusted_proxies[0].network_address}"
+        in (INSTALL / "compose.yaml").read_text()
+    )
+
+
 def test_the_published_port_fits_each_mode():
     """Behind a reverse proxy the plain-HTTP listener is published on the host's loopback only;
     the proxy examples reach it by service name. The tls example serves the LAN itself."""

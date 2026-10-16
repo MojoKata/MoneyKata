@@ -10,7 +10,10 @@ For an admin: whose relationship it is. Anyone else adds and changes only their 
 ## I am the {#relation}
 
 Spouse, couple, parent, child, friend, colleague, or family (with a label). At most one spouse at a
-time, and no one is their own ancestor.
+time, and no one is their own ancestor. A spouse counts for wash sales and a joint tax book once
+both people have confirmed the marriage: the other confirms from their own Profile, and an admin
+confirms for someone who isn't a user. Until then it counts for gifts only, and a change to it is
+confirmed again.
 
 ## Other person {#other-person}
 
