@@ -297,23 +297,69 @@ def test_reencrypt_changes_the_data_key_and_keeps_everything(store, keyed_config
 def test_an_interrupted_reencrypt_is_finished_at_start(
     store, keyed_config, monkeypatch, master_key
 ):
+    """S15.7.2: a crash part-way leaves a journal; the next unlock carries it on, redoing
+    nothing, and the data opens under the new key."""
+    from moneykata.store import reencrypt as journaled
+
     with store.db.tx() as s:
         secret_repo.put(s, store.keys.keys.secrets, "Smtp", "Smtp_x", "password", "hunter2", None)
+    old_db_key = store.keys.keys.database
 
     def crash(*a, **k):
         raise KeyboardInterrupt
 
-    monkeypatch.setattr(maintenance, "_rewrap_secrets", crash)
+    monkeypatch.setattr(journaled, "rewrap_files", crash)
     with pytest.raises(KeyboardInterrupt):
         maintenance.reencrypt(keyed_config, store, master_key)
     monkeypatch.undo()
     assert maintenance.next_keyring(keyed_config).exists()
+    steps = journaled.journal(keyed_config)["steps"]
+    assert steps["rekeyed"] is True and "secrets" in steps and "receipts" not in steps
     again = maintenance.open_store(keyed_config, master_key)
     assert not maintenance.next_keyring(keyed_config).exists()
+    assert journaled.journal(keyed_config) is None
+    assert again.keys.keys.database != old_db_key
     with again.db.read() as s:
         assert (
             secret_repo.use(s, again.keys.keys.secrets, "Smtp", "Smtp_x", "password") == "hunter2"
         )
+    done = journaled.report(keyed_config)
+    assert done["backup"] and done["receiptsSetAside"] == []
+    again.db.dispose()
+
+
+def test_a_file_or_secret_under_neither_key_is_set_aside_not_fatal(store, keyed_config, master_key):
+    """S15.7.2: one bad file never stops a re-encryption for ever."""
+    from moneykata.keys import files
+    from moneykata.store import reencrypt as journaled
+
+    keyed_config.receipts_dir.mkdir(parents=True)
+    public = store.keys.keys.receipts.public_key()
+    files.write(keyed_config.receipts_dir / "good.mkr", [b"ok"], public, "good")
+    (keyed_config.receipts_dir / "broken.mkr").write_bytes(b"not sealed at all")
+    with store.db.tx() as s:
+        secret_repo.put(s, store.keys.keys.secrets, "Smtp", "Smtp_x", "password", "hunter2", None)
+        from moneykata.store.entities.core import Secret
+
+        row = s.query(Secret).one()
+        row.nonce = bytes(len(row.nonce))  # a secret that opens under no key
+    again = maintenance.reencrypt(keyed_config, store, master_key)
+    done = journaled.report(keyed_config)
+    assert done["receiptsSetAside"] == ["broken.mkr"]
+    assert done["secretsSetAside"] == ["Smtp/Smtp_x/password"]
+    assert (keyed_config.data_dir / "receipts-set-aside" / "broken.mkr").exists()
+    assert journaled.opens(keyed_config.receipts_dir / "good.mkr", again.keys.keys.receipts, "good")
+    again.db.dispose()
+
+
+def test_a_keyring_next_nothing_explains_is_set_aside_never_deleted(
+    store, keyed_config, master_key
+):
+    store.db.dispose()
+    maintenance.next_keyring(keyed_config).write_text("{}")
+    again = maintenance.open_store(keyed_config, master_key)
+    assert not maintenance.next_keyring(keyed_config).exists()
+    assert list(keyed_config.data_dir.glob("keyring.next.set-aside-*"))
     again.db.dispose()
 
 
@@ -474,17 +520,23 @@ def test_revisions_carry_a_database_from_0001_to_head(tmp_path):
 def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_config, master_key):
     """`moneykata db restore` (S15.6.8): the backup checked, what it replaces moved aside, and
     the restored database opens at the server's next start."""
+    from moneykata.keys import files
+
+    def receipt(name: str, data: bytes) -> None:
+        public = store.keys.keys.receipts.public_key()
+        files.write(keyed_config.receipts_dir / f"{name}.mkr", [data], public, name)
+
     with store.db.tx() as s:
         new_user(s, "alice")
     keyed_config.receipts_dir.mkdir(parents=True)
-    (keyed_config.receipts_dir / "abc.mkr").write_bytes(b"sealed bytes")
+    receipt("abc", b"sealed bytes")
     made = maintenance.backup(keyed_config, store)
     assert maintenance.verify_backup(keyed_config, master_key) == made
     with pytest.raises(RefuseStart, match="does not open with that phrase"):
         maintenance.verify_backup(keyed_config, os.urandom(16))
     with store.db.tx() as s:
         new_user(s, "bob")
-    (keyed_config.receipts_dir / "later.mkr").write_bytes(b"after the backup")
+    receipt("later", b"after the backup")
     store.db.dispose()
 
     held = maintenance.lock_data_dir(keyed_config, "test")
@@ -495,6 +547,7 @@ def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_conf
     aside = maintenance.restore(keyed_config, made, master_key)
     # The receipts stay where they are; the database and keyring are set aside (S14.6).
     assert sorted(p.name for p in aside.iterdir()) == ["keyring", "moneykata.db"]
+    assert (keyed_config.data_dir / "restored.json").exists(), "the next unlock checks it"
     assert sorted(p.name for p in keyed_config.receipts_dir.iterdir()) == ["abc.mkr", "later.mkr"]
     again = maintenance.open_store(keyed_config, master_key)
     with again.db.read() as s:
@@ -559,49 +612,54 @@ def test_the_copies_on_the_host_are_listed_rewrapped_reencrypted_and_removed(
     ]
     assert all(copies.opens_with(c, store.keys) == "current" for c in found)
 
-    # Rotation through the running server: a copy re-wrapped with the data key it holds, one
-    # deleted, one left; the old phrase then opens only what was left.
+    # Rotation through the running server (S15.7.1): the keyring under the new phrase at
+    # once, one copy deleted now, and a re-encryption scheduled that will rewrite one copy and
+    # leave the other.
+    from moneykata.store import reencrypt as journaled
+
     new_key = os.urandom(16)
     store2, outcomes = maintenance.rotate_running(
         keyed_config,
         store,
         new_key,
-        {b.name: "rewrap", aside.name: "delete", "moneykata-before-0009-t.db": "leave"},
+        {b.name: "reencrypt", aside.name: "delete", "moneykata-before-0009-t.db": "leave"},
     )
     assert outcomes == {
-        b.name: "rewrapped",
+        b.name: "re-encrypted at the next unlock",
         aside.name: "deleted",
         "moneykata-before-0009-t.db": "left",
     }
-    assert maintenance.verify_backup(keyed_config, new_key) == b
-    with pytest.raises(RefuseStart, match="does not open with that phrase"):
-        maintenance.verify_backup(keyed_config, master_key)
-    found = copies.copies(keyed_config)
-    assert [copies.opens_with(c, store2.keys) for c in found] == ["current", "previous"]
+    assert journaled.journal(keyed_config)["why"] == "rotation"
+    assert maintenance.verify_backup(keyed_config, master_key) == b, "still under its day's key"
     assert [master.fingerprint(p.master_id) for p in store2.keys.ring.previous] == [
         master.fingerprint(master_key)
     ]
 
-    # Re-encryption with the new phrase: the backup rewritten under the new data key, the
-    # pre-upgrade copy (under the old phrase) left and said so.
-    store3 = maintenance.reencrypt(
-        keyed_config,
-        store2,
-        new_key,
-        {b.name: "reencrypt", "moneykata-before-0009-t.db": "reencrypt"},
-    )
-    found = copies.copies(keyed_config)
-    assert copies.opens_with(found[0], store3.keys) == "current"
-    assert copies.opens_with(found[1], store3.keys) == "previous"
-    assert maintenance.verify_backup(keyed_config, new_key) == b
+    # The next unlock, with the new phrase: everything under a new data key, the backup
+    # rewritten under it and the new phrase, the pre-upgrade copy left under the old one.
+    store2.db.dispose()
+    store3 = maintenance.open_store(keyed_config, new_key)
+    assert store3.keys.ring.data_key_id != store.keys.ring.data_key_id
+    found = {c.name: c for c in copies.copies(keyed_config)}
+    first = journaled.report(keyed_config)["backup"]
+    assert copies.opens_with(found[b.name], store3.keys) == "current"
+    assert copies.opens_with(found["moneykata-before-0009-t.db"], store3.keys) == "previous"
+    assert copies.opens_with(found[first], store3.keys) == "phrase", "the old data key"
+    assert maintenance.verify_backup(keyed_config, new_key, b) == b
+    assert journaled.report(keyed_config)["copies"] == {
+        b.name: "re-encrypted",
+        "moneykata-before-0009-t.db": "left",
+        # The backup the re-encryption made first, under the replaced data key.
+        journaled.report(keyed_config)["backup"]: "left",
+    }
     store3.db.dispose()
 
     # Settings: forget the previous key, remove a copy.
     assert copies.forget_previous(keyed_config, master.fingerprint(master_key))
     assert master.read_keyring(keyed_config.keyring_path).previous == ()
     assert not copies.forget_previous(keyed_config, "mk-none")
-    copies.remove(found[1])
-    assert [c.kind for c in copies.copies(keyed_config)] == ["backup"]
+    copies.remove(found["moneykata-before-0009-t.db"])
+    assert [c.kind for c in copies.copies(keyed_config)] == ["backup", "backup"]
     assert not (older / "moneykata-before-0009-t.keyring").exists()
 
 
@@ -611,10 +669,12 @@ def test_a_pending_reencryption_under_another_phrase_is_refused_by_name(
     """S15.7.2: a re-encryption interrupted, then a rotation offline: the next unlock says
     which phrase finishes it instead of crashing."""
 
+    from moneykata.store import reencrypt as journaled
+
     def crash(*a, **k):
         raise KeyboardInterrupt
 
-    monkeypatch.setattr(maintenance, "_rewrap_secrets", crash)
+    monkeypatch.setattr(journaled, "_rewrap_secrets", crash)
     with pytest.raises(KeyboardInterrupt):
         maintenance.reencrypt(keyed_config, store, master_key)
     monkeypatch.undo()
@@ -626,3 +686,100 @@ def test_a_pending_reencryption_under_another_phrase_is_refused_by_name(
     )
     with pytest.raises(RefuseStart, match="pending under mk-"):
         maintenance.open_store(keyed_config, other)
+
+
+def test_a_restore_after_a_reencryption_rewraps_the_receipts_and_resets_the_links(
+    store, keyed_config, master_key
+):
+    """S15.6.8: the receipts stay where they are, under the data key a re-encryption made
+    since the backup; the restore re-wraps them to the backup's, and the first unlock after it
+    starts each link's copy again and reports what doesn't open."""
+    from moneykata import ids
+    from moneykata.app import Server
+    from moneykata.keys import files
+    from moneykata.runtime import check_restored
+    from moneykata.store import reencrypt as journaled
+    from moneykata.store.entities.links import Link
+
+    keyed_config.receipts_dir.mkdir(parents=True)
+    public = store.keys.keys.receipts.public_key()
+    files.write(keyed_config.receipts_dir / "r1.mkr", [b"one"], public, "r1")
+    with store.db.tx() as s:
+        link = Link(id=ids.new_id("Link"), state="active", role="inviter", copyPublicKey="k")
+        link.copyFolder = "f"
+        s.add(link)
+    made = maintenance.backup(keyed_config, store)
+    old_receipts = store.keys.keys.receipts
+    store = maintenance.reencrypt(keyed_config, store, master_key)
+    assert not journaled.opens(keyed_config.receipts_dir / "r1.mkr", old_receipts, "r1")
+    store.db.dispose()
+    maintenance.restore(keyed_config, made, master_key)
+    assert journaled.opens(keyed_config.receipts_dir / "r1.mkr", old_receipts, "r1")
+    again = maintenance.open_store(keyed_config, master_key)
+    srv = Server(config=keyed_config, store=again, ready=True)
+    mark = maintenance.after_restore(keyed_config)
+    check_restored(srv, mark)
+    with again.db.read() as s:
+        link = s.query(Link).one()
+        assert link.copyPublicKey is None and link.copyFolder is None and link.needsFull
+    report = maintenance.restore_report(keyed_config)
+    assert report["receiptsUnopened"] == [] and report["secretsUnopened"] == []
+    again.db.dispose()
+
+
+def test_a_restore_under_an_earlier_phrase_asks_first(store, keyed_config, master_key):
+    """S15.6.8: a backup made before a rotation restores under that phrase: the restore names
+    it and goes on only when asked to."""
+    made = maintenance.backup(keyed_config, store)
+    new_key = os.urandom(16)
+    store2, _ = maintenance.rotate_running(keyed_config, store, new_key)
+    store2.db.dispose()
+    from moneykata.store import reencrypt as journaled
+
+    journaled.cancel(keyed_config)
+    asked = []
+    with pytest.raises(RefuseStart, match="current phrase stays"):
+        maintenance.restore(
+            keyed_config, made, master_key, confirm=lambda q: asked.append(q) or False
+        )
+    assert "no longer does" in asked[0] and master.fingerprint(master_key) in asked[0]
+    maintenance.restore(keyed_config, made, master_key, confirm=lambda q: True)
+    assert master.read_keyring(keyed_config.keyring_path).master_id == master.key_id(master_key)
+
+
+def test_a_pre_upgrade_copy_restores_like_a_backup(store, keyed_config, master_key):
+    """S16.13: `db restore` takes a pre-upgrade copy's .db with its .keyring beside it."""
+    with store.db.tx() as s:
+        new_user(s, "alice")
+    older = keyed_config.data_dir / "pre-upgrade"
+    older.mkdir()
+    key = store.keys.keys.sqlcipher_key
+    copy.export(store.db.engine, older / "moneykata-before-0009-t.db", key)
+    shutil.copy2(keyed_config.keyring_path, older / "moneykata-before-0009-t.keyring")
+    with store.db.tx() as s:
+        new_user(s, "bob")
+    store.db.dispose()
+    maintenance.restore(keyed_config, older / "moneykata-before-0009-t.db", master_key)
+    again = maintenance.open_store(keyed_config, master_key)
+    with again.db.read() as s:
+        assert [u.username for u in s.scalars(select(User))] == ["alice"]
+    again.db.dispose()
+
+
+def test_an_offline_backup_needs_the_server_stopped_and_changes_nothing(
+    store, keyed_config, master_key
+):
+    """S15.4.7: on the host, with the server stopped: the lock taken, read only, nothing
+    pending run and nothing migrated."""
+    from moneykata.store import reencrypt as journaled
+
+    store.db.dispose()
+    journaled.schedule(keyed_config, {}, None, "settings")
+    with pytest.raises(RefuseStart, match="re-encryption is pending"):
+        maintenance.open_store(keyed_config, master_key, read_only=True)
+    journaled.cancel(keyed_config)
+    st = maintenance.open_store(keyed_config, master_key, read_only=True)
+    with pytest.raises(Exception), st.db.engine.begin() as conn:  # noqa: B017 - refused
+        conn.exec_driver_sql("PRAGMA query_only = 1")
+        conn.exec_driver_sql('DELETE FROM "User"')
+    st.db.dispose()

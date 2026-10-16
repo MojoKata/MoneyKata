@@ -529,6 +529,29 @@ class Confirmation(Model):
     matched: bool
 
 
+class RestoreReport(Model):
+    at: dt.datetime | None
+    source: str | None
+    receiptsSetAside: list[str]
+    receiptsUnopened: list[str]
+    secretsUnopened: list[str]
+
+
+class ReencryptScheduled(Model):
+    at: dt.datetime
+    why: str  # settings, rotation, host
+    copies: dict[str, str]
+    started: bool  # under way: it can no longer be cancelled
+
+
+class ReencryptReport(Model):
+    finishedAt: dt.datetime
+    why: str | None
+    receiptsSetAside: list[str]
+    secretsSetAside: list[str]
+    copies: dict[str, str]
+
+
 class KeyStorage(Model):
     fingerprint: str
     created: dt.datetime
@@ -541,7 +564,12 @@ class KeyStorage(Model):
     databaseBytes: int
     secrets: int
     receipts: int
-    reencrypting: bool
+    # A re-encryption scheduled for the next restart (S15.7.2): when, why, and its copies'
+    # choices; and what the last one set aside.
+    scheduled: ReencryptScheduled | None = None
+    lastReencryption: ReencryptReport | None = None
+    # What the first unlock after a restore couldn't open (S15.6.8).
+    lastRestore: RestoreReport | None = None
 
 
 class CheckOut(Model):
@@ -614,7 +642,54 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
         receipts=sum(1 for _ in receipts_dir.rglob("*") if _.is_file())
         if receipts_dir.is_dir()
         else 0,
-        reencrypting=srv.tasks.status().get("reencrypt", {}).get("running", False),
+        scheduled=_scheduled(srv.config),
+        lastReencryption=_last(srv.config),
+        lastRestore=_restored(srv.config),
+    )
+
+
+def _restored(config) -> RestoreReport | None:
+    from ..store import maintenance
+
+    r = maintenance.restore_report(config)
+    if not r:
+        return None
+    at = r.get("at")
+    return RestoreReport(
+        at=dt.datetime.fromisoformat(at) if at else None,
+        source=r.get("source"),
+        receiptsSetAside=r.get("receiptsSetAside") or [],
+        receiptsUnopened=r.get("receiptsUnopened") or [],
+        secretsUnopened=r.get("secretsUnopened") or [],
+    )
+
+
+def _scheduled(config) -> ReencryptScheduled | None:
+    from ..store import reencrypt
+
+    j = reencrypt.journal(config)
+    if j is None:
+        return None
+    return ReencryptScheduled(
+        at=dt.datetime.fromisoformat(j["scheduledAt"]),
+        why=str(j.get("why") or "settings"),
+        copies=j.get("copies") or {},
+        started=bool(j.get("steps")),
+    )
+
+
+def _last(config) -> ReencryptReport | None:
+    from ..store import reencrypt
+
+    r = reencrypt.report(config)
+    if not r:
+        return None
+    return ReencryptReport(
+        finishedAt=dt.datetime.fromisoformat(r["finishedAt"]),
+        why=r.get("why"),
+        receiptsSetAside=r.get("receiptsSetAside") or [],
+        secretsSetAside=r.get("secretsSetAside") or [],
+        copies=r.get("copies") or {},
     )
 
 
@@ -670,42 +745,48 @@ def key_test(request: Request, c: Caller = Depends(admin)):
 
 
 class ReencryptIn(Model):
-    phrase: str  # the recovery phrase, typed to confirm: it wraps the new data key
     copies: dict[str, str] = Field(default_factory=dict)  # name: reencrypt, delete or leave
 
 
-@router.post("/settings/keys/reencrypt", status_code=202)
+@router.post("/settings/keys/reencrypt", response_model=KeyStorage)
 def key_reencrypt(body: ReencryptIn, request: Request, c: Caller = Depends(admin)):
-    """Re-encrypt (S15.7.2): a new data key for the database, the receipts and every secret,
-    wrapped under the phrase typed here, which must be this server's; then each copy on the
-    host as chosen. The password again, as for pruning (S13.7.2)."""
-    from ..keys import master, phrase
+    """Re-encrypt at the next restart (S15.7.2): scheduled, with each copy's choice, for the
+    next unlock to run before the server serves, with the phrase given there. It never runs
+    while the server serves. The password again (S13.7.2)."""
+    from ..config import RefuseStart
+    from ..store import reencrypt
     from .deps import recent_auth
 
     recent_auth(c)
     srv = server(request)
     try:
-        key = phrase.from_words(body.phrase)
-    except phrase.PhraseError as e:
-        raise refuse("phrase", "phrase-invalid", f"Not a recovery phrase: {e}") from None
-    if master.key_id(key) != srv.store.keys.master_id:
-        raise refuse("phrase", "phrase-wrong", "Those words are not this server's key.", 403)
-    if srv.tasks.status().get("reencrypt", {}).get("running"):
-        raise Problem(409, "reencrypt-running", "A re-encryption is already running.")
-    if any(v not in ("reencrypt", "delete", "leave") for v in body.copies.values()):
-        raise refuse("copies", "choice-invalid", "Each copy: reencrypt, delete or leave.")
-    srv.reencrypt_key = key
-    srv.reencrypt_copies = dict(body.copies)
+        reencrypt.schedule(srv.config, dict(body.copies), c.id, "settings")
+    except ValueError:
+        raise refuse("copies", "choice-invalid", "Each copy: reencrypt, delete or leave.") from None
+    except RefuseStart as e:
+        raise Problem(409, "reencrypt-running", str(e)) from None
     with srv.db.tx() as s:
         activity.record(
             s,
-            "keys.reencrypt-started",
+            "keys.reencrypt-scheduled",
             actor=c.id,
             for_admins=True,
             detail={"copies": body.copies},
         )
-    srv.tasks.run_now("reencrypt")
-    return Response(status_code=202)
+    return key_storage(request, c)
+
+
+@router.delete("/settings/keys/reencrypt", response_model=KeyStorage)
+def key_reencrypt_cancel(request: Request, c: Caller = Depends(admin)):
+    """A scheduled re-encryption not yet begun, cancelled."""
+    from ..store import reencrypt
+
+    srv = server(request)
+    if not reencrypt.cancel(srv.config):
+        raise Problem(409, "not-scheduled", "Nothing scheduled that can still be cancelled.")
+    with srv.db.tx() as s:
+        activity.record(s, "keys.reencrypt-cancelled", actor=c.id, for_admins=True)
+    return key_storage(request, c)
 
 
 # ---------- The copies on this host (S15.7, S16.13) ----------
@@ -786,8 +867,10 @@ def forget_previous_key(fingerprint: str, request: Request, c: Caller = Depends(
 
     recent_auth(c)
     srv = server(request)
-    if not copies.forget_previous(srv.config, fingerprint):
-        raise Problem(404, "not-found", "No such previous key.")
+    # The keyring is written under the maintenance lock, never beside a rotation (K5).
+    with srv.maintenance_lock:
+        if not copies.forget_previous(srv.config, fingerprint):
+            raise Problem(404, "not-found", "No such previous key.")
     k = srv.store.keys
     srv.store.keys = master.Unlocked(
         k.master_id, master.read_keyring(srv.config.keyring_path), k.keys, k.data_key

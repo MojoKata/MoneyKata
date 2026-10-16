@@ -21,7 +21,7 @@ def register(sub) -> None:
     v.add_argument("path", nargs="?", help="a backup folder")
     v.set_defaults(func=_verify_backup)
     r = ds.add_parser("restore", help="restore a backup, with the server stopped")
-    r.add_argument("path", help="the backup folder to restore")
+    r.add_argument("path", help="the backup folder to restore, or a pre-upgrade/ copy's .db file")
     r.set_defaults(func=_restore)
 
 
@@ -51,11 +51,22 @@ def _backup(args) -> int:
             raise RefuseStart(f"the server refused the backup: {host.detail(r)}")
         print(r.json()["path"])
         return 0
-    store = open_store(config, read_phrase())
-    path = backup(config, store)
-    with store.db.read() as s:
-        keep = settings.get(s, "backupCopies")
-    prune(config, keep)
+    from .maintenance import lock_data_dir
+
+    # The server stopped: the data directory locked, the database opened read only, nothing
+    # pending run and nothing migrated (S15.4.7).
+    lock = lock_data_dir(config, "the running server makes it: `docker compose exec`")
+    try:
+        store = open_store(config, read_phrase(), read_only=True)
+        try:
+            path = backup(config, store)
+            with store.db.read() as s:
+                keep = settings.get(s, "backupCopies")
+        finally:
+            store.db.dispose()
+        prune(config, keep)
+    finally:
+        lock.close()
     queue_host_event(config, "db.backup", {"name": path.name})
     print(path)
     return 0
@@ -72,10 +83,19 @@ def _verify_backup(args) -> int:
 
 
 def _restore(args) -> int:
+    from ..keys.cli import Terminal
     from .maintenance import queue_host_event, restore
 
     config = load(Path(args.config))
-    aside = restore(config, Path(args.path), read_phrase())
+
+    def confirm(question: str) -> bool:
+        tty = Terminal()
+        return tty.ask(question + " [y/N] ").strip().lower() in ("y", "yes")
+
+    def other_phrase(prompt: str) -> bytes:
+        return read_phrase(prompt=prompt)
+
+    aside = restore(config, Path(args.path), read_phrase(), confirm=confirm, ask=other_phrase)
     queue_host_event(config, "db.restore", {"name": Path(args.path).name, "aside": aside.name})
     print(f"restored {Path(args.path).name}; what it replaced is in {aside}")
     print("start the server and unlock it: it opens the restored database, migrating it if needed")

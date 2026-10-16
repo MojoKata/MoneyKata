@@ -1460,7 +1460,9 @@
  * @property {number} databaseBytes
  * @property {number} secrets
  * @property {number} receipts
- * @property {boolean} reencrypting
+ * @property {(ReencryptScheduled | null)} [scheduled]
+ * @property {(ReencryptReport | null)} [lastReencryption]
+ * @property {(RestoreReport | null)} [lastRestore]
  */
 
 /**
@@ -1570,6 +1572,8 @@
  * @property {boolean} locked
  * @property {(string | null)} fingerprint
  * @property {string} version
+ * @property {(Reencrypting | null)} [reencrypting]
+ * @property {(string | null)} [error]
  */
 
 /**
@@ -2895,8 +2899,31 @@
 
 /**
  * @typedef {Object} ReencryptIn
- * @property {string} phrase
  * @property {Object<string, string>} [copies]
+ */
+
+/**
+ * @typedef {Object} ReencryptReport
+ * @property {string} finishedAt
+ * @property {(string | null)} why
+ * @property {Array<string>} receiptsSetAside
+ * @property {Array<string>} secretsSetAside
+ * @property {Object<string, string>} copies
+ */
+
+/**
+ * @typedef {Object} ReencryptScheduled
+ * @property {string} at
+ * @property {string} why
+ * @property {Object<string, string>} copies
+ * @property {boolean} started
+ */
+
+/**
+ * @typedef {Object} Reencrypting
+ * @property {string} stage
+ * @property {number} done
+ * @property {number} total
  */
 
 /**
@@ -2963,6 +2990,15 @@
  * @property {string} sold
  * @property {import('../app/dec.js').Dec} gain
  * @property {import('../app/dec.js').Dec} yearsOwned
+ */
+
+/**
+ * @typedef {Object} RestoreReport
+ * @property {(string | null)} at
+ * @property {(string | null)} source
+ * @property {Array<string>} receiptsSetAside
+ * @property {Array<string>} receiptsUnopened
+ * @property {Array<string>} secretsUnopened
  */
 
 /**

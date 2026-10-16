@@ -8629,6 +8629,26 @@
             "title": "Fingerprint",
             "type": "string"
           },
+          "lastReencryption": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReencryptReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastRestore": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RestoreReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "previous": {
             "items": {
               "$ref": "#/components/schemas/PreviousKeyOut"
@@ -8640,10 +8660,6 @@
             "title": "Receipts",
             "type": "integer"
           },
-          "reencrypting": {
-            "title": "Reencrypting",
-            "type": "boolean"
-          },
           "reminderDue": {
             "title": "Reminderdue",
             "type": "boolean"
@@ -8651,6 +8667,16 @@
           "reminderMonths": {
             "title": "Remindermonths",
             "type": "integer"
+          },
+          "scheduled": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReencryptScheduled"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "secrets": {
             "title": "Secrets",
@@ -8668,8 +8694,7 @@
           "confirmations",
           "databaseBytes",
           "secrets",
-          "receipts",
-          "reencrypting"
+          "receipts"
         ],
         "title": "KeyStorage",
         "type": "object"
@@ -9289,6 +9314,17 @@
       "LockState": {
         "additionalProperties": false,
         "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
           "fingerprint": {
             "anyOf": [
               {
@@ -9303,6 +9339,16 @@
           "locked": {
             "title": "Locked",
             "type": "boolean"
+          },
+          "reencrypting": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Reencrypting"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "version": {
             "title": "Version",
@@ -16385,16 +16431,117 @@
             },
             "title": "Copies",
             "type": "object"
+          }
+        },
+        "title": "ReencryptIn",
+        "type": "object"
+      },
+      "ReencryptReport": {
+        "additionalProperties": false,
+        "properties": {
+          "copies": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Copies",
+            "type": "object"
           },
-          "phrase": {
-            "title": "Phrase",
+          "finishedAt": {
+            "format": "date-time",
+            "title": "Finishedat",
+            "type": "string"
+          },
+          "receiptsSetAside": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Receiptssetaside",
+            "type": "array"
+          },
+          "secretsSetAside": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Secretssetaside",
+            "type": "array"
+          },
+          "why": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Why"
+          }
+        },
+        "required": [
+          "finishedAt",
+          "why",
+          "receiptsSetAside",
+          "secretsSetAside",
+          "copies"
+        ],
+        "title": "ReencryptReport",
+        "type": "object"
+      },
+      "ReencryptScheduled": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "copies": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Copies",
+            "type": "object"
+          },
+          "started": {
+            "title": "Started",
+            "type": "boolean"
+          },
+          "why": {
+            "title": "Why",
             "type": "string"
           }
         },
         "required": [
-          "phrase"
+          "at",
+          "why",
+          "copies",
+          "started"
         ],
-        "title": "ReencryptIn",
+        "title": "ReencryptScheduled",
+        "type": "object"
+      },
+      "Reencrypting": {
+        "additionalProperties": false,
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "integer"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "stage",
+          "done",
+          "total"
+        ],
+        "title": "Reencrypting",
         "type": "object"
       },
       "Relation": {
@@ -16729,6 +16876,64 @@
           "yearsOwned"
         ],
         "title": "ResidenceOut",
+        "type": "object"
+      },
+      "RestoreReport": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          },
+          "receiptsSetAside": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Receiptssetaside",
+            "type": "array"
+          },
+          "receiptsUnopened": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Receiptsunopened",
+            "type": "array"
+          },
+          "secretsUnopened": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Secretsunopened",
+            "type": "array"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "required": [
+          "at",
+          "source",
+          "receiptsSetAside",
+          "receiptsUnopened",
+          "secretsUnopened"
+        ],
+        "title": "RestoreReport",
         "type": "object"
       },
       "RetirementOut": {
@@ -34121,8 +34326,28 @@
       }
     },
     "/ui/api/settings/keys/reencrypt": {
+      "delete": {
+        "description": "A scheduled re-encryption not yet begun, cancelled.",
+        "operationId": "key_reencrypt_cancel_ui_api_settings_keys_reencrypt_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyStorage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Key Reencrypt Cancel",
+        "tags": [
+          "settings"
+        ]
+      },
       "post": {
-        "description": "Re-encrypt (S15.7.2): a new data key for the database, the receipts and every secret,\nwrapped under the phrase typed here, which must be this server's; then each copy on the\nhost as chosen. The password again, as for pruning (S13.7.2).",
+        "description": "Re-encrypt at the next restart (S15.7.2): scheduled, with each copy's choice, for the\nnext unlock to run before the server serves, with the phrase given there. It never runs\nwhile the server serves. The password again (S13.7.2).",
         "operationId": "key_reencrypt_ui_api_settings_keys_reencrypt_post",
         "requestBody": {
           "content": {
@@ -34135,10 +34360,12 @@
           "required": true
         },
         "responses": {
-          "202": {
+          "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/KeyStorage"
+                }
               }
             },
             "description": "Successful Response"

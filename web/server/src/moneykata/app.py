@@ -34,10 +34,11 @@ class Server:
     ready: bool = False
     # Taken while the phrase is being tried (runtime.unlock); an asyncio.Lock made at start.
     unlocking: Any = None
-    # The phrase's key and the copies' choices for one re-encryption, taken by the task
-    # that runs it (S15.7.2).
-    reencrypt_key: bytes | None = None
-    reencrypt_copies: dict = field(default_factory=dict)
+    # A re-encryption under way at the unlock, before the server serves (S15.7.2): its
+    # progress for the locked screen, and why the last unlock failed, if it did.
+    reencrypting: Any = None
+    unlock_error: str | None = None
+    background: set = field(default_factory=set)
     # Backups and re-encryption never run at the same time (S15.7.2).
     maintenance_lock: threading.Lock = field(default_factory=threading.Lock)
     upload_limit: int = 25 * 1024 * 1024
@@ -151,7 +152,15 @@ def create_app(server: Server) -> FastAPI:
     def healthz():
         """`ok` once unlocked and ready; `locked` until the phrase is entered (S15.4.3), and
         `starting` in between; both of those are 503, which an uptime monitor reports."""
-        status = "ok" if server.ready else "locked" if server.store is None else "starting"
+        status = (
+            "ok"
+            if server.ready
+            else "re-encrypting"
+            if server.reencrypting is not None
+            else "locked"
+            if server.store is None
+            else "starting"
+        )
         return JSONResponse(
             {"status": status, "version": server.version},
             status_code=200 if server.ready else 503,

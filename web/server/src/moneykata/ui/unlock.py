@@ -25,10 +25,20 @@ class Phrase(Model):
     phrase: str
 
 
+class Reencrypting(Model):
+    stage: str  # backup, database, secrets, receipts, copies
+    done: int
+    total: int
+
+
 class LockState(Model):
     locked: bool
     fingerprint: str | None  # of the key the keyring is wrapped under
     version: str
+    # A re-encryption under way before the server serves (S15.7.2), and why the last unlock
+    # failed when it did.
+    reencrypting: Reencrypting | None = None
+    error: str | None = None
 
 
 def state(srv) -> LockState:
@@ -36,7 +46,14 @@ def state(srv) -> LockState:
         fp = keys_cli.fingerprint_of(srv.config)
     except RefuseStart:
         fp = None
-    return LockState(locked=srv.store is None, fingerprint=fp, version=srv.version)
+    progress = srv.reencrypting.as_dict() if srv.reencrypting is not None else None
+    return LockState(
+        locked=srv.store is None,
+        fingerprint=fp,
+        version=srv.version,
+        reencrypting=Reencrypting(**progress) if progress else None,
+        error=srv.unlock_error,
+    )
 
 
 @router.get("/unlock", response_model=LockState)
@@ -75,7 +92,9 @@ async def try_unlock(srv, words: str, address: str) -> LockState:
         log.warning("unlock refused from %s: not a phrase", address)
         raise Problem(422, "phrase-invalid", f"Not a recovery phrase: {e}") from None
     try:
-        await runtime.unlock(srv, key)
+        await runtime.unlock(srv, key, wait=False)
+    except runtime.Reencrypting:
+        raise Problem(409, "re-encrypting", "MoneyKata is re-encrypting: wait for it.") from None
     except master.WrongPhrase:
         guard.failed(LOGIN, address)
         log.warning("unlock refused from %s: wrong phrase (%s)", address, master.fingerprint(key))
@@ -84,6 +103,8 @@ async def try_unlock(srv, words: str, address: str) -> LockState:
         raise Problem(409, "unlocked-already", "MoneyKata is already unlocked.") from None
     except RefuseStart as e:
         log.error("refusing to unlock: %s", e)
+        if "pending under" in str(e):  # names the phrase that finishes it (S15.7.2)
+            raise Problem(409, "reencrypt-pending", f"{str(e)[:1].upper()}{str(e)[1:]}.") from None
         raise Problem(
             503, "cannot-unlock", "The server cannot open its data: see its log."
         ) from None

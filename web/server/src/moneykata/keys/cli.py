@@ -1,9 +1,10 @@
 """`moneykata keys …` (requirements S15.4, S15.6, S15.7): run on the host as one-off
 containers of the same image, or, for `unlock` and `rotate`, against the server running on
-this host, over its Unix socket (host.py). The
-master key is the recovery phrase: every command that needs it asks for it, and none writes
-it anywhere. What a command did is queued for Activity (`maintenance.queue_host_event`), since
-a one-off container cannot open the database without the phrase."""
+this host, over its Unix socket (host.py). The master key is the recovery phrase: every
+command that needs it asks for it, and none writes it anywhere. A recovery sheet is shown, and
+its words typed back, on the terminal only, never on standard output, so no log keeps them
+(S15.4.4). What a command did is queued for Activity (`maintenance.queue_host_event`), since a
+one-off container cannot open the database without the phrase."""
 
 import datetime as dt
 import getpass
@@ -27,6 +28,33 @@ def _say(text: str) -> None:
 
 def _hidden(prompt: str) -> str:
     return getpass.getpass(prompt)
+
+
+class Terminal:
+    """The controlling terminal, for a recovery sheet and the words typed back: never
+    standard output, which Docker's logs keep (S15.4.4). A command that shows a sheet
+    refuses to run without one."""
+
+    def __init__(self) -> None:
+        try:
+            self.f = open("/dev/tty", "r+")  # noqa: SIM115 - kept for the command's life
+        except OSError:
+            raise RefuseStart(
+                "this command shows a recovery phrase, on a terminal only: run it with one "
+                "(docker compose run --rm, or exec -it)"
+            ) from None
+
+    def say(self, text: str) -> None:
+        self.f.write(text + "\n")
+        self.f.flush()
+
+    def ask(self, prompt: str) -> str:
+        self.f.write(prompt)
+        self.f.flush()
+        return self.f.readline().rstrip("\n")
+
+    def hidden(self, prompt: str) -> str:
+        return getpass.getpass(prompt, stream=self.f)
 
 
 def sheet(master_key: bytes, server: str, when: dt.date) -> str:
@@ -87,8 +115,8 @@ def read_phrase(ask: Ask = _hidden, prompt: str = "recovery phrase (12 words): "
 
 def init(
     config: Config,
-    ask: Ask = input,
-    say: Say = _say,
+    ask: Ask | None = None,
+    say: Say | None = None,
     confirm: bool = True,
     master_key: bytes | None = None,
 ) -> bytes:
@@ -100,6 +128,9 @@ def init(
             f"{config.keyring_path} already exists: this data directory has a key. A backup "
             "brings its own keyring back with `db restore`; `keys init` is for a new server."
         )
+    if say is None or (confirm and ask is None):
+        tty = Terminal()
+        ask, say = ask or tty.ask, say or tty.say
     config.data_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     master_key = master_key or master.new_master()
     say(sheet(master_key, config.name, dt.date.today()))
@@ -172,21 +203,21 @@ def _running(config: Config) -> bool:
     return r.status_code == 200
 
 
-CHOICES = {"r": "rewrap", "d": "delete", "l": "leave", "": "rewrap"}
+CHOICES = {"r": "reencrypt", "d": "delete", "l": "leave", "": "reencrypt"}
 
 
 def ask_copies(found: list[dict], ask: Ask, say: Say, all_: str | None = None) -> dict[str, str]:
-    """Each copy's choice (S15.7.1): re-wrap (the default), delete or leave; `all_` answers
-    for every copy (`--rewrap-all`, `--delete-old`, `--leave-all`)."""
+    """Each copy's choice (S15.7.1, S15.7.2): re-encrypt (the default), delete or leave;
+    `all_` answers for every copy (`--reencrypt-all`, `--delete-old`, `--leave-all`)."""
     if not found:
         return {}
     out = {}
     say(f"\n{len(found)} copies on this host (the host's own snapshots and backups are not here):")
     for c in found:
         how = {
-            "current": "re-wraps with the key the server holds",
-            "phrase": "re-wraps with the current phrase",
-            "previous": f"needs the phrase of {c.get('masterKey')}",
+            "current": "can be re-encrypted",
+            "phrase": "under an earlier data key, this phrase: can be re-encrypted",
+            "previous": f"under an earlier phrase ({c.get('masterKey')}): left or deleted",
             "unknown": "its keyring cannot be read",
         }[c["opens"]]
         line = f"  {c['name']} ({c['kind']}, {c['made'][:10]}, {c['bytes'] // 1048576} MB): {how}"
@@ -194,76 +225,133 @@ def ask_copies(found: list[dict], ask: Ask, say: Say, all_: str | None = None) -
             out[c["name"]] = all_
             continue
         say(line)
-        answer = ask("    [R]e-wrap, [d]elete or [l]eave (R): ").strip().lower()[:1]
-        out[c["name"]] = CHOICES.get(answer, "rewrap")
+        answer = ask("    [R]e-encrypt, [d]elete or [l]eave (R): ").strip().lower()[:1]
+        out[c["name"]] = CHOICES.get(answer, "reencrypt")
     return out
 
 
 def rotate(
     config: Config,
-    ask: Ask = input,
-    say: Say = _say,
-    ask_hidden: Ask = _hidden,
+    ask: Ask | None = None,
+    say: Say | None = None,
+    ask_hidden: Ask | None = None,
     running: bool | None = None,
     all_copies: str | None = None,
 ) -> tuple[str, str]:
-    """A new master key re-wraps the data key in one step (S15.7.1): the new phrase shown and
-    confirmed, the keyring written with the old key recorded, and each copy on the host
-    re-wrapped, deleted or left. Through the running server when it is up (it holds the data
-    key, so no old phrase is needed: the way out of a lost phrase); with the old phrase typed
-    when it is stopped."""
+    """A new master key, and with it a new data key (S15.7.1): the new phrase shown and
+    confirmed on the terminal, the keyring wrapped under it with the old key recorded, and a
+    re-encryption, each copy on the host re-encrypted, deleted or left. Through the running
+    server when it is up (it holds the data key, so no old phrase is needed: the way out of a
+    lost phrase), its re-encryption then waiting for the next unlock; with the server stopped,
+    the current phrase typed and the re-encryption run at once, the data directory locked."""
+    if ask is None or say is None or ask_hidden is None:
+        tty = Terminal()
+        ask, say, ask_hidden = ask or tty.ask, say or tty.say, ask_hidden or tty.hidden
     running = _running(config) if running is None else running
     if running:
         return _rotate_online(config, ask, say, ask_hidden, all_copies)
     from ..store import copies as copies_
+    from ..store import maintenance, reencrypt
 
-    if not os.access(config.keyring_path.parent, os.W_OK):
-        raise RefuseStart(
-            f"{config.keyring_path.parent} is not writable: rotation writes the keyring "
-            "(in Docker: `docker compose run --rm moneykata keys rotate`)"
-        )
-    if pending_reencrypt(config).exists():
-        raise RefuseStart(
-            "a re-encryption is pending: start and unlock the server so it finishes, then rotate"
-        )
-    old_key = read_phrase(ask_hidden, "current recovery phrase (12 words): ")
-    ring = master.read_keyring(config.keyring_path)
-    try:
-        data_key = master.unwrap(old_key, ring)
-    except ValueError:
-        raise RefuseStart(
-            f"those words are {master.fingerprint(old_key)}, not this server's key "
-            f"{master.fingerprint(ring.master_id)}"
-        ) from None
-    current = master.Unlocked(ring.master_id, ring, master.DataKeys.derive(data_key), data_key)
-    found = copies_.copies(config)
-    choices = ask_copies(
-        [
-            {
-                "name": c.name,
-                "kind": c.kind,
-                "made": c.made.isoformat(),
-                "bytes": c.bytes,
-                "masterKey": master.fingerprint(c.ring.master_id) if c.ring else None,
-                "opens": copies_.opens_with(c, current),
-            }
-            for c in found
-        ],
-        ask,
-        say,
-        all_copies,
+    lock = maintenance.lock_data_dir(
+        config, "the server is running: run `docker compose exec moneykata moneykata keys rotate`"
     )
-    new_key = master.new_master()
-    say(sheet(new_key, config.name, dt.date.today()))
-    say("\nType back three of the words to show they are written down.")
-    if not confirm_three(new_key, ask, say):
-        raise RefuseStart("the words were not confirmed; the key was not rotated")
-    at = master.now()
-    master.write_keyring(config.keyring_path, master.rotated(ring, data_key, new_key, at), _owner())
-    outcomes = copies_.apply_rotation(config, choices, current, new_key, at, old_key)
-    old_fp, new_fp = master.fingerprint(old_key), master.fingerprint(new_key)
-    _said_rotated(say, old_fp, new_fp, outcomes)
+    try:
+        if reencrypt.pending(config):
+            raise RefuseStart(
+                "a re-encryption is pending: start and unlock the server so it finishes, "
+                "then rotate"
+            )
+        old_key = read_phrase(ask_hidden, "current recovery phrase (12 words): ")
+        ring = master.read_keyring(config.keyring_path)
+        try:
+            data_key = master.unwrap(old_key, ring)
+        except ValueError:
+            raise RefuseStart(
+                f"those words are {master.fingerprint(old_key)}, not this server's key "
+                f"{master.fingerprint(ring.master_id)}"
+            ) from None
+        current = master.Unlocked(ring.master_id, ring, master.DataKeys.derive(data_key), data_key)
+        found = copies_.copies(config)
+        choices = ask_copies(
+            [
+                {
+                    "name": c.name,
+                    "kind": c.kind,
+                    "made": c.made.isoformat(),
+                    "bytes": c.bytes,
+                    "masterKey": master.fingerprint(c.ring.master_id) if c.ring else None,
+                    "opens": copies_.opens_with(c, current),
+                }
+                for c in found
+            ],
+            ask,
+            say,
+            all_copies,
+        )
+        new_key = master.new_master()
+        say(sheet(new_key, config.name, dt.date.today()))
+        say("\nType back three of the words to show they are written down.")
+        if not confirm_three(new_key, ask, say):
+            raise RefuseStart("the words were not confirmed; the key was not rotated")
+        at = master.now()
+        master.write_keyring(
+            config.keyring_path, master.rotated(ring, data_key, new_key, at), _owner()
+        )
+        old_fp, new_fp = master.fingerprint(old_key), master.fingerprint(new_key)
+        say(f"Rotated: {old_fp} → {new_fp}. Re-encrypting under a new data key…")
+        reencrypt.schedule(config, choices, None, "rotation")
+        done = reencrypt.run(config, new_key) or {}
+    finally:
+        lock.close()
+    _said_rotated(say, old_fp, new_fp, done.get("copies") or {})
     return old_fp, new_fp
+
+
+def reencrypt_offline(
+    config: Config,
+    ask: Ask = input,
+    say: Say = _say,
+    ask_hidden: Ask = _hidden,
+    all_copies: str | None = None,
+) -> dict:
+    """`moneykata keys reencrypt`, the server stopped (S15.7.2): the phrase typed, each copy's
+    choice, and the journal run to its end at once, the data directory locked."""
+    from ..store import copies as copies_
+    from ..store import reencrypt
+
+    key = read_phrase(ask_hidden, "recovery phrase (12 words): ")
+    try:
+        current = master.unlock_keys(config, key)
+    except master.WrongPhrase as e:
+        raise RefuseStart(str(e)) from None
+    choices = (
+        {}
+        if reencrypt.journal(config) is not None
+        else ask_copies(
+            [
+                {
+                    "name": c.name,
+                    "kind": c.kind,
+                    "made": c.made.isoformat(),
+                    "bytes": c.bytes,
+                    "masterKey": master.fingerprint(c.ring.master_id) if c.ring else None,
+                    "opens": copies_.opens_with(c, current),
+                }
+                for c in copies_.copies(config)
+            ],
+            ask,
+            say,
+            all_copies,
+        )
+    )
+    done = reencrypt.at_once(config, key, choices, "host")
+    say("Re-encrypted under a new data key.")
+    for name in done.get("receiptsSetAside") or []:
+        say(f"  receipt file set aside, opening under neither key: {name}")
+    for name, outcome in (done.get("copies") or {}).items():
+        say(f"  {name}: {outcome}")
+    return done
 
 
 def _rotate_online(
@@ -277,21 +365,6 @@ def _rotate_online(
             raise RefuseStart(f"the server refused: {host.detail(r)}")
         found = r.json()["copies"]
         choices = ask_copies(found, ask, say, all_copies)
-        old_words = None
-        needs_old = [
-            c for c in found if choices.get(c["name"]) == "rewrap" and c["opens"] != "current"
-        ]
-        if needs_old:
-            say(
-                f"\n{len(needs_old)} of those hold an earlier data key: re-wrapping them needs "
-                "the current phrase. Type it, or press Enter to leave them as they are."
-            )
-            old_words = ask_hidden("current recovery phrase (Enter to skip): ").strip() or None
-            if old_words:
-                try:
-                    phrase.from_words(old_words)
-                except phrase.PhraseError as e:
-                    raise RefuseStart(f"not a valid phrase: {e}") from None
         new_key = master.new_master()
         say(sheet(new_key, config.name, dt.date.today()))
         say("\nType back three of the words to show they are written down.")
@@ -299,16 +372,16 @@ def _rotate_online(
             raise RefuseStart("the words were not confirmed; the key was not rotated")
         r = c.post(
             "/host/keys/rotate",
-            json={
-                "phrase": " ".join(phrase.to_words(new_key)),
-                "oldPhrase": old_words,
-                "copies": choices,
-            },
+            json={"phrase": " ".join(phrase.to_words(new_key)), "copies": choices},
         )
     if r.status_code != 200:
         raise RefuseStart(f"the server refused the rotation: {host.detail(r)}")
     out = r.json()
     _said_rotated(say, out["from"], out["to"], out.get("copies") or {})
+    say(
+        "The re-encryption the rotation brings runs at the next unlock, with the new phrase, "
+        "before the server serves (S15.7.1)."
+    )
     return out["from"], out["to"]
 
 
@@ -346,11 +419,31 @@ def unlock(config: Config, ask: Ask = _hidden, say: Say = _say) -> int:
     except host.NotRunning as e:
         say(f"refused: {e}")
         return 1
-    if r.status_code == 200:
-        say(f"unlocked: {r.json().get('fingerprint', '')}")
-        return 0
-    say(f"refused: {host.detail(r)}")
-    return 1
+    if r.status_code != 200:
+        say(f"refused: {host.detail(r)}")
+        return 1
+    state = r.json()
+    if state.get("reencrypting"):
+        # A re-encryption runs before the server serves (S15.7.2): followed here to its end.
+        say("the phrase opened the keyring: re-encrypting under a new data key first")
+        import time
+
+        seen = None
+        while state.get("reencrypting"):
+            p = state["reencrypting"]
+            now = (p.get("stage"), p.get("done") // 100 if p.get("total") else None)
+            if now != seen:
+                seen = now
+                total = f" {p['done']} of {p['total']}" if p.get("total") else ""
+                say(f"  {p.get('stage')}{total}")
+            time.sleep(2)
+            with host.client(config, timeout=30) as c:
+                state = c.get("/host/unlock").json()
+        if state.get("locked"):
+            say(f"refused: {state.get('error') or 'the re-encryption did not finish'}")
+            return 1
+    say(f"unlocked: {state.get('fingerprint', '')}")
+    return 0
 
 
 def register(sub) -> None:
@@ -369,10 +462,18 @@ def register(sub) -> None:
         "rotate", help="a new master key and phrase: through the running server, or offline"
     )
     g = r.add_mutually_exclusive_group()
-    g.add_argument("--rewrap-all", action="store_true", help="re-wrap every copy on the host")
+    g.add_argument("--reencrypt-all", action="store_true", help="re-encrypt every copy on the host")
     g.add_argument("--delete-old", action="store_true", help="delete every copy on the host")
     g.add_argument("--leave-all", action="store_true", help="leave every copy as it is")
     r.set_defaults(func=_rotate_cmd)
+    e = ks.add_parser(
+        "reencrypt", help="a new data key for everything, with the server stopped (S15.7.2)"
+    )
+    h = e.add_mutually_exclusive_group()
+    h.add_argument("--reencrypt-all", action="store_true", help="re-encrypt every copy on the host")
+    h.add_argument("--delete-old", action="store_true", help="delete every copy on the host")
+    h.add_argument("--leave-all", action="store_true", help="leave every copy as it is")
+    e.set_defaults(func=_reencrypt_cmd)
     ks.add_parser("unlock", help="unlock the server running on this host").set_defaults(
         func=lambda a: unlock(load(Path(a.config)))
     )
@@ -398,9 +499,28 @@ def _rotate_cmd(args) -> int:
 
     config = load(Path(args.config))
     running = _running(config)
-    flags = {"rewrap": args.rewrap_all, "delete": args.delete_old, "leave": args.leave_all}
+    flags = {"reencrypt": args.reencrypt_all, "delete": args.delete_old, "leave": args.leave_all}
     all_copies = next((k for k, on in flags.items() if on), None)
     old_fp, new_fp = rotate(config, running=running, all_copies=all_copies)
     if not running:  # the running server records its own rotation in Activity
         queue_host_event(config, "key.rotated", {"from": old_fp, "to": new_fp})
+    return 0
+
+
+def _reencrypt_cmd(args) -> int:
+    from ..store.maintenance import queue_host_event
+
+    config = load(Path(args.config))
+    flags = {"reencrypt": args.reencrypt_all, "delete": args.delete_old, "leave": args.leave_all}
+    done = reencrypt_offline(config, all_copies=next((k for k, on in flags.items() if on), None))
+    queue_host_event(
+        config,
+        "keys.reencrypted",
+        {
+            "why": "host",
+            "receiptsSetAside": len(done.get("receiptsSetAside") or []),
+            "secretsSetAside": len(done.get("secretsSetAside") or []),
+            "copies": done.get("copies") or {},
+        },
+    )
     return 0

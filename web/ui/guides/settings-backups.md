@@ -22,6 +22,6 @@ Makes a backup now.
 ## Restoring
 
 Backups are encrypted as the data is, and open with the recovery phrase of their day; each
-carries its own keyring, and a rotation re-wraps it. A restore puts the database and keyring
-back and leaves the receipt files where they are. The directory is set on the host, outside the
-data directory.
+carries its own keyring, and a rotation re-encrypts it when told to. A restore puts the database
+and keyring back and leaves the receipt files where they are, re-wrapped to the backup's key when
+a re-encryption came between. The directory is set on the host, outside the data directory.

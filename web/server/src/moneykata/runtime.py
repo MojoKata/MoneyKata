@@ -16,7 +16,7 @@ from .store import maintenance
 from .store.entities.core import TaskRun
 from .store.entities.users import OneTimeToken
 from .store.repos import ledger
-from .tasks import Daily, Every, TaskContext, TaskError
+from .tasks import Daily, Every, TaskContext
 from .tasks import TaskRun as Run
 
 log = logging.getLogger("moneykata")
@@ -89,27 +89,6 @@ def register_tasks(server: Server) -> None:
         "prices", lambda ctx: pricing.refresh(server, ctx), Daily(price_time), last.get("prices")
     )
 
-    def reencrypt(ctx: TaskContext) -> None:
-        """Settings › Key storage › Re-encrypt: only when asked, with the phrase (S15.7.2). A
-        verified backup first, under the old key, so a failure part-way leaves a known-good
-        copy; then the main job and the copies' choices, with backups kept out meanwhile."""
-        key, server.reencrypt_key = server.reencrypt_key, None
-        choices, server.reencrypt_copies = server.reencrypt_copies, {}
-        if key is None:
-            raise TaskError("re-encryption needs the recovery phrase: start it from Settings")
-        with server.maintenance_lock:
-            maintenance.backup(server.config, server.store)
-            with server.db.read() as s:
-                keep = settings.get(s, "backupCopies")
-            maintenance.prune(server.config, keep)
-            server.store = maintenance.reencrypt(server.config, server.store, key, choices)
-        with server.db.tx() as s:
-            from . import activity
-
-            activity.record(s, "keys.reencrypted", actor=None, for_admins=True)
-
-    server.tasks.register("reencrypt", reencrypt, None, last.get("reencrypt"))
-
     def mail(ctx: TaskContext) -> None:
         """Send what the outbox holds (S16.2): at once when an email is queued, and every five
         minutes for what could not go."""
@@ -181,10 +160,14 @@ class AlreadyUnlocked(Exception):
 
 
 def build(server: Server, master_key: bytes) -> None:
-    """Open the store with the phrase's key and make the server whole (S15.4.3). The master
+    """Open the store with the phrase's key and make the server whole (S15.4.3), carrying any
+    re-encryption pending to its end first, before anything is served (S15.7.2). The master
     key is used here and not kept."""
+    from .store import reencrypt
+
     config = server.config
-    store = maintenance.open_store(config, master_key)
+    was_pending = reencrypt.pending(config)
+    store = maintenance.open_store(config, master_key, progress=server.reencrypting)
     pricing.install()
     server.store = store
     with server.db.tx() as s:
@@ -201,7 +184,96 @@ def build(server: Server, master_key: bytes) -> None:
 
     apply_egress(server)
     take_host_events(server)
+    restored = maintenance.after_restore(config)
+    if restored is not None:
+        check_restored(server, restored)
     load_copy_folders(server)
+    if was_pending:
+        record_reencryption(server)
+
+
+def check_restored(server: Server, restored: dict) -> None:
+    """The first unlock after a restore (S15.6.8): each link's copy starts again, pulled in
+    full (S11.9.9), and every receipt file and secret the restored keys can't open is reported
+    in Settings › Key storage and in Activity."""
+    from sqlalchemy import select as sql_select
+
+    from . import activity
+    from .keys import secrets as sealing
+    from .store import reencrypt
+    from .store.entities.core import Secret
+    from .store.entities.links import Link
+    from .store.entities.receipts import Receipt
+
+    keys = server.store.keys.keys
+    folder = server.config.receipts_dir
+    unopened = []
+    with server.db.read() as s:
+        for r in s.scalars(
+            sql_select(Receipt).where(Receipt.deleted.is_(False), Receipt.filePrunedAt.is_(None))
+        ):
+            path = folder / f"{r.fileId}.mkr"
+            if not reencrypt.opens(path, keys.receipts, r.fileId):
+                unopened.append(r.id)
+        secrets = []
+        for row in s.scalars(sql_select(Secret)):
+            try:
+                sealing.open_sealed(
+                    keys.secrets,
+                    sealing.Sealed(row.ciphertext, row.nonce, row.wrappedKey),
+                    row.recordType,
+                    row.recordId,
+                    row.field,
+                )
+            except sealing.SecretError:
+                secrets.append(f"{row.recordType}/{row.field}")
+    with server.db.tx() as s:
+        for link in s.scalars(sql_select(Link).where(Link.deleted.is_(False))):
+            link.copyPublicKey = link.copyKeyAt = link.copyKeyById = link.copyFolder = None
+            link.inboxAsOf = None
+            link.needsFull = True
+        report = {
+            "at": restored.get("at"),
+            "source": restored.get("source"),
+            "receiptsSetAside": restored.get("receiptsSetAside") or [],
+            "receiptsUnopened": unopened,
+            "secretsUnopened": secrets,
+        }
+        maintenance.write_restore_report(server.config, report)
+        activity.record(
+            s,
+            "db.restore-checked",
+            actor=None,
+            for_admins=True,
+            detail={
+                "receipts": len(unopened),
+                "secrets": len(secrets),
+                "setAside": len(report["receiptsSetAside"]),
+            },
+        )
+
+
+def record_reencryption(server: Server) -> None:
+    """A re-encryption the unlock carried out, in Activity with what it set aside (S15.7.2)."""
+    from . import activity
+    from .store import reencrypt
+
+    done = reencrypt.report(server.config)
+    if not done:
+        return
+    with server.db.tx() as s:
+        activity.record(
+            s,
+            "keys.reencrypted",
+            actor=None,
+            for_admins=True,
+            detail={
+                "why": done.get("why"),
+                "receiptsSetAside": len(done.get("receiptsSetAside") or []),
+                "secretsSetAside": len(done.get("secretsSetAside") or []),
+                "copies": done.get("copies") or {},
+            },
+        )
 
 
 def load_copy_folders(server: Server) -> None:
@@ -238,26 +310,60 @@ def take_host_events(server: Server) -> int:
     return len(events)
 
 
-async def unlock(server: Server, master_key: bytes, seed: bool = False) -> None:
+class Reencrypting(Exception):
+    """The phrase opened the keyring, and a re-encryption runs before the server serves."""
+
+
+async def unlock(server: Server, master_key: bytes, seed: bool = False, wait: bool = True) -> None:
     """The phrase given (from the unlock page, `keys unlock`, or dev mode): the server opens
-    its store and starts its tasks. Once per start; a restart locks it again (S15.4.3)."""
+    its store and starts its tasks. Once per start; a restart locks it again (S15.4.3). With a
+    re-encryption pending (S15.7.2), the phrase is checked at once and the run carries on in
+    the background, its progress on the locked screen; `wait=False` returns then."""
+    from .store import reencrypt
+
     if server.unlocking is None:
         server.unlocking = asyncio.Lock()
+    if server.reencrypting is not None:
+        raise Reencrypting
     async with server.unlocking:
         if server.store is not None:
             raise AlreadyUnlocked
-        await asyncio.to_thread(build, server, master_key)
-        if server.config.dev:
-            from .dev import devmode
+        if reencrypt.pending(server.config):
+            await asyncio.to_thread(reencrypt.check_phrase, server.config, master_key)
+            server.reencrypting = reencrypt.Progress()
+            server.unlock_error = None
+            task = asyncio.get_running_loop().create_task(_complete(server, master_key, seed))
+            server.background.add(task)
+            task.add_done_callback(server.background.discard)
+            if wait:
+                await task
+            return
+        await _open(server, master_key, seed)
 
-            await asyncio.to_thread(devmode.after_start, server, seed)
-        from .receipts.reading import Reader
 
-        server.reader = Reader(server)
-        server.tasks.start()
-        server.reader.start()
-        server.ready = True
-        log.info("unlocked: %s", server.store.keys.master_id and server.version)
+async def _complete(server: Server, master_key: bytes, seed: bool) -> None:
+    try:
+        await _open(server, master_key, seed)
+    except Exception as e:
+        server.unlock_error = str(e) if isinstance(e, RefuseStart) else type(e).__name__
+        log.error("the re-encryption at the unlock failed: %s", server.unlock_error)
+    finally:
+        server.reencrypting = None
+
+
+async def _open(server: Server, master_key: bytes, seed: bool) -> None:
+    await asyncio.to_thread(build, server, master_key)
+    if server.config.dev:
+        from .dev import devmode
+
+        await asyncio.to_thread(devmode.after_start, server, seed)
+    from .receipts.reading import Reader
+
+    server.reader = Reader(server)
+    server.tasks.start()
+    server.reader.start()
+    server.ready = True
+    log.info("unlocked: %s", server.store.keys.master_id and server.version)
 
 
 async def start(config: Config, seed: bool = False) -> int:

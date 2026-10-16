@@ -35,7 +35,7 @@ class Phrase(Model):
 class RotateIn(Model):
     phrase: str  # the new phrase
     oldPhrase: str | None = None  # the current one when known: opens copies under earlier data keys
-    copies: dict[str, str] = Field(default_factory=dict)  # name: rewrap, delete or leave
+    copies: dict[str, str] = Field(default_factory=dict)  # name: reencrypt, delete or leave
 
 
 @router.get("/unlock")
@@ -67,8 +67,9 @@ def copies_for_rotation(request: Request):
 @router.post("/keys/rotate")
 def rotate(body: RotateIn, request: Request):
     """`moneykata keys rotate` against the running server: the new phrase's key wraps the data
-    key the server holds; the keyring is written with the old key recorded; each copy on the
-    host is re-wrapped, deleted or left as chosen."""
+    key the server holds, the old key recorded, and a re-encryption is scheduled for the next
+    unlock (S15.7.1); a copy chosen for deletion goes now, the rest are re-encrypted or left
+    then."""
     from . import activity
     from .store import maintenance
 
@@ -80,11 +81,9 @@ def rotate(body: RotateIn, request: Request):
         old_key = phrase.from_words(body.oldPhrase) if body.oldPhrase else None
     except phrase.PhraseError as e:
         raise Problem(422, "phrase-invalid", f"Not a recovery phrase: {e}") from None
-    if any(v not in ("rewrap", "delete", "leave") for v in body.copies.values()):
-        raise Problem(422, "choice-invalid", "Each copy: rewrap, delete or leave.")
+    if any(v not in ("reencrypt", "delete", "leave") for v in body.copies.values()):
+        raise Problem(422, "choice-invalid", "Each copy: reencrypt, delete or leave.")
     with srv.maintenance_lock:
-        if srv.tasks.status().get("reencrypt", {}).get("running"):
-            raise Problem(409, "reencrypt-running", "A re-encryption is running: wait for it.")
         old_fp = master.fingerprint(srv.store.keys.master_id)
         try:
             srv.store, outcomes = maintenance.rotate_running(

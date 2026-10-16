@@ -1110,18 +1110,22 @@ function Keys() {
   const copies = /** @type {any} */ (cps.data)?.copies || [];
   const [test, setTest] = useState(/** @type {any} */ (null));
   const [armed, setArmed] = useState(false);
-  const [words, setWords] = useState('');
   const [choices, setChoices] = useState(/** @type {Record<string, string>} */ ({}));
+  // A copy under an earlier phrase can only be left or deleted (S15.7.2).
   const choiceOf = (/** @type {any} */ c) =>
     choices[c.name] || (c.opens === 'current' || c.opens === 'phrase' ? 'reencrypt' : 'leave');
   const reencrypt = useSubmit(async () => {
     const sent = Object.fromEntries(copies.map((/** @type {any} */ c) => [c.name, choiceOf(c)]));
-    await withReauth(() => api.post('/settings/keys/reencrypt', { phrase: words, copies: sent }));
-    toast('Re-encrypting under a new data key');
+    await withReauth(() => api.post('/settings/keys/reencrypt', { copies: sent }));
+    toast('Scheduled for the next restart');
     setArmed(false);
-    setWords('');
     res.reload();
     cps.reload();
+  });
+  const unschedule = useSubmit(async () => {
+    await api.del('/settings/keys/reencrypt');
+    toast('The re-encryption is cancelled');
+    res.reload();
   });
   const removeCopy = async (/** @type {any} */ c) => {
     await withReauth(() => api.del(`/settings/keys/copies/${encodeURIComponent(c.name)}`));
@@ -1244,15 +1248,69 @@ function Keys() {
       }</ul>`
       : null
   }
+    ${
+    v.scheduled
+      ? html`<div class="notice mt" role="status" data-help="scheduled"><${Icon} name="refresh" /><div
+          class="grow">A re-encryption is scheduled for the next restart${
+        v.scheduled.why ===
+            'rotation'
+          ? ', brought by a rotation on the host'
+          : ''
+      }. The next unlock runs it before the server serves, with the phrase given there,
+          its progress on the locked screen.${
+        v.scheduled.started ? ' It has begun, and finishes at the next unlock.' : ''
+      }</div>${
+        v.scheduled.started ? null : html`
+          <button type="button" class="btn sm"
+            disabled=${unschedule.busy} onClick=${() =>
+              unschedule.run().catch(() => {})}>Cancel it</button>
+        `
+      }</div>`
+      : null
+  }${
+    v.lastReencryption &&
+      (v.lastReencryption.receiptsSetAside.length || v.lastReencryption.secretsSetAside.length)
+      ? html`
+        <div class="notice small bad mt" role="status">
+          <${Icon} name="alert" />
+          <div>The last
+                  re-encryption, ${date(v.lastReencryption.finishedAt)}, set aside ${v
+                    .lastReencryption
+                    .receiptsSetAside.length} receipt files and left ${v.lastReencryption
+                    .secretsSetAside
+                    .length} secrets that opened under neither key: the files are in
+                  <code>receipts-set-aside/</code> in the data directory.</div>
+        </div>
+      `
+      : null
+  }${
+    v.lastRestore &&
+      (v.lastRestore.receiptsUnopened.length || v.lastRestore.secretsUnopened.length ||
+        v.lastRestore.receiptsSetAside.length)
+      ? html`
+        <div class="notice small bad mt" role="status" data-help="after-restore">
+          <${Icon}
+            name="alert" />
+          <div>After the restore of <code>${v.lastRestore.source}</code>:
+                  ${v.lastRestore.receiptsUnopened
+                    .length} receipts' files don't open (or are missing),
+                  ${v.lastRestore.secretsUnopened.length} secrets don't open, and
+                  ${v.lastRestore.receiptsSetAside
+                    .length} files were set aside. Put the receipts back from
+                  the host's own backup of the same moment; enter the secrets again.</div>
+        </div>
+      `
+      : null
+  }
     <div class="toolbar mt"><button type="button" class="btn" onClick=${() =>
     api.post('/settings/keys/test').then(setTest)}>Test</button>
       ${
-    armed
+    armed || v.scheduled
       ? null
-      : html`<button type="button" class="btn" disabled=${v.reencrypting} onClick=${() =>
-        setArmed(true)}>${v.reencrypting ? 'Re-encrypting…' : 'Re-encrypt'}</button>`
+      : html`<button type="button" class="btn" onClick=${() =>
+        setArmed(true)}>Re-encrypt at the next restart</button>`
   }
-      <span class="small dim">A new data key for the database, the receipts and every secret. For when the data key may have been read: a memory dump, or a leaked master key beside any copy of the data. It closes nothing made before it.</span></div>
+      <span class="small dim">A new data key, made at the next unlock before the server serves. For when the data key may have been read: a memory dump or a debugging session. A leaked phrase calls for a rotation, which re-encrypts too. It closes nothing made before it.</span></div>
     ${
     armed
       ? html`
@@ -1260,14 +1318,10 @@ function Keys() {
           e.preventDefault();
           reencrypt.run().catch(() => {});
         }}>
-          <${Field} label="Recovery phrase" id="reencrypt-phrase" error=${errAt(
-            reencrypt.error,
-            'phrase',
-          )}
-            hint="The new data key is wrapped under this server's phrase: type it to confirm.">
-            <${Input} type="password" value=${words} onInput=${setWords} autocomplete="off"
-              required />
-            </${Field}>
+          <p class="small dim" style=${{ marginTop: 0 }}>At the next unlock, before the server
+            serves: a verified backup first; then the database, the receipt files and every
+            secret are rewritten under a new data key, and the copies below as you choose. The
+            phrase given at the unlock wraps the new key.</p>
             ${copies.length
               ? html`<div class="field" data-help="copies-at-re-encryption"><label>The copies on this host</label>
                 ${
@@ -1295,7 +1349,7 @@ function Keys() {
               : null}
             <${FormError} error=${reencrypt.error} />
             <div class="toolbar"><button class="btn primary" disabled=${reencrypt
-              .busy}>Re-encrypt now</button>
+              .busy}>Schedule it</button>
                     <button type="button" class="btn" onClick=${() =>
                       setArmed(false)}>Cancel</button></div>
             </form>

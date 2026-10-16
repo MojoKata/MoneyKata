@@ -132,21 +132,25 @@ def _rotate(config, old_key, monkeypatch):
         say=lambda _: None,
         ask_hidden=lambda _: " ".join(phrase.to_words(old_key)),
         running=False,
-        all_copies="rewrap",
+        all_copies="reencrypt",
     )
     return out, made["k"]
 
 
-def test_rotate_offline_rewraps_and_records_the_previous_key_in_the_keyring(
-    config, monkeypatch, tmp_path
+def test_rotate_offline_reencrypts_and_records_the_previous_key_in_the_keyring(
+    keyed_config, store, master_key, monkeypatch, tmp_path
 ):
-    old_key = cli.init(config, say=lambda _: None, confirm=False)
+    """S15.7.1: a rotation always re-encrypts: offline, with the old phrase typed, at once."""
+    config, old_key = keyed_config, master_key
     old = master.unlock_keys(config, old_key)
+    store.db.dispose()
     (old_fp, new_fp), new_key = _rotate(config, old_key, monkeypatch)
     ring = master.read_keyring(config.keyring_path)
     assert [master.fingerprint(p.master_id) for p in ring.previous] == [old_fp]
     new = master.unlock_keys(config, new_key)
-    assert new.keys.database == old.keys.database  # the data key itself is unchanged
+    assert new.keys.database != old.keys.database, "a new data key, not only a new wrap"
+    again = maintenance.open_store(config, new_key)
+    again.db.dispose()
     assert master.fingerprint(new.master_id) == new_fp != old_fp
     with pytest.raises(master.WrongPhrase):
         master.unlock_keys(config, old_key)
@@ -164,6 +168,12 @@ def test_rotate_offline_refuses_a_wrong_phrase_or_a_pending_reencryption(config,
         _rotate(config, os.urandom(16), monkeypatch)
     assert config.keyring_path.read_bytes() == before
     cli.pending_reencrypt(config).write_text("{}")
+    held = maintenance.lock_data_dir(config, "test")
+    with pytest.raises(RefuseStart, match="server is running"):
+        cli.rotate(
+            config, ask=lambda _: "", say=lambda _: None, ask_hidden=lambda _: "", running=False
+        )
+    held.close()
     with pytest.raises(RefuseStart, match="re-encryption is pending"):
         cli.rotate(
             config, ask=lambda _: "", say=lambda _: None, ask_hidden=lambda _: "", running=False
@@ -173,38 +183,72 @@ def test_rotate_offline_refuses_a_wrong_phrase_or_a_pending_reencryption(config,
 def test_rotate_through_the_running_server_needs_no_old_phrase(store, keyed_config, master_key):
     """S15.7.1: the running server holds the data key, so a lost phrase can be replaced while
     it is up; the keyring records the old key."""
+    from moneykata.store import reencrypt as journaled
+
     new_key = os.urandom(16)
     store2, outcomes = maintenance.rotate_running(keyed_config, store, new_key)
     assert outcomes == {}
+    assert journaled.journal(keyed_config)["why"] == "rotation", "it re-encrypts at the unlock"
     assert store2.keys.master_id == master.key_id(new_key) and store2.db is store.db
     ring = master.read_keyring(keyed_config.keyring_path)
     assert [p.master_id for p in ring.previous] == [master.key_id(master_key)]
     assert master.unlock_keys(keyed_config, new_key).keys.database == store.keys.keys.database
     with pytest.raises(master.WrongPhrase):
         master.unlock_keys(keyed_config, master_key)
-    maintenance.next_keyring(keyed_config).write_text("{}")
     with pytest.raises(RefuseStart, match="re-encryption is pending"):
         maintenance.rotate_running(keyed_config, store2, os.urandom(16))
 
 
-def test_rotate_offline_rewraps_the_copies_on_the_host(
+def test_rotate_offline_reencrypts_the_copies_on_the_host(
     store, keyed_config, master_key, monkeypatch
 ):
-    """S15.7.1: offline, with the old phrase typed, every copy's keyring is re-wrapped too."""
+    """S15.7.1: offline, with the old phrase typed, every copy chosen is re-encrypted too."""
     b = maintenance.backup(keyed_config, store)
     store.db.dispose()
     (_old_fp, _new_fp), new_key = _rotate(keyed_config, master_key, monkeypatch)
-    assert maintenance.verify_backup(keyed_config, new_key) == b
+    assert maintenance.verify_backup(keyed_config, new_key, b) == b
     with pytest.raises(RefuseStart):
-        maintenance.verify_backup(keyed_config, master_key)
-    # Asked per copy: Enter re-wraps, 'd' deletes, 'l' leaves.
+        maintenance.verify_backup(keyed_config, master_key, b)
+    # Asked per copy: Enter re-encrypts, 'd' deletes, 'l' leaves.
     answers = iter(["", "d", "l"])
     found = [
         {"name": n, "kind": "backup", "made": "2026-10-01T00:00:00", "bytes": 0, "opens": "current"}
         for n in ("a", "b", "c")
     ]
     assert cli.ask_copies(found, ask=lambda _: next(answers), say=lambda _: None) == {
-        "a": "rewrap",
+        "a": "reencrypt",
         "b": "delete",
         "c": "leave",
     }
+
+
+def test_a_recovery_sheet_goes_to_the_terminal_only(config, monkeypatch):
+    """S15.4.4 (K10): the sheet and the words typed back never touch standard output, which
+    Docker's logs keep; without a terminal the command refuses."""
+    import builtins
+    import io
+
+    real = builtins.open
+
+    def no_tty(path, *a, **k):
+        if str(path) == "/dev/tty":
+            raise OSError(6, "No such device or address")
+        return real(path, *a, **k)
+
+    monkeypatch.setattr(builtins, "open", no_tty)
+    with pytest.raises(RefuseStart, match="on a terminal only"):
+        cli.init(config)
+    assert not config.keyring_path.exists()
+    tty = io.StringIO()
+
+    def fake_tty(path, *a, **k):
+        if str(path) == "/dev/tty":
+            return tty
+        return real(path, *a, **k)
+
+    monkeypatch.setattr(builtins, "open", fake_tty)
+    printed = []
+    monkeypatch.setattr(builtins, "print", lambda *a, **k: printed.append(a))
+    key = cli.init(config, confirm=False)
+    assert " ".join(phrase.to_words(key)).split()[0] in tty.getvalue()
+    assert printed == [], "nothing on standard output"

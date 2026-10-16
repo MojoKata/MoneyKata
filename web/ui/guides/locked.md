@@ -14,5 +14,13 @@ quarter of an hour. Every attempt is logged.
 ## Unlock
 
 Opens the server. On the host, `docker compose exec moneykata moneykata keys unlock` does the
-same, for an admin who would rather not type the phrase into a browser. Nothing of the phrase
-is kept once the data key is unwrapped.
+same: the two are equal ways in. Nothing of the phrase is kept once the data key is unwrapped.
+The field doesn't autocorrect, capitalise, spell-check or remember what is typed, and masks it
+until the eye shows it.
+
+## Re-encrypting
+
+When a re-encryption is due (scheduled in Settings › Key storage, brought by a rotation, or
+interrupted before), the unlock runs it before the server serves: a verified backup first,
+then the database, the secrets and the receipt files under a new data key, and the copies on
+the host as chosen. This screen shows how far it has come; sign-in opens when it is done.

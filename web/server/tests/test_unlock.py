@@ -94,9 +94,9 @@ def test_rotation_and_backups_go_over_the_host_socket_only(locked, master_key):
     listed = host.get("/host/keys/copies").json()["copies"]
     mine = next(x for x in listed if x["name"] == b.name)
     assert mine["opens"] == "current" and mine["kind"] == "backup"
-    r = host.post("/host/keys/rotate", json={"phrase": new, "copies": {b.name: "rewrap"}})
+    r = host.post("/host/keys/rotate", json={"phrase": new, "copies": {b.name: "reencrypt"}})
     assert r.status_code == 200 and r.json()["from"] == old_fp
-    assert r.json()["copies"][b.name] == "rewrapped"
+    assert r.json()["copies"][b.name] == "re-encrypted at the next unlock"
     assert c.get("/ui/api/unlock").json()["fingerprint"] == r.json()["to"] != old_fp
     r = host.post("/host/backup")
     assert r.status_code == 200 and (srv.config.backup_dir / r.json()["name"]).is_dir()
@@ -154,3 +154,55 @@ def test_keys_unlock_hands_the_phrase_over_the_socket(locked, master_key):
     finally:
         stop.set()
         t.join(10)
+
+
+def test_a_scheduled_reencryption_runs_at_the_unlock_before_the_server_serves(locked, master_key):
+    """S15.7.2: scheduled, it runs when the phrase is given, the locked screen following its
+    progress and /healthz answering re-encrypting, then the server serves under a new key."""
+    import time
+
+    from moneykata.store import reencrypt
+
+    srv, c = locked
+    maintenance.open_store(srv.config, master_key).db.dispose()  # a database to re-encrypt
+    before = srv.config.keyring_path.read_text()
+    reencrypt.schedule(srv.config, {}, None, "settings")
+    words = " ".join(phrase.to_words(master_key))
+    wrong = " ".join(phrase.to_words(os.urandom(16)))
+    r = c.post("/ui/api/unlock", json={"phrase": wrong}, headers={"Origin": ORIGIN})
+    assert r.status_code == 403, "the phrase is checked before anything starts"
+    r = c.post("/ui/api/unlock", json={"phrase": words}, headers={"Origin": ORIGIN})
+    assert r.status_code == 200, r.text
+    seen = []
+    for _ in range(300):
+        state = c.get("/ui/api/unlock").json()
+        seen.append((state["locked"], state["reencrypting"], c.get("/healthz").json()["status"]))
+        if not state["locked"]:
+            break
+        time.sleep(0.05)
+    assert seen[-1][0] is False and c.get("/healthz").status_code == 200
+    assert reencrypt.journal(srv.config) is None and reencrypt.report(srv.config)["backup"]
+    assert srv.config.keyring_path.read_text() != before
+    with srv.db.read() as s:
+        assert "keys.reencrypted" in [a.kind for a in s.query(Activity)]
+
+
+def test_reencryption_is_scheduled_in_settings_never_run_while_serving(server, admin_client):
+    """S15.7.2: Settings › Key storage schedules it for the next restart, after the password
+    again; until it begins it can be cancelled."""
+    from conftest import stale
+
+    from moneykata.store import reencrypt
+
+    stale(server)
+    r = admin_client.post("/ui/api/settings/keys/reencrypt", json={"copies": {}})
+    assert r.status_code == 403 and r.json()["code"] == "reauth-required"
+    admin_client.post("/ui/api/session/reauth", json={"password": "a long admin passphrase"})
+    r = admin_client.post("/ui/api/settings/keys/reencrypt", json={"copies": {"x": "bogus"}})
+    assert r.status_code == 422
+    r = admin_client.post("/ui/api/settings/keys/reencrypt", json={"copies": {}})
+    assert r.status_code == 200 and r.json()["scheduled"]["why"] == "settings"
+    assert reencrypt.pending(server.config) and not reencrypt.next_keyring(server.config).exists()
+    r = admin_client.delete("/ui/api/settings/keys/reencrypt")
+    assert r.status_code == 200 and r.json()["scheduled"] is None
+    assert not reencrypt.pending(server.config)

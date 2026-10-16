@@ -12,7 +12,6 @@ def test_build_registers_every_background_task(keyed_config, master_key):
             "backups",
             "pruning",
             "prices",
-            "reencrypt",
             "mail",
             "alerts",
             "alert-summaries",

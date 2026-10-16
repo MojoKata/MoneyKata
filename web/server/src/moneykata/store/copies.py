@@ -208,6 +208,31 @@ def reencrypt(c: Copy, master_key: bytes, new_data_key: bytes) -> None:
     _write_ring(c, ring, new_data_key)
 
 
+def reencrypt_with(c: Copy, old_data_key: bytes, new_data_key: bytes, master_key: bytes) -> None:
+    """Rewrite a copy that holds the data key a re-encryption replaced under the new one, and
+    wrap its keyring under this phrase (S15.7.2), whatever phrase it was under before. Its new
+    keyring is written aside first, so a crash between the two leaves a copy that opens: on a
+    second run the database, already re-keyed, only takes its keyring."""
+    assert c.ring is not None
+    old_keys, new_keys = master.DataKeys.derive(old_data_key), master.DataKeys.derive(new_data_key)
+    ring = master.wrap(master_key, new_data_key, master.now(), master.now(), (*c.ring.previous,))
+    aside = c.keyring.with_name(c.keyring.name + ".next")
+    master.write_keyring(aside, ring)
+    if c.db_path.exists():
+        try:
+            copy.verify(c.db_path, new_keys.sqlcipher_key)
+        except Exception:
+            copy.rekey(c.db_path, old_keys.sqlcipher_key, new_keys.sqlcipher_key)
+    receipts = c.path / "receipts" if c.kind == "before-restore" else None
+    if receipts is not None and receipts.is_dir():
+        from .reencrypt import rewrap_files
+
+        rewrap_files(receipts, old_keys.receipts, new_keys.receipts)
+    os.replace(aside, c.keyring)
+    if c.kind == "backup":
+        _refresh_manifest(c, ring, new_data_key)
+
+
 def can_open(c: Copy, master_key: bytes) -> bool:
     """Whether the phrase opens this copy's database (its keyring and the file agree)."""
     try:
