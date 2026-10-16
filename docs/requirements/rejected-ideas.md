@@ -55,3 +55,13 @@ reason.
     later re-wrap changes only the copy MoneyKata still holds, not theirs. A copy opens with
     the keys of its day for as long as it exists, so the answer to a leak is to delete the
     copies, not to re-key them (S15.7.3, S15.8).
+18. **A master key file on the host**, read by the server's account at start, mounted read
+    only from a directory kept out of every backup. It gives unattended restarts, and it
+    costs the one thing on the host that must never be snapshotted, replicated or backed up
+    with the rest: a chore at every install, and a mistake waiting in every snapshot. The
+    recovery phrase already is the key; entering it after each start keeps nothing on disk
+    and lets the whole host be backed up as it is (S15.4).
+19. **An automatic unlock** of the server or the connector after a restart, from a file or
+    a script on the host. It is a key file by another name: whatever can unlock without a
+    person is on the disk, in the snapshots and in the replicas. A restart needs a person,
+    with the phrase or the vault's words (S15.4.1, S18.3.2).

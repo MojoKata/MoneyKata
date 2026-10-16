@@ -2,6 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -26,9 +27,14 @@ class Server:
     """Everything a request may reach, built once at start (main.py) and kept on app.state."""
 
     config: Config
+    # None while the server is locked: the phrase has not been entered since it started.
     store: Store | None = None
     version: str = field(default_factory=paths.version)
     ready: bool = False
+    # Taken while the phrase is being tried (runtime.unlock); an asyncio.Lock made at start.
+    unlocking: Any = None
+    # The phrase's key for one re-encryption, taken by the task that runs it (S15.7.2).
+    reencrypt_key: bytes | None = None
     upload_limit: int = 25 * 1024 * 1024
     # The receipt reader (S9.8.4), started with the server; tests run without one.
     reader: object | None = None
@@ -138,10 +144,12 @@ def create_app(server: Server) -> FastAPI:
 
     @app.get("/healthz", include_in_schema=False)
     def healthz():
-        status = 200 if server.ready else 503
+        """`ok` once unlocked and ready; `locked` until the phrase is entered (S15.4.3), and
+        `starting` in between; both of those are 503, which an uptime monitor reports."""
+        status = "ok" if server.ready else "locked" if server.store is None else "starting"
         return JSONResponse(
-            {"status": "ok" if server.ready else "starting", "version": server.version},
-            status_code=status,
+            {"status": status, "version": server.version},
+            status_code=200 if server.ready else 503,
             headers={"Cache-Control": "no-store"},
         )
 
@@ -175,6 +183,7 @@ def create_app(server: Server) -> FastAPI:
         taxpanels,
         tokens,
         transactions,
+        unlock,
         users,
         wallets,
     )
@@ -184,6 +193,7 @@ def create_app(server: Server) -> FastAPI:
     from .ui import settings as settings_routes
 
     for module in (
+        unlock,
         session,
         users,
         profile,
@@ -230,7 +240,8 @@ def create_app(server: Server) -> FastAPI:
     app.include_router(static.router(static.Static(server.version, server.config.dev)))
 
     # The last added runs first: the client's address, then the log, the headers, the Origin
-    # check and the body limit.
+    # check, the body limit, and last the gate that answers for a locked server.
+    app.add_middleware(middleware.Locked, locked=lambda: server.store is None)
     app.add_middleware(middleware.SessionCookie, max_age=server.session_max_age)
     app.add_middleware(middleware.BodyLimit, upload_limit=server.upload_cap)
     app.add_middleware(middleware.OriginCheck)

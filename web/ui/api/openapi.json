@@ -8642,10 +8642,6 @@
             "title": "Fingerprint",
             "type": "string"
           },
-          "keyFile": {
-            "title": "Keyfile",
-            "type": "string"
-          },
           "previous": {
             "items": {
               "$ref": "#/components/schemas/PreviousKeyOut"
@@ -8675,7 +8671,6 @@
           }
         },
         "required": [
-          "keyFile",
           "fingerprint",
           "created",
           "ageDays",
@@ -9291,6 +9286,37 @@
           "canWrite"
         ],
         "title": "LoanView",
+        "type": "object"
+      },
+      "LockState": {
+        "additionalProperties": false,
+        "properties": {
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "locked",
+          "fingerprint",
+          "version"
+        ],
+        "title": "LockState",
         "type": "object"
       },
       "Login": {
@@ -13875,6 +13901,20 @@
         "title": "PersonSpend",
         "type": "object"
       },
+      "Phrase": {
+        "additionalProperties": false,
+        "properties": {
+          "phrase": {
+            "title": "Phrase",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phrase"
+        ],
+        "title": "Phrase",
+        "type": "object"
+      },
       "PickIn": {
         "additionalProperties": false,
         "properties": {
@@ -14585,10 +14625,6 @@
             "title": "Fingerprint",
             "type": "string"
           },
-          "path": {
-            "title": "Path",
-            "type": "string"
-          },
           "removableAfter": {
             "anyOf": [
               {
@@ -14604,7 +14640,6 @@
         },
         "required": [
           "fingerprint",
-          "path",
           "removableAfter"
         ],
         "title": "PreviousKeyOut",
@@ -16289,6 +16324,20 @@
           "changed"
         ],
         "title": "RecurringRow",
+        "type": "object"
+      },
+      "ReencryptIn": {
+        "additionalProperties": false,
+        "properties": {
+          "phrase": {
+            "title": "Phrase",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phrase"
+        ],
+        "title": "ReencryptIn",
         "type": "object"
       },
       "Relation": {
@@ -29051,6 +29100,50 @@
         ]
       }
     },
+    "/ui/api/keys/rotate": {
+      "post": {
+        "description": "`moneykata keys rotate` against the running server: the new phrase's key wraps the data\nkey the server holds; the keyring is written with the old key recorded. From loopback\nonly (S15.4.4).",
+        "operationId": "rotate_ui_api_keys_rotate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Phrase"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Rotate Ui Api Keys Rotate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate",
+        "tags": [
+          "unlock"
+        ]
+      }
+    },
     "/ui/api/linked": {
       "get": {
         "description": "The households that share something with you (S12.10.1); none share nothing.",
@@ -33333,7 +33426,7 @@
     },
     "/ui/api/settings/keys": {
       "get": {
-        "description": "Read only: the master key is changed only on the host (S15.4.6).",
+        "description": "Read only: the master key is a phrase, changed only on the host (S15.7.1).",
         "operationId": "key_storage_ui_api_settings_keys_get",
         "responses": {
           "200": {
@@ -33355,8 +33448,18 @@
     },
     "/ui/api/settings/keys/reencrypt": {
       "post": {
-        "description": "Re-encrypt (S15.7.2): a new data key for the database and every secret.",
+        "description": "Re-encrypt (S15.7.2): a new data key for the database, the receipts and every secret,\nwrapped under the phrase typed here, which must be this server's.",
         "operationId": "key_reencrypt_ui_api_settings_keys_reencrypt_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReencryptIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "202": {
             "content": {
@@ -33365,6 +33468,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Key Reencrypt",
@@ -33375,7 +33488,7 @@
     },
     "/ui/api/settings/keys/test": {
       "post": {
-        "description": "Test: the key file passes its checks, unwraps the data key, and opens the database\nand a secret.",
+        "description": "Test: the keyring on disk is the one the phrase unlocked, and the database and a\nsecret open with the data key it holds.",
         "operationId": "key_test_ui_api_settings_keys_test_post",
         "responses": {
           "200": {
@@ -36218,6 +36331,66 @@
         "summary": "Answer Transfer",
         "tags": [
           "wallets"
+        ]
+      }
+    },
+    "/ui/api/unlock": {
+      "get": {
+        "operationId": "lock_state_ui_api_unlock_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Lock State",
+        "tags": [
+          "unlock"
+        ]
+      },
+      "post": {
+        "operationId": "unlock_ui_api_unlock_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Phrase"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unlock",
+        "tags": [
+          "unlock"
         ]
       }
     },

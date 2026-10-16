@@ -7,14 +7,18 @@ this page says what to do. Commands are run from the folder holding `compose.yam
 ## 1. What runs where
 
 One container, from one image (`moneykata:<version>`), as an unprivileged user (uid 10001),
-listening on port 37373. It needs four things from the host:
+listening on port 37373. It needs three things from the host, and one thing from a person:
 
 | On the host     | In the container          | Holds                                          |
 |-----------------|---------------------------|------------------------------------------------|
 | `data/`         | `/var/lib/moneykata`      | the database, its keyring, receipts, linked copies, copies made before upgrades |
 | `backups/`      | `/var/backups/moneykata`  | the daily backups                               |
-| `keys/`         | `/etc/moneykata` (read only) | the master key file; never backed up with the data |
 | `moneykata.toml`| `/etc/moneykata.toml` (read only) | the configuration; never a secret       |
+
+The master key is the **recovery phrase**, and it is never stored: the server starts locked
+after every start (a restart, an upgrade, a reboot) until someone enters the phrase, on the
+locked screen in a browser or with `docker compose exec moneykata moneykata keys unlock`
+(S15.4). Nothing on the host holds a key, so the host can be snapshotted and backed up whole.
 
 `install/compose.yaml` runs it behind the household's reverse proxy (`proxy` mode);
 `install/proxy/` has Caddy, nginx and haproxy examples. `install/compose.tls.yaml` runs its
@@ -56,20 +60,23 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 2. **Make the folders**, owned by the container's user:
 
    ```sh
-   mkdir -p data backups keys && sudo chown 10001:10001 data backups
+   mkdir -p data backups && sudo chown 10001:10001 data backups
    ```
 
    Put `backups/` on a different disk from `data/` if you can.
-3. **Make the master key**: `docker compose run --rm keys-init`. It shows the **recovery
-   phrase**, 12 words, and won't finish until you type three of them back. Store the phrase
-   as S15.6 says: two copies in two places, one offline, never with the backups.
+3. **Make the master key**: `docker compose run --rm moneykata keys init`. It shows the
+   **recovery phrase**, 12 words, and won't finish until you type three of them back. The
+   phrase is the key: nothing of it is written, and nothing shows it again. Store it as
+   S15.6 says: two copies in two places, one offline, never with the backups.
 4. **Start it**: `docker compose up -d`, then point the reverse proxy at it and set
    `trusted_proxies` in `moneykata.toml` to the proxy's addresses. The listener speaks plain
    HTTP in `proxy` mode, so the compose file publishes it on the host's loopback only: a
    proxy running on the host reaches `127.0.0.1:37373`, and one running in the same compose
-   project (`proxy/` is written that way) reaches `moneykata:37373` by name. A server with no users
-   makes `admin` with a default password; its first sign-in asks for a new password and an
-   email address (S10.1.2).
+   project (`proxy/` is written that way) reaches `moneykata:37373` by name.
+5. **Unlock it**: it starts locked. Open the app and enter the phrase on the locked screen,
+   or run `docker compose exec moneykata moneykata keys unlock` and type it there. Do this
+   after every start. A server with no users then makes `admin` with a default password; its
+   first sign-in asks for a new password and an email address (S10.1.2).
 
 ### 2.1 On Proxmox
 
@@ -79,20 +86,20 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
   with receipt reading turned off (Settings › Receipts).
 - **In an LXC container**: turn on **nesting** (Options › Features), install Docker inside,
   then as above. Keep `backups/` on a separate mount point backed by other storage.
-- Proxmox's own backups of the VM or container hold the master key if `keys/` is inside it.
-  Either keep `keys/` on a mount point left out of those backups, or treat those backups as
-  holding the key: never store them with MoneyKata's own backups.
+- Proxmox's own backups of the VM or container can include everything: no key is on the
+  disk, and nothing in them opens without the phrase.
 
 ### 2.2 On TrueNAS
 
 *Not yet tried on a real host: these steps follow the compose file.*
 
-- Make three datasets, for data, backups and keys; set the first two's owner to uid 10001.
-  Put backups on a different pool from data if you have one, and leave the keys dataset out
-  of replication and snapshot tasks that leave the box.
-- Install it as a **custom app** from `compose.yaml`, with the three datasets as host paths
-  in place of `./data`, `./backups` and `./keys`.
-- Run the key step once from a shell on the NAS: `docker compose run --rm keys-init`.
+- Make two datasets, for data and backups, owned by uid 10001. Put backups on a different
+  pool from data if you have one. Both can go into snapshot and replication tasks as they
+  are: nothing in them opens without the phrase.
+- Install it as a **custom app** from `compose.yaml`, with the two datasets as host paths in
+  place of `./data` and `./backups`.
+- Run the key step once from a shell on the NAS: `docker compose run --rm moneykata keys
+  init`, and unlock after each start (§2 step 5).
 
 ## 3. Upgrading
 
@@ -100,7 +107,8 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    `moneykata` service and the key commands), and run `docker compose up -d`.
 2. At start the server copies the database into `data/pre-upgrade/` and checks the copy,
    then migrates it one revision at a time. The three newest copies are kept.
-3. Watch it come up: `docker compose ps` shows `healthy` once it answers.
+3. Unlock it (§2 step 5), then watch it come up: `docker compose ps` shows `healthy` once
+   it answers; it shows `unhealthy` while locked.
 
 **Going back** to the earlier release: stop it, set the old tag again, and restore the copy
 made before the upgrade (or the last backup, §6). An older release refuses a database that a
@@ -124,7 +132,9 @@ newer one has migrated: it says so in a `refusing to start:` line (§5.1).
 - **Health**: the image checks itself every 30 seconds (`moneykata health`, which asks
   `/healthz`). `docker compose ps` shows `starting`, `healthy` or `unhealthy`. From outside,
   point an uptime monitor (Uptime Kuma, for example) at `https://<your address>/healthz`: it
-  answers `{"status": "ok", "version": …}` once the server is ready, and 503 while starting.
+  answers `{"status": "ok", "version": …}` once the server is unlocked and ready, and 503
+  with `"locked"` while it waits for the phrase, which is how anyone learns that a reboot
+  happened and the phrase is needed.
 - **Alerts**: problems that need someone show in Alerts for admins, and are emailed to those
   who chose it: a failed backup, a price source, email, the bitcoin node or a linked server
   failing for longer than Settings › Alerts allows, and a recovery phrase not confirmed.
@@ -142,9 +152,16 @@ and exit code 78. The compose file restarts it three times at most, then leaves 
 
 | The line says                         | Do                                                      |
 |---------------------------------------|---------------------------------------------------------|
-| the key file is missing or its mode is wrong | restore the key from its phrase (§6.2), or fix the file's owner and mode as the line says |
-| the key does not open the database   | the wrong key is mounted: mount the one whose fingerprint the line names |
-| the database is from a newer MoneyKata | run that release or a later one; or restore a backup made by this one |
+| the keyring is missing               | a new server: `keys init` (§2); a rebuilt one: restore a backup (§6.2) |
+| the config file has a problem         | fix `moneykata.toml` as the line says                    |
+
+A server that started but stays locked after the phrase was entered says why in its log
+(`refusing to unlock:`): a database from a newer MoneyKata (run that release or a later one,
+or restore a backup made by this one), or a keyring the phrase doesn't open (the wrong
+phrase, or the keyring from another server: the line names its fingerprint).
+
+| The line says                         | Do                                                      |
+|---------------------------------------|---------------------------------------------------------|
 | the config file has a problem         | fix `moneykata.toml` as the line says                    |
 | the data directory is in use          | another server is running on the same `data/`: stop it   |
 
@@ -153,62 +170,70 @@ and exit code 78. The compose file restarts it three times at most, then leaves 
 ### 6.1 A backup onto the same server
 
 1. Choose the backup: `ls backups/`. Check it first:
-   `docker compose run --rm moneykata db verify-backup /var/backups/moneykata/<backup>`.
+   `docker compose run --rm moneykata db verify-backup /var/backups/moneykata/<backup>`,
+   which asks for the phrase.
 2. Stop the server: `docker compose stop moneykata`.
-3. Restore it: `docker compose run --rm moneykata db restore /var/backups/moneykata/<backup>`.
-   It checks the backup again, refuses one from a newer release, and moves what it replaces
-   (the database, its keyring, the receipts and the linked copies) into
+3. Restore it: `docker compose run --rm moneykata db restore /var/backups/moneykata/<backup>`,
+   with the phrase. It checks the backup again, refuses one from a newer release, and moves
+   what it replaces (the database, its keyring, the receipts and the linked copies) into
    `data/before-restore-<time>/` rather than deleting it.
-4. Start: `docker compose up -d`. The server opens the restored database and migrates it if
-   it came from an earlier release. Linked households pull their copies again.
+4. Start and unlock: `docker compose up -d`, then §2 step 5. The server opens the restored
+   database and migrates it if it came from an earlier release. Linked households pull
+   their copies again.
 5. Once you're satisfied, remove `data/before-restore-<time>/`.
 
 ### 6.2 Onto a new host
 
-1. Install the image and make the folders as in §2, but don't run `keys-init`.
-2. Write the key back from the recovery phrase:
-   `docker compose run --rm keys-init keys init --from-phrase`. It checks the phrase's
-   checksum and writes the key file with the right owner and mode.
-3. Copy the backup folder into the new `backups/`, then restore and start as in §6.1, steps 3
-   and 4. The restore checks the key opens the backup before it changes anything.
+1. Install the image and make the folders as in §2, but don't run `keys init`: the backup
+   brings its keyring, and the phrase is the key.
+2. Copy the backup folder into the new `backups/`, then restore, start and unlock as in
+   §6.1, steps 3 and 4. The restore checks the phrase opens the backup before it changes
+   anything.
 
 ### 6.3 Drills
 
-- **Monthly**: `docker compose exec moneykata moneykata db verify-backup`. It checks the
-  newest backup's hashes and that it opens with the master key, and changes nothing.
+- **Monthly**: `docker compose run --rm moneykata db verify-backup`, with the phrase. It
+  checks the newest backup's hashes and that it opens, and changes nothing.
 - **Yearly**: rehearse §6.2 into a throwaway folder on another machine or a scratch VM, with
   the phrase from its offline copy. That proves the backups, the phrase and these steps
   together. In the same sitting, check the phrase's copies are readable and run
-  `moneykata keys verify` (S15.6.5).
+  `docker compose run --rm moneykata keys verify` (S15.6.5). Every unlock after a restart is
+  a check as well.
 
 ## 7. Keys
 
-- **Show the phrase again**: `docker compose run --rm moneykata keys phrase`.
+- **Unlock after a start**: `docker compose exec moneykata moneykata keys unlock`, or the
+  locked screen in a browser. Nothing shows the phrase again: it is never stored.
 - **Check a copy of the phrase**: `docker compose run --rm moneykata keys verify`.
-- **Rotate the master key** (S15.7.1): `docker compose run --rm keys-rotate`, store the new
-  phrase, then `docker compose restart moneykata`. Keep the previous key, as
-  `moneykata.toml` lists it, until every copy made before the rotation is gone: backup
-  pruning removes the backup directory's own copies, and Settings › Key storage says when
-  that is done; copies anywhere else (the NAS, the bucket, a snapshot, a copy made by hand)
-  are yours to delete, and open with the previous key until you do.
-- **Re-encrypt the data** (S15.7.2): Settings › Key storage › **Re-encrypt**. For when the
-  data key may have been read: a memory dump, or a leaked master key or phrase (below).
+- **Rotate the master key** (S15.7.1): with the server running, `docker compose exec
+  moneykata moneykata keys rotate`. It needs no old phrase (the running server holds the
+  data key), shows the new one and asks three words back, so it is also the way out of a
+  lost phrase: do it before the server ever restarts. With the server stopped, `docker
+  compose run --rm moneykata keys rotate` asks for the current phrase first. Store the new
+  phrase; the server unlocks with it from its next start. Keep the previous phrase until
+  every copy made before the rotation is gone: backup pruning removes the backup directory's
+  own copies, and Settings › Key storage says when that is done; copies anywhere else (the
+  NAS, the bucket, a snapshot, a copy made by hand) are yours to delete, and open with the
+  previous phrase until you do.
+- **Re-encrypt the data** (S15.7.2): Settings › Key storage › **Re-encrypt**, which asks for
+  the phrase. For when the data key may have been read: a memory dump, or a leaked phrase
+  (below).
 
 ### 7.1 When the key or phrase may have leaked
 
-A leaked key is a leaked copy (S15.8): whoever has the phrase and any backup or copy of
+A leaked phrase is a leaked copy (S15.8): whoever has the phrase and any backup or copy of
 `data/` made under it has everything in that copy, for ever. In this order:
 
 1. Revoke and reissue every secret at its source: price-source keys, the bitcoin node's
    password, the SMTP password; unpair the connector and pair it again (§8).
-2. Settings › Key storage › **Re-encrypt**, and wait for it to finish.
-3. `docker compose run --rm keys-rotate`, store the new phrase in two places, restart.
+2. Settings › Key storage › **Re-encrypt**, with the phrase, and wait for it to finish.
+3. `docker compose exec moneykata moneykata keys rotate`, and store the new phrase in two
+   places. The leaked phrase no longer unlocks the server.
 4. Delete every backup and copy made before step 3, wherever it is: `backups/` (prune by
    hand: `rm -r backups/moneykata-<date>-*` for the old ones), the NAS or bucket, snapshots
    and VM images, `data/pre-upgrade/` and `data/before-restore-*/`. A copy you cannot delete
    is one the finder can read.
-5. Then delete the old key file, its sheet and its password-manager entry, and remove it
-   from `moneykata.toml`.
+5. Then destroy the old phrase's sheet and password-manager entry.
 
 ## 8. The MoneyKata Connector
 

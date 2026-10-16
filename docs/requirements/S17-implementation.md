@@ -141,7 +141,10 @@
    versions and hashes of the dev-only downloads (Deno, Playwright's Chromium).
 7. **Dev mode** (`web/dev.sh run --seed --stubs`, `moneykata dev`) runs the whole server from a
    checkout as the current user, relaxing the surroundings, never the rules: sessions, CSP,
-   encryption and sharing behave as in production. `https://localhost:37373` with a
+   encryption and sharing behave as in production. The one exception is the recovery phrase:
+   a dev server makes its key on first run and keeps the phrase in `web/.dev/phrase`, so it
+   unlocks itself at every start; its data is throwaway, and an installed server never does
+   this (S15.4). `https://localhost:37373` with a
    self-signed certificate, `web/.dev/` for data, receipts and mail, seed users
    (`admin`, `alice`, `bob`, a *Household* group), a year of seeded transactions across every
    account type, open and closed option positions with an assignment and a wash sale, budgets,
@@ -155,10 +158,11 @@
    data directory, and never calls a real provider unless one is configured.
 8. **Packaging: one Docker (OCI) image for the server** (the connector has an image of its
    own, S18.10) holding its own Python and venv, the browser app, RapidOCR's models and the
-   `moneykata` command, running as an unprivileged user (uid 10001). It serves on port 37373 and takes three mounts: the **data directory** (database,
-   receipts, linked copies), the **backup directory**, and the **key directory**, read only
-   for the server and kept out of the backups (S15.4). `moneykata.toml` is mounted too;
-   secrets never come from environment variables. `install/compose.yaml` is the example to
+   `moneykata` command, running as an unprivileged user (uid 10001). It serves on port 37373
+   and takes two mounts: the **data directory** (database, keyring, receipts, linked copies)
+   and the **backup directory**. `moneykata.toml` is mounted too; secrets never come from
+   environment variables, and no key is mounted at all: the master key is the recovery
+   phrase, entered after every start (S15.4). `install/compose.yaml` is the example to
    start from; it publishes the plain-HTTP listener on the host's loopback only (the proxy
    examples reach the service by name) and keeps the logs Docker holds to five files of
    10 MB. `docs/operations.md`

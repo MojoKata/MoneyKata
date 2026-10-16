@@ -51,13 +51,14 @@ def next_keyring(config: Config) -> Path:
     return config.keyring_path.with_name(config.keyring_path.name + ".next")
 
 
-def open_store(config: Config, migrate_copies: bool = True) -> Store:
-    """Unwrap the data key, open the database with it, and bring it to this release."""
+def open_store(config: Config, master_key: bytes, migrate_copies: bool = True) -> Store:
+    """Unwrap the data key with the phrase's key, open the database with it, and bring it to
+    this release. The master key is used here and not kept."""
     mapping.map_all()
-    unlocked = master.open_keys(config)
+    unlocked = master.unlock_keys(config, master_key)
     config.data_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     if next_keyring(config).exists():
-        unlocked = _finish_reencrypt(config, unlocked)
+        unlocked = _finish_reencrypt(config, unlocked, master_key)
     key = unlocked.keys.sqlcipher_key
     engine = make_engine(config.db_path, key)
     try:
@@ -77,17 +78,19 @@ def open_store(config: Config, migrate_copies: bool = True) -> Store:
     return Store(Database(engine), unlocked)
 
 
-def reencrypt(config: Config, store: Store) -> Store:
+def reencrypt(config: Config, store: Store, master_key: bytes) -> Store:
     """A new data key (S15.7.2): the database is re-keyed and every secret gets a fresh data
-    key and nonce. The master key is unchanged. The new keyring is written aside first, so an
-    interrupted run is finished at the next start."""
-    master_key = master.check_key_file(config.key_file, config.data_dir, config.backup_dir)
+    key and nonce. The master key, typed again for this, is unchanged. The new keyring is
+    written aside first, so an interrupted run is finished at the next unlock."""
+    if master.key_id(master_key) != store.keys.master_id:
+        raise master.WrongPhrase("those words are not this server's key")
     old = store.keys
-    ring = master.wrap(master_key, master.new_data_key(), old.ring.master_created, master.now())
-    master.write_keyring(next_keyring(config), ring)
-    new = master.Unlocked(
-        old.master_id, ring, master.DataKeys.derive(master.unwrap(master_key, ring))
+    data_key = master.new_data_key()
+    ring = master.wrap(
+        master_key, data_key, old.ring.master_created, master.now(), old.ring.previous
     )
+    master.write_keyring(next_keyring(config), ring)
+    new = master.Unlocked(old.master_id, ring, master.DataKeys.derive(data_key), data_key)
     with store.db.engine.connect() as conn:
         conn.connection.dbapi_connection.execute(f'PRAGMA rekey = "{new.keys.sqlcipher_key}"')
     store.db.dispose()
@@ -145,13 +148,13 @@ def _rewrap_receipts(folder: Path, old_key, new_key) -> int:
     return n
 
 
-def _finish_reencrypt(config: Config, current: master.Unlocked) -> master.Unlocked:
+def _finish_reencrypt(
+    config: Config, current: master.Unlocked, master_key: bytes
+) -> master.Unlocked:
     """A re-encryption was interrupted: use whichever key the database opens with."""
-    master_key = master.check_key_file(config.key_file, config.data_dir, config.backup_dir)
     ring = master.read_keyring(next_keyring(config))
-    pending = master.Unlocked(
-        current.master_id, ring, master.DataKeys.derive(master.unwrap(master_key, ring))
-    )
+    data_key = master.unwrap(master_key, ring)
+    pending = master.Unlocked(current.master_id, ring, master.DataKeys.derive(data_key), data_key)
     try:
         connect(config.db_path, pending.keys.sqlcipher_key).close()
     except WrongKey:
@@ -168,18 +171,38 @@ def _finish_reencrypt(config: Config, current: master.Unlocked) -> master.Unlock
     return pending
 
 
-def record_key_event(config: Config, kind: str, detail: dict) -> None:
-    """A key command run on the host, recorded in Activity for admins (S15.7.4)."""
-    from ..activity import record
+HOST_EVENTS = "host-events.jsonl"
 
+
+def queue_host_event(config: Config, kind: str, detail: dict) -> None:
+    """A command run on the host, queued for Activity (S15.7.4): a one-off container has no
+    phrase to open the database with, so the running server takes the queue at its next
+    unlock and every quarter hour (`take_host_events`)."""
+    config.data_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    line = json.dumps({"kind": kind, "at": clock.now().isoformat(), "detail": detail})
+    path = config.data_dir / HOST_EVENTS
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    with os.fdopen(fd, "a") as f:
+        f.write(line + "\n")
+    if os.geteuid() == 0:
+        os.chown(path, 10001, 10001)
+
+
+def take_host_events(config: Config) -> list[dict]:
+    """The queued host events, removed from the queue."""
+    path = config.data_dir / HOST_EVENTS
     try:
-        store = open_store(config)
-    except RefuseStart as e:
-        log.warning("could not record %s in Activity: %s", kind, e)
-        return
-    with store.db.tx() as s:
-        record(s, kind, actor=None, via="host", for_admins=True, detail=detail)
-    store.db.dispose()
+        text = path.read_text()
+    except FileNotFoundError:
+        return []
+    path.unlink()
+    out = []
+    for line in text.splitlines():
+        try:
+            out.append(json.loads(line))
+        except ValueError:
+            continue
+    return out
 
 
 # ---------- backups ----------
@@ -264,42 +287,32 @@ def check_backup(path: Path, master_key: bytes) -> None:
         copy.verify(scratch, master.DataKeys.derive(data_key).sqlcipher_key)
 
 
-def master_keys(config: Config) -> list[bytes]:
-    """The master key and any previous ones kept after a rotation (S15.7.1), newest first."""
-    keys = [master.check_key_file(config.key_file, config.data_dir, config.backup_dir)]
-    keys += [
-        master.check_key_file(p.path, config.data_dir, config.backup_dir)
-        for p in config.previous_keys
-    ]
-    return keys
-
-
-def verify_backup(config: Config, path: Path | None = None) -> Path:
+def verify_backup(config: Config, master_key: bytes, path: Path | None = None) -> Path:
     """`moneykata db verify-backup`: a backup (the newest by default) is whole and opens with
-    the master key or a previous one: the drill operations.md asks for."""
+    the phrase typed, which may be a previous one for a backup made before a rotation: the
+    drill operations.md asks for."""
     if path is None:
         made = backups(config)
         if not made:
             raise RefuseStart(f"there is no backup in {config.backup_dir}")
         path = made[-1]
-    failure: Exception | None = None
-    for key in master_keys(config):
-        try:
-            check_backup(path, key)
-            return path
-        except ValueError as e:  # this key doesn't unwrap it: try the next
-            failure = e
-    raise RefuseStart(f"{path.name} does not open with the master key: {failure}")
+    try:
+        check_backup(path, master_key)
+    except ValueError as e:
+        raise RefuseStart(f"{path.name} does not open with that phrase: {e}") from None
+    return path
 
 
-def restore(config: Config, backup_path: Path, now: dt.datetime | None = None) -> Path:
-    """`moneykata db restore`, with the server stopped: check the backup, move what it replaces
-    aside into `before-restore-<time>/` in the data directory, and copy it in. The server's
-    next start opens it and migrates it if it is from an earlier release. Returns the folder
-    the replaced files went to."""
+def restore(
+    config: Config, backup_path: Path, master_key: bytes, now: dt.datetime | None = None
+) -> Path:
+    """`moneykata db restore`, with the server stopped: check the backup opens with the phrase
+    typed, move what it replaces aside into `before-restore-<time>/` in the data directory, and
+    copy it in. The server's next unlock opens it and migrates it if it is from an earlier
+    release. Returns the folder the replaced files went to."""
     lock = lock_data_dir(config, "stop the server before restoring")
     try:
-        verify_backup(config, backup_path)
+        verify_backup(config, master_key, backup_path)
         manifest = json.loads((backup_path / "manifest.json").read_text())
         revision = manifest.get("revision")
         if revision is not None and revision not in migrate.known():
@@ -328,10 +341,13 @@ def restore(config: Config, backup_path: Path, now: dt.datetime | None = None) -
 # ---------- the maintenance shell ----------
 
 
-def shell(config: Config) -> int:
-    """`moneykata db shell`: SQL against the open database, as root on the host, with the key
-    from the key file. Secrets stay encrypted even here (S15.3.4)."""
-    unlocked = master.open_keys(config)
+def shell(config: Config, master_key: bytes) -> int:
+    """`moneykata db shell`: SQL against the database, on the host, with the phrase typed.
+    Secrets stay encrypted even here (S15.3.4)."""
+    try:
+        unlocked = master.unlock_keys(config, master_key)
+    except master.WrongPhrase as e:
+        raise RefuseStart(str(e)) from None
     try:
         conn = connect(config.db_path, unlocked.keys.sqlcipher_key)
     except WrongKey as e:
@@ -359,3 +375,15 @@ def shell(config: Config) -> int:
         buf = ""
     conn.close()
     return 0
+
+
+def rotate_running(config: Config, store: Store, new_master: bytes) -> Store:
+    """Rotation through the running server (S15.7.1): it holds the data key, so no old phrase
+    is needed; the keyring is written again under the new master key, the old one recorded."""
+    if next_keyring(config).exists():
+        raise RefuseStart("a re-encryption is pending: it finishes at the next unlock")
+    ring = master.rotated(store.keys.ring, store.keys.data_key, new_master, master.now())
+    master.write_keyring(config.keyring_path, ring)
+    return Store(
+        store.db, master.Unlocked(ring.master_id, ring, store.keys.keys, store.keys.data_key)
+    )

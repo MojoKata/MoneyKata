@@ -54,7 +54,6 @@ def test_the_image_is_built_from_pinned_sources():
 def test_the_image_makes_the_directories_the_example_config_names():
     data, backups = EXAMPLE.data_dir, EXAMPLE.backup_dir
     assert f"install -d -o {SERVER_UID} -g {SERVER_UID} -m 0700 {data} {backups}" in DOCKERFILE
-    assert f"-m 0755 {EXAMPLE.key_file.parent}" in DOCKERFILE
     assert EXAMPLE.mode == "proxy" and EXAMPLE.port == config.DEFAULT_PORT
 
 
@@ -89,8 +88,8 @@ def test_the_connector_service_is_apart_locked_down_and_reaches_nothing_in():
     assert "--require-hashes" in dockerfile
 
 
-def test_the_server_service_is_locked_down_and_its_key_directory_read_only():
-    key_dir = str(EXAMPLE.key_file.parent)
+def test_the_server_service_is_locked_down_and_mounts_no_key():
+    """The master key is a phrase, never a file (S15.4): nothing named keys is mounted."""
     for name, compose in COMPOSE.items():
         service = compose["services"]["moneykata"]
         assert service["read_only"] is True, name
@@ -100,14 +99,16 @@ def test_the_server_service_is_locked_down_and_its_key_directory_read_only():
         # A refused start (exit 78) is retried a few times, never in a loop (S13.6).
         assert service["restart"] == "on-failure:3", name
         mounts = _mounts(service)
-        assert mounts[key_dir][1], f"{name}: the key directory must be mounted read only"
         assert mounts[str(config.DEFAULT_CONFIG)][1], f"{name}: moneykata.toml must be read only"
         assert not mounts[str(EXAMPLE.data_dir)][1] and not mounts[str(EXAMPLE.backup_dir)][1]
-        # The key directory is never backed up with the data: it is its own host directory.
-        assert mounts[key_dir][0] not in (
-            mounts[str(EXAMPLE.data_dir)][0],
-            mounts[str(EXAMPLE.backup_dir)][0],
-        )
+        assert set(mounts) == {
+            str(EXAMPLE.data_dir),
+            str(EXAMPLE.backup_dir),
+            str(config.DEFAULT_CONFIG),
+        }, f"{name}: the server mounts its data, its backups and its config, nothing else"
+        for spec in compose["services"].values():
+            for v in spec.get("volumes", []):
+                assert "keys" not in str(v), f"{name}: no key directory exists any more"
 
 
 def test_the_published_port_fits_each_mode():
@@ -120,24 +121,17 @@ def test_the_published_port_fits_each_mode():
         assert f"moneykata:{port}" in example.read_text(), example.name
 
 
-def test_only_the_key_commands_mount_the_key_directory_writable():
-    """`keys init` and `keys rotate` run as root in one-off containers and write the key
-    directory; only `rotate` writes moneykata.toml (S15.4.6)."""
-    key_dir = str(EXAMPLE.key_file.parent)
-    toml = str(config.DEFAULT_CONFIG)
+def test_no_service_runs_as_root_and_the_key_commands_need_none():
+    """`keys init` and `keys rotate` run as the image's own user: the keyring is in the data
+    directory, which the server's account owns (S15.4.4)."""
     for name, compose in COMPOSE.items():
         services = compose["services"]
-        for service in ("keys-init", "keys-rotate"):
-            spec = services[service]
-            assert spec["user"] == "0:0", f"{name}: {service}"
-            assert spec["profiles"] == ["keys"], f"{name}: {service}"
-            assert spec["command"] == ["keys", service.removeprefix("keys-")], f"{name}: {service}"
-            assert not _mounts(spec)[key_dir][1], f"{name}: {service} needs the key directory"
-        assert _mounts(services["keys-init"])[toml][1], f"{name}: keys-init keeps the config ro"
-        assert not _mounts(services["keys-rotate"])[toml][1], f"{name}: keys-rotate writes it"
+        assert set(services) == {"moneykata", "connector"}, name
         for service, spec in services.items():
-            if service not in ("keys-init", "keys-rotate"):
-                assert "user" not in spec, f"{name}: {service} must run as the image's user"
+            assert "user" not in spec, f"{name}: {service} must run as the image's user"
+    text = (INSTALL / "compose.yaml").read_text()
+    assert "docker compose run --rm moneykata keys init" in text
+    assert "keys unlock" in text
 
 
 def test_the_smoke_script_is_there_for_each_platform():
@@ -147,4 +141,4 @@ def test_the_smoke_script_is_there_for_each_platform():
         "web/install/smoke.sh must be executable"
     )
     text = script.read_text()
-    assert "linux/arm64" in text and "keys init --from-phrase" in text and "unlock" in text
+    assert "linux/arm64" in text and "keys unlock" in text and "503" in text

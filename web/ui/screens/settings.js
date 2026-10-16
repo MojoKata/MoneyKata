@@ -1042,6 +1042,14 @@ function Keys() {
   const v = /** @type {any} */ (res.data);
   const [test, setTest] = useState(/** @type {any} */ (null));
   const [armed, setArmed] = useState(false);
+  const [words, setWords] = useState('');
+  const reencrypt = useSubmit(async () => {
+    await api.post('/settings/keys/reencrypt', { phrase: words });
+    toast('Re-encrypting under a new data key');
+    setArmed(false);
+    setWords('');
+    res.reload();
+  });
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!v) return html`<${Loading} />`;
   const confirmed = v.confirmations.find((/** @type {any} */ c) => c.matched);
@@ -1054,9 +1062,8 @@ function Keys() {
   }</h3>
     <p class="small dim" style=${{
     marginTop: 0,
-  }}>Read only here. The master key is a file on the host and is changed only there,
-      so a browser session can never read or replace it.</p>
-    <div class="list-item"><span class="grow dim">Key file</span><code>${v.keyFile}</code></div>
+  }}>Read only here. The master key is the recovery phrase, never stored: it is entered
+      when the server starts, and changed only on the host.</p>
     <div class="list-item"><span class="grow dim">Fingerprint</span><code>${v.fingerprint}</code></div>
     <div class="list-item"><span class="grow dim">Made</span>${
     date(v.created.slice(0, 10))
@@ -1105,8 +1112,8 @@ function Keys() {
       ? html`<span class="pill ok"><${Icon} name="check" /> confirmed</span>`
       : html`<span class="pill warn">unchecked</span>`
   }</div>
-    <div class="notice mt"><${Icon} name="alert" /><div>Without the key file or its recovery phrase, nothing here and no backup
-      can be opened. Keep the phrase in two places, one offline, never beside the backups.</div></div>
+    <div class="notice mt"><${Icon} name="alert" /><div>Without the recovery phrase, nothing here and no backup can be
+      opened, and the server cannot even start serving. Keep the phrase in two places, one offline.</div></div>
     ${
     test
       ? html`<ul class="small">${
@@ -1118,16 +1125,36 @@ function Keys() {
   }
     <div class="toolbar mt"><button type="button" class="btn" onClick=${() =>
     api.post('/settings/keys/test').then(setTest)}>Test</button>
-      <button type="button" class="btn" disabled=${v.reencrypting} onClick=${() =>
+      ${
     armed
-      ? api.post('/settings/keys/reencrypt').then(() => {
-        toast('Re-encrypting under a new data key');
-        setArmed(false);
-        res.reload();
-      })
-      : setArmed(true)}>${
-    v.reencrypting ? 'Re-encrypting…' : armed ? 'Click again to re-encrypt' : 'Re-encrypt'
-  }</button>
+      ? null
+      : html`<button type="button" class="btn" disabled=${v.reencrypting} onClick=${() =>
+        setArmed(true)}>${v.reencrypting ? 'Re-encrypting…' : 'Re-encrypt'}</button>`
+  }
       <span class="small dim">A new data key for the database, the receipts and every secret. For when the data key may have been read: a memory dump, or a leaked master key beside any copy of the data. It closes nothing made before it.</span></div>
+    ${
+    armed
+      ? html`
+        <form class="mt" onSubmit=${(/** @type {Event} */ e) => {
+          e.preventDefault();
+          reencrypt.run().catch(() => {});
+        }}>
+          <${Field} label="Recovery phrase" id="reencrypt-phrase" error=${errAt(
+            reencrypt.error,
+            'phrase',
+          )}
+            hint="The new data key is wrapped under this server's phrase: type it to confirm.">
+            <${Input} type="password" value=${words} onInput=${setWords} autocomplete="off"
+              required />
+            </${Field}>
+            <${FormError} error=${reencrypt.error} />
+            <div class="toolbar"><button class="btn primary" disabled=${reencrypt
+              .busy}>Re-encrypt now</button>
+                    <button type="button" class="btn" onClick=${() =>
+                      setArmed(false)}>Cancel</button></div>
+            </form>
+      `
+      : null
+  }
   </div>`;
 }

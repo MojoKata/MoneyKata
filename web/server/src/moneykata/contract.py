@@ -28,7 +28,6 @@ def openapi_document() -> dict:
         mode="proxy",
         data_dir=Path("/nonexistent/data"),
         backup_dir=Path("/nonexistent/backups"),
-        key_file=Path("/nonexistent/keys/master.key"),
     )
     app = create_app(Server(config=config))
     doc = get_openapi(

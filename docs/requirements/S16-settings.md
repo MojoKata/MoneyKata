@@ -42,13 +42,14 @@ follows Backups, and Connector (18), which follows Linked servers:
     The college-cost averages and the metal per share arrive with the features that use
     them (529s, physical assets).
 12. **Backups**: the time of day and the copies kept; the backup directory is set on the host.
-13. **Key storage** (S15): read-only. The master key's fingerprint and age, who confirmed
-    its recovery phrase and when, rotation progress and the date the previous key can go
+13. **Key storage** (S15): read-only. The master key's fingerprint and age, when the phrase
+    was last entered, who confirmed the phrase and when, the previous keys and the date each
+    can go
     (counting the backup directory's own copies only, and saying so: copies kept elsewhere
     are the admin's to count, S15.7.1.4), the progress of a re-encryption, and anything that
-    cannot be opened. Buttons: **Test** and **Re-encrypt**, with what re-encryption is for
-    and that it closes no copy made before it (S15.7.2). The master key itself is only ever
-    changed on the host.
+    cannot be opened. Buttons: **Test** and **Re-encrypt**, which asks for the recovery
+    phrase, with what re-encryption is for and that it closes no copy made before it
+    (S15.7.2). The master key itself is only ever changed on the host.
 14. **Network**: the address ranges allowed to reach each path, one list per line, empty for
     any: **the app** (`/ui`, and `/mcp` with it: an agent sits where a person's browser does,
     and its token is already the user's); **linked servers** (`/link`); and **the connector**

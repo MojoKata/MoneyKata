@@ -38,11 +38,16 @@
    is thrown before the library is first used.
 6. **Stopping**: on SIGTERM the server ends every event stream, lets requests in flight finish
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
-   cannot start for a reason only an operator can fix (a config file it can't use, a file
-   mode, a database from a newer release, a certificate it can't load, a data directory another
-   server is using), it says why in one
-   `refusing to start:` line and exits 78 (`EX_CONFIG`). The example `compose.yaml` restarts
-   it only on failure, three times at most, so a refused start isn't retried in a loop.
+   cannot start for a reason only an operator can fix (a config file it can't use, a missing
+   keyring, a certificate it can't load, a data directory another server is using), it says
+   why in one `refusing to start:` line and exits 78 (`EX_CONFIG`). The example
+   `compose.yaml` restarts it only on failure, three times at most, so a refused start isn't
+   retried in a loop. **A locked start**: with no key anywhere (S15.4), the server comes up
+   **locked**: `/healthz` answers 503 `locked`, `/ui` serves only the locked screen, and
+   every other path, `/link`, `/connector` and `/mcp` included, answers 503 `locked` with
+   `Retry-After`, until an admin enters the recovery phrase (S15.4.3). What the phrase then
+   cannot open (a database from a newer release) is refused at the unlock, with the reason
+   in the log, and the server stays locked.
 7. **Security policies**. One place for the rules every request
    passes through; other sections refer here.
    1. **Sessions**: a 256-bit random token in a cookie named `mk_session`, `HttpOnly`,

@@ -1,14 +1,17 @@
-"""`moneykata keys …` (requirements S15.4.6, S15.6, S15.7): run on the host, as one-off
-containers of the same image. Only `init` and `rotate` need the key directory writable."""
+"""`moneykata keys …` (requirements S15.4, S15.6, S15.7): run on the host as one-off
+containers of the same image, or, for `unlock`, against the server running on this host. The
+master key is the recovery phrase: every command that needs it asks for it, and none writes
+it anywhere. What a command did is queued for Activity (`maintenance.queue_host_event`), since
+a one-off container cannot open the database without the phrase."""
 
 import datetime as dt
+import getpass
 import os
-import re
 import secrets as pysecrets
 from collections.abc import Callable
 from pathlib import Path
 
-from ..config import Config, PreviousKey, RefuseStart, load
+from ..config import Config, RefuseStart, load
 from . import master, phrase
 
 SERVER_UID = 10001
@@ -19,6 +22,10 @@ Say = Callable[[str], None]
 
 def _say(text: str) -> None:
     print(text)
+
+
+def _hidden(prompt: str) -> str:
+    return getpass.getpass(prompt)
 
 
 def sheet(master_key: bytes, server: str, when: dt.date) -> str:
@@ -35,8 +42,9 @@ def sheet(master_key: bytes, server: str, when: dt.date) -> str:
             "",
             *rows,
             "",
-            "Keep at least two copies in two places, one of them offline, and never with the",
-            "backups. Losing both the key file and these words loses everything this server holds.",
+            "These words are the master key, and they are never stored: the server asks for",
+            "them at every start. Keep at least two copies in two places, one of them offline.",
+            "Losing them loses everything this server holds, and every backup of it.",
         ]
     )
 
@@ -47,7 +55,8 @@ def matches(word: str, typed: str) -> bool:
 
 
 def confirm_three(master_key: bytes, ask: Ask, say: Say, tries: int = 3) -> bool:
-    """Ask for three words chosen at random; the key is saved only when they are right."""
+    """Ask for three words chosen at random; the key counts as written down only when they
+    are right."""
     words = phrase.to_words(master_key)
     for _ in range(tries):
         picks = sorted(pysecrets.SystemRandom().sample(range(12), 3))
@@ -67,199 +76,236 @@ def _owner() -> int | None:
     return SERVER_UID if os.geteuid() == 0 else None
 
 
+def read_phrase(ask: Ask = _hidden, prompt: str = "recovery phrase (12 words): ") -> bytes:
+    """The master key from a typed phrase; a phrase that isn't one refuses the command."""
+    try:
+        return phrase.from_words(ask(prompt))
+    except phrase.PhraseError as e:
+        raise RefuseStart(f"not a valid phrase: {e}") from None
+
+
 def init(
     config: Config,
     ask: Ask = input,
     say: Say = _say,
-    from_phrase: bool = False,
     confirm: bool = True,
+    master_key: bytes | None = None,
 ) -> bytes:
-    if config.key_file.exists():
-        raise RefuseStart(f"{config.key_file} already exists; `keys init` never overwrites a key")
+    """A fresh data directory's keys: a new master key, shown as its phrase and confirmed by
+    three words typed back, and a new data key wrapped under it in the keyring. Nothing of the
+    master key is written (S15.4.2)."""
+    if config.keyring_path.exists():
+        raise RefuseStart(
+            f"{config.keyring_path} already exists: this data directory has a key. A backup "
+            "brings its own keyring back with `db restore`; `keys init` is for a new server."
+        )
     config.data_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-    ring_exists = config.keyring_path.exists()
-    if from_phrase:
-        try:
-            master_key = phrase.from_words(ask("recovery phrase (12 words): "))
-        except phrase.PhraseError as e:
-            raise RefuseStart(str(e)) from None
-        if ring_exists:
-            ring = master.read_keyring(config.keyring_path)
-            if master.key_id(master_key) != ring.master_id:
-                raise RefuseStart(
-                    f"these words are key {master.fingerprint(master_key)}, but the data "
-                    f"directory's keyring was wrapped by {master.fingerprint(ring.master_id)}"
-                )
-            master.unwrap(master_key, ring)
-            say(f"The words match the keyring ({master.fingerprint(master_key)}).")
-        else:
-            now = master.now()
-            ring = master.wrap(master_key, master.new_data_key(), now, now)
-            master.write_keyring(config.keyring_path, ring, _owner())
-    else:
-        if ring_exists:
-            raise RefuseStart(
-                f"{config.keyring_path} already exists: this data directory "
-                "has a key. Use `keys init --from-phrase` to write it back."
-            )
-        master_key = master.new_master()
-        say(sheet(master_key, config.name, dt.date.today()))
-        if confirm:
-            say("\nType back three of the words to show they are written down.")
-            if not confirm_three(master_key, ask, say):
-                raise RefuseStart("the words were not confirmed; no key was saved")
-        now = master.now()
-        ring = master.wrap(master_key, master.new_data_key(), now, now)
-        master.write_keyring(config.keyring_path, ring, _owner())
-    master.write_key_file(config.key_file, master_key, _owner())
-    say(f"Saved {config.key_file} ({master.fingerprint(master_key)}).")
+    master_key = master_key or master.new_master()
+    say(sheet(master_key, config.name, dt.date.today()))
+    if confirm:
+        say("\nType back three of the words to show they are written down.")
+        if not confirm_three(master_key, ask, say):
+            raise RefuseStart("the words were not confirmed; no key was made")
+    now = master.now()
+    ring = master.wrap(master_key, master.new_data_key(), now, now)
+    master.write_keyring(config.keyring_path, ring, _owner())
+    say(
+        f"Made the keyring for {master.fingerprint(master_key)}. The phrase is the key and is "
+        "not stored: start the server, then unlock it with the phrase."
+    )
     return master_key
 
 
-def check(config: Config, say: Say = _say) -> master.Unlocked:
-    unlocked = master.open_keys(config)
-    say(f"ok: {master.fingerprint(unlocked.master_id)} unwraps the data key")
-    return unlocked
-
-
-def _read(config: Config) -> bytes:
-    return master.check_key_file(config.key_file, config.data_dir, config.backup_dir)
-
-
-def show_phrase(config: Config, say: Say = _say, file: Path | None = None) -> None:
-    key = _read(config)
-    ring = master.read_keyring(config.keyring_path)
-    text = sheet(key, config.name, ring.master_created.date())
-    if file:
-        fd = os.open(file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, "w") as f:
-            f.write(text + "\n")
-        say(f"Wrote the recovery sheet to {file}. Print it, then delete the file.")
-    else:
-        say(text)
+def fingerprint_of(config: Config) -> str:
+    """The fingerprint of the master key the keyring was wrapped under; no phrase needed."""
+    return master.fingerprint(master.read_keyring(config.keyring_path).master_id)
 
 
 def verify(
     config: Config,
-    ask: Ask = input,
+    ask: Ask = _hidden,
     say: Say = _say,
     record: Callable[[str, bool], None] | None = None,
 ) -> bool:
-    """Whether a typed phrase matches the running key, changing nothing (S15.6.5)."""
-    key = _read(config)
+    """Whether a typed phrase unwraps this server's keyring, changing nothing (S15.6.5)."""
+    ring = master.read_keyring(config.keyring_path)
     try:
         typed = phrase.from_words(ask("recovery phrase (12 words): "))
     except phrase.PhraseError as e:
         say(f"not a valid phrase: {e}")
         return False
-    ok = pysecrets.compare_digest(typed, key)
+    try:
+        master.unwrap(typed, ring)
+        ok = True
+    except ValueError:
+        ok = False
     say(
-        f"match: the phrase is the key {master.fingerprint(key)}"
+        f"match: the phrase is the key {master.fingerprint(ring.master_id)}"
         if ok
-        else "no match: these words are a different key"
+        else f"no match: these words are {master.fingerprint(typed)}, not this server's key "
+        f"{master.fingerprint(ring.master_id)}"
     )
     if record:
-        record(master.key_id(key), ok)
+        record(ring.master_id, ok)
     return ok
 
 
-def rotate(config: Config, ask: Ask = input, say: Say = _say) -> tuple[str, str]:
-    """A new master key re-wraps the data key in one step (S15.7.1). Nothing else changes."""
-    if config.path is None:
+def pending_reencrypt(config: Config) -> Path:
+    return config.keyring_path.with_name(config.keyring_path.name + ".next")
+
+
+def _base(config: Config) -> str:
+    scheme = "https" if config.mode == "tls" else "http"
+    return f"{scheme}://127.0.0.1:{config.port}"
+
+
+def _running(config: Config) -> bool:
+    """Whether the server is up and unlocked on this host's loopback."""
+    import httpx
+
+    try:
+        r = httpx.get(f"{_base(config)}/ui/api/unlock", verify=False, timeout=5)  # noqa: S501
+    except httpx.HTTPError:
+        return False
+    return r.status_code == 200 and r.json().get("locked") is False
+
+
+def rotate(
+    config: Config,
+    ask: Ask = input,
+    say: Say = _say,
+    ask_hidden: Ask = _hidden,
+    running: bool | None = None,
+) -> tuple[str, str]:
+    """A new master key re-wraps the data key in one step (S15.7.1): the new phrase shown and
+    confirmed, the keyring written with the old key recorded. Through the running server when
+    it is up (it holds the data key, so no old phrase is needed: the way out of a lost
+    phrase); with the old phrase typed when it is stopped. Nothing else changes."""
+    running = _running(config) if running is None else running
+    if running:
+        new_key = master.new_master()
+        say(sheet(new_key, config.name, dt.date.today()))
+        say("\nType back three of the words to show they are written down.")
+        if not confirm_three(new_key, ask, say):
+            raise RefuseStart("the words were not confirmed; the key was not rotated")
+        return _rotate_online(config, new_key, say)
+    if not os.access(config.keyring_path.parent, os.W_OK):
         raise RefuseStart(
-            "rotation records the previous key in moneykata.toml: run it with --config"
+            f"{config.keyring_path.parent} is not writable: rotation writes the keyring "
+            "(in Docker: `docker compose run --rm moneykata keys rotate`)"
         )
-    # Everything rotation writes is checked first, so a read-only mount stops it before any
-    # key is moved rather than halfway through.
-    for target in (config.path, config.key_file.parent, config.keyring_path.parent):
-        if not os.access(target, os.W_OK):
-            raise RefuseStart(
-                f"{target} is not writable: rotation writes the key directory, the keyring and "
-                "moneykata.toml (in Docker: `docker compose run --rm keys-rotate`)"
-            )
-    old_key = _read(config)
+    if pending_reencrypt(config).exists():
+        raise RefuseStart(
+            "a re-encryption is pending: start and unlock the server so it finishes, then rotate"
+        )
+    old_key = read_phrase(ask_hidden, "current recovery phrase (12 words): ")
     ring = master.read_keyring(config.keyring_path)
-    data_key = master.unwrap(old_key, ring)
+    try:
+        data_key = master.unwrap(old_key, ring)
+    except ValueError:
+        raise RefuseStart(
+            f"those words are {master.fingerprint(old_key)}, not this server's key "
+            f"{master.fingerprint(ring.master_id)}"
+        ) from None
     new_key = master.new_master()
     say(sheet(new_key, config.name, dt.date.today()))
     say("\nType back three of the words to show they are written down.")
     if not confirm_three(new_key, ask, say):
         raise RefuseStart("the words were not confirmed; the key was not rotated")
-    stamp = dt.date.today().strftime("%Y%m%d")
-    kept = config.key_file.with_name(f"{config.key_file.stem}-{stamp}{config.key_file.suffix}")
-    n = 1
-    while kept.exists():
-        n += 1
-        kept = kept.with_name(f"{config.key_file.stem}-{stamp}-{n}{config.key_file.suffix}")
-    os.rename(config.key_file, kept)
-    master.write_key_file(config.key_file, new_key, _owner())
-    new_ring = master.wrap(new_key, data_key, master.now(), ring.data_key_created)
-    master.write_keyring(config.keyring_path, new_ring, _owner())
-    previous = (*config.previous_keys, PreviousKey(kept, master.fingerprint(old_key)))
-    write_previous(config.path, previous)
+    master.write_keyring(
+        config.keyring_path, master.rotated(ring, data_key, new_key, master.now()), _owner()
+    )
     old_fp, new_fp = master.fingerprint(old_key), master.fingerprint(new_key)
-    say(f"Rotated: {old_fp} → {new_fp}. Back up the new phrase now, then restart the server.")
-    say(f"Keep {kept.name} until every backup made before today has been pruned.")
+    _said_rotated(say, old_fp, new_fp)
     return old_fp, new_fp
 
 
-def write_previous(path: Path, previous: tuple[PreviousKey, ...]) -> None:
-    """Set `previous = [...]` under [keys] in moneykata.toml, keeping the rest as written."""
-    text = path.read_text()
-    entries = ", ".join(
-        f'{{ path = "{p.path}", fingerprint = "{p.fingerprint}" }}' for p in previous
+def _rotate_online(config: Config, new_key: bytes, say: Say) -> tuple[str, str]:
+    import httpx
+
+    base = _base(config)
+    # This container's own listener on loopback; its certificate may be self-signed.
+    r = httpx.post(
+        f"{base}/ui/api/keys/rotate",
+        json={"phrase": " ".join(phrase.to_words(new_key))},
+        headers={"Origin": base},
+        verify=False,  # noqa: S501
+        timeout=300,
     )
-    line = f"previous = [{entries}]"
-    lines = text.splitlines()
-    start = next((i for i, x in enumerate(lines) if x.strip() == "[keys]"), None)
-    if start is None:
-        lines += ["", "[keys]", line]
-    else:
-        end = next(
-            (i for i in range(start + 1, len(lines)) if re.match(r"^\s*\[", lines[i])), len(lines)
+    if r.status_code != 200:
+        raise RefuseStart(f"the server refused the rotation: {r.json().get('detail', r.text)}")
+    out = r.json()
+    _said_rotated(say, out["from"], out["to"])
+    return out["from"], out["to"]
+
+
+def _said_rotated(say: Say, old_fp: str, new_fp: str) -> None:
+    say(f"Rotated: {old_fp} → {new_fp}. Back up the new phrase now.")
+    say(
+        "The server unlocks with the new phrase from its next start. Keep the old phrase until "
+        "every copy made before today is gone (S15.7.1)."
+    )
+
+
+def unlock(config: Config, ask: Ask = _hidden, say: Say = _say) -> int:
+    """`moneykata keys unlock` (S15.4.3): the phrase handed to the server running on this
+    host, over its own listener on loopback, the way the unlock page hands it over."""
+    import httpx
+
+    words = ask("recovery phrase (12 words): ")
+    try:
+        phrase.from_words(words)
+    except phrase.PhraseError as e:
+        say(f"refused: not a valid phrase: {e}")
+        return 1
+    base = _base(config)
+    try:
+        # This container's own listener on loopback; its certificate may be self-signed.
+        r = httpx.post(
+            f"{base}/ui/api/unlock",
+            json={"phrase": words},
+            headers={"Origin": base},
+            verify=False,  # noqa: S501
+            timeout=300,
         )
-        for i in range(start + 1, end):
-            if re.match(r"^\s*previous\s*=", lines[i]):
-                lines[i] = line
-                break
-        else:
-            lines.insert(end, line)
-    with open(path, "r+") as f:  # in place: the file may be a single-file bind mount
-        f.seek(0)
-        f.write("\n".join(lines) + "\n")
-        f.truncate()
+    except httpx.HTTPError as e:
+        say(f"refused: the server isn't answering on {base}: {e}")
+        return 1
+    if r.status_code == 200:
+        say(f"unlocked: {r.json().get('fingerprint', '')}")
+        return 0
+    detail = r.json().get("detail", r.text) if r.headers.get("content-type") else r.text
+    say(f"refused: {detail}")
+    return 1
 
 
 def register(sub) -> None:
-    k = sub.add_parser("keys", help="the master key and its recovery phrase (S15)")
+    k = sub.add_parser("keys", help="the master key: its recovery phrase and the keyring (S15)")
     ks = k.add_subparsers(dest="keys_command", required=True)
-    i = ks.add_parser("init", help="make the master key and the data key")
-    i.add_argument(
-        "--from-phrase", action="store_true", help="write the key back from its recovery phrase"
+    ks.add_parser(
+        "init", help="a new master key, shown as its phrase, and a new data key"
+    ).set_defaults(func=lambda a: (init(load(Path(a.config))), 0)[1])
+    ks.add_parser("fingerprint", help="print the fingerprint of the key in use").set_defaults(
+        func=lambda a: (print(fingerprint_of(load(Path(a.config)))), 0)[1]
     )
-    i.set_defaults(func=lambda a: (init(load(Path(a.config)), from_phrase=a.from_phrase), 0)[1])
-    ks.add_parser("check", help="run the start-up checks on the key").set_defaults(
-        func=lambda a: (check(load(Path(a.config))), 0)[1]
-    )
-    ks.add_parser("fingerprint", help="print the key's fingerprint").set_defaults(
-        func=lambda a: (print(master.fingerprint(_read(load(Path(a.config))))), 0)[1]
-    )
-    p = ks.add_parser("phrase", help="show the recovery phrase again")
-    p.add_argument("--file", type=Path, help="write it as a recovery sheet to print")
-    p.set_defaults(func=lambda a: (show_phrase(load(Path(a.config)), file=a.file), 0)[1])
-    ks.add_parser("verify", help="check a typed phrase against the key").set_defaults(
+    ks.add_parser("verify", help="check a typed phrase against the keyring").set_defaults(
         func=_verify_cmd
     )
-    ks.add_parser("rotate", help="replace the master key").set_defaults(func=_rotate_cmd)
+    ks.add_parser(
+        "rotate", help="a new master key and phrase: through the running server, or offline"
+    ).set_defaults(func=_rotate_cmd)
+    ks.add_parser("unlock", help="unlock the server running on this host").set_defaults(
+        func=lambda a: unlock(load(Path(a.config)))
+    )
 
 
 def _verify_cmd(args) -> int:
-    from ..store.maintenance import record_key_event
+    from ..store.maintenance import queue_host_event
 
     config = load(Path(args.config))
     ok = verify(
         config,
-        record=lambda kid, ok: record_key_event(
+        record=lambda kid, ok: queue_host_event(
             config,
             "key.verified" if ok else "key.verify-failed",
             {"fingerprint": master.fingerprint(kid)},
@@ -269,9 +315,11 @@ def _verify_cmd(args) -> int:
 
 
 def _rotate_cmd(args) -> int:
-    from ..store.maintenance import record_key_event
+    from ..store.maintenance import queue_host_event
 
     config = load(Path(args.config))
-    old_fp, new_fp = rotate(config)
-    record_key_event(load(Path(args.config)), "key.rotated", {"from": old_fp, "to": new_fp})
+    running = _running(config)
+    old_fp, new_fp = rotate(config, running=running)
+    if not running:  # the running server records its own rotation in Activity
+        queue_host_event(config, "key.rotated", {"from": old_fp, "to": new_fp})
     return 0

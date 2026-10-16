@@ -1,6 +1,6 @@
 # MoneyKata's configuration (requirements S13.3, S15.4). Mounted read only at
-# /etc/moneykata.toml; `moneykata keys rotate` is the one command that writes to it.
-# It never holds a secret: those are in the database, encrypted (S14.4).
+# /etc/moneykata.toml. It never holds a secret: those are in the database, encrypted (S14.4), and the master key
+# is a recovery phrase entered when the server starts, never a file.
 
 [server]
 # Shown in logs and the self-signed certificate. The name linked servers see is set in
@@ -16,13 +16,6 @@ trusted_proxies = ["172.16.0.0/12"]
 [paths]
 data = "/var/lib/moneykata"
 backups = "/var/backups/moneykata"
-
-[keys]
-# The master key file, from the key directory mounted read only (S15.4). Never inside the
-# data or backup directory.
-master = "/etc/moneykata/master.key"
-# Keys kept after a rotation until the backups made before it are pruned (S15.7):
-# previous = [{ path = "/etc/moneykata/master-2026.key", fingerprint = "mk-3f9a…c21e" }]
 
 # [tls]   in "tls" mode: a certificate and key; without them, a self-signed pair is made on
 # cert = "/etc/moneykata/tls/fullchain.pem"   first start and kept in the data directory.

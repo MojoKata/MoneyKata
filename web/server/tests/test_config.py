@@ -8,7 +8,6 @@ from moneykata.main import main
 BASE = {
     "server": {"name": "home", "mode": "proxy", "trusted_proxies": ["10.0.0.0/8"]},
     "paths": {"data": "/var/lib/moneykata", "backups": "/var/backups/moneykata"},
-    "keys": {"master": "/etc/moneykata/master.key"},
 }
 
 
@@ -20,6 +19,7 @@ def test_parses_a_full_config():
     assert str(c.trusted_proxies[0]) == "10.0.0.0/8"
     assert c.db_path == Path("/var/lib/moneykata/moneykata.db")
     assert c.mail_dir == Path("/var/lib/moneykata/mail")
+    assert c.keyring_path == Path("/var/lib/moneykata/keyring")
 
 
 @pytest.mark.parametrize(
@@ -28,8 +28,8 @@ def test_parses_a_full_config():
         ({"server": {"mode": "open"}}, "server.mode"),
         ({"server": {"port": 0}}, "server.port"),
         ({"server": {"trusted_proxies": ["nope"]}}, "trusted_proxies"),
-        ({"keys": {"master": "/var/lib/moneykata/master.key"}}, "inside the data directory"),
-        ({"keys": {"master": "/var/backups/moneykata/k"}}, "inside the backup directory"),
+        ({"keys": {"master": "/etc/moneykata/master.key"}}, "is not used"),
+        ({"paths": {"data": "/d", "backups": "/d/backups"}}, "inside the data directory"),
         ({"paths": {"data": "relative", "backups": "/b"}}, "absolute"),
         ({"tls": {"cert": "/a.crt"}}, "both cert and key"),
         ({"tls": {"names": "money.lan"}}, "list of host names"),
@@ -58,7 +58,7 @@ def test_refused_start_exits_78_with_one_line(tmp_path, capsys):
     assert code == 78
     err = capsys.readouterr().err.strip().splitlines()
     assert err[-1].startswith("refusing to start: ")
-    assert main(["--config", str(tmp_path / "none.toml"), "keys", "check"]) == 78
+    assert main(["--config", str(tmp_path / "none.toml"), "keys", "fingerprint"]) == 78
     assert capsys.readouterr().err.strip().splitlines()[-1].startswith("refused: ")
 
 
@@ -104,7 +104,6 @@ def test_tls_names_join_the_self_signed_certificate(tmp_path):
     raw = {k: dict(v) for k, v in BASE.items()}
     raw["server"]["mode"] = "tls"
     raw["paths"] = {"data": str(tmp_path / "data"), "backups": str(tmp_path / "backups")}
-    raw["keys"] = {"master": str(tmp_path / "keys" / "master.key")}
     raw["tls"] = {"names": ["money.lan", "192.168.1.20"]}
     config = parse(raw, "test")
     assert config.cert_names == ("money.lan", "192.168.1.20")

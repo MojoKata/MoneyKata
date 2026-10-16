@@ -75,8 +75,9 @@ descriptor) and a few of whose transactions are known. Mainnet.
 **Needs:** a Raspberry Pi 4 (4 GB) or 5, or an arm64 NAS, with Docker, and the images built
 with `--platform linux/amd64,linux/arm64`.
 
-1. Load both images; install as `operations.md` §2; `keys init`; start. Passing: `docker
-   compose ps` shows healthy within two minutes; the default admin's setup works.
+1. Load both images; install as `operations.md` §2; `keys init`; start; unlock with the
+   phrase. Passing: `/healthz` says `locked` first, `docker compose ps` shows healthy within
+   two minutes of the unlock, and the default admin's setup works.
 2. Upload a receipt photo and a statement PDF. Passing: both are read; note the seconds each
    took (S9.8.4.5 expects 3–10 s a receipt on a Pi 5).
 3. Run a day of use: imports, a backup at its time, a price refresh. Passing: no `unhealthy`,
@@ -115,16 +116,18 @@ as ofxhome.com lists them), a routing and account number, and a sign-in.
 
 ## T10–T11: Proxmox and TrueNAS
 
-Follow `operations.md` §2.1 or §2.2 on the real host. Passing: the install reaches healthy,
-a restart keeps the data, the keys dataset or mount is left out of the host's own backups,
-and a backup lands on the other pool or disk. Record what the page didn't say and fix it.
+Follow `operations.md` §2.1 or §2.2 on the real host. Passing: the install reaches healthy
+once unlocked, a restart comes back locked and the phrase opens it with the data intact, a
+snapshot of the host holds no key (search it for the keyring's fingerprint and the phrase's
+words: neither is there), and a backup lands on the other pool or disk. Record what the page
+didn't say and fix it.
 
 ## T12: a restore onto a new host
 
-Follow `operations.md` §6.2 with the phrase read from its offline copy. Passing: the key is
-written from the phrase, the restore refuses a changed backup and accepts the real one, the
-server starts, every account and receipt is there, and linked copies pull again. Record the
-time it took.
+Follow `operations.md` §6.2 with the phrase read from its offline copy. Passing: the restore
+refuses a changed backup, a wrong phrase, and accepts the real one with the real phrase; the
+server starts locked and unlocks with the phrase; every account and receipt is there, and
+linked copies pull again. Record the time it took.
 
 ## T13: the connector on another machine
 

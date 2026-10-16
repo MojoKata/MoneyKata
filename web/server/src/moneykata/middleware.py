@@ -40,7 +40,9 @@ def _send_problem(status: int, code: str, detail: str, headers=()):
     body = json.dumps(
         {
             "type": f"https://moneykata.invalid/problems/{code}",
-            "title": {403: "Not allowed", 413: "Too large"}.get(status, "Error"),
+            "title": {403: "Not allowed", 413: "Too large", 503: "Not available"}.get(
+                status, "Error"
+            ),
             "status": status,
             "detail": detail,
             "code": code,
@@ -319,3 +321,36 @@ class SessionCookie:
             await send(message)
 
         await self.app(scope, receive, wrapped)
+
+
+class Locked:
+    """While the server is locked (S13.6, S15.4.3), only what unlocking needs answers: the
+    app's page and files, the health check, the demo and the unlock route. Everything else,
+    the API, the link, connector and MCP listeners included, answers 503 `locked`."""
+
+    OPEN = frozenset({"/", "/healthz", "/demo", "/ui", "/ui/api/unlock"})
+
+    def __init__(self, app, locked: Callable[[], bool]):
+        self.app = app
+        self.locked = locked
+
+    @classmethod
+    def allowed(cls, path: str) -> bool:
+        if path in cls.OPEN:
+            return True
+        return path.startswith("/ui/") and not path.startswith("/ui/api/")
+
+    async def __call__(self, scope, receive, send):
+        if (
+            scope["type"] in ("http", "websocket")
+            and self.locked()
+            and not self.allowed(scope["path"])
+        ):
+            await _send_problem(
+                503,
+                "locked",
+                "MoneyKata is locked: an admin enters the recovery phrase to open it.",
+                [(b"retry-after", b"30"), (b"cache-control", b"no-store")],
+            )(send)
+            return
+        await self.app(scope, receive, send)

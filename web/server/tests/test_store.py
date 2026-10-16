@@ -184,22 +184,27 @@ def test_live_leaves_out_deleted_records(db):
     assert names == ["b"]
 
 
-def test_a_newer_database_refuses_the_start(store, keyed_config):
+def test_a_newer_database_refuses_the_start(store, keyed_config, master_key):
     with store.db.engine.begin() as conn:
         conn.exec_driver_sql("UPDATE \"SchemaRevision\" SET version_num = '9999'")
     store.db.dispose()
     with pytest.raises(RefuseStart, match="newer MoneyKata"):
-        maintenance.open_store(keyed_config)
+        maintenance.open_store(keyed_config, master_key)
 
 
-def test_a_wrong_data_key_refuses_the_start(store, keyed_config):
+def test_a_wrong_data_key_refuses_the_start(store, keyed_config, master_key):
     store.db.dispose()
     ring = master.read_keyring(keyed_config.keyring_path)
-    key = keyed_config.key_file.read_bytes()
-    fresh = master.wrap(key, master.new_data_key(), ring.master_created, master.now())
+    fresh = master.wrap(master_key, master.new_data_key(), ring.master_created, master.now())
     master.write_keyring(keyed_config.keyring_path, fresh)
     with pytest.raises(RefuseStart, match="does not open with the data key"):
-        maintenance.open_store(keyed_config)
+        maintenance.open_store(keyed_config, master_key)
+
+
+def test_a_wrong_phrase_does_not_unlock(store, keyed_config):
+    store.db.dispose()
+    with pytest.raises(master.WrongPhrase, match="wrapped by"):
+        maintenance.open_store(keyed_config, os.urandom(16))
 
 
 def test_secrets_are_bound_to_their_record_and_field(store):
@@ -236,14 +241,14 @@ def test_settings_have_defaults_and_are_checked(db):
         assert settings.section(s, "backups") == {"backupTime": "02:30", "backupCopies": 14}
 
 
-def test_backup_is_verified_restorable_and_pruned(store, keyed_config, tmp_path):
+def test_backup_is_verified_restorable_and_pruned(store, keyed_config, tmp_path, master_key):
     with store.db.tx() as s:
         new_user(s)
     keyed_config.receipts_dir.mkdir(parents=True)
     (keyed_config.receipts_dir / "abc.mkr").write_bytes(b"sealed bytes")
     t0 = dt.datetime(2026, 10, 1, tzinfo=dt.UTC)
     made = [maintenance.backup(keyed_config, store, t0 + dt.timedelta(days=i)) for i in range(3)]
-    key = keyed_config.key_file.read_bytes()
+    key = master_key
     for b in made:
         maintenance.check_backup(b, key)
         assert (b / "receipts" / "abc.mkr").exists()
@@ -257,7 +262,7 @@ def test_backup_is_verified_restorable_and_pruned(store, keyed_config, tmp_path)
     restored.data_dir.mkdir()
     shutil.copy(made[-1] / "moneykata.db", restored.db_path)
     shutil.copy(made[-1] / "keyring", restored.keyring_path)
-    again = maintenance.open_store(restored)
+    again = maintenance.open_store(restored, master_key)
     with again.db.read() as s:
         assert s.scalars(select(User)).one().username == "alice"
     again.db.dispose()
@@ -267,25 +272,29 @@ def test_backup_is_verified_restorable_and_pruned(store, keyed_config, tmp_path)
         maintenance.check_backup(made[-1], key)
 
 
-def test_reencrypt_changes_the_data_key_and_keeps_everything(store, keyed_config):
+def test_reencrypt_changes_the_data_key_and_keeps_everything(store, keyed_config, master_key):
     with store.db.tx() as s:
         new_user(s)
         secret_repo.put(s, store.keys.keys.secrets, "Smtp", "Smtp_x", "password", "hunter2", None)
     old_db_key = store.keys.keys.database
-    store2 = maintenance.reencrypt(keyed_config, store)
+    with pytest.raises(master.WrongPhrase):
+        maintenance.reencrypt(keyed_config, store, os.urandom(16))
+    store2 = maintenance.reencrypt(keyed_config, store, master_key)
     assert store2.keys.keys.database != old_db_key
     with store2.db.read() as s:
         assert (
             secret_repo.use(s, store2.keys.keys.secrets, "Smtp", "Smtp_x", "password") == "hunter2"
         )
     store2.db.dispose()
-    store3 = maintenance.open_store(keyed_config)
+    store3 = maintenance.open_store(keyed_config, master_key)
     with store3.db.read() as s:
         assert s.scalars(select(User)).one().username == "alice"
     store3.db.dispose()
 
 
-def test_an_interrupted_reencrypt_is_finished_at_start(store, keyed_config, monkeypatch):
+def test_an_interrupted_reencrypt_is_finished_at_start(
+    store, keyed_config, monkeypatch, master_key
+):
     with store.db.tx() as s:
         secret_repo.put(s, store.keys.keys.secrets, "Smtp", "Smtp_x", "password", "hunter2", None)
 
@@ -294,10 +303,10 @@ def test_an_interrupted_reencrypt_is_finished_at_start(store, keyed_config, monk
 
     monkeypatch.setattr(maintenance, "_rewrap_secrets", crash)
     with pytest.raises(KeyboardInterrupt):
-        maintenance.reencrypt(keyed_config, store)
+        maintenance.reencrypt(keyed_config, store, master_key)
     monkeypatch.undo()
     assert maintenance.next_keyring(keyed_config).exists()
-    again = maintenance.open_store(keyed_config)
+    again = maintenance.open_store(keyed_config, master_key)
     assert not maintenance.next_keyring(keyed_config).exists()
     with again.db.read() as s:
         assert (
@@ -306,7 +315,7 @@ def test_an_interrupted_reencrypt_is_finished_at_start(store, keyed_config, monk
     again.db.dispose()
 
 
-def test_migration_copies_the_database_first(store, keyed_config, monkeypatch):
+def test_migration_copies_the_database_first(store, keyed_config, monkeypatch, master_key):
     with store.db.tx() as s:
         new_user(s)
     store.db.dispose()
@@ -323,7 +332,7 @@ def test_migration_copies_the_database_first(store, keyed_config, monkeypatch):
     for i in range(3):  # three copies from earlier upgrades, oldest first
         (older / f"moneykata-before-000{i}-x.db").write_bytes(b"old")
         os.utime(older / f"moneykata-before-000{i}-x.db", (1_000_000 + i, 1_000_000 + i))
-    maintenance.open_store(keyed_config).db.dispose()
+    maintenance.open_store(keyed_config, master_key).db.dispose()
     copies = sorted(p.name for p in older.iterdir())
     assert calls == ["head"]
     # The new copy and the two newest before it: the oldest is removed.
@@ -457,7 +466,7 @@ def test_revisions_carry_a_database_from_0001_to_head(tmp_path):
     assert differ == []
 
 
-def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_config):
+def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_config, master_key):
     """`moneykata db restore` (S15.6.8): the backup checked, what it replaces moved aside, and
     the restored database opens at the server's next start."""
     with store.db.tx() as s:
@@ -465,7 +474,9 @@ def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_conf
     keyed_config.receipts_dir.mkdir(parents=True)
     (keyed_config.receipts_dir / "abc.mkr").write_bytes(b"sealed bytes")
     made = maintenance.backup(keyed_config, store)
-    assert maintenance.verify_backup(keyed_config) == made
+    assert maintenance.verify_backup(keyed_config, master_key) == made
+    with pytest.raises(RefuseStart, match="does not open with that phrase"):
+        maintenance.verify_backup(keyed_config, os.urandom(16))
     with store.db.tx() as s:
         new_user(s, "bob")
     (keyed_config.receipts_dir / "later.mkr").write_bytes(b"after the backup")
@@ -473,28 +484,30 @@ def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_conf
 
     held = maintenance.lock_data_dir(keyed_config, "test")
     with pytest.raises(RefuseStart, match="stop the server before restoring"):
-        maintenance.restore(keyed_config, made)
+        maintenance.restore(keyed_config, made, master_key)
     held.close()
 
-    aside = maintenance.restore(keyed_config, made)
+    aside = maintenance.restore(keyed_config, made, master_key)
     assert sorted(p.name for p in (aside / "receipts").iterdir()) == ["abc.mkr", "later.mkr"]
     assert sorted(p.name for p in keyed_config.receipts_dir.iterdir()) == ["abc.mkr"]
-    again = maintenance.open_store(keyed_config)
+    again = maintenance.open_store(keyed_config, master_key)
     with again.db.read() as s:
         assert [u.username for u in s.scalars(select(User))] == ["alice"]
     again.db.dispose()
 
 
-def test_restore_refuses_a_changed_backup_or_one_from_a_newer_release(store, keyed_config):
+def test_restore_refuses_a_changed_backup_or_one_from_a_newer_release(
+    store, keyed_config, master_key
+):
     made = maintenance.backup(keyed_config, store)
     store.db.dispose()
     manifest = made / "manifest.json"
     head = f'"revision": "{migrate.head()}"'
     manifest.write_text(manifest.read_text().replace(head, '"revision": "9999"'))
     with pytest.raises(RefuseStart, match="from a newer MoneyKata"):
-        maintenance.restore(keyed_config, made)
+        maintenance.restore(keyed_config, made, master_key)
     assert keyed_config.db_path.exists()  # nothing was moved
     with open(made / "moneykata.db", "ab") as f:
         f.write(b"x")
     with pytest.raises(RuntimeError, match="has changed since the backup"):
-        maintenance.verify_backup(keyed_config, made)
+        maintenance.verify_backup(keyed_config, master_key, made)

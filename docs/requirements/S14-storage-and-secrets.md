@@ -42,9 +42,10 @@
    decrypted only when used, never logged, and never sent back to the browser: the UI shows
    a stored secret as *set*, with when and by whom. Passwords, two-step recovery codes, and session,
    reset and invitation tokens are stored as hashes.
-5. **The master key**: 128 random bits in a file on the host, outside the data directory and
-   its backups, never in the database, backed up as a 12-word recovery phrase. S15 covers how it is made, protected, backed up,
-   restored and rotated.
+5. **The master key**: 128 random bits that exist only as a 12-word recovery phrase, in the
+   admin's keeping, and in the server's memory while it unwraps the data key at each start.
+   It is never stored: not on the host, not in the database, not in a backup. S15 covers how
+   it is made, entered, protected and rotated.
 6. **Backups**: daily and verified, of the database **and the receipts directory**, to a
    directory set on the host; the time of day and the number of copies kept are Settings. The
    server makes and verifies (`PRAGMA integrity_check`) the copies itself, and prunes the
@@ -56,8 +57,9 @@
    restore is documented, and tested by a check. Linked copies (`links/`) are left out: they
    can't be checked without their access keys, and they are pulled again from their sources
    after a restore (S11.9.9).
-7. **Financial data at rest** is encrypted with the rest of the database (S15.1). Ordinary SQLite tools can't read it. `moneykata db shell` opens it,
-   as root on the host, with the key from the key file.
+7. **Financial data at rest** is encrypted with the rest of the database (S15.1). Ordinary
+   SQLite tools can't read it. `moneykata db shell` opens it on the host, with the recovery
+   phrase typed.
 8. **Export**: a user can export their own data (accounts, transactions, lots, receipts) as a
    ZIP of CSVs and files, at any time. This is the way out, and the backup a single user can
    keep.

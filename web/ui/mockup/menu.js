@@ -60,6 +60,11 @@ export function openMockMenu(at, nav, route) {
     })),
     { head: true, label: 'State' },
     { label: 'Prices stale', on: mock.stale, onSelect: () => mock.setStale(!mock.stale) },
+    {
+      label: 'Server locked (after a restart)',
+      on: mock.locked,
+      onSelect: () => mock.setLocked(!mock.locked),
+    },
     { label: 'Privacy mode', on: privacy.value, onSelect: () => (privacy.value = !privacy.value) },
   ]);
 }

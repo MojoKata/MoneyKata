@@ -21,10 +21,9 @@ def make_server(tmp_path, name: str) -> Server:
         mode="proxy",
         data_dir=tmp_path / name / "data",
         backup_dir=tmp_path / name / "backups",
-        key_file=tmp_path / name / "keys" / "master.key",
     )
-    keys_cli.init(cfg, say=lambda _: None, confirm=False)
-    srv = Server(config=cfg, store=open_store(cfg), ready=True)
+    key = keys_cli.init(cfg, say=lambda _: None, confirm=False)
+    srv = Server(config=cfg, store=open_store(cfg, key), ready=True)
     with srv.db.tx() as s:
         accounts.ensure_default_admin(s)
         ensure_categories(s)

@@ -4,29 +4,41 @@ production."""
 
 import hashlib
 import logging
+import os
 
 from .. import clock
-from ..config import Config
+from ..config import Config, RefuseStart
 from ..keys import cli as keys_cli
 from ..keys import phrase
 
 log = logging.getLogger("moneykata.dev")
 
 
-def prepare(config: Config) -> None:
-    """A dev server makes its own master key on first run, without the recovery-phrase step:
-    its data is throwaway."""
-    for d in (config.data_dir, config.backup_dir, config.mail_dir, config.key_file.parent):
+def prepare(config: Config) -> bytes:
+    """A dev server makes its own master key on first run, without the recovery-phrase step,
+    and keeps the phrase in a file beside its data (`web/.dev/phrase`): dev data is throwaway,
+    and a server that asks for twelve words at every restart is no use to develop against.
+    An installed server never does this (S15.4). Returns the key, for the unlock at start."""
+    for d in (config.data_dir, config.backup_dir, config.mail_dir):
         d.mkdir(mode=0o700, parents=True, exist_ok=True)
-    if not config.key_file.exists():
-        if clock.frozen():
-            # The generated mockup's build: a key made from fixed words, so its fingerprint
-            # comes out the same every time.
-            words = " ".join(phrase.to_words(hashlib.sha256(b"mockup").digest()[:16]))
-            keys_cli.init(config, ask=lambda _: words, say=lambda _: None, from_phrase=True)
-        else:
-            keys_cli.init(config, say=lambda _: None, confirm=False)
-        log.info("dev: made a master key in %s", config.key_file)
+    phrase_file = config.data_dir.parent / "phrase"
+    if not config.keyring_path.exists():
+        # The generated mockup's build (a frozen clock): a key made from fixed words, so its
+        # fingerprint comes out the same every time.
+        key = hashlib.sha256(b"mockup").digest()[:16] if clock.frozen() else os.urandom(16)
+        keys_cli.init(config, say=lambda _: None, confirm=False, master_key=key)
+        fd = os.open(phrase_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(" ".join(phrase.to_words(key)) + "\n")
+        log.info("dev: made a master key; its phrase is in %s", phrase_file)
+        return key
+    try:
+        return phrase.from_words(phrase_file.read_text())
+    except (OSError, phrase.PhraseError) as e:
+        raise RefuseStart(
+            f"dev: {config.keyring_path} exists but {phrase_file} doesn't hold its phrase ({e}); "
+            f"remove {config.data_dir.parent} to start over"
+        ) from None
 
 
 def after_start(server, seed: bool) -> None:

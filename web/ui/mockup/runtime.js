@@ -49,6 +49,15 @@
   } catch {
     // no storage: prices are fresh
   }
+  // The server locked after a restart (S15.4.3), until the phrase is entered: a state of the
+  // mockup's own, since the recorded server was unlocked for the crawl.
+  const LOCKED = 'mk-mockup-locked';
+  let locked = false;
+  try {
+    locked = localStorage.getItem(LOCKED) === '1';
+  } catch {
+    // no storage: unlocked
+  }
 
   /** A request's key: its path and its query in order, less what only says "now". */
   const keyOf = (/** @type {string} */ url) => {
@@ -82,6 +91,28 @@
       );
     }
     const key = keyOf(url);
+    if (key === '/ui/api/unlock') {
+      if (method === 'POST') {
+        locked = false;
+        try {
+          localStorage.setItem(LOCKED, '0');
+        } catch {
+          // without storage the page comes back unlocked anyway
+        }
+      }
+      return Promise.resolve(
+        json(200, { locked, fingerprint: 'mk-b7ef…5f6d', version: data.version || '' }),
+      );
+    }
+    if (locked && key.startsWith('/ui/api/')) {
+      return Promise.resolve(
+        json(503, {
+          code: 'locked',
+          title: 'Not available',
+          detail: 'MoneyKata is locked: an admin enters the recovery phrase to open it.',
+        }),
+      );
+    }
     if (key === '/ui/api/session') {
       if (method === 'DELETE') signedIn = false;
       if (method === 'POST') signedIn = true;
@@ -135,6 +166,15 @@
     users: data.users,
     user,
     stale,
+    locked,
+    setLocked(/** @type {boolean} */ on) {
+      try {
+        localStorage.setItem(LOCKED, on ? '1' : '0');
+      } catch {
+        // without storage the page comes back unlocked
+      }
+      location.reload();
+    },
     setStale(/** @type {boolean} */ on) {
       try {
         localStorage.setItem(STALE, on ? '1' : '0');

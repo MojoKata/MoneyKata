@@ -1450,7 +1450,6 @@
 
 /**
  * @typedef {Object} KeyStorage
- * @property {string} keyFile
  * @property {string} fingerprint
  * @property {string} created
  * @property {number} ageDays
@@ -1564,6 +1563,13 @@
  * @property {(Following | null)} [following]
  * @property {boolean} canWrite
  * @property {number} [version]
+ */
+
+/**
+ * @typedef {Object} LockState
+ * @property {boolean} locked
+ * @property {(string | null)} fingerprint
+ * @property {string} version
  */
 
 /**
@@ -2468,6 +2474,11 @@
  */
 
 /**
+ * @typedef {Object} Phrase
+ * @property {string} phrase
+ */
+
+/**
  * @typedef {Object} PickIn
  * @property {string} lotId
  * @property {import('../app/dec.js').Dec} quantity
@@ -2585,7 +2596,6 @@
 /**
  * @typedef {Object} PreviousKeyOut
  * @property {string} fingerprint
- * @property {string} path
  * @property {(string | null)} removableAfter
  */
 
@@ -2872,6 +2882,11 @@
  * @property {number} count
  * @property {boolean} missed
  * @property {boolean} changed
+ */
+
+/**
+ * @typedef {Object} ReencryptIn
+ * @property {string} phrase
  */
 
 /**

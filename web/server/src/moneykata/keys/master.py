@@ -1,9 +1,11 @@
 """The three levels of keys (requirements S15.3).
 
-The **master key** (128 bits) sits in one file on the host and wraps one thing: the **data
-key** (256 bits), kept wrapped in the data directory's `keyring`, so it travels with every
-backup. From the data key HKDF-SHA256 derives the database key, the receipts key pair and the
-secrets key, each under its own label.
+The **master key** (128 bits) is the recovery phrase, never stored: an admin enters it when the
+server starts (S15.4). It wraps one thing: the **data key** (256 bits), kept wrapped in the
+data directory's `keyring`, so it travels with every backup and copy. From the data key
+HKDF-SHA256 derives the database key, the receipts key pair and the secrets key, each under
+its own label. The master key is held only while it unwraps or wraps; the data keys for the
+server's lifetime.
 """
 
 import base64
@@ -11,7 +13,6 @@ import datetime as dt
 import hashlib
 import json
 import os
-import stat
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -58,60 +59,16 @@ def now() -> dt.datetime:
     return clock.now().replace(microsecond=0)
 
 
-# ---------- the key file ----------
-
-
-def check_key_file(path: Path, data_dir: Path, backup_dir: Path) -> bytes:
-    """Read the master key, refusing every condition of S15.4.4."""
-    try:
-        st = os.lstat(path)
-    except FileNotFoundError:
-        raise RefuseStart(
-            f"the master key {path} does not exist; make it with `moneykata keys init`"
-        ) from None
-    except PermissionError:
-        raise RefuseStart(f"the master key {path} cannot be reached by this account") from None
-    if not stat.S_ISREG(st.st_mode):
-        raise RefuseStart(f"the master key {path} is not a regular file")
-    resolved = path.resolve()
-    for d, label in ((data_dir, "data"), (backup_dir, "backup")):
-        if resolved.is_relative_to(d.resolve()):
-            raise RefuseStart(f"the master key {path} is inside the {label} directory")
-    mode = stat.S_IMODE(st.st_mode)
-    if mode & 0o044:
-        raise RefuseStart(
-            f"the master key {path} can be read by others (mode {mode:04o}; it must be 0400)"
-        )
-    if mode & 0o022 or (mode & 0o200 and st.st_uid != 0):
-        raise RefuseStart(
-            f"the master key {path} can be written by an account other than "
-            f"root (mode {mode:04o}; it must be 0400)"
-        )
-    if st.st_size != KEY_BYTES:
-        raise RefuseStart(f"the master key {path} is not exactly {KEY_BYTES} bytes")
-    try:
-        data = path.read_bytes()
-    except PermissionError:
-        raise RefuseStart(f"the master key {path} cannot be read by this account") from None
-    if len(data) != KEY_BYTES:
-        raise RefuseStart(f"the master key {path} is not exactly {KEY_BYTES} bytes")
-    return data
-
-
-def write_key_file(path: Path, master: bytes, owner: int | None = None) -> None:
-    """Write a new key file, mode 0400, refusing to overwrite one."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o400)
-    try:
-        os.write(fd, master)
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-    if owner is not None:
-        os.chown(path, owner, owner)
-
-
 # ---------- the keyring: the wrapped data key ----------
+
+
+@dataclass(frozen=True)
+class Previous:
+    """A master key this keyring was wrapped under before a rotation (S15.7.1): its id, so
+    Settings can say which copies made before that date still open with its phrase."""
+
+    master_id: str
+    rotated: dt.datetime
 
 
 @dataclass(frozen=True)
@@ -121,6 +78,7 @@ class Keyring:
     data_key_created: dt.datetime
     nonce: bytes
     wrapped: bytes
+    previous: tuple[Previous, ...] = ()
 
     def to_json(self) -> str:
         return (
@@ -132,6 +90,10 @@ class Keyring:
                     "dataKeyCreatedAt": self.data_key_created.isoformat(),
                     "nonce": _b64(self.nonce),
                     "wrapped": _b64(self.wrapped),
+                    "previous": [
+                        {"masterKeyId": p.master_id, "rotatedAt": p.rotated.isoformat()}
+                        for p in self.previous
+                    ],
                 },
                 indent=2,
             )
@@ -149,6 +111,10 @@ class Keyring:
             dt.datetime.fromisoformat(d["dataKeyCreatedAt"]),
             _unb64(d["nonce"]),
             _unb64(d["wrapped"]),
+            tuple(
+                Previous(p["masterKeyId"], dt.datetime.fromisoformat(p["rotatedAt"]))
+                for p in d.get("previous", [])
+            ),
         )
 
 
@@ -157,12 +123,27 @@ def _aad(master_id: str) -> bytes:
 
 
 def wrap(
-    master: bytes, data_key: bytes, master_created: dt.datetime, data_key_created: dt.datetime
+    master: bytes,
+    data_key: bytes,
+    master_created: dt.datetime,
+    data_key_created: dt.datetime,
+    previous: tuple[Previous, ...] = (),
 ) -> Keyring:
     nonce = os.urandom(12)
     mid = key_id(master)
     sealed = AESGCM(hkdf(master, "moneykata master")).encrypt(nonce, data_key, _aad(mid))
-    return Keyring(mid, master_created, data_key_created, nonce, sealed)
+    return Keyring(mid, master_created, data_key_created, nonce, sealed, previous)
+
+
+def rotated(ring: Keyring, data_key: bytes, new_master: bytes, at: dt.datetime) -> Keyring:
+    """The same data key wrapped under a new master key, the old one recorded (S15.7.1)."""
+    return wrap(
+        new_master,
+        data_key,
+        at,
+        ring.data_key_created,
+        (*ring.previous, Previous(ring.master_id, at)),
+    )
 
 
 def unwrap(master: bytes, ring: Keyring) -> bytes:
@@ -230,20 +211,28 @@ class DataKeys:
 
 @dataclass(frozen=True)
 class Unlocked:
+    """What the server holds once unlocked: never the master key. The raw data key stays so
+    the running server can re-wrap it under a new phrase (rotation, S15.7.1)."""
+
     master_id: str
     ring: Keyring
     keys: DataKeys
+    data_key: bytes = b""
 
 
-def open_keys(config: Config) -> Unlocked:
-    """At start: read the key file, check it, and unwrap the data key with it."""
-    master = check_key_file(config.key_file, config.data_dir, config.backup_dir)
+class WrongPhrase(ValueError):
+    """The phrase is a valid one, but not the key that wrapped this keyring."""
+
+
+def unlock_keys(config: Config, master: bytes) -> Unlocked:
+    """At unlock: unwrap the data key from the keyring with the phrase's key. The master key
+    is used here and nowhere kept."""
     ring = read_keyring(config.keyring_path)
     try:
         data_key = unwrap(master, ring)
     except ValueError as e:
-        raise RefuseStart(str(e)) from None
-    return Unlocked(key_id(master), ring, DataKeys.derive(data_key))
+        raise WrongPhrase(str(e)) from None
+    return Unlocked(key_id(master), ring, DataKeys.derive(data_key), data_key)
 
 
 def new_data_key() -> bytes:

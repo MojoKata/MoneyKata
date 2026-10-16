@@ -34,6 +34,8 @@ options.vnode = (vnode) => {
 const LINKED = location.pathname.match(/^\/ui\/linked\/([^/]+)/);
 if (LINKED) readLinked(LINKED[1]);
 const LinkedWindow = lazy(() => import('../screens/linked.js'));
+// The locked server's one screen (S15.4.3), until an admin enters the recovery phrase.
+const LockedScreen = lazy(() => import('../screens/locked.js'));
 
 function signOutLocally(/** @type {string} */ why) {
   disconnect();
@@ -49,6 +51,13 @@ function App() {
     if (s && !s.user.needsSetup) connect(signOutLocally);
   }, [s?.user?.id, s?.user?.needsSetup]);
 
+  if (ended.value === 'locked') {
+    return html`
+      <${Router}>
+        <${Route} default component=${LockedScreen} />
+        </${Router}>
+    `;
+  }
   if (PUBLIC_PATHS.some((p) => path.startsWith(p))) return html`<${PublicScreens} />`;
   if (!s) return ended.value ? html`<${PublicScreens} />` : null;
   if (s.user.needsSetup) return html`<${SetupScreen} />`;

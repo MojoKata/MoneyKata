@@ -2184,11 +2184,11 @@ label.drop {
 "GET /ui/api/relationships":{"body": {"items": [], "limit": 500, "offset": 0, "total": 0}, "status": 200},
 "GET /ui/api/session":{"body": {"dev": true, "household": {"avatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "name": "Alice & Bob"}, "serverName": "moneykata", "user": {"admin": true, "avatar": null, "bitcoinUnit": "btc", "displayName": "Admin", "email": "admin@griffin.home", "id": "User_01m4rdf800e00tf99mm9efehdp", "needsSetup": false, "theme": "dark", "timeZone": "auto", "username": "admin", "zone": "UTC"}, "version": "0.1.0"}, "status": 200},
 "GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "bitcoin": ["bitcoinSource", "bitcoinEsploraUrl", "bitcoinNodeHost", "bitcoinNodePort", "bitcoinNodeTls", "bitcoinRpcUser", "bitcoinNodeCert", "bitcoinNodeCertOffered"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "links": ["linkAddress", "linkReleaseMinutes"], "network": ["networkAppRanges", "networkLinkRanges", "networkConnectorRanges"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"], "storage": ["keepStatementsYears"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "bitcoinEsploraUrl": "https://mempool.space/api", "bitcoinNodeCert": null, "bitcoinNodeCertOffered": null, "bitcoinNodeHost": null, "bitcoinNodePort": 50002, "bitcoinNodeTls": true, "bitcoinRpcUser": null, "bitcoinSource": "esplora", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keepStatementsYears": null, "keyReminderMonths": 12, "linkAddress": null, "linkReleaseMinutes": 60, "lockoutFailures": 10, "lockoutMinutes": 15, "networkAppRanges": [], "networkConnectorRanges": ["127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "::1/128", "fc00::/7"], "networkLinkRanges": [], "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": "https://localhost:37373", "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "version": 3, "versions": {"householdAvatar": 1, "householdName": 1, "publicUrl": 1}}, "status": 200},
-"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2656363, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
+"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2656381, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
 "GET /ui/api/settings/bitcoin":{"body": {"certificate": null, "certificateOffered": null, "lastError": null, "lastRun": null, "password": null, "wallets": 1}, "status": 200},
 "GET /ui/api/settings/connector":{"body": {"codeExpiresAt": null, "connections": [{"accounts": [{"id": "Acct_01m4rdf800e02af3bqw26mpwnz", "name": "Taxable brokerage", "syncAccount": "Individual ••4417"}], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "schwab", "id": "Conn_01m4rdf800e00traevg9kh27yd", "institutionAccounts": [{"last4": "4417", "name": "Individual"}, {"last4": "0921", "name": "Rollover IRA"}], "label": "Schwab login", "lastRunAdded": 14, "lastRunAt": "2026-10-12T14:00:00Z", "message": "14 new", "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "signInAddress": null, "state": "ok", "version": 1}, {"accounts": [], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "ofx-direct", "id": "Conn_01m4rdf800e019wkhvp6w03c2y", "institutionAccounts": [{"last4": "1204", "name": "Everyday Checking"}], "label": "Credit union", "lastRunAdded": null, "lastRunAt": "2026-10-11T11:00:00Z", "message": "the password was refused", "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "signInAddress": null, "state": "needs-sign-in", "version": 1}, {"accounts": [{"id": "Acct_01m4rdf800e0490demg1an248p", "name": "Bob's checking", "syncAccount": "Joint Household ••3311"}], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "folder", "id": "Conn_01m4rdf800e01ved56y1xft4b5", "institutionAccounts": [], "label": "UMB downloads", "lastRunAdded": 1, "lastRunAt": "2026-10-11T16:00:00Z", "message": "1 statement", "ownerId": "User_01m4rdf800e01skjft3xb5ewck", "ownerName": "Bob Griffin", "signInAddress": null, "state": "ok", "version": 1}], "connectorVersion": "0.1.0", "fingerprint": "33d9 2372 0031 ba55", "lastReportAt": "2026-10-12T15:57:00Z", "locked": false, "pairedAt": "2026-10-09T12:00:00Z", "pairedBy": "Admin", "sealingKey": "W1iNnsp_S1nOWckdHewpAwI9T2ZwPGOeH5JFgWNtsV8", "serverFingerprint": "d27d 1a94 1ba0 8df5", "silentForSeconds": null, "state": "paired"}, "status": 200},
 "GET /ui/api/settings/email":{"body": {"lastError": null, "lastRun": null, "password": null, "setAside": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2707456, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
+"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2707456, "fingerprint": "mk-b7ef…5f6d", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
 "GET /ui/api/settings/links":{"body": {"address": "https://localhost:37373", "fingerprint": "d27d 1a94 1ba0 8df5", "links": [{"address": "https://money.parents.ts.net", "codeExpiresAt": null, "createdAt": "2026-10-12T16:00:00Z", "endedAt": null, "failingSince": null, "fingerprint": "2774 b0db 58c5 2747", "householdAvatar": {"color": "#7a4b9c", "initials": "MT", "kind": "initials"}, "householdName": "Margaret & Tom", "id": "Link_01m4rdf800e00ssm4x59pbnntd", "incoming": [{"includeReceipts": false, "kind": "account", "names": ["Alice Griffin", "Bob Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "account", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "budget", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "portfolio", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}], "lastError": null, "lastOkAt": "2026-10-12T16:00:00Z", "linkedCopy": {"items": 4, "keyMadeAt": "2026-10-12T16:00:00Z", "keyMadeBy": null, "locksInSeconds": null, "receipts": 0, "sizeBytes": 13272, "unlocked": false, "unlockedAt": null, "unlockedBy": null, "waiting": 1}, "pausedUntil": null, "peerName": "griffin-parents", "peerVersion": "0.1.0", "role": "inviter", "state": "active", "syncBytes": null, "syncThrough": null, "syncTotal": null, "users": [{"displayName": "Margaret Griffin", "email": "margaret@parents.home", "id": "User_01m4rdf800e029senk6fw9b9rk", "username": "margaret"}, {"displayName": "Tom Griffin", "email": "tom@parents.home", "id": "User_01m4rdf800e02sbv3fknze4jfe", "username": "tom"}]}]}, "status": 200},
 "GET /ui/api/settings/receipts":{"body": {"failed": 0, "lastRun": "2026-10-12T16:00:00Z", "read": 3, "reading": 0, "waiting": 0}, "status": 200},
 "GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2707456, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
@@ -2456,11 +2456,11 @@ label.drop {
 "GET /ui/api/relationships":{"body": {"items": [{"canChange": true, "endsOn": null, "fromDate": null, "id": "Rltn_01m4rdf800e01shhzemj9kmnfe", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e02844dfnfyp9y96", "name": "Emma Griffin"}, "relation": "child", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": null, "id": "Rltn_01m4rdf800e02bf5jgffndvbeb", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e02tsv7f23fh5z29", "name": "Carol Griffin"}, "relation": "child", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": "2015-05-01", "id": "Rltn_01m4rdf800e04reh25zer6sdkx", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e04a5zzmr1yqp0z6", "name": "Priya Shah"}, "relation": "friend", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": "2009-06-14", "id": "Rltn_01m4rdf800e00rg957k7kepe84", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e01rjw9bshc99z5y", "name": "Bob Griffin"}, "relation": "spouse", "toDate": null, "version": 1}], "limit": 500, "offset": 0, "total": 4}, "status": 200},
 "GET /ui/api/session":{"body": {"dev": true, "household": {"avatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "name": "Alice & Bob"}, "serverName": "moneykata", "user": {"admin": true, "avatar": null, "bitcoinUnit": "btc", "displayName": "Alice Griffin", "email": "alice@griffin.home", "id": "User_01m4rdf800e018w8wax25eypm1", "needsSetup": false, "theme": "dark", "timeZone": "auto", "username": "alice", "zone": "UTC"}, "version": "0.1.0"}, "status": 200},
 "GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "bitcoin": ["bitcoinSource", "bitcoinEsploraUrl", "bitcoinNodeHost", "bitcoinNodePort", "bitcoinNodeTls", "bitcoinRpcUser", "bitcoinNodeCert", "bitcoinNodeCertOffered"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "links": ["linkAddress", "linkReleaseMinutes"], "network": ["networkAppRanges", "networkLinkRanges", "networkConnectorRanges"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"], "storage": ["keepStatementsYears"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "bitcoinEsploraUrl": "https://mempool.space/api", "bitcoinNodeCert": null, "bitcoinNodeCertOffered": null, "bitcoinNodeHost": null, "bitcoinNodePort": 50002, "bitcoinNodeTls": true, "bitcoinRpcUser": null, "bitcoinSource": "esplora", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keepStatementsYears": null, "keyReminderMonths": 12, "linkAddress": null, "linkReleaseMinutes": 60, "lockoutFailures": 10, "lockoutMinutes": 15, "networkAppRanges": [], "networkConnectorRanges": ["127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "::1/128", "fc00::/7"], "networkLinkRanges": [], "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": "https://localhost:37373", "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "version": 3, "versions": {"householdAvatar": 1, "householdName": 1, "publicUrl": 1}}, "status": 200},
-"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2656363, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
+"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2656381, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
 "GET /ui/api/settings/bitcoin":{"body": {"certificate": null, "certificateOffered": null, "lastError": null, "lastRun": null, "password": null, "wallets": 1}, "status": 200},
 "GET /ui/api/settings/connector":{"body": {"codeExpiresAt": null, "connections": [{"accounts": [{"id": "Acct_01m4rdf800e02af3bqw26mpwnz", "name": "Taxable brokerage", "syncAccount": "Individual ••4417"}], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "schwab", "id": "Conn_01m4rdf800e00traevg9kh27yd", "institutionAccounts": [{"last4": "4417", "name": "Individual"}, {"last4": "0921", "name": "Rollover IRA"}], "label": "Schwab login", "lastRunAdded": 14, "lastRunAt": "2026-10-12T14:00:00Z", "message": "14 new", "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "signInAddress": null, "state": "ok", "version": 1}, {"accounts": [], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "ofx-direct", "id": "Conn_01m4rdf800e019wkhvp6w03c2y", "institutionAccounts": [{"last4": "1204", "name": "Everyday Checking"}], "label": "Credit union", "lastRunAdded": null, "lastRunAt": "2026-10-11T11:00:00Z", "message": "the password was refused", "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "signInAddress": null, "state": "needs-sign-in", "version": 1}, {"accounts": [{"id": "Acct_01m4rdf800e0490demg1an248p", "name": "Bob's checking", "syncAccount": "Joint Household ••3311"}], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "folder", "id": "Conn_01m4rdf800e01ved56y1xft4b5", "institutionAccounts": [], "label": "UMB downloads", "lastRunAdded": 1, "lastRunAt": "2026-10-11T16:00:00Z", "message": "1 statement", "ownerId": "User_01m4rdf800e01skjft3xb5ewck", "ownerName": "Bob Griffin", "signInAddress": null, "state": "ok", "version": 1}], "connectorVersion": "0.1.0", "fingerprint": "33d9 2372 0031 ba55", "lastReportAt": "2026-10-12T15:57:00Z", "locked": false, "pairedAt": "2026-10-09T12:00:00Z", "pairedBy": "Admin", "sealingKey": "W1iNnsp_S1nOWckdHewpAwI9T2ZwPGOeH5JFgWNtsV8", "serverFingerprint": "d27d 1a94 1ba0 8df5", "silentForSeconds": null, "state": "paired"}, "status": 200},
 "GET /ui/api/settings/email":{"body": {"lastError": null, "lastRun": null, "password": null, "setAside": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2707456, "fingerprint": "mk-b7ef…5f6d", "keyFile": "/srv/moneykata/keys/master.key", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
+"GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2707456, "fingerprint": "mk-b7ef…5f6d", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
 "GET /ui/api/settings/links":{"body": {"address": "https://localhost:37373", "fingerprint": "d27d 1a94 1ba0 8df5", "links": [{"address": "https://money.parents.ts.net", "codeExpiresAt": null, "createdAt": "2026-10-12T16:00:00Z", "endedAt": null, "failingSince": null, "fingerprint": "2774 b0db 58c5 2747", "householdAvatar": {"color": "#7a4b9c", "initials": "MT", "kind": "initials"}, "householdName": "Margaret & Tom", "id": "Link_01m4rdf800e00ssm4x59pbnntd", "incoming": [{"includeReceipts": false, "kind": "account", "names": ["Alice Griffin", "Bob Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "account", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "budget", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "portfolio", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}], "lastError": null, "lastOkAt": "2026-10-12T16:00:00Z", "linkedCopy": {"items": 4, "keyMadeAt": "2026-10-12T16:00:00Z", "keyMadeBy": null, "locksInSeconds": null, "receipts": 0, "sizeBytes": 13272, "unlocked": false, "unlockedAt": null, "unlockedBy": null, "waiting": 1}, "pausedUntil": null, "peerName": "griffin-parents", "peerVersion": "0.1.0", "role": "inviter", "state": "active", "syncBytes": null, "syncThrough": null, "syncTotal": null, "users": [{"displayName": "Margaret Griffin", "email": "margaret@parents.home", "id": "User_01m4rdf800e029senk6fw9b9rk", "username": "margaret"}, {"displayName": "Tom Griffin", "email": "tom@parents.home", "id": "User_01m4rdf800e02sbv3fknze4jfe", "username": "tom"}]}]}, "status": 200},
 "GET /ui/api/settings/receipts":{"body": {"failed": 0, "lastRun": "2026-10-12T16:00:00Z", "read": 3, "reading": 0, "waiting": 0}, "status": 200},
 "GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2707456, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
@@ -2802,6 +2802,7 @@ label.drop {
 "linked-receipts":"# Receipts\n\nThe receipts that came with what this household shares with you: only for accounts its owner\nshared with **Include receipts**. Each shows its payee, date and amount, as read where it was\nuploaded; click one to open it. It is decrypted as it is shown, never written out in plain, and\nchecked against the fingerprint its source sent.\n\n## The header strip {#strip}\n\nWhich server this comes from, that it is read only, when it last synced, and who unlocked it and\nwhen it locks. **Lock now** locks it for everyone at once.\n",
 "linked-taxes":"# Taxes\n\nA tax book shared with you: its panels, as its filers' server worked them out. Everything here is read only and comes from that household's server; nothing is worked\nout again here.\n\n## The header strip {#strip}\n\nWhich server this comes from, that it is read only, when it last synced, and who unlocked it and\nwhen it locks. **Lock now** locks it for everyone at once.\n",
 "linked-transactions":"# Transactions\n\nThe latest transactions of each account shared with you, one account at a time. Everything here is read only and comes from that household's server; nothing is worked\nout again here.\n\n## The header strip {#strip}\n\nWhich server this comes from, that it is read only, when it last synced, and who unlocked it and\nwhen it locks. **Lock now** locks it for everyone at once.\n",
+"locked":"# MoneyKata is locked\n\nThe server has started and holds no key: the master key is the recovery phrase, which is\nnever stored. Until an admin enters it, the server serves this screen and nothing else, and\nnobody can sign in. It locks again at every restart.\n\n## Recovery phrase\n\nThe 12 words from the recovery sheet, in order, with spaces between them. Four letters of each\nword are enough. The eye button shows what was typed. The phrase is checked against the\nserver's keyring: a wrong phrase is refused, and ten wrong ones in a row are refused for a\nquarter of an hour. Every attempt is logged.\n\n## Unlock\n\nOpens the server. On the host, `docker compose exec moneykata moneykata keys unlock` does the\nsame, for an admin who would rather not type the phrase into a browser. Nothing of the phrase\nis kept once the data key is unwrapped.\n",
 "portfolio-holdings":"# Portfolio: Holdings\n\nWhat the portfolio's accounts hold, added up by instrument.\n\n![A portfolio's Holdings](shots/portfolio-holdings.webp)\n\n## Weight\n\nEach holding's share of the portfolio's value, cash included.\n\n## Cost basis\n\nWhat you paid for what you hold, fees included.\n\n## Stale\n\nA price older than it should be: two trading days for a stock, or 90 days for a typed price.\n\n## Options · capital at risk {#capital-at-risk}\n\nThe options' market value in these accounts, and what they put at risk: each strategy's, and each\noption on its own as a single leg.\n",
 "portfolio-performance":"# Portfolio: Performance\n\nHow the portfolio grew, apart from the money you put in.\n\n![A portfolio's Performance](shots/portfolio-performance.webp)\n\n## Value\n\nWhat the portfolio's accounts you can see are worth now.\n\n## Time-weighted return\n\nHow the investments themselves did over the range, whatever you put in or took out and when: each\nday's growth chained together. Use it to compare with a benchmark or a fund.\n\n## Money-weighted return (IRR) {#money-weighted-return}\n\nYour own return, a year, counting when your money went in: money added before a rise earns more of\nit. It differs from the time-weighted return when you added or took money out.\n\n## Contributed\n\nWhat went in less what came out over the range. **Growth** is the change in value that wasn't\ncontributed.\n\n## Range\n\nHow far back the chart goes.\n\n## Benchmark\n\nThe same money put into the benchmark on the same days: VT (world stocks), SPY (US large companies)\nor a 60/40 mix of VT and BND.\n\n## Returns by period\n\nThe time-weighted return of each account and the portfolio. Three and five years are shown a year\n(annualised); a dash means the history doesn't go back that far.\n",
 "portfolio-projections":"# Portfolio: Projections\n\nThe projections built on this portfolio, active plans and scenarios. They are worked out on the\nProjections screen, where their inputs live.\n",
@@ -2825,7 +2826,7 @@ label.drop {
 "settings-email":"# Email (SMTP)\n\nHow MoneyKata sends its emails: invitations, password resets, sign-up links and decisions, alerts.\nUntil a host is set, each email is written to the `mail` folder in the data directory instead, where\nan admin can open it.\n\nEmails go out in the background, so nothing waits on the mail server. One that can't be sent stays\nqueued and is tried again every five minutes; this section shows the queue and the last error.\n\n## Host {#smtp-host}\n\nThe mail server's name, such as your email provider's SMTP server or a relay on your network.\nMoneyKata reaches only this host for email.\n\n## Port {#smtp-port}\n\n587 for STARTTLS, 465 for TLS, 25 for a plain relay.\n\n## Security {#smtp-security}\n\n**STARTTLS** and **TLS** encrypt the connection and check the server's certificate. **None** sends\nin the clear: only for a relay on your own network.\n\n## Username {#smtp-username}\n\nThe account to sign in to the mail server with, often an email address. Leave it empty for a relay\nthat needs none.\n\n## Password {#smtp-password}\n\nKept encrypted as a secret, used only when sending, and never shown again. Many providers want an\napp password rather than your own.\n\n## From address {#smtp-from}\n\nThe sender emails show, such as `MoneyKata \u003cmoney@example.com>`. Your provider may insist it matches\nthe username.\n\n## Send a test email\n\nSends one to your own address now, through the saved settings, and says what failed if it couldn't.\n",
 "settings-general":"# Settings: General\n\nThe server's name and the household it belongs to.\n\n![Settings: General](shots/settings-general.webp)\n\n## Server name\n\nShown to linked servers.\n\n## Server time zone\n\nRead from the host. A user whose time zone is **Auto** sees times in it.\n\n## Household name\n\nAt the top of the sidebar.\n\n## Household initials\n\nThe household's avatar.\n\n## Household colour\n\nThe avatar's colour.\n\n## Public URL\n\nThe address people reach MoneyKata at, such as `https://money.example.lan`. Links in emails\n(invitations, resets) are built from it, never from the request.\n",
 "settings-imports":"# Settings: Imports\n\n![Settings: Imports](shots/settings-imports.webp)\n\n## File types\n\nOFX, QFX and CSV, and statements as PDF, JPEG, PNG, WebP or HEIC, checked from what's inside the\nfile, never its name.\n\n## Largest file {#largest-file}\n\nThe biggest file that can be imported, in MB.\n\n## Read statements\n\nWhether a statement's PDF or photo can be imported. It is read on this server by the receipt reader,\nin its own process, and checked by the person before anything is saved. Off, only OFX, QFX and CSV\nfiles import.\n",
-"settings-keys":"# Settings: Key storage\n\nRead only. Everything the server stores is encrypted under one master key, a file on the host.\n\n![Settings: Key storage](shots/settings-keys.webp)\n\n## Fingerprint\n\nA short name for the key that reveals nothing about it, such as `mk-3f9a…c21e`.\n\n## Recovery phrase\n\nThe master key written as 12 words, the only way back if the key file is lost. Check a copy once a\nyear on the host with `moneykata keys verify`.\n\n## Test\n\nChecks the key file, unwraps the data key and opens the database and a secret.\n\n## Previous key\n\nA master key kept after a rotation, because the backups made before it hold the data key wrapped\nunder it. The date shown is when the backup directory's own pruning has removed the last of those\ncopies. A backup copied anywhere else (a NAS, a cloud bucket, a snapshot) is not counted: it still\nopens with the previous key for as long as it exists, so count those copies yourself before the\nold key and its phrase are destroyed.\n\n## Re-encrypt\n\nMakes a new data key and re-encrypts the database, the receipt files and every secret under it.\nFor when the data key may have been read: a memory dump or a debugging session on the live server,\nor a master key or recovery phrase that leaked while any copy of the data directory or a backup\ncould have been taken with it. It closes nothing made before it: every earlier copy still opens\nwith the key it was made under, so a leak also means deleting those copies wherever they are. It\ndoesn't change the master key, which is rotated on the host with `moneykata keys rotate`.\n",
+"settings-keys":"# Settings: Key storage\n\nRead only. Everything the server stores is encrypted under one master key, which is the\nrecovery phrase: never stored, entered when the server starts, and changed only on the host.\n\n![Settings: Key storage](shots/settings-keys.webp)\n\n## Fingerprint\n\nA short name for the key that reveals nothing about it, such as `mk-3f9a…c21e`.\n\n## Unlocked\n\nWhen the phrase was last entered. The server locks again at every restart, until someone\nenters the phrase on the locked screen or with `moneykata keys unlock` on the host.\n\n## Recovery phrase\n\nThe master key written as 12 words. It is shown once, at install, and never again: without it\nnothing here, no backup, and no restart of the server opens. Check a copy once a year on the\nhost with `moneykata keys verify`.\n\n## Test\n\nChecks that the keyring on disk is the one the phrase unlocked, and that the database and a\nsecret open with the data key.\n\n## Previous key\n\nA master key kept after a rotation, because the backups made before it hold the data key wrapped\nunder it. The date shown is when the backup directory's own pruning has removed the last of those\ncopies. A backup copied anywhere else (a NAS, a cloud bucket, a snapshot) is not counted: it still\nopens with the previous key for as long as it exists, so count those copies yourself before the\nold key and its phrase are destroyed.\n\n## Re-encrypt\n\nMakes a new data key and re-encrypts the database, the receipt files and every secret under it.\nIt asks for the recovery phrase, which wraps the new data key.\nFor when the data key may have been read: a memory dump or a debugging session on the live server,\nor a master key or recovery phrase that leaked while any copy of the data directory or a backup\ncould have been taken with it. It closes nothing made before it: every earlier copy still opens\nwith the key it was made under, so a leak also means deleting those copies wherever they are. It\ndoesn't change the master key, which is rotated on the host with `moneykata keys rotate`.\n",
 "settings-links":"# Linked servers\n\nOther MoneyKata servers that share read-only with this one: another household's, or a\npreparer's. Admins only.\n\n![Linked servers](shots/settings-links.webp)\n\n**Invite a server** makes a one-time code for the other server's admin. **Enter a link code**\nanswers one: MoneyKata connects to the address in the code, checks the server's key against the\nfingerprint in it, and asks to link. The inviting side then lists it as **wants to link**: compare\nthe fingerprint shown with what the other admin sees for their own server (by phone, in person)\nand **Approve** or **Reject** it.\n\n## This server's link address {#link-address}\n\nWhere other servers reach this one, as `https://…` without a path: MoneyKata answers them under\n`/link/`. It must be reachable from the other server: a forwarded port, a reverse proxy that\npasses `/link/`, or both servers on one overlay network such as Tailscale or WireGuard (the easy\nway, with no open port). Empty, the public URL is used.\n\nA link works when either side can reach the other: each exchange carries both directions.\n\nEach link shows its state, its fingerprint and MoneyKata version, and when the last exchange\nworked. **Pull now** exchanges at once rather than at the next hour. **Pause** stops this side\nexchanging for a time you choose; it shows **paused until** then and resumes on its own, or at\nonce with **Resume now**. **End link** ends it on both sides: the other side learns at once, or\nat its next call; its users are removed here, and nothing is deleted on the server that shared.\nA server that can't be reached shows **unreachable since** and the reason.\n\n## Syncing {#progress}\n\nA large change, such as the first pull into a new copy, arrives in parts of about 4 MB, oldest\nfirst, so what has arrived is usable at once. While parts are still coming the link shows the date\nit has reached and how much of the change has arrived.\n\n## Linked copies {#linked-copies}\n\nWhat each link brings in is kept apart from this household's data, in its own encrypted copy under\nits own **access key**: 12 words. This server's master key can't open it, and backups leave it\nout. **Create the access key** once the link is active: MoneyKata shows the words once, for the\nhousehold's password manager, where the people its shares name can reach them. Pulls into the copy\nbegin then.\n\nThe first person its shares name who opens the household's window enters the words; the copy then\nstays unlocked for everyone it shares with, each seeing only what names them, until it goes unused.\nEach copy shows its size, the changes **waiting** (pulled while it was locked, sealed so only its\nwords open them, and applied when it is next unlocked), when its key was made and by whom, and who\nunlocked it. **Lock now**\nlocks it at once. **Reset copy** (if the words are lost) deletes the copy and its key: make a new\naccess key, and everything is pulled again from the other server, where nothing was lost.\n\n## Release linked keys after {#link-release}\n\nHow long an unlocked copy's key stays in memory with nobody viewing it: 15 minutes, 1 hour (the\ndefault) or 4 hours. Background work, such as a pull, doesn't count as viewing. A restart locks\nevery copy.\n\n## Shared from a linked server {#incoming}\n\nWhat each linked server shares with people here, as an admin sees it: only its kind, its owner's\nname, when it was shared and the people here it names. Its name and figures stay inside the\nencrypted copy, for those people. The owner there decides who sees what; an admin here can't\nchange it, and nothing shared from there can be shared on.\n\n## Users on linked servers {#linked-users}\n\nEach linked server's active users, sent at every exchange and updated in place: a new user is\nadded, a changed name or email is updated, and a user no longer on the list is removed (and comes\nback if they return). People here can share with them, always read only. They never sign in here,\njoin a group, own anything or receive alerts.\n",
 "settings-network":"# Network\n\nWhich addresses may reach each part of this server. Each list holds address ranges, one per\nline, as `192.168.1.0/24` or a single address; an empty list allows any address. A change\napplies to the next request. Addresses outside a list get *not found*, as if the path didn't\nexist. `/healthz` and `/demo` answer any address. Admins only.\n\n![Network](shots/settings-network.webp)\n\n## Allowed to use the app {#network-app-ranges}\n\nThe ranges that may reach the app (`/ui`), and `/mcp` with it, since an agent sits where a\nperson's browser does and its token is already the user's. Empty by default: any address the\nhost's port mapping and firewall let through.\n\n## Allowed to link {#network-link-ranges}\n\nWhere linked servers call `/link` from: an overlay network's range (Tailscale uses\n`100.64.0.0/10`), or the other household's address. Empty by default.\n\n## Allowed to connect {#network-connector-ranges}\n\nWhere the MoneyKata Connector calls `/connector` from. By default the LAN and the overlay\n(`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, loopback and the private\nIPv6 range), so a connector beside the server or on the household's overlay works as it is. A\nconnector on a laptop away from home needs the range it calls from added here.\n",
 "settings-passwords":"# Settings: Passwords\n\n![Settings: Passwords](shots/settings-passwords.webp)\n\n## Minimum length\n\nAt least 8; 12 by default. It is the only rule: no character classes and no expiry. The 100,000 most\ncommon passwords are refused whatever their length.\n",
@@ -4905,7 +4906,6 @@ export const api = {
 
 /**
  * @typedef {Object} KeyStorage
- * @property {string} keyFile
  * @property {string} fingerprint
  * @property {string} created
  * @property {number} ageDays
@@ -5019,6 +5019,13 @@ export const api = {
  * @property {(Following | null)} [following]
  * @property {boolean} canWrite
  * @property {number} [version]
+ */
+
+/**
+ * @typedef {Object} LockState
+ * @property {boolean} locked
+ * @property {(string | null)} fingerprint
+ * @property {string} version
  */
 
 /**
@@ -5923,6 +5930,11 @@ export const api = {
  */
 
 /**
+ * @typedef {Object} Phrase
+ * @property {string} phrase
+ */
+
+/**
  * @typedef {Object} PickIn
  * @property {string} lotId
  * @property {import('@mk/app/dec.js').Dec} quantity
@@ -6040,7 +6052,6 @@ export const api = {
 /**
  * @typedef {Object} PreviousKeyOut
  * @property {string} fingerprint
- * @property {string} path
  * @property {(string | null)} removableAfter
  */
 
@@ -6327,6 +6338,11 @@ export const api = {
  * @property {number} count
  * @property {boolean} missed
  * @property {boolean} changed
+ */
+
+/**
+ * @typedef {Object} ReencryptIn
+ * @property {string} phrase
  */
 
 /**
@@ -8211,6 +8227,8 @@ options.vnode = (vnode) => {
 const LINKED = location.pathname.match(/^\/ui\/linked\/([^/]+)/);
 if (LINKED) readLinked(LINKED[1]);
 const LinkedWindow = lazy(() => import('@mk/screens/linked.js'));
+// The locked server's one screen (S15.4.3), until an admin enters the recovery phrase.
+const LockedScreen = lazy(() => import('@mk/screens/locked.js'));
 
 function signOutLocally(/** @type {string} */ why) {
   disconnect();
@@ -8226,6 +8244,13 @@ function App() {
     if (s && !s.user.needsSetup) connect(signOutLocally);
   }, [s?.user?.id, s?.user?.needsSetup]);
 
+  if (ended.value === 'locked') {
+    return html`
+      <${Router}>
+        <${Route} default component=${LockedScreen} />
+        </${Router}>
+    `;
+  }
   if (PUBLIC_PATHS.some((p) => path.startsWith(p))) return html`<${PublicScreens} />`;
   if (!s) return ended.value ? html`<${PublicScreens} />` : null;
   if (s.user.needsSetup) return html`<${SetupScreen} />`;
@@ -16762,6 +16787,11 @@ export function openMockMenu(at, nav, route) {
     })),
     { head: true, label: 'State' },
     { label: 'Prices stale', on: mock.stale, onSelect: () => mock.setStale(!mock.stale) },
+    {
+      label: 'Server locked (after a restart)',
+      on: mock.locked,
+      onSelect: () => mock.setLocked(!mock.locked),
+    },
     { label: 'Privacy mode', on: privacy.value, onSelect: () => (privacy.value = !privacy.value) },
   ]);
 }
@@ -22321,6 +22351,58 @@ function Receipts({ id }) {
   }</div>`;
 }
 </script>
+<script type="text/plain" data-module="@mk/screens/locked.js">
+// The locked screen (requirements S13.6, S15.4.3): the server has started and holds no key
+// until an admin enters the recovery phrase here. The phrase is the authentication: nobody
+// can sign in before the database is open.
+import { useState } from 'preact/hooks';
+import { html } from '@mk/app/html.js';
+import { api } from '@mk/api/client.js';
+import { useSubmit } from '@mk/app/hooks.js';
+import { loadSession } from '@mk/store/session.js';
+import { AuthCard } from '@mk/components/auth.js';
+import { Field, FormError } from '@mk/components/fields.js';
+import { Icon } from '@mk/components/icon.js';
+
+export default function Locked() {
+  const [words, setWords] = useState('');
+  const [shown, setShown] = useState(false);
+  const unlock = useSubmit(async () => {
+    await api.post('/unlock', { phrase: words });
+    setWords('');
+    await loadSession();
+  });
+  return html`
+    <${AuthCard} title="MoneyKata is locked" guide="locked"
+      sub="The server started and holds no key. An admin enters the recovery phrase to open it; everyone signs in after that.">
+      <form onSubmit=${(/** @type {Event} */ e) => {
+        e.preventDefault();
+        unlock.run().catch(() => {});
+      }}>
+        <${Field} label="Recovery phrase" id="recovery-phrase"
+          hint="The 12 words from the recovery sheet, in order. Four letters of each are enough.">
+          <span class="pw"><textarea class="in" rows="3" value=${words} required
+              autocomplete="off" spellcheck=${false}
+              style=${shown ? {} : { WebkitTextSecurity: 'disc' }}
+              onInput=${(/** @type {any} */ ev) =>
+                setWords(ev.currentTarget.value)}></textarea><button
+              type="button" class="icon-btn" aria-pressed=${shown ? 'true' : 'false'}
+              aria-label=${shown ? 'Hide the phrase' : 'Show the phrase'}
+              onClick=${() => setShown(!shown)}><${Icon} name=${shown
+                ? 'eye-off'
+                : 'eye'} /></button></span>
+          </${Field}>
+          <${FormError} error=${unlock.error} />
+          <button class="btn primary" style=${{ width: '100%', justifyContent: 'center' }}
+            disabled=${unlock.busy}>${unlock.busy ? 'Opening…' : 'Unlock'}</button>
+          <p class="small dim" style=${{ marginTop: '12px' }}>Or on the host:
+            <code>docker compose exec moneykata moneykata keys unlock</code>. The server locks
+            again at every restart; nothing of the phrase is kept.</p>
+          </form>
+          </${AuthCard}>
+  `;
+}
+</script>
 <script type="text/plain" data-module="@mk/screens/new-account.js">
 // New account (requirements S12.2.2): a type picker, then the account form.
 import { useState } from 'preact/hooks';
@@ -25930,6 +26012,14 @@ function Keys() {
   const v = /** @type {any} */ (res.data);
   const [test, setTest] = useState(/** @type {any} */ (null));
   const [armed, setArmed] = useState(false);
+  const [words, setWords] = useState('');
+  const reencrypt = useSubmit(async () => {
+    await api.post('/settings/keys/reencrypt', { phrase: words });
+    toast('Re-encrypting under a new data key');
+    setArmed(false);
+    setWords('');
+    res.reload();
+  });
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!v) return html`<${Loading} />`;
   const confirmed = v.confirmations.find((/** @type {any} */ c) => c.matched);
@@ -25942,9 +26032,8 @@ function Keys() {
   }</h3>
     <p class="small dim" style=${{
     marginTop: 0,
-  }}>Read only here. The master key is a file on the host and is changed only there,
-      so a browser session can never read or replace it.</p>
-    <div class="list-item"><span class="grow dim">Key file</span><code>${v.keyFile}</code></div>
+  }}>Read only here. The master key is the recovery phrase, never stored: it is entered
+      when the server starts, and changed only on the host.</p>
     <div class="list-item"><span class="grow dim">Fingerprint</span><code>${v.fingerprint}</code></div>
     <div class="list-item"><span class="grow dim">Made</span>${
     date(v.created.slice(0, 10))
@@ -25993,8 +26082,8 @@ function Keys() {
       ? html`<span class="pill ok"><${Icon} name="check" /> confirmed</span>`
       : html`<span class="pill warn">unchecked</span>`
   }</div>
-    <div class="notice mt"><${Icon} name="alert" /><div>Without the key file or its recovery phrase, nothing here and no backup
-      can be opened. Keep the phrase in two places, one offline, never beside the backups.</div></div>
+    <div class="notice mt"><${Icon} name="alert" /><div>Without the recovery phrase, nothing here and no backup can be
+      opened, and the server cannot even start serving. Keep the phrase in two places, one offline.</div></div>
     ${
     test
       ? html`<ul class="small">${
@@ -26006,17 +26095,37 @@ function Keys() {
   }
     <div class="toolbar mt"><button type="button" class="btn" onClick=${() =>
     api.post('/settings/keys/test').then(setTest)}>Test</button>
-      <button type="button" class="btn" disabled=${v.reencrypting} onClick=${() =>
+      ${
     armed
-      ? api.post('/settings/keys/reencrypt').then(() => {
-        toast('Re-encrypting under a new data key');
-        setArmed(false);
-        res.reload();
-      })
-      : setArmed(true)}>${
-    v.reencrypting ? 'Re-encrypting…' : armed ? 'Click again to re-encrypt' : 'Re-encrypt'
-  }</button>
+      ? null
+      : html`<button type="button" class="btn" disabled=${v.reencrypting} onClick=${() =>
+        setArmed(true)}>${v.reencrypting ? 'Re-encrypting…' : 'Re-encrypt'}</button>`
+  }
       <span class="small dim">A new data key for the database, the receipts and every secret. For when the data key may have been read: a memory dump, or a leaked master key beside any copy of the data. It closes nothing made before it.</span></div>
+    ${
+    armed
+      ? html`
+        <form class="mt" onSubmit=${(/** @type {Event} */ e) => {
+          e.preventDefault();
+          reencrypt.run().catch(() => {});
+        }}>
+          <${Field} label="Recovery phrase" id="reencrypt-phrase" error=${errAt(
+            reencrypt.error,
+            'phrase',
+          )}
+            hint="The new data key is wrapped under this server's phrase: type it to confirm.">
+            <${Input} type="password" value=${words} onInput=${setWords} autocomplete="off"
+              required />
+            </${Field}>
+            <${FormError} error=${reencrypt.error} />
+            <div class="toolbar"><button class="btn primary" disabled=${reencrypt
+              .busy}>Re-encrypt now</button>
+                    <button type="button" class="btn" onClick=${() =>
+                      setArmed(false)}>Cancel</button></div>
+            </form>
+      `
+      : null
+  }
   </div>`;
 }
 </script>
@@ -28466,7 +28575,10 @@ import { setBitcoinUnit, setZone } from '@mk/app/format.js';
 
 /** @type {import('@preact/signals').Signal<any>} */
 export const session = signal(null);
-/** Why there is no session: 'signed-out', 'expired', 'disabled', or '' while loading. */
+/**
+ * Why there is no session: 'signed-out', 'expired', 'disabled', 'locked' (the server waits
+ * for its recovery phrase, S15.4.3), or '' while loading.
+ */
 export const ended = signal('');
 
 export async function loadSession() {
@@ -28477,9 +28589,9 @@ export async function loadSession() {
     setBitcoinUnit(info.user.bitcoinUnit);
     ended.value = '';
     return info;
-  } catch {
+  } catch (e) {
     session.value = null;
-    ended.value = 'signed-out';
+    ended.value = /** @type {any} */ (e)?.code === 'locked' ? 'locked' : 'signed-out';
     return null;
   }
 }
@@ -29033,6 +29145,15 @@ import{Component as t,options as i,isValidElement as n,Fragment as e}from"preact
   } catch {
     // no storage: prices are fresh
   }
+  // The server locked after a restart (S15.4.3), until the phrase is entered: a state of the
+  // mockup's own, since the recorded server was unlocked for the crawl.
+  const LOCKED = 'mk-mockup-locked';
+  let locked = false;
+  try {
+    locked = localStorage.getItem(LOCKED) === '1';
+  } catch {
+    // no storage: unlocked
+  }
 
   /** A request's key: its path and its query in order, less what only says "now". */
   const keyOf = (/** @type {string} */ url) => {
@@ -29066,6 +29187,28 @@ import{Component as t,options as i,isValidElement as n,Fragment as e}from"preact
       );
     }
     const key = keyOf(url);
+    if (key === '/ui/api/unlock') {
+      if (method === 'POST') {
+        locked = false;
+        try {
+          localStorage.setItem(LOCKED, '0');
+        } catch {
+          // without storage the page comes back unlocked anyway
+        }
+      }
+      return Promise.resolve(
+        json(200, { locked, fingerprint: 'mk-b7ef…5f6d', version: data.version || '' }),
+      );
+    }
+    if (locked && key.startsWith('/ui/api/')) {
+      return Promise.resolve(
+        json(503, {
+          code: 'locked',
+          title: 'Not available',
+          detail: 'MoneyKata is locked: an admin enters the recovery phrase to open it.',
+        }),
+      );
+    }
     if (key === '/ui/api/session') {
       if (method === 'DELETE') signedIn = false;
       if (method === 'POST') signedIn = true;
@@ -29119,6 +29262,15 @@ import{Component as t,options as i,isValidElement as n,Fragment as e}from"preact
     users: data.users,
     user,
     stale,
+    locked,
+    setLocked(/** @type {boolean} */ on) {
+      try {
+        localStorage.setItem(LOCKED, on ? '1' : '0');
+      } catch {
+        // without storage the page comes back unlocked
+      }
+      location.reload();
+    },
     setStale(/** @type {boolean} */ on) {
       try {
         localStorage.setItem(STALE, on ? '1' : '0');

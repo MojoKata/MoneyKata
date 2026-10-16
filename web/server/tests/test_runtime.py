@@ -1,10 +1,12 @@
-"""The server as main.py builds it: its background tasks and start-up work."""
+"""The server as main.py builds it at unlock: its background tasks and start-up work."""
 
+from moneykata.app import Server
 from moneykata.runtime import build
 
 
-def test_build_registers_every_background_task(keyed_config):
-    server = build(keyed_config)
+def test_build_registers_every_background_task(keyed_config, master_key):
+    server = Server(config=keyed_config)
+    build(server, master_key)
     try:
         assert set(server.tasks.status()) == {
             "backups",

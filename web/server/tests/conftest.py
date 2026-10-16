@@ -1,4 +1,5 @@
 import json
+import os
 from decimal import Decimal
 
 import pytest
@@ -20,8 +21,14 @@ def config(tmp_path) -> Config:
         mode="proxy",
         data_dir=tmp_path / "data",
         backup_dir=tmp_path / "backups",
-        key_file=tmp_path / "keys" / "master.key",
     )
+
+
+@pytest.fixture
+def master_key() -> bytes:
+    """The recovery phrase's key, which a test holds as the admin holds the phrase: it is
+    never on disk (S15.4)."""
+    return os.urandom(16)
 
 
 @pytest.fixture
@@ -33,15 +40,16 @@ def bare_client(config):
 
 
 @pytest.fixture
-def keyed_config(config) -> Config:
-    """A config whose master key and keyring exist (made without the phrase step)."""
-    keys_cli.init(config, say=lambda _: None, confirm=False)
+def keyed_config(config, master_key) -> Config:
+    """A config whose keyring exists, wrapped under `master_key` (made without the phrase's
+    three-word confirmation)."""
+    keys_cli.init(config, say=lambda _: None, confirm=False, master_key=master_key)
     return config
 
 
 @pytest.fixture
-def store(keyed_config):
-    st = open_store(keyed_config)
+def store(keyed_config, master_key):
+    st = open_store(keyed_config, master_key)
     yield st
     st.db.dispose()
 

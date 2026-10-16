@@ -12,7 +12,6 @@ services:
     volumes:
       - ./data:/var/lib/moneykata
       - ./backups:/var/backups/moneykata
-      - ./keys:/etc/moneykata:ro
       - ./moneykata-tls.toml:/etc/moneykata.toml:ro
     read_only: true
     tmpfs:
@@ -45,27 +44,6 @@ services:
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "5" }
-
-  # The key commands, as in compose.yaml.
-  keys-init:
-    image: moneykata:0.1.0
-    profiles: ["keys"]
-    user: "0:0"
-    command: ["keys", "init"]
-    volumes:
-      - ./data:/var/lib/moneykata
-      - ./keys:/etc/moneykata
-      - ./moneykata-tls.toml:/etc/moneykata.toml:ro
-
-  keys-rotate:
-    image: moneykata:0.1.0
-    profiles: ["keys"]
-    user: "0:0"
-    command: ["keys", "rotate"]
-    volumes:
-      - ./data:/var/lib/moneykata
-      - ./keys:/etc/moneykata
-      - ./moneykata-tls.toml:/etc/moneykata.toml
 
 volumes:
   connector-data:

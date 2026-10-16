@@ -211,3 +211,11 @@
     spaces between them: `1d`, `90m`, `2w 3d 4h`, `2w3d`. It is read by one helper on each side
     (`app/duration.js`, `moneykata/duration.py`), which refuses anything else and says why, and
     shown back the same way, so `2w 3d 4h` reads as typed.
+14. **The locked screen** (S13.6, S15.4.3). While the server holds no key, every address
+    under `/ui` shows one screen outside the frame, in the card the sign-in screens use: the
+    server has started and holds no key, with a field for the 12 words of the recovery
+    phrase (hidden as a password is, with the eye button, S12.1.3) and **Unlock**, and a line
+    naming the host command that does the same. A wrong phrase is refused at the field;
+    after the lockout of S13.7.5.1 the screen says how long to wait. Once unlocked, the
+    screen gives way to sign-in. A page open when the server restarts lands on it at its
+    next request, as it lands on sign-in when a session ends (S12.6).

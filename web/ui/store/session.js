@@ -5,7 +5,10 @@ import { setBitcoinUnit, setZone } from '../app/format.js';
 
 /** @type {import('@preact/signals').Signal<any>} */
 export const session = signal(null);
-/** Why there is no session: 'signed-out', 'expired', 'disabled', or '' while loading. */
+/**
+ * Why there is no session: 'signed-out', 'expired', 'disabled', 'locked' (the server waits
+ * for its recovery phrase, S15.4.3), or '' while loading.
+ */
 export const ended = signal('');
 
 export async function loadSession() {
@@ -16,9 +19,9 @@ export async function loadSession() {
     setBitcoinUnit(info.user.bitcoinUnit);
     ended.value = '';
     return info;
-  } catch {
+  } catch (e) {
     session.value = null;
-    ended.value = 'signed-out';
+    ended.value = /** @type {any} */ (e)?.code === 'locked' ? 'locked' : 'signed-out';
     return null;
   }
 }

@@ -10,6 +10,7 @@ import pytest
 
 from moneykata.config import load
 from moneykata.keys import cli as keys_cli
+from moneykata.keys import phrase
 
 pytestmark = pytest.mark.browser
 
@@ -34,10 +35,8 @@ port = {port}
 [paths]
 data = "{tmp / "data"}"
 backups = "{tmp / "backups"}"
-[keys]
-master = "{tmp / "keys" / "master.key"}"
 """)
-    keys_cli.init(load(config), say=lambda _: None, confirm=False)
+    key = keys_cli.init(load(config), say=lambda _: None, confirm=False)
     log = open(tmp / "server.log", "wb")  # noqa: SIM115 - a file: an unread pipe fills up
     proc = subprocess.Popen(
         [sys.executable, "-m", "moneykata.main", "--config", str(config), "serve"],
@@ -48,13 +47,23 @@ master = "{tmp / "keys" / "master.key"}"
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
         try:
-            if httpx.get(base + "/healthz").status_code == 200:
+            r = httpx.get(base + "/healthz")
+            if r.status_code == 503 and r.json()["status"] == "locked":
                 break
         except httpx.TransportError:
             pass
         if proc.poll() is not None:
             pytest.fail(f"server exited: {(tmp / 'server.log').read_text()}")
         time.sleep(0.1)
+    # It starts locked (S15.4.3): the phrase opens it, as the unlock page or `keys unlock` do.
+    r = httpx.post(
+        base + "/ui/api/unlock",
+        json={"phrase": " ".join(phrase.to_words(key))},
+        headers={"Origin": base},
+        timeout=60,
+    )
+    assert r.status_code == 200, r.text
+    assert httpx.get(base + "/healthz").status_code == 200
     yield base
     proc.terminate()  # SIGTERM: a clean stop within the 5-second grace (S13.6)
     assert proc.wait(timeout=8) == 0

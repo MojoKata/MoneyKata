@@ -43,7 +43,6 @@ def dev_config(
         cert_names=hostnames,
         data_dir=base / "data",
         backup_dir=base / "backups",
-        key_file=base / "keys" / "master.key",
         mail_folder=base / "mail",
         dev=True,
         stubs=stubs,
@@ -88,7 +87,8 @@ def cmd_dev(args) -> int:
 
 
 def cmd_health(args) -> int:
-    """The image's health check: is this container's server answering /healthz?"""
+    """The image's health check: is this container's server answering /healthz? A locked
+    server prints `locked` and counts as unhealthy, until the phrase is entered."""
     import httpx
 
     config = load(Path(args.config))

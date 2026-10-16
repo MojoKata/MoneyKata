@@ -17,7 +17,7 @@ runs on a Linux VM.
 | `--port N` | 37373 | the port to listen on |
 | `--listen ADDR` | `127.0.0.1` | the address to listen on; `0.0.0.0` for every interface |
 | `--hostname NAME` | none | a name or address the certificate also covers; repeatable |
-| `--data DIR` | `web/.dev` | where the database, keys, backups and mail are kept |
+| `--data DIR` | `web/.dev` | where the database, backups and mail are kept, with `phrase`, the dev server's recovery phrase, so it unlocks itself (an installed server never stores it, S15.4) |
 | `--peer` | off | a second server (port 37374, `web/.dev-peer`) for links |
 
 The certificate lives in `<data>/data/tls/self-signed.crt`. It always covers `localhost` and

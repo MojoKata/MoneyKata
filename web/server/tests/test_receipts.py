@@ -150,8 +150,8 @@ def test_size_limit_is_a_setting(server, alice, admin_client):
     assert r.status_code == 413
 
 
-def test_reencrypt_carries_the_receipts_over(server, alice, keyed_config):
+def test_reencrypt_carries_the_receipts_over(server, alice, keyed_config, master_key):
     data = png((1, 2, 3))
     rid = upload(alice, data).json()["id"]
-    server.store = maintenance.reencrypt(keyed_config, server.store)
+    server.store = maintenance.reencrypt(keyed_config, server.store, master_key)
     assert alice.get(f"/ui/api/receipts/{rid}/file").content == data

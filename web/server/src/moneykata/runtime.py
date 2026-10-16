@@ -10,13 +10,13 @@ from sqlalchemy import delete, select
 from . import clock, figures, listener, settings, timezones
 from .app import Server, create_app
 from .auth import sessions, users
-from .config import Config
+from .config import Config, RefuseStart
 from .prices import refresh as pricing
 from .store import maintenance
 from .store.entities.core import TaskRun
 from .store.entities.users import OneTimeToken
 from .store.repos import ledger
-from .tasks import Daily, Every, TaskContext
+from .tasks import Daily, Every, TaskContext, TaskError
 from .tasks import TaskRun as Run
 
 log = logging.getLogger("moneykata")
@@ -87,8 +87,11 @@ def register_tasks(server: Server) -> None:
     )
 
     def reencrypt(ctx: TaskContext) -> None:
-        """Settings › Key storage › Re-encrypt: only when asked (S15.7.2)."""
-        server.store = maintenance.reencrypt(server.config, server.store)
+        """Settings › Key storage › Re-encrypt: only when asked, with the phrase (S15.7.2)."""
+        key, server.reencrypt_key = server.reencrypt_key, None
+        if key is None:
+            raise TaskError("re-encryption needs the recovery phrase: start it from Settings")
+        server.store = maintenance.reencrypt(server.config, server.store, key)
         with server.db.tx() as s:
             from . import activity
 
@@ -160,10 +163,17 @@ def register_tasks(server: Server) -> None:
     server.services.mailer.notify = lambda: server.tasks.run_now("mail")
 
 
-def build(config: Config) -> Server:
-    store = maintenance.open_store(config)
+class AlreadyUnlocked(Exception):
+    pass
+
+
+def build(server: Server, master_key: bytes) -> None:
+    """Open the store with the phrase's key and make the server whole (S15.4.3). The master
+    key is used here and not kept."""
+    config = server.config
+    store = maintenance.open_store(config, master_key)
     pricing.install()
-    server = Server(config=config, store=store)
+    server.store = store
     with server.db.tx() as s:
         if users.ensure_default_admin(s):
             log.info("made the default admin: sign in as %s to set it up", users.DEFAULT_ADMIN)
@@ -177,50 +187,93 @@ def build(config: Config) -> Server:
     from .ui.prices import apply_egress
 
     apply_egress(server)
-    return server
+    take_host_events(server)
+
+
+def take_host_events(server: Server) -> int:
+    """What the host's one-off commands queued (keys verify, rotate), into Activity."""
+    from . import activity
+
+    events = maintenance.take_host_events(server.config)
+    if not events:
+        return 0
+    with server.db.tx() as s:
+        for e in events:
+            activity.record(
+                s,
+                str(e.get("kind", "host")),
+                actor=None,
+                via="host",
+                for_admins=True,
+                detail={**(e.get("detail") or {}), "at": e.get("at")},
+            )
+    return len(events)
+
+
+async def unlock(server: Server, master_key: bytes, seed: bool = False) -> None:
+    """The phrase given (from the unlock page, `keys unlock`, or dev mode): the server opens
+    its store and starts its tasks. Once per start; a restart locks it again (S15.4.3)."""
+    if server.unlocking is None:
+        server.unlocking = asyncio.Lock()
+    async with server.unlocking:
+        if server.store is not None:
+            raise AlreadyUnlocked
+        await asyncio.to_thread(build, server, master_key)
+        if server.config.dev:
+            from .dev import devmode
+
+            await asyncio.to_thread(devmode.after_start, server, seed)
+        from .receipts.reading import Reader
+
+        server.reader = Reader(server)
+        server.tasks.start()
+        server.reader.start()
+        server.ready = True
+        log.info("unlocked: %s", server.store.keys.master_id and server.version)
 
 
 async def start(config: Config, seed: bool = False) -> int:
+    dev_key: bytes | None = None
     if config.dev:
         from .dev import devmode
 
-        devmode.prepare(config)
+        dev_key = devmode.prepare(config)
     from .store.maintenance import lock_data_dir
 
     lock = lock_data_dir(config, "only one server may use a data directory")  # noqa: F841 - held while running
-    server = build(config)
-    if config.dev:
-        from .dev import devmode
-
-        devmode.after_start(server, seed=seed)
+    if not config.keyring_path.exists():
+        raise RefuseStart(
+            f"the keyring {config.keyring_path} is missing: run `moneykata keys init` on a new "
+            "server, or `db restore` a backup"
+        )
+    server = Server(config=config)
+    server.unlocking = asyncio.Lock()
     app = create_app(server)
     server.events.bind(asyncio.get_running_loop())
-
-    from .receipts.reading import Reader
-
-    server.reader = Reader(server)
+    if dev_key is not None:
+        await unlock(server, dev_key, seed=seed)
 
     async def on_stop() -> None:
         server.ready = False
         await server.events.close_all()
-        server.tasks.stop()
-        server.reader.stop()
+        if server.store is not None:
+            server.tasks.stop()
+            server.reader.stop()
 
-    server.tasks.start()
-    server.reader.start()
-    server.ready = True
     scheme = "https" if config.mode == "tls" else "http"
     log.info(
-        "MoneyKata %s%s listening on %s://%s:%s",
+        "MoneyKata %s%s listening on %s://%s:%s%s",
         server.version,
         " (dev)" if config.dev else "",
         scheme,
         config.host,
         config.port,
+        "" if server.store is not None else ": locked until the recovery phrase is entered",
     )
     try:
         await listener.run(app, config, on_stop)
     finally:
-        server.db.dispose()
+        if server.store is not None:
+            server.db.dispose()
     log.info("stopped")
     return 0

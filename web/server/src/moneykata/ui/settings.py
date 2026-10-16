@@ -10,7 +10,7 @@ from fastapi.responses import Response
 from sqlalchemy import select, text
 
 from .. import activity, clock, settings, timezones
-from ..errors import FieldError, Problem
+from ..errors import FieldError, Problem, refuse
 from ..store.entities.core import Setting
 from .conventions import ExactRoute, Loose, Model, check_version, if_match, version_of
 from .deps import Caller, admin, server
@@ -415,8 +415,7 @@ def reread_all(request: Request, c: Caller = Depends(admin)):
 
 class PreviousKeyOut(Model):
     fingerprint: str
-    path: str
-    removableAfter: dt.date | None
+    removableAfter: dt.date | None  # when the backup directory's own copies no longer need it
 
 
 class Confirmation(Model):
@@ -426,7 +425,6 @@ class Confirmation(Model):
 
 
 class KeyStorage(Model):
-    keyFile: str
     fingerprint: str
     created: dt.datetime
     ageDays: int
@@ -462,7 +460,7 @@ def _database_bytes(s) -> int:
 
 @router.get("/settings/keys", response_model=KeyStorage)
 def key_storage(request: Request, c: Caller = Depends(admin)):
-    """Read only: the master key is changed only on the host (S15.4.6)."""
+    """Read only: the master key is a phrase, changed only on the host (S15.7.1)."""
     from sqlalchemy import func
 
     from ..keys import master
@@ -472,9 +470,6 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
     ring = srv.store.keys.ring
     now = clock.now()
     with srv.db.read() as s:
-        rotated = s.scalars(
-            select(Activity).where(Activity.kind == "key.rotated").order_by(Activity.at.desc())
-        ).first()
         keep_days = settings.get(s, "backupCopies")
         months = settings.get(s, "keyReminderMonths")
         database_bytes = _database_bytes(s)
@@ -493,10 +488,8 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
         ]
         secrets = s.scalar(select(func.count()).select_from(Secret))
     age = (now - ring.master_created).days
-    removable = (rotated.at + dt.timedelta(days=keep_days)).date() if rotated else None
     receipts_dir = srv.config.receipts_dir
     return KeyStorage(
-        keyFile=str(srv.config.key_file),
         fingerprint=master.fingerprint(srv.store.keys.master_id),
         created=ring.master_created,
         ageDays=age,
@@ -504,8 +497,11 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
         reminderDue=bool(months) and age > months * 30.4,
         dataKeyCreated=ring.data_key_created,
         previous=[
-            PreviousKeyOut(fingerprint=p.fingerprint, path=str(p.path), removableAfter=removable)
-            for p in srv.config.previous_keys
+            PreviousKeyOut(
+                fingerprint=master.fingerprint(p.master_id),
+                removableAfter=(p.rotated + dt.timedelta(days=keep_days)).date(),
+            )
+            for p in ring.previous
         ],
         confirmations=confirmations,
         databaseBytes=database_bytes,
@@ -519,8 +515,8 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
 
 @router.post("/settings/keys/test", response_model=KeyTest)
 def key_test(request: Request, c: Caller = Depends(admin)):
-    """Test: the key file passes its checks, unwraps the data key, and opens the database
-    and a secret."""
+    """Test: the keyring on disk is the one the phrase unlocked, and the database and a
+    secret open with the data key it holds."""
     from ..config import RefuseStart
     from ..keys import master
     from ..keys import secrets as sealing
@@ -531,11 +527,20 @@ def key_test(request: Request, c: Caller = Depends(admin)):
     cfg = srv.config
     checks = []
     try:
-        key = master.check_key_file(cfg.key_file, cfg.data_dir, cfg.backup_dir)
-        checks.append(CheckOut(name="Key file", ok=True, detail="present, 16 bytes, mode 0400"))
-        data_key = master.unwrap(key, master.read_keyring(cfg.keyring_path))
-        checks.append(CheckOut(name="Data key", ok=True, detail="unwrapped by the master key"))
-        conn = connect(cfg.db_path, master.DataKeys.derive(data_key).sqlcipher_key)
+        ring = master.read_keyring(cfg.keyring_path)
+        if ring.master_id != srv.store.keys.master_id:
+            raise ValueError(
+                f"the keyring on disk is wrapped under {master.fingerprint(ring.master_id)}, "
+                f"the server was unlocked with {master.fingerprint(srv.store.keys.master_id)}"
+            )
+        checks.append(
+            CheckOut(
+                name="Keyring",
+                ok=True,
+                detail=f"present, wrapped under {master.fingerprint(ring.master_id)}",
+            )
+        )
+        conn = connect(cfg.db_path, srv.store.keys.keys.sqlcipher_key)
         conn.close()
         checks.append(CheckOut(name="Database", ok=True, detail="opens with the data key"))
     except (RefuseStart, ValueError, WrongKey) as e:
@@ -559,10 +564,26 @@ def key_test(request: Request, c: Caller = Depends(admin)):
     return KeyTest(ok=all(x.ok for x in checks), checks=checks)
 
 
+class ReencryptIn(Model):
+    phrase: str  # the recovery phrase, typed to confirm: it wraps the new data key
+
+
 @router.post("/settings/keys/reencrypt", status_code=202)
-def key_reencrypt(request: Request, c: Caller = Depends(admin)):
-    """Re-encrypt (S15.7.2): a new data key for the database and every secret."""
+def key_reencrypt(body: ReencryptIn, request: Request, c: Caller = Depends(admin)):
+    """Re-encrypt (S15.7.2): a new data key for the database, the receipts and every secret,
+    wrapped under the phrase typed here, which must be this server's."""
+    from ..keys import master, phrase
+
     srv = server(request)
+    try:
+        key = phrase.from_words(body.phrase)
+    except phrase.PhraseError as e:
+        raise refuse("phrase", "phrase-invalid", f"Not a recovery phrase: {e}") from None
+    if master.key_id(key) != srv.store.keys.master_id:
+        raise refuse("phrase", "phrase-wrong", "Those words are not this server's key.", 403)
+    if srv.tasks.status().get("reencrypt", {}).get("running"):
+        raise Problem(409, "reencrypt-running", "A re-encryption is already running.")
+    srv.reencrypt_key = key
     with srv.db.tx() as s:
         activity.record(s, "keys.reencrypt-started", actor=c.id, for_admins=True)
     srv.tasks.run_now("reencrypt")
