@@ -9,7 +9,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
-from .. import activity, clock, exactjson, receipts, settings
+from .. import activity, clock, exactjson, parsing, receipts, settings
 from ..errors import Problem, refuse
 from ..keys.files import FileError
 from ..receipts import reading, retention
@@ -410,10 +410,13 @@ def receipt_file(receipt_id: str, request: Request, c: Caller = Depends(caller))
     }
     try:
         if r.mediaType == "image/heic":
-            data = receipts.as_jpeg(receipts.whole(srv, r))
+            # Decoded in the reader's worker, never here (S9.1, S9.8.4.2).
+            data = parsing.as_jpeg(receipts.whole(srv, r))
             return Response(data, media_type="image/jpeg", headers=headers)
         stream = receipts.read_file(srv, r)
         first = next(stream)
+    except parsing.ReadError as e:
+        raise Problem(415, "receipt-unshowable", f"The photo can't be shown: {e}") from None
     except (FileError, OSError) as e:
         raise Problem(500, "receipt-unreadable", f"The receipt's file can't be read: {e}") from None
 

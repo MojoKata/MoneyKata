@@ -2756,6 +2756,7 @@
  * @property {number} failed
  * @property {number} read
  * @property {(string | null)} lastRun
+ * @property {(boolean | null)} [fileSandbox]
  */
 
 /**

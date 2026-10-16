@@ -364,7 +364,13 @@ def file(link_id: str, file_id: str, request: Request, c: Caller = Depends(calle
 
     if kind == "image/heic":
         data = first + b"".join(rest())
-        return Response(receipts.as_jpeg(data), media_type="image/jpeg", headers=headers)
+        from .. import parsing
+
+        try:
+            jpeg = parsing.as_jpeg(data)  # decoded in the reader's worker (S9.8.4.2)
+        except parsing.ReadError:
+            raise Problem(415, "receipt-type", "That photo can't be shown.") from None
+        return Response(jpeg, media_type="image/jpeg", headers=headers)
 
     def body():
         yield first

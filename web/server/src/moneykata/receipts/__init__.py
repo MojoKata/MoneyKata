@@ -118,6 +118,12 @@ def thumbnail(data: bytes, media_type: str) -> bytes | None:
         return None
 
 
+def _parsing():
+    from .. import parsing
+
+    return parsing
+
+
 def as_jpeg(data: bytes) -> bytes:
     """An iPhone photo (HEIC) as JPEG for the browser, turned the way it was taken."""
     img = _open_image(data).convert("RGB")
@@ -174,7 +180,8 @@ def store(s: Session, server, owner_id: str, name: str, data: bytes) -> Stored:
         size=len(data),
         sha256=digest,
         fileId=file_id,
-        thumbnail=thumbnail(data, media),
+        # Drawn in the reader's worker, never here (S9.5, S9.8.4.2).
+        thumbnail=_parsing().thumbnail(data, media),
         readStatus="waiting" if settings.get(s, "readReceipts") else "off",
     )
     s.add(r)

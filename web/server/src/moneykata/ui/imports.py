@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import access, clock, exactjson, ids, receipts, settings
+from .. import access, clock, exactjson, ids, parsing, receipts, settings
 from ..errors import Problem, refuse
 from ..importers import brokerage, csvfile, ofx, statements
 from ..importers.parsed import ParsedFile, ReadError, Row, Security
@@ -140,7 +140,7 @@ def _run(
     srv.jobs.update(job, state="running", progress=0.1)
     try:
         if ofx.looks_like_ofx(data):
-            parsed = ofx.read(data)
+            parsed = parsing.read_ofx(data)
         else:
             if mapping is None:
                 with srv.db.read() as s:
@@ -153,7 +153,7 @@ def _run(
                         )
                     ).first()
                 if saved is None:
-                    proposal = csvfile.propose(data)
+                    proposal = parsing.propose_csv(data)
                     srv.jobs.update(
                         job,
                         state="done",
@@ -166,7 +166,7 @@ def _run(
                     )
                     return
                 mapping = json.loads(saved.columns)
-            parsed = csvfile.read(data, mapping)
+            parsed = parsing.read_csv(data, mapping)
         with srv.db.tx() as s:
             account, _ = access.account(s, user_id, account_id, "write")
             if mapping is not None and save_mapping and parsed.format == "csv":
@@ -275,7 +275,7 @@ def apply_mapping(upload_id: str, body: MappingIn, request: Request, c: Caller =
     if problems:
         raise refuse(f"mapping.{problems[0][0]}", "mapping-incomplete", problems[0][1])
     try:
-        csvfile.read(held.data, body.mapping)
+        parsing.read_csv(held.data, body.mapping)
     except ReadError as e:
         raise refuse("mapping", "mapping-does-not-read", str(e)) from None
     with _held_lock:

@@ -452,6 +452,9 @@ class ReadingQueue(Model):
     failed: int
     read: int
     lastRun: dt.datetime | None
+    # Whether the reader's worker is kept out of the data directory on this host: False on a
+    # kernel without Landlock (S9.8.4.2, S16.10); None until it is known.
+    fileSandbox: bool | None = None
 
 
 def _queue(s, srv) -> ReadingQueue:
@@ -477,9 +480,14 @@ def _queue(s, srv) -> ReadingQueue:
 
 @router.get("/settings/receipts", response_model=ReadingQueue)
 def receipts_queue(request: Request, c: Caller = Depends(admin)):
+    from .. import parsing
+
     srv = server(request)
+    state = parsing.sandbox()
     with srv.db.read() as s:
-        return _queue(s, srv)
+        out = _queue(s, srv)
+    out.fileSandbox = state.get("landlock") if state else None
+    return out
 
 
 @router.post("/settings/receipts/reread", response_model=ReadingQueue)

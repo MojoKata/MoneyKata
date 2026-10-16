@@ -15485,6 +15485,17 @@
             "title": "Failed",
             "type": "integer"
           },
+          "fileSandbox": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filesandbox"
+          },
           "lastRun": {
             "anyOf": [
               {

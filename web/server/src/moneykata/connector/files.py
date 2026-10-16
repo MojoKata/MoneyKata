@@ -11,7 +11,7 @@ from email.policy import HTTP
 
 from fastapi import Request
 
-from .. import activity, clock, receipts, settings
+from .. import activity, clock, parsing, receipts, settings
 from ..errors import Problem
 from ..importers import csvfile, ofx, statements
 from ..importers.parsed import ReadError
@@ -75,7 +75,7 @@ def post(srv, c: Connection, a: Account, data: bytes, meta: dict) -> dict:
     if media is not None:
         return _keep(srv, c, a, data, name, media)
     if ofx.looks_like_ofx(data):
-        parsed = ofx.read(data)
+        parsed = parsing.read_ofx(data)
     elif csvfile.looks_like_csv(data):
         with srv.db.read() as s:
             from sqlalchemy import false, select
@@ -94,7 +94,7 @@ def post(srv, c: Connection, a: Account, data: bytes, meta: dict) -> dict:
                 "mapping-missing",
                 "The account has no saved CSV mapping: import one file by hand first.",
             )
-        parsed = csvfile.read(data, json.loads(saved.columns))
+        parsed = parsing.read_csv(data, json.loads(saved.columns))
     else:
         raise Refused("file-refused", "Not a file MoneyKata imports (OFX, QFX, CSV, a statement).")
     try:
@@ -123,11 +123,9 @@ def _keep(srv, c: Connection, a: Account, data: bytes, name: str, media: str) ->
     digest = hashlib.sha256(data).hexdigest()
     start = end = institution = None
     if media == "application/pdf":
-        from ..receipts import ocr
-
         try:
-            lines = ocr.text_layer(data)
-        except ocr.ReadError:  # a PDF that won't open is kept by its name alone
+            lines = parsing.text_layer(data)  # in the reader's worker (S9.8.4.2)
+        except parsing.ReadError:  # a PDF that won't open is kept by its name alone
             lines = None
         if lines:
             start, end, institution = statements.period_and_institution(lines)

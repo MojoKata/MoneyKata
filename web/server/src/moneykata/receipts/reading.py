@@ -2,10 +2,11 @@
 request, by a separate worker process, so a hostile or broken file can't take the server down.
 
 - An upload marks its receipt *waiting* and answers at once; the reader picks it up.
-- Jobs run one at a time by default (Settings › Receipts), each in its own worker process with
-  ONNX Runtime held to 2 threads, a lower CPU priority, a memory cap and 60 seconds per
-  receipt. A worker that crashes or runs out of time is stopped and a new one started; the
-  receipt is marked *couldn't read it*, with the reason, and stays usable by hand.
+- Jobs run one at a time by default (Settings › Receipts), each in its own worker process
+  (worker.py, its own sandbox) with ONNX Runtime held to 2 threads, a lower CPU priority, a
+  memory cap and 60 seconds per receipt. A worker that crashes or runs out of time is stopped
+  and a new one started; the receipt is marked *couldn't read it*, with the reason, and stays
+  usable by hand.
 - What is read fills the receipt's empty fields as suggestions, marked as read from it; a value
   a person entered is never overwritten. The full text goes into the database and its search
   index, never into Activity or the log.
@@ -15,10 +16,13 @@ import contextlib
 import datetime as dt
 import json
 import logging
-import multiprocessing
 import os
 import queue
+import select
+import subprocess
+import sys
 import threading
+import time
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -27,21 +31,13 @@ from sqlalchemy import text
 from .. import clock, settings
 from ..store.entities.accounts import Account
 from ..store.entities.receipts import Receipt
-from . import ocr, parser
+from . import parser
 
 log = logging.getLogger("moneykata.receipts")
 
 TIME_LIMIT = 60
 MEMORY_CAP = 1536 * 1024 * 1024
-NICE = 10
 FIELDS = ("date", "amount", "payee")
-
-
-def _limit_self() -> None:
-    """In the worker: a lower priority. Its memory is watched from outside (an address-space
-    limit can't be used: ONNX Runtime and OpenCV map far more than they touch)."""
-    with contextlib.suppress(OSError):
-        os.nice(NICE)
 
 
 def resident(pid: int) -> int:
@@ -56,69 +52,122 @@ def resident(pid: int) -> int:
     return 0
 
 
-def _serve(conn) -> None:
-    """The worker process's loop: a file in, its lines (or why not) out."""
-    os.environ["OMP_NUM_THREADS"] = str(ocr.THREADS)
-    _limit_self()
-    while True:
-        try:
-            job = conn.recv()
-        except EOFError:
-            return
-        if job is None:
-            return
-        data, media = job
-        try:
-            r = ocr.read(data, media)
-            conn.send(("ok", r.lines, r.method, r.engine))
-        except ocr.ReadError as e:
-            conn.send(("error", str(e)))
-        except MemoryError:
-            conn.send(("error", "it needed more memory than the reader may use"))
-        except Exception as e:
-            conn.send(("error", f"the reader failed ({type(e).__name__})"))
+MAX_ANSWER = 64 * 1024 * 1024
+MAX_LINES = 20_000
+MAX_LINE = 2_000
 
 
 class Worker:
-    """One worker process, started when first needed and again after a crash or a timeout."""
+    """One worker process (worker.py), started when first needed and again after a crash or a
+    timeout: no environment, no file descriptor but its pipes, and length-prefixed JSON both
+    ways, never pickles (S9.8.4.2). `state` is what its sandbox holds, as it said at start."""
 
-    def __init__(self) -> None:
+    def __init__(self, data_dir=None) -> None:
         self.proc = None
-        self.conn = None
+        self.data_dir = data_dir
+        self.state: dict | None = None
+        self._buf = b""
 
     def _start(self) -> None:
-        ctx = multiprocessing.get_context("spawn")
-        here, there = ctx.Pipe()
-        self.proc = ctx.Process(target=_serve, args=(there,), daemon=True, name="mk-reader")
-        self.proc.start()
-        there.close()
-        self.conn = here
+        # This Python, the worker's module, and the data directory its sandbox refuses: no
+        # input from anyone reaches the command line.
+        self.proc = subprocess.Popen(  # noqa: S603
+            [sys.executable, "-I", "-m", "moneykata.receipts.worker", str(self.data_dir or "")],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            env={},
+            close_fds=True,
+        )
+        self._buf = b""
+        hello = self._recv(time.monotonic() + 120)
+        if not isinstance(hello, dict) or hello.get("ready") is not True:
+            raise OSError("the reader didn't start")
+        self.state = {k: bool(hello.get(k)) for k in ("seccomp", "landlock", "core")}
+
+    def _exactly(self, n: int, deadline: float) -> bytes:
+        fd = self.proc.stdout.fileno()
+        while len(self._buf) < n:
+            if time.monotonic() > deadline:
+                raise TimeoutError
+            if resident(self.proc.pid) > MEMORY_CAP:
+                raise MemoryError
+            ready, _, _ = select.select([fd], [], [], 0.25)
+            if ready:
+                chunk = os.read(fd, 1 << 16)
+                if not chunk:
+                    raise EOFError
+                self._buf += chunk
+        out, self._buf = self._buf[:n], self._buf[n:]
+        return out
+
+    def _recv(self, deadline: float):
+        n = int.from_bytes(self._exactly(4, deadline), "big")
+        if n > MAX_ANSWER:
+            raise ValueError("an answer larger than allowed")
+        return json.loads(self._exactly(n, deadline))
+
+    def call(self, op: str, data: bytes = b"", limit: float = TIME_LIMIT, **params) -> dict:
+        """One job; its answer as the worker sent it, to be checked by the caller, or `error`
+        with the reason."""
+        if self.proc is None or self.proc.poll() is not None:
+            try:
+                self._start()
+            except OSError, ValueError, EOFError, TimeoutError, MemoryError:
+                self.stop()
+                return {"error": "the reader couldn't start"}
+        head = json.dumps({"op": op, **params, "length": len(data)}).encode()
+        try:
+            stdin = self.proc.stdin
+            stdin.write(len(head).to_bytes(4, "big") + head + len(data).to_bytes(4, "big"))
+            stdin.write(data)
+            stdin.flush()
+            out = self._recv(time.monotonic() + limit)
+        except TimeoutError:
+            self.stop()
+            return {"error": f"it took longer than {int(limit)} seconds"}
+        except MemoryError:
+            self.stop()
+            return {"error": "it needed more memory than the reader may use"}
+        except EOFError, BrokenPipeError, OSError, ValueError:
+            self.stop()
+            return {"error": "the reader stopped while reading it"}
+        if not isinstance(out, dict):
+            self.stop()
+            return {"error": "the reader answered out of turn"}
+        if "error" in out:
+            return {"error": str(out["error"])[:300]}
+        return out
 
     def read(self, data: bytes, media: str, limit: float = TIME_LIMIT) -> tuple:
-        if self.proc is None or not self.proc.is_alive():
-            self._start()
-        try:
-            self.conn.send((data, media))
-            waited = 0.0
-            while not self.conn.poll(min(0.25, limit)):
-                waited += 0.25
-                if resident(self.proc.pid) > MEMORY_CAP:
-                    self.stop()
-                    return ("error", "it needed more memory than the reader may use")
-                if waited >= limit:
-                    self.stop()
-                    return ("error", f"it took longer than {int(limit)} seconds")
-            return self.conn.recv()
-        except EOFError, BrokenPipeError, OSError:
+        """A receipt or statement read: ("ok", lines, method, engine), or ("error", why)."""
+        out = self.call("read", data, limit, media=media)
+        if "error" in out:
+            return ("error", out["error"])
+        lines, method, engine = out.get("lines"), out.get("method"), out.get("engine")
+        if (
+            not isinstance(lines, list)
+            or len(lines) > MAX_LINES
+            or not all(isinstance(x, str) and len(x) <= MAX_LINE for x in lines)
+            or method not in ("text", "ocr")
+            or not isinstance(engine, str)
+            or len(engine) > 200
+        ):
             self.stop()
-            return ("error", "the reader stopped while reading it")
+            return ("error", "the reader answered out of turn")
+        return ("ok", lines, method, engine)
 
     def stop(self) -> None:
         if self.proc is not None:
-            if self.proc.is_alive():
+            if self.proc.poll() is None:
                 self.proc.kill()
-            self.proc.join(5)
-        self.proc = self.conn = None
+            with contextlib.suppress(Exception):
+                self.proc.wait(5)
+            for f in (self.proc.stdin, self.proc.stdout):
+                with contextlib.suppress(Exception):
+                    f.close()
+        self.proc = None
+        self._buf = b""
 
 
 class Reader:
@@ -148,7 +197,7 @@ class Reader:
                 )
             ]
         for i in range(n):
-            w = Worker()
+            w = Worker(self.server.config.data_dir)
             t = threading.Thread(target=self._loop, args=(w,), daemon=True, name=f"mk-read-{i}")
             self.workers.append(w)
             self.threads.append(t)

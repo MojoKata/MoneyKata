@@ -656,6 +656,17 @@ function ReadingQueue() {
   return html`
     <div class="card content-narrow mt">
       <h3>Reading</h3>
+      ${q.fileSandbox === false
+        ? html`
+          <div class="notice small" role="status" data-help="file-sandbox">
+            <${Icon}
+              name="info" />
+            <div>Reading runs without its file sandbox on this host: its kernel has
+                    no Landlock (Linux 5.13 or later), so the reader could open the data directory. It
+                    still has no network, and it still runs apart from the server.</div>
+          </div>
+        `
+        : null}
       <div class="list-item"><span class="grow">Waiting</span>${q.waiting + q.reading}</div>
       <div class="list-item"><span class="grow">Read</span>${q.read}</div>
       <div class="list-item"><span class="grow">Couldn't read</span>${q.failed}</div>

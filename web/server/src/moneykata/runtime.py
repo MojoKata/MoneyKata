@@ -274,6 +274,12 @@ async def start(config: Config, seed: bool = False) -> int:
             f"the keyring {config.keyring_path} is missing: run `moneykata keys init` on a new "
             "server, or `db restore` a backup"
         )
+    # No other process of this account reads the server's memory, keys and all (S9.8.4.2);
+    # the reader's workers are kept out of the data directory.
+    from . import parsing, sandbox
+
+    sandbox.not_dumpable()
+    parsing.use_data_dir(config.data_dir)
     server = Server(config=config)
     server.unlocking = asyncio.Lock()
     app = create_app(server)
@@ -290,6 +296,7 @@ async def start(config: Config, seed: bool = False) -> int:
         if server.store is not None:
             server.tasks.stop()
             server.reader.stop()
+        parsing.stop()
 
     scheme = "https" if config.mode == "tls" else "http"
     log.info(

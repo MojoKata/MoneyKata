@@ -280,3 +280,62 @@ def test_fixture_receipts_stay_above_the_accuracy_floor():
     finally:
         w.stop()
     assert right / asked >= 0.8, f"{right} of {asked}"
+
+
+def test_the_worker_gives_up_the_network_and_its_environment(tmp_path):
+    """S9.8.4.2: no network socket (seccomp), no environment, and the data directory closed
+    where the kernel has Landlock; it says which it holds."""
+    from moneykata import sandbox
+
+    (tmp_path / "secret").write_text("x")
+    w = Worker(tmp_path)
+    try:
+        out = w.call("selftest", b"", path=str(tmp_path))
+        assert out["network"] is False, "a network socket is refused"
+        # Its own thread count, and the locale Python itself sets: nothing of the server's.
+        assert set(out["environment"]) <= {"OMP_NUM_THREADS", "LC_CTYPE"}
+        assert w.state["seccomp"] and w.state["core"]
+        landlock = sandbox.landlock_abi() >= 1
+        assert w.state["landlock"] is landlock
+        assert out["path"] is (not landlock), "the data directory is closed with Landlock"
+    finally:
+        w.stop()
+
+
+def test_an_answer_out_of_shape_is_refused(monkeypatch):
+    """The server checks every field of what the worker answers, never trusting its shape."""
+    from moneykata import parsing
+    from moneykata.importers import parsed
+
+    w = Worker()
+    monkeypatch.setattr(
+        w, "call", lambda *a, **k: {"lines": ["ok", 7], "method": "ocr", "engine": "x"}
+    )
+    assert w.read(b"", "image/png") == ("error", "the reader answered out of turn")
+    monkeypatch.setattr(parsing, "_call", lambda op, data, **k: {"webp": "not base64!"})
+    assert parsing.thumbnail(b"", "image/png") is None
+    monkeypatch.setattr(parsing, "_call", lambda op, data, **k: {"jpeg": "aGVsbG8="})
+    with pytest.raises(parsed.ReadError):
+        parsing.as_jpeg(b"")
+    for bad in (
+        None,
+        {"format": "ofx", "rows": [{"date": "2026-13-01", "kind": "deposit", "amount": "1"}]},
+        {"format": "ofx", "rows": [{"date": "2026-01-01", "kind": "deposit", "amount": "NaN"}]},
+        {"format": "exe", "rows": []},
+    ):
+        monkeypatch.setattr(parsing, "_call", lambda op, data, b=bad, **k: {"parsed": b})
+        with pytest.raises(parsed.ReadError):
+            parsing.read_ofx(b"")
+
+
+def test_the_server_can_be_made_non_dumpable():
+    """S9.8.4.3: no other process of its account reads the server's memory."""
+    import subprocess
+    import sys
+
+    code = (
+        "import ctypes; from moneykata import sandbox; sandbox.not_dumpable();"
+        "libc = ctypes.CDLL(None); print(libc.prctl(3, 0, 0, 0, 0))"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    assert out.stdout.strip() == "0"
