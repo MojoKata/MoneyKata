@@ -22,9 +22,10 @@ log = logging.getLogger("moneykata.store")
 BACKUP_PREFIX = "moneykata-"
 LOCK_FILE = "moneykata.lock"
 # What a restore replaces in the data directory. Linked copies go too: they are left out of
-# backups and pulled again from their sources (S11.9.9). The TLS pair, the mail folder, the
-# outbox and the pre-upgrade copies stay.
-RESTORED = ("moneykata.db", "moneykata.db-wal", "moneykata.db-shm", "keyring", "receipts", "links")
+# backups and pulled again from their sources (S11.9.9). The receipts stay in place: a backup
+# is the database and its keyring only, the host backs up the files (S14.6). The TLS pair, the
+# mail folder, the outbox and the pre-upgrade copies stay.
+RESTORED = ("moneykata.db", "moneykata.db-wal", "moneykata.db-shm", "keyring", "links")
 
 
 def lock_data_dir(config: Config, why: str):
@@ -73,15 +74,22 @@ def open_store(config: Config, master_key: bytes, migrate_copies: bool = True) -
     if config.db_path.exists():
         os.chmod(config.db_path, 0o600)
     migrate.upgrade(
-        engine, config.db_path, key, config.data_dir / "pre-upgrade" if migrate_copies else None
+        engine,
+        config.db_path,
+        key,
+        config.data_dir / "pre-upgrade" if migrate_copies else None,
+        config.keyring_path,
     )
     return Store(Database(engine), unlocked)
 
 
-def reencrypt(config: Config, store: Store, master_key: bytes) -> Store:
+def reencrypt(
+    config: Config, store: Store, master_key: bytes, choices: dict[str, str] | None = None
+) -> Store:
     """A new data key (S15.7.2): the database is re-keyed and every secret gets a fresh data
     key and nonce. The master key, typed again for this, is unchanged. The new keyring is
-    written aside first, so an interrupted run is finished at the next unlock."""
+    written aside first, so an interrupted run is finished at the next unlock. Then each copy
+    on the host is rewritten, deleted or left as its choice says (`copies`)."""
     if master.key_id(master_key) != store.keys.master_id:
         raise master.WrongPhrase("those words are not this server's key")
     old = store.keys
@@ -99,6 +107,13 @@ def reencrypt(config: Config, store: Store, master_key: bytes) -> Store:
     _rewrap_receipts(config.receipts_dir, old.keys.receipts, new.keys.receipts)
     os.replace(next_keyring(config), config.keyring_path)
     log.info("re-encrypted under a new data key")
+    if choices:
+        from . import copies
+
+        for name, outcome in copies.apply_reencryption(
+            config, choices, master_key, data_key
+        ).items():
+            log.info("copy %s: %s", name, outcome)
     return store
 
 
@@ -151,9 +166,17 @@ def _rewrap_receipts(folder: Path, old_key, new_key) -> int:
 def _finish_reencrypt(
     config: Config, current: master.Unlocked, master_key: bytes
 ) -> master.Unlocked:
-    """A re-encryption was interrupted: use whichever key the database opens with."""
+    """A re-encryption was interrupted: use whichever key the database opens with. It is
+    finished here, at the unlock, with the phrase just given; a pending keyring wrapped under
+    another phrase (a rotation in between) is refused by name rather than crashed on."""
     ring = master.read_keyring(next_keyring(config))
-    data_key = master.unwrap(master_key, ring)
+    try:
+        data_key = master.unwrap(master_key, ring)
+    except ValueError:
+        raise RefuseStart(
+            f"a re-encryption is pending under {master.fingerprint(ring.master_id)}: unlock "
+            "with that phrase so it can finish"
+        ) from None
     pending = master.Unlocked(current.master_id, ring, master.DataKeys.derive(data_key), data_key)
     try:
         connect(config.db_path, pending.keys.sqlcipher_key).close()
@@ -217,8 +240,10 @@ def _sha256(path: Path) -> str:
 
 
 def backup(config: Config, store: Store, now: dt.datetime | None = None) -> Path:
-    """One verified copy of the database, the keyring and the receipts directory. Every file
-    in it is as encrypted as the data is: it opens only with the master key or its phrase."""
+    """One verified, coherent copy of the database with its keyring (S14.6). Never the receipt
+    files: the host backs up the data directory, and this copy exists so that the live
+    database the host picks up has a consistent twin beside it. It opens only with the
+    phrase."""
     now = now or clock.now()
     name = BACKUP_PREFIX + now.strftime("%Y%m%d-%H%M%S")
     config.backup_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -231,8 +256,6 @@ def backup(config: Config, store: Store, now: dt.datetime | None = None) -> Path
     copy.verify(part / "moneykata.db", key)
     shutil.copy2(config.keyring_path, part / "keyring")
     os.chmod(part / "keyring", 0o600)
-    if config.receipts_dir.is_dir():
-        shutil.copytree(config.receipts_dir, part / "receipts")
     files = {
         str(p.relative_to(part)): {"bytes": p.stat().st_size, "sha256": _sha256(p)}
         for p in sorted(part.rglob("*"))
@@ -330,8 +353,6 @@ def restore(
         shutil.copy2(backup_path / "keyring", config.keyring_path)
         for p in (config.db_path, config.keyring_path):
             os.chmod(p, 0o600)
-        if (backup_path / "receipts").is_dir():
-            shutil.copytree(backup_path / "receipts", config.receipts_dir)
         log.info("restored %s; the files it replaced are in %s", backup_path.name, aside.name)
         return aside
     finally:
@@ -377,13 +398,24 @@ def shell(config: Config, master_key: bytes) -> int:
     return 0
 
 
-def rotate_running(config: Config, store: Store, new_master: bytes) -> Store:
+def rotate_running(
+    config: Config,
+    store: Store,
+    new_master: bytes,
+    choices: dict[str, str] | None = None,
+    old_master: bytes | None = None,
+) -> tuple[Store, dict[str, str]]:
     """Rotation through the running server (S15.7.1): it holds the data key, so no old phrase
-    is needed; the keyring is written again under the new master key, the old one recorded."""
+    is needed; the keyring is written again under the new master key, the old one recorded.
+    Then each copy on the host is re-wrapped, deleted or left as its choice says; a copy
+    under an earlier data key can be re-wrapped only when the old phrase was given too."""
+    from . import copies
+
     if next_keyring(config).exists():
         raise RefuseStart("a re-encryption is pending: it finishes at the next unlock")
-    ring = master.rotated(store.keys.ring, store.keys.data_key, new_master, master.now())
+    at = master.now()
+    ring = master.rotated(store.keys.ring, store.keys.data_key, new_master, at)
     master.write_keyring(config.keyring_path, ring)
-    return Store(
-        store.db, master.Unlocked(ring.master_id, ring, store.keys.keys, store.keys.data_key)
-    )
+    new = master.Unlocked(ring.master_id, ring, store.keys.keys, store.keys.data_key)
+    outcomes = copies.apply_rotation(config, choices or {}, store.keys, new_master, at, old_master)
+    return Store(store.db, new), outcomes

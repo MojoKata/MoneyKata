@@ -63,10 +63,13 @@ def register_tasks(server: Server) -> None:
         return at
 
     def backup(ctx: TaskContext) -> None:
-        maintenance.backup(server.config, server.store)
-        with server.db.read() as s:
-            keep = settings.get(s, "backupCopies")
-        maintenance.prune(server.config, keep)
+        # Never beside a re-encryption (S15.7.2): one would copy a keyring the other is
+        # replacing. The lock makes one wait for the other.
+        with server.maintenance_lock:
+            maintenance.backup(server.config, server.store)
+            with server.db.read() as s:
+                keep = settings.get(s, "backupCopies")
+            maintenance.prune(server.config, keep)
 
     server.tasks.register("backups", backup, Daily(setting_time("backupTime")), last.get("backups"))
 
@@ -87,11 +90,19 @@ def register_tasks(server: Server) -> None:
     )
 
     def reencrypt(ctx: TaskContext) -> None:
-        """Settings › Key storage › Re-encrypt: only when asked, with the phrase (S15.7.2)."""
+        """Settings › Key storage › Re-encrypt: only when asked, with the phrase (S15.7.2). A
+        verified backup first, under the old key, so a failure part-way leaves a known-good
+        copy; then the main job and the copies' choices, with backups kept out meanwhile."""
         key, server.reencrypt_key = server.reencrypt_key, None
+        choices, server.reencrypt_copies = server.reencrypt_copies, {}
         if key is None:
             raise TaskError("re-encryption needs the recovery phrase: start it from Settings")
-        server.store = maintenance.reencrypt(server.config, server.store, key)
+        with server.maintenance_lock:
+            maintenance.backup(server.config, server.store)
+            with server.db.read() as s:
+                keep = settings.get(s, "backupCopies")
+            maintenance.prune(server.config, keep)
+            server.store = maintenance.reencrypt(server.config, server.store, key, choices)
         with server.db.tx() as s:
             from . import activity
 

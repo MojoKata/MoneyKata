@@ -3281,101 +3281,26 @@
         "title": "ContributionsView",
         "type": "object"
       },
-      "CopyOut": {
+      "CopiesOut": {
         "additionalProperties": false,
-        "description": "The link's copy (S11.7): its access key, size, and whether it is unlocked.",
         "properties": {
-          "items": {
-            "title": "Items",
-            "type": "integer"
+          "copies": {
+            "items": {
+              "$ref": "#/components/schemas/moneykata__ui__settings__CopyOut"
+            },
+            "title": "Copies",
+            "type": "array"
           },
-          "keyMadeAt": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Keymadeat"
-          },
-          "keyMadeBy": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Keymadeby"
-          },
-          "locksInSeconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Locksinseconds"
-          },
-          "receipts": {
-            "title": "Receipts",
-            "type": "integer"
-          },
-          "sizeBytes": {
-            "title": "Sizebytes",
-            "type": "integer"
-          },
-          "unlocked": {
-            "title": "Unlocked",
-            "type": "boolean"
-          },
-          "unlockedAt": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unlockedat"
-          },
-          "unlockedBy": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unlockedby"
-          },
-          "waiting": {
-            "title": "Waiting",
-            "type": "integer"
+          "note": {
+            "title": "Note",
+            "type": "string"
           }
         },
         "required": [
-          "keyMadeAt",
-          "keyMadeBy",
-          "sizeBytes",
-          "receipts",
-          "items",
-          "waiting",
-          "unlocked",
-          "unlockedBy",
-          "unlockedAt",
-          "locksInSeconds"
+          "copies",
+          "note"
         ],
-        "title": "CopyOut",
+        "title": "CopiesOut",
         "type": "object"
       },
       "CopyState": {
@@ -3589,6 +3514,28 @@
           "attention"
         ],
         "title": "Dashboard",
+        "type": "object"
+      },
+      "Deleted": {
+        "description": "Every DELETE's answer (S13.8.1): what went, and what it belonged to as it now stands,\nor null for a record that belonged to nothing.",
+        "properties": {
+          "deleted": {
+            "$ref": "#/components/schemas/Gone"
+          },
+          "parent": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent"
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "Deleted",
         "type": "object"
       },
       "Deleted_BookDetail_": {
@@ -15332,10 +15279,6 @@
       "PruneOut": {
         "additionalProperties": false,
         "properties": {
-          "backup": {
-            "title": "Backup",
-            "type": "string"
-          },
           "bytes": {
             "title": "Bytes",
             "type": "integer"
@@ -15347,8 +15290,7 @@
         },
         "required": [
           "files",
-          "bytes",
-          "backup"
+          "bytes"
         ],
         "title": "PruneOut",
         "type": "object"
@@ -16329,6 +16271,13 @@
       "ReencryptIn": {
         "additionalProperties": false,
         "properties": {
+          "copies": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Copies",
+            "type": "object"
+          },
           "phrase": {
             "title": "Phrase",
             "type": "string"
@@ -16875,6 +16824,38 @@
           "available"
         ],
         "title": "RolloverOut",
+        "type": "object"
+      },
+      "RotateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "copies": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Copies",
+            "type": "object"
+          },
+          "oldPhrase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldphrase"
+          },
+          "phrase": {
+            "title": "Phrase",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phrase"
+        ],
+        "title": "RotateIn",
         "type": "object"
       },
       "Sale": {
@@ -18334,6 +18315,9 @@
           "later": {
             "$ref": "#/components/schemas/Size"
           },
+          "orphans": {
+            "$ref": "#/components/schemas/Size"
+          },
           "pruned": {
             "title": "Pruned",
             "type": "integer"
@@ -18352,7 +18336,8 @@
           "pruned",
           "byYear",
           "expiredBy",
-          "keepStatementsYears"
+          "keepStatementsYears",
+          "orphans"
         ],
         "title": "StorageOut",
         "type": "object"
@@ -22274,6 +22259,103 @@
         "title": "Household",
         "type": "object"
       },
+      "moneykata__ui__links__CopyOut": {
+        "additionalProperties": false,
+        "description": "The link's copy (S11.7): its access key, size, and whether it is unlocked.",
+        "properties": {
+          "items": {
+            "title": "Items",
+            "type": "integer"
+          },
+          "keyMadeAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keymadeat"
+          },
+          "keyMadeBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keymadeby"
+          },
+          "locksInSeconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locksinseconds"
+          },
+          "receipts": {
+            "title": "Receipts",
+            "type": "integer"
+          },
+          "sizeBytes": {
+            "title": "Sizebytes",
+            "type": "integer"
+          },
+          "unlocked": {
+            "title": "Unlocked",
+            "type": "boolean"
+          },
+          "unlockedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlockedat"
+          },
+          "unlockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlockedby"
+          },
+          "waiting": {
+            "title": "Waiting",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "keyMadeAt",
+          "keyMadeBy",
+          "sizeBytes",
+          "receipts",
+          "items",
+          "waiting",
+          "unlocked",
+          "unlockedBy",
+          "unlockedAt",
+          "locksInSeconds"
+        ],
+        "title": "CopyOut",
+        "type": "object"
+      },
       "moneykata__ui__links__LinkOut": {
         "additionalProperties": false,
         "properties": {
@@ -22400,7 +22482,7 @@
           "linkedCopy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/CopyOut"
+                "$ref": "#/components/schemas/moneykata__ui__links__CopyOut"
               },
               {
                 "type": "null"
@@ -22987,6 +23069,58 @@
           "avatar"
         ],
         "title": "Household",
+        "type": "object"
+      },
+      "moneykata__ui__settings__CopyOut": {
+        "additionalProperties": false,
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "made": {
+            "format": "date-time",
+            "title": "Made",
+            "type": "string"
+          },
+          "masterKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Masterkey"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opens": {
+            "title": "Opens",
+            "type": "string"
+          },
+          "what": {
+            "title": "What",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "what",
+          "made",
+          "bytes",
+          "masterKey",
+          "opens"
+        ],
+        "title": "CopyOut",
         "type": "object"
       },
       "moneykata__ui__settings__SecretSet": {
@@ -29100,15 +29234,39 @@
         ]
       }
     },
+    "/ui/api/keys/copies": {
+      "get": {
+        "description": "The copies on this host, for `keys rotate` to ask about (S15.7.1). Loopback only.",
+        "operationId": "copies_for_rotation_ui_api_keys_copies_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Copies For Rotation Ui Api Keys Copies Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Copies For Rotation",
+        "tags": [
+          "unlock"
+        ]
+      }
+    },
     "/ui/api/keys/rotate": {
       "post": {
-        "description": "`moneykata keys rotate` against the running server: the new phrase's key wraps the data\nkey the server holds; the keyring is written with the old key recorded. From loopback\nonly (S15.4.4).",
+        "description": "`moneykata keys rotate` against the running server: the new phrase's key wraps the data\nkey the server holds; the keyring is written with the old key recorded; each copy on the\nhost is re-wrapped, deleted or left as chosen. From loopback only (S15.4.4).",
         "operationId": "rotate_ui_api_keys_rotate_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Phrase"
+                "$ref": "#/components/schemas/RotateIn"
               }
             }
           },
@@ -33446,9 +33604,117 @@
         ]
       }
     },
+    "/ui/api/settings/keys/copies": {
+      "get": {
+        "description": "Every copy on this host, with how it opens; snapshots and the host's backups are not\nhere (S15.7).",
+        "operationId": "key_copies_ui_api_settings_keys_copies_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopiesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Key Copies",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/keys/copies/{name}": {
+      "delete": {
+        "description": "Remove one copy (S15.8 step 4). The password again (S13.7.2).",
+        "operationId": "remove_copy_ui_api_settings_keys_copies__name__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Copy",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/ui/api/settings/keys/previous/{fingerprint}": {
+      "delete": {
+        "description": "Drop a previous master key from the keyring's list once nothing needs it (S15.7.1).",
+        "operationId": "forget_previous_key_ui_api_settings_keys_previous__fingerprint__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fingerprint",
+            "required": true,
+            "schema": {
+              "title": "Fingerprint",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Forget Previous Key",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
     "/ui/api/settings/keys/reencrypt": {
       "post": {
-        "description": "Re-encrypt (S15.7.2): a new data key for the database, the receipts and every secret,\nwrapped under the phrase typed here, which must be this server's.",
+        "description": "Re-encrypt (S15.7.2): a new data key for the database, the receipts and every secret,\nwrapped under the phrase typed here, which must be this server's; then each copy on the\nhost as chosen. The password again, as for pruning (S13.7.2).",
         "operationId": "key_reencrypt_ui_api_settings_keys_reencrypt_post",
         "requestBody": {
           "content": {
@@ -34014,9 +34280,31 @@
         ]
       }
     },
+    "/ui/api/settings/storage/orphans/remove": {
+      "post": {
+        "description": "Remove the files no record names, left behind by a restore of an older database under\nfiles written later (S14.6, S16.17). The password again (S13.7.2).",
+        "operationId": "remove_orphans_ui_api_settings_storage_orphans_remove_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PruneOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Remove Orphans",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
     "/ui/api/settings/storage/prune": {
       "post": {
-        "description": "Remove the expired files of the categories ticked: a verified backup first, then the\nfiles, keeping every record; recorded in Activity with its counts (S14.10.5).",
+        "description": "Remove the expired files of the categories ticked, keeping every record; recorded in\nActivity with its counts (S14.10.5). No backup first: a backup holds no files, the host's\nown backups do.",
         "operationId": "prune_files_ui_api_settings_storage_prune_post",
         "requestBody": {
           "content": {

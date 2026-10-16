@@ -15,7 +15,7 @@ what key rotation does.
 | **keyring** | the file in the data directory that holds the wrapped data key, so it travels with every backup. |
 | **database key, receipts key, secrets key** | the keys derived from the data key, one for each kind of thing (S15.3.2). |
 | **fingerprint** | a short name for a master key that reveals nothing about it, `mk-3f9a…c21e` (S15.3.5). |
-| **copy** | anything that holds the data as it was at some moment: a backup, wherever it was copied to; the data directory on a disk, a snapshot or a VM image; a `pre-upgrade/` or `before-restore-*/` folder. A copy opens with the keys of its day, for as long as it exists. |
+| **copy** | anything that holds the data as it was at some moment. **On this host**, where MoneyKata can see and act on it: a backup in the backup directory, a `pre-upgrade/` copy, a `before-restore-*/` folder, each carrying its own keyring. **Elsewhere**, where only the admin can: the host's snapshots, replicas and backups, a VM image, a disk. A copy opens with the keys of its day, for as long as it exists. |
 | **rotation** | a new master key and phrase; the data key is re-wrapped under it and nothing else changes (S15.7.1). |
 | **re-encryption** | a new data key; the database, the receipt files and every secret are encrypted again under it; the master key is unchanged (S15.7.2). |
 
@@ -45,7 +45,9 @@ replica holds only the right-hand side, and the whole host can be backed up as i
    3. **Secrets, each on its own as well**: every *secret* the server holds so it can act for
       its users: price-source API keys, the bitcoin node's credentials, the SMTP password,
       and this server's private link key (S11.1).
-   4. **Backups**, which are copies of the encrypted database and files (S14.6).
+   4. **Backups**, which are copies of the encrypted database with its keyring (S14.6); the
+      receipt files are in the host's own backup of the data directory, encrypted as they
+      are.
    5. **Encrypted under their own access keys, not the master key**: everything a link
       brings in, in its linked copy (S11.9). The master key cannot open it, so neither losing
       nor rotating the master key touches it.
@@ -153,9 +155,9 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       quarter of an hour (S15.7.4), since a one-off container cannot open the database.
 5. **What losing it costs.** Everything this server holds is encrypted under the master
    key, which exists only as its phrase, so **losing the recovery phrase loses all of it**:
-   the database, the receipts and every backup, and the server cannot even start serving
-   again. There is no back door, and no one can recover it, including the people who make
-   MoneyKata.
+   the database, the receipts, every backup and every copy the host holds, and the server
+   cannot even start serving again. There is no back door, and no one can recover it,
+   including the people who make MoneyKata.
    1. **The host lost, the phrase kept** (a failed disk, a rebuilt host): install, restore
       the backup (S15.6.8), start, and unlock with the phrase. Nothing is lost.
    2. **The phrase lost while the server is running**: nothing is lost yet, but the next
@@ -199,10 +201,11 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       encryption on the host is a good habit but no longer carries the key: nothing on the
       disk opens without the phrase, so the data directory and the backup directory can be
       snapshotted, replicated and sent to a NAS or a cloud bucket as they are, as long as
-      the recovery phrase never goes with them. **Know where every copy is**: a copy outside
-      the backup directory is never pruned by MoneyKata, opens with the key of its day for
-      as long as it exists, and is yours to delete after a rotation or a leak (S15.7.3,
-      S15.8).
+      the recovery phrase never goes with them. **Know where every copy is**: the copies on
+      this host are listed in Settings › Key storage, with how each opens; a copy anywhere
+      else (the host's snapshots and backups above all) is never seen or pruned by MoneyKata,
+      opens with the key of its day for as long as it exists, and is yours to delete after a
+      rotation or a leak (S15.7.3, S15.8).
    8. **Restoring onto a new host**: install MoneyKata, restore the backup with `moneykata
       db restore`, which asks for the phrase and checks it opens the backup's keyring, then
       start and unlock. The restore runs with the server stopped (the server holds a lock on
@@ -220,29 +223,44 @@ replica holds only the right-hand side, and the whole host can be backed up as i
          key's fingerprint and the date in the keyring. Run inside the running server's
          container, it hands the new key to the server, which holds the data key, so **no
          old phrase is needed**: this is the way out of a lost phrase (S15.5.2). Run with the
-         server stopped, it asks for the current phrase first;
+         server stopped, it asks for the current phrase first. **Then the copies on the
+         host**, listed with their dates and sizes: for each, **re-wrap** (the default: its
+         keyring written again under the new key, no data touched, no time taken),
+         **delete**, or **leave**; `--rewrap-all`, `--delete-old` and `--leave-all` answer
+         for a script. A copy that holds the data key the server holds is re-wrapped
+         without any old phrase; one made under an earlier data key needs the current
+         phrase, which the command asks for when such a copy is to be re-wrapped and the
+         server is running, and which the offline command has anyway; one under an earlier
+         phrase still is left, and the command says so. The outcome of each is recorded in
+         Activity with the rotation;
       2. **back up the new phrase at once** (S15.6). The server unlocks with the new phrase
          from its next start; nothing needs restarting;
       3. verify the new phrase (`keys verify`);
-      4. **keep the previous key until every copy made before the rotation is gone**,
-         because those copies hold the data key wrapped under it. In the backup directory,
-         backup pruning does this on its own (S14.6, 14 copies by default: two weeks of
-         daily backups, and fewer days when backups are also made by hand), and Settings ›
-         Key storage names the date it will be done, **counting only the backup directory's
-         own copies**. A backup copied anywhere else (a NAS, a cloud bucket, a snapshot, a
-         copy made by hand) and any other copy (the terms above) are outside that count and
-         open with the previous key for as long as they exist: the admin counts those. Then
-         destroy the old phrase's recovery sheet and password-manager entry; Settings drops
-         it from the list of previous keys when told.
-   2. **Re-encrypting** (Settings › Key storage › **Re-encrypt**, admins) makes a new data
-      key: the database is re-keyed (`PRAGMA rekey`), receipt files are re-encrypted a few
-      at a time while the server keeps serving, and every secret gets a fresh data key and
-      nonce. The master key is unchanged: the button asks for the phrase, which wraps the
-      new data key. Settings › Key storage shows the progress. It is for when **the data key
-      may have been read**: a memory dump or a debugging session on the live server, and
-      **any leak of the recovery phrase** (S15.8.1), since a leaked phrase opens the data key
-      in every copy it could have been taken with. It closes nothing made before it
-      (S15.7.3).
+      4. **keep the previous phrase until every copy made under it is gone**. Settings › Key
+         storage lists each previous key with how many copies on this host still need it,
+         which after a rotation that re-wrapped everything is none; the host's own snapshots
+         and backups made before the rotation are outside that count and open with the
+         previous phrase for as long as the host keeps them: the admin counts those. Then
+         **Forget** drops the key from the list, and the old phrase's recovery sheet and
+         password-manager entry are destroyed.
+   2. **Re-encrypting** (Settings › Key storage › **Re-encrypt**, admins, the password
+      again) makes a new data key: the database is re-keyed (`PRAGMA rekey`), receipt files
+      are re-encrypted a few at a time while the server keeps serving, and every secret gets
+      a fresh data key and nonce. The master key is unchanged: the button asks for the
+      phrase, which wraps the new data key. **A verified backup is made first**, under the
+      old key, so a failure part-way leaves a known-good copy, and **no backup runs while a
+      re-encryption does**: each waits for the other. **The copies on the host** are listed
+      in the dialog, and for each the admin chooses **re-encrypt** (the default: rewritten
+      under the new data key after the main job), **delete**, or **leave** (it keeps its old
+      data key, which this phrase still opens); a copy under an earlier phrase cannot be
+      rewritten and is left or deleted. **Interrupted** by a stop or a crash, the
+      re-encryption finishes at the next unlock, with the phrase given then; a pending
+      re-encryption under another phrase (a rotation in between) is refused at the unlock
+      by name, and rotation refuses while one is pending. Settings › Key storage shows the
+      progress. It is for when **the data key may have been read**: a memory dump or a
+      debugging session on the live server, and **any leak of the recovery phrase**
+      (S15.8.1), since a leaked phrase opens the data key in every copy it could have been
+      taken with. It closes nothing made before it (S15.7.3).
    3. **What neither does: a copy keeps the keys of its day.** Rotation and re-encryption
       change what copies made *after* them need; they change nothing about copies made
       before, which still open with the key and phrase of their day:
@@ -289,12 +307,12 @@ replica holds only the right-hand side, and the whole host can be backed up as i
          master key does not wrap;
       3. **rotate the master key** (S15.7.1) and back up the new phrase, so the leaked phrase
          opens nothing made from now on, and no longer unlocks the server;
-      4. **delete every copy made before the rotation, everywhere it was copied**: the
-         backup directory (`backup pruning` will, but not soon enough: prune by hand), the
-         NAS, the cloud bucket, snapshots, `pre-upgrade/` and `before-restore-*/` folders.
-         A copy that cannot be deleted is one the finder of the phrase can read, and should
-         be treated as read: its secrets revoked (step 1 covers them) and its contents
-         assumed known;
+      4. **delete every copy made before the rotation, everywhere it was copied**: on this
+         host, from the list in Settings › Key storage, or by choosing **delete** for each at
+         the rotation; elsewhere, the host's snapshots, replicas, backups and VM images, on
+         both ends of any replication. A copy that cannot be deleted is one the finder of
+         the phrase can read, and should be treated as read: its secrets revoked (step 1
+         covers them) and its contents assumed known;
       5. then destroy the old phrase's sheet and password-manager entry, which the deleted
          copies no longer need.
    3. **A memory dump or a debugging session on the live server** exposes the data key, and

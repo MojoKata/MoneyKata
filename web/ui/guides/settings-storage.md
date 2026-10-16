@@ -8,7 +8,14 @@ them here. Sizes and counts only, never what the files hold.
 
 ## Prune
 
-Opens the files that have expired, by category, to prune: a verified backup first, then the files.
+Opens the files that have expired, by category, to prune. No backup is made first: a backup holds
+no files, and a pruned file survives only in the host's own backups of the data directory.
+
+## Files no record names {#files-no-record-names}
+
+Files in the receipts directory that no receipt, deleted or not, refers to: left behind when an
+older database was restored under files written after it. **Remove** deletes them, after your
+password.
 
 ## Keep statements for {#keep-statements-years}
 

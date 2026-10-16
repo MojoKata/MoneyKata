@@ -15,6 +15,7 @@ import { toast } from '../components/toast.js';
 import { loadSession } from '../store/session.js';
 import { LinksSection } from '../components/links.js';
 import { ConnectorSection } from '../components/connector.js';
+import { withReauth } from '../components/reauth.js';
 import { StorageSection } from '../components/storage.js';
 
 const SECTIONS = /** @type {[string, string][]} */ ([
@@ -1008,8 +1009,9 @@ function Backups() {
             v.lastError ? html`: failed (${v.lastError})` : ': encrypted and verified'
           }.`
           : 'No backup yet.'} Directory (set on the host): <code>${v
-          .directory}</code>. Backups open with the master key's
-          recovery phrase.</div></div>
+          .directory}</code>. A backup is the database and its keyring, a coherent copy
+          for the host's own backup to pick up; receipt files are never copied, the host
+          backs them up with the data directory. Backups open with the recovery phrase.</div></div>
         ${v.backups.length
           ? html`
             <table class="t mt">
@@ -1037,22 +1039,53 @@ function Backups() {
   `;
 }
 
+/** How a copy on the host opens (S15.7), in words. @param {string} opens */
+function opensWith(opens) {
+  return opens === 'current'
+    ? 'opens with this phrase'
+    : opens === 'phrase'
+    ? 'opens with this phrase (an earlier data key)'
+    : opens === 'previous'
+    ? 'needs a previous phrase'
+    : 'its keyring cannot be read';
+}
+
 function Keys() {
   const res = useApi('/settings/keys', {}, ['task']);
+  const cps = useApi('/settings/keys/copies', {}, ['task']);
   const v = /** @type {any} */ (res.data);
+  const copies = /** @type {any} */ (cps.data)?.copies || [];
   const [test, setTest] = useState(/** @type {any} */ (null));
   const [armed, setArmed] = useState(false);
   const [words, setWords] = useState('');
+  const [choices, setChoices] = useState(/** @type {Record<string, string>} */ ({}));
+  const choiceOf = (/** @type {any} */ c) =>
+    choices[c.name] || (c.opens === 'current' || c.opens === 'phrase' ? 'reencrypt' : 'leave');
   const reencrypt = useSubmit(async () => {
-    await api.post('/settings/keys/reencrypt', { phrase: words });
+    const sent = Object.fromEntries(copies.map((/** @type {any} */ c) => [c.name, choiceOf(c)]));
+    await withReauth(() => api.post('/settings/keys/reencrypt', { phrase: words, copies: sent }));
     toast('Re-encrypting under a new data key');
     setArmed(false);
     setWords('');
     res.reload();
+    cps.reload();
   });
+  const removeCopy = async (/** @type {any} */ c) => {
+    await withReauth(() => api.del(`/settings/keys/copies/${encodeURIComponent(c.name)}`));
+    toast(`${c.name} removed`);
+    cps.reload();
+    res.reload();
+  };
+  const forget = async (/** @type {string} */ fp) => {
+    await withReauth(() => api.del(`/settings/keys/previous/${encodeURIComponent(fp)}`));
+    toast(`${fp} forgotten`);
+    res.reload();
+  };
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!v) return html`<${Loading} />`;
   const confirmed = v.confirmations.find((/** @type {any} */ c) => c.matched);
+  const needing = (/** @type {string} */ fp) =>
+    copies.filter((/** @type {any} */ c) => c.masterKey === fp).length;
   return html`<div class="card"><h3>Key storage<span class="spacer"></span>${
     test
       ? test.ok
@@ -1086,22 +1119,57 @@ function Keys() {
     v.secrets === 1 ? '' : 's'
   }
       <span class="small dim">· passwords are hashed</span></div>
-    <div class="list-item"><span class="grow dim">Previous key</span>${
+    <div class="list-item"><span class="grow dim">Previous keys</span>${
     v.previous.length
-      ? v.previous.map((/** @type {any} */ p) =>
-        html`<span><code>${p.fingerprint}</code> ${
-          p.removableAfter
-            ? html`
-              <span
-                class="small dim">· the backup directory's copies made under it are pruned after ${date(
-                  p.removableAfter,
-                )}; copies kept elsewhere are yours to count</span>
-            `
-            : null
-        }</span>`
-      )
+      ? html`<span>${
+        v.previous.map((/** @type {any} */ p) =>
+          html`<div><code>${p.fingerprint}</code> <span class="small dim">· needed by ${
+            needing(p.fingerprint)
+          } ${needing(p.fingerprint) === 1 ? 'copy' : 'copies'} here${
+            p.removableAfter ? `, and by the host's snapshots until it prunes them` : ''
+          }</span>
+            <button type="button" class="btn sm" onClick=${() =>
+            forget(p.fingerprint).catch((e) => toast(e.message))}>Forget</button></div>`
+        )
+      }</span>`
       : html`<span class="dim">none</span>`
   }</div>
+    <div class="list-item"><div class="grow"><span class="dim">Copies on this host</span>
+      ${
+    copies.length
+      ? html`
+        <table class="t mt">
+          <caption class="sr-only">Copies on this host</caption>
+          <thead>
+            <tr>
+              <th>Copy</th>
+              <th>Made</th>
+              <th class="num">Size</th>
+              <th>Opens</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>${copies.map((/** @type {any} */ c) =>
+            html`
+              <tr>
+                <td><code>${c.name}</code><div class="small dim">${c.what}</div></td>
+                <td>${moment(c.made)}</td>
+                <td class="num">${(c.bytes / 1048576).toFixed(1)} MB</td>
+                <td class="small">${opensWith(c.opens)}${c.masterKey
+                  ? html`
+                    <code>${c.masterKey}</code>
+                  `
+                  : null}</td>
+                <td><button type="button" class="btn sm" onClick=${() =>
+                  removeCopy(c).catch((e) => toast(e.message))}>Remove</button></td>
+              </tr>
+            `
+          )}</tbody>
+        </table>
+      `
+      : html`<span class="small dim"> none</span>`
+  }
+      <div class="small dim">${/** @type {any} */ (cps.data)?.note || ''}</div></div></div>
     <div class="list-item"><div class="grow">Recovery phrase<div class="small dim">${
     confirmed
       ? `Last confirmed with moneykata keys verify on ${date(confirmed.at.slice(0, 10))}.`
@@ -1147,6 +1215,31 @@ function Keys() {
             <${Input} type="password" value=${words} onInput=${setWords} autocomplete="off"
               required />
             </${Field}>
+            ${copies.length
+              ? html`<div class="field" data-help="copies-at-re-encryption"><label>The copies on this host</label>
+                ${
+                copies.map((/** @type {any} */ c) =>
+                  html`
+                    <div class="list-item">
+                      <div class="grow"><code>${c.name}</code>
+                                        <div class="small dim">${c.what} · ${opensWith(
+                                          c.opens,
+                                        )}</div></div>
+                      <span
+                        style=${{ flex: 'none', width: '180px' }}><${Select} value=${choiceOf(
+                          c,
+                        )} onChange=${(/** @type {string} */ x) =>
+                          setChoices({ ...choices, [c.name]: x })} options=${[
+                          ['reencrypt', 'Re-encrypt'],
+                          ['delete', 'Delete'],
+                          ['leave', 'Leave as it is'],
+                        ]} /></span>
+                    </div>
+                  `
+                )
+              }
+                <div class="small dim">A copy that needs a previous phrase can only be left or deleted.</div></div>`
+              : null}
             <${FormError} error=${reencrypt.error} />
             <div class="toolbar"><button class="btn primary" disabled=${reencrypt
               .busy}>Re-encrypt now</button>

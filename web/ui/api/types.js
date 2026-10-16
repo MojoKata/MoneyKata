@@ -583,18 +583,9 @@
  */
 
 /**
- * The link's copy (S11.7): its access key, size, and whether it is unlocked.
- * @typedef {Object} CopyOut
- * @property {(string | null)} keyMadeAt
- * @property {(string | null)} keyMadeBy
- * @property {number} sizeBytes
- * @property {number} receipts
- * @property {number} items
- * @property {number} waiting
- * @property {boolean} unlocked
- * @property {(string | null)} unlockedBy
- * @property {(string | null)} unlockedAt
- * @property {(number | null)} locksInSeconds
+ * @typedef {Object} CopiesOut
+ * @property {Array<moneykata__ui__settings__CopyOut>} copies
+ * @property {string} note
  */
 
 /**
@@ -635,6 +626,14 @@
  * @property {(string | null)} lastUpdated
  * @property {Array<GroupTotal>} groups
  * @property {Array<Attention>} attention
+ */
+
+/**
+ * Every DELETE's answer (S13.8.1): what went, and what it belonged to as it now stands,
+ * or null for a record that belonged to nothing.
+ * @typedef {Object} Deleted
+ * @property {Gone} deleted
+ * @property {(unknown | null)} [parent]
  */
 
 /**
@@ -2721,7 +2720,6 @@
  * @typedef {Object} PruneOut
  * @property {number} files
  * @property {number} bytes
- * @property {string} backup
  */
 
 /**
@@ -2887,6 +2885,7 @@
 /**
  * @typedef {Object} ReencryptIn
  * @property {string} phrase
+ * @property {Object<string, string>} [copies]
  */
 
 /**
@@ -2992,6 +2991,13 @@
  * @property {import('../app/dec.js').Dec} used
  * @property {import('../app/dec.js').Dec} eligible
  * @property {import('../app/dec.js').Dec} available
+ */
+
+/**
+ * @typedef {Object} RotateIn
+ * @property {string} phrase
+ * @property {(string | null)} [oldPhrase]
+ * @property {Object<string, string>} [copies]
  */
 
 /**
@@ -3296,6 +3302,7 @@
  * @property {Array<YearSizes>} byYear
  * @property {Array<CategorySize>} expiredBy
  * @property {(number | null)} keepStatementsYears
+ * @property {Size} orphans
  */
 
 /**
@@ -3985,6 +3992,21 @@
  */
 
 /**
+ * The link's copy (S11.7): its access key, size, and whether it is unlocked.
+ * @typedef {Object} moneykata__ui__links__CopyOut
+ * @property {(string | null)} keyMadeAt
+ * @property {(string | null)} keyMadeBy
+ * @property {number} sizeBytes
+ * @property {number} receipts
+ * @property {number} items
+ * @property {number} waiting
+ * @property {boolean} unlocked
+ * @property {(string | null)} unlockedBy
+ * @property {(string | null)} unlockedAt
+ * @property {(number | null)} locksInSeconds
+ */
+
+/**
  * @typedef {Object} moneykata__ui__links__LinkOut
  * @property {string} id
  * @property {string} state
@@ -4006,7 +4028,7 @@
  * @property {(number | null)} syncBytes
  * @property {(number | null)} syncTotal
  * @property {Array<RemoteUser>} users
- * @property {(CopyOut | null)} [linkedCopy]
+ * @property {(moneykata__ui__links__CopyOut | null)} [linkedCopy]
  * @property {Array<Incoming>} [incoming]
  */
 
@@ -4088,6 +4110,17 @@
  * @typedef {Object} moneykata__ui__session__Household
  * @property {string} name
  * @property {Object<string, unknown>} avatar
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__settings__CopyOut
+ * @property {string} name
+ * @property {string} kind
+ * @property {string} what
+ * @property {string} made
+ * @property {number} bytes
+ * @property {(string | null)} masterKey
+ * @property {string} opens
  */
 
 /**

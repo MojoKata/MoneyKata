@@ -37,3 +37,13 @@ def verify(path: Path, key: str | None) -> None:
         conn.close()
     if result != [("ok",)]:
         raise RuntimeError(f"the copy {path.name} failed its integrity check")
+
+
+def rekey(path: Path, old_key: str, new_key: str) -> None:
+    """Rewrite a copy in place under another key (PRAGMA rekey), then check it opens."""
+    conn = connect(path, old_key)
+    try:
+        conn.execute(f'PRAGMA rekey = "{new_key}"')
+    finally:
+        conn.close()
+    verify(path, new_key)

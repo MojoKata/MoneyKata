@@ -13,7 +13,7 @@ from moneykata import ids, settings
 from moneykata.config import RefuseStart
 from moneykata.keys import master
 from moneykata.keys import secrets as sealing
-from moneykata.store import maintenance, migrate, schema_check, views
+from moneykata.store import copy, maintenance, migrate, schema_check, views
 from moneykata.store.db import Database, live, make_engine
 from moneykata.store.entities.core import Secret
 from moneykata.store.entities.users import User
@@ -251,7 +251,8 @@ def test_backup_is_verified_restorable_and_pruned(store, keyed_config, tmp_path,
     key = master_key
     for b in made:
         maintenance.check_backup(b, key)
-        assert (b / "receipts" / "abc.mkr").exists()
+        # The database and its keyring only: the host backs up the files (S14.6).
+        assert sorted(p.name for p in b.iterdir()) == ["keyring", "manifest.json", "moneykata.db"]
     assert maintenance.prune(keyed_config, 2) == made[:1]
     assert maintenance.backups(keyed_config) == made[1:]
 
@@ -333,12 +334,15 @@ def test_migration_copies_the_database_first(store, keyed_config, monkeypatch, m
         (older / f"moneykata-before-000{i}-x.db").write_bytes(b"old")
         os.utime(older / f"moneykata-before-000{i}-x.db", (1_000_000 + i, 1_000_000 + i))
     maintenance.open_store(keyed_config, master_key).db.dispose()
-    copies = sorted(p.name for p in older.iterdir())
+    copies = sorted(p.name for p in older.glob("*.db"))
     assert calls == ["head"]
     # The new copy and the two newest before it: the oldest is removed.
     assert len(copies) == migrate.PRE_UPGRADE_KEPT and "moneykata-before-0000-x.db" not in copies
-    new = [p for p in older.iterdir() if "0002" in p.name and "-x" not in p.name]
+    new = [p for p in older.glob("*.db") if "0002" in p.name and "-x" not in p.name]
     assert len(new) == 1 and os.stat(new[0]).st_mode & 0o777 == 0o600
+    # It carries its keyring, so it still opens after a re-encryption (S15.7).
+    ring = new[0].with_suffix(".keyring")
+    assert master.read_keyring(ring).master_id == master.key_id(master_key)
 
 
 def test_database_class_requires_a_unit_of_work(db):
@@ -488,11 +492,19 @@ def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_conf
     held.close()
 
     aside = maintenance.restore(keyed_config, made, master_key)
-    assert sorted(p.name for p in (aside / "receipts").iterdir()) == ["abc.mkr", "later.mkr"]
-    assert sorted(p.name for p in keyed_config.receipts_dir.iterdir()) == ["abc.mkr"]
+    # The receipts stay where they are; the database and keyring are set aside (S14.6).
+    assert sorted(p.name for p in aside.iterdir()) == ["keyring", "moneykata.db"]
+    assert sorted(p.name for p in keyed_config.receipts_dir.iterdir()) == ["abc.mkr", "later.mkr"]
     again = maintenance.open_store(keyed_config, master_key)
     with again.db.read() as s:
         assert [u.username for u in s.scalars(select(User))] == ["alice"]
+        # A file no record names is counted, for Settings › Storage to offer removing.
+        from moneykata.receipts import retention
+
+        assert retention.orphan_files(s, keyed_config.receipts_dir) == [
+            keyed_config.receipts_dir / "abc.mkr",
+            keyed_config.receipts_dir / "later.mkr",
+        ]
     again.db.dispose()
 
 
@@ -511,3 +523,99 @@ def test_restore_refuses_a_changed_backup_or_one_from_a_newer_release(
         f.write(b"x")
     with pytest.raises(RuntimeError, match="has changed since the backup"):
         maintenance.verify_backup(keyed_config, master_key, made)
+
+
+def test_the_copies_on_the_host_are_listed_rewrapped_reencrypted_and_removed(
+    store, keyed_config, master_key
+):
+    """S15.7: every copy carries its keyring; a rotation re-wraps it, a re-encryption rewrites
+    it, Settings removes it; each says how it opens."""
+    from moneykata.store import copies
+
+    with store.db.tx() as s:
+        new_user(s)
+    b = maintenance.backup(keyed_config, store)
+    older = keyed_config.data_dir / "pre-upgrade"
+    older.mkdir()
+    key = store.keys.keys.sqlcipher_key
+    copy.export(store.db.engine, older / "moneykata-before-0009-t.db", key)
+    shutil.copy2(keyed_config.keyring_path, older / "moneykata-before-0009-t.keyring")
+    aside = keyed_config.data_dir / "before-restore-20261001-000000"
+    aside.mkdir()
+    copy.export(store.db.engine, aside / "moneykata.db", key)
+    shutil.copy2(keyed_config.keyring_path, aside / "keyring")
+    found = copies.copies(keyed_config)
+    assert [(c.kind, c.name) for c in found] == [
+        ("backup", b.name),
+        ("pre-upgrade", "moneykata-before-0009-t.db"),
+        ("before-restore", aside.name),
+    ]
+    assert all(copies.opens_with(c, store.keys) == "current" for c in found)
+
+    # Rotation through the running server: a copy re-wrapped with the data key it holds, one
+    # deleted, one left; the old phrase then opens only what was left.
+    new_key = os.urandom(16)
+    store2, outcomes = maintenance.rotate_running(
+        keyed_config,
+        store,
+        new_key,
+        {b.name: "rewrap", aside.name: "delete", "moneykata-before-0009-t.db": "leave"},
+    )
+    assert outcomes == {
+        b.name: "rewrapped",
+        aside.name: "deleted",
+        "moneykata-before-0009-t.db": "left",
+    }
+    assert maintenance.verify_backup(keyed_config, new_key) == b
+    with pytest.raises(RefuseStart, match="does not open with that phrase"):
+        maintenance.verify_backup(keyed_config, master_key)
+    found = copies.copies(keyed_config)
+    assert [copies.opens_with(c, store2.keys) for c in found] == ["current", "previous"]
+    assert [master.fingerprint(p.master_id) for p in store2.keys.ring.previous] == [
+        master.fingerprint(master_key)
+    ]
+
+    # Re-encryption with the new phrase: the backup rewritten under the new data key, the
+    # pre-upgrade copy (under the old phrase) left and said so.
+    store3 = maintenance.reencrypt(
+        keyed_config,
+        store2,
+        new_key,
+        {b.name: "reencrypt", "moneykata-before-0009-t.db": "reencrypt"},
+    )
+    found = copies.copies(keyed_config)
+    assert copies.opens_with(found[0], store3.keys) == "current"
+    assert copies.opens_with(found[1], store3.keys) == "previous"
+    assert maintenance.verify_backup(keyed_config, new_key) == b
+    store3.db.dispose()
+
+    # Settings: forget the previous key, remove a copy.
+    assert copies.forget_previous(keyed_config, master.fingerprint(master_key))
+    assert master.read_keyring(keyed_config.keyring_path).previous == ()
+    assert not copies.forget_previous(keyed_config, "mk-none")
+    copies.remove(found[1])
+    assert [c.kind for c in copies.copies(keyed_config)] == ["backup"]
+    assert not (older / "moneykata-before-0009-t.keyring").exists()
+
+
+def test_a_pending_reencryption_under_another_phrase_is_refused_by_name(
+    store, keyed_config, master_key, monkeypatch
+):
+    """S15.7.2: a re-encryption interrupted, then a rotation offline: the next unlock says
+    which phrase finishes it instead of crashing."""
+
+    def crash(*a, **k):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(maintenance, "_rewrap_secrets", crash)
+    with pytest.raises(KeyboardInterrupt):
+        maintenance.reencrypt(keyed_config, store, master_key)
+    monkeypatch.undo()
+    other = os.urandom(16)
+    ring = master.read_keyring(keyed_config.keyring_path)
+    master.write_keyring(
+        keyed_config.keyring_path,
+        master.rotated(ring, master.unwrap(master_key, ring), other, master.now()),
+    )
+    with pytest.raises(RefuseStart, match="pending under mk-"):
+        maintenance.open_store(keyed_config, other)

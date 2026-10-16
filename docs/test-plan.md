@@ -124,10 +124,12 @@ didn't say and fix it.
 
 ## T12: a restore onto a new host
 
-Follow `operations.md` §6.2 with the phrase read from its offline copy. Passing: the restore
-refuses a changed backup, a wrong phrase, and accepts the real one with the real phrase; the
-server starts locked and unlocks with the phrase; every account and receipt is there, and
-linked copies pull again. Record the time it took.
+Follow `operations.md` §6.2 with the phrase read from its offline copy, the receipts directory
+restored from the host's own backup. Passing: the restore refuses a changed backup, a wrong
+phrase, and accepts the real one with the real phrase; the server starts locked and unlocks
+with the phrase; every account is there, every receipt opens, Settings › Storage counts no
+file no record names (or only those written after the backup), and linked copies pull
+again. Record the time it took.
 
 ## T13: the connector on another machine
 

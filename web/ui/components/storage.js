@@ -6,6 +6,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
+import { withReauth } from './reauth.js';
 import { Failed, Loading } from './bits.js';
 import { Dialog, openDialog } from './dialog.js';
 import { errAt, Field, FormError, Input } from './fields.js';
@@ -171,7 +172,18 @@ export function StorageSection() {
                 color: 'var(--c1)',
                 note: `${count(v.forever.files)} · ${size(v.forever.bytes)}`,
               },
-            ]} />${v.pruned
+            ]} />${v.orphans.files
+              ? html`<div class="list-item"><span class="grow">${
+                count(v.orphans.files)
+              } files no record names
+                  <div class="small dim">Left behind when an older database was restored under files written later.</div></span>${
+                size(v.orphans.bytes)
+              } <button type="button" class="btn sm" onClick=${() =>
+                withReauth(() => api.post('/settings/storage/orphans/remove')).then((out) => {
+                  toast(`${count(out.files)} files removed, ${size(out.bytes)} freed`);
+                  res.reload();
+                }, (e) => toast(e.message))}>Remove</button></div>`
+              : null}${v.pruned
               ? html`<p class="small dim">${count(v.pruned)} files pruned before.</p>`
               : null}</div>
           <div class="card"><h3 data-help="what-expires-each-year">What expires each year</h3><p
@@ -299,8 +311,8 @@ function PruneDialog({ close, v }) {
           class="grow">${x.category}</span>${count(x.files)} files · ${size(x.bytes)}</label>`
       )}
       <div class="list-item"><span class="grow"><b>Space freed</b></span><b>${size(bytes)}</b></div>
-      <div class="notice mt" role="note"><div>A verified backup is made first. The pruned files
-        stay in the backups made before it until backup pruning removes them.</div></div>
+      <div class="notice mt" role="note"><div>No backup is made first: a backup holds no files.
+        A pruned file survives only in the host's own backups of the data directory.</div></div>
       <${Field} label="Type the number of files to confirm" id="prune-count"
         error=${errAt(run.error, 'count')}>
         <${Input} value=${typed} onInput=${setTyped} inputmode="numeric" placeholder=${count(files)}

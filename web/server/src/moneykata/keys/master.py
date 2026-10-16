@@ -41,6 +41,12 @@ def key_id(master: bytes) -> str:
     return hashlib.sha256(b"moneykata key id" + master).hexdigest()[:16]
 
 
+def data_key_id(data_key: bytes) -> str:
+    """The same for a data key: a keyring names which data key it wraps, so the running
+    server knows which copies hold the data key it has (S15.7.1) without unwrapping them."""
+    return hashlib.sha256(b"moneykata data key id" + data_key).hexdigest()[:16]
+
+
 def fingerprint(master_or_id: bytes | str) -> str:
     """The short form shown in Settings and on the recovery sheet: mk-3f9a…c21e."""
     kid = master_or_id if isinstance(master_or_id, str) else key_id(master_or_id)
@@ -79,6 +85,7 @@ class Keyring:
     nonce: bytes
     wrapped: bytes
     previous: tuple[Previous, ...] = ()
+    data_key_id: str = ""
 
     def to_json(self) -> str:
         return (
@@ -90,6 +97,7 @@ class Keyring:
                     "dataKeyCreatedAt": self.data_key_created.isoformat(),
                     "nonce": _b64(self.nonce),
                     "wrapped": _b64(self.wrapped),
+                    "dataKeyId": self.data_key_id,
                     "previous": [
                         {"masterKeyId": p.master_id, "rotatedAt": p.rotated.isoformat()}
                         for p in self.previous
@@ -115,6 +123,7 @@ class Keyring:
                 Previous(p["masterKeyId"], dt.datetime.fromisoformat(p["rotatedAt"]))
                 for p in d.get("previous", [])
             ),
+            d.get("dataKeyId", ""),
         )
 
 
@@ -132,7 +141,9 @@ def wrap(
     nonce = os.urandom(12)
     mid = key_id(master)
     sealed = AESGCM(hkdf(master, "moneykata master")).encrypt(nonce, data_key, _aad(mid))
-    return Keyring(mid, master_created, data_key_created, nonce, sealed, previous)
+    return Keyring(
+        mid, master_created, data_key_created, nonce, sealed, previous, data_key_id(data_key)
+    )
 
 
 def rotated(ring: Keyring, data_key: bytes, new_master: bytes, at: dt.datetime) -> Keyring:

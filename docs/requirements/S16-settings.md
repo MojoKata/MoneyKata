@@ -41,15 +41,22 @@ follows Backups, and Connector (18), which follows Linked servers:
     shipped value removes the correction. A year after the latest shipped uses the latest.
     The college-cost averages and the metal per share arrive with the features that use
     them (529s, physical assets).
-12. **Backups**: the time of day and the copies kept; the backup directory is set on the host.
+12. **Backups**: the time of day and the copies kept, each backup listed with its size and
+    the key it opens with, and **Back up now**; the backup directory is set on the host. The
+    section says what a backup is: the database with its keyring, never the receipt files,
+    which the host backs up with the data directory (S14.6).
 13. **Key storage** (S15): read-only. The master key's fingerprint and age, when the phrase
-    was last entered, who confirmed the phrase and when, the previous keys and the date each
-    can go
+    was last entered, who confirmed the phrase and when, the previous keys, each with how
+    many copies on this host still need its phrase and **Forget**, the **copies on this
+    host** (every backup, pre-upgrade copy and before-restore folder, with its date, size and
+    how it opens, and **Remove**) under one line that says the host's own snapshots and
+    backups are copies too
     (counting the backup directory's own copies only, and saying so: copies kept elsewhere
     are the admin's to count, S15.7.1.4), the progress of a re-encryption, and anything that
     cannot be opened. Buttons: **Test** and **Re-encrypt**, which asks for the recovery
-    phrase, with what re-encryption is for and that it closes no copy made before it
-    (S15.7.2). The master key itself is only ever changed on the host.
+    phrase and, for each copy on the host, whether to re-encrypt, delete or leave it, with
+    what re-encryption is for and that it closes no copy made before it (S15.7.2). The
+    master key itself is only ever changed on the host.
 14. **Network**: the address ranges allowed to reach each path, one list per line, empty for
     any: **the app** (`/ui`, and `/mcp` with it: an agent sits where a person's browser does,
     and its token is already the user's); **linked servers** (`/link`); and **the connector**
@@ -60,8 +67,9 @@ follows Backups, and Connector (18), which follows Linked servers:
     by default), and the time of the daily summary email (07:00 by default, in each user's
     time zone).
 17. **Storage** (S14.10): the size of the database and of the receipts directory, files
-    expired against the rest, what expires each coming year by category, **Keep statements
-    for** (years, empty for ever), each category's **Keep receipts for**, and **Prune**.
+    expired against the rest, the files no record names with **Remove** (S14.6), what
+    expires each coming year by category, **Keep statements for** (years, empty for ever),
+    each category's **Keep receipts for**, and **Prune**.
 18. **Connector** (S18): pairing with the MoneyKata Connector (**Pair**, the connector's
     fingerprint, **Unpair**), whether it is locked, its last report, and every Connection's
     state, owner and accounts, never their credentials.

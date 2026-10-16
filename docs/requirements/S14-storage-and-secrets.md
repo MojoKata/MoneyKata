@@ -46,17 +46,24 @@
    admin's keeping, and in the server's memory while it unwraps the data key at each start.
    It is never stored: not on the host, not in the database, not in a backup. S15 covers how
    it is made, entered, protected and rotated.
-6. **Backups**: daily and verified, of the database **and the receipts directory**, to a
-   directory set on the host; the time of day and the number of copies kept are Settings. The
-   server makes and verifies (`PRAGMA integrity_check`) the copies itself, and prunes the
-   oldest beyond the number kept (**backup pruning**). `moneykata db backup` makes one at
-   once, and `moneykata db verify-backup` checks one (the newest by default) without changing
-   it: every file against the manifest's hashes, and that it opens with the master key or a
-   previous one. They are
-   encrypted as the data is, and open with the master key's recovery phrase (S15.6). A
-   restore is documented, and tested by a check. Linked copies (`links/`) are left out: they
-   can't be checked without their access keys, and they are pulled again from their sources
-   after a restore (S11.9.9).
+6. **Backups**: daily and verified, of the database **with its keyring, and nothing else**,
+   to a directory set on the host; the time of day and the number of copies kept are
+   Settings. **The host backs up the filesystem**, the data directory with its receipt
+   files, linked copies and keyring included (by snapshots, a replication or any backup
+   tool); a backup here exists so that the live database file the host picks up has a
+   coherent, verified twin beside it. Receipt files are never copied into a backup: they
+   are written once and never changed, which the host's backup already protects. The
+   backup directory therefore belongs inside what the host backs up, not on a disk apart.
+   The server makes and verifies (`PRAGMA integrity_check`) the copies itself, never while
+   a re-encryption runs (S15.7.2), and prunes the oldest beyond the number kept (**backup
+   pruning**). `moneykata db backup` makes one at once, and `moneykata db verify-backup`
+   checks one (the newest by default) without changing it: every file against the
+   manifest's hashes, and that it opens with the phrase typed, which may be a previous one.
+   Each backup carries its own keyring, so it opens with the phrase of its day, and a
+   rotation re-wraps it (S15.7.1). A restore (S15.6.8) puts the database and keyring back,
+   leaves the receipt files where they are, and sets the linked copies aside to be pulled
+   again (S11.9.9); files the restored database does not name are counted in Settings ›
+   Storage, with **Remove** (S16.17). The restore is documented, and tested by a check.
 7. **Financial data at rest** is encrypted with the rest of the database (S15.1). Ordinary
    SQLite tools can't read it. `moneykata db shell` opens it on the host, with the recovery
    phrase typed.
@@ -109,13 +116,14 @@
        expires in it, by category. Sizes are the files' sizes on disk; the section shows
        sizes and counts only, never what the files hold.
     5. **Prune 1,284 files (2.1 GB)** names what has expired. It previews them by category,
-       any of which can be unticked, makes a verified backup (S14.6), asks the admin to type
-       the count to confirm, and their password again if given over 10 minutes ago
-       (S13.7.2), removes the files, and records the file pruning in Activity with its
-       counts. A file several receipts share is removed once none of them needs it, and the
-       same file uploaded again after it is a new receipt with its file. Each record keeps its row, amounts and links, and shows *File pruned
-       Jan 3, 2034*. A pruned file stays in the backups made before it until backup pruning
-       (S14.6) removes them, so a restore can bring it back until then.
+       any of which can be unticked, asks the admin to type the count to confirm, and their
+       password again if given over 10 minutes ago (S13.7.2), removes the files, and records
+       the file pruning in Activity with its counts. No backup is made first: a backup holds
+       no files (S14.6). A file several receipts share is removed once none of them needs
+       it, and the same file uploaded again after it is a new receipt with its file. Each
+       record keeps its row, amounts and links, and shows *File pruned Jan 3, 2034*. A
+       pruned file survives only in the host's own backups of the data directory, for as
+       long as the host keeps them.
     6. **Linked copies follow their source.** File pruning never touches a linked copy
        (S11.9): a file the source prunes leaves the copy at its next pull, and the copy keeps
        nothing longer than its source does.

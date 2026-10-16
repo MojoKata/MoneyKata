@@ -209,8 +209,10 @@ preparer.
       Nothing is lost: the linked copy is only a copy, and the source keeps the data. The
       master key has a recovery phrase because it is the only way into this server's own
       data (S15.6); a copy key does not need one.
-   9. **Backups** leave linked copies out (S14.6). After a restore, the admin makes a new
-      access key for each link, and each copy is pulled in full from its source.
+   9. **Backups** leave linked copies out (S14.6); the host's own backup of the data
+      directory carries them, encrypted under their access keys. After a restore, which sets
+      them aside, the admin makes a new access key for each link, and each copy is pulled in
+      full from its source.
    10. **What this protects against, and what it does not.** A stolen disk, a backup that
        leaves the house, and this server's admin or root reading files while the copy is
        locked reveal nothing of a linked copy beyond its size, its number of receipts and

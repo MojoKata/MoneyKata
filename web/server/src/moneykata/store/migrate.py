@@ -15,6 +15,8 @@ must come back clean before they are switched on again.
 
 import datetime as dt
 import logging
+import os
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -63,8 +65,15 @@ def current(engine: Engine) -> str | None:
         ).get_current_revision()
 
 
-def upgrade(engine: Engine, db_path: Path, key: str | None, copies_dir: Path | None) -> bool:
-    """Migrate to head. Returns whether anything changed."""
+def upgrade(
+    engine: Engine,
+    db_path: Path,
+    key: str | None,
+    copies_dir: Path | None,
+    keyring_path: Path | None = None,
+) -> bool:
+    """Migrate to head. Returns whether anything changed. The copy made first carries its
+    keyring beside it, so it still opens after a re-encryption (S15.7)."""
     rev = current(engine)
     if rev is not None and rev not in known():
         raise RefuseStart(
@@ -81,11 +90,15 @@ def upgrade(engine: Engine, db_path: Path, key: str | None, copies_dir: Path | N
         dest = copies_dir / f"moneykata-before-{target}-{stamp}.db"
         copy.export(engine, dest, key)
         copy.verify(dest, key)
+        if keyring_path is not None and keyring_path.exists():
+            shutil.copy2(keyring_path, dest.with_suffix(".keyring"))
+            os.chmod(dest.with_suffix(".keyring"), 0o600)
         log.info("copied the database before migrating: %s", dest.name)
         for old in sorted(
             copies_dir.glob("moneykata-before-*.db"), key=lambda p: p.stat().st_mtime
         )[:-PRE_UPGRADE_KEPT]:
             old.unlink()
+            old.with_suffix(".keyring").unlink(missing_ok=True)
             log.info("removed an older pre-upgrade copy: %s", old.name)
     with engine.connect() as conn:
         for sql in views.drop_all_sql(conn):

@@ -7,12 +7,13 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
+from pydantic import Field
 from sqlalchemy import select, text
 
 from .. import activity, clock, settings, timezones
 from ..errors import FieldError, Problem, refuse
 from ..store.entities.core import Setting
-from .conventions import ExactRoute, Loose, Model, check_version, if_match, version_of
+from .conventions import Deleted, ExactRoute, Loose, Model, check_version, if_match, version_of
 from .deps import Caller, admin, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["settings"])
@@ -566,14 +567,18 @@ def key_test(request: Request, c: Caller = Depends(admin)):
 
 class ReencryptIn(Model):
     phrase: str  # the recovery phrase, typed to confirm: it wraps the new data key
+    copies: dict[str, str] = Field(default_factory=dict)  # name: reencrypt, delete or leave
 
 
 @router.post("/settings/keys/reencrypt", status_code=202)
 def key_reencrypt(body: ReencryptIn, request: Request, c: Caller = Depends(admin)):
     """Re-encrypt (S15.7.2): a new data key for the database, the receipts and every secret,
-    wrapped under the phrase typed here, which must be this server's."""
+    wrapped under the phrase typed here, which must be this server's; then each copy on the
+    host as chosen. The password again, as for pruning (S13.7.2)."""
     from ..keys import master, phrase
+    from .deps import recent_auth
 
+    recent_auth(c)
     srv = server(request)
     try:
         key = phrase.from_words(body.phrase)
@@ -583,11 +588,111 @@ def key_reencrypt(body: ReencryptIn, request: Request, c: Caller = Depends(admin
         raise refuse("phrase", "phrase-wrong", "Those words are not this server's key.", 403)
     if srv.tasks.status().get("reencrypt", {}).get("running"):
         raise Problem(409, "reencrypt-running", "A re-encryption is already running.")
+    if any(v not in ("reencrypt", "delete", "leave") for v in body.copies.values()):
+        raise refuse("copies", "choice-invalid", "Each copy: reencrypt, delete or leave.")
     srv.reencrypt_key = key
+    srv.reencrypt_copies = dict(body.copies)
     with srv.db.tx() as s:
-        activity.record(s, "keys.reencrypt-started", actor=c.id, for_admins=True)
+        activity.record(
+            s,
+            "keys.reencrypt-started",
+            actor=c.id,
+            for_admins=True,
+            detail={"copies": body.copies},
+        )
     srv.tasks.run_now("reencrypt")
     return Response(status_code=202)
+
+
+# ---------- The copies on this host (S15.7, S16.13) ----------
+
+
+class CopyOut(Model):
+    name: str
+    kind: str  # backup, pre-upgrade, before-restore
+    what: str
+    made: dt.datetime
+    bytes: int
+    masterKey: str | None  # the fingerprint its keyring is wrapped under
+    opens: str  # current, phrase, previous, unknown (store/copies.py)
+
+
+class CopiesOut(Model):
+    copies: list[CopyOut]
+    note: str
+
+
+COPIES_NOTE = (
+    "The host's own snapshots and backups are copies too, outside this list: they open with "
+    "the phrase of their day for as long as the host keeps them."
+)
+
+
+def copies_out(srv) -> CopiesOut:
+    from ..keys import master
+    from ..store import copies
+
+    return CopiesOut(
+        copies=[
+            CopyOut(
+                name=c.name,
+                kind=c.kind,
+                what=c.what,
+                made=c.made,
+                bytes=c.bytes,
+                masterKey=master.fingerprint(c.ring.master_id) if c.ring else None,
+                opens=copies.opens_with(c, srv.store.keys),
+            )
+            for c in copies.copies(srv.config)
+        ],
+        note=COPIES_NOTE,
+    )
+
+
+@router.get("/settings/keys/copies", response_model=CopiesOut)
+def key_copies(request: Request, c: Caller = Depends(admin)):
+    """Every copy on this host, with how it opens; snapshots and the host's backups are not
+    here (S15.7)."""
+    return copies_out(server(request))
+
+
+@router.delete("/settings/keys/copies/{name}", response_model=Deleted)
+def remove_copy(name: str, request: Request, c: Caller = Depends(admin)):
+    """Remove one copy (S15.8 step 4). The password again (S13.7.2)."""
+    from ..store import copies
+    from .deps import recent_auth
+
+    recent_auth(c)
+    srv = server(request)
+    found = copies.find(srv.config, name)
+    if found is None:
+        raise Problem(404, "not-found", "No such copy.")
+    copies.remove(found)
+    with srv.db.tx() as s:
+        activity.record(s, "keys.copy-removed", actor=c.id, for_admins=True, detail={"name": name})
+    return Deleted(deleted={"id": name, "deletedAt": clock.now(), "version": 0}, parent=None)
+
+
+@router.delete("/settings/keys/previous/{fingerprint}", response_model=Deleted)
+def forget_previous_key(fingerprint: str, request: Request, c: Caller = Depends(admin)):
+    """Drop a previous master key from the keyring's list once nothing needs it (S15.7.1)."""
+    from ..keys import master
+    from ..store import copies
+    from .deps import recent_auth
+
+    recent_auth(c)
+    srv = server(request)
+    if not copies.forget_previous(srv.config, fingerprint):
+        raise Problem(404, "not-found", "No such previous key.")
+    k = srv.store.keys
+    srv.store.keys = master.Unlocked(
+        k.master_id, master.read_keyring(srv.config.keyring_path), k.keys, k.data_key
+    )
+    with srv.db.tx() as s:
+        activity.record(
+            s, "keys.previous-forgotten", actor=c.id, for_admins=True, detail={"key": fingerprint}
+        )
+    return Deleted(deleted={"id": fingerprint, "deletedAt": clock.now(), "version": 0}, parent=None)
 
 
 # ---------- Backups (S16.12, S14.6) ----------
@@ -683,6 +788,7 @@ class StorageOut(Model):
     byYear: list[YearSizes]  # what expires each coming year, by category
     expiredBy: list[CategorySize]  # what can be pruned now, by category
     keepStatementsYears: int | None
+    orphans: Size  # files no record names (S14.6)
 
 
 def _size(g) -> Size:
@@ -719,6 +825,7 @@ def storage(request: Request, c: Caller = Depends(admin)):
                 for k, g in sorted(st.expiredBy.items())
             ],
             keepStatementsYears=settings.get(s, "keepStatementsYears"),
+            orphans=_size(st.orphans),
         )
 
 
@@ -730,16 +837,14 @@ class PruneIn(Model):
 class PruneOut(Model):
     files: int
     bytes: int
-    backup: str
 
 
 @router.post("/settings/storage/prune", response_model=PruneOut)
 def prune_files(body: PruneIn, request: Request, c: Caller = Depends(admin)):
-    """Remove the expired files of the categories ticked: a verified backup first, then the
-    files, keeping every record; recorded in Activity with its counts (S14.10.5)."""
-    from ..errors import refuse
+    """Remove the expired files of the categories ticked, keeping every record; recorded in
+    Activity with its counts (S14.10.5). No backup first: a backup holds no files, the host's
+    own backups do."""
     from ..receipts import retention
-    from ..store import maintenance
     from .deps import recent_auth
 
     recent_auth(c)
@@ -750,7 +855,6 @@ def prune_files(body: PruneIn, request: Request, c: Caller = Depends(admin)):
         raise refuse("categories", "nothing-to-prune", "No expired files in what is ticked.")
     if body.count != len(rows):
         raise refuse("count", "count-mismatch", f"Type {len(rows):,} to prune them.")
-    made = maintenance.backup(srv.config, srv.store)
     with srv.db.tx() as s:
         rows = retention.prunable(s, body.categories)
         freed = retention.prune_files(s, srv.config.receipts_dir, rows, c.id)
@@ -761,4 +865,25 @@ def prune_files(body: PruneIn, request: Request, c: Caller = Depends(admin)):
             for_admins=True,
             detail={"files": len(rows), "bytes": freed, "categories": body.categories},
         )
-    return PruneOut(files=len(rows), bytes=freed, backup=made.name)
+    return PruneOut(files=len(rows), bytes=freed)
+
+
+@router.post("/settings/storage/orphans/remove", response_model=PruneOut)
+def remove_orphans(request: Request, c: Caller = Depends(admin)):
+    """Remove the files no record names, left behind by a restore of an older database under
+    files written later (S14.6, S16.17). The password again (S13.7.2)."""
+    from ..receipts import retention
+    from .deps import recent_auth
+
+    recent_auth(c)
+    srv = server(request)
+    with srv.db.tx() as s:
+        n, freed = retention.remove_orphans(s, srv.config.receipts_dir)
+        activity.record(
+            s,
+            "files.orphans-removed",
+            actor=c.id,
+            for_admins=True,
+            detail={"files": n, "bytes": freed},
+        )
+    return PruneOut(files=n, bytes=freed)

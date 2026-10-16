@@ -247,6 +247,9 @@ class Storage:
     pruned: int
     byYear: dict[int, dict[str, Group]] = field(default_factory=dict)  # coming years
     expiredBy: dict[str, Group] = field(default_factory=dict)  # by category, to prune
+    # Files in the receipts directory that no receipt row names, deleted rows included: left
+    # behind when an older database was restored under files written later (S14.6).
+    orphans: Group = field(default_factory=Group)
 
 
 def storage(s: Session, receipts_dir: Path, today: dt.date | None = None) -> Storage:
@@ -274,7 +277,28 @@ def storage(s: Session, receipts_dir: Path, today: dt.date | None = None) -> Sto
             y.files += 1
             y.bytes += size
     out.byYear = {k: dict(v) for k, v in sorted(years.items())}
+    for p in orphan_files(s, receipts_dir):
+        out.orphans.files += 1
+        out.orphans.bytes += p.stat().st_size
     return out
+
+
+def orphan_files(s: Session, receipts_dir: Path) -> list[Path]:
+    """The files no receipt row names, deleted rows included (S9.7)."""
+    if not receipts_dir.is_dir():
+        return []
+    named = {fid for (fid,) in s.execute(select(Receipt.fileId)) if fid}
+    return sorted(p for p in receipts_dir.glob("*.mkr") if p.stem not in named)
+
+
+def remove_orphans(s: Session, receipts_dir: Path) -> tuple[int, int]:
+    """Remove the orphan files; the count and bytes freed."""
+    n = freed = 0
+    for p in orphan_files(s, receipts_dir):
+        freed += p.stat().st_size
+        p.unlink()
+        n += 1
+    return n, freed
 
 
 def prunable(s: Session, categories: list[str] | None, today: dt.date | None = None):

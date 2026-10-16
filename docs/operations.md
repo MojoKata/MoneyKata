@@ -89,6 +89,17 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 - Proxmox's own backups of the VM or container can include everything: no key is on the
   disk, and nothing in them opens without the phrase.
 
+### 2.3 On ZFS, with snapshots and replication
+
+- Snapshot and replicate the datasets holding `data/` and `backups/` as you do the rest of
+  the host: nothing in them opens without the phrase, and a raw send of an encrypted dataset
+  opens only with the dataset's own key as well. Keep the phrase out of them.
+- Every snapshot and replica is a **copy** (S15.8): it opens with the phrase of its day for
+  as long as it exists, and MoneyKata cannot see or prune it. After a rotation or a leak,
+  the snapshots made before are yours to destroy, on both ends of the replication.
+- The live database file in a snapshot is crash-consistent at best; the verified copy in
+  `backups/` from the same day is the one to restore from.
+
 ### 2.2 On TrueNAS
 
 *Not yet tried on a real host: these steps follow the compose file.*
@@ -116,15 +127,19 @@ newer one has migrated: it says so in a `refusing to start:` line (§5.1).
 
 ## 4. Backups
 
-- **Every day** at the time in Settings › Backups, the server copies the database, its
-  keyring and the receipts into `backups/moneykata-<date>-<time>/`, checks the copy opens, and
-  writes a `manifest.json` with each file's size and hash. **Backup pruning** keeps the number
-  of copies set there (14 by default) and removes older ones.
-- **Now**: `docker compose exec moneykata moneykata db backup`.
-- A backup is as encrypted as the data: it opens only with the master key or its recovery
-  phrase. You can copy `backups/` as it is to a NAS, another disk or a cloud bucket, as long as
-  the phrase and the key file never go with it.
-- Linked copies are left out: after a restore they are pulled again from their sources.
+- **The host backs up the files.** MoneyKata's own backup never copies the receipt files,
+  the linked copies or anything else in `data/`: your backup of the host does (snapshots,
+  replication, any backup tool), and `data/` is safe to back up whole, since nothing in it
+  opens without the phrase. Put `backups/` inside what the host backs up too.
+- **Every day** at the time in Settings › Backups, the server writes a coherent, verified
+  copy of the database with its keyring into `backups/moneykata-<date>-<time>/`, with a
+  `manifest.json` of each file's size and hash, so the host's backup holds a consistent
+  database beside the live one it also picks up. **Backup pruning** keeps the number of
+  copies set there (14 by default) and removes older ones. No backup runs while a
+  re-encryption does; each waits for the other.
+- **Now**: `docker compose run --rm moneykata db backup`, with the phrase.
+- A backup opens only with the phrase of its day; each carries its own keyring, and a
+  rotation re-wraps them (§7).
 - A backup that fails raises an alert for admins (and an email, for those who chose it).
 
 ## 5. Watching it
@@ -175,8 +190,10 @@ phrase, or the keyring from another server: the line names its fingerprint).
 2. Stop the server: `docker compose stop moneykata`.
 3. Restore it: `docker compose run --rm moneykata db restore /var/backups/moneykata/<backup>`,
    with the phrase. It checks the backup again, refuses one from a newer release, and moves
-   what it replaces (the database, its keyring, the receipts and the linked copies) into
-   `data/before-restore-<time>/` rather than deleting it.
+   what it replaces (the database, its keyring and the linked copies) into
+   `data/before-restore-<time>/` rather than deleting it. The receipt files stay where they
+   are; Settings › Storage then counts any file the restored database no longer names, with
+   Remove.
 4. Start and unlock: `docker compose up -d`, then §2 step 5. The server opens the restored
    database and migrates it if it came from an earlier release. Linked households pull
    their copies again.
@@ -209,12 +226,14 @@ phrase, or the keyring from another server: the line names its fingerprint).
   moneykata moneykata keys rotate`. It needs no old phrase (the running server holds the
   data key), shows the new one and asks three words back, so it is also the way out of a
   lost phrase: do it before the server ever restarts. With the server stopped, `docker
-  compose run --rm moneykata keys rotate` asks for the current phrase first. Store the new
-  phrase; the server unlocks with it from its next start. Keep the previous phrase until
-  every copy made before the rotation is gone: backup pruning removes the backup directory's
-  own copies, and Settings › Key storage says when that is done; copies anywhere else (the
-  NAS, the bucket, a snapshot, a copy made by hand) are yours to delete, and open with the
-  previous phrase until you do.
+  compose run --rm moneykata keys rotate` asks for the current phrase first. It then lists
+  every copy on the host (backups, pre-upgrade copies, before-restore folders) and asks for
+  each: **re-wrap** (Enter: its keyring under the new phrase, nothing else touched),
+  **delete**, or **leave**; `--rewrap-all` answers for all of them. Store the new phrase; the
+  server unlocks with it from its next start. Settings › Key storage then says which
+  copies, if any, still need the previous phrase; the host's snapshots and backups made
+  before the rotation always do, until you destroy them. When nothing needs it, **Forget**
+  it there and destroy its copies.
 - **Re-encrypt the data** (S15.7.2): Settings › Key storage › **Re-encrypt**, which asks for
   the phrase. For when the data key may have been read: a memory dump, or a leaked phrase
   (below).

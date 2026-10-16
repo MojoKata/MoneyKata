@@ -14,6 +14,7 @@ import ipaddress
 import logging
 
 from fastapi import APIRouter, Request
+from pydantic import Field
 
 from ..config import RefuseStart
 from ..errors import Problem
@@ -29,6 +30,12 @@ LOGIN = "recovery phrase"  # the lockout's name for unlock attempts
 
 class Phrase(Model):
     phrase: str
+
+
+class RotateIn(Model):
+    phrase: str  # the new phrase
+    oldPhrase: str | None = None  # the current one when known: opens copies under earlier data keys
+    copies: dict[str, str] = Field(default_factory=dict)  # name: rewrap, delete or leave
 
 
 class LockState(Model):
@@ -100,11 +107,24 @@ def _loopback(request: Request) -> bool:
         return False
 
 
+@router.get("/keys/copies", response_model=dict)
+def copies_for_rotation(request: Request):
+    """The copies on this host, for `keys rotate` to ask about (S15.7.1). Loopback only."""
+    from .settings import copies_out
+
+    srv = server(request)
+    if not _loopback(request):
+        raise Problem(404, "not-found", "Not found.")
+    if srv.store is None:
+        raise Problem(503, "locked", "Unlock the server first.")
+    return copies_out(srv).model_dump(mode="json")
+
+
 @router.post("/keys/rotate", response_model=dict)
-def rotate(body: Phrase, request: Request):
+def rotate(body: RotateIn, request: Request):
     """`moneykata keys rotate` against the running server: the new phrase's key wraps the data
-    key the server holds; the keyring is written with the old key recorded. From loopback
-    only (S15.4.4)."""
+    key the server holds; the keyring is written with the old key recorded; each copy on the
+    host is re-wrapped, deleted or left as chosen. From loopback only (S15.4.4)."""
     from .. import activity
     from ..store import maintenance
 
@@ -115,13 +135,21 @@ def rotate(body: Phrase, request: Request):
         raise Problem(503, "locked", "Unlock the server first, or rotate it offline.")
     try:
         new_key = phrase.from_words(body.phrase)
+        old_key = phrase.from_words(body.oldPhrase) if body.oldPhrase else None
     except phrase.PhraseError as e:
         raise Problem(422, "phrase-invalid", f"Not a recovery phrase: {e}") from None
-    old_fp = master.fingerprint(srv.store.keys.master_id)
-    try:
-        srv.store = maintenance.rotate_running(srv.config, srv.store, new_key)
-    except RefuseStart as e:
-        raise Problem(409, "reencrypt-pending", str(e)) from None
+    if any(v not in ("rewrap", "delete", "leave") for v in body.copies.values()):
+        raise Problem(422, "choice-invalid", "Each copy: rewrap, delete or leave.")
+    with srv.maintenance_lock:
+        if srv.tasks.status().get("reencrypt", {}).get("running"):
+            raise Problem(409, "reencrypt-running", "A re-encryption is running: wait for it.")
+        old_fp = master.fingerprint(srv.store.keys.master_id)
+        try:
+            srv.store, outcomes = maintenance.rotate_running(
+                srv.config, srv.store, new_key, body.copies, old_key
+            )
+        except RefuseStart as e:
+            raise Problem(409, "reencrypt-pending", str(e)) from None
     new_fp = master.fingerprint(new_key)
     with srv.db.tx() as s:
         activity.record(
@@ -130,7 +158,7 @@ def rotate(body: Phrase, request: Request):
             actor=None,
             via="host",
             for_admins=True,
-            detail={"from": old_fp, "to": new_fp},
+            detail={"from": old_fp, "to": new_fp, "copies": outcomes},
         )
     log.info("the master key was rotated through the running server: %s -> %s", old_fp, new_fp)
-    return {"from": old_fp, "to": new_fp}
+    return {"from": old_fp, "to": new_fp, "copies": outcomes}

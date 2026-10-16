@@ -2184,14 +2184,15 @@ label.drop {
 "GET /ui/api/relationships":{"body": {"items": [], "limit": 500, "offset": 0, "total": 0}, "status": 200},
 "GET /ui/api/session":{"body": {"dev": true, "household": {"avatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "name": "Alice & Bob"}, "serverName": "moneykata", "user": {"admin": true, "avatar": null, "bitcoinUnit": "btc", "displayName": "Admin", "email": "admin@griffin.home", "id": "User_01m4rdf800e00tf99mm9efehdp", "needsSetup": false, "theme": "dark", "timeZone": "auto", "username": "admin", "zone": "UTC"}, "version": "0.1.0"}, "status": 200},
 "GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "bitcoin": ["bitcoinSource", "bitcoinEsploraUrl", "bitcoinNodeHost", "bitcoinNodePort", "bitcoinNodeTls", "bitcoinRpcUser", "bitcoinNodeCert", "bitcoinNodeCertOffered"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "links": ["linkAddress", "linkReleaseMinutes"], "network": ["networkAppRanges", "networkLinkRanges", "networkConnectorRanges"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"], "storage": ["keepStatementsYears"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "bitcoinEsploraUrl": "https://mempool.space/api", "bitcoinNodeCert": null, "bitcoinNodeCertOffered": null, "bitcoinNodeHost": null, "bitcoinNodePort": 50002, "bitcoinNodeTls": true, "bitcoinRpcUser": null, "bitcoinSource": "esplora", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keepStatementsYears": null, "keyReminderMonths": 12, "linkAddress": null, "linkReleaseMinutes": 60, "lockoutFailures": 10, "lockoutMinutes": 15, "networkAppRanges": [], "networkConnectorRanges": ["127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "::1/128", "fc00::/7"], "networkLinkRanges": [], "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": "https://localhost:37373", "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "version": 3, "versions": {"householdAvatar": 1, "householdName": 1, "publicUrl": 1}}, "status": 200},
-"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2656381, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
+"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2613589, "files": 2, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
 "GET /ui/api/settings/bitcoin":{"body": {"certificate": null, "certificateOffered": null, "lastError": null, "lastRun": null, "password": null, "wallets": 1}, "status": 200},
 "GET /ui/api/settings/connector":{"body": {"codeExpiresAt": null, "connections": [{"accounts": [{"id": "Acct_01m4rdf800e02af3bqw26mpwnz", "name": "Taxable brokerage", "syncAccount": "Individual ••4417"}], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "schwab", "id": "Conn_01m4rdf800e00traevg9kh27yd", "institutionAccounts": [{"last4": "4417", "name": "Individual"}, {"last4": "0921", "name": "Rollover IRA"}], "label": "Schwab login", "lastRunAdded": 14, "lastRunAt": "2026-10-12T14:00:00Z", "message": "14 new", "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "signInAddress": null, "state": "ok", "version": 1}, {"accounts": [], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "ofx-direct", "id": "Conn_01m4rdf800e019wkhvp6w03c2y", "institutionAccounts": [{"last4": "1204", "name": "Everyday Checking"}], "label": "Credit union", "lastRunAdded": null, "lastRunAt": "2026-10-11T11:00:00Z", "message": "the password was refused", "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "signInAddress": null, "state": "needs-sign-in", "version": 1}, {"accounts": [{"id": "Acct_01m4rdf800e0490demg1an248p", "name": "Bob's checking", "syncAccount": "Joint Household ••3311"}], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "folder", "id": "Conn_01m4rdf800e01ved56y1xft4b5", "institutionAccounts": [], "label": "UMB downloads", "lastRunAdded": 1, "lastRunAt": "2026-10-11T16:00:00Z", "message": "1 statement", "ownerId": "User_01m4rdf800e01skjft3xb5ewck", "ownerName": "Bob Griffin", "signInAddress": null, "state": "ok", "version": 1}], "connectorVersion": "0.1.0", "fingerprint": "33d9 2372 0031 ba55", "lastReportAt": "2026-10-12T15:57:00Z", "locked": false, "pairedAt": "2026-10-09T12:00:00Z", "pairedBy": "Admin", "sealingKey": "W1iNnsp_S1nOWckdHewpAwI9T2ZwPGOeH5JFgWNtsV8", "serverFingerprint": "d27d 1a94 1ba0 8df5", "silentForSeconds": null, "state": "paired"}, "status": 200},
 "GET /ui/api/settings/email":{"body": {"lastError": null, "lastRun": null, "password": null, "setAside": 0, "waiting": 0}, "status": 200},
 "GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2707456, "fingerprint": "mk-b7ef…5f6d", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
+"GET /ui/api/settings/keys/copies":{"body": {"copies": [{"bytes": 2614022, "kind": "backup", "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000", "opens": "current", "what": "a backup"}], "note": "The host's own snapshots and backups are copies too, outside this list: they open with the phrase of their day for as long as the host keeps them."}, "status": 200},
 "GET /ui/api/settings/links":{"body": {"address": "https://localhost:37373", "fingerprint": "d27d 1a94 1ba0 8df5", "links": [{"address": "https://money.parents.ts.net", "codeExpiresAt": null, "createdAt": "2026-10-12T16:00:00Z", "endedAt": null, "failingSince": null, "fingerprint": "2774 b0db 58c5 2747", "householdAvatar": {"color": "#7a4b9c", "initials": "MT", "kind": "initials"}, "householdName": "Margaret & Tom", "id": "Link_01m4rdf800e00ssm4x59pbnntd", "incoming": [{"includeReceipts": false, "kind": "account", "names": ["Alice Griffin", "Bob Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "account", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "budget", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "portfolio", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}], "lastError": null, "lastOkAt": "2026-10-12T16:00:00Z", "linkedCopy": {"items": 4, "keyMadeAt": "2026-10-12T16:00:00Z", "keyMadeBy": null, "locksInSeconds": null, "receipts": 0, "sizeBytes": 13272, "unlocked": false, "unlockedAt": null, "unlockedBy": null, "waiting": 1}, "pausedUntil": null, "peerName": "griffin-parents", "peerVersion": "0.1.0", "role": "inviter", "state": "active", "syncBytes": null, "syncThrough": null, "syncTotal": null, "users": [{"displayName": "Margaret Griffin", "email": "margaret@parents.home", "id": "User_01m4rdf800e029senk6fw9b9rk", "username": "margaret"}, {"displayName": "Tom Griffin", "email": "tom@parents.home", "id": "User_01m4rdf800e02sbv3fknze4jfe", "username": "tom"}]}]}, "status": 200},
 "GET /ui/api/settings/receipts":{"body": {"failed": 0, "lastRun": "2026-10-12T16:00:00Z", "read": 3, "reading": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2707456, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
+"GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2707456, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "orphans": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
 "GET /ui/api/settings/tax-tables":{"body": {"rows": [{"corrected": false, "group": "Retirement", "key": "iraLimit", "kind": "money", "label": "IRA contribution limit", "shipped": 7500, "source": "IRS", "value": 7500}, {"corrected": false, "group": "Retirement", "key": "iraCatchUp", "kind": "money", "label": "IRA catch-up (50+)", "shipped": 1100, "source": "IRS", "value": 1100}, {"corrected": false, "group": "Retirement", "key": "k401Deferral", "kind": "money", "label": "401(k) employee deferral", "shipped": 24500, "source": "IRS", "value": 24500}, {"corrected": false, "group": "Retirement", "key": "k401CatchUp", "kind": "money", "label": "401(k) catch-up (50–59, 64+)", "shipped": 8000, "source": "IRS", "value": 8000}, {"corrected": false, "group": "Retirement", "key": "k401CatchUp6063", "kind": "money", "label": "401(k) catch-up (60–63)", "shipped": 11250, "source": "IRS", "value": 11250}, {"corrected": false, "group": "Retirement", "key": "hsaSelf", "kind": "money", "label": "HSA, self-only", "shipped": 4400, "source": "IRS", "value": 4400}, {"corrected": false, "group": "Retirement", "key": "hsaFamily", "kind": "money", "label": "HSA, family", "shipped": 8750, "source": "IRS", "value": 8750}, {"corrected": false, "group": "Retirement", "key": "rmdAge", "kind": "number", "label": "RMD starting age", "shipped": 73, "source": "IRS", "value": 73}, {"corrected": false, "group": "Gifts and giving", "key": "giftExclusion", "kind": "money", "label": "Annual gift exclusion", "shipped": 19000, "source": "IRS", "value": 19000}, {"corrected": false, "group": "Gifts and giving", "key": "rothFrom529", "kind": "money", "label": "529 to Roth IRA, lifetime", "shipped": 35000, "source": "IRS", "value": 35000}, {"corrected": false, "group": "Gifts and giving", "key": "qcdLimit", "kind": "money", "label": "QCD limit", "shipped": 111000, "source": "IRS", "value": 111000}, {"corrected": false, "group": "Taxes", "key": "collectablesRate", "kind": "percent", "label": "Collectables rate (max)", "shipped": 28, "source": "IRS", "value": 28}, {"corrected": false, "group": "Taxes", "key": "form8615Threshold", "kind": "money", "label": "Form 8615 unearned income", "shipped": 2700, "source": "IRS", "value": 2700}, {"corrected": false, "group": "Taxes", "key": "federalDue", "kind": "numbers", "label": "Federal return due (month, day)", "shipped": [4, 15], "source": "IRS", "value": [4, 15]}, {"corrected": false, "group": "Education", "key": "collegePublic", "kind": "money", "label": "College a year, public four-year (in-state)", "shipped": 27100, "source": "NCES Digest of Education Statistics, table 330.10", "value": 27100}, {"corrected": false, "group": "Education", "key": "collegePrivate", "kind": "money", "label": "College a year, private nonprofit four-year", "shipped": 60300, "source": "NCES Digest of Education Statistics, table 330.10", "value": 60300}, {"corrected": false, "group": "Metal spot", "key": "slvOzPerShare", "kind": "number", "label": "Silver per SLV share (troy oz)", "shipped": 0.8591, "source": "iShares", "value": 0.8591}, {"corrected": false, "group": "Metal spot", "key": "ppltOzPerShare", "kind": "number", "label": "Platinum per PPLT share (troy oz)", "shipped": 0.0909, "source": "abrdn", "value": 0.0909}, {"corrected": false, "group": "Metal spot", "key": "pallOzPerShare", "kind": "number", "label": "Palladium per PALL share (troy oz)", "shipped": 0.0909, "source": "abrdn", "value": 0.0909}, {"corrected": false, "group": "Bitcoin models", "key": "btcPowerLaw", "kind": "numbers", "label": "Bitcoin power law (A, n)", "shipped": [0.00000000000000001, 5.8], "source": "Santostasi's fit: price = A × days since the genesis block ^ n", "value": [0.00000000000000001, 5.8]}, {"corrected": false, "group": "Bitcoin models", "key": "btcLogRegression", "kind": "numbers", "label": "Bitcoin log regression (a, b)", "shipped": [2.66167155, 17.91837619], "source": "the rainbow chart's curve: log10(price) = a × ln(days) − b", "value": [2.66167155, 17.91837619]}, {"corrected": false, "group": "Bitcoin models", "key": "btcStockToFlow", "kind": "numbers", "label": "Bitcoin stock-to-flow (a, b)", "shipped": [14.6, 3.3], "source": "PlanB (2019): market value = e^a × SF^b", "value": [14.6, 3.3]}, {"corrected": false, "group": "Bitcoin models", "key": "btcSaylor2045", "kind": "numbers", "label": "Saylor 2045 (bear, base, bull)", "shipped": [3000000, 13000000, 49000000], "source": "Michael Saylor, Bitcoin24 (2024)", "value": [3000000, 13000000, 49000000]}, {"corrected": false, "group": "Bitcoin models", "key": "btcArk2030", "kind": "numbers", "label": "ARK 2030 (bear, base, bull)", "shipped": [500000, 1200000, 2400000], "source": "ARK Invest, Big Ideas (2025)", "value": [500000, 1200000, 2400000]}], "version": 0, "year": 2026, "years": [2025, 2026]}, "status": 200},
 "GET /ui/api/signup":{"body": {"domains": [], "open": false}, "status": 200},
 "GET /ui/api/signup-requests":{"body": {"items": [], "limit": 500, "offset": 0, "total": 0}, "status": 200},
@@ -2456,14 +2457,15 @@ label.drop {
 "GET /ui/api/relationships":{"body": {"items": [{"canChange": true, "endsOn": null, "fromDate": null, "id": "Rltn_01m4rdf800e01shhzemj9kmnfe", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e02844dfnfyp9y96", "name": "Emma Griffin"}, "relation": "child", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": null, "id": "Rltn_01m4rdf800e02bf5jgffndvbeb", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e02tsv7f23fh5z29", "name": "Carol Griffin"}, "relation": "child", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": "2015-05-01", "id": "Rltn_01m4rdf800e04reh25zer6sdkx", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e04a5zzmr1yqp0z6", "name": "Priya Shah"}, "relation": "friend", "toDate": null, "version": 1}, {"canChange": true, "endsOn": null, "fromDate": "2009-06-14", "id": "Rltn_01m4rdf800e00rg957k7kepe84", "label": null, "person1": {"deleted": false, "id": "Persn_01m4rdf800e018wqa0ct5gnsn9", "name": "Alice Griffin"}, "person2": {"deleted": false, "id": "Persn_01m4rdf800e01rjw9bshc99z5y", "name": "Bob Griffin"}, "relation": "spouse", "toDate": null, "version": 1}], "limit": 500, "offset": 0, "total": 4}, "status": 200},
 "GET /ui/api/session":{"body": {"dev": true, "household": {"avatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "name": "Alice & Bob"}, "serverName": "moneykata", "user": {"admin": true, "avatar": null, "bitcoinUnit": "btc", "displayName": "Alice Griffin", "email": "alice@griffin.home", "id": "User_01m4rdf800e018w8wax25eypm1", "needsSetup": false, "theme": "dark", "timeZone": "auto", "username": "alice", "zone": "UTC"}, "version": "0.1.0"}, "status": 200},
 "GET /ui/api/settings":{"body": {"sections": {"alerts": ["alertSourceHours", "alertSummaryTime"], "backups": ["backupTime", "backupCopies"], "bitcoin": ["bitcoinSource", "bitcoinEsploraUrl", "bitcoinNodeHost", "bitcoinNodePort", "bitcoinNodeTls", "bitcoinRpcUser", "bitcoinNodeCert", "bitcoinNodeCertOffered"], "email": ["smtpHost", "smtpPort", "smtpSecurity", "smtpUsername", "smtpFrom"], "general": ["serverName", "householdName", "householdAvatar", "publicUrl"], "imports": ["importMaxMb", "readStatements"], "keys": ["keyReminderMonths"], "links": ["linkAddress", "linkReleaseMinutes"], "network": ["networkAppRanges", "networkLinkRanges", "networkConnectorRanges"], "passwords": ["passwordMinLength"], "prices": ["priceRefreshTime", "priceRefreshZone"], "receipts": ["receiptMaxMb", "readReceipts", "receiptReadJobs"], "sessions": ["sessionIdleHours", "sessionAbsoluteDays", "lockoutFailures", "lockoutMinutes"], "signup": ["signupEnabled", "signupDomains"], "storage": ["keepStatementsYears"]}, "serverZone": "UTC", "values": {"alertSourceHours": 48, "alertSummaryTime": "07:00", "backupCopies": 14, "backupTime": "02:30", "bitcoinEsploraUrl": "https://mempool.space/api", "bitcoinNodeCert": null, "bitcoinNodeCertOffered": null, "bitcoinNodeHost": null, "bitcoinNodePort": 50002, "bitcoinNodeTls": true, "bitcoinRpcUser": null, "bitcoinSource": "esplora", "householdAvatar": {"color": "#3b7a57", "initials": "AB", "kind": "initials"}, "householdName": "Alice & Bob", "importMaxMb": 25, "keepStatementsYears": null, "keyReminderMonths": 12, "linkAddress": null, "linkReleaseMinutes": 60, "lockoutFailures": 10, "lockoutMinutes": 15, "networkAppRanges": [], "networkConnectorRanges": ["127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "::1/128", "fc00::/7"], "networkLinkRanges": [], "passwordMinLength": 12, "priceRefreshTime": "18:00", "priceRefreshZone": "America/New_York", "publicUrl": "https://localhost:37373", "readReceipts": true, "readStatements": true, "receiptMaxMb": 25, "receiptReadJobs": 1, "serverName": "moneykata", "sessionAbsoluteDays": 30, "sessionIdleHours": 8, "signupDomains": [], "signupEnabled": false, "smtpFrom": null, "smtpHost": null, "smtpPort": 587, "smtpSecurity": "starttls", "smtpUsername": null}, "version": 3, "versions": {"householdAvatar": 1, "householdName": 1, "publicUrl": 1}}, "status": 200},
-"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2656381, "files": 5, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
+"GET /ui/api/settings/backups":{"body": {"backups": [{"bytes": 2613589, "files": 2, "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000"}], "copies": 14, "directory": "/srv/moneykata/backups", "lastError": null, "lastRun": "2026-10-12T16:00:00Z", "nextRun": "2026-10-13T02:30:00Z", "running": false, "time": "02:30"}, "status": 200},
 "GET /ui/api/settings/bitcoin":{"body": {"certificate": null, "certificateOffered": null, "lastError": null, "lastRun": null, "password": null, "wallets": 1}, "status": 200},
 "GET /ui/api/settings/connector":{"body": {"codeExpiresAt": null, "connections": [{"accounts": [{"id": "Acct_01m4rdf800e02af3bqw26mpwnz", "name": "Taxable brokerage", "syncAccount": "Individual ••4417"}], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "schwab", "id": "Conn_01m4rdf800e00traevg9kh27yd", "institutionAccounts": [{"last4": "4417", "name": "Individual"}, {"last4": "0921", "name": "Rollover IRA"}], "label": "Schwab login", "lastRunAdded": 14, "lastRunAt": "2026-10-12T14:00:00Z", "message": "14 new", "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "signInAddress": null, "state": "ok", "version": 1}, {"accounts": [], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "ofx-direct", "id": "Conn_01m4rdf800e019wkhvp6w03c2y", "institutionAccounts": [{"last4": "1204", "name": "Everyday Checking"}], "label": "Credit union", "lastRunAdded": null, "lastRunAt": "2026-10-11T11:00:00Z", "message": "the password was refused", "ownerId": "User_01m4rdf800e018w8wax25eypm1", "ownerName": "Alice Griffin", "signInAddress": null, "state": "needs-sign-in", "version": 1}, {"accounts": [{"id": "Acct_01m4rdf800e0490demg1an248p", "name": "Bob's checking", "syncAccount": "Joint Household ••3311"}], "createdAt": "2026-10-12T16:00:00Z", "credentialWaiting": false, "driver": "folder", "id": "Conn_01m4rdf800e01ved56y1xft4b5", "institutionAccounts": [], "label": "UMB downloads", "lastRunAdded": 1, "lastRunAt": "2026-10-11T16:00:00Z", "message": "1 statement", "ownerId": "User_01m4rdf800e01skjft3xb5ewck", "ownerName": "Bob Griffin", "signInAddress": null, "state": "ok", "version": 1}], "connectorVersion": "0.1.0", "fingerprint": "33d9 2372 0031 ba55", "lastReportAt": "2026-10-12T15:57:00Z", "locked": false, "pairedAt": "2026-10-09T12:00:00Z", "pairedBy": "Admin", "sealingKey": "W1iNnsp_S1nOWckdHewpAwI9T2ZwPGOeH5JFgWNtsV8", "serverFingerprint": "d27d 1a94 1ba0 8df5", "silentForSeconds": null, "state": "paired"}, "status": 200},
 "GET /ui/api/settings/email":{"body": {"lastError": null, "lastRun": null, "password": null, "setAside": 0, "waiting": 0}, "status": 200},
 "GET /ui/api/settings/keys":{"body": {"ageDays": 0, "confirmations": [], "created": "2026-10-12T16:00:00Z", "dataKeyCreated": "2026-10-12T16:00:00Z", "databaseBytes": 2707456, "fingerprint": "mk-b7ef…5f6d", "previous": [], "receipts": 3, "reencrypting": false, "reminderDue": false, "reminderMonths": 12, "secrets": 1}, "status": 200},
+"GET /ui/api/settings/keys/copies":{"body": {"copies": [{"bytes": 2614022, "kind": "backup", "made": "2026-10-12T16:00:00Z", "masterKey": "mk-b7ef…5f6d", "name": "moneykata-20261012-160000", "opens": "current", "what": "a backup"}], "note": "The host's own snapshots and backups are copies too, outside this list: they open with the phrase of their day for as long as the host keeps them."}, "status": 200},
 "GET /ui/api/settings/links":{"body": {"address": "https://localhost:37373", "fingerprint": "d27d 1a94 1ba0 8df5", "links": [{"address": "https://money.parents.ts.net", "codeExpiresAt": null, "createdAt": "2026-10-12T16:00:00Z", "endedAt": null, "failingSince": null, "fingerprint": "2774 b0db 58c5 2747", "householdAvatar": {"color": "#7a4b9c", "initials": "MT", "kind": "initials"}, "householdName": "Margaret & Tom", "id": "Link_01m4rdf800e00ssm4x59pbnntd", "incoming": [{"includeReceipts": false, "kind": "account", "names": ["Alice Griffin", "Bob Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "account", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "budget", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}, {"includeReceipts": false, "kind": "portfolio", "names": ["Alice Griffin"], "ownerName": "Margaret Griffin", "sharedAt": "2026-09-12T16:00:00Z"}], "lastError": null, "lastOkAt": "2026-10-12T16:00:00Z", "linkedCopy": {"items": 4, "keyMadeAt": "2026-10-12T16:00:00Z", "keyMadeBy": null, "locksInSeconds": null, "receipts": 0, "sizeBytes": 13272, "unlocked": false, "unlockedAt": null, "unlockedBy": null, "waiting": 1}, "pausedUntil": null, "peerName": "griffin-parents", "peerVersion": "0.1.0", "role": "inviter", "state": "active", "syncBytes": null, "syncThrough": null, "syncTotal": null, "users": [{"displayName": "Margaret Griffin", "email": "margaret@parents.home", "id": "User_01m4rdf800e029senk6fw9b9rk", "username": "margaret"}, {"displayName": "Tom Griffin", "email": "tom@parents.home", "id": "User_01m4rdf800e02sbv3fknze4jfe", "username": "tom"}]}]}, "status": 200},
 "GET /ui/api/settings/receipts":{"body": {"failed": 0, "lastRun": "2026-10-12T16:00:00Z", "read": 3, "reading": 0, "waiting": 0}, "status": 200},
-"GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2707456, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
+"GET /ui/api/settings/storage":{"body": {"byYear": [], "databaseBytes": 2707456, "expired": {"bytes": 0, "files": 0}, "expiredBy": [], "forever": {"bytes": 42827, "files": 3}, "keepStatementsYears": null, "later": {"bytes": 0, "files": 0}, "orphans": {"bytes": 0, "files": 0}, "pruned": 0, "receiptsBytes": 42827}, "status": 200},
 "GET /ui/api/settings/tax-tables":{"body": {"rows": [{"corrected": false, "group": "Retirement", "key": "iraLimit", "kind": "money", "label": "IRA contribution limit", "shipped": 7500, "source": "IRS", "value": 7500}, {"corrected": false, "group": "Retirement", "key": "iraCatchUp", "kind": "money", "label": "IRA catch-up (50+)", "shipped": 1100, "source": "IRS", "value": 1100}, {"corrected": false, "group": "Retirement", "key": "k401Deferral", "kind": "money", "label": "401(k) employee deferral", "shipped": 24500, "source": "IRS", "value": 24500}, {"corrected": false, "group": "Retirement", "key": "k401CatchUp", "kind": "money", "label": "401(k) catch-up (50–59, 64+)", "shipped": 8000, "source": "IRS", "value": 8000}, {"corrected": false, "group": "Retirement", "key": "k401CatchUp6063", "kind": "money", "label": "401(k) catch-up (60–63)", "shipped": 11250, "source": "IRS", "value": 11250}, {"corrected": false, "group": "Retirement", "key": "hsaSelf", "kind": "money", "label": "HSA, self-only", "shipped": 4400, "source": "IRS", "value": 4400}, {"corrected": false, "group": "Retirement", "key": "hsaFamily", "kind": "money", "label": "HSA, family", "shipped": 8750, "source": "IRS", "value": 8750}, {"corrected": false, "group": "Retirement", "key": "rmdAge", "kind": "number", "label": "RMD starting age", "shipped": 73, "source": "IRS", "value": 73}, {"corrected": false, "group": "Gifts and giving", "key": "giftExclusion", "kind": "money", "label": "Annual gift exclusion", "shipped": 19000, "source": "IRS", "value": 19000}, {"corrected": false, "group": "Gifts and giving", "key": "rothFrom529", "kind": "money", "label": "529 to Roth IRA, lifetime", "shipped": 35000, "source": "IRS", "value": 35000}, {"corrected": false, "group": "Gifts and giving", "key": "qcdLimit", "kind": "money", "label": "QCD limit", "shipped": 111000, "source": "IRS", "value": 111000}, {"corrected": false, "group": "Taxes", "key": "collectablesRate", "kind": "percent", "label": "Collectables rate (max)", "shipped": 28, "source": "IRS", "value": 28}, {"corrected": false, "group": "Taxes", "key": "form8615Threshold", "kind": "money", "label": "Form 8615 unearned income", "shipped": 2700, "source": "IRS", "value": 2700}, {"corrected": false, "group": "Taxes", "key": "federalDue", "kind": "numbers", "label": "Federal return due (month, day)", "shipped": [4, 15], "source": "IRS", "value": [4, 15]}, {"corrected": false, "group": "Education", "key": "collegePublic", "kind": "money", "label": "College a year, public four-year (in-state)", "shipped": 27100, "source": "NCES Digest of Education Statistics, table 330.10", "value": 27100}, {"corrected": false, "group": "Education", "key": "collegePrivate", "kind": "money", "label": "College a year, private nonprofit four-year", "shipped": 60300, "source": "NCES Digest of Education Statistics, table 330.10", "value": 60300}, {"corrected": false, "group": "Metal spot", "key": "slvOzPerShare", "kind": "number", "label": "Silver per SLV share (troy oz)", "shipped": 0.8591, "source": "iShares", "value": 0.8591}, {"corrected": false, "group": "Metal spot", "key": "ppltOzPerShare", "kind": "number", "label": "Platinum per PPLT share (troy oz)", "shipped": 0.0909, "source": "abrdn", "value": 0.0909}, {"corrected": false, "group": "Metal spot", "key": "pallOzPerShare", "kind": "number", "label": "Palladium per PALL share (troy oz)", "shipped": 0.0909, "source": "abrdn", "value": 0.0909}, {"corrected": false, "group": "Bitcoin models", "key": "btcPowerLaw", "kind": "numbers", "label": "Bitcoin power law (A, n)", "shipped": [0.00000000000000001, 5.8], "source": "Santostasi's fit: price = A × days since the genesis block ^ n", "value": [0.00000000000000001, 5.8]}, {"corrected": false, "group": "Bitcoin models", "key": "btcLogRegression", "kind": "numbers", "label": "Bitcoin log regression (a, b)", "shipped": [2.66167155, 17.91837619], "source": "the rainbow chart's curve: log10(price) = a × ln(days) − b", "value": [2.66167155, 17.91837619]}, {"corrected": false, "group": "Bitcoin models", "key": "btcStockToFlow", "kind": "numbers", "label": "Bitcoin stock-to-flow (a, b)", "shipped": [14.6, 3.3], "source": "PlanB (2019): market value = e^a × SF^b", "value": [14.6, 3.3]}, {"corrected": false, "group": "Bitcoin models", "key": "btcSaylor2045", "kind": "numbers", "label": "Saylor 2045 (bear, base, bull)", "shipped": [3000000, 13000000, 49000000], "source": "Michael Saylor, Bitcoin24 (2024)", "value": [3000000, 13000000, 49000000]}, {"corrected": false, "group": "Bitcoin models", "key": "btcArk2030", "kind": "numbers", "label": "ARK 2030 (bear, base, bull)", "shipped": [500000, 1200000, 2400000], "source": "ARK Invest, Big Ideas (2025)", "value": [500000, 1200000, 2400000]}], "version": 0, "year": 2026, "years": [2025, 2026]}, "status": 200},
 "GET /ui/api/shares/account/Acct_01m4rdf800e00rpbkavrdymf5d":{"body": {"accounts": [], "groups": [{"id": "Group_01m4rdf800e00tya428n81rvcb", "level": "none", "members": 2, "name": "Admins"}, {"id": "Group_01m4rdf800e0192x3k8skth481", "level": "read", "members": 2, "name": "Household"}], "hidden": {}, "itemId": "Acct_01m4rdf800e00rpbkavrdymf5d", "itemName": "Everyday checking", "kind": "account", "links": [{"householdName": "Margaret & Tom", "includeReceipts": false, "linkId": "Link_01m4rdf800e00ssm4x59pbnntd", "serverName": "griffin-parents", "users": [{"avatar": null, "displayName": "Margaret Griffin", "id": "User_01m4rdf800e029senk6fw9b9rk", "level": "none", "via": []}, {"avatar": null, "displayName": "Tom Griffin", "id": "User_01m4rdf800e02sbv3fknze4jfe", "level": "none", "via": []}]}], "users": [{"avatar": null, "displayName": "Admin", "id": "User_01m4rdf800e00tf99mm9efehdp", "level": "none", "via": []}, {"avatar": null, "displayName": "Bob Griffin", "id": "User_01m4rdf800e01skjft3xb5ewck", "level": "none", "via": [{"groupId": "Group_01m4rdf800e0192x3k8skth481", "groupName": "Household", "level": "read"}]}], "version": 1}, "status": 200},
 "GET /ui/api/shares/account/Acct_01m4rdf800e01b9479fephfqf8":{"body": {"accounts": [], "groups": [{"id": "Group_01m4rdf800e00tya428n81rvcb", "level": "none", "members": 2, "name": "Admins"}, {"id": "Group_01m4rdf800e0192x3k8skth481", "level": "none", "members": 2, "name": "Household"}], "hidden": {}, "itemId": "Acct_01m4rdf800e01b9479fephfqf8", "itemName": "Emergency savings", "kind": "account", "links": [{"householdName": "Margaret & Tom", "includeReceipts": false, "linkId": "Link_01m4rdf800e00ssm4x59pbnntd", "serverName": "griffin-parents", "users": [{"avatar": null, "displayName": "Margaret Griffin", "id": "User_01m4rdf800e029senk6fw9b9rk", "level": "none", "via": []}, {"avatar": null, "displayName": "Tom Griffin", "id": "User_01m4rdf800e02sbv3fknze4jfe", "level": "none", "via": []}]}], "users": [{"avatar": null, "displayName": "Admin", "id": "User_01m4rdf800e00tf99mm9efehdp", "level": "none", "via": []}, {"avatar": null, "displayName": "Bob Griffin", "id": "User_01m4rdf800e01skjft3xb5ewck", "level": "write", "via": []}], "version": 1}, "status": 200},
@@ -2762,7 +2764,7 @@ label.drop {
 "dialog-person":"# A gift plan\n\nYour plan for someone you give gifts to: your budget, their holidays and dates, and your notes.\nYours alone unless you share it.\n\n## The person {#the-person}\n\nName, sex and birthday belong to the person, seen by the whole household unless whoever added them\nkeeps them private. Only the person (when they sign in here), whoever added them or an admin changes\nthem. How they're related to you is worked out from relationships. Gifts for someone who uses this\nserver are never shown to them, even through a share.\n\n## Name\n\nOne person, once: a name already here shows that person instead, to plan for them, or to ask whoever\nadded them to share them. **A different person** with the same name is added once both have birth\nyears, and they differ.\n\n## Sex\n\nChooses the words for the family tree: mother or father, niece or nephew.\n\n## Birthday\n\nTheir birthday, with the year if you know it (for their age), or without it: 10-20.\n\n## Died on {#died-on}\n\nThe day they died. It ends a marriage on that day, so a widow or widower shows in the family tree;\ntheir gifts stay in your history.\n\n## Private\n\nSeen only by you and those you share them with. Only whoever added them makes them private.\n\n## Their relationships {#their-relationships}\n\nTheir family and friends, entered and worked out, as of today.\n\n## Yearly gift budget {#gift-budget}\n\nWhat you mean to spend on them in a year, all occasions together.\n\n## Holidays\n\nThe holidays they get gifts for. Dates are worked out each year: fixed ones, rule-based ones like\nMother's Day, and lunar or lunisolar ones like Diwali from shipped tables.\n\n## Anniversaries and other dates {#dates}\n\nAny anniversary other than a wedding, a name day, any other date of their own, each with a budget of\nits own if you like. A wedding anniversary comes from their marriage.\n\n## Remind me {#lead-days}\n\nHow long before a date it shows on the Dashboard and raises an alert, until something is bought.\n\n## Notes\n\nSizes, likes, what they already have.\n\n## Given before\n\nWhat you gave them in past years, so it isn't given twice.\n\n## Delete plan\n\nDeletes your gift plan for them; they stay among the household's people.\n\n## Delete person\n\nDeletes them for everyone, asking first. Gifts bought, given or received stay in the history as\n_Emma (deleted)_; ideas and planned gifts for them alone go with them. A user's own person isn't\ndeleted here.\n",
 "dialog-plan":"# Edit plan\n\nThe plan from the month shown on. Earlier months keep the plan they had.\n\n## Category\n\nA category plans its children too: plan _Food_ for groceries and dining together, or each on its\nown.\n\n## Amount\n\nWhat you mean to spend in a month, or a year for a yearly line. Income categories plan what you\nexpect to receive.\n\n## Every\n\n**Month** compares with each month; **Year** with the year so far, for costs that come once or twice\na year.\n\n## Rollover\n\nCarry what is left at the end of a month into the next, or what was overspent out of it.\n",
 "dialog-portfolio":"# Portfolio\n\n## Name\n\nWhat it's called.\n\n## Accounts\n\nYours, and any shared with you. People you share the portfolio with see only those also shared with\nthem.\n\n## Benchmark\n\nWhat Performance compares it with: VT (world stocks), SPY (US large companies) or 60/40 of VT and\nBND.\n",
-"dialog-prune":"# Prune files\n\nThe expired files, by category: untick any to keep for now. A verified backup is made first; the\npruned files stay in the backups made before it until backup pruning removes them, so a restore can\nbring them back until then. Each record keeps its row, amounts, dates and links, and shows _File\npruned_.\n\n## Type the number of files to confirm {#prune-count}\n\nThe count, as the title says, so nothing is pruned by a slip.\n\n## Your password {#reauth-password}\n\nAsked again when it was given over 10 minutes ago.\n",
+"dialog-prune":"# Prune files\n\nThe expired files, by category: untick any to keep for now. No backup is made first: a backup\nholds no files, and a pruned file survives only in the host's own backups of the data directory.\nEach record keeps its row, amounts, dates and links, and shows _File pruned_.\n\n## Type the number of files to confirm {#prune-count}\n\nThe count, as the title says, so nothing is pruned by a slip.\n\n## Your password {#reauth-password}\n\nAsked again when it was given over 10 minutes ago.\n",
 "dialog-rebaseline":"# Re-baseline\n\nThe projection is active, and its inputs changed. **Re-baseline** tracks the actual balance against\nthe new inputs from today; **Keep the baseline** keeps comparing against the plan as it was made\nactive.\n",
 "dialog-receipt":"# Receipt\n\nThe receipt, its fields, and what it is attached to. A photo opens full size; a PDF opens in the\nbrowser's own viewer.\n\nWhen it was uploaded, MoneyKata read it on the server: its date, total and merchant fill the empty\nfields, marked _read from the receipt_ with how sure the reader was. Check them; anything you type\nstays yours and is never replaced. **Read again** reads it once more.\n\n## Keep\n\nKeeps the file for ever, whatever its retention: for a warranty, or a medical bill an HSA may repay\nlater. Beside it, how long the file is kept otherwise: _Kept until Mar 2031_ (in bold within 90\ndays), _Kept while the lot is open_ while what it is attached to hasn't ended, or _Kept for ever_.\nAn expired file shows _Expired Mar 2031, prunable_, and an admin may prune it in Settings ›\nStorage; a pruned file's record keeps its amounts, dates and links.\n\n## Date {#receipt-date}\n\nThe date on the receipt: the transaction it belongs to is looked for within five days of it.\n\n## Amount {#receipt-amount}\n\nThe total paid. A transaction up to 25% larger still matches, for a tip added after the receipt was\nprinted.\n\n## Payee {#receipt-payee}\n\nWho was paid, as the receipt says.\n\n## Notes {#receipt-notes}\n\nAnything worth keeping with it.\n\n## Tags {#receipt-tags}\n\nWords to find it by, separated by commas, such as _medical_ or _warranty_.\n\n## Attached to {#attached-to}\n\nThe transactions it supports. **Attach** takes the best match among your transactions with the same\namount near its date; the buttons beside it are the next two. **Detach** returns it to the inbox\nwhen nothing else links to it.\n\n## Text read from the receipt\n\nEverything the reader found, which the Receipts screen searches.\n\n## Delete\n\nOnly its owner, and only once nothing links to it.\n",
 "dialog-recovery-codes":"# Recovery codes\n\nTen codes, each of which signs you in once in place of a code from the app. They are shown only now:\nMoneyKata keeps only a fingerprint of each.\n\nPrint them or keep them in a password manager, not on the phone that has the app. Profile shows how\nmany are left; make new ones before they run out.\n",
@@ -2820,13 +2822,13 @@ label.drop {
 "receipts":"# Receipts\n\nPDFs and photos of receipts, invoices and statements, kept encrypted on this server and attached to\nthe transactions they belong to.\n\n![Receipts](shots/receipts.webp)\n\n## Drop PDFs or photos here {#receipt-files}\n\nPDF, JPEG, PNG, WebP and HEIC (iPhone photos), many at once, each up to the size in Settings ›\nReceipts. The type is checked from the file itself. A file you already uploaded isn't stored twice:\nyou get the receipt you have.\n\n## Show\n\n**All** your receipts, and those attached to transactions in accounts shared with you; or the\n**Inbox**: your receipts attached to nothing yet.\n\n## Search\n\nMatches the text read from each receipt (`blue bottle`, `142.18`), and its payee, amount, file name,\nnotes and tags.\n\n## Being read\n\nEach upload is read on this server in the background: **Reading…** until it's done, then its fields\nare filled in. **Couldn't read it** says why; the receipt still works with its fields typed by hand.\n\n## Sharing\n\nA receipt is seen by whoever can read a transaction it is attached to. One attached to nothing is\nyours alone. Only you can delete your receipt, and only once nothing links to it.\n",
 "reset":"# Reset your password\n\n## New password {#password}\n\nEvery session of yours is signed out when it changes.\n",
 "settings-alerts":"# Alerts\n\nHow alerts behave for everyone. Each user chooses in Profile whether alerts reach them by email.\n\n## Alert when a source has failed for {#alert-source-hours}\n\nHow long a price source, or email, may keep failing before admins are alerted. A source that fails\nnow and then and recovers raises nothing; one that keeps failing raises one alert, which resolves by\nitself when it works again. 48 hours by default.\n\n## Daily summary at {#alert-summary-time}\n\nWhen the daily summary email goes to those who chose it, in each person's own time zone. It lists\nthe alerts opened since the last one, and none is sent on a day without any.\n",
-"settings-backups":"# Settings: Backups\n\nDaily copies of the database and receipts, made, checked and pruned by the server.\n\n![Settings: Backups](shots/settings-backups.webp)\n\n## Time of day\n\nWhen the daily backup runs.\n\n## Copies kept\n\nHow many backups stay; older ones are deleted. 14 by default.\n\n## Back up now\n\nMakes a backup now.\n\n## Restoring\n\nBackups are encrypted as the data is, and open with the master key's recovery phrase. The directory\nis set on the host, outside the data directory.\n",
+"settings-backups":"# Settings: Backups\n\nDaily copies of the database with its keyring, made, checked and pruned by the server. Never\nthe receipt files: the host backs up the data directory, files and all, and this copy exists so\nthat the live database the host picks up has a coherent, verified twin beside it. The backup\ndirectory belongs inside what the host backs up.\n\n![Settings: Backups](shots/settings-backups.webp)\n\n## Time of day\n\nWhen the daily backup runs.\n\n## Copies kept\n\nHow many backups stay; older ones are deleted. 14 by default.\n\n## Back up now\n\nMakes a backup now.\n\n## Restoring\n\nBackups are encrypted as the data is, and open with the recovery phrase of their day; each\ncarries its own keyring, and a rotation re-wraps it. A restore puts the database and keyring\nback and leaves the receipt files where they are. The directory is set on the host, outside the\ndata directory.\n",
 "settings-bitcoin":"# Bitcoin\n\nWhere self-custody wallets' balances and history come from: a public explorer, or the\nhousehold's own node. Admins only.\n\n![Bitcoin settings](shots/settings-bitcoin.webp)\n\n## Explorer or node\n\n**Public: mempool.space** or **Blockstream**: nothing to set up, but the explorer sees which\naddresses are asked about. **Own node**, which keeps them private: a **mempool or Esplora**\ninstance, an **Electrum server** (Fulcrum or electrs), or **Bitcoin Core**, where MoneyKata keeps a\nwatch-only descriptor wallet for each wallet account. Only public keys and addresses are ever sent.\n\n## Esplora address {#esplora-url}\n\nYour own instance's API: `http://umbrel.local:3006/api`, for example.\n\n## Node address {#node-host}\n\nThe node's host name or address on your network. Naming it here lets MoneyKata reach it there,\npast the guard that otherwise keeps it off local addresses.\n\n## Node port {#node-port}\n\n50002 for an Electrum server with TLS (50001 without); 8332 for Bitcoin Core.\n\n## TLS\n\nAn Electrum server's TLS, usually on. Its certificate is usually one it made itself, so it is\ntrusted on first use: **Test** shows its SHA-256 fingerprint, and once you confirm it, any other\ncertificate is refused, and admins alerted, until you confirm the new one.\n\n## Certificate\n\nThe Electrum server's certificate trusted, by its SHA-256 fingerprint. Confirm a new one only if\nyou know why it changed, such as the node being set up again.\n\n## RPC user {#rpc-user}\n\nBitcoin Core's `rpcuser`, or the user of an `rpcauth` line.\n\n## Node password {#node-password}\n\nIts password. Stored encrypted, never shown again: type a new one to replace it.\n\n## Last checked {#checked}\n\nHow many wallets there are and when they were last read. Wallets are read every hour, and each\nwallet's **Check now** reads it at once. A failure lasting longer than Settings › Alerts allows\nalerts admins and each wallet's owner.\n\n## Test\n\nAsks the saved explorer or node for the chain's height, and says what failed. Save first.\n",
 "settings-connector":"# Connector\n\nThe MoneyKata Connector is a second service that keeps people's sign-ins at their institutions,\nfetches with its drivers, and pushes what it fetches into imports. MoneyKata can't reach it or\nread its vault: it only hears its signed reports, every five minutes. Admins only.\n\n![Connector](shots/settings-connector.webp)\n\nThe card shows whether a connector is paired, its key's fingerprint, the version it runs, when\nit last reported and whether it is **locked**. It starts locked after every restart of its own;\nan admin unlocks it on its host with its 12 words. A connector not heard from for 15 minutes,\nor locked, raises an alert for admins.\n\n## Pair {#pair}\n\nShows a one-time pairing code, in the command to run on the connector's host, valid 24 hours.\nIt holds this server's address and key fingerprint; the connector then introduces itself, and\nboth sides show its fingerprint for you to compare. One connector is paired at a time: pairing\nanother replaces it, as Unpair does. Needs your password again when it was given over 10\nminutes ago.\n\n## Unpair {#unpair}\n\nRefuses the connector's key from then on, stops every Connection, and turns every account's\nsync off. The connector deletes the credentials it held for this server. Needs your password\nagain when it was given over 10 minutes ago. Unpair at once when the connector's host or its\nvolume is lost or stolen: its identity key is kept outside the vault, so whoever has the copy\ncan report as the connector and post files until it is unpaired. The vault itself, with the\nsign-ins and the key that opens sealed credentials, stays closed without the words.\n\n## Connections {#connections}\n\nEvery person's sign-ins, kept by the connector: who owns each, its driver (Folder, OFX Direct\nConnect or Schwab), the accounts it keeps current, and its state from the last report: ok with\nwhat the last run added, waiting for credentials, needs a sign-in, or failing with the\nconnector's words. Credentials are never shown here, or anywhere: they exist only in the\nconnector's vault. People start and change their own under Profile › Connections.\n",
 "settings-email":"# Email (SMTP)\n\nHow MoneyKata sends its emails: invitations, password resets, sign-up links and decisions, alerts.\nUntil a host is set, each email is written to the `mail` folder in the data directory instead, where\nan admin can open it.\n\nEmails go out in the background, so nothing waits on the mail server. One that can't be sent stays\nqueued and is tried again every five minutes; this section shows the queue and the last error.\n\n## Host {#smtp-host}\n\nThe mail server's name, such as your email provider's SMTP server or a relay on your network.\nMoneyKata reaches only this host for email.\n\n## Port {#smtp-port}\n\n587 for STARTTLS, 465 for TLS, 25 for a plain relay.\n\n## Security {#smtp-security}\n\n**STARTTLS** and **TLS** encrypt the connection and check the server's certificate. **None** sends\nin the clear: only for a relay on your own network.\n\n## Username {#smtp-username}\n\nThe account to sign in to the mail server with, often an email address. Leave it empty for a relay\nthat needs none.\n\n## Password {#smtp-password}\n\nKept encrypted as a secret, used only when sending, and never shown again. Many providers want an\napp password rather than your own.\n\n## From address {#smtp-from}\n\nThe sender emails show, such as `MoneyKata \u003cmoney@example.com>`. Your provider may insist it matches\nthe username.\n\n## Send a test email\n\nSends one to your own address now, through the saved settings, and says what failed if it couldn't.\n",
 "settings-general":"# Settings: General\n\nThe server's name and the household it belongs to.\n\n![Settings: General](shots/settings-general.webp)\n\n## Server name\n\nShown to linked servers.\n\n## Server time zone\n\nRead from the host. A user whose time zone is **Auto** sees times in it.\n\n## Household name\n\nAt the top of the sidebar.\n\n## Household initials\n\nThe household's avatar.\n\n## Household colour\n\nThe avatar's colour.\n\n## Public URL\n\nThe address people reach MoneyKata at, such as `https://money.example.lan`. Links in emails\n(invitations, resets) are built from it, never from the request.\n",
 "settings-imports":"# Settings: Imports\n\n![Settings: Imports](shots/settings-imports.webp)\n\n## File types\n\nOFX, QFX and CSV, and statements as PDF, JPEG, PNG, WebP or HEIC, checked from what's inside the\nfile, never its name.\n\n## Largest file {#largest-file}\n\nThe biggest file that can be imported, in MB.\n\n## Read statements\n\nWhether a statement's PDF or photo can be imported. It is read on this server by the receipt reader,\nin its own process, and checked by the person before anything is saved. Off, only OFX, QFX and CSV\nfiles import.\n",
-"settings-keys":"# Settings: Key storage\n\nRead only. Everything the server stores is encrypted under one master key, which is the\nrecovery phrase: never stored, entered when the server starts, and changed only on the host.\n\n![Settings: Key storage](shots/settings-keys.webp)\n\n## Fingerprint\n\nA short name for the key that reveals nothing about it, such as `mk-3f9a…c21e`.\n\n## Unlocked\n\nWhen the phrase was last entered. The server locks again at every restart, until someone\nenters the phrase on the locked screen or with `moneykata keys unlock` on the host.\n\n## Recovery phrase\n\nThe master key written as 12 words. It is shown once, at install, and never again: without it\nnothing here, no backup, and no restart of the server opens. Check a copy once a year on the\nhost with `moneykata keys verify`.\n\n## Test\n\nChecks that the keyring on disk is the one the phrase unlocked, and that the database and a\nsecret open with the data key.\n\n## Previous key\n\nA master key kept after a rotation, because the backups made before it hold the data key wrapped\nunder it. The date shown is when the backup directory's own pruning has removed the last of those\ncopies. A backup copied anywhere else (a NAS, a cloud bucket, a snapshot) is not counted: it still\nopens with the previous key for as long as it exists, so count those copies yourself before the\nold key and its phrase are destroyed.\n\n## Re-encrypt\n\nMakes a new data key and re-encrypts the database, the receipt files and every secret under it.\nIt asks for the recovery phrase, which wraps the new data key.\nFor when the data key may have been read: a memory dump or a debugging session on the live server,\nor a master key or recovery phrase that leaked while any copy of the data directory or a backup\ncould have been taken with it. It closes nothing made before it: every earlier copy still opens\nwith the key it was made under, so a leak also means deleting those copies wherever they are. It\ndoesn't change the master key, which is rotated on the host with `moneykata keys rotate`.\n",
+"settings-keys":"# Settings: Key storage\n\nRead only. Everything the server stores is encrypted under one master key, which is the\nrecovery phrase: never stored, entered when the server starts, and changed only on the host.\n\n![Settings: Key storage](shots/settings-keys.webp)\n\n## Fingerprint\n\nA short name for the key that reveals nothing about it, such as `mk-3f9a…c21e`.\n\n## Unlocked\n\nWhen the phrase was last entered. The server locks again at every restart, until someone\nenters the phrase on the locked screen or with `moneykata keys unlock` on the host.\n\n## Recovery phrase\n\nThe master key written as 12 words. It is shown once, at install, and never again: without it\nnothing here, no backup, and no restart of the server opens. Check a copy once a year on the\nhost with `moneykata keys verify`.\n\n## Test\n\nChecks that the keyring on disk is the one the phrase unlocked, and that the database and a\nsecret open with the data key.\n\n## Previous keys\n\nThe master keys this server was rotated away from, each with how many copies on this host still\nneed its phrase. A rotation re-wraps every copy it is told to, so the count is usually none; the\nhost's own snapshots and backups made before the rotation still open with that phrase for as\nlong as the host keeps them, and are yours to count. **Forget** drops a key from the list once\nnothing needs it; destroy its sheet and password-manager entry then.\n\n## Copies on this host\n\nEvery copy MoneyKata can see: the backups in the backup directory, the copies made before a\nmigration (`pre-upgrade/`) and what a restore set aside (`before-restore-*/`). Each carries its\nown keyring and says how it opens: with this phrase, with this phrase but an earlier data key,\nor only with a previous phrase. **Remove** deletes one, after your password. The host's own\nsnapshots and backups are copies too, outside this list.\n\n## Re-encrypt\n\nMakes a new data key and re-encrypts the database, the receipt files and every secret under it,\nafter a verified backup, and never while a backup runs. It asks for the recovery phrase, which\nwraps the new data key, and your password again.\n\n## The copies on this host {#copies-at-re-encryption}\n\nFor each copy, what the re-encryption does with it: **Re-encrypt** (the default) rewrites it\nunder the new data key, after the main job; **Delete** removes it; **Leave as it is** keeps it\nunder its old data key, which this phrase still opens. A copy that needs a previous phrase cannot\nbe rewritten here: leave it or delete it.\nFor when the data key may have been read: a memory dump or a debugging session on the live server,\nor a master key or recovery phrase that leaked while any copy of the data directory or a backup\ncould have been taken with it. It closes nothing made before it: every earlier copy still opens\nwith the key it was made under, so a leak also means deleting those copies wherever they are. It\ndoesn't change the master key, which is rotated on the host with `moneykata keys rotate`.\n",
 "settings-links":"# Linked servers\n\nOther MoneyKata servers that share read-only with this one: another household's, or a\npreparer's. Admins only.\n\n![Linked servers](shots/settings-links.webp)\n\n**Invite a server** makes a one-time code for the other server's admin. **Enter a link code**\nanswers one: MoneyKata connects to the address in the code, checks the server's key against the\nfingerprint in it, and asks to link. The inviting side then lists it as **wants to link**: compare\nthe fingerprint shown with what the other admin sees for their own server (by phone, in person)\nand **Approve** or **Reject** it.\n\n## This server's link address {#link-address}\n\nWhere other servers reach this one, as `https://…` without a path: MoneyKata answers them under\n`/link/`. It must be reachable from the other server: a forwarded port, a reverse proxy that\npasses `/link/`, or both servers on one overlay network such as Tailscale or WireGuard (the easy\nway, with no open port). Empty, the public URL is used.\n\nA link works when either side can reach the other: each exchange carries both directions.\n\nEach link shows its state, its fingerprint and MoneyKata version, and when the last exchange\nworked. **Pull now** exchanges at once rather than at the next hour. **Pause** stops this side\nexchanging for a time you choose; it shows **paused until** then and resumes on its own, or at\nonce with **Resume now**. **End link** ends it on both sides: the other side learns at once, or\nat its next call; its users are removed here, and nothing is deleted on the server that shared.\nA server that can't be reached shows **unreachable since** and the reason.\n\n## Syncing {#progress}\n\nA large change, such as the first pull into a new copy, arrives in parts of about 4 MB, oldest\nfirst, so what has arrived is usable at once. While parts are still coming the link shows the date\nit has reached and how much of the change has arrived.\n\n## Linked copies {#linked-copies}\n\nWhat each link brings in is kept apart from this household's data, in its own encrypted copy under\nits own **access key**: 12 words. This server's master key can't open it, and backups leave it\nout. **Create the access key** once the link is active: MoneyKata shows the words once, for the\nhousehold's password manager, where the people its shares name can reach them. Pulls into the copy\nbegin then.\n\nThe first person its shares name who opens the household's window enters the words; the copy then\nstays unlocked for everyone it shares with, each seeing only what names them, until it goes unused.\nEach copy shows its size, the changes **waiting** (pulled while it was locked, sealed so only its\nwords open them, and applied when it is next unlocked), when its key was made and by whom, and who\nunlocked it. **Lock now**\nlocks it at once. **Reset copy** (if the words are lost) deletes the copy and its key: make a new\naccess key, and everything is pulled again from the other server, where nothing was lost.\n\n## Release linked keys after {#link-release}\n\nHow long an unlocked copy's key stays in memory with nobody viewing it: 15 minutes, 1 hour (the\ndefault) or 4 hours. Background work, such as a pull, doesn't count as viewing. A restart locks\nevery copy.\n\n## Shared from a linked server {#incoming}\n\nWhat each linked server shares with people here, as an admin sees it: only its kind, its owner's\nname, when it was shared and the people here it names. Its name and figures stay inside the\nencrypted copy, for those people. The owner there decides who sees what; an admin here can't\nchange it, and nothing shared from there can be shared on.\n\n## Users on linked servers {#linked-users}\n\nEach linked server's active users, sent at every exchange and updated in place: a new user is\nadded, a changed name or email is updated, and a user no longer on the list is removed (and comes\nback if they return). People here can share with them, always read only. They never sign in here,\njoin a group, own anything or receive alerts.\n",
 "settings-network":"# Network\n\nWhich addresses may reach each part of this server. Each list holds address ranges, one per\nline, as `192.168.1.0/24` or a single address; an empty list allows any address. A change\napplies to the next request. Addresses outside a list get *not found*, as if the path didn't\nexist. `/healthz` and `/demo` answer any address. Admins only.\n\n![Network](shots/settings-network.webp)\n\n## Allowed to use the app {#network-app-ranges}\n\nThe ranges that may reach the app (`/ui`), and `/mcp` with it, since an agent sits where a\nperson's browser does and its token is already the user's. Empty by default: any address the\nhost's port mapping and firewall let through.\n\n## Allowed to link {#network-link-ranges}\n\nWhere linked servers call `/link` from: an overlay network's range (Tailscale uses\n`100.64.0.0/10`), or the other household's address. Empty by default.\n\n## Allowed to connect {#network-connector-ranges}\n\nWhere the MoneyKata Connector calls `/connector` from. By default the LAN and the overlay\n(`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`, loopback and the private\nIPv6 range), so a connector beside the server or on the household's overlay works as it is. A\nconnector on a laptop away from home needs the range it calls from added here.\n",
 "settings-passwords":"# Settings: Passwords\n\n![Settings: Passwords](shots/settings-passwords.webp)\n\n## Minimum length\n\nAt least 8; 12 by default. It is the only rule: no character classes and no expiry. The 100,000 most\ncommon passwords are refused whatever their length.\n",
@@ -2834,7 +2836,7 @@ label.drop {
 "settings-receipts":"# Receipts\n\nHow receipts are kept: encrypted in the data directory, each file once however often it is uploaded,\nand in every backup.\n\n## Largest file (MB) {#receipt-max-mb}\n\nThe largest receipt that can be uploaded, 25 MB by default. The file types are PDF, JPEG, PNG, WebP\nand HEIC, checked from each file's content.\n\n## Read receipts\n\nMoneyKata reads each receipt's date, total and merchant on this server, with RapidOCR, and suggests\nthe transaction it belongs to. Nothing leaves the server, and no outside service or download is\ninvolved. A PDF with text in it is read directly; a photo or scan is read by OCR. Turn it off on a\nhost too small to run it: receipts still upload and can be filled in by hand.\n\n## Jobs at a time {#receipt-read-jobs}\n\nHow many receipts are read at once, each in its own process limited to 2 threads, a lower priority,\n1.5 GB of memory and 60 seconds a receipt. A batch of uploads works through the queue.\n\n## Reading\n\nThe queue: receipts waiting, read, and those that couldn't be read, with the reason on each.\n\n## Re-read all receipts\n\nAfter an update with new models: every receipt is read again. Only empty fields, and those still\nholding what was read before, are replaced; anything a person typed stays.\n",
 "settings-sessions":"# Settings: Sign-in and sessions\n\nHow long a sign-in lasts and when repeated failures lock a username.\n\n![Settings: Sign-in and sessions](shots/settings-sessions.webp)\n\n## Idle timeout {#idle-timeout}\n\nHours without using MoneyKata before a session ends. 8 by default.\n\n## Longest session {#longest-session}\n\nDays a session lasts, used or not. 30 by default.\n\n## Failed sign-ins before a lockout\n\nWrong passwords in 15 minutes that lock the username. 10 by default.\n\n## Lockout {#lockout}\n\nMinutes a locked username waits. 15 by default.\n",
 "settings-signup":"# Sign-up\n\nWhether people can ask for an account themselves, from the sign-in screen.\n\n## Sign-up\n\nWhen on, the sign-in screen offers **Sign up**. A person gives their name, email, a username and a\npassword, confirms the email from a link, and waits; the request then shows under **Requests** in\nUsers and Groups, where an admin approves or rejects it. It needs email (SMTP) and the public URL,\nwhich the links are built from.\n\n## Allowed email domains {#signup-domains}\n\nOptional: only addresses at these domains can ask. Empty allows any.\n",
-"settings-storage":"# Settings: Storage\n\nHow much the database and the files take, and how long receipt and statement files are kept.\nRecords are never removed: only files whose retention has run out, and only when an admin prunes\nthem here. Sizes and counts only, never what the files hold.\n\n![Storage](shots/settings-storage.webp)\n\n## Prune\n\nOpens the files that have expired, by category, to prune: a verified backup first, then the files.\n\n## Keep statements for {#keep-statements-years}\n\nYears after each statement's period. Empty keeps them for ever, the default.\n\n## Receipt and statement files {#files}\n\nThe files expired and prunable, those that expire later or are kept while their record is open,\nand those kept for ever.\n\n## What expires each year {#what-expires-each-year}\n\nBy category, from the periods set now: change a category's period and these move.\n\n## Keep receipts for {#keep-receipts-for}\n\nEach category's period: years after the record a receipt is attached to ended. A subcategory\nwithout its own takes its parent's; empty keeps them for ever, the default.\n",
+"settings-storage":"# Settings: Storage\n\nHow much the database and the files take, and how long receipt and statement files are kept.\nRecords are never removed: only files whose retention has run out, and only when an admin prunes\nthem here. Sizes and counts only, never what the files hold.\n\n![Storage](shots/settings-storage.webp)\n\n## Prune\n\nOpens the files that have expired, by category, to prune. No backup is made first: a backup holds\nno files, and a pruned file survives only in the host's own backups of the data directory.\n\n## Files no record names {#files-no-record-names}\n\nFiles in the receipts directory that no receipt, deleted or not, refers to: left behind when an\nolder database was restored under files written after it. **Remove** deletes them, after your\npassword.\n\n## Keep statements for {#keep-statements-years}\n\nYears after each statement's period. Empty keeps them for ever, the default.\n\n## Receipt and statement files {#files}\n\nThe files expired and prunable, those that expire later or are kept while their record is open,\nand those kept for ever.\n\n## What expires each year {#what-expires-each-year}\n\nBy category, from the periods set now: change a category's period and these move.\n\n## Keep receipts for {#keep-receipts-for}\n\nEach category's period: years after the record a receipt is attached to ended. A subcategory\nwithout its own takes its parent's; empty keeps them for ever, the default.\n",
 "settings-tax-tables":"# Tax tables\n\nFigures that change each year and ship with MoneyKata: contribution limits, the gift exclusion, the\nQCD limit, the bitcoin models' published figures, and more. They are updated with MoneyKata; correct\none here if it changes before an update. A corrected figure is marked, and setting it back to the\nshipped value removes the correction.\n\n## Year\n\nThe tax year shown. A year after the latest shipped uses the latest.\n\n## Figure\n\nDollars, a percentage, a number, or several numbers separated by commas (a model's parameters, or\nbear, base and bull targets).\n",
 "setup":"# Set up the admin account\n\nA new server's first sign-in, with the published default password, leads only here.\n\n## Your name\n\nShown to the people you share with.\n\n## Sex\n\nYour person's (every user is one): it chooses the words for the family tree.\n\n## Email address\n\nWhere invitations and resets for this account go.\n\n## New password {#password}\n\nNot the published default, and not a common password.\n",
 "signin":"# Sign in\n\n## Username or email\n\nEither one.\n\n## Password\n\nTen wrong passwords in 15 minutes lock the username for a while.\n\n## Code\n\nWhen two-step sign-in is on, the six-digit code your authenticator app shows for MoneyKata. A new\none comes every 30 seconds, and each works once. Wrong codes count like wrong passwords.\n\n## Recovery code\n\nOne of the ten codes you saved when you turned two-step on, if your phone is lost. Each works once.\nWith none left, ask an admin to reset your two-step sign-in.\n\n## Forgot password?\n\nSends a link to choose a new one. The answer is the same whether or not the account exists.\n\n## Account disabled\n\nAn admin made the account inactive. You can ask, once a week, to be made active again.\n",
@@ -4039,18 +4041,9 @@ export const api = {
  */
 
 /**
- * The link's copy (S11.7): its access key, size, and whether it is unlocked.
- * @typedef {Object} CopyOut
- * @property {(string | null)} keyMadeAt
- * @property {(string | null)} keyMadeBy
- * @property {number} sizeBytes
- * @property {number} receipts
- * @property {number} items
- * @property {number} waiting
- * @property {boolean} unlocked
- * @property {(string | null)} unlockedBy
- * @property {(string | null)} unlockedAt
- * @property {(number | null)} locksInSeconds
+ * @typedef {Object} CopiesOut
+ * @property {Array<moneykata__ui__settings__CopyOut>} copies
+ * @property {string} note
  */
 
 /**
@@ -4091,6 +4084,14 @@ export const api = {
  * @property {(string | null)} lastUpdated
  * @property {Array<GroupTotal>} groups
  * @property {Array<Attention>} attention
+ */
+
+/**
+ * Every DELETE's answer (S13.8.1): what went, and what it belonged to as it now stands,
+ * or null for a record that belonged to nothing.
+ * @typedef {Object} Deleted
+ * @property {Gone} deleted
+ * @property {(unknown | null)} [parent]
  */
 
 /**
@@ -6177,7 +6178,6 @@ export const api = {
  * @typedef {Object} PruneOut
  * @property {number} files
  * @property {number} bytes
- * @property {string} backup
  */
 
 /**
@@ -6343,6 +6343,7 @@ export const api = {
 /**
  * @typedef {Object} ReencryptIn
  * @property {string} phrase
+ * @property {Object<string, string>} [copies]
  */
 
 /**
@@ -6448,6 +6449,13 @@ export const api = {
  * @property {import('@mk/app/dec.js').Dec} used
  * @property {import('@mk/app/dec.js').Dec} eligible
  * @property {import('@mk/app/dec.js').Dec} available
+ */
+
+/**
+ * @typedef {Object} RotateIn
+ * @property {string} phrase
+ * @property {(string | null)} [oldPhrase]
+ * @property {Object<string, string>} [copies]
  */
 
 /**
@@ -6752,6 +6760,7 @@ export const api = {
  * @property {Array<YearSizes>} byYear
  * @property {Array<CategorySize>} expiredBy
  * @property {(number | null)} keepStatementsYears
+ * @property {Size} orphans
  */
 
 /**
@@ -7441,6 +7450,21 @@ export const api = {
  */
 
 /**
+ * The link's copy (S11.7): its access key, size, and whether it is unlocked.
+ * @typedef {Object} moneykata__ui__links__CopyOut
+ * @property {(string | null)} keyMadeAt
+ * @property {(string | null)} keyMadeBy
+ * @property {number} sizeBytes
+ * @property {number} receipts
+ * @property {number} items
+ * @property {number} waiting
+ * @property {boolean} unlocked
+ * @property {(string | null)} unlockedBy
+ * @property {(string | null)} unlockedAt
+ * @property {(number | null)} locksInSeconds
+ */
+
+/**
  * @typedef {Object} moneykata__ui__links__LinkOut
  * @property {string} id
  * @property {string} state
@@ -7462,7 +7486,7 @@ export const api = {
  * @property {(number | null)} syncBytes
  * @property {(number | null)} syncTotal
  * @property {Array<RemoteUser>} users
- * @property {(CopyOut | null)} [linkedCopy]
+ * @property {(moneykata__ui__links__CopyOut | null)} [linkedCopy]
  * @property {Array<Incoming>} [incoming]
  */
 
@@ -7544,6 +7568,17 @@ export const api = {
  * @typedef {Object} moneykata__ui__session__Household
  * @property {string} name
  * @property {Object<string, unknown>} avatar
+ */
+
+/**
+ * @typedef {Object} moneykata__ui__settings__CopyOut
+ * @property {string} name
+ * @property {string} kind
+ * @property {string} what
+ * @property {string} made
+ * @property {number} bytes
+ * @property {(string | null)} masterKey
+ * @property {string} opens
  */
 
 /**
@@ -14729,6 +14764,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
+import { withReauth } from '@mk/components/reauth.js';
 import { Failed, Loading } from '@mk/components/bits.js';
 import { Dialog, openDialog } from '@mk/components/dialog.js';
 import { errAt, Field, FormError, Input } from '@mk/components/fields.js';
@@ -14894,7 +14930,18 @@ export function StorageSection() {
                 color: 'var(--c1)',
                 note: `${count(v.forever.files)} · ${size(v.forever.bytes)}`,
               },
-            ]} />${v.pruned
+            ]} />${v.orphans.files
+              ? html`<div class="list-item"><span class="grow">${
+                count(v.orphans.files)
+              } files no record names
+                  <div class="small dim">Left behind when an older database was restored under files written later.</div></span>${
+                size(v.orphans.bytes)
+              } <button type="button" class="btn sm" onClick=${() =>
+                withReauth(() => api.post('/settings/storage/orphans/remove')).then((out) => {
+                  toast(`${count(out.files)} files removed, ${size(out.bytes)} freed`);
+                  res.reload();
+                }, (e) => toast(e.message))}>Remove</button></div>`
+              : null}${v.pruned
               ? html`<p class="small dim">${count(v.pruned)} files pruned before.</p>`
               : null}</div>
           <div class="card"><h3 data-help="what-expires-each-year">What expires each year</h3><p
@@ -15022,8 +15069,8 @@ function PruneDialog({ close, v }) {
           class="grow">${x.category}</span>${count(x.files)} files · ${size(x.bytes)}</label>`
       )}
       <div class="list-item"><span class="grow"><b>Space freed</b></span><b>${size(bytes)}</b></div>
-      <div class="notice mt" role="note"><div>A verified backup is made first. The pruned files
-        stay in the backups made before it until backup pruning removes them.</div></div>
+      <div class="notice mt" role="note"><div>No backup is made first: a backup holds no files.
+        A pruned file survives only in the host's own backups of the data directory.</div></div>
       <${Field} label="Type the number of files to confirm" id="prune-count"
         error=${errAt(run.error, 'count')}>
         <${Input} value=${typed} onInput=${setTyped} inputmode="numeric" placeholder=${count(files)}
@@ -24985,6 +25032,7 @@ import { toast } from '@mk/components/toast.js';
 import { loadSession } from '@mk/store/session.js';
 import { LinksSection } from '@mk/components/links.js';
 import { ConnectorSection } from '@mk/components/connector.js';
+import { withReauth } from '@mk/components/reauth.js';
 import { StorageSection } from '@mk/components/storage.js';
 
 const SECTIONS = /** @type {[string, string][]} */ ([
@@ -25978,8 +26026,9 @@ function Backups() {
             v.lastError ? html`: failed (${v.lastError})` : ': encrypted and verified'
           }.`
           : 'No backup yet.'} Directory (set on the host): <code>${v
-          .directory}</code>. Backups open with the master key's
-          recovery phrase.</div></div>
+          .directory}</code>. A backup is the database and its keyring, a coherent copy
+          for the host's own backup to pick up; receipt files are never copied, the host
+          backs them up with the data directory. Backups open with the recovery phrase.</div></div>
         ${v.backups.length
           ? html`
             <table class="t mt">
@@ -26007,22 +26056,53 @@ function Backups() {
   `;
 }
 
+/** How a copy on the host opens (S15.7), in words. @param {string} opens */
+function opensWith(opens) {
+  return opens === 'current'
+    ? 'opens with this phrase'
+    : opens === 'phrase'
+    ? 'opens with this phrase (an earlier data key)'
+    : opens === 'previous'
+    ? 'needs a previous phrase'
+    : 'its keyring cannot be read';
+}
+
 function Keys() {
   const res = useApi('/settings/keys', {}, ['task']);
+  const cps = useApi('/settings/keys/copies', {}, ['task']);
   const v = /** @type {any} */ (res.data);
+  const copies = /** @type {any} */ (cps.data)?.copies || [];
   const [test, setTest] = useState(/** @type {any} */ (null));
   const [armed, setArmed] = useState(false);
   const [words, setWords] = useState('');
+  const [choices, setChoices] = useState(/** @type {Record<string, string>} */ ({}));
+  const choiceOf = (/** @type {any} */ c) =>
+    choices[c.name] || (c.opens === 'current' || c.opens === 'phrase' ? 'reencrypt' : 'leave');
   const reencrypt = useSubmit(async () => {
-    await api.post('/settings/keys/reencrypt', { phrase: words });
+    const sent = Object.fromEntries(copies.map((/** @type {any} */ c) => [c.name, choiceOf(c)]));
+    await withReauth(() => api.post('/settings/keys/reencrypt', { phrase: words, copies: sent }));
     toast('Re-encrypting under a new data key');
     setArmed(false);
     setWords('');
     res.reload();
+    cps.reload();
   });
+  const removeCopy = async (/** @type {any} */ c) => {
+    await withReauth(() => api.del(`/settings/keys/copies/${encodeURIComponent(c.name)}`));
+    toast(`${c.name} removed`);
+    cps.reload();
+    res.reload();
+  };
+  const forget = async (/** @type {string} */ fp) => {
+    await withReauth(() => api.del(`/settings/keys/previous/${encodeURIComponent(fp)}`));
+    toast(`${fp} forgotten`);
+    res.reload();
+  };
   if (res.error) return html`<${Failed} error=${res.error} />`;
   if (!v) return html`<${Loading} />`;
   const confirmed = v.confirmations.find((/** @type {any} */ c) => c.matched);
+  const needing = (/** @type {string} */ fp) =>
+    copies.filter((/** @type {any} */ c) => c.masterKey === fp).length;
   return html`<div class="card"><h3>Key storage<span class="spacer"></span>${
     test
       ? test.ok
@@ -26056,22 +26136,57 @@ function Keys() {
     v.secrets === 1 ? '' : 's'
   }
       <span class="small dim">· passwords are hashed</span></div>
-    <div class="list-item"><span class="grow dim">Previous key</span>${
+    <div class="list-item"><span class="grow dim">Previous keys</span>${
     v.previous.length
-      ? v.previous.map((/** @type {any} */ p) =>
-        html`<span><code>${p.fingerprint}</code> ${
-          p.removableAfter
-            ? html`
-              <span
-                class="small dim">· the backup directory's copies made under it are pruned after ${date(
-                  p.removableAfter,
-                )}; copies kept elsewhere are yours to count</span>
-            `
-            : null
-        }</span>`
-      )
+      ? html`<span>${
+        v.previous.map((/** @type {any} */ p) =>
+          html`<div><code>${p.fingerprint}</code> <span class="small dim">· needed by ${
+            needing(p.fingerprint)
+          } ${needing(p.fingerprint) === 1 ? 'copy' : 'copies'} here${
+            p.removableAfter ? `, and by the host's snapshots until it prunes them` : ''
+          }</span>
+            <button type="button" class="btn sm" onClick=${() =>
+            forget(p.fingerprint).catch((e) => toast(e.message))}>Forget</button></div>`
+        )
+      }</span>`
       : html`<span class="dim">none</span>`
   }</div>
+    <div class="list-item"><div class="grow"><span class="dim">Copies on this host</span>
+      ${
+    copies.length
+      ? html`
+        <table class="t mt">
+          <caption class="sr-only">Copies on this host</caption>
+          <thead>
+            <tr>
+              <th>Copy</th>
+              <th>Made</th>
+              <th class="num">Size</th>
+              <th>Opens</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>${copies.map((/** @type {any} */ c) =>
+            html`
+              <tr>
+                <td><code>${c.name}</code><div class="small dim">${c.what}</div></td>
+                <td>${moment(c.made)}</td>
+                <td class="num">${(c.bytes / 1048576).toFixed(1)} MB</td>
+                <td class="small">${opensWith(c.opens)}${c.masterKey
+                  ? html`
+                    <code>${c.masterKey}</code>
+                  `
+                  : null}</td>
+                <td><button type="button" class="btn sm" onClick=${() =>
+                  removeCopy(c).catch((e) => toast(e.message))}>Remove</button></td>
+              </tr>
+            `
+          )}</tbody>
+        </table>
+      `
+      : html`<span class="small dim"> none</span>`
+  }
+      <div class="small dim">${/** @type {any} */ (cps.data)?.note || ''}</div></div></div>
     <div class="list-item"><div class="grow">Recovery phrase<div class="small dim">${
     confirmed
       ? `Last confirmed with moneykata keys verify on ${date(confirmed.at.slice(0, 10))}.`
@@ -26117,6 +26232,31 @@ function Keys() {
             <${Input} type="password" value=${words} onInput=${setWords} autocomplete="off"
               required />
             </${Field}>
+            ${copies.length
+              ? html`<div class="field" data-help="copies-at-re-encryption"><label>The copies on this host</label>
+                ${
+                copies.map((/** @type {any} */ c) =>
+                  html`
+                    <div class="list-item">
+                      <div class="grow"><code>${c.name}</code>
+                                        <div class="small dim">${c.what} · ${opensWith(
+                                          c.opens,
+                                        )}</div></div>
+                      <span
+                        style=${{ flex: 'none', width: '180px' }}><${Select} value=${choiceOf(
+                          c,
+                        )} onChange=${(/** @type {string} */ x) =>
+                          setChoices({ ...choices, [c.name]: x })} options=${[
+                          ['reencrypt', 'Re-encrypt'],
+                          ['delete', 'Delete'],
+                          ['leave', 'Leave as it is'],
+                        ]} /></span>
+                    </div>
+                  `
+                )
+              }
+                <div class="small dim">A copy that needs a previous phrase can only be left or deleted.</div></div>`
+              : null}
             <${FormError} error=${reencrypt.error} />
             <div class="toolbar"><button class="btn primary" disabled=${reencrypt
               .busy}>Re-encrypt now</button>

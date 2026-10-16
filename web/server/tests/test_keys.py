@@ -132,6 +132,7 @@ def _rotate(config, old_key, monkeypatch):
         say=lambda _: None,
         ask_hidden=lambda _: " ".join(phrase.to_words(old_key)),
         running=False,
+        all_copies="rewrap",
     )
     return out, made["k"]
 
@@ -173,7 +174,8 @@ def test_rotate_through_the_running_server_needs_no_old_phrase(store, keyed_conf
     """S15.7.1: the running server holds the data key, so a lost phrase can be replaced while
     it is up; the keyring records the old key."""
     new_key = os.urandom(16)
-    store2 = maintenance.rotate_running(keyed_config, store, new_key)
+    store2, outcomes = maintenance.rotate_running(keyed_config, store, new_key)
+    assert outcomes == {}
     assert store2.keys.master_id == master.key_id(new_key) and store2.db is store.db
     ring = master.read_keyring(keyed_config.keyring_path)
     assert [p.master_id for p in ring.previous] == [master.key_id(master_key)]
@@ -183,3 +185,26 @@ def test_rotate_through_the_running_server_needs_no_old_phrase(store, keyed_conf
     maintenance.next_keyring(keyed_config).write_text("{}")
     with pytest.raises(RefuseStart, match="re-encryption is pending"):
         maintenance.rotate_running(keyed_config, store2, os.urandom(16))
+
+
+def test_rotate_offline_rewraps_the_copies_on_the_host(
+    store, keyed_config, master_key, monkeypatch
+):
+    """S15.7.1: offline, with the old phrase typed, every copy's keyring is re-wrapped too."""
+    b = maintenance.backup(keyed_config, store)
+    store.db.dispose()
+    (_old_fp, _new_fp), new_key = _rotate(keyed_config, master_key, monkeypatch)
+    assert maintenance.verify_backup(keyed_config, new_key) == b
+    with pytest.raises(RefuseStart):
+        maintenance.verify_backup(keyed_config, master_key)
+    # Asked per copy: Enter re-wraps, 'd' deletes, 'l' leaves.
+    answers = iter(["", "d", "l"])
+    found = [
+        {"name": n, "kind": "backup", "made": "2026-10-01T00:00:00", "bytes": 0, "opens": "current"}
+        for n in ("a", "b", "c")
+    ]
+    assert cli.ask_copies(found, ask=lambda _: next(answers), say=lambda _: None) == {
+        "a": "rewrap",
+        "b": "delete",
+        "c": "leave",
+    }

@@ -130,7 +130,7 @@ def test_pruning_needs_the_password_again_and_the_count_and_keeps_the_record(
     assert r.json()["code"] == "count-mismatch"
     r = admin_client.post("/ui/api/settings/storage/prune", json=body)
     assert r.status_code == 200, r.text
-    assert r.json()["files"] == 1 and r.json()["backup"]
+    assert r.json()["files"] == 1 and "backup" not in r.json()  # no backup first (S14.10.5)
     d = c.get(f"/ui/api/receipts/{rid}").json()
     assert d["keptState"] == "pruned" and d["kept"].startswith("File pruned")
     assert d["links"] and d["links"][0]["transactionId"] == t["id"], "the record keeps its links"

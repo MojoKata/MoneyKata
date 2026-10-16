@@ -1,6 +1,7 @@
 """The ASGI application: routes, middleware and the server's run-time state."""
 
 import logging
+import threading
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -33,8 +34,12 @@ class Server:
     ready: bool = False
     # Taken while the phrase is being tried (runtime.unlock); an asyncio.Lock made at start.
     unlocking: Any = None
-    # The phrase's key for one re-encryption, taken by the task that runs it (S15.7.2).
+    # The phrase's key and the copies' choices for one re-encryption, taken by the task
+    # that runs it (S15.7.2).
     reencrypt_key: bytes | None = None
+    reencrypt_copies: dict = field(default_factory=dict)
+    # Backups and re-encryption never run at the same time (S15.7.2).
+    maintenance_lock: threading.Lock = field(default_factory=threading.Lock)
     upload_limit: int = 25 * 1024 * 1024
     # The receipt reader (S9.8.4), started with the server; tests run without one.
     reader: object | None = None

@@ -83,8 +83,16 @@ def test_rotation_through_the_running_server_is_for_loopback_only(locked, master
     assert r.status_code == 503 and r.json()["code"] == "locked"
     assert c.post("/ui/api/unlock", json={"phrase": words}, headers=headers).status_code == 200
     old_fp = c.get("/ui/api/unlock").json()["fingerprint"]
-    r = c.post("/ui/api/keys/rotate", json={"phrase": new}, headers=headers)
+    b = maintenance.backup(srv.config, srv.store)
+    listed = c.get("/ui/api/keys/copies").json()["copies"]
+    assert [x["name"] for x in listed] == [b.name] and listed[0]["opens"] == "current"
+    r = c.post(
+        "/ui/api/keys/rotate",
+        json={"phrase": new, "copies": {b.name: "rewrap"}},
+        headers=headers,
+    )
     assert r.status_code == 200 and r.json()["from"] == old_fp
+    assert r.json()["copies"] == {b.name: "rewrapped"}
     assert c.get("/ui/api/unlock").json()["fingerprint"] == r.json()["to"] != old_fp
     with srv.db.read() as s:
         assert "key.rotated" in [a.kind for a in s.query(Activity)]

@@ -1,6 +1,9 @@
 # Settings: Backups
 
-Daily copies of the database and receipts, made, checked and pruned by the server.
+Daily copies of the database with its keyring, made, checked and pruned by the server. Never
+the receipt files: the host backs up the data directory, files and all, and this copy exists so
+that the live database the host picks up has a coherent, verified twin beside it. The backup
+directory belongs inside what the host backs up.
 
 ![Settings: Backups](shots/settings-backups.webp)
 
@@ -18,5 +21,7 @@ Makes a backup now.
 
 ## Restoring
 
-Backups are encrypted as the data is, and open with the master key's recovery phrase. The directory
-is set on the host, outside the data directory.
+Backups are encrypted as the data is, and open with the recovery phrase of their day; each
+carries its own keyring, and a rotation re-wraps it. A restore puts the database and keyring
+back and leaves the receipt files where they are. The directory is set on the host, outside the
+data directory.

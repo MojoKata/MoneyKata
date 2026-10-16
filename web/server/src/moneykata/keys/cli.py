@@ -170,25 +170,51 @@ def _running(config: Config) -> bool:
     return r.status_code == 200 and r.json().get("locked") is False
 
 
+CHOICES = {"r": "rewrap", "d": "delete", "l": "leave", "": "rewrap"}
+
+
+def ask_copies(found: list[dict], ask: Ask, say: Say, all_: str | None = None) -> dict[str, str]:
+    """Each copy's choice (S15.7.1): re-wrap (the default), delete or leave; `all_` answers
+    for every copy (`--rewrap-all`, `--delete-old`, `--leave-all`)."""
+    if not found:
+        return {}
+    out = {}
+    say(f"\n{len(found)} copies on this host (the host's own snapshots and backups are not here):")
+    for c in found:
+        how = {
+            "current": "re-wraps with the key the server holds",
+            "phrase": "re-wraps with the current phrase",
+            "previous": f"needs the phrase of {c.get('masterKey')}",
+            "unknown": "its keyring cannot be read",
+        }[c["opens"]]
+        line = f"  {c['name']} ({c['kind']}, {c['made'][:10]}, {c['bytes'] // 1048576} MB): {how}"
+        if all_ is not None:
+            out[c["name"]] = all_
+            continue
+        say(line)
+        answer = ask("    [R]e-wrap, [d]elete or [l]eave (R): ").strip().lower()[:1]
+        out[c["name"]] = CHOICES.get(answer, "rewrap")
+    return out
+
+
 def rotate(
     config: Config,
     ask: Ask = input,
     say: Say = _say,
     ask_hidden: Ask = _hidden,
     running: bool | None = None,
+    all_copies: str | None = None,
 ) -> tuple[str, str]:
     """A new master key re-wraps the data key in one step (S15.7.1): the new phrase shown and
-    confirmed, the keyring written with the old key recorded. Through the running server when
-    it is up (it holds the data key, so no old phrase is needed: the way out of a lost
-    phrase); with the old phrase typed when it is stopped. Nothing else changes."""
+    confirmed, the keyring written with the old key recorded, and each copy on the host
+    re-wrapped, deleted or left. Through the running server when it is up (it holds the data
+    key, so no old phrase is needed: the way out of a lost phrase); with the old phrase typed
+    when it is stopped."""
     running = _running(config) if running is None else running
     if running:
-        new_key = master.new_master()
-        say(sheet(new_key, config.name, dt.date.today()))
-        say("\nType back three of the words to show they are written down.")
-        if not confirm_three(new_key, ask, say):
-            raise RefuseStart("the words were not confirmed; the key was not rotated")
-        return _rotate_online(config, new_key, say)
+        return _rotate_online(config, ask, say, ask_hidden, all_copies)
+    from ..store import copies as copies_
+
     if not os.access(config.keyring_path.parent, os.W_OK):
         raise RefuseStart(
             f"{config.keyring_path.parent} is not writable: rotation writes the keyring "
@@ -207,43 +233,99 @@ def rotate(
             f"those words are {master.fingerprint(old_key)}, not this server's key "
             f"{master.fingerprint(ring.master_id)}"
         ) from None
+    current = master.Unlocked(ring.master_id, ring, master.DataKeys.derive(data_key), data_key)
+    found = copies_.copies(config)
+    choices = ask_copies(
+        [
+            {
+                "name": c.name,
+                "kind": c.kind,
+                "made": c.made.isoformat(),
+                "bytes": c.bytes,
+                "masterKey": master.fingerprint(c.ring.master_id) if c.ring else None,
+                "opens": copies_.opens_with(c, current),
+            }
+            for c in found
+        ],
+        ask,
+        say,
+        all_copies,
+    )
     new_key = master.new_master()
     say(sheet(new_key, config.name, dt.date.today()))
     say("\nType back three of the words to show they are written down.")
     if not confirm_three(new_key, ask, say):
         raise RefuseStart("the words were not confirmed; the key was not rotated")
-    master.write_keyring(
-        config.keyring_path, master.rotated(ring, data_key, new_key, master.now()), _owner()
-    )
+    at = master.now()
+    master.write_keyring(config.keyring_path, master.rotated(ring, data_key, new_key, at), _owner())
+    outcomes = copies_.apply_rotation(config, choices, current, new_key, at, old_key)
     old_fp, new_fp = master.fingerprint(old_key), master.fingerprint(new_key)
-    _said_rotated(say, old_fp, new_fp)
+    _said_rotated(say, old_fp, new_fp, outcomes)
     return old_fp, new_fp
 
 
-def _rotate_online(config: Config, new_key: bytes, say: Say) -> tuple[str, str]:
+def _rotate_online(
+    config: Config, ask: Ask, say: Say, ask_hidden: Ask, all_copies: str | None
+) -> tuple[str, str]:
     import httpx
 
     base = _base(config)
     # This container's own listener on loopback; its certificate may be self-signed.
+    r = httpx.get(f"{base}/ui/api/keys/copies", verify=False, timeout=30)  # noqa: S501
+    if r.status_code != 200:
+        raise RefuseStart(f"the server refused: {r.json().get('detail', r.text)}")
+    found = r.json()["copies"]
+    choices = ask_copies(found, ask, say, all_copies)
+    old_words = None
+    needs_old = [c for c in found if choices.get(c["name"]) == "rewrap" and c["opens"] != "current"]
+    if needs_old:
+        say(
+            f"\n{len(needs_old)} of those hold an earlier data key: re-wrapping them needs the "
+            "current phrase. Type it, or press Enter to leave them as they are."
+        )
+        old_words = ask_hidden("current recovery phrase (Enter to skip): ").strip() or None
+        if old_words:
+            try:
+                phrase.from_words(old_words)
+            except phrase.PhraseError as e:
+                raise RefuseStart(f"not a valid phrase: {e}") from None
+    new_key = master.new_master()
+    say(sheet(new_key, config.name, dt.date.today()))
+    say("\nType back three of the words to show they are written down.")
+    if not confirm_three(new_key, ask, say):
+        raise RefuseStart("the words were not confirmed; the key was not rotated")
     r = httpx.post(
         f"{base}/ui/api/keys/rotate",
-        json={"phrase": " ".join(phrase.to_words(new_key))},
+        json={
+            "phrase": " ".join(phrase.to_words(new_key)),
+            "oldPhrase": old_words,
+            "copies": choices,
+        },
         headers={"Origin": base},
         verify=False,  # noqa: S501
-        timeout=300,
+        timeout=600,
     )
     if r.status_code != 200:
         raise RefuseStart(f"the server refused the rotation: {r.json().get('detail', r.text)}")
     out = r.json()
-    _said_rotated(say, out["from"], out["to"])
+    _said_rotated(say, out["from"], out["to"], out.get("copies") or {})
     return out["from"], out["to"]
 
 
-def _said_rotated(say: Say, old_fp: str, new_fp: str) -> None:
+def _said_rotated(say: Say, old_fp: str, new_fp: str, outcomes: dict[str, str]) -> None:
     say(f"Rotated: {old_fp} → {new_fp}. Back up the new phrase now.")
+    for name, outcome in outcomes.items():
+        say(f"  {name}: {outcome}")
+    left = [n for n, o in outcomes.items() if o.startswith("left")]
     say(
-        "The server unlocks with the new phrase from its next start. Keep the old phrase until "
-        "every copy made before today is gone (S15.7.1)."
+        "The server unlocks with the new phrase from its next start. "
+        + (
+            f"Keep the old phrase: {len(left)} copies here still need it, and so do the host's "
+            "snapshots and backups made before today (S15.7.1)."
+            if left
+            else "Nothing here needs the old phrase; the host's snapshots and backups made "
+            "before today still do, for as long as they are kept (S15.7.1)."
+        )
     )
 
 
@@ -291,9 +373,14 @@ def register(sub) -> None:
     ks.add_parser("verify", help="check a typed phrase against the keyring").set_defaults(
         func=_verify_cmd
     )
-    ks.add_parser(
+    r = ks.add_parser(
         "rotate", help="a new master key and phrase: through the running server, or offline"
-    ).set_defaults(func=_rotate_cmd)
+    )
+    g = r.add_mutually_exclusive_group()
+    g.add_argument("--rewrap-all", action="store_true", help="re-wrap every copy on the host")
+    g.add_argument("--delete-old", action="store_true", help="delete every copy on the host")
+    g.add_argument("--leave-all", action="store_true", help="leave every copy as it is")
+    r.set_defaults(func=_rotate_cmd)
     ks.add_parser("unlock", help="unlock the server running on this host").set_defaults(
         func=lambda a: unlock(load(Path(a.config)))
     )
@@ -319,7 +406,9 @@ def _rotate_cmd(args) -> int:
 
     config = load(Path(args.config))
     running = _running(config)
-    old_fp, new_fp = rotate(config, running=running)
+    flags = {"rewrap": args.rewrap_all, "delete": args.delete_old, "leave": args.leave_all}
+    all_copies = next((k for k, on in flags.items() if on), None)
+    old_fp, new_fp = rotate(config, running=running, all_copies=all_copies)
     if not running:  # the running server records its own rotation in Activity
         queue_host_event(config, "key.rotated", {"from": old_fp, "to": new_fp})
     return 0
