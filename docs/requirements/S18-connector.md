@@ -91,9 +91,12 @@ ask it for anything.
       4. **A stolen volume, disk or backup of the connector**, or its powered-off machine,
          yields the identity key and the pairing: whoever has it can report as the connector,
          read the answers of S18.2.4.2 and post files, until MoneyKata **unpairs** it
-         (S18.4.4), which an admin does at once when a connector's host is lost. The vault
-         stays closed without the words: no credential, and no sealing key, so no box sealed
-         before or after the theft opens. This is why the sealing key lives in the vault.
+         (S18.4.4), which an admin does at once when a connector's host is lost. MoneyKata
+         helps notice it: the address a connector's reports come from is recorded, the first
+         one as known, and a report from another address alerts admins until one **accepts**
+         the new address (the connector moved) or unpairs (S18.5.4). The vault stays closed
+         without the words: no credential, and no sealing key, so no box sealed before or
+         after the theft opens. This is why the sealing key lives in the vault.
 3. **The vault and its words.**
    1. **Made at install**: `docker compose run --rm connector init` makes a random 128-bit
       key and prints it as **12 BIP-39 words** with the vault's fingerprint, and won't finish
@@ -181,7 +184,10 @@ ask it for anything.
    2. **the connector hasn't been heard from for 15 minutes**: it is stopped, down, or can't
       reach MoneyKata;
    3. **a Connection needs a sign-in or is failing**, also to the owner of each account it
-      keeps current.
+      keeps current;
+   4. **the connector reports from a new address** (S18.2.4.4): the alert names the address
+      known and the new one, and stays until an admin accepts the new address in Settings ›
+      Connector (the password again) or unpairs.
 
    Reports never carry a credential, an amount or an account number beyond its last four
    digits.

@@ -54,8 +54,11 @@
       built-in **Admins** group. The last active admin cannot be removed or deactivated.
    9. **Emails** (plain text): invitation, sign-up confirmation and decision, reset,
       email-change confirmation (to the new address) and notice (to the old one, once the
-      change took effect, so a change the person didn't make is noticed), password changed,
-      two-step turned on or off, reactivated, and alerts (S12.11).
+      change took effect, so a change the person didn't make is noticed), a sign-in from an
+      address the user hasn't signed in from in 30 days (once they have signed in from
+      somewhere; the addresses seen are kept on the user for those 30 days, and each session
+      records its own), password changed, two-step turned on or off, reactivated, and alerts
+      (S12.11).
       In dev mode they are written to a folder (S17.7).
 2. **Admins are not superusers of money.** An admin manages users, groups and Settings, and
    sees only the accounts and portfolios shared with them. Users are not deleted: a user

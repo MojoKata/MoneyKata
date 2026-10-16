@@ -442,3 +442,26 @@ def test_the_stream_says_hello_and_ends(server):
         assert r.headers["content-type"].startswith("text/event-stream")
         body = "".join(r.iter_text())
     assert "event: hello" in body and '"version"' in body
+
+
+def test_a_sign_in_from_a_new_address_is_emailed(client, server):
+    """S10.1.9: once a user has signed in from somewhere, a sign-in from an address not seen
+    in 30 days sends them a notice; the same address again does not."""
+    from conftest import ORIGIN
+    from fastapi.testclient import TestClient
+
+    set_public_url(server)
+    make_user(server, "gil")
+    sign_in(server, "gil")  # the first address seen: nothing to compare with
+    sign_in(server, "gil")
+    assert [m["Subject"] for m in mails(server)] == []
+    far = TestClient(client.app, base_url=ORIGIN, client=("203.0.113.9", 50000))
+    r = far.post(
+        "/ui/api/session", json={"login": "gil", "password": PW}, headers={"Origin": ORIGIN}
+    )
+    assert r.status_code == 200, r.text
+    subjects = [m["Subject"] for m in mails(server)]
+    assert subjects == ["A sign-in to MoneyKata from a new address"]
+    assert "signin.new-address" in kinds(server)
+    far.post("/ui/api/session", json={"login": "gil", "password": PW}, headers={"Origin": ORIGIN})
+    assert len(mails(server)) == 1  # now a known address

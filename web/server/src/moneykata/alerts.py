@@ -231,7 +231,19 @@ def connector(s: Session, server) -> Iterable[Cause]:
             icon="sync",
             since=row.lastReportAt,
         )
-    elif row.locked:
+    if row.lastAddress and row.knownAddress and row.lastAddress != row.knownAddress:
+        yield Cause(
+            key="connector:moved",
+            kind="connector-moved",
+            title="The MoneyKata Connector reports from a new address",
+            about=f"Connector · was {row.knownAddress}, now {row.lastAddress} · accept it if "
+            "the connector moved; unpair if its host was lost",
+            link="/ui/settings/connector",
+            fix="Connector settings",
+            icon="alert",
+            since=row.lastReportAt,
+        )
+    if silent is None and row.locked:
         yield Cause(
             key="connector:locked",
             kind="connector-locked",
@@ -576,7 +588,7 @@ _KINDS = {
     "projections_behind": {"projection-behind"},
     "bitcoin_certificate": {"node-certificate"},
     "bitcoin_off_chain": {"off-chain"},
-    "connector": {"connector-silent", "connector-locked", "connection-failing"},
+    "connector": {"connector-silent", "connector-locked", "connector-moved", "connection-failing"},
 }
 
 

@@ -167,7 +167,8 @@
           than a minute off says *the clocks disagree*, which NTP on one host fixes); a
           backup that failed;
           a link's first share waiting for its access key (S11.9.2); the MoneyKata Connector
-          locked, or not heard from for 15 minutes (S18.5); and the yearly check of
+          locked, not heard from for 15 minutes, or reporting from an address other than the
+          one admins know, until one accepts it or unpairs (S18.5); and the yearly check of
           the master key's recovery phrase (S15.6.5), due a year after the phrase was last
           confirmed with `keys verify`, or after the key was made. An admin's alert about someone else's
           account names its owner and source, never the account's name or figures (S10.2);

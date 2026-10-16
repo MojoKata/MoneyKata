@@ -123,7 +123,12 @@ async def report(request: Request):
     except signing.Refused as e:
         return refusal(request, e)
     out = manage.apply_report(
-        srv, row, exactjson.loads(body or b"{}"), request.headers.get("mk-conn-version"), protocol
+        srv,
+        row,
+        exactjson.loads(body or b"{}"),
+        request.headers.get("mk-conn-version"),
+        protocol,
+        request.client.host if request.client else None,
     )
     srv.tasks.run_now("alerts")
     return answer(srv, out, caller.nonce)

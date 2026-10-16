@@ -27,6 +27,13 @@ the connector get sealed sign-ins and post files. If they differ, someone else a
 pairing code first: **Unpair**. Until confirmed, people see in the connection dialog that no
 sign-in can be sealed yet.
 
+## Accept {#accept}
+
+Shown when the connector's reports come from an address other than the one known. If the
+connector moved (a laptop on another network, a new host), **Accept** the new address, after
+your password, and the alert closes. If its host or volume was lost or stolen, **Unpair**
+instead: whoever has the copy is reporting as the connector.
+
 ## Unpair {#unpair}
 
 Refuses the connector's key from then on, stops every Connection, and turns every account's

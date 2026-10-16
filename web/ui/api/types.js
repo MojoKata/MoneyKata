@@ -553,6 +553,8 @@
  * @property {(string | null)} pairedBy
  * @property {(string | null)} confirmedAt
  * @property {(string | null)} confirmedBy
+ * @property {(string | null)} lastAddress
+ * @property {(string | null)} knownAddress
  * @property {(string | null)} lastReportAt
  * @property {(number | null)} silentForSeconds
  * @property {(string | null)} connectorVersion

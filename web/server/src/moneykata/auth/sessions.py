@@ -21,7 +21,12 @@ def now() -> dt.datetime:
 
 
 def create(
-    s: Db, user_id: str, admin: bool, needs_setup: bool = False, auth_at: dt.datetime | None = None
+    s: Db,
+    user_id: str,
+    admin: bool,
+    needs_setup: bool = False,
+    auth_at: dt.datetime | None = None,
+    address: str | None = None,
 ) -> str:
     token, token_hash = new_token()
     t = now()
@@ -33,6 +38,7 @@ def create(
             createdAt=t,
             lastSeenAt=t,
             expiresAt=t + dt.timedelta(days=days),
+            address=address,
             authAt=auth_at or t,
             admin=admin,
             needsSetup=needs_setup,

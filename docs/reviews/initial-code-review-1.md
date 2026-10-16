@@ -350,8 +350,9 @@ queuing host commands for Activity with no "who", which S15.4.7 says.
 ## 4. Candidate gaps (not yet in `gaps.md`)
 
 **Done:** 1 to 8 by parts 1 to 3; 9 (clocks) in S11.1.3, the protocols and operations; 10 rejected;
-11 in S9.8.4; 12 as later work L3; 13 in S16.14; 14 by the notice to the old address (a
-new-browser notice needs sessions to keep an address, left out); 15 by the host events; 16 moot.
+11 in S9.8.4; 12 as later work L3; 13 in S16.14; 14 by the notice to the old address and the
+notice of a sign-in from a new address (sessions and users keep the addresses seen); 15 by the
+host events; 16 moot. The connector's new-address alert of F2 is built as well (S18.5.4).
 
 Each would take the next free G id when recorded. Ranked as `gaps.md` ranks.
 

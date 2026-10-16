@@ -97,6 +97,38 @@ def paired(server, admin, client):
     return fake
 
 
+def test_a_connector_reporting_from_a_new_address_is_alerted_until_accepted(
+    server, paired, admin, client
+):
+    """S18.2.4.4: the first address its reports come from is known; a change alerts admins,
+    who accept it (the connector moved) or unpair (its host was lost)."""
+    from conftest import ORIGIN
+    from fastapi.testclient import TestClient
+
+    from moneykata import alerts
+
+    paired.call("/connector/v1/report", {"locked": False, "connections": []})
+    view = admin.get("/ui/api/settings/connector").json()
+    assert view["lastAddress"] == "127.0.0.1" and view["knownAddress"] == "127.0.0.1"
+    moved = FakeConnector(server, TestClient(client.app, base_url=ORIGIN, client=("10.9.9.9", 1)))
+    moved.key, moved.fp = paired.key, paired.fp
+    assert (
+        moved.call("/connector/v1/report", {"locked": False, "connections": []}).status_code == 200
+    )
+    view = admin.get("/ui/api/settings/connector").json()
+    assert view["lastAddress"] == "10.9.9.9" and view["knownAddress"] == "127.0.0.1"
+    alerts.evaluate(server)
+    kinds_open = [a["kind"] for a in admin.get("/ui/api/alerts").json()["open"]]
+    assert "connector-moved" in kinds_open
+    assert admin.post("/ui/api/settings/connector/accept-address").status_code == 200
+    view = admin.get("/ui/api/settings/connector").json()
+    assert view["knownAddress"] == "10.9.9.9"
+    alerts.evaluate(server)
+    kinds_open = [a["kind"] for a in admin.get("/ui/api/alerts").json()["open"]]
+    assert "connector-moved" not in kinds_open
+    assert "connector.address-changed" in [a.kind for a in activity_rows(server)]
+
+
 def test_an_unconfirmed_pairing_gets_no_credential_and_posts_no_file(server, admin, client):
     """S18.4.3: paired but not confirmed, the connector reports and is answered, but a sealed
     credential is withheld, a file is refused, and no sign-in can be sealed for it."""

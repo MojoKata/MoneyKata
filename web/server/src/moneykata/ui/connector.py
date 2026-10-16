@@ -60,6 +60,8 @@ class ConnectorOut(Model):
     pairedBy: str | None
     confirmedAt: dt.datetime | None  # an admin compared the fingerprints (S18.4.3)
     confirmedBy: str | None
+    lastAddress: str | None  # where its reports come from (S18.2.4.4)
+    knownAddress: str | None  # the address admins accepted; a difference is alerted
     lastReportAt: dt.datetime | None
     silentForSeconds: int | None  # past the 15 minutes allowed
     connectorVersion: str | None
@@ -118,6 +120,8 @@ def view(s, srv) -> ConnectorOut:
             pairedBy=None,
             confirmedAt=None,
             confirmedBy=None,
+            lastAddress=None,
+            knownAddress=None,
             lastReportAt=None,
             silentForSeconds=None,
             connectorVersion=None,
@@ -148,6 +152,8 @@ def view(s, srv) -> ConnectorOut:
         pairedBy=by.displayName if by else None,
         confirmedAt=row.confirmedAt,
         confirmedBy=confirmed_by.displayName if confirmed_by else None,
+        lastAddress=row.lastAddress,
+        knownAddress=row.knownAddress,
         lastReportAt=row.lastReportAt,
         silentForSeconds=int(silent.total_seconds()) if silent else None,
         connectorVersion=row.connectorVersion,
@@ -188,6 +194,19 @@ def confirm(request: Request, c: Caller = Depends(admin)):
     srv = server(request)
     if not manage.confirm(srv, c.id):
         raise Problem(404, "not-found", "No connector is paired.")
+    with srv.db.tx() as s:
+        return view(s, srv)
+
+
+@router.post("/settings/connector/accept-address", response_model=ConnectorOut)
+def accept_address(request: Request, c: Caller = Depends(admin)):
+    """Accept (S18.2.4.4): the address the connector now reports from is its own. The
+    password again (S13.7.2)."""
+    recent_auth(c)
+    srv = server(request)
+    if not manage.accept_address(srv, c.id):
+        raise Problem(404, "not-found", "No connector is paired.")
+    srv.tasks.run_now("alerts")
     with srv.db.tx() as s:
         return view(s, srv)
 

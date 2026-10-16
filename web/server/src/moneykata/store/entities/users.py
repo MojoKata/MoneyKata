@@ -24,6 +24,7 @@ class User(Record):
     reactivationAskedAt: dt.datetime | None = None
     twoStepAt: dt.datetime | None = None
     totpLastStep: int | None = None
+    recentAddresses: str = "{}"
     alertSummaryAt: dt.datetime | None = None
     linkId: str | None = None
     remoteId: str | None = None
@@ -54,6 +55,7 @@ class Session:
     lastSeenAt: dt.datetime
     expiresAt: dt.datetime
     authAt: dt.datetime
+    address: str | None = None
     admin: bool = False
     needsSetup: bool = False
 

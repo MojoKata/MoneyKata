@@ -30,6 +30,10 @@ Connector = record(
     Column("lastReportAt", UtcTimestamp),
     Column("locked", Boolean, nullable=False, server_default=text("1")),
     Column("connectorVersion", Text),  # the connector's own version, from its reports
+    # Where its reports come from: a change alerts admins, since a stolen volume reports as
+    # the connector from wherever it went (S18.2.4.4); Accept makes the new one known.
+    Column("lastAddress", Text),
+    Column("knownAddress", Text),
     Column("protocol", Integer),
     CheckConstraint("state IN ('pairing', 'paired', 'ended')", name="state"),
 )

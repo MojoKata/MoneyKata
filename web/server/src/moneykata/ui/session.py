@@ -2,6 +2,8 @@
 stream (requirements S10.1, S12.6, S13.7)."""
 
 import asyncio
+import datetime as dt
+import json
 import time
 
 from fastapi import APIRouter, Depends, Request
@@ -11,6 +13,7 @@ from .. import activity, settings, timezones
 from ..auth import passwords, sessions, signup, twostep
 from ..auth import users as accounts
 from ..errors import Problem, refuse
+from ..mail import Email
 from ..ratelimit import Window, too_many
 from ..store.entities.users import User
 from .conventions import ExactRoute, Loose, Model
@@ -191,7 +194,7 @@ def sign_in(body: SignIn, request: Request):
                 two_step = twostep.start_sign_in(s, user)
             else:
                 guard.succeeded(login)
-                admin, token = _signed_in(s, user)
+                admin, token = _signed_in(s, user, address=address, svc=srv.services)
     if failed:
         # Committed above: failures and lockouts stay in Activity.
         raise Problem(401, "bad-credentials", "The username or password is not right.")
@@ -248,9 +251,14 @@ def _failed(s, guard, login: str, address: str, user: User | None) -> None:
     )
 
 
-def _signed_in(s, user: User, kind: str = "signin") -> tuple[bool, str]:
+ADDRESS_DAYS = 30
+
+
+def _signed_in(
+    s, user: User, kind: str = "signin", address: str | None = None, svc=None
+) -> tuple[bool, str]:
     admin = accounts.is_admin(s, user.id)
-    token = sessions.create(s, user.id, admin, user.needsSetup)
+    token = sessions.create(s, user.id, admin, user.needsSetup, address=address)
     user.lastSignInAt = sessions.now()
     activity.record(
         s,
@@ -261,7 +269,55 @@ def _signed_in(s, user: User, kind: str = "signin") -> tuple[bool, str]:
         owner=user.id,
         for_admins=kind != "signin",
     )
+    _note_address(s, user, address, svc)
     return admin, token
+
+
+def _note_address(s, user: User, address: str | None, svc) -> None:
+    """A sign-in from an address not seen in 30 days is emailed to the user (S10.1.9), once
+    they have signed in from somewhere before; the addresses seen are kept on the user."""
+    import ipaddress
+
+    try:
+        ipaddress.ip_address(address or "")
+    except ValueError:
+        return  # no real address to remember
+    t = sessions.now()
+    try:
+        seen = {k: v for k, v in json.loads(user.recentAddresses or "{}").items()}
+    except ValueError:
+        seen = {}
+    seen = {
+        k: v
+        for k, v in seen.items()
+        if t - dt.datetime.fromisoformat(v) < dt.timedelta(days=ADDRESS_DAYS)
+    }
+    new = bool(seen) and address not in seen
+    seen[address] = t.isoformat()
+    user.recentAddresses = json.dumps(seen)
+    if new:
+        activity.record(
+            s,
+            "signin.new-address",
+            actor=user.id,
+            subject_kind="user",
+            subject_id=user.id,
+            owner=user.id,
+        )
+        if svc is not None and user.email and not user.needsSetup:
+            svc.mailer.send(
+                s,
+                Email(
+                    user.email,
+                    "A sign-in to MoneyKata from a new address",
+                    (
+                        f"Hello {user.displayName},\n\nSomeone signed in as {user.username} "
+                        f"from {address}, an address not used in the last {ADDRESS_DAYS} "
+                        "days. If it was you, there is nothing to do. If it wasn't, change "
+                        "your password now and tell an admin.\n"
+                    ),
+                ),
+            )
 
 
 @router.delete("/session", status_code=204)

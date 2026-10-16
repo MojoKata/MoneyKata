@@ -185,6 +185,24 @@ def confirm(srv, by: str) -> bool:
         return True
 
 
+def accept_address(srv, by: str) -> bool:
+    """Settings › Connector › Accept: the address the connector now reports from is its own
+    (S18.2.4.4)."""
+    with srv.db.tx() as s:
+        row = paired(s)
+        if row is None:
+            return False
+        row.knownAddress = row.lastAddress
+        activity.record(
+            s,
+            "connector.address-accepted",
+            actor=by,
+            for_admins=True,
+            detail={"to": row.lastAddress},
+        )
+        return True
+
+
 def unpair(srv, by: str | None, reason: str = "unpaired") -> bool:
     """Settings › Connector › Unpair, or the connector's own `unpaired` call."""
     with srv.db.tx() as s:
@@ -219,7 +237,14 @@ def _accounts_of(s, c: Connection) -> list[dict]:
     return out
 
 
-def apply_report(srv, row: Connector, body: dict, version: str | None, protocol: int | None):
+def apply_report(
+    srv,
+    row: Connector,
+    body: dict,
+    version: str | None,
+    protocol: int | None,
+    address: str | None = None,
+):
     """A report (S18.5, protocol §4.2): what the connector says of itself and each Connection,
     answered with what waits for it. Nothing in a report is a credential, an amount or an
     account number beyond its last four digits: what it says is kept as its words."""
@@ -230,6 +255,20 @@ def apply_report(srv, row: Connector, body: dict, version: str | None, protocol:
         row.locked = bool(body.get("locked", True))
         row.connectorVersion = version
         row.protocol = protocol
+        if address and address != row.lastAddress:
+            # A report from somewhere new (S18.2.4.4): the first address is taken as known;
+            # a later change is alerted until an admin accepts it.
+            if row.lastAddress is None and row.knownAddress is None:
+                row.knownAddress = address
+            elif address != row.knownAddress:
+                activity.record(
+                    s,
+                    "connector.address-changed",
+                    actor=None,
+                    for_admins=True,
+                    detail={"from": row.lastAddress, "to": address},
+                )
+            row.lastAddress = address
         # Removed Connections (deleted here, S18.6.4) are listed so the connector deletes
         # their credentials, until it has reported without them once.
         mine = {

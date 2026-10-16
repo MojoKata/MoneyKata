@@ -19,6 +19,8 @@ class Connector(Record):
     lastReportAt: dt.datetime | None = None
     locked: bool = True
     connectorVersion: str | None = None
+    lastAddress: str | None = None
+    knownAddress: str | None = None
     protocol: int | None = None
 
 

@@ -203,7 +203,9 @@ of, `POST /connector/v1/report`:
    names Connections whose owners removed them or whose accounts all turned sync off, and the
    connector deletes their credentials and never reports them again.
 3. MoneyKata records the report's time, so a connector silent for 15 minutes raises the alert
-   of S18.5.2, and shows `locked` as S18.5.1 says.
+   of S18.5.2, and shows `locked` as S18.5.1 says. It records the address the report came
+   from as well: the first is taken as the connector's; a report from another address is
+   still answered but alerts admins until one accepts the new address or unpairs (S18.5.4).
 
 ### 4.3 Credentials
 

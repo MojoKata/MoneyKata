@@ -46,6 +46,9 @@ User = record(
     # last step a code was accepted for, so a code is never accepted twice.
     Column("twoStepAt", UtcTimestamp),
     Column("totpLastStep", Integer),
+    # The addresses this user signed in from in the last 30 days, JSON {address: when}, so a
+    # sign-in from a new one is noticed by email (S10.1.9).
+    Column("recentAddresses", Text, nullable=False, server_default=text("'{}'")),
     # When the last daily summary of alerts was sent (S12.11.5).
     Column("alertSummaryAt", UtcTimestamp),
     # A user of a linked server (S10.3.3.1): its link, and its id there. It never signs in here,
@@ -112,6 +115,7 @@ Session = exception(
     Column("expiresAt", UtcTimestamp, nullable=False),
     # When the password was last given in this session, for re-authentication (S13.7.2).
     Column("authAt", UtcTimestamp, nullable=False),
+    Column("address", Text),  # the client's address at sign-in (S10.1.9)
     Column("admin", Boolean, nullable=False, server_default=text("0")),
     Column("needsSetup", Boolean, nullable=False, server_default=text("0")),
     Index("ix_Session_userId", "userId"),

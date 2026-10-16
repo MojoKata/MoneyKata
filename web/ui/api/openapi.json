@@ -3102,6 +3102,28 @@
             ],
             "title": "Fingerprint"
           },
+          "knownAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knownaddress"
+          },
+          "lastAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastaddress"
+          },
           "lastReportAt": {
             "anyOf": [
               {
@@ -3182,6 +3204,8 @@
           "pairedBy",
           "confirmedAt",
           "confirmedBy",
+          "lastAddress",
+          "knownAddress",
           "lastReportAt",
           "silentForSeconds",
           "connectorVersion",
@@ -33558,6 +33582,28 @@
           }
         },
         "summary": "Get Connector",
+        "tags": [
+          "connector"
+        ]
+      }
+    },
+    "/ui/api/settings/connector/accept-address": {
+      "post": {
+        "description": "Accept (S18.2.4.4): the address the connector now reports from is its own. The\npassword again (S13.7.2).",
+        "operationId": "accept_address_ui_api_settings_connector_accept_address_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Accept Address",
         "tags": [
           "connector"
         ]

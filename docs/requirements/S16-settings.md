@@ -81,5 +81,6 @@ follows Backups, and Connector (18), which follows Linked servers:
     each category's **Keep receipts for**, and **Prune**.
 18. **Connector** (S18): pairing with the MoneyKata Connector (**Pair**, the connector's
     fingerprint, **Confirm** once the fingerprints were compared, who confirmed and when,
-    **Unpair**), whether it is locked, its last report, and every Connection's state, owner
-    and accounts, never their credentials.
+    **Unpair**), whether it is locked, its last report and the address it reports from
+    (with **Accept** when that address changed, S18.2.4.4), and every Connection's state,
+    owner and accounts, never their credentials.
