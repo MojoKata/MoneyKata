@@ -84,7 +84,7 @@ export function ReceiptCard({ r, onOpen }) {
           : r.readStatus === 'failed'
           ? html`<span class="pill bad">couldn't read it</span>`
           : r.links.length
-          ? html`<span class="pill ok">${r.links[0].accountName}${
+          ? html`<span class="pill ok">${r.links[0].accountName || r.links[0].label}${
             r.links.length > 1 ? ` +${r.links.length - 1}` : ''
           }</span>`
           : html`<span class="pill warn">inbox</span>`}</div>
@@ -127,6 +127,11 @@ export function ReceiptDialog({ close, id }) {
   const attach = useSubmit(async (/** @type {string} */ tid) => {
     await api.post(`/receipts/${id}/links`, { transactionId: tid });
     toast('Attached');
+    res.reload();
+  });
+  // A gift's or a donation's receipt, taken back from it (S9.3).
+  const detachKept = useSubmit(async (/** @type {any} */ l) => {
+    await api.del(`/receipts/${id}/kept/${l.kind}/${l.itemId}`);
     res.reload();
   });
   const detach = useSubmit(async (/** @type {string} */ tid) => {
@@ -291,7 +296,10 @@ export function ReceiptDialog({ close, id }) {
                 }</div>`
                 : html`
                   <div class="list-item">
-                    <div class="grow small">The statement of ${l.accountName}</div>
+                    <div class="grow small">${l.label}</div>${l.canDetach
+                      ? html`<button type="button" class="btn sm" onClick=${() =>
+                        detachKept.run(l).catch((e) => toast(e.message))}>Detach</button>`
+                      : null}
                   </div>
                 `
             )

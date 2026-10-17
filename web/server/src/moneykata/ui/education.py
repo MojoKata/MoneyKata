@@ -402,7 +402,7 @@ def withdrawals_view(s, c: Caller, a: Account, lvl: str) -> WithdrawalsView:
                 description=e.description,
                 amount=e.amount,
                 documents=[
-                    receipt_row(s, r, receipts.level(s, c.id, r) or "read")
+                    receipt_row(s, r, receipts.level(s, c.id, r) or "read", c.id)
                     for r in receipts.of_item(s, e.id, "expense")
                 ],
                 version=e.version,

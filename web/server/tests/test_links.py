@@ -759,3 +759,12 @@ def test_a_peers_own_certificate_is_pinned_announced_and_accepted(admins, monkey
     r = ca.post(f"/ui/api/settings/links/{a_id}/accept-certificate")
     assert r.status_code == 200 and r.json()["certificate"] == keys.short(rogue)
     assert r.json()["certificateOffered"] is None
+
+
+def test_calls_no_known_key_signs_are_limited_by_address(server):
+    # N9: 60 a minute, counted before a body is read (S13.7.5.4).
+    from conftest import new_client
+
+    with new_client(server) as c:
+        codes = [c.get("/link/v1/hello").status_code for _ in range(61)]
+    assert codes[:60] == [200] * 60 and codes[60] == 429

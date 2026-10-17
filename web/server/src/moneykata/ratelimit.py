@@ -1,6 +1,7 @@
 """Rate limits (requirements S13.7.5), answered with 429 and Retry-After. Counters live in
 memory: they are work state, not records (schema.md §4.4), and a restart clears them."""
 
+import ipaddress
 import math
 import threading
 import time
@@ -51,6 +52,20 @@ class Window:
         wait = self.hit(key)
         if wait:
             raise too_many(wait, what)
+
+
+def address_key(host: str | None) -> str:
+    """An address as a limit counts it: an IPv6 one by its /64, which one household is given
+    whole (S13.7.5.1)."""
+    try:
+        ip = ipaddress.ip_address(host or "")
+    except ValueError:
+        return host or "-"
+    if isinstance(ip, ipaddress.IPv6Address):
+        if ip.ipv4_mapped:
+            return str(ip.ipv4_mapped)
+        return str(ipaddress.ip_network(f"{ip}/64", strict=False))
+    return str(ip)
 
 
 def too_many(wait: float, what: str) -> Problem:

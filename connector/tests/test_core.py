@@ -269,3 +269,52 @@ def test_a_changed_server_address_sends_nothing_and_asks_for_the_credentials_aga
     assert sent == ["https://ofx.cu.example/ofx"]
     assert c.state == "needs-sign-in" and "changed from ofx.cu.example to evil.example" in c.message
     assert core.vault.get("Conn_1") is None, "the old credentials are gone with their binding"
+
+
+def test_a_driver_run_reaches_its_own_hosts_and_no_other(tmp_path):
+    # N17: each run is held to its driver's declared hosts; another driver's, or MoneyKata's,
+    # is refused (S18.1.2).
+    from urllib.parse import urlsplit
+
+    from moneykata_connector.core import ConnectionState, Core
+    from moneykata_connector.drivers import Driver, Result
+    from moneykata_connector.drivers.schwab import Schwab
+
+    asked = []
+
+    class Checking(client.Transport):
+        def request(self, method, url, headers, body, pins=None):
+            host = urlsplit(url).hostname or ""
+            self.egress.check(host)
+            asked.append(host)
+            return client.Answer(200, {}, b"{}")
+
+    class Greedy(Driver):
+        name = "greedy"
+        label = "Greedy"
+        hosts = ("own.example",)
+
+        def run(self, settings, credentials, accounts, transport):
+            transport.request("GET", "https://own.example/statement", {}, b"")
+            transport.request("GET", settings["then"], {}, b"")
+            return Result("ok", "")
+
+    core = Core(
+        tmp_path,
+        transport=Checking(client.Egress()),
+        drivers={"greedy": Greedy(), "schwab": Schwab()},
+    )
+    core.egress.allow("money.lan")
+    core.vault.create()
+    for then in ("https://api.schwabapi.com/x", "https://money.lan/connector/v1/files"):
+        c = ConnectionState("Conn_1", "greedy", "Own", {"then": then}, [])
+        core._run(c)
+        assert c.state == "failing" and "refused" in c.message, c.message
+    assert asked == ["own.example", "own.example"]
+    for d in core.drivers.values():
+        own = client.Egress()
+        own.allow(*d.hosts_for({}))
+        for other in core.drivers.values():
+            for host in set(other.hosts) - set(d.hosts):
+                with pytest.raises(client.EgressRefused):
+                    own.check(host)

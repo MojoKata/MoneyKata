@@ -117,3 +117,44 @@ def test_an_unused_copy_locks_and_reset_starts_again(server, setup):
     assert not lcopy.folder(server.config.data_dir, link_id).exists()
     r = alice.post(f"/ui/api/linked/{link_id}/unlock", json={"words": " ".join(words)})
     assert r.status_code == 422 and r.json()["code"] == "no-key"
+
+
+def test_files_no_row_names_are_swept_once_old_enough(server, setup):
+    # N11: a crash's leftovers go; a file still arriving, or delivered for a change to come,
+    # stays (S11.9.6.6).
+    import os
+    import time
+
+    from moneykata.links import copies
+    from moneykata.links.routes import DELIVERED
+
+    link_id, admin, alice, _ = setup
+    words = admin.post(f"/ui/api/settings/links/{link_id}/copy-key").json()["words"]
+    alice.post(f"/ui/api/linked/{link_id}/unlock", json={"words": " ".join(words)})
+    d = lcopy.folder(server.config.data_dir, link_id) / "receipts"
+    old = time.time() - 3600
+    for name in ("left.mkr", "half.mkr.tmp", "waiting.mkr", "new.mkr"):
+        (d / name).write_bytes(b"x")
+        if name != "new.mkr":
+            os.utime(d / name, (old, old))
+    DELIVERED[link_id] = {"Rcpt_1": "waiting.mkr"}
+    try:
+        assert copies.orphans(server, link_id) == 2
+    finally:
+        DELIVERED.pop(link_id, None)
+    assert sorted(p.name for p in d.iterdir()) == ["new.mkr", "waiting.mkr"]
+
+
+def test_who_viewed_linked_data_is_recorded_once_an_hour(server, setup):
+    # N11: the receiving side records who viewed linked data (S11.8).
+    from moneykata.ui import linked
+
+    link_id, admin, alice, _ = setup
+    words = admin.post(f"/ui/api/settings/links/{link_id}/copy-key").json()["words"]
+    alice.post(f"/ui/api/linked/{link_id}/unlock", json={"words": " ".join(words)})
+    linked._viewed.clear()
+    for _ in range(3):
+        assert alice.get(f"/ui/api/linked/{link_id}/items").status_code == 200
+    feed = admin.get("/ui/api/activity").json()["items"]
+    seen = [x["text"] for x in feed if "viewed what" in x["text"]]
+    assert seen == ["Alice viewed what Margaret & Tom shares"], seen

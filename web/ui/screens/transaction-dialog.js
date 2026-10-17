@@ -130,13 +130,16 @@ export function TransactionDialog({ close, txn, start, accounts, accountId }) {
       );
       toast('Saved');
     } else {
-      await api.post('/transactions', { accountId: acct, ...body() }, { idempotent: true });
+      await api.post('/transactions', { accountId: acct, ...body() }, {
+        idempotent: true,
+        ...(confirm ? { params: { confirm: true } } : {}),
+      });
       toast('Added');
     }
     close(true);
   });
-  const remove = useSubmit(async () => {
-    await api.del(`/transactions/${txn.id}`, txn.version);
+  const remove = useSubmit(async (/** @type {boolean} */ confirm = false) => {
+    await api.del(`/transactions/${txn.id}`, txn.version, confirm ? { confirm: true } : undefined);
     toast('Deleted');
     close(true);
   });
@@ -146,7 +149,9 @@ export function TransactionDialog({ close, txn, start, accounts, accountId }) {
     close(true);
   });
   const e = save.error;
-  const reconciled = e?.code === 'reconciled-period';
+  // A reconciled period, or a year whose return is filed (S2.8): asked, then done anyway.
+  const reconciled = ['reconciled-period', 'closed-year'].includes(e?.code);
+  const removeAsk = ['reconciled-period', 'closed-year'].includes(remove.error?.code);
   const options = [['', 'Uncategorised'], ...cats.list.map((c) => [c.id, c.path])];
   const splitTotal = splits.reduce((s, x) => s + (cents(x.amount) ?? 0n), 0n);
   const left = (cents(f.amount) ?? 0n) - splitTotal;
@@ -161,7 +166,10 @@ export function TransactionDialog({ close, txn, start, accounts, accountId }) {
           ${editing
             ? html`
               <button type="button" class="btn danger" disabled=${remove.busy}
-                onClick=${() => (armed ? remove.run().catch(() => {}) : setArmed(true))}>${armed
+                onClick=${() =>
+                  armed ? remove.run(removeAsk).catch(() => {}) : setArmed(true)}>${removeAsk
+                  ? 'Delete it anyway'
+                  : armed
                   ? (['assign', 'exercise'].includes(txn.kind)
                     ? 'Click again to delete it and its stock trade'
                     : 'Click again to delete')

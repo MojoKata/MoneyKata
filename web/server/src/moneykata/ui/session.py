@@ -149,8 +149,15 @@ def _address(request: Request) -> str:
     return request.client.host if request.client else "-"
 
 
+def _counted(request: Request) -> str:
+    """The address a sign-in counts against: an IPv6 one by its /64 (S13.7.5.1)."""
+    from ..ratelimit import address_key
+
+    return address_key(_address(request))
+
+
 def _throttle(request: Request) -> None:
-    wait = _by_address.hit(_address(request))
+    wait = _by_address.hit(_counted(request))
     if wait:
         raise too_many(wait, "attempts")
 
@@ -224,9 +231,31 @@ def sign_in_code(body: TwoStepCode, request: Request):
         else:
             guard.succeeded(login)
             twostep.finish_sign_in(s, body.token)
+            # The second step's sign-in, a new address emailed as the first step's is.
             admin, token = _signed_in(
-                s, user, "signin" if how == "code" else "signin.recovery-code"
+                s,
+                user,
+                "signin" if how == "code" else "signin.recovery-code",
+                address=address,
+                svc=srv.services,
             )
+            if how != "code" and user.email:
+                # A recovery code used is emailed (S10.1.9), with how many are left.
+                left = twostep.codes_left(s, user.id)
+                srv.services.mailer.send(
+                    s,
+                    Email(
+                        user.email,
+                        "A sign-in to MoneyKata with a recovery code",
+                        (
+                            f"Hello {user.displayName},\n\nSomeone signed in as "
+                            f"{user.username} with one of your two-step recovery codes; "
+                            f"{left} {'is' if left == 1 else 'are'} left. If it was you, make "
+                            "new codes in Profile once you have your app again. If it wasn't, "
+                            "change your password now and tell an admin.\n"
+                        ),
+                    ),
+                )
     if how is None:
         delay = guard.delay(login, address)
         if delay:

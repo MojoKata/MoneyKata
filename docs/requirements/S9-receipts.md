@@ -18,7 +18,9 @@
    a medical expense) or tax documents (a 1099), physical-asset items (a purchase receipt,
    an appraisal, a certificate, photos, S1.10), loans (a closing disclosure, a statement),
    529 qualified expenses, gifts and donations, or to nothing yet (the **inbox**). Attaching
-   one suggests matching transactions by amount and date.
+   one suggests matching transactions by amount and date. A receipt kept with anything is out
+   of the inbox, and its dialog names each thing it is kept with; whoever can change one of
+   them can detach it from that.
 4. **Viewing**: thumbnails in a grid, a viewer with zoom for images and the browser's own PDF
    viewer for PDFs, served `Content-Disposition: inline` with `Content-Security-Policy:
    sandbox` and `X-Content-Type-Options: nosniff`, from a path that needs the session. The
@@ -27,7 +29,9 @@
    their EXIF orientation applied, pypdfium2 for a PDF's first page) and kept in the database,
    which is encrypted (S15.1.1), as small WebP images.
 6. **Sharing** follows what the receipt is attached to: whoever can read a transaction can see
-   its receipts. An unattached receipt is its owner's alone. Attaching a receipt needs write on
+   its receipts, a gift's through the gift plans that show the gift, a donation's by its
+   owner and those who see the giving plan it counts in, and a tax document's file by the tax
+   book's filers (S8.16). An unattached receipt is its owner's alone. Attaching a receipt needs write on
    it: its owner, or someone with write on what it is attached to; a read share shows it and
    attaches it nowhere (S10.3.1). Receipts cross a link only when the owner ticks **Include
    receipts** on that share, and then only as encrypted files in the other side's linked copy

@@ -83,3 +83,19 @@ def test_every_list_is_paged(store, keyed_config):
         == "array"
     ]
     assert bare == []
+
+
+def test_the_document_lists_the_problems_and_their_codes():
+    # N16: the problem document and its stable codes are in the OpenAPI document (S13.8.3).
+    from moneykata import contract
+
+    doc = contract.openapi_document()
+    codes = doc["components"]["schemas"]["Problem"]["properties"]["code"]["enum"]
+    for code in ("closed-year", "version-required", "rule-sets-nothing", "uploads-in-flight"):
+        assert code in codes, code
+    for path, ops in doc["paths"].items():
+        for method, op in ops.items():
+            assert op["responses"]["default"] == {"$ref": "#/components/responses/Problem"}, (
+                method,
+                path,
+            )

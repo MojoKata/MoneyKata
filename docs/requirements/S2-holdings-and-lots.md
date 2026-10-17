@@ -17,6 +17,20 @@
    allocation), mergers (cash and/or stock) and return of capital adjust lots, never history.
    Return of capital is spread over every lot of the holding by quantity, a lot without a basis
    keeping its share until its basis is entered; what exceeds a lot's basis is a capital gain.
+   1. **Recorded** on Positions with **Corporate action…** (or read from a broker's file, for a
+      split): the holding, the date, and what the action needs. Each lot keeps the day it was
+      acquired and any holding period a wash sale tacked to it.
+   2. **A split** multiplies every lot's shares by its ratio, the basis unchanged.
+   3. **A symbol change** moves every lot whole to the new symbol.
+   4. **A spin-off** gives new shares at its ratio for each one held, and moves the share of
+      each lot's basis the company states (its Form 8937, typed in percent) to them; the rest
+      stays with the shares held.
+   5. **A merger** moves every lot to the acquirer at its ratio. Cash paid besides the shares
+      is a gain only as far as the lot's gain goes, worked out from the acquirer's price that
+      day (IRC §356); the new shares' basis is the old less the cash plus that gain, and the
+      gain is a row of Form 8949. A merger paid all in cash is a sale of every lot.
+   6. A move between instruments is a pair of transactions, one on each; deleting either
+      deletes both, after asking. Options on the shares are adjusted as S3.10 says.
 5. **Dividends and interest**: qualified and ordinary dividends, reinvestment (a dividend plus
    a buy), and capital-gain distributions, with the classification the 1099 will use.
 6. **Bank transactions** have a payee (normalised by **payee rules**), a category (S7.2), an
@@ -49,3 +63,11 @@
 8. **Editing history** is allowed. Every derived figure (balances, lots, gains, budgets,
    charts) follows on the next request. An edit that changes a closed tax year's realized
    gains asks for confirmation first.
+   1. **A closed year**, for an account, is one whose tax book counts the account and has its
+      federal return filed or accepted (S8.15).
+   2. **The edit is worked out first**: a transaction added, changed or deleted, an option
+      trade or its end, a corporate action. When it moves the realized gains of a closed year,
+      it is refused with the years named (*This changes the realized gains of 2025, a year
+      whose return is filed*), and the dialog offers to make it anyway, saying the return may
+      need amending. An edit that moves no closed year's gains (a memo, a category) asks
+      nothing.

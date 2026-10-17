@@ -40,7 +40,78 @@ def openapi_document() -> dict:
     # The release is stated by the document but would make every version bump a contract
     # change; the committed file names the series only.
     doc["info"]["version"] = "see web/VERSION"
+    _problems(doc)
     return doc
+
+
+PROBLEM_CALLS = {"Problem", "refuse", "FieldError", "_send_problem"}
+
+
+def problem_codes() -> list[str]:
+    """Every stable code the server answers a problem with (S13.8.3), read from its source:
+    the second argument of Problem(), refuse(), FieldError() and the middleware's problems."""
+    import ast
+
+    codes: set[str] = set()
+    for path in paths.PACKAGE.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if not isinstance(node, ast.Call) or len(node.args) < 2:
+                continue
+            f = node.func
+            name = (
+                f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else ""
+            )
+            arg = node.args[1]
+            if (
+                name in PROBLEM_CALLS
+                and isinstance(arg, ast.Constant)
+                and isinstance(arg.value, str)
+            ):
+                codes.add(arg.value)
+    return sorted(codes)
+
+
+def _problems(doc: dict) -> None:
+    """The problem document (RFC 9457) as a schema, its codes listed, and as every
+    operation's default response."""
+    codes = problem_codes()
+    schemas = doc.setdefault("components", {}).setdefault("schemas", {})
+    schemas["ProblemFieldError"] = {
+        "type": "object",
+        "required": ["field", "code", "message"],
+        "properties": {
+            "field": {"type": ["string", "null"]},
+            "code": {"type": "string", "enum": codes},
+            "message": {"type": "string"},
+        },
+    }
+    schemas["Problem"] = {
+        "type": "object",
+        "description": "A refusal (S13.8.3): its code is one of those listed, and stable.",
+        "required": ["type", "title", "status", "detail", "code", "errorId", "errors"],
+        "properties": {
+            "type": {"type": "string", "format": "uri"},
+            "title": {"type": "string"},
+            "status": {"type": "integer"},
+            "detail": {"type": "string"},
+            "code": {"type": "string", "enum": codes},
+            "errorId": {"type": "string"},
+            "errors": {
+                "type": "array",
+                "items": {"$ref": "#/components/schemas/ProblemFieldError"},
+            },
+        },
+    }
+    doc["components"].setdefault("responses", {})["Problem"] = {
+        "description": "A refusal, as application/problem+json.",
+        "content": {
+            "application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}
+        },
+    }
+    for ops in doc.get("paths", {}).values():
+        for op in ops.values():
+            if isinstance(op, dict) and "responses" in op:
+                op["responses"].setdefault("default", {"$ref": "#/components/responses/Problem"})
 
 
 def openapi_json(doc: dict | None = None) -> str:

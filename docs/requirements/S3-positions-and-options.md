@@ -31,7 +31,9 @@
    say: a long call exercised adds its premium to the stock's basis, a short put assigned
    subtracts its premium from it, a short call assigned adds its premium to the proceeds. The
    premium is worked out from the option's lots each time the account's figures are, so a
-   corrected opening trade follows through. The resulting stock lots link back to the option,
+   corrected opening trade follows through. A call assigned, or a put exercised, with none of
+   the shares held is a short sale at the strike: a short stock lot whose basis is what it
+   brought in, closed by the shares bought later, its gain short-term. The resulting stock lots link back to the option,
    and deleting the assignment or exercise deletes its stock trade with it, after asking; the
    stock trade alone isn't deleted.
 5. **Strategies**: legs held together (a covered call, a vertical spread, an iron condor)

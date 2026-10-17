@@ -255,3 +255,22 @@ def test_received_gifts_and_thank_yous(alice):
     assert g["status"] == "received" and g["thankYou"]
     ideas = alice.get("/ui/api/gifts?status=received").json()["items"]
     assert [x["description"] for x in ideas] == ["Scarf"]
+
+
+def test_a_gifts_receipt_is_kept_with_it_and_can_be_taken_back(alice):
+    # N13: not in the Inbox while kept with the gift; detached, it is again.
+    emma = person(alice)
+    g = gift(alice, people=[emma["id"]], status="given", cost="40.00")
+    up = alice.post(
+        "/ui/api/receipts", files={"file": ("r.pdf", b"%PDF-1.4 r", "application/pdf")}
+    ).json()
+    r = alice.post(f"/ui/api/gifts/{g['id']}/documents", json={"receiptId": up["id"]})
+    assert r.status_code == 200, r.text
+    assert alice.get("/ui/api/receipts", params={"show": "inbox"}).json()["items"] == []
+    [link] = alice.get(f"/ui/api/receipts/{up['id']}").json()["links"]
+    assert link["kind"] == "gift" and link["label"] == "The gift Watercolour set"
+    assert link["canDetach"]
+    r = alice.delete(f"/ui/api/receipts/{up['id']}/kept/gift/{g['id']}")
+    assert r.status_code == 200, r.text
+    inbox = alice.get("/ui/api/receipts", params={"show": "inbox"}).json()["items"]
+    assert [x["id"] for x in inbox] == [up["id"]]

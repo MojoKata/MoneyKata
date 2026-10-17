@@ -169,7 +169,44 @@ def test_the_phrase_check_comes_due_after_a_year(server, admin_client, frozen):
     clock.fix(created + dt.timedelta(days=364))
     assert alerts.evaluate(server) == []
     clock.fix(created + dt.timedelta(days=366))
-    assert [a.kind for a in alerts.evaluate(server)] == ["phrase-check"]
+    assert sorted(a.kind for a in alerts.evaluate(server)) == ["key-rotation", "phrase-check"]
+
+
+def test_the_rotation_reminder_follows_its_setting(server, admin_client, frozen):
+    # N15: due after the period Settings › Key storage sets (S15.8.4); off, never.
+    created = server.store.keys.ring.master_created
+    with server.db.tx() as s:
+        settings.put(s, "keyReminderMonths", 6, None)
+    clock.fix(created + dt.timedelta(days=190))
+    assert [a.kind for a in alerts.evaluate(server)] == ["key-rotation"]
+    with server.db.tx() as s:
+        settings.put(s, "keyReminderMonths", 0, None)
+    assert alerts.evaluate(server) == []
+
+
+def test_an_option_expiring_within_a_week_and_a_pledge_due(server, frozen):
+    # N15: to the account's owner, and to the organisation's (S12.11.1.3, S7.9.5).
+    from test_accounts import new_account
+    from test_options import opt
+
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    brk = new_account(c, name="Brokerage", type="brokerage")
+    opt(c, brk["id"], "sell-to-open", "2026-10-01", "1.00", expiry="2026-10-16", fees="0")
+    org = c.post(
+        "/ui/api/giving/organisations",
+        json={"name": "Food Bank", "deductible": True, "pledge": "50.00", "pledgeEvery": "month"},
+    )
+    assert org.status_code == 201, org.text
+    titles = sorted(a.title for a in alerts.evaluate(server))
+    assert titles == ["MSFT 16OCT26 480 P expires in 3 days"], titles
+    at(days=13)  # Oct 26: the month's pledge is due; the option has expired
+    assert "pledge-due" in [a.kind for a in alerts.evaluate(server)]
+    from moneykata.store.entities.alerts import Alert
+
+    with server.db.read() as s:
+        open_ = {a.kind for a in s.query(Alert).filter(Alert.resolvedAt.is_(None))}
+    assert "option-expiring" not in open_ and "pledge-due" in open_
 
 
 def _outbox_subjects(server) -> list[str]:

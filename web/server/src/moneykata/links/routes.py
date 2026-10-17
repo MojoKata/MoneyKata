@@ -3,7 +3,7 @@
 
 import re
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import false, select
 
@@ -11,7 +11,26 @@ from .. import clock, exactjson
 from ..store.entities.links import Link
 from . import PROTOCOL, SUPPORTED, keys, signing
 
-router = APIRouter(prefix="/link/v1", include_in_schema=False)
+
+def limit(request: Request) -> None:
+    """Before a body is read (S13.7.5.4): a call naming a linked server's key counts against
+    that link, 60 a minute; any other, against its address."""
+    from .. import ratelimit
+
+    srv = request.app.state.server
+    key = request.headers.get("mk-link-key", "")
+    link_id = None
+    if key:
+        with srv.db.read() as s:
+            link_id = s.scalar(select(Link.id).where(Link.peerKey == key, Link.deleted == false()))
+    if link_id:
+        srv.link_limit.check(link_id, "calls from this linked server")
+    else:
+        host = request.client.host if request.client else None
+        srv.link_unknown.check(ratelimit.address_key(host), "calls from this address")
+
+
+router = APIRouter(prefix="/link/v1", include_in_schema=False, dependencies=[Depends(limit)])
 
 
 def own(srv) -> tuple[object, str]:

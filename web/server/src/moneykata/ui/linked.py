@@ -7,7 +7,7 @@ import json
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import false, select
 
-from .. import clock, exactjson, settings
+from .. import activity, clock, exactjson, settings
 from ..errors import Problem
 from ..links import copies
 from ..links.changes import waiting
@@ -198,13 +198,37 @@ class LinkedRow(Model):
     row: dict | None  # its row in its list, as its source shows it
 
 
+# Who viewed linked data (S11.8): at most once an hour for each person and link.
+VIEWED_EVERY = 3600
+_viewed: dict[tuple[str, str], float] = {}
+
+
 def _open(srv, s, c: Caller, link_id: str):
     """The unlocked copy, for a read made for this person (it counts as a use)."""
     _state(srv, s, c, link_id)
     o = srv.copies.get(link_id)
     if o is None:
         raise Problem(423, "copy-locked", "This household's copy is locked: enter its access key.")
+    _note_viewed(srv, c.id, link_id)
     return o
+
+
+def _note_viewed(srv, user_id: str, link_id: str) -> None:
+    import time
+
+    now = time.monotonic()
+    if now - _viewed.get((user_id, link_id), -VIEWED_EVERY) < VIEWED_EVERY:
+        return
+    _viewed[(user_id, link_id)] = now
+    with srv.db.tx() as w:
+        activity.record(
+            w,
+            "link.viewed",
+            actor=user_id,
+            subject_kind="link",
+            subject_id=link_id,
+            for_admins=True,
+        )
 
 
 @router.get("/linked/{link_id}/items", response_model=list[LinkedRow])

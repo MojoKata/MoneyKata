@@ -1,5 +1,8 @@
 # Transaction
 
+A change that moves the realized gains of a year whose return is filed asks first, naming the
+year: **Change it anyway** makes it, and the return may need amending.
+
 ## Account
 
 The account it belongs to.

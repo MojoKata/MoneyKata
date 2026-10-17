@@ -3,12 +3,15 @@ unlocking, locking and resetting a copy, with each recorded in Activity (S11.8).
 
 import contextlib
 import json
+import logging
 
 from sqlalchemy import false, select
 
 from .. import activity, clock, settings
 from ..store.entities.links import Link, LinkedItem
 from .copy import CopyError, folder
+
+log = logging.getLogger("moneykata.links")
 
 
 def named(s, link_id: str, user_id: str) -> bool:
@@ -97,9 +100,46 @@ def reset(srv, link_id: str, by: str) -> None:
         activity.record(s, "link.copy-reset", actor=by, for_admins=True)
 
 
+ORPHAN_MINUTES = 10  # a file this old that no row names was left by a crash
+
+
+def orphans(srv, link_id: str) -> int:
+    """With the copy open: the receipt files no row of it names, and the temporary files a
+    write left behind, once old enough not to be one still arriving (S11.9.6.6). A file a
+    peer delivered stays until the change that names it comes. Returns how many went."""
+    import time
+
+    from sqlalchemy import select
+
+    from . import copydb
+    from .routes import DELIVERED
+
+    o = srv.copies.get(link_id, for_person=False)
+    d = folder(srv.config.data_dir, link_id) / "receipts"
+    if o is None or not d.exists():
+        return 0
+    with o.engine.connect() as conn:
+        kept = set(conn.execute(select(copydb.File.c.fileName)).scalars())
+    waiting = set(DELIVERED.get(link_id, {}).values())
+    old = time.time() - ORPHAN_MINUTES * 60
+    gone = 0
+    for f in d.iterdir():
+        if f.stat().st_mtime > old or f.name in kept or f.name in waiting:
+            continue
+        if f.suffix in (".mkr", ".tmp"):
+            f.unlink(missing_ok=True)
+            gone += 1
+    return gone
+
+
 def sweep(srv) -> list[str]:
     with srv.db.read() as s:
         minutes = settings.get(s, "linkReleaseMinutes")
+    for link_id in list(srv.copies.open):
+        try:
+            orphans(srv, link_id)
+        except Exception:  # a sweep never stops the locking that follows
+            log.exception("sweeping a linked copy's files failed")
     locked = srv.copies.sweep(minutes)
     if locked:
         with srv.db.tx() as s:

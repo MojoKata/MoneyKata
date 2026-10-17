@@ -44,8 +44,6 @@ class Core:
         self.egress = Egress()
         self.transport = transport or Transport(self.egress)
         self.drivers: dict[str, Driver] = drivers or registry()
-        for d in self.drivers.values():
-            self.egress.allow(*d.hosts)
         self.pairing = keys.load(data / "pairing.json")
         self.server: client.Server | None = None
         self.connections: dict[str, ConnectionState] = {}
@@ -288,8 +286,11 @@ class Core:
                 )
                 return
         try:
-            self.egress.allow(*d.hosts_for(c.settings))
-            r = d.run(c.settings, creds, c.accounts, self.transport)
+            # This run reaches its driver's hosts and no other: not MoneyKata, not another
+            # driver's (S18.1.2).
+            own = client.Egress()
+            own.allow(*d.hosts_for(c.settings))
+            r = d.run(c.settings, creds, c.accounts, self.transport.with_egress(own))
         except client.EgressRefused as e:
             c.state, c.message, c.last_run = "failing", f"refused: {e}", time.time()
             return

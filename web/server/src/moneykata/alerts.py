@@ -341,6 +341,28 @@ def email(s: Session, server) -> Iterable[Cause]:
 
 
 @check
+def key_rotation(s: Session, server) -> Iterable[Cause]:
+    """The master key's rotation (S15.8.4), due once the key is older than Settings › Key
+    storage's reminder period; none when the period is off."""
+    months = settings.get(s, "keyReminderMonths")
+    if not months:
+        return
+    made = server.store.keys.ring.master_created
+    due = made + dt.timedelta(days=round(months * 30.44))
+    if clock.now() >= due:
+        yield Cause(
+            key="keys:rotation",
+            kind="key-rotation",
+            title="Time to rotate the master key",
+            about=f"it is over {months} months old: `moneykata keys rotate` on the host",
+            link="/ui/settings/keys",
+            fix="Key storage",
+            icon="lock",
+            since=due,
+        )
+
+
+@check
 def recovery_phrase(s: Session, server) -> Iterable[Cause]:
     """The yearly check of the master key's recovery phrase (S15.6.5)."""
     from .store.entities.core import Activity
@@ -466,6 +488,89 @@ def options_expired(s: Session, server) -> Iterable[Cause]:
                 fix="Record it",
                 icon="candles",
             )
+
+
+EXPIRING_DAYS = 7
+
+
+@check
+def options_expiring(s: Session, server) -> Iterable[Cause]:
+    """An option held that expires within a week (S12.11.1.3): to its account's owner, to
+    close, roll or let go; it resolves once it is closed or past its expiry."""
+    from . import options
+    from .ledger import types as atypes
+    from .store.entities.accounts import Account, Instrument
+    from .store.repos import ledger as repo
+
+    today = clock.today()
+    for a in s.scalars(select(Account).where(Account.deleted == false())):
+        if not atypes.investing(a.type):
+            continue
+        for iid, qty in repo.load(s, a).replay().positions().items():
+            c = options.contract_of(s, iid)
+            if c is None or not today <= c.expiry <= today + dt.timedelta(days=EXPIRING_DAYS):
+                continue
+            inst = s.get(Instrument, iid)
+            days = (c.expiry - today).days
+            when = "today" if days == 0 else "tomorrow" if days == 1 else f"in {days} days"
+            yield Cause(
+                key=f"option-expiring:{a.id}:{iid}",
+                kind="option-expiring",
+                title=f"{inst.symbol} expires {when}",
+                about=f"{abs(qty).normalize():f} {'short' if qty < 0 else 'long'} in {a.name}",
+                user_id=a.ownerId,
+                link="/ui/positions/open",
+                fix="See it",
+                icon="candles",
+            )
+
+
+@check
+def pledges_due(s: Session, server) -> Iterable[Cause]:
+    """A pledge not yet met (S7.9.5): a monthly one from the 25th of the month, a yearly one
+    from December 1, while less than it has been given to the organisation in that month or
+    year. It resolves when the donation is recorded."""
+    from decimal import Decimal
+
+    from .store.entities.giving import Donation, Organisation
+
+    today = clock.today()
+    for o in s.scalars(
+        select(Organisation).where(Organisation.deleted == false(), Organisation.pledge > 0)
+    ):
+        if o.pledgeEvery == "month" and today.day >= 25:
+            first, period = today.replace(day=1), f"{today:%B}"
+        elif o.pledgeEvery == "year" and today.month == 12:
+            first, period = today.replace(month=1, day=1), str(today.year)
+        else:
+            continue
+        given = sum(
+            (
+                d.amount
+                for d in s.scalars(
+                    select(Donation).where(
+                        Donation.organisationId == o.id,
+                        Donation.ownerId == o.ownerId,
+                        Donation.deleted == false(),
+                        Donation.date >= first,
+                        Donation.date <= today,
+                    )
+                )
+            ),
+            Decimal(0),
+        )
+        if given >= o.pledge:
+            continue
+        yield Cause(
+            key=f"pledge:{o.id}:{first.isoformat()}",
+            kind="pledge-due",
+            title=f"Your pledge to {o.name} is due",
+            about=f"for {period}",
+            user_id=o.ownerId,
+            link="/ui/giving/organisations",
+            fix="Record a donation",
+            icon="heart",
+        )
 
 
 @check

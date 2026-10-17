@@ -72,8 +72,10 @@ ask it for anything.
       for the commands an admin runs there (S18.3). MoneyKata has nothing to call and no way to
       ask for a credential. A call it makes follows no redirect (a 3xx answer is a failure, so
       nothing is sent again elsewhere), waits at most 60 seconds, and reads at most 25 MB of an
-      answer. Its allowlist is kept per driver run, and refuses loopback, link-local and cloud
-      metadata addresses, as MoneyKata's egress guard does (S13.5). It verifies every TLS
+      answer. Its allowlist is kept per driver run: a run reaches its own driver's hosts and
+      no other, not another driver's and not MoneyKata's, which only the connector's own calls
+      reach; a test runs a driver with every other host refused. It refuses loopback,
+      link-local and cloud metadata addresses, as MoneyKata's egress guard does (S13.5). It verifies every TLS
       certificate: an institution's against the system's roots, MoneyKata's against those roots
       or, for a certificate of MoneyKata's own, against the fingerprint the pairing code
       carried (S18.4.1).

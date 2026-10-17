@@ -24,7 +24,8 @@ class EgressRefused(Exception):
 
 @dataclass
 class Egress:
-    """The hosts that may be reached: MoneyKata's, and each driver's declared ones."""
+    """The hosts that may be reached: MoneyKata's for the connector's own calls, and for each
+    driver's run only the hosts that driver declared (S18.1.2)."""
 
     allowed: set[str] = field(default_factory=set)
 
@@ -70,6 +71,14 @@ class Transport:
 
     def __init__(self, egress: Egress):
         self.egress = egress
+
+    def with_egress(self, egress: Egress) -> Transport:
+        """The same transport held to another allowlist: one driver run's."""
+        import copy
+
+        other = copy.copy(self)
+        other.egress = egress
+        return other
 
     def request(self, method: str, url: str, headers: dict, body: bytes, pins=None) -> Answer:
         u = urlsplit(url)

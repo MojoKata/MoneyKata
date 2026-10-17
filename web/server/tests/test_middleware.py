@@ -90,3 +90,26 @@ def test_an_outbound_client_always_verifies_tls():
     assert net.Client(net.Guard())._transport._pool._ssl_context.verify_mode == ssl.CERT_REQUIRED
     pinned = net.Client(net.Guard(), pins=["ab" * 32])._transport._pool._ssl_context
     assert pinned.verify_mode == ssl.CERT_NONE, "the key decides, checked after the handshake"
+
+
+def test_uploads_in_flight_are_capped_per_caller(server, monkeypatch):
+    # N9: at most 100 MB arriving at once for one caller (S13.7.6), here a smaller cap.
+    from conftest import make_user, sign_in
+
+    from moneykata import middleware
+
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    monkeypatch.setattr(middleware, "IN_FLIGHT", 1000)
+    r = c.post("/ui/api/receipts", files={"file": ("big.png", b"x" * 5000)})
+    assert r.status_code == 429 and r.json()["code"] == "uploads-in-flight", r.text
+    r = c.post("/ui/api/receipts", files={"file": ("small.png", b"x" * 100)})
+    assert r.status_code != 429, "the count is let go when a request ends"
+
+
+def test_an_ipv6_address_counts_by_its_64():
+    from moneykata.ratelimit import address_key
+
+    assert address_key("2001:db8:1:2::5") == address_key("2001:db8:1:2:ffff::1")
+    assert address_key("2001:db8:1:2::5") != address_key("2001:db8:1:3::5")
+    assert address_key("::ffff:192.0.2.7") == "192.0.2.7" == address_key("192.0.2.7")

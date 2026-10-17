@@ -349,7 +349,7 @@ def detail(s, c: Caller, it: Item, a: Account, lvl: str) -> ItemDetail:
             for m in reversed(d.improvements)
         ],
         documents=[
-            receipt_row(s, r, receipts.level(s, c.id, r) or "read")
+            receipt_row(s, r, receipts.level(s, c.id, r) or "read", c.id)
             for r in receipts.of_item(s, it.id)
         ],
         history=history,

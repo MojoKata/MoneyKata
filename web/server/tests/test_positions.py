@@ -2,6 +2,7 @@
 grouped."""
 
 import datetime as dt
+from decimal import Decimal
 
 import pytest
 from conftest import make_user, sign_in
@@ -105,3 +106,105 @@ def test_a_wash_sale_moves_the_loss_into_the_replacement_lot(server, alice):
     assert r.status_code == 200
     sale = next(r for r in alice.get("/ui/api/positions").json()["closed"] if r["symbol"] == "AAPL")
     assert sale["realized"] == "-500.00"
+
+
+# ---- Corporate actions (S2.4, N4) ----
+
+
+def _ca(c, acct, inst_id, **body):
+    r = c.post(f"/ui/api/accounts/{acct}/corporate-actions", json={"instrumentId": inst_id} | body)
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def _lots(server, acct):
+    from moneykata.store.entities.accounts import Account, Instrument
+    from moneykata.store.repos import ledger as repo
+
+    with server.db.read() as s:
+        rp = repo.load(s, s.get(Account, acct)).replay()
+        out = {}
+        for x in rp.open:
+            sym = s.get(Instrument, x.instrumentId).symbol
+            q, b, d = out.get(sym, (0, 0, x.acquiredOn))
+            out[sym] = (q + x.quantity, b + (x.basis or 0), min(d, x.acquiredOn))
+        return out, rp.disposals
+
+
+def test_symbol_changes_spin_offs_and_mergers_move_lots_never_sell_them(server, alice):
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    a = brk["id"]
+    add(alice, a, "100000.00", "2025-01-01", kind="deposit")
+    for sym, qty, price in (("FB", "10", "100"), ("GE", "100", "100"), ("ATVI", "100", "50")):
+        add(
+            alice,
+            a,
+            f"-{int(qty) * int(price)}.00",
+            "2025-01-02",
+            kind="buy",
+            symbol=sym,
+            quantity=qty,
+            price=price,
+        )
+    held = {p["symbol"]: p["instrumentId"] for p in alice.get("/ui/api/positions").json()["open"]}
+    _ca(alice, a, held["FB"], kind="symbol-change", date="2026-06-09", newSymbol="META")
+    _ca(
+        alice,
+        a,
+        held["GE"],
+        kind="spin-off",
+        date="2026-01-03",
+        newSymbol="GEHC",
+        ratio="0.3333",
+        basisShare="13.65",
+    )
+    _ca(
+        alice,
+        a,
+        held["ATVI"],
+        kind="merger",
+        date="2026-10-13",
+        newSymbol="MSFT",
+        ratio="0.2",
+        cashPerShare="10.00",
+        newPrice="400",
+    )
+    lots, disposals = _lots(server, a)
+    assert "FB" not in lots and lots["META"][:2] == (10, Decimal("1000.00"))
+    assert lots["META"][2] == dt.date(2025, 1, 2), "the days held carry over"
+    assert lots["GE"][:2] == (100, Decimal("8635.00"))
+    assert lots["GEHC"][:2] == (Decimal("33.3300"), Decimal("1365.00"))
+    assert lots["MSFT"][:2] == (Decimal("20.0"), Decimal("5000.00"))
+    [boot] = disposals
+    assert boot.proceeds == Decimal("1000.00"), "the cash is a gain, the gain being larger"
+    h = alice.get(f"/ui/api/accounts/{a}/holdings").json()
+    assert h["cash"] == "85000.00", "the merger's cash is in the account"
+
+
+def test_an_all_cash_merger_is_a_sale_and_a_pair_is_undone_whole(server, alice):
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    a = brk["id"]
+    add(alice, a, "10000.00", "2025-01-01", kind="deposit")
+    add(alice, a, "-2000.00", "2025-01-02", kind="buy", symbol="TWTR", quantity="50", price="40")
+    add(alice, a, "-500.00", "2025-01-02", kind="buy", symbol="FB", quantity="5", price="100")
+    held = {p["symbol"]: p["instrumentId"] for p in alice.get("/ui/api/positions").json()["open"]}
+    _ca(alice, a, held["TWTR"], kind="merger", date="2026-10-13", cashPerShare="54.20")
+    lots, disposals = _lots(server, a)
+    assert "TWTR" not in lots and disposals[0].proceeds == Decimal("2710.00")
+    _, new = _ca(alice, a, held["FB"], kind="symbol-change", date="2026-06-09", newSymbol="META")
+    r = alice.delete(f"/ui/api/transactions/{new['id']}", headers={"If-Match": str(new["version"])})
+    assert r.status_code == 200, r.text
+    lots, _ = _lots(server, a)
+    assert "FB" in lots and "META" not in lots
+    r = alice.post(
+        f"/ui/api/accounts/{a}/corporate-actions",
+        json={
+            "instrumentId": held["FB"],
+            "kind": "spin-off",
+            "date": "2026-06-09",
+            "newSymbol": "X",
+            "ratio": "1",
+            "basisShare": "150",
+        },
+    )
+    assert r.status_code == 422 and r.json()["errors"][0]["field"] == "basisShare"

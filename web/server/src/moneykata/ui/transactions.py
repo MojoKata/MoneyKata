@@ -28,6 +28,7 @@ from ..store.entities.accounts import (
 from ..store.repos import ledger as repo
 from ..store.tables.accounts import TXN_KINDS
 from ..store.types import Cents
+from ..taxes import closed
 from .conventions import (
     Deleted,
     ExactRoute,
@@ -53,8 +54,12 @@ INSTRUMENT_KINDS = (
     "split",
     "return-of-capital",
 )
-# Recorded through the option-trade endpoint (S3.2), which knows the contract.
+# Recorded through the option-trade endpoint (S3.2), which knows the contract, and the
+# corporate-action one (S2.4), which makes their pairs.
 OPTION_KINDS = (
+    "symbol-change",
+    "spin-off",
+    "merger",
     "buy-to-open",
     "sell-to-open",
     "buy-to-close",
@@ -431,6 +436,10 @@ def _check(s: Session, body, kind: str, investing: bool) -> list[FieldError]:
     errors = []
     if kind not in TXN_KINDS:
         errors.append(FieldError("kind", "kind-invalid", "Choose a kind of transaction."))
+    elif kind in OPTION_KINDS[:3]:
+        errors.append(
+            FieldError("kind", "corporate-kind", "Record it as a corporate action on Positions.")
+        )
     elif kind in OPTION_KINDS:
         errors.append(
             FieldError("kind", "option-kind", "Record an option trade from the account's Holdings.")
@@ -540,7 +549,9 @@ def _instrument(s: Session, body: TxnIn, account: Account) -> str | None:
 
 
 @router.post("/transactions", response_model=TxnOut, status_code=201)
-def create_transaction(body: TxnIn, request: Request, c: Caller = Depends(caller)):
+def create_transaction(
+    body: TxnIn, request: Request, c: Caller = Depends(caller), confirm: bool = False
+):
     srv = server(request)
     key = request.headers.get("idempotency-key")
     again = srv.idempotency.lookup(c.id, key)
@@ -551,6 +562,7 @@ def create_transaction(body: TxnIn, request: Request, c: Caller = Depends(caller
         a, level = access.account(s, c.id, body.accountId, "write")
         investing = atypes.investing(a.type)
         _raise(_check(s, body, body.kind, investing))
+        guard = closed.Guard(s, a, confirm) if investing else None
         inst_id = _instrument(s, body, a)
         if body.kind in ("buy", "sell", "reinvest", "transfer-in", "transfer-out") and (
             not inst_id or not body.quantity
@@ -625,6 +637,8 @@ def create_transaction(body: TxnIn, request: Request, c: Caller = Depends(caller
             s.flush()
         if inst_id:
             washes.recompute(s, a.ownerId)
+        if guard is not None:
+            guard.check()
         out = shape(s, c.id, [t], {a.id: level})[0]
     payload = out.model_dump(mode="json")
     headers = {"Location": f"/ui/api/transactions/{t.id}"}
@@ -664,6 +678,7 @@ def change_transaction(
     sent = body.model_fields_set
     with server(request).db.tx() as s:
         t, a, level = _editable(s, c, txn_id, version, confirm)
+        guard = closed.Guard(s, a, confirm)
         kind = body.kind if "kind" in sent and body.kind else t.kind
         checked = body.model_copy(update={"amount": body.amount if "amount" in sent else t.amount})
         _raise(_check(s, checked, kind, atypes.investing(a.type)))
@@ -723,6 +738,7 @@ def change_transaction(
         s.flush()
         if t.instrumentId:
             washes.recompute(s, a.ownerId)
+        guard.check()
         return shape(s, c.id, [t], {a.id: level})[0]
 
 
@@ -736,10 +752,15 @@ def delete_transaction(
 ):
     with server(request).db.tx() as s:
         t, a, _ = _editable(s, c, txn_id, version, confirm)
+        guard = closed.Guard(s, a, confirm)
         if t.kind in ("split", "option-adjust"):
             from ..options import adjust
 
             adjust.undo(s, c.id, t)
+        if t.kind in ("symbol-change", "spin-off", "merger"):
+            from .. import corporate
+
+            corporate.undo(s, c.id, t)
         end = s.get(Transaction, t.optionTransactionId) if t.optionTransactionId else None
         if end is not None and end.kind in ("assign", "exercise") and not end.deleted:
             raise refuse(
@@ -762,6 +783,7 @@ def delete_transaction(
         if t.instrumentId:
             s.flush()
             washes.recompute(s, a.ownerId)
+        guard.check()
         activity.record(
             s,
             "transaction.deleted",

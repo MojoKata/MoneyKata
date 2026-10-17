@@ -11,6 +11,7 @@ from ..errors import FieldError, Problem, refuse
 from ..ledger import types as atypes
 from ..store.entities.accounts import Instrument, Transaction
 from ..store.repos import ledger as repo
+from ..taxes import closed
 from .conventions import ExactRoute, Model, Money, Quantity
 from .deps import Caller, caller, server
 from .transactions import TxnOut, shape
@@ -32,7 +33,13 @@ class OptionTrade(Model):
 
 
 @router.post("/accounts/{account_id}/options", response_model=TxnOut, status_code=201)
-def record_trade(account_id: str, body: OptionTrade, request: Request, c: Caller = Depends(caller)):
+def record_trade(
+    account_id: str,
+    body: OptionTrade,
+    request: Request,
+    c: Caller = Depends(caller),
+    confirm: bool = False,
+):
     e: list[FieldError] = []
     if body.action not in options.ACTIONS:
         e.append(FieldError("action", "action-invalid", "Buy or sell, to open or to close."))
@@ -61,6 +68,7 @@ def record_trade(account_id: str, body: OptionTrade, request: Request, c: Caller
             raise refuse(
                 "action", "kind-not-for-account", "Options belong in an investing account."
             )
+        guard = closed.Guard(s, a, confirm)
         inst, contract = options.contract(
             s, underlying, body.right, body.strike, body.expiry, body.multiplier
         )
@@ -91,6 +99,7 @@ def record_trade(account_id: str, body: OptionTrade, request: Request, c: Caller
         )
         s.add(t)
         s.flush()
+        guard.check()
         activity.record(
             s,
             "option.traded",
@@ -114,7 +123,12 @@ class Settle(Model):
     status_code=201,
 )
 def settle(
-    account_id: str, instrument_id: str, body: Settle, request: Request, c: Caller = Depends(caller)
+    account_id: str,
+    instrument_id: str,
+    body: Settle,
+    request: Request,
+    c: Caller = Depends(caller),
+    confirm: bool = False,
 ):
     """An option's end: it expired, was assigned, or was exercised (S3.4, S3.6)."""
     if body.how not in ("expired", "assign", "exercise"):
@@ -124,8 +138,10 @@ def settle(
         inst = s.get(Instrument, instrument_id)
         if inst is None or inst.deleted:
             raise refuse("instrumentId", "not-found", "No such option.")
+        guard = closed.Guard(s, a, confirm)
         made = options.settle(s, c.id, a, inst, body.how, body.date, body.contracts)
         washes.recompute(s, a.ownerId)
+        guard.check()
         activity.record(
             s,
             "option.settled",
@@ -273,3 +289,68 @@ def adjust_contracts(body: Adjustment, request: Request, c: Caller = Depends(cal
         for o in owners:
             washes.recompute(s, o)
     return Adjusted(contracts=moved, accounts=len(touched))
+
+
+# ---- Corporate actions (S2.4) ----
+
+
+class CorporateAction(Model):
+    kind: str  # split, symbol-change, spin-off, merger
+    date: dt.date
+    instrumentId: str
+    ratio: Quantity | None = None  # new shares for each one held
+    newSymbol: str | None = None
+    basisShare: Quantity | None = None  # a spin-off: the percent of basis that moves
+    cashPerShare: Money | None = None  # a merger's cash for each share held
+    newPrice: Quantity | None = None  # a new share's price that day, for a merger's cash
+
+
+@router.post(
+    "/accounts/{account_id}/corporate-actions", response_model=list[TxnOut], status_code=201
+)
+def corporate_action(
+    account_id: str,
+    body: CorporateAction,
+    request: Request,
+    c: Caller = Depends(caller),
+    confirm: bool = False,
+):
+    """A split, symbol change, spin-off or merger: lots reshaped or moved, never sold and
+    bought again; a merger's cash is a gain only as far as the gain goes."""
+    from .. import corporate
+
+    if body.kind not in corporate.KINDS:
+        raise refuse("kind", "kind-invalid", "A split, symbol change, spin-off or merger.")
+    with server(request).db.tx() as s:
+        a, level = access.account(s, c.id, account_id, "write")
+        if not atypes.investing(a.type):
+            raise refuse("kind", "kind-not-for-account", "These belong in an investing account.")
+        inst = s.get(Instrument, body.instrumentId)
+        if inst is None or inst.deleted or inst.instrumentClass == "option":
+            raise refuse("instrumentId", "instrument-unknown", "Choose a holding.")
+        guard = closed.Guard(s, a, confirm)
+        made = corporate.record(
+            s,
+            c.id,
+            a,
+            inst,
+            body.kind,
+            body.date,
+            body.ratio,
+            body.newSymbol,
+            body.basisShare,
+            body.cashPerShare,
+            body.newPrice,
+        )
+        washes.recompute(s, a.ownerId)
+        guard.check()
+        activity.record(
+            s,
+            "account.corporate-action",
+            actor=c.id,
+            subject_kind="account",
+            subject_id=a.id,
+            owner=a.ownerId,
+            detail={"name": corporate.WORDS[body.kind].lower()},
+        )
+        return shape(s, c.id, made, {a.id: level})

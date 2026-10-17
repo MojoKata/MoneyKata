@@ -523,7 +523,7 @@ def _gift_out(s, c: Caller, g: Gift, ps: list[str]) -> GiftOut:
         cash=g.cash,
         thankYou=g.thankYou,
         documents=[
-            receipt_row(s, r, receipts.level(s, c.id, r) or "read")
+            receipt_row(s, r, receipts.level(s, c.id, r) or "read", c.id)
             for r in receipts.of_item(s, g.id, "gift")
         ],
         canWrite=access.RANK[lvl] >= 2,

@@ -375,3 +375,90 @@ def test_a_due_date_skips_weekends_and_legal_holidays():
         dt.date(2023, 4, 18),
         dt.date(2026, 4, 15),
     ]
+
+
+def test_an_edit_that_moves_a_filed_years_gains_asks_first(server, couple):
+    # N5: once 2025's federal return is filed, an edit that changes 2025's realized gains is
+    # refused, naming the year, until confirmed.
+    from test_accounts import add, new_account
+
+    alice = couple[0]
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    add(alice, brk["id"], "10000.00", "2024-01-02", kind="deposit")
+    add(
+        alice,
+        brk["id"],
+        "-1000.00",
+        "2024-01-05",
+        kind="buy",
+        symbol="VTI",
+        quantity="10",
+        price="100",
+    )
+    sale = add(
+        alice,
+        brk["id"],
+        "1500.00",
+        "2025-03-03",
+        kind="sell",
+        symbol="VTI",
+        quantity="10",
+        price="150",
+    )
+    me = alice.get("/ui/api/session").json()["user"]["id"]
+    book = alice.post("/ui/api/tax-books", json={"year": 2025, "filers": [me]}).json()
+    r = alice.post(
+        f"/ui/api/tax-books/{book['id']}/filings",
+        json={
+            "jurisdiction": "federal",
+            "form": "1040",
+            "progress": "filed",
+            "filedOn": "2026-04-10",
+        },
+    )
+    assert r.status_code == 201, r.text
+    r = alice.patch(
+        f"/ui/api/transactions/{sale['id']}",
+        json={"amount": "1600.00"},
+        headers={"If-Match": str(sale["version"])},
+    )
+    assert r.status_code == 409 and r.json()["code"] == "closed-year", r.text
+    assert r.json()["years"] == [2025]
+    r = alice.patch(
+        f"/ui/api/transactions/{sale['id']}",
+        json={"amount": "1600.00"},
+        headers={"If-Match": str(sale["version"])},
+        params={"confirm": "true"},
+    )
+    assert r.status_code == 200, r.text
+    # A memo isn't a gain: no question asked.
+    r = alice.patch(
+        f"/ui/api/transactions/{sale['id']}",
+        json={"memo": "sold to rebalance"},
+        headers={"If-Match": str(r.json()["version"])},
+    )
+    assert r.status_code == 200, r.text
+
+
+def test_a_tax_documents_file_opens_for_the_books_filers(server, couple):
+    # N13: a co-filer opens the file through the book; it isn't in the uploader's Inbox, and
+    # can't be deleted while the document keeps it.
+    alice, bob, a_id, b_id = couple
+    b = book(alice, 2026, [a_id, b_id])
+    bob.post(f"/ui/api/tax-books/{b['id']}/accept")
+    up = alice.post(
+        "/ui/api/receipts", files={"file": ("w2.pdf", b"%PDF-1.4 w2", "application/pdf")}
+    ).json()
+    r = alice.post(
+        f"/ui/api/tax-books/{b['id']}/documents",
+        json={"form": "W-2", "issuer": "Acme Corp", "receiptId": up["id"]},
+    )
+    assert r.status_code == 201, r.text
+    assert bob.get(f"/ui/api/receipts/{up['id']}/file").status_code == 200
+    got = alice.get(f"/ui/api/receipts/{up['id']}").json()
+    assert [(x["kind"], x["label"]) for x in got["links"]] == [
+        ("tax-document", "W-2 in the 2026 tax book")
+    ]
+    assert alice.get("/ui/api/receipts", params={"show": "inbox"}).json()["items"] == []
+    r = alice.delete(f"/ui/api/receipts/{up['id']}", headers={"If-Match": str(got["version"])})
+    assert r.status_code == 409

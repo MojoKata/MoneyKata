@@ -25,14 +25,19 @@ router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["receipts"])
 
 
 class LinkOut(Model):
-    """A transaction it supports, or (a statement) the account it is kept on."""
+    """A transaction it supports, the account it is kept on (a statement), or what else it is
+    kept with: an item, a qualified expense, a gift, a donation, a tax document."""
 
+    kind: str  # transaction, account, item, expense, gift, donation, tax-document
+    itemId: str
     transactionId: str | None
-    accountId: str
-    accountName: str
+    accountId: str | None
+    accountName: str | None
     date: dt.date | None
     amount: Money | None
     payee: str | None
+    label: str  # how it is named in the receipt's dialog
+    canDetach: bool = False
 
 
 class ReceiptRow(Model):
@@ -101,21 +106,29 @@ class Attach(Model):
     transactionId: str
 
 
-def _links(s, r: Receipt) -> list[LinkOut]:
+def _links(s, r: Receipt, user_id: str | None = None) -> list[LinkOut]:
+    from ..store.entities.education import Gift
+    from ..store.entities.giving import Donation, Organisation
+    from ..store.entities.taxes import TaxBook
+
     out = []
     for ln in receipts.links(s, r.id):
         if ln.kind in ("item", "expense"):
             it = s.get(Item if ln.kind == "item" else QualifiedExpense, ln.itemId)
             a = s.get(Account, it.accountId) if it is not None and not it.deleted else None
             if a is not None and not a.deleted:
+                name = it.name if ln.kind == "item" else (it.description or "Expense")
                 out.append(
                     LinkOut(
+                        kind=ln.kind,
+                        itemId=ln.itemId,
                         transactionId=None,
                         accountId=a.id,
                         accountName=a.name,
                         date=None,
                         amount=None,
-                        payee=it.name if ln.kind == "item" else (it.description or "Expense"),
+                        payee=name,
+                        label=f"{name} in {a.name}",
                     )
                 )
             continue
@@ -124,14 +137,44 @@ def _links(s, r: Receipt) -> list[LinkOut]:
             if a is not None and not a.deleted:
                 out.append(
                     LinkOut(
+                        kind="account",
+                        itemId=a.id,
                         transactionId=None,
                         accountId=a.id,
                         accountName=a.name,
                         date=None,
                         amount=None,
                         payee="Statement",
+                        label=f"The statement of {a.name}",
                     )
                 )
+            continue
+        if ln.kind in ("gift", "donation"):
+            thing = s.get(Gift if ln.kind == "gift" else Donation, ln.itemId)
+            if thing is None or thing.deleted:
+                continue
+            if ln.kind == "gift":
+                label = f"The gift {thing.description}"
+                when, amount = None, thing.cost
+            else:
+                org = s.get(Organisation, thing.organisationId) if thing.organisationId else None
+                label = f"The donation to {org.name if org else thing.description or 'a cause'}"
+                when, amount = thing.date, thing.amount
+            out.append(
+                LinkOut(
+                    kind=ln.kind,
+                    itemId=ln.itemId,
+                    transactionId=None,
+                    accountId=None,
+                    accountName=None,
+                    date=when,
+                    amount=amount,
+                    payee=None,
+                    label=label,
+                    canDetach=user_id is not None
+                    and receipts._kept_level(s, user_id, ln) == "write",
+                )
+            )
             continue
         t = s.get(Transaction, ln.itemId)
         if t is None or t.deleted:
@@ -139,18 +182,38 @@ def _links(s, r: Receipt) -> list[LinkOut]:
         a = s.get(Account, t.accountId)
         out.append(
             LinkOut(
+                kind="transaction",
+                itemId=t.id,
                 transactionId=t.id,
                 accountId=a.id,
                 accountName=a.name,
                 date=t.date,
                 amount=t.amount,
                 payee=t.payee,
+                label=t.payee or "Transaction",
+            )
+        )
+    for doc in receipts.on_tax_documents(s, r.id):
+        book = s.get(TaxBook, doc.bookId)
+        if book is None or book.deleted:
+            continue
+        out.append(
+            LinkOut(
+                kind="tax-document",
+                itemId=doc.id,
+                transactionId=None,
+                accountId=None,
+                accountName=None,
+                date=None,
+                amount=None,
+                payee=doc.issuer,
+                label=f"{doc.form} in the {book.year} tax book",
             )
         )
     return out
 
 
-def row(s, r: Receipt, level: str) -> ReceiptRow:
+def row(s, r: Receipt, level: str, user_id: str | None = None) -> ReceiptRow:
     owner = s.get(User, r.ownerId)
     return ReceiptRow(
         id=r.id,
@@ -166,7 +229,7 @@ def row(s, r: Receipt, level: str) -> ReceiptRow:
         payee=r.payee,
         notes=r.notes,
         tags=receipts.tags_of(r),
-        links=_links(s, r),
+        links=_links(s, r, user_id),
         hasThumbnail=r.thumbnail is not None,
         readStatus=r.readStatus,
         readError=r.readError,
@@ -178,7 +241,7 @@ def row(s, r: Receipt, level: str) -> ReceiptRow:
 
 
 def detail(s, user_id: str, r: Receipt, level: str) -> ReceiptDetail:
-    base = row(s, r, level)
+    base = row(s, r, level, user_id)
     rt = retention.retention(retention.Context(s), r)
     return ReceiptDetail(
         **base.model_dump(),
@@ -221,7 +284,7 @@ def list_receipts(
     """Newest first. *inbox*: the caller's receipts attached to nothing yet. The search looks
     in what was read from each receipt (S9.8.5) as well as its fields."""
     with server(request).db.read() as s:
-        rows = [row(s, r, lvl) for r, lvl in receipts.visible(s, c.id)]
+        rows = [row(s, r, lvl, c.id) for r, lvl in receipts.visible(s, c.id)]
         in_text = reading.search(s, q) if q else set()
     if show == "inbox":
         rows = [r for r in rows if not r.links and r.level == "owner"]
@@ -262,7 +325,7 @@ async def upload(request: Request, file: UploadFile = File(...), c: Caller = Dep
         stored = receipts.store(s, srv, c.id, file.filename or "receipt", data)
         if not stored.existing:
             activity.record(s, "receipt.uploaded", actor=c.id, owner=c.id)
-        out = row(s, stored.receipt, "owner")
+        out = row(s, stored.receipt, "owner", c.id)
     if out.readStatus == "waiting" and srv.reader is not None:
         srv.reader.queue(out.id)
     return JSONResponse(
@@ -390,6 +453,26 @@ def detach(receipt_id: str, transaction_id: str, request: Request, c: Caller = D
         )
 
 
+@router.delete(
+    "/receipts/{receipt_id}/kept/{kind}/{item_id}", response_model=Deleted[ReceiptDetail]
+)
+def detach_kept(
+    receipt_id: str, kind: str, item_id: str, request: Request, c: Caller = Depends(caller)
+):
+    """A receipt kept with a gift or a donation, taken away from it (S9.3)."""
+    with server(request).db.tx() as s:
+        r, _ = receipts.get(s, c.id, receipt_id)
+        receipts.detach_kept(s, c.id, r, kind, item_id)
+        s.flush()
+        lvl = receipts.level(s, c.id, r)
+        if lvl is None:
+            raise Problem(404, "not-found", "Not found")
+        return Deleted[ReceiptDetail](
+            deleted=Gone(id=f"{r.id}/{kind}/{item_id}", deletedAt=clock.now()),
+            parent=detail(s, c.id, r, lvl),
+        )
+
+
 def _disposition(name: str) -> str:
     return "inline; filename*=UTF-8''" + urllib.parse.quote(name)
 
@@ -456,5 +539,5 @@ def transaction_receipts(transaction_id: str, request: Request, c: Caller = Depe
         out = []
         for rid in ids:
             r = s.get(Receipt, rid)
-            out.append(row(s, r, receipts.level(s, c.id, r) or "read"))
+            out.append(row(s, r, receipts.level(s, c.id, r) or "read", c.id))
         return out

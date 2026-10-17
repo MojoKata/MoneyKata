@@ -300,3 +300,34 @@ def test_each_option_trade_has_its_premium_pl_and_return(alice):
     assert put["returnPct"] == 0.83
     call = next(x for x in rows if x["symbol"].endswith("480 C"))
     assert call["closed"] is None and rows[0] is call, "open trades first"
+
+
+def test_assigned_a_call_with_no_shares_opens_a_short_stock_lot(alice):
+    # N7: a short sale at the strike, not a sale without a lot; buying the shares closes it.
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    add(alice, brk["id"], "10000.00", "2026-09-01", kind="deposit")
+    opt(alice, brk["id"], "sell-to-open", "2026-09-02", "6.40", right="call", fees="0")
+    call = _held(alice, brk["id"], "MSFT 20NOV26 480 C")
+    r = alice.post(
+        f"/ui/api/accounts/{brk['id']}/options/{call['instrumentId']}/settle",
+        json={"how": "assign", "date": "2026-11-20"},
+    )
+    assert r.status_code == 201, r.text
+    msft = _held(alice, brk["id"], "MSFT")
+    assert msft["quantity"] == "-100.0" and msft["cost"] == "-48640.00"
+    r = alice.post(
+        "/ui/api/transactions",
+        json={
+            "accountId": brk["id"],
+            "date": "2026-11-23",
+            "amount": "-47000.00",
+            "kind": "buy",
+            "symbol": "MSFT",
+            "quantity": "100",
+            "price": "470",
+        },
+    )
+    assert r.status_code == 201, r.text
+    assert _held(alice, brk["id"], "MSFT") is None
+    gains = alice.get("/ui/api/positions/gains", params={"by": "term"}).json()
+    assert "1640.00" in str(gains), gains

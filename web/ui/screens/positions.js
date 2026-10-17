@@ -11,6 +11,7 @@ import { Chips, Empty, Failed, Loading, Tabs } from '../components/bits.js';
 import { openDialog } from '../components/dialog.js';
 import { Icon } from '../components/icon.js';
 import { Mark, OptionTrade, Settle } from '../components/optiontrade.js';
+import { CorporateAction } from '../components/corporate.js';
 import { Dec, dec, num } from '../app/dec.js';
 import { GroupButton, Strategies } from '../components/strategies.js';
 
@@ -93,6 +94,8 @@ export default function Positions({ tab }) {
       <${Chips} label="Show" value=${kind} onChange=${setKind}
         options=${KIND} />
       <span class="spacer"></span>
+      <button class="btn" onClick=${() =>
+        openDialog(CorporateAction, {}).then((x) => x && res.reload())}>Corporate action…</button>
       <button class="btn primary" onClick=${() =>
         openDialog(OptionTrade, {}).then((x) => x && res.reload())}><${Icon} name="plus" /> Record
         an option trade</button>

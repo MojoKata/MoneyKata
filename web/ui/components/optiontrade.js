@@ -44,7 +44,7 @@ export function OptionTrade({ close, accountId, start }) {
   const cash = f.action.startsWith('buy')
     ? -gross - Number(clean(f.fees) || 0)
     : gross - Number(clean(f.fees) || 0);
-  const save = useSubmit(async () => {
+  const save = useSubmit(async (/** @type {boolean} */ confirm = false) => {
     const out = await api.post(`/accounts/${account}/options`, {
       date: f.date,
       action: f.action,
@@ -55,15 +55,18 @@ export function OptionTrade({ close, accountId, start }) {
       contracts: clean(f.contracts),
       premium: clean(f.premium),
       fees: clean(f.fees) || '0',
-    }, { idempotent: true });
+    }, { idempotent: true, ...(confirm ? { params: { confirm: true } } : {}) });
     toast(`${out.payee} recorded`);
     close(out);
   });
   const e = save.error;
+  const ask = e?.code === 'closed-year'; // a year whose return is filed (S2.8)
   return html`
     <${Dialog} title="Record an option trade" close=${close} onSubmit=${() =>
-      save.run().catch(() => {})}
-      footer=${html`<button class="btn primary" disabled=${save.busy || !account}>Record</button>`}>
+      save.run(ask).catch(() => {})}
+      footer=${html`<button class="btn primary" disabled=${save.busy || !account}>${
+        ask ? 'Record it anyway' : 'Record'
+      }</button>`}>
       <div class="field" data-help="action" id="x-action"><label>Trade</label>
         <${Seg} label="Trade" value=${f.action} onChange=${set(
           'action',

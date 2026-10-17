@@ -5,6 +5,7 @@ Plain ASGI middleware, so streaming responses (the live stream, receipt files) p
 through.
 """
 
+import hashlib
 import ipaddress
 import json
 import logging
@@ -198,12 +199,37 @@ class OriginCheck:
         await self.app(scope, receive, send)
 
 
+IN_FLIGHT = 100 * 1024 * 1024  # uploads arriving at once, per user (S13.7.6)
+
+
 class BodyLimit:
-    """JSON bodies up to 1 MB; uploads (multipart) up to the size Settings allow (S13.7.6)."""
+    """JSON bodies up to 1 MB; uploads (multipart) up to the size Settings allow, and at most
+    100 MB of them arriving at once for one caller (S13.7.6): a session, a linked server's key
+    or the connector's, else an address."""
 
     def __init__(self, app, upload_limit: Callable[[], int]):
         self.app = app
         self.upload_limit = upload_limit
+        self.in_flight: dict[str, int] = {}
+
+    @staticmethod
+    def _caller(scope, headers: dict) -> str:
+        from http.cookies import SimpleCookie
+
+        from .auth.sessions import COOKIE
+
+        cookie = SimpleCookie()
+        try:
+            cookie.load(headers.get(b"cookie", ""))
+        except Exception:  # a malformed cookie is no session
+            cookie = SimpleCookie()
+        if COOKIE in cookie:
+            return "session:" + hashlib.sha256(cookie[COOKIE].value.encode()).hexdigest()
+        for h in (b"mk-link-key", b"mk-conn-key"):
+            if headers.get(h):
+                return "key:" + headers[h]
+        client = scope.get("client")
+        return "address:" + (client[0] if client else "-")
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http" or scope["method"] in SAFE_METHODS:
@@ -228,6 +254,21 @@ class BodyLimit:
         if length and length.isdigit() and int(length) > limit:
             await too_large(send)
             return
+        upload = limit != JSON_LIMIT and limit != LINK_LIMIT
+        who = self._caller(scope, headers) if upload else ""
+        # What it says it carries is held for it before the app runs, so a caller past the
+        # cap is answered at once; a body without a length is counted as it arrives.
+        declared = int(length) if upload and length and length.isdigit() else 0
+        if upload and self.in_flight.get(who, 0) + declared > IN_FLIGHT:
+            await _send_problem(
+                429,
+                "uploads-in-flight",
+                "More than 100 MB of uploads are arriving at once. Wait for them to finish.",
+                [(b"retry-after", b"10")],
+            )(send)
+            return
+        if upload:
+            self.in_flight[who] = self.in_flight.get(who, 0) + declared
         seen = 0
         started = False
 
@@ -235,9 +276,14 @@ class BodyLimit:
             nonlocal seen
             message = await receive()
             if message["type"] == "http.request":
-                seen += len(message.get("body", b""))
+                n = len(message.get("body", b""))
+                seen += n
                 if seen > limit:
                     raise _TooLarge
+                if upload and seen > declared:
+                    self.in_flight[who] = self.in_flight.get(who, 0) + min(n, seen - declared)
+                    if self.in_flight[who] > IN_FLIGHT:
+                        raise _Busy
             return message
 
         async def tracking(message):
@@ -251,9 +297,28 @@ class BodyLimit:
         except _TooLarge:
             if not started:
                 await too_large(send)
+        except _Busy:
+            if not started:
+                await _send_problem(
+                    429,
+                    "uploads-in-flight",
+                    "More than 100 MB of uploads are arriving at once. Wait for them to finish.",
+                    [(b"retry-after", b"10")],
+                )(send)
+        finally:
+            if upload:
+                left = self.in_flight.get(who, 0) - max(seen, declared)
+                if left > 0:
+                    self.in_flight[who] = left
+                else:
+                    self.in_flight.pop(who, None)
 
 
 class _TooLarge(Exception):
+    pass
+
+
+class _Busy(Exception):
     pass
 
 

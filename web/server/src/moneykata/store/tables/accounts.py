@@ -73,6 +73,10 @@ TXN_KINDS = (
     # An adjusted contract (S3.10): the lots of one carried to the other, nothing sold. A pair
     # linked by transferId: on the old contract, then on the new with the ratio of contracts.
     "option-adjust",
+    # Corporate actions that move lots between instruments (S2.4), pairs in the same way.
+    "symbol-change",
+    "spin-off",
+    "merger",
 )
 INSTRUMENT_CLASSES = (
     "cash",

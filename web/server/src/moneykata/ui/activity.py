@@ -84,6 +84,7 @@ TEXT = {
     "transaction.updated": "{actor} changed {fields} of a transaction in {subject}",
     "transaction.deleted": "{actor} deleted a transaction in {subject}",
     "transaction.categorised": "{actor} changed the category of {count_txns} in {subject}",
+    "account.corporate-action": "{actor} recorded a {name} in {subject}",
     "rule.created": "{actor} added a categorisation rule",
     "rule.updated": "{actor} changed a categorisation rule",
     "rule.moved": "{actor} reordered their categorisation rules",
@@ -122,6 +123,7 @@ TEXT = {
     "link.served": "This server sent a linked server {count} changed items",
     "link.copy-key-made": "{actor} created a linked copy's access key",
     "link.copy-unlocked": "{actor} unlocked a linked copy",
+    "link.viewed": "{actor} viewed what {subject} shares",
     "link.copy-unlock-failed": "{actor} gave wrong words for a linked copy",
     "link.copy-locked": "{actor} locked a linked copy ({why})",
     "link.copy-reset": "{actor} reset a linked copy",
@@ -244,7 +246,10 @@ def _visible(s, c: Caller):
         conds.append(
             and_(
                 Activity.forAdmins,
-                or_(Activity.subjectKind.is_(None), Activity.subjectKind.in_(("user", "group"))),
+                or_(
+                    Activity.subjectKind.is_(None),
+                    Activity.subjectKind.in_(("user", "group", "link")),
+                ),
             )
         )
     return or_(*conds)
@@ -322,4 +327,9 @@ def _names(s, rows: list[Activity]) -> dict[tuple[str, str], str]:
     budget_ids = {a.subjectId for a in rows if a.subjectKind == "budget"}
     for b in s.scalars(select(Budget).where(Budget.id.in_(budget_ids))):
         names[("budget", b.id)] = b.name
+    from ..store.entities.links import Link
+
+    link_ids = {a.subjectId for a in rows if a.subjectKind == "link"}
+    for k in s.scalars(select(Link).where(Link.id.in_(link_ids))):
+        names[("link", k.id)] = k.householdName or k.peerName or "a linked household"
     return names

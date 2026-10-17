@@ -360,6 +360,7 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/gifts/gifts", "Add a gift", "dialog-gift"),
         ("/ui/giving/donations", "Record a donation", "dialog-donation"),
         ("/ui/positions/open", "Record an option trade", "dialog-option-trade"),
+        ("/ui/positions/open", "Corporate action…", "dialog-corporate-action"),
         ("/ui/giving/organisations", "Add an organisation", "dialog-organisation"),
         ("/ui/taxes/summary", "New tax book", "dialog-tax-book"),
         ("/ui/taxes/filings", "Add a filing", "dialog-filing"),

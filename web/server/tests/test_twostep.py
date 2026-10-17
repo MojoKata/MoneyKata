@@ -127,6 +127,9 @@ def test_a_recovery_code_works_once(server, frozen):
     with server.db.read() as s:
         assert len(s.scalars(select(RecoveryCode)).all()) == 9
     assert "signin.recovery-code" in kinds(server)
+    # N12: the sign-in with a recovery code is emailed, with how many are left.
+    [m] = [m for m in mails(server) if "recovery code" in m["Subject"]]
+    assert "9 are left" in m.get_content()
 
 
 def test_wrong_codes_lock_the_user_like_wrong_passwords(server, frozen):
@@ -201,3 +204,23 @@ def test_an_admins_reset_turns_it_off_and_ends_the_users_sessions(server, admin_
     # Not an admin: refused.
     c2 = sign_in(server, "alice")
     assert c2.delete(f"/ui/api/users/{alice.id}/two-step").status_code == 403
+
+
+def test_a_two_step_sign_in_from_a_new_address_is_emailed(server, frozen):
+    # N12: the second step notes the address as a password-only sign-in does (S10.1.9).
+    from moneykata.store.entities.users import User
+
+    make_user(server, "alice")
+    seed, _ = turn_on(sign_in(server, "alice"))
+    with server.db.tx() as s:
+        u = s.query(User).filter_by(username="alice").one()
+        u.recentAddresses = '{"192.0.2.1": "2026-10-01T00:00:00+00:00"}'
+    later(30)
+    with new_client(server) as b:
+        token = b.post("/ui/api/session", json={"login": "alice", "password": PW}).json()[
+            "twoStepToken"
+        ]
+        r = b.post("/ui/api/session/two-step", json={"token": token, "code": code(seed)})
+        assert r.status_code == 200, r.text
+    assert "signin.new-address" in kinds(server)
+    assert any("new address" in m["Subject"] for m in mails(server))

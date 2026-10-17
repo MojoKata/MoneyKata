@@ -99,7 +99,10 @@
       contribution is never counted twice.
    5. **Organisations**: the name, EIN (optional), whether gifts to it are **deductible**
       (a 501(c)(3) charity, or not, such as a political campaign or a person), causes (tags),
-      and **pledges** (an amount a month or a year, shown as expected donations).
+      and **pledges** (an amount a month or a year, shown as expected donations). A pledge
+      is **due** from the 25th of the month for a monthly one, and from December 1 for a
+      yearly one, while less than it has been given to the organisation in that month or year;
+      a due pledge raises an alert to its owner (S12.11.1.3), resolved by the donation.
    6. **The Giving screen**: given against the target and against the pace to date, the
       projected year end, giving by organisation, cause and type, the DAF's balance and its
       grants, the percentage of income over past years, and the donations missing an
