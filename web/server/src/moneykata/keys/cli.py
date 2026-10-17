@@ -8,6 +8,7 @@ one-off container cannot open the database without the phrase."""
 
 import datetime as dt
 import getpass
+import io
 import os
 import secrets as pysecrets
 from collections.abc import Callable
@@ -30,6 +31,13 @@ def _hidden(prompt: str) -> str:
     return getpass.getpass(prompt)
 
 
+def open_tty() -> io.TextIOWrapper:
+    """The controlling terminal, to read and write, opened as getpass opens it: a terminal
+    can't seek, and open("/dev/tty", "r+") asks for a file that can."""
+    fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
+    return io.TextIOWrapper(io.FileIO(fd, "w+"), encoding="utf-8")
+
+
 class Terminal:
     """The controlling terminal, for a recovery sheet and the words typed back: never
     standard output, which Docker's logs keep (S15.4.4). A command that shows a sheet
@@ -37,7 +45,7 @@ class Terminal:
 
     def __init__(self) -> None:
         try:
-            self.f = open("/dev/tty", "r+")  # noqa: SIM115 - kept for the command's life
+            self.f = open_tty()  # kept for the command's life
         except OSError:
             raise RefuseStart(
                 "this command shows a recovery phrase, on a terminal only: run it with one "
