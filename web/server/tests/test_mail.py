@@ -253,9 +253,18 @@ def test_sign_up_never_says_an_email_has_an_account(admin_client, server, smtp):
     open_signup(admin_client, server)
     make_user(server, "bob", email="bob@home.lan")
     waiting = len(server.services.mailer.waiting())
-    r = sign_up(server, email="Bob@home.lan", username="bobby")
+    hashed = []
+    from moneykata.auth import passwords
+
+    real = passwords.hash_password
+    passwords.hash_password = lambda pw: hashed.append(pw) or real(pw)
+    try:
+        r = sign_up(server, email="Bob@home.lan", username="bobby")
+    finally:
+        passwords.hash_password = real
     assert r.status_code == 204
     assert len(server.services.mailer.waiting()) == waiting, "no link for a known address"
+    assert len(hashed) == 1, "hashed all the same, so it takes as long (S10.1.4.1)"
 
 
 def test_sign_up_checks_its_fields_and_domains(admin_client, server, smtp):

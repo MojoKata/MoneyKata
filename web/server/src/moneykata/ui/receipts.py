@@ -3,6 +3,7 @@ its file and thumbnail, and the transactions it may belong to."""
 
 import datetime as dt
 import json
+import logging
 import urllib.parse
 from decimal import Decimal
 
@@ -10,7 +11,7 @@ from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from .. import activity, clock, exactjson, parsing, receipts, settings
-from ..errors import Problem, refuse
+from ..errors import Problem, new_error_id, refuse
 from ..keys.files import FileError
 from ..receipts import reading, retention
 from ..store.entities.accounts import Account, Transaction
@@ -22,6 +23,7 @@ from .conventions import Deleted, ExactRoute, Gone, Model, Money, check, gone, i
 from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["receipts"])
+log = logging.getLogger("moneykata.receipts")
 
 
 class LinkOut(Model):
@@ -501,7 +503,12 @@ def receipt_file(receipt_id: str, request: Request, c: Caller = Depends(caller))
     except parsing.ReadError as e:
         raise Problem(415, "receipt-unshowable", f"The photo can't be shown: {e}") from None
     except (FileError, OSError) as e:
-        raise Problem(500, "receipt-unreadable", f"The receipt's file can't be read: {e}") from None
+        # The reason, which may name a path on the host, goes to the log only (S13.7.8).
+        error_id = new_error_id()
+        log.warning("receipt %s unreadable (%s): %s", r.id, error_id, e)
+        raise Problem(
+            500, "receipt-unreadable", "The receipt's file can't be read.", error_id=error_id
+        ) from None
 
     def body():
         yield first

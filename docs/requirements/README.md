@@ -74,7 +74,7 @@ None open. A new question takes the next id after Q19.
 
 ## Later work
 
-Work planned for after the first release ([later.md](later.md), S17.9.10).
+Work planned for after the first release ([later.md](later.md), S17.9.11).
 
 | Id | Item | What it is |
 |---|---|---|

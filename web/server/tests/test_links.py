@@ -812,3 +812,15 @@ def test_calls_no_known_key_signs_are_limited_by_address(server):
     with new_client(server) as c:
         codes = [c.get("/link/v1/hello").status_code for _ in range(61)]
     assert codes[:60] == [200] * 60 and codes[60] == 429
+
+
+def test_a_peers_refusal_is_told_in_this_servers_own_words():
+    # S13.7.9: a linked server's message stays in the log; alerts and emails say it this
+    # server's way, by its code.
+    assert client.refusal("clock-skew", 403) == (
+        "The other server says this server's time is more than a minute off."
+    )
+    assert client.refusal("link-paused", 403) == "The link is paused on the other server."
+    assert client.refusal("whatever", 403) == (
+        "The other server refused the call (whatever, HTTP 403)."
+    )

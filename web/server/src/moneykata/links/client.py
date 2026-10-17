@@ -3,10 +3,43 @@ the egress guard, TLS verified (a public certificate against the system's roots,
 against the key pinned for it), and their signed answers checked against the call they answer."""
 
 import json
+import logging
+import re
 from urllib.parse import urlsplit, urlunsplit
 
 from .. import exactjson, net
 from . import PROTOCOL, keys, signing
+
+log = logging.getLogger("moneykata.links")
+
+_CODE = re.compile(r"^[a-z][a-z0-9-]{0,39}$")
+# A peer's refusal in this server's own words, by its code (link-protocol.md §7).
+REFUSALS = {
+    "unsigned": "The other server says the call wasn't signed.",
+    "clock-skew": "The other server says this server's time is more than a minute off.",
+    "bad-signature": "The other server didn't accept this server's signature.",
+    "replayed": "The other server says it has seen this call already.",
+    "not-linked": "The other server has no link with this one.",
+    "limit": "The other server is limiting calls; it is asked again later.",
+    "locked": "The other server is locked; it is asked again at the next exchange.",
+    "not-shared": "The other server shares no such file with this one.",
+    "protocol-unsupported": "The other server doesn't answer this protocol.",
+    "code-used": "The link code was used, has expired, or was withdrawn.",
+    "already-linked": "The two servers are already linked.",
+    "change-refused": "The other server refused a change this one sent.",
+}
+
+
+def refusal(code: str, status: int, protocols=None) -> str:
+    if code == "protocol-unsupported" and isinstance(protocols, list) and protocols:
+        spoken = ", ".join(str(int(p)) for p in protocols if isinstance(p, int))
+        return (
+            f"The other server speaks link protocol {spoken}; this one speaks {PROTOCOL}. "
+            "The older server needs updating."
+        )
+    if code.startswith("link-"):
+        return f"The link is {code.removeprefix('link-')} on the other server."
+    return REFUSALS.get(code, f"The other server refused the call ({code}, HTTP {status}).")
 
 
 class LinkError(Exception):
@@ -104,9 +137,11 @@ def call(
         seen.append(key)
     out = exactjson.loads(r.content) if r.content else {}
     if r.status_code >= 400:
-        raise LinkError(
-            out.get("code", "refused"), out.get("message", f"refused ({r.status_code})")
-        )
+        code = out.get("code")
+        code = code if isinstance(code, str) and _CODE.match(code) else "refused"
+        # The peer's own words go to the log only, never into an alert or email (S13.7.9).
+        log.info("%s refused %s: %s %r", address, path, code, str(out.get("message", ""))[:200])
+        raise LinkError(code, refusal(code, r.status_code, out.get("protocols")))
     return out
 
 

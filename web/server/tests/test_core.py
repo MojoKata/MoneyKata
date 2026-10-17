@@ -125,6 +125,26 @@ def test_windows_and_sign_in_lockout():
     assert g.locked("10.0.0.5") == 0
 
 
+def test_the_lockout_counts_an_ipv6_address_by_its_64():
+    # S13.7.5.1: one household's /64 is one address to the lockout.
+    clock = [0.0]
+    g = SignInGuard(clock=lambda: clock[0])
+    for i in range(10):
+        g.failed("alice", f"2001:db8:1:2::{i + 1:x}")
+    assert g.locked("2001:db8:1:2::ffff") > 0
+    assert g.locked("2001:db8:1:3::1") == 0
+
+
+def test_a_two_step_sign_in_takes_one_code_at_a_time_and_five_in_all():
+    # S10.1.6.3: a second code waits for the first; the fifth wrong one ends the sign-in.
+    g = SignInGuard()
+    assert g.checking("t1") and not g.checking("t1")
+    g.checked("t1")
+    assert g.checking("t1")
+    assert [g.code_wrong("t1") for _ in range(5)] == [False] * 4 + [True]
+    assert not g.code_wrong("t1"), "a new count once it ended"
+
+
 def test_money_fields_refuse_floats():
     class Body(Model):
         amount: Money

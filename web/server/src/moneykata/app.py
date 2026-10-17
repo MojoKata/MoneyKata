@@ -53,6 +53,8 @@ class Server:
     api_limit: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(600, 60))
     upload_rate: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(60, 3600))
     sign_in: ratelimit.SignInGuard = field(default_factory=ratelimit.SignInGuard)
+    # Password resets, re-authentications, reactivations: 30 in 15 minutes per address.
+    password_asks: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(30, 15 * 60))
     # Nonces of linked servers' calls, so none is accepted twice (S11.1.3).
     link_nonces: Nonces = field(default_factory=Nonces)
     # The paired connector's calls (S18.4.3): its nonces, and 60 calls a minute (S13.7.5.4).

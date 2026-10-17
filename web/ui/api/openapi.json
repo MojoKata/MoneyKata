@@ -14989,7 +14989,6 @@
         "properties": {
           "code": {
             "enum": [
-              "account-active",
               "account-disabled",
               "account-missing",
               "account-not-counted",
@@ -15003,7 +15002,6 @@
               "amount-mismatch",
               "amount-negative",
               "ancestor-loop",
-              "asked-recently",
               "assumption-invalid",
               "avatar-invalid",
               "bad-credentials",
@@ -15326,7 +15324,6 @@
         "properties": {
           "code": {
             "enum": [
-              "account-active",
               "account-disabled",
               "account-missing",
               "account-not-counted",
@@ -15340,7 +15337,6 @@
               "amount-mismatch",
               "amount-negative",
               "ancestor-loop",
-              "asked-recently",
               "assumption-invalid",
               "avatar-invalid",
               "bad-credentials",
@@ -33989,7 +33985,7 @@
     },
     "/ui/api/profile/password": {
       "post": {
-        "description": "Ends every session; this browser gets a fresh one (S13.7.1).",
+        "description": "Ends every session; this browser gets a fresh one (S13.7.1). A wrong current password\ncounts toward the sign-in's lockout (S13.7.5.1).",
         "operationId": "change_password_ui_api_profile_password_post",
         "requestBody": {
           "content": {
@@ -34689,6 +34685,7 @@
     },
     "/ui/api/reactivation-requests": {
       "post": {
+        "description": "The same answer whatever the account's state, and a wrong password counted as a\nsign-in's (S10.1.7).",
         "operationId": "reactivation_request_ui_api_reactivation_requests_post",
         "requestBody": {
           "content": {
@@ -35985,6 +35982,7 @@
     },
     "/ui/api/session/reauth": {
       "post": {
+        "description": "The password again, counted toward the sign-in's lockout (S13.7.2, S13.7.5.1).",
         "operationId": "reauth_ui_api_session_reauth_post",
         "requestBody": {
           "content": {
@@ -36066,7 +36064,7 @@
     },
     "/ui/api/session/two-step": {
       "post": {
-        "description": "The second step: a code from the app, or one of the recovery codes (S10.1.6).",
+        "description": "The second step: a code from the app, or one of the recovery codes (S10.1.6). One code\nat a time for each sign-in, slowed before it is checked, and five wrong ones end the\nsign-in, so the password is needed again (S10.1.6.3).",
         "operationId": "sign_in_code_ui_api_session_two_step_post",
         "requestBody": {
           "content": {

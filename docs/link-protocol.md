@@ -217,8 +217,8 @@ admin reads out from their Settings › Linked servers.
 
 1. The protocol has one number, `1`, sent in `MK-Link-Protocol` on every call. A server
    answers the versions it lists as supported, and refuses any other with
-   `protocol-unsupported`, naming those it speaks, so the admins learn which server needs
-   updating. A newer MoneyKata keeps answering the older protocol for at least one release
+   `protocol-unsupported`, naming those it speaks in `protocols` (a list of numbers), so the
+   admins learn which server needs updating. A newer MoneyKata keeps answering the older protocol for at least one release
    after it adds a new one.
 2. Within a protocol version, a message may gain fields: a receiver ignores fields it doesn't
    know, and a sender never relies on a new field being understood.
@@ -237,7 +237,9 @@ shown (section 5.3).
 ## 7. Refusals
 
 A refusal is JSON `{code, message}` with HTTP 403 (or 426 for a protocol), signed as section 3
-says when the call carried a nonce.
+says when the call carried a nonce. The `message` is for the caller's log: the caller tells its
+admins of a refusal in its own words, by its code, and never copies the message into an alert or
+an email (S13.7.9).
 
 | Code | When |
 |---|---|

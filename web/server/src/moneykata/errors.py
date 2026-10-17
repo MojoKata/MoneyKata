@@ -48,6 +48,7 @@ class Problem(Exception):
     errors: list[FieldError] = field(default_factory=list)
     headers: dict[str, str] = field(default_factory=dict)
     extra: dict = field(default_factory=dict)
+    error_id: str | None = None  # one already in the log with the detail behind it
 
 
 def refuse(field_name: str | None, code: str, message: str, status: int = 422) -> Problem:
@@ -69,6 +70,15 @@ def problem_response(
     error_id: str | None = None,
 ) -> JSONResponse:
     error_id = error_id or new_error_id()
+    # Every problem is in the log by its id, with its status and code, refusals included, so
+    # an admin can find what a user saw (S13.7.8); never its detail, which may name a value.
+    log.log(
+        logging.WARNING if status >= 500 else logging.INFO,
+        "problem %s %s %s",
+        error_id,
+        status,
+        code,
+    )
     body = {
         "type": f"https://moneykata.invalid/problems/{code}",
         "title": TITLES.get(status, "Error"),
@@ -86,10 +96,8 @@ def problem_response(
 def install(app: FastAPI) -> None:
     @app.exception_handler(Problem)
     async def on_problem(request: Request, exc: Problem):
-        if exc.status >= 500:
-            log.error("problem %s %s %s", request.url.path, exc.status, exc.code)
         return problem_response(
-            exc.status, exc.code, exc.detail, exc.errors, exc.headers, exc.extra
+            exc.status, exc.code, exc.detail, exc.errors, exc.headers, exc.extra, exc.error_id
         )
 
     @app.exception_handler(RequestValidationError)

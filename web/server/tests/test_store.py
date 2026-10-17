@@ -876,3 +876,16 @@ def test_0017_writes_money_in_cents_and_leaves_the_premium_to_the_replay(tmp_pat
         assert tuple(row.one()) == (None, "lifo")
         assert q("PRAGMA foreign_key_check").fetchall() == []
     engine.dispose()
+
+
+def test_a_failed_write_names_no_value_it_was_given(store):
+    # S13.7.9: the engines hide statement parameters, so a failed write logs no value.
+    from sqlalchemy.exc import IntegrityError
+
+    secret = "4111-1111-1111-1111"
+    row = {"k": "aTestKey", "v": json.dumps(secret), "t": "2026-10-17T00:00:00.000000Z"}
+    insert = text('INSERT INTO "Setting" (key, value, "updatedAt") VALUES (:k, :v, :t)')
+    with pytest.raises(IntegrityError) as e, store.db.tx() as s:
+        s.execute(insert, row)
+        s.execute(insert, row)
+    assert secret not in str(e.value)

@@ -54,6 +54,9 @@ def make_engine(path: Path, key: str | None) -> Engine:
         pool_size=16,
         max_overflow=32,
         pool_timeout=30,
+        # A failed statement's error names no value it was given, so the log holds none
+        # (S13.7.9).
+        hide_parameters=True,
     )
 
     @event.listens_for(engine, "checkin")

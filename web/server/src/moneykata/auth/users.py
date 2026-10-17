@@ -607,22 +607,18 @@ def set_active(s: Db, svc: Services, by: User, user: User, active: bool) -> list
     return ended
 
 
-def ask_reactivation(s: Db, login: str, password: str) -> None:
-    """From the *account is disabled* screen, once a week (S10.1.7)."""
+def ask_reactivation(s: Db, login: str, password: str) -> bool:
+    """From the *account is disabled* screen, once a week (S10.1.7). Whether the password was
+    right; the request is recorded only for a disabled account not asked for in the past week,
+    and the asker is told the same either way."""
     user = by_login(s, login)
-    if user is None or not passwords.verify(user.passwordHash, password):
-        raise Problem(401, "bad-credentials", "The username or password is not right.")
-    if user.active:
-        raise refuse(None, "account-active", "This account is active: sign in.", 409)
-    if user.reactivationAskedAt and now() - user.reactivationAskedAt < dt.timedelta(
-        days=REACTIVATION_DAYS
+    if not passwords.verify(user.passwordHash if user else None, password):
+        return False
+    if user.active or (
+        user.reactivationAskedAt
+        and now() - user.reactivationAskedAt < dt.timedelta(days=REACTIVATION_DAYS)
     ):
-        raise refuse(
-            None,
-            "asked-recently",
-            "You asked less than a week ago. An admin will see your request.",
-            429,
-        )
+        return True
     user.reactivationAskedAt = now()
     activity.record(
         s,
@@ -633,6 +629,7 @@ def ask_reactivation(s: Db, login: str, password: str) -> None:
         owner=user.id,
         for_admins=True,
     )
+    return True
 
 
 def update_user(

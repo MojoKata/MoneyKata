@@ -331,9 +331,52 @@ def test_deactivation_ends_sessions_and_reactivation_can_be_asked(admin_client, 
         assert r.status_code == 401  # a wrong password says nothing about the account
         body = {"login": "ivy", "password": PW}
         assert again.post("/ui/api/reactivation-requests", json=body).status_code == 204
-        assert again.post("/ui/api/reactivation-requests", json=body).status_code == 429
     row = next(u for u in admin_client.get("/ui/api/users").json()["items"] if u["id"] == ivy.id)
     assert row["reactivationAskedAt"] is not None
+
+
+def test_a_reactivation_request_answers_the_same_whatever_the_account(admin_client, server):
+    # S10.1.7: right or wrong, active or not, asked already or not: one answer; a wrong
+    # password counts as a sign-in's.
+    ivy = make_user(server, "ivy")
+    make_user(server, "jo")
+    row = next(u for u in admin_client.get("/ui/api/users").json()["items"] if u["id"] == ivy.id)
+    admin_client.patch(
+        f"/ui/api/users/{ivy.id}", json={"active": False}, headers={"If-Match": str(row["version"])}
+    )
+    asked = "/ui/api/reactivation-requests"
+    with new_client(server) as c:
+        answers = [
+            c.post(asked, json=body).status_code
+            for body in (
+                {"login": "ivy", "password": PW},
+                {"login": "ivy", "password": PW},
+                {"login": "jo", "password": PW},
+                {"login": "jo", "password": "wrong"},
+                {"login": "nobody", "password": "wrong"},
+            )
+        ]
+        assert answers == [204] * 5
+    assert kinds(server).count("signin.failed") == 2
+    assert kinds(server).count("user.reactivation-asked") == 1
+
+
+def test_a_wrong_password_asked_again_counts_toward_the_lockout(server, monkeypatch):
+    # S13.7.5.1: re-authentication and the current password are guarded as a sign-in is.
+    from moneykata.ui import session
+
+    monkeypatch.setattr(session.time, "sleep", lambda s: None)
+    make_user(server, "kim")
+    c = sign_in(server, "kim")
+    for _ in range(5):
+        assert c.post("/ui/api/session/reauth", json={"password": "wrong"}).status_code == 401
+    for _ in range(5):
+        r = c.post(
+            "/ui/api/profile/password",
+            json={"currentPassword": "wrong", "newPassword": "another long passphrase"},
+        )
+        assert r.status_code == 422 and r.json()["code"] == "password-wrong"
+    assert c.post("/ui/api/session/reauth", json={"password": PW}).status_code == 429
 
 
 def test_the_last_admin_stays(admin_client, server):

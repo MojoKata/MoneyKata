@@ -12,11 +12,12 @@ from sqlalchemy import select
 from .. import activity, clock, people, settings, timezones
 from ..auth import sessions, twostep
 from ..auth import users as accounts
-from ..errors import refuse
+from ..errors import Problem, refuse
 from ..people import tree
 from ..store.entities.users import OneTimeToken, User
 from .conventions import Deleted, ExactRoute, Gone, Model, check, if_match, stale
 from .deps import Caller, caller, recent_auth, server, set_cookie
+from .session import count_failure, guarded
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["profile"])
 AVATAR = re.compile(r"^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$")
@@ -256,12 +257,20 @@ def change_profile(
 
 @router.post("/profile/password", status_code=204)
 def change_password(body: PasswordChange, request: Request, c: Caller = Depends(caller)):
-    """Ends every session; this browser gets a fresh one (S13.7.1)."""
+    """Ends every session; this browser gets a fresh one (S13.7.1). A wrong current password
+    counts toward the sign-in's lockout (S13.7.5.1)."""
     srv = server(request)
-    with srv.db.tx() as s:
-        u = s.get(User, c.id)
-        accounts.change_password(s, srv.services, u, body.currentPassword, body.newPassword)
-        token = sessions.create(s, u.id, c.admin, False)
+    address = guarded(request, c.user.username)
+    try:
+        with srv.db.tx() as s:
+            u = s.get(User, c.id)
+            accounts.change_password(s, srv.services, u, body.currentPassword, body.newPassword)
+            token = sessions.create(s, u.id, c.admin, False)
+    except Problem as e:
+        if e.code == "password-wrong":
+            with srv.db.tx() as s:
+                count_failure(s, srv.sign_in, c.user.username, address, s.get(User, c.id))
+        raise
     srv.events.end_user(c.id, "signed-out")
     set_cookie(request, token)
     return Response(status_code=204)

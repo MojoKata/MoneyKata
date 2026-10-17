@@ -12,16 +12,16 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from .. import activity, settings, timezones
 from ..auth import passwords, sessions, signup, twostep
 from ..auth import users as accounts
+from ..auth.tokens import digest
 from ..errors import Problem, refuse
 from ..mail import Email
-from ..ratelimit import Window, too_many
+from ..ratelimit import too_many
 from ..store.entities.users import User
 from .conventions import ExactRoute, Loose, Model
 from .deps import Caller, caller_in_setup, caller_quiet, server, set_cookie
 from .stream import stream
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["session"])
-_by_address = Window(30, 15 * 60)
 
 
 class Household(Model):
@@ -157,7 +157,7 @@ def _counted(request: Request) -> str:
 
 
 def _throttle(request: Request) -> None:
-    wait = _by_address.hit(_counted(request))
+    wait = server(request).password_asks.hit(_counted(request))
     if wait:
         raise too_many(wait, "attempts")
 
@@ -188,7 +188,7 @@ def sign_in(body: SignIn, request: Request):
         user = accounts.by_login(s, login)
         ok = passwords.verify(user.passwordHash if user else None, body.password)
         if not ok:
-            _failed(s, guard, login, address, user)
+            count_failure(s, guard, login, address, user)
             failed = True
         else:
             failed = False
@@ -213,59 +213,92 @@ def sign_in(body: SignIn, request: Request):
 
 @router.post("/session/two-step", response_model=SessionInfo, responses={401: {}, 429: {}})
 def sign_in_code(body: TwoStepCode, request: Request):
-    """The second step: a code from the app, or one of the recovery codes (S10.1.6)."""
+    """The second step: a code from the app, or one of the recovery codes (S10.1.6). One code
+    at a time for each sign-in, slowed before it is checked, and five wrong ones end the
+    sign-in, so the password is needed again (S10.1.6.3)."""
     srv = server(request)
     guard = srv.sign_in
     address = _address(request)
-    with srv.db.tx() as s:
-        user = twostep.pending_user(s, body.token)
-        login = user.username
-        locked = guard.locked(address)
-        if locked:
-            raise too_many(locked, "failed sign-ins from this address")
-        if not user.active or user.deleted:
-            raise Problem(403, "account-disabled", "This account is disabled.")
-        how = twostep.check_code(s, srv.keys.secrets, user, body.code)
-        if how is None:
-            _failed(s, guard, login, address, user)
-        else:
-            guard.succeeded(login)
-            twostep.finish_sign_in(s, body.token)
-            # The second step's sign-in, a new address emailed as the first step's is.
-            admin, token = _signed_in(
-                s,
-                user,
-                "signin" if how == "code" else "signin.recovery-code",
-                address=address,
-                svc=srv.services,
-            )
-            if how != "code" and user.email:
-                # A recovery code used is emailed (S10.1.9), with how many are left.
-                left = twostep.codes_left(s, user.id)
-                srv.services.mailer.send(
-                    s,
-                    Email(
-                        user.email,
-                        "A sign-in to MoneyKata with a recovery code",
-                        (
-                            f"Hello {user.displayName},\n\nSomeone signed in as "
-                            f"{user.username} with one of your two-step recovery codes; "
-                            f"{left} {'is' if left == 1 else 'are'} left. If it was you, make "
-                            "new codes in Profile once you have your app again. If it wasn't, "
-                            "change your password now and tell an admin.\n"
-                        ),
-                    ),
-                )
-    if how is None:
+    locked = guard.locked(address)
+    if locked:
+        raise too_many(locked, "failed sign-ins from this address")
+    pending = digest(body.token or "")
+    if not guard.checking(pending):
+        raise too_many(1, "codes at once for this sign-in")
+    try:
+        with srv.db.tx() as s:
+            login = twostep.pending_user(s, body.token).username
         delay = guard.delay(login, address)
         if delay:
             time.sleep(delay)
+        ended = False
+        with srv.db.tx() as s:
+            user = twostep.pending_user(s, body.token)
+            if not user.active or user.deleted:
+                raise Problem(403, "account-disabled", "This account is disabled.")
+            how = twostep.check_code(s, srv.keys.secrets, user, body.code)
+            if how is None:
+                count_failure(s, guard, login, address, user)
+                if guard.code_wrong(pending):
+                    twostep.finish_sign_in(s, body.token)
+                    ended = True
+            else:
+                guard.succeeded(login)
+                guard.code_done(pending)
+                twostep.finish_sign_in(s, body.token)
+                # The second step's sign-in, a new address emailed as the first step's is.
+                admin, token = _signed_in(
+                    s,
+                    user,
+                    "signin" if how == "code" else "signin.recovery-code",
+                    address=address,
+                    svc=srv.services,
+                )
+                if how != "code" and user.email:
+                    # A recovery code used is emailed (S10.1.9), with how many are left.
+                    left = twostep.codes_left(s, user.id)
+                    srv.services.mailer.send(
+                        s,
+                        Email(
+                            user.email,
+                            "A sign-in to MoneyKata with a recovery code",
+                            (
+                                f"Hello {user.displayName},\n\nSomeone signed in as "
+                                f"{user.username} with one of your two-step recovery codes; "
+                                f"{left} {'is' if left == 1 else 'are'} left. If it was you, "
+                                "make new codes in Profile once you have your app again. If it "
+                                "wasn't, change your password now and tell an admin.\n"
+                            ),
+                        ),
+                    )
+    finally:
+        guard.checked(pending)
+    if ended:
+        raise Problem(401, "two-step-expired", "Too many wrong codes. Sign in again.")
+    if how is None:
         raise refuse("code", "code-wrong", "That code isn't right.", 401)
     set_cookie(request, token)
     return info(request, user, admin)
 
 
-def _failed(s, guard, login: str, address: str, user: User | None) -> None:
+def guarded(request: Request, login: str) -> str:
+    """A password asked for outside the sign-in itself (re-authentication, the current
+    password, a reactivation request) behind the sign-in's guard: refused while its address is
+    locked, slowed for a username that keeps failing. The address it counts against
+    (S13.7.5.1)."""
+    guard = server(request).sign_in
+    address = _address(request)
+    locked = guard.locked(address)
+    if locked:
+        raise too_many(locked, "failed sign-ins from this address")
+    delay = guard.delay(login, address)
+    if delay:
+        time.sleep(delay)
+    return address
+
+
+def count_failure(s, guard, login: str, address: str, user: User | None) -> None:
+    """A wrong password or code, counted toward the lockout and recorded in Activity."""
     failures = settings.get(s, "lockoutFailures")
     minutes = settings.get(s, "lockoutMinutes")
     now_locked = guard.failed(login, address, failures, minutes)
@@ -378,14 +411,20 @@ def setup(body: Setup, request: Request, c: Caller = Depends(caller_in_setup)):
 
 @router.post("/session/reauth", status_code=204)
 def reauth(body: Password, request: Request, c: Caller = Depends(caller_in_setup)):
+    """The password again, counted toward the sign-in's lockout (S13.7.2, S13.7.5.1)."""
     srv = server(request)
     _throttle(request)
+    address = guarded(request, c.user.username)
     with srv.db.tx() as s:
         user = s.get(User, c.id)
-        if not passwords.verify(user.passwordHash, body.password):
-            raise Problem(401, "password-wrong", "That is not your password.")
-        row = sessions.find(s, request.cookies.get(sessions.COOKIE)).session
-        row.authAt = sessions.now()
+        right = passwords.verify(user.passwordHash, body.password)
+        if right:
+            row = sessions.find(s, request.cookies.get(sessions.COOKIE)).session
+            row.authAt = sessions.now()
+        else:
+            count_failure(s, srv.sign_in, user.username, address, user)
+    if not right:
+        raise Problem(401, "password-wrong", "That is not your password.")
     return Response(status_code=204)
 
 
@@ -486,10 +525,15 @@ def email_change_confirm(body: Token, request: Request):
 
 @router.post("/reactivation-requests", status_code=204)
 def reactivation_request(body: SignIn, request: Request):
+    """The same answer whatever the account's state, and a wrong password counted as a
+    sign-in's (S10.1.7)."""
     srv = server(request)
     _throttle(request)
+    login = body.login.strip().lower()
+    address = guarded(request, login)
     with srv.db.tx() as s:
-        accounts.ask_reactivation(s, body.login, body.password)
+        if not accounts.ask_reactivation(s, login, body.password):
+            count_failure(s, srv.sign_in, login, address, accounts.by_login(s, login))
     return Response(status_code=204)
 
 

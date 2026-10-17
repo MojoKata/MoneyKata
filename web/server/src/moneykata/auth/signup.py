@@ -91,6 +91,8 @@ def request(
     if sex not in people.SEXES:
         errors.append(FieldError("sex", "sex-invalid", "Female or male."))
     _raise(errors)
+    # Hashed before the address is looked up, so a known address takes as long (S10.1.4.1).
+    password_hash = passwords.hash_password(password)
     if by_login(s, email) is not None or _waiting_for(s, SignupRequest.email, email):
         # The same answer as a new address; nothing is sent.
         return
@@ -100,7 +102,7 @@ def request(
         displayName=display_name.strip(),
         username=username,
         email=email,
-        passwordHash=passwords.hash_password(password),
+        passwordHash=password_hash,
         sex=sex,
         confirmTokenHash=token_hash,
         confirmBy=clock.now() + dt.timedelta(hours=CONFIRM_HOURS),

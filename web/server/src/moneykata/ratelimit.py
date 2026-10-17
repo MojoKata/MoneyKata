@@ -78,16 +78,21 @@ def too_many(wait: float, what: str) -> Problem:
 
 
 class SignInGuard:
-    """Ten failures in 15 minutes lock the **address** they came from for 15 minutes, and a
-    username that keeps failing is **slowed**, never locked, so nobody can lock an admin out by
-    typing wrong passwords (S13.7.5.1, S10.1). Lockout length and threshold come from
-    Settings."""
+    """Ten failures in 15 minutes lock the **address** they came from for 15 minutes, an IPv6
+    one by its /64, and a username that keeps failing is **slowed**, never locked, so nobody can
+    lock an admin out by typing wrong passwords (S13.7.5.1, S10.1). Lockout length and threshold
+    come from Settings. A two-step sign-in is checked one code at a time, and ends after five
+    wrong codes, so the password is needed again (S10.1.6.3)."""
+
+    CODE_TRIES = 5
 
     def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
         self._clock = clock
         self._failures: dict[str, deque] = defaultdict(deque)  # by address
         self._by_user: dict[str, deque] = defaultdict(deque)
         self._locked_until: dict[str, float] = {}  # by address
+        self._codes: dict[str, int] = {}  # wrong codes, by pending sign-in
+        self._checking: set[str] = set()  # the pending sign-ins whose code is being checked
         self._lock = threading.Lock()
 
     def _trim(self, q: deque, now: float) -> None:
@@ -97,7 +102,7 @@ class SignInGuard:
     def locked(self, address: str) -> float:
         """Seconds the address stays locked, or 0."""
         with self._lock:
-            until = self._locked_until.get(address, 0)
+            until = self._locked_until.get(address_key(address), 0)
             left = until - self._clock()
             return left if left > 0 else 0.0
 
@@ -124,6 +129,7 @@ class SignInGuard:
             u = self._by_user[username.lower()]
             self._trim(u, now)
             u.append(now)
+            address = address_key(address)
             q = self._failures[address]
             self._trim(q, now)
             q.append(now)
@@ -132,3 +138,30 @@ class SignInGuard:
                 q.clear()
                 return True
             return False
+
+    def checking(self, pending: str) -> bool:
+        """Begin checking a code for a pending two-step sign-in; False while another of its
+        codes is being checked."""
+        with self._lock:
+            if pending in self._checking:
+                return False
+            self._checking.add(pending)
+            return True
+
+    def checked(self, pending: str) -> None:
+        with self._lock:
+            self._checking.discard(pending)
+
+    def code_wrong(self, pending: str) -> bool:
+        """A wrong code for a pending sign-in; True once it has had its five, and ends."""
+        with self._lock:
+            n = self._codes.get(pending, 0) + 1
+            if n >= self.CODE_TRIES:
+                self._codes.pop(pending, None)
+                return True
+            self._codes[pending] = n
+            return False
+
+    def code_done(self, pending: str) -> None:
+        with self._lock:
+            self._codes.pop(pending, None)

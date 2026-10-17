@@ -48,7 +48,8 @@ def state(srv) -> LockState:
         fp = None
     progress = srv.reencrypting.as_dict() if srv.reencrypting is not None else None
     return LockState(
-        locked=srv.store is None,
+        # Locked until the server serves: the store opens a moment before its tasks start.
+        locked=srv.store is None or not srv.ready,
         fingerprint=fp,
         version=srv.version,
         reencrypting=Reencrypting(**progress) if progress else None,

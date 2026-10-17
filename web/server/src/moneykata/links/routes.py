@@ -90,10 +90,13 @@ async def verified(request: Request, states=("active",)) -> tuple[Link, signing.
 def refusal(request: Request, e: signing.Refused) -> Response:
     """Signed when the call carried a nonce, so the caller can tell a refusal from a forgery."""
     status = 426 if e.code == "protocol-unsupported" else 403
+    body = {"code": e.code, "message": e.message}
+    if e.code == "protocol-unsupported":
+        body["protocols"] = sorted(SUPPORTED)  # those it speaks, for the caller to name
     call = asked(request)
     if call is None:
-        return JSONResponse({"code": e.code, "message": e.message}, status_code=status)
-    return answer(request.app.state.server, {"code": e.code, "message": e.message}, call, status)
+        return JSONResponse(body, status_code=status)
+    return answer(request.app.state.server, body, call, status)
 
 
 @router.get("/hello")

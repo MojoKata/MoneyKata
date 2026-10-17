@@ -432,9 +432,49 @@
          exchange of a landed address (S18.5).
       9. **The rest of the review's findings**, the generated mockup and help shots for what
          changed, both images, and `web/check`.
-   9. **The first release** is the eight milestones. The build's branch is committed and pushed
+   9. **Milestone 9**, what the second review's account of its findings against the code
+      (`docs/reviews/initial-code-review-2.md`, section 12) found still open, in nine parts:
+      1. **Sign-in**: a two-step sign-in ended after five wrong codes, one code checked at a
+         time, the slowdown before the check, and the lockout counting an IPv6 address by its
+         /64 (S10.1.6.3, S13.7.5.1); reactivation, re-authentication and the current-password
+         check behind the sign-in guard, a reactivation request answered the same whatever the
+         account, and sign-up taking the same time for an address already known (S10.1.4.1,
+         S10.1.7); and what errors and logs may hold (S13.7.8, S13.7.9).
+      2. **Email queued in the database** (S16.2, S15.1.7): an email waits there until it is
+         sent or its link expires, a refused one keeps only its recipient, subject and error,
+         and a written email stays in the mail folder as long as its link works.
+      3. **The connector**: the key MoneyKata's `hello` gives hashed against the pairing's
+         fingerprint (S18.4.2), and `connect` showing the host the credentials will go to and
+         filing them once the admin confirms it (S18.7.2).
+      4. **Links**: a call not yet signed by a known key refused before it opens a transaction
+         (S13.7.5.4); a copy's key gone with its release; a change applied once and in order
+         (S11.9.5.3); a pull recorded with its link (S11.8); a shared budget naming only the
+         accounts shared (S11.3.1); a person shared to a linked server (S10.3); what flows each
+         way in Settings › Linked servers (S11.7); and the link protocol's answers and
+         refusals stated once (`docs/link-protocol.md` §1.3, §7).
+      5. **The host and the reader**: a PDF page rendered within the pixel cap (S9.8.4.3);
+         uploads held in memory (S13.7.6); Remove copy asking for the phrase too (S16.13);
+         `verify-backup` showing when a backup was made; the live stream's alert event without
+         a title; dev mode only from a checkout; pruning that counts no deleted receipt
+         (S14.10.5); a restore that leaves the receipt files where they are (S15.6.8); and an
+         unlock counted as a check of the recovery phrase (S15.6.5).
+      6. **Figures**: an option's expiry decided on the expiry day's close only (S3.6); a wash
+         sale's replacement in an IRA (S3.8.3); an adjusted strike rounded (S3.10.1); PMI in a
+         payoff plan (S1.9.5); a portfolio's returns keeping a deleted account, a donated
+         replacement's holding period, and TXF's codes (S5.2, S7.9.3, S8.2); and the last
+         money columns in cents (S14.3).
+      7. **Imports, wallets, alerts and the contract**: imports' answers in exact numbers
+         (R1.9); no wallet read until Settings › Bitcoin is saved (S16.7); skips learned only
+         from lines left out by choice (S1.3.3.4); the stale statement value's alert (S4.3);
+         a loan's statements checked on its Overview (S1.11); and every problem code, and
+         every 422, in the OpenAPI document (S13.8.3).
+      8. **Tests**: a golden-file case for each figure the second review found wrong (S17.5),
+         a `Location` test that follows what it names, and tests for the fixes that had none.
+      9. **The rest**: the generated mockup and help shots for what changed, both images, the
+         review's section 12 brought up to date, and `web/check`.
+   10. **The first release** is the nine milestones. The build's branch is committed and pushed
       part by part, and merges into `main` only once all of it is built and the requirements
       have their final approval.
-   10. **After the first release**: learned column positions for statements (S1.3.3.7),
+   11. **After the first release**: learned column positions for statements (S1.3.3.7),
        miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of [later
        work](later.md) (L1 to L9).

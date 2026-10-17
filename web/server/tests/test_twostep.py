@@ -132,20 +132,34 @@ def test_a_recovery_code_works_once(server, frozen):
     assert "9 are left" in m.get_content()
 
 
-def test_wrong_codes_lock_the_user_like_wrong_passwords(server, frozen):
+def test_five_wrong_codes_end_the_sign_in_and_ten_lock_the_address(server, frozen, monkeypatch):
+    # S10.1.6.3: five wrong codes end a sign-in, so the password is needed again; wrong codes
+    # count toward the address's lockout as wrong passwords do (S13.7.5.1).
+    from moneykata.ui import session
+
+    monkeypatch.setattr(session.time, "sleep", lambda s: None)
     make_user(server, "alice")
     seed, _ = turn_on(sign_in(server, "alice"))
     later(30)
+    two_step = "/ui/api/session/two-step"
     with new_client(server) as b:
-        token = b.post("/ui/api/session", json={"login": "alice", "password": PW}).json()[
-            "twoStepToken"
+
+        def started() -> str:
+            r = b.post("/ui/api/session", json={"login": "alice", "password": PW})
+            return r.json()["twoStepToken"]
+
+        first = started()
+        codes = [
+            b.post(two_step, json={"token": first, "code": "000000"}).json()["code"]
+            for _ in range(5)
         ]
-        statuses = [
-            b.post("/ui/api/session/two-step", json={"token": token, "code": "000000"}).status_code
-            for _ in range(10)
-        ]
-        assert statuses == [401] * 10
-        r = b.post("/ui/api/session/two-step", json={"token": token, "code": code(seed)})
+        assert codes == ["code-wrong"] * 4 + ["two-step-expired"]
+        r = b.post(two_step, json={"token": first, "code": code(seed)})
+        assert r.status_code == 401 and r.json()["code"] == "two-step-expired"
+        second = started()
+        for _ in range(5):
+            b.post(two_step, json={"token": second, "code": "000000"})
+        r = b.post("/ui/api/session", json={"login": "alice", "password": PW})
         assert r.status_code == 429
     assert "signin.locked" in kinds(server)
 

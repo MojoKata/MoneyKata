@@ -222,7 +222,8 @@ export default function SignIn() {
       <${AuthCard} title="This account is disabled" guide="signin"
         sub="An admin switched it off. You can ask them to make it active again, once a week.">
             ${sent
-              ? html`<div class="notice" role="status">Your request is with the admins.</div>`
+              ? html`<div class="notice" role="status">If that is a disabled account here, the admins will
+                see your request.</div>`
               : html`
                 <form onSubmit=${(/** @type {Event} */ e) => {
                   e.preventDefault();

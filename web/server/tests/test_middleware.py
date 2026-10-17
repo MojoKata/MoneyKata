@@ -113,3 +113,12 @@ def test_an_ipv6_address_counts_by_its_64():
     assert address_key("2001:db8:1:2::5") == address_key("2001:db8:1:2:ffff::1")
     assert address_key("2001:db8:1:2::5") != address_key("2001:db8:1:3::5")
     assert address_key("::ffff:192.0.2.7") == "192.0.2.7" == address_key("192.0.2.7")
+
+
+def test_every_problem_is_logged_by_its_id_status_and_code(bare_client, caplog):
+    # S13.7.8: a refusal's id is in the log with its status and code, never its detail.
+    with caplog.at_level("INFO", logger="moneykata.errors"):
+        r = bare_client.get("/ui/api/no-such-thing")
+    assert r.status_code == 404
+    line = f"problem {r.json()['errorId']} 404 not-found"
+    assert any(rec.getMessage() == line for rec in caplog.records), caplog.text
