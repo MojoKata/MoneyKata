@@ -2,7 +2,7 @@
 
 What happened, newest first: who changed what. It never names an amount.
 
-![Activity](shots/activity.webp)
+![Activity](shots/activity.png)
 
 ## Account
 

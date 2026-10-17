@@ -1,6 +1,6 @@
 # Settings: Imports
 
-![Settings: Imports](shots/settings-imports.webp)
+![Settings: Imports](shots/settings-imports.png)
 
 ## File types
 

@@ -2,7 +2,7 @@
 
 Every gift, from idea to given, and those you've received.
 
-![Gifts](shots/gifts-gifts.webp)
+![Gifts](shots/gifts-gifts.png)
 
 ## Show
 

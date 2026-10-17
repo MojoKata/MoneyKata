@@ -3,7 +3,7 @@
 A budget plans spending per category over the accounts you choose, month by month. It is yours, or
 shared: share it with a group at **Write** for a household budget everyone in it plans and follows.
 
-![Budgets](shots/budgets-month.webp)
+![Budgets](shots/budgets-month.png)
 
 ## Month
 

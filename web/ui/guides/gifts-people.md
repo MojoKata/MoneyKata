@@ -3,7 +3,7 @@
 Your gift plans for the people you give gifts to: their dates, your budget, what you've spent on
 them this year and the last gift you gave.
 
-![People](shots/gifts-people.webp)
+![People](shots/gifts-people.png)
 
 ## People
 

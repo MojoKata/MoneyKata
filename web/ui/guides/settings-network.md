@@ -9,7 +9,7 @@ The lists are kept in the database, which can't be read while the server is lock
 phrase is given, the locked screen and the unlock answer any address that reaches the listener:
 the reverse proxy in front of MoneyKata, and the host's firewall, are what limit them.
 
-![Network](shots/settings-network.webp)
+![Network](shots/settings-network.png)
 
 ## Allowed to use the app {#network-app-ranges}
 

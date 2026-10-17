@@ -2,7 +2,7 @@
 
 Where you land after signing in: what you're worth, how it's moving, and what needs you.
 
-![The Dashboard](shots/dashboard.webp)
+![The Dashboard](shots/dashboard.png)
 
 ## Net worth
 

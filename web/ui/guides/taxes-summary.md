@@ -3,7 +3,7 @@
 What a tax book holds: its filers, the accounts it counts, its filings and documents, and the
 figures carried from last year.
 
-![The tax summary](shots/taxes-summary.webp)
+![The tax summary](shots/taxes-summary.png)
 
 ## Tax book
 

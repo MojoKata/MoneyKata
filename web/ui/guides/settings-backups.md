@@ -5,7 +5,7 @@ the receipt files: the host backs up the data directory, files and all, and this
 that the live database the host picks up has a coherent, verified twin beside it. The backup
 directory belongs inside what the host backs up.
 
-![Settings: Backups](shots/settings-backups.webp)
+![Settings: Backups](shots/settings-backups.png)
 
 ## Time of day
 

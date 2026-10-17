@@ -2,7 +2,7 @@
 
 Contributions against the year's limits, distributions, and the required minimum distributions due.
 
-![Retirement](shots/taxes-retirement.webp)
+![Retirement](shots/taxes-retirement.png)
 
 ## Tax book
 

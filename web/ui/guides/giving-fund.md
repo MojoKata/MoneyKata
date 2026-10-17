@@ -3,7 +3,7 @@
 A donor-advised fund: what it holds, what went into it this year (deducted then), and the grants it
 made (not deducted again).
 
-![Donor-advised fund](shots/giving-fund.webp)
+![Donor-advised fund](shots/giving-fund.png)
 
 ## Year
 

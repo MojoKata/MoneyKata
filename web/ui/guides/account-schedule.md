@@ -2,7 +2,7 @@
 
 A loan's amortization schedule, computed from its terms and the payments made.
 
-![A loan's Schedule](shots/account-schedule.webp)
+![A loan's Schedule](shots/account-schedule.png)
 
 ## Due
 

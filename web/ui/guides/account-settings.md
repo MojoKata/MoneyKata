@@ -2,7 +2,7 @@
 
 The account's name, how it's kept current, and its lot method.
 
-![An account's Settings](shots/account-settings.webp)
+![An account's Settings](shots/account-settings.png)
 
 ## Name
 

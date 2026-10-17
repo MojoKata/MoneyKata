@@ -2,7 +2,7 @@
 
 Every account's transactions together, newest first.
 
-![Transactions](shots/transactions.webp)
+![Transactions](shots/transactions.png)
 
 ## Search {#search}
 

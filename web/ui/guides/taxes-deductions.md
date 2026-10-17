@@ -2,7 +2,7 @@
 
 Totals of the tax-tagged categories, with the receipts behind them, and the estimated tax payments.
 
-![Deductions](shots/taxes-deductions.webp)
+![Deductions](shots/taxes-deductions.png)
 
 ## Tax book
 

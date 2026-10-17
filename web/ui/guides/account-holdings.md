@@ -2,7 +2,7 @@
 
 What the account holds, worked out from its trades and lots.
 
-![An account's Holdings](shots/account-holdings.webp)
+![An account's Holdings](shots/account-holdings.png)
 
 ## Price
 

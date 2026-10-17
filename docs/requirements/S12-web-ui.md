@@ -99,7 +99,7 @@
       The Markdown is a subset: headings, paragraphs, lists, tables, code, quotes (shown as
       notes), images, links, bold, italic; raw HTML is shown as text.
    5. **Screenshots** come from the clickable mockup (`web/dev.sh help-shots`, dark theme,
-      1280 px, WebP) and are committed.
+      1280 px, PNG quantized to 256 colours) and are committed.
    6. **Checks**: a test fails when a screen has no guide, a guide's screenshot is missing,
       a field's label finds no heading, or the next field down the page sends the guide up. Finance terms (cost basis, wash
    sale, RMD, TWR and IRR) get a short plain-language explanation in the guide of the screen

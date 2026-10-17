@@ -2,7 +2,7 @@
 
 Every closing trade: a sale, a buy to close, an expiry, an assignment.
 
-![Closed positions](shots/positions-closed.webp)
+![Closed positions](shots/positions-closed.png)
 
 ## Show
 
