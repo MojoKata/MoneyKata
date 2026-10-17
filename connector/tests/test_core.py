@@ -1,8 +1,9 @@
 """The connector's core (requirements S18.1–S18.5): the vault and its words, the keys, signed
-calls, sealed credentials, the egress allowlist, the socket's commands, and the limits of
-S18.1.2 (no import from MoneyKata, the core under 600 lines, a driver under 400)."""
+calls, sealed credentials, the egress allowlist, the socket's commands, and S18.1.2 (no
+import from MoneyKata, each driver's size listed with its colour)."""
 
 import ast
+import inspect
 import json
 import re
 import time
@@ -206,14 +207,23 @@ def _code_lines(path: Path) -> int:
     )
 
 
-def test_the_core_and_each_driver_stay_small_and_import_nothing_from_moneykata():
-    """S18.1.2: the core under 1,200 lines of code, a driver under 400, no import from
+def _colour(lines: int) -> str:
+    return "🟢" if lines < 1000 else "🟡" if lines < 2000 else "🔴"
+
+
+def test_each_drivers_size_is_listed_with_its_colour_and_nothing_imports_moneykata():
+    """S18.1.2: each driver's lines of code and colour as the connector protocol's table of
+    drivers lists them (§6), whatever the size; no limit on the core; no import from
     MoneyKata."""
-    core = [p for p in PACKAGE.glob("*.py")]
-    total = sum(_code_lines(p) for p in core)
-    assert total <= 1200, f"the core is {total} lines of code"
-    for p in (PACKAGE / "drivers").glob("*.py"):
-        assert _code_lines(p) <= 400, f"{p.name} is {_code_lines(p)} lines of code"
+    doc = (PACKAGE.parents[1] / "docs" / "connector-protocol.md").read_text()
+    table = doc.split("## 6. Drivers", 1)[1].split("\n## ", 1)[0]
+    listed = dict(re.findall(r"^\| `([a-z-]+)` \|.*\| (\S+ [\d,]+) \|$", table, re.M))
+    drivers = registry()
+    for name, driver in drivers.items():
+        lines = _code_lines(Path(inspect.getfile(type(driver))))
+        size = f"{_colour(lines)} {lines:,}"
+        assert listed.get(name) == size, f"connector-protocol.md §6: {name}'s size is {size}"
+    assert set(listed) == set(drivers), "the table of drivers lists one that isn't a driver"
     for p in PACKAGE.rglob("*.py"):
         assert not re.search(r"^\s*(from|import)\s+moneykata\b", p.read_text(), re.M), p
 

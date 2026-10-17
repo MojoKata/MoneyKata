@@ -6,7 +6,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Request, Response
 
 from .. import clock
-from ..taxes import books, dependents, exports, panels
+from ..taxes import books, closed, dependents, exports, panels
 from .conventions import ExactRoute, Model, Money, Quantity, Ratio
 from .deps import Caller, caller, server
 
@@ -345,6 +345,17 @@ def build(s, b) -> Panels:
 def get_panels(book_id: str, request: Request, c: Caller = Depends(caller)):
     with server(request).db.read() as s:
         b, _ = books.get(s, c.id, book_id)
+        return build(s, b)
+
+
+@router.post("/tax-books/{book_id}/no-amendment", response_model=Panels)
+def no_amendment(book_id: str, request: Request, c: Caller = Depends(caller)):
+    """No amendment needed (S8.15): settles the edits made since the federal return was filed,
+    with who said so and when."""
+    with server(request).db.tx() as s:
+        b, _ = books.get(s, c.id, book_id, "write")
+        closed.settle(s, b, c.id, "not-needed")
+        s.flush()
         return build(s, b)
 
 

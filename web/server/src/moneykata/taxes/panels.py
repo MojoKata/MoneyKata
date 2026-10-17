@@ -29,7 +29,7 @@ from ..store.entities.receipts import ReceiptLink
 from ..store.entities.taxes import EstimatedPayment, TaxBook
 from ..store.entities.users import User
 from ..store.repos import ledger as repo
-from . import books, dependents
+from . import books, closed, dependents
 
 ZERO = Decimal(0)
 CENT = Decimal("0.01")
@@ -868,6 +868,8 @@ class Issue:
 
 def issues(s: Session, book: TaxBook, rows: list[Row]) -> list[Issue]:
     out = []
+    if changed := changed_after_filing(s, book):
+        out.append(Issue("changed-after-filing", changed))
     counted = books.counted(s, book)
     for a in counted.leftOut:
         out.append(Issue("left-out", f"{a.name} is left out of this tax book."))
@@ -953,6 +955,26 @@ def issues(s: Session, book: TaxBook, rows: list[Row]) -> list[Issue]:
                 )
             )
     return out
+
+
+def changed_after_filing(s: Session, book: TaxBook) -> str | None:
+    """The edits made anyway since the federal return was filed, not yet settled (S8.15): how
+    far they moved the realized gains, and in which accounts."""
+    edits: dict[str, int] = defaultdict(int)
+    total = Decimal(0)
+    for change in closed.unsettled(s, book):
+        edits[change.accountId] += 1
+        total += change.gains
+    if not edits:
+        return None
+    where = "; ".join(
+        f"{s.get(Account, a).name}, {n} edit{'' if n == 1 else 's'}" for a, n in edits.items()
+    )
+    sign = "-" if total < 0 else "+"
+    return (
+        f"Realized gains changed by {sign}${abs(total):,.2f} after the federal return was "
+        f"filed: {where}"
+    )
 
 
 def spouse_accounts(s: Session, book: TaxBook) -> list[Account]:

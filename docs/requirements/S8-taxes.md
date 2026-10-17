@@ -24,8 +24,8 @@ produces worksheets and exports. It never files, and says so (R1.16).
    the flags left for review.
 4. **Missing or doubtful data**: lots without a basis, sales without a matching lot, options
    with an unresolved expiry, transfers between users' accounts (a gift's carry-over basis),
-   crypto without a known acquisition, and possible wash sales the rules leave to the
-   preparer (S3.8.5).
+   crypto without a known acquisition, possible wash sales the rules leave to the
+   preparer (S3.8.5), and edits made since the federal return was filed (S8.15).
 5. **Income**: interest (1099-INT), dividends ordinary, qualified and capital-gain
    distributions (1099-DIV), foreign tax paid, and crypto income (staking, rewards) at fair
    value when received.
@@ -116,6 +116,15 @@ produces worksheets and exports. It never files, and says so (R1.16).
 
     A filing past its due date that is not filed and has no extension shows in the
     Dashboard's *Needs attention*.
+
+    **Changed after filing.** An edit made anyway to a closed year (S2.8.3) is listed in the
+    tax book's Issues (S8.4) and in the Dashboard's *Needs attention*, with how much the
+    realized gains moved since the federal return was filed and in which accounts
+    (*Realized gains changed by +$412.50 after the federal return was filed: Brokerage, 2
+    edits*). It stays until a filer or a helper with write adds an amended federal return,
+    which settles every change made before it, or chooses **No amendment needed**, which
+    settles them with their name and the day. A later edit made anyway, once the year is
+    closed again (S2.8.1), is listed afresh.
 16. **Tax documents**: each has its form, who issued it, the account it is for, notes, and
     its file, which is kept as a receipt (S9) with the same storage and protection.
     1. **Received**, kept in the tax book: W-2s, 1099s, 1098s, 1095s, K-1s, 5498s and

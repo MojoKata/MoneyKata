@@ -104,6 +104,7 @@ def map_all() -> None:
         (tx.Filing, taxes.Filing),
         (tx.TaxBookDependent, taxes.TaxBookDependent),
         (tx.EstimatedPayment, taxes.EstimatedPayment),
+        (tx.TaxBookChange, taxes.TaxBookChange),
         (tx.TaxDocument, taxes.TaxDocument),
         (gv.GivingPlan, giving.GivingPlan),
         (gv.Organisation, giving.Organisation),

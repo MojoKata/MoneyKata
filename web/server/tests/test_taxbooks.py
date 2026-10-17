@@ -440,6 +440,86 @@ def test_an_edit_that_moves_a_filed_years_gains_asks_first(server, couple):
     assert r.status_code == 200, r.text
 
 
+def test_an_edit_made_anyway_stays_on_the_book_until_amended_or_waved(server, couple):
+    # S2.8.3, S8.15: an edit made anyway is listed on the book and in Needs attention; an
+    # amended federal return settles it and opens the year while it's prepared; filing it
+    # closes the year again; No amendment needed settles what follows.
+    from test_accounts import add, new_account
+
+    alice = couple[0]
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    add(alice, brk["id"], "10000.00", "2024-01-02", kind="deposit")
+    add(alice, brk["id"], "-1000.00", "2024-01-05", kind="buy", symbol="VTI", quantity="10",
+        price="100")  # fmt: skip
+    sale = add(alice, brk["id"], "1500.00", "2025-03-03", kind="sell", symbol="VTI",
+               quantity="10", price="150")  # fmt: skip
+    me = alice.get("/ui/api/session").json()["user"]["id"]
+    b = alice.post("/ui/api/tax-books", json={"year": 2025, "filers": [me]}).json()
+    federal = {"jurisdiction": "federal", "form": "1040", "progress": "filed"}
+    r = alice.post(
+        f"/ui/api/tax-books/{b['id']}/filings", json={**federal, "filedOn": "2026-04-10"}
+    )
+    original = next(f for f in r.json()["filings"] if f["form"] == "1040")
+
+    def issues():
+        p = alice.get(f"/ui/api/tax-books/{b['id']}/panels").json()
+        return [i["text"] for i in p["issues"] if i["kind"] == "changed-after-filing"]
+
+    def attention():
+        d = alice.get("/ui/api/dashboard").json()
+        return [a["text"] for a in d["attention"] if a["kind"] == "changed-after-filing"]
+
+    def edit(amount, confirm):
+        nonlocal sale
+        r = alice.patch(
+            f"/ui/api/transactions/{sale['id']}",
+            json={"amount": amount},
+            headers={"If-Match": str(sale["version"])},
+            params={"confirm": "true"} if confirm else {},
+        )
+        if r.status_code == 200:
+            sale = r.json()
+        return r
+
+    assert issues() == [] and attention() == []
+    assert edit("1600.00", confirm=True).status_code == 200
+    assert edit("1650.00", confirm=True).status_code == 200
+    assert issues() == [
+        "Realized gains changed by +$150.00 after the federal return was filed: Brokerage, 2 edits"
+    ]
+    assert attention() == ["2025's realized gains changed after the federal return was filed"]
+    # An amended return, being prepared: the changes are settled and the year is open.
+    r = alice.post(
+        f"/ui/api/tax-books/{b['id']}/filings",
+        json={**federal, "form": "1040-X", "progress": "in progress", "amendsId": original["id"]},
+    )
+    assert r.status_code == 201, r.text
+    amended = next(f for f in r.json()["filings"] if f["form"] == "1040-X")
+    assert issues() == [] and attention() == []
+    assert edit("1700.00", confirm=False).status_code == 200
+    assert issues() == []
+    # Filed: the year is closed again, and an edit made anyway is listed afresh.
+    r = alice.patch(
+        f"/ui/api/filings/{amended['id']}",
+        json={**federal, "form": "1040-X", "amendsId": original["id"], "filedOn": "2026-06-20"},
+        headers={"If-Match": str(amended["version"])},
+    )
+    assert r.status_code == 200, r.text
+    r = edit("1690.00", confirm=False)
+    assert r.status_code == 409 and r.json()["code"] == "closed-year", r.text
+    assert edit("1690.00", confirm=True).status_code == 200
+    assert issues() == [
+        "Realized gains changed by -$10.00 after the federal return was filed: Brokerage, 1 edit"
+    ]
+    # No amendment needed settles it, for those who may write.
+    r = couple[1].post(f"/ui/api/tax-books/{b['id']}/no-amendment")
+    assert r.status_code in (403, 404), r.text
+    r = alice.post(f"/ui/api/tax-books/{b['id']}/no-amendment")
+    assert r.status_code == 200, r.text
+    assert [i for i in r.json()["issues"] if i["kind"] == "changed-after-filing"] == []
+    assert issues() == [] and attention() == []
+
+
 def test_a_tax_documents_file_opens_for_the_books_filers(server, couple):
     # N13: a co-filer opens the file through the book; it isn't in the uploader's Inbox, and
     # can't be deleted while the document keeps it.

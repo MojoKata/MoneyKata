@@ -83,6 +83,18 @@ class Filing(Record):
 
 
 @dataclass(kw_only=True, eq=False)
+class TaxBookChange(Record):
+    id: str
+    bookId: str
+    accountId: str
+    gains: Decimal
+    madeById: str | None = None
+    settled: str | None = None
+    settledAt: dt.datetime | None = None
+    settledById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
 class EstimatedPayment(Record):
     id: str
     filingId: str

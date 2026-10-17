@@ -16,7 +16,8 @@ The form filed: Form 1040, a state's form.
 
 ## Amends
 
-For an amended return: the filing it amends.
+For an amended return: the filing it amends. An amended federal return settles the edits made
+since the return was filed, and opens the year for edits until it is filed itself.
 
 ## Filing status
 

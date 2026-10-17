@@ -291,10 +291,15 @@ owner pastes back is exchanged within seconds), `POST /connector/v1/report`:
 
 What each driver posts, and what its `settings` hold (S18.9):
 
-| Driver | Posts | Settings | Credentials (sealed, 4.3) |
-|---|---|---|---|
-| `ofx-direct` | the OFX statement the institution's OFX server answers with, as it is | `url`, `org`, `fid`, `accountType` (`CHECKING`, `SAVINGS`, `CREDITCARD`, `INVESTMENT`), `accountId`, and `bankId` (the routing number) for a bank account | `{username, password}`, bound to the host of `url` when filed (4.3.3) |
-| `schwab` | positions, transactions and balances from the Trader API, written as an OFX investment statement, one file per account | `appKey` | `{appSecret, landed}`: the app's secret and the address the owner landed on after signing in; the driver keeps the refresh token in the vault, and asks for a new sign-in when it has run out, after seven days. Bound to no host: the driver's is fixed |
+| Driver | Posts | Settings | Credentials (sealed, 4.3) | Size |
+|---|---|---|---|---|
+| `ofx-direct` | the OFX statement the institution's OFX server answers with, as it is | `url`, `org`, `fid`, `accountType` (`CHECKING`, `SAVINGS`, `CREDITCARD`, `INVESTMENT`), `accountId`, and `bankId` (the routing number) for a bank account | `{username, password}`, bound to the host of `url` when filed (4.3.3) | 🟢 91 |
+| `schwab` | positions, transactions and balances from the Trader API, written as an OFX investment statement, one file per account | `appKey` | `{appSecret, landed}`: the app's secret and the address the owner landed on after signing in; the driver keeps the refresh token in the vault, and asks for a new sign-in when it has run out, after seven days. Bound to no host: the driver's is fixed | 🟢 230 |
+
+**Size** is the driver's lines of code, leaving out blank lines, comments and docstrings, with
+its colour (S18.1.2.1): 🟢 under 1,000, 🟡 1,000 to 1,999, 🔴 2,000 or more, a driver to read
+again before it grows. `connector/tests/test_core.py` counts them and fails when a size here is
+out of date, or a driver is missing from the table.
 
 A driver's host is the one it declares (`api.schwabapi.com`), or, for OFX Direct Connect, the
 server its owner named in the settings **and sealed with the credentials**; the egress

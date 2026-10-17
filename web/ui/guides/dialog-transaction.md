@@ -1,7 +1,9 @@
 # Transaction
 
 A change that moves the realized gains of a year whose return is filed asks first, naming the
-year: **Change it anyway** makes it, and the return may need amending.
+year: **Change it anyway** makes it, and the return may need amending. The tax book lists the change
+in its Issues until an amended return is added or someone says none is needed. While an amended
+federal return is being prepared, the year is open and nothing is asked.
 
 ## Account
 

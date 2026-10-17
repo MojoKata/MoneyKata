@@ -204,6 +204,7 @@ def _attention(
             )
     # A filing past its due date, not filed, with no extension still running (S8.15).
     from ..taxes import books as taxbooks
+    from ..taxes import closed
 
     for b, lvl in taxbooks.visible(s, c.id):
         if lvl not in ("owner", "write"):
@@ -219,6 +220,16 @@ def _attention(
                         link="/ui/taxes/filings",
                     )
                 )
+        # Edits made anyway since the federal return was filed, not yet settled (S8.15).
+        if closed.unsettled(s, b):
+            out.append(
+                Attention(
+                    kind="changed-after-filing",
+                    count=1,
+                    text=f"{b.year}'s realized gains changed after the federal return was filed",
+                    link="/ui/taxes/issues",
+                )
+            )
     status = pricing.status(s, dev, c.id)
     if status["stale"]:
         out.append(

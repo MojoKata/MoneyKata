@@ -562,7 +562,7 @@ def create_transaction(
         a, level = access.account(s, c.id, body.accountId, "write")
         investing = atypes.investing(a.type)
         _raise(_check(s, body, body.kind, investing))
-        guard = closed.Guard(s, a, confirm) if investing else None
+        guard = closed.Guard(s, a, confirm, c.id) if investing else None
         inst_id = _instrument(s, body, a)
         if body.kind in ("buy", "sell", "reinvest", "transfer-in", "transfer-out") and (
             not inst_id or not body.quantity
@@ -678,7 +678,7 @@ def change_transaction(
     sent = body.model_fields_set
     with server(request).db.tx() as s:
         t, a, level = _editable(s, c, txn_id, version, confirm)
-        guard = closed.Guard(s, a, confirm)
+        guard = closed.Guard(s, a, confirm, c.id)
         kind = body.kind if "kind" in sent and body.kind else t.kind
         checked = body.model_copy(update={"amount": body.amount if "amount" in sent else t.amount})
         _raise(_check(s, checked, kind, atypes.investing(a.type)))
@@ -756,7 +756,7 @@ def delete_transaction(
 ):
     with server(request).db.tx() as s:
         t, a, _ = _editable(s, c, txn_id, version, confirm)
-        guard = closed.Guard(s, a, confirm)
+        guard = closed.Guard(s, a, confirm, c.id)
         if t.kind in ("split", "option-adjust"):
             from ..options import adjust
 

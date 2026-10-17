@@ -343,6 +343,25 @@ def backups(s: Session, server) -> Iterable[Cause]:
 
 
 @check
+def reader_sandbox(s: Session, server) -> Iterable[Cause]:
+    """Reading runs without its file sandbox: the host's kernel, or its container, doesn't
+    offer Landlock (S9.8.4.2). For admins, while it lasts."""
+    from . import parsing
+
+    if parsing.file_sandbox() is False:
+        yield Cause(
+            key="reader-sandbox",
+            kind="reader-sandbox",
+            title="Reading runs without its file sandbox",
+            about="this host doesn't offer Landlock (Linux 5.13 or later, and a container "
+            "that allows it), so a file that exploits a reader could reach the data directory",
+            link="/ui/settings/receipts",
+            fix="Receipts settings",
+            icon="lock",
+        )
+
+
+@check
 def email(s: Session, server) -> Iterable[Cause]:
     """Email that can't be sent for longer than the source threshold (admins)."""
     from .store.entities.core import TaskRun
@@ -761,6 +780,7 @@ _KINDS = {
     "bitcoin_source": {"source-failing"},
     "linked_servers": {"source-failing", "link-broken", "link-certificate", "link-key-waiting"},
     "backups": {"backup-failed"},
+    "reader_sandbox": {"reader-sandbox"},
     "recovery_phrase": {"phrase-check"},
     "key_rotation": {"key-rotation"},
     "accounts": {"statement-overdue", "reconcile-mismatch"},

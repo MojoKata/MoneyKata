@@ -118,6 +118,24 @@ Filing = record(
     Index("ix_Filing_bookId", "bookId"),
 )
 
+# An edit made anyway to a year whose federal return was filed (S2.8.3, S8.15): the account,
+# how much it moved the year's realized gains, and who made it. It is settled by an amended
+# federal return, or by No amendment needed, with who settled it.
+TaxBookChange = record(
+    "TaxBookChange",
+    "TxChg",
+    Column("bookId", Text, ForeignKey("TaxBook.id", ondelete="CASCADE"), nullable=False),
+    Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
+    Column("gains", Dec, nullable=False),
+    Column("madeById", Text, ForeignKey("User.id")),
+    Column("settled", Text),  # amended, not-needed
+    Column("settledAt", UtcTimestamp),
+    Column("settledById", Text, ForeignKey("User.id")),
+    CheckConstraint("settled IS NULL OR settled IN ('amended', 'not-needed')", name="settled"),
+    CheckConstraint('(settled IS NULL) = ("settledAt" IS NULL)', name="settled_at"),
+    Index("ix_TaxBookChange_bookId", "bookId"),
+)
+
 # A filing's estimated payment for a quarter, matched to the transaction that paid it.
 EstimatedPayment = record(
     "EstimatedPayment",

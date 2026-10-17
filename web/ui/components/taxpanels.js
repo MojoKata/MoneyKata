@@ -5,6 +5,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { useApi } from '../app/hooks.js';
+import { api } from '../api/client.js';
 import { date, money, quantity } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Chips, Empty, Failed, Loading } from './bits.js';
@@ -45,7 +46,7 @@ export function Panel({ b, tab }) {
     ${tab === 'giving' ? html`<${Giving} p=${p} />` : null}
     ${tab === 'education' ? html`<${Education} p=${p} />` : null}
     ${tab === 'property' ? html`<${Property} p=${p} />` : null}
-    ${tab === 'issues' ? html`<${Issues} p=${p} />` : null}
+    ${tab === 'issues' ? html`<${Issues} p=${p} b=${b} reload=${res.reload} />` : null}
   `;
 }
 
@@ -583,15 +584,25 @@ function Property({ p }) {
   `;
 }
 
-/** @param {{ p: any }} p */
-function Issues({ p }) {
+/**
+ * An edit made anyway since the federal return was filed offers an amended return, or No
+ * amendment needed (S8.15), to those who may write.
+ * @param {{ p: any, b: any, reload: () => void }} props
+ */
+function Issues({ p, b, reload }) {
+  const waive = () => api.post(`/tax-books/${b.id}/no-amendment`).then(reload);
   return html`
     <div class="card">${p.issues.length
       ? p.issues.map((/** @type {any} */ i) =>
         html`
           <div
             class="list-item"><${Icon} name="alert" /><span class="grow">${i.text}</span>${i
-                .link
+                    .kind === 'changed-after-filing' && b.canWrite
+              ? html`
+                <a class="btn sm" href="/ui/taxes/filings">Add an amended return</a><button class="btn sm"
+                  onClick=${waive}>No amendment needed</button>
+              `
+              : i.link
               ? html`<a class="small" href=${i.link}>Look</a>`
               : null}</div>
         `

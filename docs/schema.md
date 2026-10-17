@@ -123,6 +123,7 @@ The prefixes of the tables that exist.
 | TaxBk  | TaxBook          | One user's, or a married couple's, tax records for one tax year.                                      |
 | TaxFg  | TaxFigure        | An admin's correction of a shipped tax-table figure for one year.                                     |
 | Token  | AccessToken      | A user's read-only token for the MCP endpoint, kept as a hash of its secret.                          |
+| TxChg  | TaxBookChange    | An edit made anyway to a year whose federal return was filed, and how it was settled.                 |
 | TxDep  | TaxBookDependent | A person a tax book's filers claim for the year: how claimed, months lived with them, student.        |
 | TxDoc  | TaxDocument      | A tax document received (W-2, 1099) or filed (a return, a notice), with its file.                     |
 | Txn    | Transaction      | One dated movement in an account.                                                                     |

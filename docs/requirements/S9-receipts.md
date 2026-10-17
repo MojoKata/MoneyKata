@@ -110,8 +110,11 @@
          4. every file a person or the connector brings is parsed there, never in the server:
             receipts and statements read (S1.3.3), thumbnails made (S9.5), HEIC photos decoded
             for display (S9.1), and OFX and CSV files read for an import (S1.3.2);
-         5. on a kernel without Landlock, Settings › Receipts says that reading runs without
-            its file sandbox on this host (S16.10), and reading stays on;
+         5. Landlock is used wherever the host offers it, as the worker finds when it starts.
+            Where the host doesn't (a kernel before 5.13, or a kernel or container that
+            doesn't allow it), reading stays on, Settings › Receipts says that reading runs
+            without its file sandbox on this host (S16.10), and admins have an alert while it
+            does (S12.11.1.1);
       3. Pillow's decompression-bomb limit and a cap of 40 million pixels refuse oversized
          images before decoding, and a PDF page is rendered only within the same cap;
       4. a receipt that fails is marked *couldn't read it*, with the reason, and stays usable

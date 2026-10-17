@@ -174,9 +174,10 @@
           or reporting from an address other than the one admins know, until one accepts it or
           unpairs (S18.5), and a Connection needing a sign-in or failing; the yearly check of
           the master key's recovery phrase (S15.6.5), due a year after the phrase last opened
-          the keyring, by an unlock or `keys verify`, or after the key was made; and the master
-          key's rotation, due after the period Settings › Key storage sets (S15.8.4). An
-          admin's alert about someone else's account names its owner and source, never the
+          the keyring, by an unlock or `keys verify`, or after the key was made; the master
+          key's rotation, due after the period Settings › Key storage sets (S15.8.4); and the
+          receipt reader running without its file sandbox, on a host that doesn't offer
+          Landlock (S9.8.4.2). An admin's alert about someone else's account names its owner and source, never the
           account's name or figures (S10.2);
        2. **for an account's owner**: their wallet's explorer or node failing for longer than
           the threshold, an account whose next statement or import is overdue for its interval

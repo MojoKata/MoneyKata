@@ -269,6 +269,22 @@ def test_the_daily_summary_goes_once_a_day_after_its_time(server, frozen):
     assert alerts.daily_summaries(server) == 0, "none on a day without new alerts"
 
 
+def test_reading_without_its_file_sandbox_alerts_admins(server, admin_client, frozen):
+    # S9.8.4.2: a host without Landlock keeps reading on, and admins are told while it lasts.
+    from moneykata import parsing
+
+    alerts.evaluate(server)
+    assert listed(admin_client)["open"] == []
+    parsing.PINNED = False
+    alerts.evaluate(server)
+    (a,) = listed(admin_client)["open"]
+    assert a["title"] == "Reading runs without its file sandbox"
+    assert a["link"] == "/ui/settings/receipts" and "Landlock" in a["about"]
+    parsing.PINNED = True
+    alerts.evaluate(server)
+    assert listed(admin_client)["open"] == []
+
+
 def test_every_check_names_the_kinds_it_keeps_when_it_fails():
     assert {fn.__name__ for fn in alerts.CHECKS} == set(alerts._KINDS)
 

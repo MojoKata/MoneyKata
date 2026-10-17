@@ -14,6 +14,17 @@ from moneykata.keys import cli as keys_cli
 from moneykata.store.maintenance import open_store
 
 
+@pytest.fixture(autouse=True)
+def file_sandbox_shown():
+    """What a test sees doesn't depend on the kernel it runs on: the reader's file sandbox is
+    shown as there (S9.8.4.2), unless the test pins it otherwise."""
+    from moneykata import parsing
+
+    parsing.PINNED = True
+    yield
+    parsing.PINNED = None
+
+
 @pytest.fixture
 def config(tmp_path) -> Config:
     return Config(

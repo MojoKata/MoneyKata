@@ -483,10 +483,10 @@ def receipts_queue(request: Request, c: Caller = Depends(admin)):
     from .. import parsing
 
     srv = server(request)
-    state = parsing.sandbox()
+    sandboxed = parsing.file_sandbox(start=True)
     with srv.db.read() as s:
         out = _queue(s, srv)
-    out.fileSandbox = state.get("landlock") if state else None
+    out.fileSandbox = sandboxed
     return out
 
 

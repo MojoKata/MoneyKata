@@ -38995,6 +38995,52 @@
         ]
       }
     },
+    "/ui/api/tax-books/{book_id}/no-amendment": {
+      "post": {
+        "description": "No amendment needed (S8.15): settles the edits made since the federal return was filed,\nwith who said so and when.",
+        "operationId": "no_amendment_ui_api_tax_books__book_id__no_amendment_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Panels"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "summary": "No Amendment",
+        "tags": [
+          "taxes"
+        ]
+      }
+    },
     "/ui/api/tax-books/{book_id}/panels": {
       "get": {
         "operationId": "get_panels_ui_api_tax_books__book_id__panels_get",

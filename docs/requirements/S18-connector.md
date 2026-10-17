@@ -53,11 +53,18 @@ ask it for anything.
    2. **Small enough to read.** Python with the standard library, plus the `cryptography`
       wheel for the core alone (its Ed25519 and X25519 keys and the vault's AES-GCM, which
       the standard library doesn't provide) and at most one pinned, hashed dependency per
-      driver; no import from MoneyKata. Each driver declares the hosts
-      it talks to, the credentials it needs and what it sends, and a test fails when a driver
-      reaches another host or grows past 400 lines of code, or the core (the vault, keys,
-      signing, the client, the loop, the socket and the command line together) past 1,200:
-      lines of code, not counting blank lines, comments and docstrings.
+      driver; no import from MoneyKata. Each driver declares the hosts it talks to, the
+      credentials it needs and what it sends, and a test fails when a driver reaches another
+      host.
+      1. **A driver's size is tracked**, since a driver holds its institution's credentials
+         and knows its API: under 1,000 lines of code is **green**, 1,000 to 1,999
+         **yellow**, and 2,000 or more **red**, a driver to read again before it grows. Lines
+         of code leave out blank lines, comments and docstrings. Each driver's count and its
+         colour's icon (🟢, 🟡, 🔴) are listed with it in the connector protocol's table of
+         drivers (§6), and a test fails when one there is out of date, never for the size
+         itself.
+      2. **The core** (the vault, keys, signing, the client, the loop, the socket and the
+         command line) has no limit: there is one core, kept as small as it can be.
 2. **Isolation**: the rules the design rests on.
    1. **Separate**: its own process, unprivileged user (uid 10002), image and volume
       (`connector-data`: the vault and the connector's identity key). MoneyKata never mounts

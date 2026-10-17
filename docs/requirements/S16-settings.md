@@ -44,8 +44,8 @@ Backups, and Connector (18), which follows Linked servers; 15 is not a section:
    default, 5 minutes to 24 hours).
 10. **Receipts**: the size limit (25 MB by default, 1 to 100); **Read receipts** on or off,
     jobs at a time (1 by default, at most 4), the reading queue, and **Re-read all receipts**
-    (S9.8.7). On a kernel without Landlock, the section says that reading runs without its file
-    sandbox on this host (S9.8.4.2).
+    (S9.8.7). On a host without Landlock, the section says that reading runs without its file
+    sandbox here, which admins are alerted to as well (S9.8.4.2).
 11. **Tax tables**: per year, for every year a tax book may cover (S8.14), shipped and
     correctable: contribution limits and thresholds, the annual gift exclusion, the 529-to-Roth
     lifetime limit, the QCD limit, the collectables rate, the unearned income above which Form

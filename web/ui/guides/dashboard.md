@@ -40,7 +40,8 @@ the baseline.
 ## Needs attention
 
 Transactions to categorise, lots without a cost basis, accounts whose reported balance doesn't match
-or whose next statement is overdue, and stale prices. Each line links to where it's fixed.
+or whose next statement is overdue, a return past its due date, a year whose realized gains changed
+after its federal return was filed, and stale prices. Each line links to where it's fixed.
 
 > Prices are daily closes, never live. The dot by **Prices** at the top turns amber when a held
 > instrument's price is stale.

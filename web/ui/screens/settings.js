@@ -663,9 +663,10 @@ function ReadingQueue() {
           <div class="notice small" role="status" data-help="file-sandbox">
             <${Icon}
               name="info" />
-            <div>Reading runs without its file sandbox on this host: its kernel has
-                    no Landlock (Linux 5.13 or later), so the reader could open the data directory. It
-                    still has no network, and it still runs apart from the server.</div>
+            <div>Reading runs without its file sandbox on this host: it doesn't offer
+                    Landlock (Linux 5.13 or later, and a container that allows it), so the reader
+                    could open the data directory. It still has no network, and it still runs
+                    apart from the server. Admins have an alert while it lasts.</div>
           </div>
         `
         : null}

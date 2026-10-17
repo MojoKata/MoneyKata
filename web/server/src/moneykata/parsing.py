@@ -12,6 +12,9 @@ LIMIT = 60
 _lock = threading.Lock()
 _worker = None
 _data_dir = None
+# What the file sandbox is shown as, whatever this host offers: set for the generated mockup and
+# the tests, so what they show doesn't depend on the kernel they run on. None everywhere else.
+PINNED: bool | None = None
 
 
 def _call(op: str, data: bytes, **params) -> dict:
@@ -49,6 +52,23 @@ def sandbox() -> dict | None:
         return None
     with _lock:
         return dict(_worker.state) if _worker is not None and _worker.state else None
+
+
+def file_sandbox(start: bool = False) -> bool | None:
+    """Whether reading keeps its worker out of the data directory (S9.8.4.2): what the quick
+    worker found when it started, else whether this host offers Landlock at all. With `start`,
+    the worker is started first; None when it won't start."""
+    if PINNED is not None:
+        return PINNED
+    if start:
+        state = sandbox()
+        return state.get("landlock") if state else None
+    with _lock:
+        if _worker is not None and _worker.state:
+            return _worker.state["landlock"]
+    from .sandbox import landlock_abi
+
+    return landlock_abi() >= 1
 
 
 def _bytes(value, magic: tuple[bytes, ...], limit: int) -> bytes | None:

@@ -68,7 +68,7 @@ def record_trade(
             raise refuse(
                 "action", "kind-not-for-account", "Options belong in an investing account."
             )
-        guard = closed.Guard(s, a, confirm)
+        guard = closed.Guard(s, a, confirm, c.id)
         inst, contract = options.contract(
             s, underlying, body.right, body.strike, body.expiry, body.multiplier
         )
@@ -138,7 +138,7 @@ def settle(
         inst = s.get(Instrument, instrument_id)
         if inst is None or inst.deleted:
             raise refuse("instrumentId", "not-found", "No such option.")
-        guard = closed.Guard(s, a, confirm)
+        guard = closed.Guard(s, a, confirm, c.id)
         made = options.settle(s, c.id, a, inst, body.how, body.date, body.contracts)
         washes.recompute(s, a.ownerId)
         guard.check()
@@ -328,7 +328,7 @@ def corporate_action(
         inst = s.get(Instrument, body.instrumentId)
         if inst is None or inst.deleted or inst.instrumentClass == "option":
             raise refuse("instrumentId", "instrument-unknown", "Choose a holding.")
-        guard = closed.Guard(s, a, confirm)
+        guard = closed.Guard(s, a, confirm, c.id)
         made = corporate.record(
             s,
             c.id,

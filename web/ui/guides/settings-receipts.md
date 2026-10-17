@@ -29,8 +29,10 @@ The queue: receipts waiting, read, and those that couldn't be read, with the rea
 Every file someone brings (a receipt, a statement, a photo, an OFX or CSV import) is opened only
 by the reader's own process, never by the server, and that process gives up what it doesn't need
 before it reads: it can open no network connection, and on Linux 5.13 or later (Landlock) it
-can't open the data directory either. On an older kernel, this section says the reader runs
-without that file sandbox; it still has no network and still runs apart from the server.
+can't open the data directory either. It uses Landlock wherever the host offers it. On a host
+that doesn't (an older kernel, or a container that doesn't allow it), this section says the
+reader runs without that file sandbox, and admins have an alert while it lasts; the reader still
+has no network and still runs apart from the server.
 
 ## Re-read all receipts
 

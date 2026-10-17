@@ -84,6 +84,10 @@ def cmd_dev(args) -> int:
 
         clock.fix(dt.datetime.fromisoformat(args.frozen))
         ids.repeatable()
+        # The mockup shows a host without Landlock, wherever it is built: its note and alert.
+        from . import parsing
+
+        parsing.PINNED = False
     return serve(config, seed=args.seed)
 
 

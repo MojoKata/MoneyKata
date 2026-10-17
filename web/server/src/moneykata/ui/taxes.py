@@ -21,7 +21,7 @@ from ..store.entities.taxes import (
     TaxDocument,
 )
 from ..store.entities.users import User
-from ..taxes import books, dependents
+from ..taxes import books, closed, dependents
 from .conventions import Deleted, ExactRoute, Model, Money, check, gone, if_match
 from .deps import Caller, caller, server
 
@@ -834,8 +834,15 @@ def add_filing(book_id: str, body: FilingIn, request: Request, c: Caller = Depen
         s.add(f)
         s.flush()
         _set_payments(s, f, body.payments, c.id)
+        _amending(s, c, b, f)
         s.flush()
         return detail(s, c, b, lvl)
+
+
+def _amending(s, c: Caller, b: TaxBook, f: Filing) -> None:
+    """An amended federal return settles the edits made since the return was filed (S8.15)."""
+    if f.jurisdiction == "federal" and f.amendsId:
+        closed.settle(s, b, c.id, "amended")
 
 
 def _own_filing(s, c: Caller, filing_id: str) -> tuple[Filing, TaxBook, str]:
@@ -863,6 +870,7 @@ def change_filing(
             setattr(f, k, v)
         f.updatedAt = clock.now()
         _set_payments(s, f, body.payments, c.id)
+        _amending(s, c, b, f)
         s.flush()
         return detail(s, c, b, lvl)
 
