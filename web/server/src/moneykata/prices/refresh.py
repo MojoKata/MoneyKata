@@ -21,7 +21,7 @@ from ..store.entities.assets import Item
 from ..store.entities.prices import Price, PriceSource
 from ..store.repos import secrets as secret_repo
 from ..store.tables import prices as prices_table
-from ..tasks import TaskContext
+from ..tasks import Stopping, TaskContext
 from .base import SOURCES, Ref, SourceError, TickerSource
 
 log = logging.getLogger("moneykata.prices")
@@ -47,7 +47,8 @@ def is_stale(cls: str, source: str, as_of: dt.date, today: dt.date) -> bool:
         return (today - as_of).days > STATEMENT_STALE_DAYS
     if cls in STALE_DAYS:
         return (today - as_of).days > STALE_DAYS[cls]
-    return trading_days_between(as_of, today) > 2
+    # An option's close older than the last trading day (S4.5); a stock's after two (S4.7).
+    return trading_days_between(as_of, today) > (1 if cls == "option" else 2)
 
 
 def stored_closes(
@@ -138,9 +139,51 @@ def for_class(sources: list[PriceSource], cls: str) -> list[PriceSource]:
 # ---------- what needs a price ----------
 
 
+def held(s: Session) -> set[str]:
+    """The instruments an open lot holds, long or short, in a live account (S4.4): one sold
+    or expired is no longer fetched."""
+    from ..store.repos import ledger as repo
+
+    accounts = s.scalars(
+        select(Account).where(
+            Account.deleted == false(),
+            Account.id.in_(
+                select(Transaction.accountId).where(
+                    Transaction.instrumentId.is_not(None), Transaction.deleted == false()
+                )
+            )
+            | Account.id.in_(select(Holding.accountId).where(Holding.deleted == false())),
+        )
+    ).all()
+    return {
+        lot.instrumentId for a in accounts for lot in repo.load(s, a).replay().open if lot.quantity
+    }
+
+
+def _held_by(s: Session, viewer: str) -> list[str]:
+    """What the accounts the viewer can see hold, but cash."""
+    from .. import access
+    from ..store.repos import ledger as repo
+
+    ids = {
+        lot.instrumentId
+        for a, _ in access.visible_accounts(s, viewer)
+        for lot in repo.load(s, a).replay().open
+        if lot.quantity
+    }
+    if not ids:
+        return []
+    return [
+        i.id
+        for i in s.scalars(select(Instrument).where(Instrument.id.in_(ids)))
+        if i.instrumentClass not in ("cash", "money-market")
+    ]
+
+
 def priced(s: Session, benchmarks: bool = True) -> list[tuple[Instrument, dt.date]]:
     """Every instrument held in a live account, or used as a benchmark, with the first day
     its history is wanted. Without benchmarks: only what is held."""
+    holding = held(s)
     firsts: dict[str, dt.date] = {}
     for iid, day in s.execute(
         select(Transaction.instrumentId, func.min(Transaction.date))
@@ -152,14 +195,16 @@ def priced(s: Session, benchmarks: bool = True) -> list[tuple[Instrument, dt.dat
         )
         .group_by(Transaction.instrumentId)
     ):
-        firsts[iid] = day
+        if iid in holding:
+            firsts[iid] = day
     for iid, day in s.execute(
         select(Holding.instrumentId, func.min(Holding.asOf))
         .join(Account, Account.id == Holding.accountId)
         .where(Holding.deleted == false(), Account.deleted == false())
         .group_by(Holding.instrumentId)
     ):
-        firsts[iid] = min(day, firsts.get(iid, day))
+        if iid in holding:
+            firsts[iid] = min(day, firsts.get(iid, day))
     # Metals valued at spot (S1.10.2): their metal's spot, from the first one acquired.
     from ..assets import METAL_SYMBOLS
 
@@ -280,14 +325,16 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
             continue
         candidates = for_class(sources, inst.instrumentClass)
         ref = Ref(inst.id, inst.symbol, inst.instrumentClass)
+        end = today
         if inst.instrumentClass == "option":
-            # An option is fetched by its OCC ticker, and only until it expires.
+            # An option is fetched by its OCC ticker, and only until it expires (S4.4).
             with server.db.read() as s:
                 c = options.contract_of(s, inst.id)
                 under = s.get(Instrument, c.underlyingId) if c else None
-            if c is None or under is None:
+            if c is None or under is None or c.expiry < start:
                 continue
             ref = Ref(inst.id, options.occ(c.root or under.symbol, c), "option")
+            end = min(today, c.expiry)
         per_share = None
         if not candidates and inst.symbol in METAL_PROXIES:
             # Metal spot from a proxy's closes, divided by the metal each share holds (S4.3).
@@ -307,9 +354,16 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
             try:
                 if src.id not in built:
                     built[src.id] = build(server, src, ctx)
-                closes = built[src.id].history(ref, start, today)
-            except SourceError as e:
-                run["error"] = str(e)
+                closes = built[src.id].history(ref, start, end)
+            except Stopping:
+                raise
+            except Exception as e:
+                # A bad answer fails that source for this instrument, never the refresh (S4.4).
+                if not isinstance(e, SourceError):
+                    log.warning("%s failed for %s: %r", src.name, inst.symbol, e)
+                run["error"] = (
+                    str(e) if isinstance(e, SourceError) else "an answer it couldn't read"
+                )
                 continue
             run["ok"] = True
             if per_share:
@@ -334,13 +388,20 @@ def refresh(server, ctx: TaskContext | None = None) -> dict:
     return {"stored": stored, "unpriced": missing}
 
 
-def status(s: Session, dev: bool) -> dict:
-    """The header's last refresh and whether held prices are stale (S12.5)."""
+def status(s: Session, dev: bool, viewer: str | None = None) -> dict:
+    """The header's last refresh and whether held prices are stale (S12.5): what the viewer's
+    accounts hold, with the prices they typed (S4.10); without a viewer, what is held."""
     rows = enabled(s, dev)
     last = max((r.lastOkAt for r in rows if r.lastOkAt), default=None)
     # Held prices only: the benchmarks every server watches leave a new server, which holds
     # nothing, with nothing to be stale.
-    ids = [i.id for i, _ in priced(s, benchmarks=False)]
-    closes = stored_closes(s, ids, clock.today())
+    ids = [i.id for i, _ in priced(s, benchmarks=False)] if viewer is None else _held_by(s, viewer)
+    today = clock.today()
+    closes = stored_closes(s, ids, today)
+    if viewer is not None:
+        for t in valuation.typed(s, viewer, ids, None, today):
+            if t.instrumentId not in closes or t.date >= closes[t.instrumentId].asOf:
+                stale = is_stale("", "manual", t.date, today)
+                closes[t.instrumentId] = valuation.Price(t.close, t.date, "manual", stale)
     stale = any(p.stale for p in closes.values()) or (bool(ids) and len(closes) < len(ids))
     return {"lastRefresh": last, "stale": stale and bool(ids), "sources": len(rows)}

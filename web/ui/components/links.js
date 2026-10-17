@@ -65,6 +65,8 @@ export function LinksSection() {
         ? 'Its new certificate is accepted'
         : what === 'resume'
         ? 'Link resumed'
+        : what === 'reset-copy'
+        ? 'Resetting the copy: everything is pulled again'
         : `Link ${out.state === 'ended' ? 'ended' : out.state}`,
     );
     res.reload();

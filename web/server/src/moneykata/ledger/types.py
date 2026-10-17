@@ -106,13 +106,15 @@ def investing(account_type: str) -> bool:
 
 
 def reconcilable(account_type: str) -> bool:
-    """Banking, card and brokerage accounts have a Reconcile tab (S1.11); a loan is checked
-    against its servicer's balance on its own screen (S1.9.4)."""
+    """Every account kept from files or statements has a Reconcile tab (S1.11): banking, cards,
+    brokerage, retirement and plan accounts, 529s, DAFs and exchanges. A loan is checked
+    against its servicer's balance on its own screen (S1.9.4); a watched wallet and a physical
+    asset have no statements."""
     from ..loans import is_loan
 
-    if is_loan(account_type) or GROUPS[account_type] == "physical-assets":
+    if is_loan(account_type) or account_type == "crypto-wallet":
         return False
-    return GROUPS[account_type] in ("banking", "liabilities") or account_type == "brokerage"
+    return GROUPS[account_type] != "physical-assets"
 
 
 def retirement(account_type: str) -> bool:

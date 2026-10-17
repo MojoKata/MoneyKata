@@ -168,7 +168,7 @@ def gather(s, c: Caller, kind: str = "all"):
             extra = {}
             oc = options.contract_of(s, iid) if inst.instrumentClass == "option" else None
             if oc is not None:
-                under = options.per_share(s, oc, today)
+                under = options.per_share(s, oc, today, led.account.ownerId)
                 extra = {
                     "expiry": oc.expiry,
                     "daysToExpiry": (oc.expiry - today).days,

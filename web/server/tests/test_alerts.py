@@ -267,3 +267,33 @@ def test_the_daily_summary_goes_once_a_day_after_its_time(server, frozen):
     assert _outbox_subjects(server)[-1] == "MoneyKata: 1 new alert"
     at(days=1)
     assert alerts.daily_summaries(server) == 0, "none on a day without new alerts"
+
+
+def test_every_check_names_the_kinds_it_keeps_when_it_fails():
+    assert {fn.__name__ for fn in alerts.CHECKS} == set(alerts._KINDS)
+
+
+def test_a_check_that_fails_leaves_its_alerts_open_and_unsent(server, admin_client, frozen):
+    with server.db.tx() as s:
+        s.add(TaskRun(name="backups", startedAt=T0, finishedAt=T0, error="disk full"))
+    alerts.evaluate(server)
+    before = [a["title"] for a in listed(admin_client)["open"]]
+    assert before == ["Backup failed"]
+    with server.db.tx() as s:
+        s.get(TaskRun, "backups").error = None
+
+    def broken(s, server):
+        raise RuntimeError("a check that can't run")
+        yield
+
+    i = next(i for i, fn in enumerate(alerts.CHECKS) if fn.__name__ == "backups")
+    keep = alerts.CHECKS[i]
+    broken.__name__ = "backups"
+    alerts.CHECKS[i] = broken
+    try:
+        assert alerts.evaluate(server) == []  # nothing reopened, so nothing sent again
+    finally:
+        alerts.CHECKS[i] = keep
+    assert [a["title"] for a in listed(admin_client)["open"]] == before
+    alerts.evaluate(server)  # the check runs again: the backup is fixed
+    assert listed(admin_client)["open"] == []

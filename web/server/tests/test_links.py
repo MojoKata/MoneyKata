@@ -286,7 +286,7 @@ def test_an_item_is_shared_read_only_with_a_linked_servers_people(admins):
 
 # ---------- pulls (S11.3.1, S11.4, S11.9.5)
 
-from test_accounts import add  # noqa: E402
+from test_accounts import add, wait_job  # noqa: E402
 
 from moneykata.links import copy as lcopy  # noqa: E402
 from moneykata.links import copydb  # noqa: E402
@@ -391,7 +391,7 @@ def test_a_reset_copy_is_pulled_again_in_full(admins):
     alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}})
     cb.post(f"/ui/api/settings/links/{b_id}/copy-key")
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
-    cb.post(f"/ui/api/settings/links/{b_id}/reset-copy")
+    wait_job(cb, cb.post(f"/ui/api/settings/links/{b_id}/reset-copy").json())
     words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
     carol = sign_in(b, "carol")
@@ -571,6 +571,9 @@ def test_a_large_change_arrives_in_parts_oldest_first(admins, monkeypatch):
             "/ui/api/accounts", json={"name": f"Account {year}", "type": "checking"}
         ).json()
         add(alice, acct["id"], amount="10.00", day=f"{year}-03-02", payee="Opening")
+        if year == 2026:  # a long history: its transactions travel in pieces by date
+            for month in range(4, 10):
+                add(alice, acct["id"], amount="-1.00", day=f"2026-{month:02}-01", payee="Shop")
         alice.put(
             f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}}
         )
@@ -595,8 +598,18 @@ def test_a_large_change_arrives_in_parts_oldest_first(admins, monkeypatch):
     assert side["syncTotal"] is None, "all of it arrived"
     carol = sign_in(b, "carol")
     carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
-    items, _docs = docs_in(b, b_id)
+    items, docs = docs_in(b, b_id)
     assert set(ids_) <= set(items), "every part applied, in order"
+    pieces = [
+        d
+        for p in seen
+        for d in p.get("docs") or []
+        if d["path"] == f"/transactions?account={ids_[2]}"
+    ]
+    assert len(pieces) > 1 and pieces[0].get("append") is None and pieces[-1]["append"]
+    long = next(v for k, v in docs.items() if k[1] == f"/transactions?account={ids_[2]}")
+    days = [t["date"] for t in long["items"]]
+    assert days == sorted(days, reverse=True) and len(days) == 7, "whole, newest first"
 
 
 def test_a_remote_user_is_a_person_of_their_own_until_someone_joins_them(admins):
@@ -711,6 +724,37 @@ def test_what_crosses_a_link_is_sealed_to_the_receiving_copy(admins, monkeypatch
     carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
     items, _ = docs_in(b, b_id)
     assert [i.name for i in items.values()] == ["Secret Brokerage"], "the copy opens it"
+
+
+def test_a_malformed_change_is_set_aside_and_everything_asked_for(admins, monkeypatch):
+    """S11.9.5.3: a signed change that isn't in a change's shape stops nothing: it is set
+    aside, recorded on the link, and the next pull asks for everything."""
+    from moneykata.links import changes
+    from moneykata.store.entities.links import Link
+
+    a, b, ca, cb, _wire = admins
+    make_user(b, "carol")
+    _a_id, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post("/ui/api/accounts", json={"name": "Brokerage", "type": "brokerage"}).json()
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
+    alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}})
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    assert changes.waiting(b.config.data_dir, b_id)
+    texts = [e["text"] for e in cb.get("/ui/api/activity").json()["items"]]
+    assert any(t.endswith("asked a linked server for its changes now") for t in texts)
+    assert any("changed items: Alice" in t and "account for Carol" in t for t in texts), texts[:4]
+    real = changes.open_part
+    monkeypatch.setattr(changes, "open_part", lambda *x: {**real(*x), "items": [{"id": 5}]})
+    carol = sign_in(b, "carol")
+    r = carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
+    assert r.status_code == 200, r.text
+    assert changes.waiting(b.config.data_dir, b_id) == []
+    with b.db.read() as s:
+        link = s.get(Link, b_id)
+        assert link.needsFull and "asked for" in link.lastError
 
 
 def test_a_peers_own_certificate_is_pinned_announced_and_accepted(admins, monkeypatch):

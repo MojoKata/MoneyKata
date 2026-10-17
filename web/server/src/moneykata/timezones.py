@@ -4,12 +4,13 @@ zone; the server's own zone is read from the host."""
 import os
 from functools import cache
 from pathlib import Path
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
+from zoneinfo import TZPATH, ZoneInfo, ZoneInfoNotFoundError, available_timezones
 
 
 @cache
 def host_zone() -> str:
-    """The host's zone: TZ, then /etc/timezone, then where /etc/localtime points; else UTC."""
+    """The host's zone: TZ, then /etc/timezone, then where /etc/localtime points, or the zone
+    whose data it holds when the host mounted its own file there (S14.9.2); else UTC."""
     candidates = [os.environ.get("TZ", "").lstrip(":")]
     tz_file = Path("/etc/timezone")
     if tz_file.is_file():
@@ -19,10 +20,24 @@ def host_zone() -> str:
         target = str(localtime.resolve())
         if "zoneinfo/" in target:
             candidates.append(target.split("zoneinfo/", 1)[1])
+    elif localtime.is_file():
+        candidates.append(zone_of(localtime.read_bytes()))
     for name in candidates:
         if name and valid(name):
             return name
     return "UTC"
+
+
+def zone_of(data: bytes) -> str:
+    """The name of the zone whose compiled file is `data`, or "" when none is."""
+    for root in map(Path, TZPATH):
+        for name in names():
+            try:
+                if (root / name).read_bytes() == data:
+                    return name
+            except OSError:
+                continue
+    return ""
 
 
 def valid(name: str) -> bool:

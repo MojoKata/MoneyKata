@@ -495,7 +495,7 @@ def test_the_connector_alerts_admins_when_locked_or_silent(server, paired, admin
     assert view["silentForSeconds"] and view["silentForSeconds"] >= 60
 
 
-def test_a_connection_that_needs_a_sign_in_alerts_its_owner(server, paired):
+def test_a_connection_that_needs_a_sign_in_alerts_its_owner_and_admins(server, paired, admin):
     alice = make_user(server, "alice").id
     cid = connection(server, alice)
     paired.call(
@@ -510,6 +510,8 @@ def test_a_connection_that_needs_a_sign_in_alerts_its_owner(server, paired):
     mine = c.get("/ui/api/alerts").json()["open"]
     assert [a["title"] for a in mine] == ["Alice's Schwab login needs a sign-in"]
     assert mine[0]["fix"] == "Sign in again"
+    theirs = admin.get("/ui/api/alerts").json()["open"]
+    assert any(a["title"] == "Alice's Schwab login needs a sign-in" for a in theirs)
 
 
 @pytest.fixture

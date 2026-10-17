@@ -5,6 +5,7 @@ import datetime as dt
 from dataclasses import dataclass, field
 from decimal import Decimal as D
 from pathlib import Path
+from types import SimpleNamespace
 
 from moneykata import paths
 from moneykata.ledger import balances, lots, reconcile, transfers
@@ -253,10 +254,13 @@ def test_first_parting_running_balance_row():
     assert reconcile.first_parting(start, txns) == txns[1].id
 
 
-def test_needs_an_anchor_after_45_days():
-    txns = [Txn(d(2026, 8, 1), "deposit", D(1))]
-    assert reconcile.needs_anchor([Anchor(d(2026, 8, 1), D(1))], txns, d(2026, 9, 10)) is False
-    assert reconcile.needs_anchor([Anchor(d(2026, 8, 1), D(1))], txns, d(2026, 9, 20)) is True
+def test_needs_an_anchor_once_the_next_statement_is_overdue():
+    # A monthly statement ending Aug 31 is overdue from Oct 15 (S1.11.7.3).
+    acct = SimpleNamespace(type="checking", statementInterval=None, keptBy='["file"]')
+    imports = [SimpleNamespace(coveredFrom=d(2026, 8, 1), coveredTo=d(2026, 8, 31))]
+    assert reconcile.needs_anchor(acct, imports, d(2026, 10, 14)) is False
+    assert reconcile.needs_anchor(acct, imports, d(2026, 10, 15)) is True
+    assert reconcile.needs_anchor(acct, [], d(2027, 1, 1)) is False
 
 
 def test_calculations_never_import_sqlalchemy():

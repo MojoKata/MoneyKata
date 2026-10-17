@@ -489,3 +489,19 @@ def test_uploads_are_checked_from_their_content(server):
         files={"file": ("statement.ofx", b"MZ\x90\x00\x03 a program, not a statement")},
     )
     assert r.status_code == 415
+
+
+def test_an_edited_transfer_in_moves_its_holding(server):
+    # Shares moved in from another broker, then corrected (B37).
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    a = new_account(c, name="Brokerage", type="brokerage")
+    t = add(c, a["id"], "0", "2026-03-02", kind="transfer-in", symbol="VTI", quantity="10")
+    r = c.patch(
+        f"/ui/api/transactions/{t['id']}",
+        json={"quantity": "12", "costBasis": "2400.00"},
+        headers={"If-Match": str(t["version"])},
+    )
+    assert r.status_code == 200, r.text
+    h = c.get(f"/ui/api/accounts/{a['id']}/holdings").json()["holdings"][0]
+    assert Decimal(h["quantity"]) == 12 and h["costBasis"] == "2400.00"

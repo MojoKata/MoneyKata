@@ -235,8 +235,10 @@ def linked_servers(s: Session, server) -> Iterable[Cause]:
 @check
 def connector(s: Session, server) -> Iterable[Cause]:
     """The MoneyKata Connector locked, or not heard from for 15 minutes (S18.5): admins. A
-    Connection that needs a sign-in or is failing: its owner (S18.5.3)."""
+    Connection that needs a sign-in or is failing: admins, and the owner of each account it
+    keeps current (S18.5.3)."""
     from .connector import manage
+    from .store.entities.accounts import Account
     from .store.entities.connector import Connection
 
     row = manage.paired(s)
@@ -288,14 +290,35 @@ def connector(s: Session, server) -> Iterable[Cause]:
         )
     ):
         needs = c.state == "needs-sign-in"
+        title = f"{c.label} {'needs a sign-in' if needs else 'is failing'}"
+        about = f"Connection · {c.message or c.driver}"
+        # Admins, and the owner of each account it keeps current (S18.5.3).
+        owners = {c.ownerId} | set(
+            s.scalars(
+                select(Account.ownerId).where(
+                    Account.connectionId == c.id, Account.deleted == false()
+                )
+            )
+        )
+        for owner in sorted(owners):
+            yield Cause(
+                key=f"connection:{c.id}:{c.state}:{owner}",
+                kind="connection-failing",
+                title=title,
+                about=about,
+                user_id=owner,
+                link="/ui/profile",
+                fix="Sign in again" if needs and owner == c.ownerId else "Your connections",
+                icon="lock" if needs else "sync",
+                since=c.lastRunAt,
+            )
         yield Cause(
             key=f"connection:{c.id}:{c.state}",
             kind="connection-failing",
-            title=f"{c.label} {'needs a sign-in' if needs else 'is failing'}",
-            about=f"Connection · {c.message or c.driver}",
-            user_id=c.ownerId,
-            link="/ui/profile",
-            fix="Sign in again" if needs else "Your connections",
+            title=title,
+            about=about,
+            link="/ui/settings/connector",
+            fix="Connector settings",
             icon="lock" if needs else "sync",
             since=c.lastRunAt,
         )
@@ -657,12 +680,13 @@ def recipients(s: Session, alert: Alert) -> list[User]:
 
 
 def evaluate(server) -> list[Alert]:
-    """Run every check; open, update and resolve alerts. Returns the alerts that opened."""
+    """Run every check in a read transaction, then open, update and resolve alerts, writing
+    only what changed (S12.11.2). A check that fails leaves its alerts as they are. Returns the
+    alerts that opened."""
     now = clock.now()
-    opened: list[Alert] = []
-    with server.db.tx() as s:
-        holding: dict[str, Cause] = {}
-        failed: set[str] = set()
+    holding: dict[str, Cause] = {}
+    failed: set[str] = set()
+    with server.db.read() as s:
         for fn in CHECKS:
             try:
                 for cause in fn(s, server):
@@ -670,16 +694,36 @@ def evaluate(server) -> list[Alert]:
             except Exception:
                 # A check that fails says nothing: its alerts stay as they are.
                 log.exception("the alert check %s failed", fn.__name__)
-                failed |= _KINDS.get(fn.__name__, set())
-        for a in _unresolved(s):
-            cause = holding.pop(a.causeKey, None)
-            if cause is None:
-                if a.kind not in failed:
-                    a.resolvedAt = now
-                    a.resolution = "the cause cleared"
+                failed |= _KINDS[fn.__name__]
+        current = [
+            (a.id, a.causeKey, a.kind, (a.title, a.about, a.link, a.fix), a.openedAt, a.seenSince)
+            for a in _unresolved(s)
+        ]
+    resolve: list[str] = []
+    change: dict[str, tuple[Cause, bool]] = {}
+    for alert_id, key, kind, shown, opened_at, seen in current:
+        cause = holding.pop(key, None)
+        if cause is None:
+            if kind not in failed:
+                resolve.append(alert_id)
+            continue
+        opens = opened_at is None and seen + cause.delay <= now
+        if opens or shown != (cause.title, cause.about, cause.link, cause.fix):
+            change[alert_id] = (cause, opens)
+    if not (resolve or change or holding):
+        return []
+    opened: list[Alert] = []
+    with server.db.tx() as s:
+        for alert_id in resolve:
+            a = s.get(Alert, alert_id)
+            if a is not None and a.resolvedAt is None:
+                a.resolvedAt, a.resolution = now, "the cause cleared"
+        for alert_id, (cause, opens) in change.items():
+            a = s.get(Alert, alert_id)
+            if a is None or a.resolvedAt is not None:
                 continue
             a.title, a.about, a.link, a.fix = cause.title, cause.about, cause.link, cause.fix
-            if a.openedAt is None and a.seenSince + cause.delay <= now:
+            if opens and a.openedAt is None:
                 a.openedAt = now
                 opened.append(a)
         for cause in holding.values():
@@ -710,16 +754,25 @@ def evaluate(server) -> list[Alert]:
     return opened
 
 
+# The kinds each check raises: when it fails, these stay as they are.
 _KINDS = {
     "price_sources": {"source-failing"},
     "email": {"source-failing"},
+    "bitcoin_source": {"source-failing"},
+    "linked_servers": {"source-failing", "link-broken", "link-certificate", "link-key-waiting"},
     "backups": {"backup-failed"},
     "recovery_phrase": {"phrase-check"},
+    "key_rotation": {"key-rotation"},
     "accounts": {"statement-overdue", "reconcile-mismatch"},
     "projections_behind": {"projection-behind"},
     "bitcoin_certificate": {"node-certificate"},
     "bitcoin_off_chain": {"off-chain"},
     "connector": {"connector-silent", "connector-locked", "connector-moved", "connection-failing"},
+    "options_expired": {"option-expired"},
+    "options_expiring": {"option-expiring"},
+    "pledges_due": {"pledge-due"},
+    "occasions": {"occasion"},
+    "share_asked": {"share-asked"},
 }
 
 

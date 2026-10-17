@@ -389,14 +389,14 @@ def reauth(body: Password, request: Request, c: Caller = Depends(caller_in_setup
     return Response(status_code=204)
 
 
-@router.post("/password-reset", status_code=202)
+@router.post("/password-reset", status_code=204)
 def password_reset(body: Login, request: Request):
     """The answer is the same whether or not the user exists (S10.1.5)."""
     srv = server(request)
     _throttle(request)
     with srv.db.tx() as s:
         accounts.request_reset(s, srv.services, body.login)
-    return Response(status_code=202)
+    return Response(status_code=204)
 
 
 @router.post("/password-reset/confirm", status_code=204)
@@ -417,7 +417,7 @@ def signup_open(request: Request):
     return SignupOpen(open=on, domains=domains)
 
 
-@router.post("/signup", status_code=202, responses={403: {}, 422: {}, 429: {}})
+@router.post("/signup", status_code=204, responses={403: {}, 422: {}, 429: {}})
 def signup_request(body: SignupForm, request: Request):
     """The answer is the same whether or not the email already has an account (S10.1.4)."""
     srv = server(request)
@@ -432,7 +432,7 @@ def signup_request(body: SignupForm, request: Request):
             body.password,
             body.sex,
         )
-    return Response(status_code=202)
+    return Response(status_code=204)
 
 
 @router.post("/signup/confirm", response_model=SignupConfirmed)
@@ -484,13 +484,13 @@ def email_change_confirm(body: Token, request: Request):
     return Response(status_code=204)
 
 
-@router.post("/reactivation-requests", status_code=202)
+@router.post("/reactivation-requests", status_code=204)
 def reactivation_request(body: SignIn, request: Request):
     srv = server(request)
     _throttle(request)
     with srv.db.tx() as s:
         accounts.ask_reactivation(s, body.login, body.password)
-    return Response(status_code=202)
+    return Response(status_code=204)
 
 
 @router.get(

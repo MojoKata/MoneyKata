@@ -125,9 +125,8 @@ class Copies:
         self, data_dir: Path, link_id: str, public: str, words: str, user_id: str, at: dt.datetime
     ) -> Open:
         with self.lock:
-            if link_id in self.open:
-                self.open[link_id].used = self.clock()
-                return self.open[link_id]
+            # The words are checked even when someone else has the copy open already: an
+            # unlock is recorded only for the words (S11.9.4).
             self._check_limits(link_id, user_id)
             try:
                 key = phrase.from_words(words)
@@ -140,6 +139,9 @@ class Copies:
                     self.wrong[(link_id, user_id)] = 0
                 raise CopyError("words-wrong", "Those aren't this copy's words.")
             self.wrong.pop((link_id, user_id), None)
+            if link_id in self.open:
+                self.open[link_id].used = self.clock()
+                return self.open[link_id]
             return self._open(data_dir, link_id, key, user_id, at)
 
     def _open(self, data_dir, link_id, key: bytes, user_id: str, at) -> Open:

@@ -11,10 +11,12 @@ whole copy (`full`), the items it adds or changes without their names (`items`),
 and files, and what they remove. `signature` is Ed25519 over the registry and the SHA-256 of
 `sealed`, as canonical JSON (keys sorted, no spaces)."""
 
+import contextlib
 import datetime as dt
 import hashlib
 import json
 import re
+import shutil
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -167,10 +169,31 @@ def apply(srv, link_id: str) -> int:
             raw = p.read_bytes()
             change, local = entry["change"], entry.get("local") or {}
             verify(peer, {**change, "sealed": b64(raw)})
-            changes.append((open_part(priv, change, way, raw), local))
-    except (sealed.SealError, ChangeError, ValueError, KeyError, OSError) as e:
+            opened = open_part(priv, change, way, raw)
+            _shape(opened)
+            changes.append((opened, local))
+    except (
+        sealed.SealError,
+        ChangeError,
+        ValueError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        OSError,
+    ) as e:
+        # Nothing of the inbox is applied: it is set aside, the failure recorded on the link,
+        # and the next pull asks for everything (S11.9.5.3).
+        aside = folder(srv.config.data_dir, link_id) / "set-aside"
+        shutil.rmtree(aside, ignore_errors=True)
+        aside.mkdir(parents=True, exist_ok=True)
+        for f in files:
+            for part in (f, f.with_suffix(".json")):
+                with contextlib.suppress(OSError):
+                    part.rename(aside / part.name)
         with srv.db.tx() as s:
-            s.get(Link, link_id).lastError = f"A pulled change can't be applied: {e}"
+            row = s.get(Link, link_id)
+            row.lastError = f"A pulled change can't be applied, so everything is asked for: {e}"
+            row.needsFull, row.inboxAsOf = True, None
         raise ChangeError(str(e)) from None
     receipts_dir = folder(srv.config.data_dir, link_id) / "receipts"
     with o.engine.begin() as conn:
@@ -189,6 +212,42 @@ def apply(srv, link_id: str) -> int:
     with srv.db.tx() as s:
         s.get(Link, link_id).inboxAsOf = None
     return len(changes)
+
+
+def _shape(c: dict) -> None:
+    """A change's shape, checked before any of it is applied: a signed change that isn't one
+    is refused here, never part-way through the copy's transaction (S11.9.5.3)."""
+
+    def texts(v) -> bool:
+        return isinstance(v, list) and all(isinstance(x, str) for x in v)
+
+    def rows(v, *keys: str) -> bool:
+        return isinstance(v, list) and all(
+            isinstance(x, dict) and all(isinstance(x.get(k), str) for k in keys) for x in v
+        )
+
+    def whole(v) -> bool:
+        return v is None or (isinstance(v, int) and not isinstance(v, bool))
+
+    ok = (
+        whole(c.get("seq"))
+        and texts(c.get("removed") or [])
+        and rows(c.get("items") or [], "id", "kind")
+        and all(whole(it.get("version")) for it in c.get("items") or [])
+        and rows(c.get("docsRemoved") or [], "itemId", "path", "viewer")
+        and rows(c.get("docs") or [], "itemId", "path", "viewer")
+        and all("body" in d for d in c.get("docs") or [])
+        and all(
+            isinstance(d["body"], dict) and isinstance(d["body"].get("items"), list)
+            for d in c.get("docs") or []
+            if d.get("append")
+        )
+        and texts(c.get("filesRemoved") or [])
+        and rows(c.get("files") or [], "id", "itemId", "sha256")
+        and all(whole(f.get("length")) for f in c.get("files") or [])
+    )
+    if not ok:
+        raise ChangeError(f"change {c.get('seq')} isn't in the shape of a change")
 
 
 def _type_of(private, way: str, file_id: str, path) -> str:
@@ -239,13 +298,25 @@ def _apply_one(conn, c: dict, names: dict[str, str], types: dict[str, str]) -> l
             )
         )
     for d in c.get("docs") or []:
+        body = d["body"]
+        if d.get("append"):
+            # A later piece of a long list (S11.4): its records go ahead of the older ones.
+            had = conn.execute(
+                select(copydb.Doc.c.body).where(
+                    copydb.Doc.c.itemId == d["itemId"],
+                    copydb.Doc.c.path == d["path"],
+                    copydb.Doc.c.viewer == d["viewer"],
+                )
+            ).scalar()
+            before = exactjson.loads(had) if had else {}
+            body = {**before, **body, "items": body["items"] + (before.get("items") or [])}
         conn.execute(
             copydb.Doc.insert().prefix_with("OR REPLACE"),
             {
                 "itemId": d["itemId"],
                 "path": d["path"],
                 "viewer": d["viewer"],
-                "body": exactjson.dumps(d["body"], separators=(",", ":")),
+                "body": exactjson.dumps(body, separators=(",", ":")),
             },
         )
     for fid in c.get("filesRemoved") or []:

@@ -217,10 +217,44 @@ def _check_inputs(inputs: dict) -> list[FieldError]:
             e[-1] = FieldError(f"inputs.people.{i}.retireAge", "input-invalid", e[-1].message)
     if inputs.get("date"):
         try:
-            if dt.date.fromisoformat(inputs["date"]) <= clock.today():
+            when = dt.date.fromisoformat(inputs["date"])
+            if when <= clock.today():
                 e.append(FieldError("inputs.date", "date-past", "A date in the future."))
+            elif when.year > clock.today().year + 100:
+                e.append(FieldError("inputs.date", "date-invalid", "A date within 100 years."))
         except ValueError:
             e.append(FieldError("inputs.date", "date-invalid", "A date."))
+    # The years a projection runs are bounded: a birth year within the last 120 years, a date
+    # or first year of school within the next 100 (S6.4).
+    year = clock.today().year
+    people = inputs.get("people") or []
+    if not isinstance(people, list) or len(people) > 2:
+        e.append(FieldError("inputs.people", "input-invalid", "One person, or a couple."))
+        people = []
+    for i, p in enumerate(people):
+        born = p.get("birthYear") if isinstance(p, dict) else None
+        if born is not None and (
+            isinstance(born, bool) or not isinstance(born, int) or not year - 120 <= born <= year
+        ):
+            e.append(
+                FieldError(
+                    f"inputs.people.{i}.birthYear", "input-invalid", "A year in the last 120."
+                )
+            )
+    _num(inputs, "firstYear", year - 1, year + 100, e, "A year within the next 100.")
+    income = inputs.get("income") or []
+    if not isinstance(income, list) or len(income) > 10:
+        e.append(FieldError("inputs.income", "input-invalid", "At most 10 sources of income."))
+    else:
+        for i, item in enumerate(income):
+            _num({"x": item}, "x.fromAge", 0, 120, e, "Between 0 and 120.")
+            _num({"x": item}, "x.monthly", 0, 1_000_000, e, "Zero or more.")
+            if e and e[-1].field.startswith("inputs.x."):
+                e[-1] = FieldError(
+                    e[-1].field.replace("inputs.x.", f"inputs.income.{i}."),
+                    "input-invalid",
+                    e[-1].message,
+                )
     w = (inputs.get("withdrawal") or {}).get("method")
     if w is not None and w not in ("fourPercent", "fixed", "percent"):
         e.append(FieldError("inputs.withdrawal.method", "input-invalid", "Choose a rule."))

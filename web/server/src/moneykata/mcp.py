@@ -13,6 +13,7 @@ HTTP, for an AI assistant holding one of a user's access tokens.
 """
 
 import datetime as dt
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -30,7 +31,7 @@ LIMIT = ratelimit.Window(60, 60)
 INSTRUCTIONS = (
     "MoneyKata is a household's finances: accounts, holdings, transactions, portfolios, "
     "budgets, gifts, giving and taxes. Every tool reads; nothing can be changed here. Amounts "
-    "are US dollars as decimal strings; dates are ISO 8601."
+    "are US dollars, as exact JSON numbers; dates are ISO 8601 (2026-10-14)."
 )
 
 
@@ -228,7 +229,7 @@ def _gifts(srv, w, args):
 @tool(
     "get_giving",
     "A year's giving: donations by organisation, the giving plan and what is left of it.",
-    {"year": {"type": "integer"}},
+    {"year": {"type": "integer", "minimum": 1900, "maximum": 2200}},
     whole=True,
 )
 def _giving(srv, w, args):
@@ -327,6 +328,8 @@ def _call(srv, w: Who, params: dict) -> dict:
         return _tool_error(f"{name} takes {', '.join(t.params) or 'nothing'}.")
     if missing := [r for r in t.required if not args.get(r)]:
         return _tool_error(f"{name} needs {', '.join(missing)}.")
+    if wrong := _invalid(t, args):
+        return _tool_error(wrong)
     if t.whole and w.chosen is not None:
         return _tool_error("This token reads only its chosen accounts and portfolios.")
     with srv.db.tx() as s:
@@ -349,6 +352,30 @@ def _call(srv, w: Who, params: dict) -> dict:
         "structuredContent": {"result": out},
         "isError": False,
     }
+
+
+def _invalid(t: Tool, args: dict) -> str | None:
+    """What is wrong with a call's arguments against its tool's schema, or None (S10.9.5)."""
+    for key, value in args.items():
+        schema = t.params[key]
+        if schema["type"] == "integer":
+            low, high = schema.get("minimum"), schema.get("maximum")
+            if isinstance(value, bool) or not isinstance(value, int):
+                return f"{key} is a whole number."
+            if (low is not None and value < low) or (high is not None and value > high):
+                return f"{key} is from {low} to {high}."
+        elif not isinstance(value, str) or len(value) > 200:
+            return f"{key} is a string of at most 200 characters."
+        elif "enum" in schema and value not in schema["enum"]:
+            return f"{key} is one of {', '.join(schema['enum'])}."
+        elif "pattern" in schema and not re.fullmatch(schema["pattern"], value):
+            return f"{key} doesn't have the form {schema['pattern']}."
+        elif schema.get("format") == "date":
+            try:
+                dt.date.fromisoformat(value)
+            except ValueError:
+                return f"{key} is a date such as 2026-10-14."
+    return None
 
 
 def _tool_error(message: str) -> dict:

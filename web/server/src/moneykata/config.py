@@ -66,6 +66,14 @@ class Config:
         return self.data_dir / "outbox"
 
 
+# Every key the file may hold, by section; any other refuses the start.
+KEYS = {
+    "server": {"name", "mode", "host", "port", "trusted_proxies"},
+    "paths": {"data", "backups", "socket"},
+    "tls": {"cert", "key", "names"},
+}
+
+
 def _path(table: dict, key: str, where: str) -> Path:
     value = table.get(key)
     if not isinstance(value, str) or not value:
@@ -92,10 +100,16 @@ def parse(raw: dict, where: str, path: Path | None = None) -> Config:
             f"{where}: [keys] is not used: the master key is a recovery phrase entered when "
             "the server starts, never a file, and the keyring records its rotations (S15.4)"
         )
-    known = {"server", "paths", "tls"}
-    unknown = set(raw) - known
+    unknown = set(raw) - set(KEYS)
     if unknown:
         raise RefuseStart(f"{where}: unknown section [{sorted(unknown)[0]}]")
+    for section, keys in KEYS.items():
+        table = raw.get(section, {})
+        if not isinstance(table, dict):
+            raise RefuseStart(f"{where}: [{section}] must be a section")
+        if extra := sorted(set(table) - keys):
+            # A misspelt key would otherwise start with its default (S13.6).
+            raise RefuseStart(f"{where}: unknown key {section}.{extra[0]}")
     server = raw.get("server", {})
     paths = raw.get("paths", {})
     tls = raw.get("tls", {})
@@ -121,6 +135,7 @@ def parse(raw: dict, where: str, path: Path | None = None) -> Config:
 
     data_dir = _path(paths, "data", f"{where} [paths]")
     backup_dir = _path(paths, "backups", f"{where} [paths]")
+    socket = _path(paths, "socket", f"{where} [paths]") if "socket" in paths else DEFAULT_SOCKET
 
     cert = tls.get("cert")
     key = tls.get("key")
@@ -130,7 +145,7 @@ def parse(raw: dict, where: str, path: Path | None = None) -> Config:
     if not isinstance(names, list) or not all(isinstance(n, str) and n.strip() for n in names):
         raise RefuseStart(f"{where}: [tls] names must be a list of host names or addresses")
 
-    for p, label in ((data_dir, "data"), (backup_dir, "backups")):
+    for p, label in ((data_dir, "data"), (backup_dir, "backups"), (socket, "socket")):
         if not p.is_absolute():
             raise RefuseStart(f"{where}: the {label} path must be absolute")
     _check_apart(data_dir, backup_dir)
@@ -147,6 +162,7 @@ def parse(raw: dict, where: str, path: Path | None = None) -> Config:
         tls_key=Path(key) if key else None,
         cert_names=tuple(n.strip() for n in names),
         path=path,
+        socket_path=socket,
     )
 
 

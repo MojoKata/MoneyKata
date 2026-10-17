@@ -3,6 +3,7 @@
 (schema.md §4.4), kept in memory for a day."""
 
 import datetime as dt
+import logging
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -12,6 +13,7 @@ from . import clock, ids
 
 JobState = Literal["waiting", "running", "done", "failed"]
 KEEP = dt.timedelta(days=1)
+log = logging.getLogger("moneykata.jobs")
 
 
 @dataclass
@@ -45,6 +47,38 @@ class Jobs:
         with self._lock:
             job = self._jobs.get(job_id)
         return job if job and job.userId == user_id else None
+
+    def start(self, kind: str, user_id: str, work: Callable[[Job], Any]) -> Job:
+        """A job that runs `work` on a thread of its own: done with what it returns (a dict),
+        or failed, naming only the error's type (S13.7.9)."""
+        job = self.create(kind, user_id)
+
+        def body() -> None:
+            self.update(job, state="running")
+            try:
+                result = work(job)
+            except Exception as e:
+                log.exception("job %s failed", kind)
+                self.update(
+                    job, state="failed", error={"code": "failed", "message": type(e).__name__}
+                )
+            else:
+                out = result if isinstance(result, dict) else None
+                self.update(job, state="done", progress=1.0, result=out)
+
+        threading.Thread(target=body, name=f"mk-job-{kind}", daemon=True).start()
+        return job
+
+    def follow(self, job: Job) -> Callable:
+        """What a task calls when its run ends, to end the job that asked for it."""
+
+        def ended(run) -> None:
+            if run.error:
+                self.update(job, state="failed", error={"code": "failed", "message": run.error})
+            else:
+                self.update(job, state="done", progress=1.0)
+
+        return ended
 
     def update(self, job: Job, **changes) -> None:
         for k, v in changes.items():

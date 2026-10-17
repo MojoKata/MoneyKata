@@ -228,8 +228,8 @@ def record(s, account_id: str, txs: list[sources.Tx]) -> int:
 
 def mark_gone(s, account_id: str, txs: list[sources.Tx]) -> int:
     """A recorded transaction the explorer or node no longer has, after a whole history was
-    read, is marked *no longer on the chain*, never deleted (S1.6.2.7); one back on it is
-    unmarked."""
+    read, is marked *no longer on the chain* once two reads in a row miss it, never deleted
+    (S1.6.2.7); one back on it is unmarked, and one its owner kept stays kept."""
     seen = {f"btc:{t.txid}" for t in txs}
     now = clock.now()
     marked = 0
@@ -240,11 +240,15 @@ def mark_gone(s, account_id: str, txs: list[sources.Tx]) -> int:
             Transaction.deleted == false(),
         )
     ):
-        if r.fitId not in seen and r.offChainAt is None:
+        if r.fitId in seen:
+            r.offChainAt = r.offChainMissedAt = None
+        elif r.offChainKeptAt is not None or r.offChainAt is not None:
+            continue
+        elif r.offChainMissedAt is None:
+            r.offChainMissedAt = now  # one miss: a node catching up, or a reorganisation
+        else:
             r.offChainAt = now
             marked += 1
-        elif r.fitId in seen and r.offChainAt is not None:
-            r.offChainAt = None
     return marked
 
 
@@ -275,6 +279,10 @@ def sync_all(server, ctx=None) -> str | None:
         except SourceError as e:
             error = error or str(e)
             log.warning("bitcoin: %s", e)
+        except Exception:
+            # One wallet's failure is its own: the others are still read.
+            log.exception("bitcoin: reading wallet %s failed", account_id)
+            error = error or "a wallet couldn't be read; the server's log says why"
     if error:
         raise SourceError(error)
     return None

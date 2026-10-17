@@ -37,10 +37,9 @@ def openapi_document() -> dict:
         description="The browser app's API, /ui/api (requirements S13.8). It is "
         "served with the app and carries no version of its own.",
     )
-    # The release is stated by the document but would make every version bump a contract
-    # change; the committed file names the series only.
-    doc["info"]["version"] = "see web/VERSION"
+    # The release, from web/VERSION (S13.8.9): a version bump changes the document too.
     _problems(doc)
+    _created(doc)
     return doc
 
 
@@ -112,6 +111,18 @@ def _problems(doc: dict) -> None:
         for op in ops.values():
             if isinstance(op, dict) and "responses" in op:
                 op["responses"].setdefault("default", {"$ref": "#/components/responses/Problem"})
+
+
+def _created(doc: dict) -> None:
+    """Every 201 names what it made in `Location` (S13.8.4)."""
+    for ops in doc.get("paths", {}).values():
+        for op in ops.values():
+            made = op.get("responses", {}).get("201") if isinstance(op, dict) else None
+            if made is not None:
+                made.setdefault("headers", {})["Location"] = {
+                    "description": "Where what was made is read.",
+                    "schema": {"type": "string"},
+                }
 
 
 def openapi_json(doc: dict | None = None) -> str:

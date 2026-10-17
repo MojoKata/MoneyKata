@@ -5,6 +5,7 @@ Mainnet only. Nothing here ever holds or logs a secret: a refusal names the kind
 
 import hashlib
 import hmac
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -295,17 +296,37 @@ REFUSAL = (
 )
 
 
+_NUMBER = re.compile(r"\d+[.):]?")
+_WORD = re.compile(r"(?:\d+[.):]?)?([a-z]+)[.]?")
+
+
+def _seed_phrase(text: str) -> bool:
+    """Twelve BIP-39 words in a row, one of them perhaps mistyped, however they are separated
+    or numbered: by spaces, lines or commas, as `1. abandon` or `1) abandon` (S1.6.3)."""
+    run = misses = 0
+    for tok in re.split(r"[\s,;]+", text.lower()):
+        if not tok or _NUMBER.fullmatch(tok):
+            continue
+        m = _WORD.fullmatch(tok)
+        if m and m.group(1) in _bip39():
+            run += 1
+        elif run and not misses:
+            run, misses = run + 1, 1
+        else:
+            run = misses = 0
+        if run >= 12:
+            return True
+    return False
+
+
 def secret_kind(text: str) -> str | None:
     """What secret the text looks like, if it looks like one: a seed phrase, a private key in
-    WIF or hex, or an extended private key."""
-    words = text.lower().split()
-    if len(words) >= 12 and sum(w in _bip39() for w in words) >= len(words) - 1:
+    WIF or hex, or an extended private key, alone or inside a descriptor."""
+    if _seed_phrase(text):
         return "seed phrase"
-    import re
-
     if re.search(r"[xyztuv]prv[1-9A-HJ-NP-Za-km-z]{100,}", text):
         return "extended private key"
-    for tok in re.split(r"[\s,()\[\]/]+", text):
+    for tok in re.split(r"[^0-9A-Za-z]+", text):
         if len(tok) == 64 and all(c in "0123456789abcdefABCDEF" for c in tok):
             return "private key (64 hex digits)"
         if tok[:4] in ("xprv", "yprv", "zprv", "tprv", "uprv", "vprv"):

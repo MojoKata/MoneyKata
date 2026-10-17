@@ -107,7 +107,8 @@ def job_out(job: Job) -> JobOut:
     )
 
 
-def _accepted(job: Job) -> JSONResponse:
+def accepted(job: Job) -> JSONResponse:
+    """202 with the job (S13.8.7), and where to follow it."""
     return JSONResponse(
         job_out(job).model_dump(mode="json"),
         status_code=202,
@@ -255,14 +256,14 @@ async def upload(
                 )
         job = srv.jobs.create("import", c.id)
         _pool.submit(_run_statement, srv, job, account_id, c.id, data, file.filename or "", media)
-        return _accepted(job)
+        return accepted(job)
     if not (ofx.looks_like_ofx(data) or csvfile.looks_like_csv(data)):
         raise Problem(
             415, "unsupported-type", "Import OFX, QFX or CSV files, or a statement (PDF or photo)."
         )
     job = srv.jobs.create("import", c.id)
     _pool.submit(_run, srv, job, account_id, c.id, data, file.filename or "file", None, False)
-    return _accepted(job)
+    return accepted(job)
 
 
 @router.post("/imports/{upload_id}/mapping", response_model=JobOut, status_code=202)
@@ -285,7 +286,7 @@ def apply_mapping(upload_id: str, body: MappingIn, request: Request, c: Caller =
     _pool.submit(
         _run, srv, job, held.accountId, c.id, held.data, held.fileName, body.mapping, body.save
     )
-    return _accepted(job)
+    return accepted(job)
 
 
 # ---------- statements (S1.3.3) ----------
@@ -1060,7 +1061,7 @@ async def keep_upload(
         raise Problem(415, "unsupported-type", "A statement: a PDF or a photo of one.")
     job = srv.jobs.create("import", c.id)
     _pool.submit(_run_keep, srv, job, account_id, c.id, data, file.filename or "", media, reads)
-    return _accepted(job)
+    return accepted(job)
 
 
 def _run_keep(srv, job, account_id, user_id, data, name, media, reads: bool) -> None:

@@ -18,6 +18,8 @@ trusted_proxies = ["172.30.37.10"]
 [paths]
 data = "/var/lib/moneykata"
 backups = "/var/backups/moneykata"
+# socket = "/run/moneykata/sock"   where host commands reach the running server (S13.6): a
+#                                  directory of the server's account alone, as compose.yaml's tmpfs
 
 # [tls]   in "tls" mode: a certificate and key; without them, a self-signed pair is made on
 # cert = "/etc/moneykata/tls/fullchain.pem"   first start and kept in the data directory.

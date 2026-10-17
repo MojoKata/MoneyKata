@@ -1,6 +1,7 @@
 """Settings › Linked servers (requirements S11.1, S11.7): invite a server or join one with its
 code, approve a request, pause, resume or end a link, and see each link's users."""
 
+import contextlib
 import datetime as dt
 import json
 
@@ -8,7 +9,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import Field
 from sqlalchemy import false, select
 
-from .. import clock, settings
+from .. import activity, clock, settings
 from ..errors import Problem, refuse
 from ..links import keys, manage
 from ..links.client import LinkError
@@ -16,6 +17,7 @@ from ..store.entities.links import Link
 from ..store.entities.users import User
 from .conventions import ExactRoute, Model
 from .deps import Caller, admin, server
+from .imports import JobOut, accepted
 from .prices import apply_egress
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["links"])
@@ -312,7 +314,10 @@ def end(link_id: str, request: Request, c: Caller = Depends(admin)):
 
 @router.post("/settings/links/{link_id}/pull", response_model=LinkOut)
 def pull_now(link_id: str, request: Request, c: Caller = Depends(admin)):
-    """An exchange now rather than at the next hour (S11.7)."""
+    """An exchange now rather than at the next hour (S11.7), recorded with who asked (S11.8)."""
+    with server(request).db.tx() as s:
+        if s.get(Link, link_id) is not None:
+            activity.record(s, "link.pull-asked", actor=c.id, for_admins=True)
     return _act(request, c, link_id, lambda srv: manage.exchange(srv, link_id))
 
 
@@ -362,12 +367,27 @@ def lock_copy(link_id: str, request: Request, c: Caller = Depends(admin)):
     return _act(request, c, link_id, lambda srv: copies.lock(srv, link_id, c.id, True))
 
 
-@router.post("/settings/links/{link_id}/reset-copy", response_model=LinkOut)
+@router.post("/settings/links/{link_id}/reset-copy", response_model=JobOut, status_code=202)
 def reset_copy(link_id: str, request: Request, c: Caller = Depends(admin)):
-    """The copy deleted and taken again in full; the password again if given over 10 minutes
-    ago (S13.6.2)."""
+    """The copy deleted and taken again in full, as a job (S11.9.8, S13.8.7); the password
+    again if given over 10 minutes ago (S13.6.2)."""
     from ..links import copies
     from .deps import recent_auth
 
     recent_auth(c)
-    return _act(request, c, link_id, lambda srv: copies.reset(srv, link_id, c.id))
+    srv = server(request)
+    with srv.db.read() as s:
+        link = s.get(Link, link_id)
+        if link is None or link.deleted:
+            raise Problem(404, "not-found", "No such link.")
+
+    def work(job) -> dict:
+        copies.reset(srv, link_id, c.id)
+        # Pulled again in full at once; a failure is recorded on the link, and the next
+        # hourly exchange tries again.
+        with contextlib.suppress(LinkError):
+            manage.exchange(srv, link_id)
+        apply_egress(srv)
+        return {"linkId": link_id}
+
+    return accepted(srv.jobs.start("reset-copy", c.id, work))

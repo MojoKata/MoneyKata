@@ -29,3 +29,15 @@ class Price(SoftDeleted):
     updatedAt: dt.datetime = field(default_factory=_now)
     deletedAt: dt.datetime | None = None
     deletedById: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
+class TypedPrice(SoftDeleted):
+    instrumentId: str
+    userId: str
+    date: dt.date
+    close: Decimal
+    version: int = 1
+    updatedAt: dt.datetime = field(default_factory=_now)
+    deletedAt: dt.datetime | None = None
+    deletedById: str | None = None

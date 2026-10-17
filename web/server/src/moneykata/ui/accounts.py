@@ -361,7 +361,7 @@ def row(
         countInNetWorth=a.countInNetWorth,
         needsAnchor=atypes.reconcilable(a.type)
         and a.active
-        and reconcile.needs_anchor(ledger.anchors, ledger.transactions, today),
+        and reconcile.needs_anchor(a, ledger.imports, today),
         mismatch=bool(checks) and not checks[-1].ok,
         investing=investing,
         reconcilable=atypes.reconcilable(a.type),
@@ -783,7 +783,7 @@ def account_reconcile(account_id: str, request: Request, c: Caller = Depends(cal
                 )
                 for x in held_lines
             ],
-            needsAnchor=reconcile.needs_anchor(ledger.anchors, ledger.transactions, clock.today()),
+            needsAnchor=reconcile.needs_anchor(a, ledger.imports, clock.today()),
             openingStandIn=start.standIn,
             reconciliations=[_reconciliation_row(s, r) for r in recs],
         )

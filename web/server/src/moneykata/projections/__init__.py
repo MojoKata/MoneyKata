@@ -34,6 +34,7 @@ BOND = re.compile(
 REIT = re.compile(r"\b(reit|real estate)\b|^(VNQ|SCHH|VGSLX)$", re.I)
 SLACK = Decimal("0.02")
 CENTS = Decimal("0.01")
+MAX_YEARS = 101  # a projection runs at most 100 years on from this one
 BTC = re.compile(r"^(BTC|XBT)\b", re.I)
 
 
@@ -195,7 +196,7 @@ def prepare(s: Session, p: Projection, viewer: str) -> Prepared:
         people = people_of(s, owner, inputs)
         horizon = int(inputs.get("horizonAge") or 95)
         youngest = max(x["birthYear"] for x in people)
-        years = max(2, youngest + horizon - year + 1)
+        years = min(MAX_YEARS, max(2, youngest + horizon - year + 1))
         # The household retires when the last of them does: contributions stop and the
         # withdrawals start then.
         retire_year = max(x["birthYear"] + x["retireAge"] for x in people)
@@ -211,7 +212,7 @@ def prepare(s: Session, p: Projection, viewer: str) -> Prepared:
         withdrawal = inputs.get("withdrawal") or {"method": "fourPercent"}
     elif p.goal == "education":
         school = education_school(s, inputs, year)
-        target_index = school["startIndex"]
+        target_index = min(school["startIndex"], MAX_YEARS - school["years"])
         years = target_index + school["years"]
         contribution = float(inputs.get("monthly", 0) or 0) * 12
         contribute_years = target_index - 1
@@ -445,7 +446,8 @@ def widened(lo: Decimal, mid: Decimal, hi: Decimal) -> tuple[Decimal, Decimal, D
 def tracking(s: Session, p: Projection, viewer: str, upto: dt.date | None = None) -> dict | None:
     """The actual balance of what it is built on since the baseline, against the band, and
     whether it is on track, ahead or behind (on the last day given: the alert checks it as of
-    the end of the last month)."""
+    the end of the last month). A viewer who isn't shared every account it is built on sees
+    the status, and the balance of only the accounts shared with them, with no band (S6.1)."""
     if not p.active or not p.baseline or p.baselineAt is None:
         return None
     base = json.loads(p.baseline)
@@ -456,13 +458,21 @@ def tracking(s: Session, p: Projection, viewer: str, upto: dt.date | None = None
     if spec.get("kind", "typed") == "typed":
         return {"status": "untracked", "points": [], "baseline": base, "since": start.isoformat()}
     on = built_on(s, p.ownerId, spec)
+    seen = (
+        None
+        if viewer == p.ownerId
+        else {a.id for a, _ in access.visible_accounts(s, viewer)} & {a.id for a in on.accounts}
+    )
     totals: dict[dt.date, Decimal] = {}
+    theirs: dict[dt.date, Decimal] = {}
     step = max(1, (today - start).days // 60)
     for a in on.accounts:
         for day, value in valuation.series(
             s, repo.load(s, a), atypes.investing(a.type), start, today, step
         ):
             totals[day] = totals.get(day, Decimal(0)) + value
+            if seen is not None and a.id in seen:
+                theirs[day] = theirs.get(day, Decimal(0)) + value
     # The actual balances stay exact (S6.9); the band is the model's, to the cent.
     for day in sorted(totals):
         if day >= start:
@@ -480,6 +490,15 @@ def tracking(s: Session, p: Projection, viewer: str, upto: dt.date | None = None
         _, lo, _, hi = band[-1]
         value = points[-1][1]
         status = "behind" if value < lo else "ahead" if value > hi else "on track"
+    if seen is not None and len(seen) < len(on.accounts):
+        return {
+            "status": status,
+            "points": [(d.isoformat(), theirs[d]) for d in sorted(theirs) if d >= start],
+            "band": [],
+            "baseline": base,
+            "since": start.isoformat(),
+            "partial": True,
+        }
     return {
         "status": status,
         "points": [(d.isoformat(), v) for d, v in points],

@@ -7,7 +7,7 @@ What the account holds, worked out from its trades and lots.
 ## Price
 
 The latest daily close. Hover it for its source and date: a close from a price source, the broker's
-statement value, a typed price, or the last trade when nothing else is known.
+statement value, a price the account's owner typed, or their last trade when nothing else is known.
 
 ## Cost basis
 

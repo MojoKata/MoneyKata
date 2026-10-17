@@ -36,8 +36,9 @@ def record_run(server: Server):
                 row.startedAt, row.finishedAt, row.error = run.started, run.finished, run.error
         # Its name only: Settings › Backups and Key storage reload when theirs ends.
         server.events.publish("task", {"name": name})
-        if name not in ("alerts", "alert-summaries"):
-            # A task's outcome can open or resolve an alert: look now, not in 15 minutes.
+        if name not in ("alerts", "alert-summaries", "linked-copies"):
+            # A task's outcome can open or resolve an alert: look now, not in 15 minutes. The
+            # copies' sweeper, every minute, raises none.
             server.tasks.run_now("alerts")
 
     return record
@@ -146,6 +147,15 @@ def register_tasks(server: Server) -> None:
     server.tasks.register(
         "alerts", lambda ctx: alerts.evaluate(server), Every(900), last.get("alerts")
     )
+
+    def host_events(ctx: TaskContext) -> None:
+        # What the host's commands queued, within a quarter of an hour (S15.4.7); a phrase
+        # checked on the host clears its alert at once.
+        kinds = take_host_events(server)
+        if kinds & {"key.verified", "key.verify-failed"}:
+            server.tasks.run_now("alerts")
+
+    server.tasks.register("host-events", host_events, Every(900), last.get("host-events"))
     server.tasks.register(
         "alert-summaries",
         lambda ctx: alerts.daily_summaries(server),
@@ -290,13 +300,14 @@ def load_copy_folders(server: Server) -> None:
             linked.NAMES[link_id] = name
 
 
-def take_host_events(server: Server) -> int:
-    """What the host's one-off commands queued (keys verify, rotate), into Activity."""
+def take_host_events(server: Server) -> set[str]:
+    """What the host's one-off commands queued (every `keys` and `db` command), into Activity;
+    returns the kinds taken."""
     from . import activity
 
     events = maintenance.take_host_events(server.config)
     if not events:
-        return 0
+        return set()
     with server.db.tx() as s:
         for e in events:
             activity.record(
@@ -307,7 +318,7 @@ def take_host_events(server: Server) -> int:
                 for_admins=True,
                 detail={**(e.get("detail") or {}), "at": e.get("at")},
             )
-    return len(events)
+    return {str(e.get("kind")) for e in events}
 
 
 class Reencrypting(Exception):

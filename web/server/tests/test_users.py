@@ -254,9 +254,9 @@ def test_password_reset(client, server):
     set_public_url(server)
     make_user(server, "fay")
     other = sign_in(server, "fay")
-    assert client.post("/ui/api/password-reset", json={"login": "nobody"}).status_code == 202
+    assert client.post("/ui/api/password-reset", json={"login": "nobody"}).status_code == 204
     assert mails(server) == []
-    assert client.post("/ui/api/password-reset", json={"login": "fay"}).status_code == 202
+    assert client.post("/ui/api/password-reset", json={"login": "fay"}).status_code == 204
     path, token = last_link(server)
     assert path.endswith("/ui/reset")
     r = client.post(
@@ -303,7 +303,7 @@ def test_email_change_needs_recent_password_and_a_confirmed_link(server):
     assert r.status_code == 403 and r.json()["code"] == "reauth-required"
     assert c.post("/ui/api/session/reauth", json={"password": "wrong"}).status_code == 401
     assert c.post("/ui/api/session/reauth", json={"password": PW}).status_code == 204
-    assert c.post("/ui/api/profile/email", json={"email": "hal@new.lan"}).status_code == 202
+    assert c.post("/ui/api/profile/email", json={"email": "hal@new.lan"}).status_code == 204
     assert mails(server)[-1]["To"] == "hal@new.lan"
     assert c.get("/ui/api/profile").json()["email"] == "hal@home.lan"
     assert c.get("/ui/api/profile").json()["pendingEmail"] == "hal@new.lan"
@@ -330,7 +330,7 @@ def test_deactivation_ends_sessions_and_reactivation_can_be_asked(admin_client, 
         r = again.post("/ui/api/session", json={"login": "ivy", "password": "wrong"})
         assert r.status_code == 401  # a wrong password says nothing about the account
         body = {"login": "ivy", "password": PW}
-        assert again.post("/ui/api/reactivation-requests", json=body).status_code == 202
+        assert again.post("/ui/api/reactivation-requests", json=body).status_code == 204
         assert again.post("/ui/api/reactivation-requests", json=body).status_code == 429
     row = next(u for u in admin_client.get("/ui/api/users").json()["items"] if u["id"] == ivy.id)
     assert row["reactivationAskedAt"] is not None

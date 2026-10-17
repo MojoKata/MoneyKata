@@ -125,6 +125,8 @@ class Transaction(Record):
     optionTransactionId: str | None = None
     createdById: str | None = None
     offChainAt: dt.datetime | None = None
+    offChainMissedAt: dt.datetime | None = None
+    offChainKeptAt: dt.datetime | None = None
 
 
 @dataclass(kw_only=True, eq=False)

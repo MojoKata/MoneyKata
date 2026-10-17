@@ -50,6 +50,10 @@ class WalletView(Model):
     version: int  # its keys together: replacing them is made against it (S13.8.6)
 
 
+MAX_TEXT = 200_000  # characters: well over a thousand addresses
+MAX_ENTRIES = 1000  # keys, descriptors and addresses
+
+
 class WalletIn(Model):
     text: str  # extended public keys and addresses, one a line
     gapLimit: int = 20
@@ -136,6 +140,8 @@ def put_wallet(
     version: int = Depends(if_match),
 ):
     """The wallet's keys and addresses, replaced whole."""
+    if len(body.text) > MAX_TEXT:
+        raise refuse("text", "too-long", "At most 200,000 characters of keys and addresses.")
     what = bk.secret_kind(body.text)
     if what:
         raise refuse("text", "secret-refused", bk.REFUSAL.format(what=what))
@@ -143,6 +149,8 @@ def put_wallet(
         entries = bk.parse(body.text)
     except bk.Refused as e:
         raise refuse("text", e.code, e.message) from None
+    if len(entries) > MAX_ENTRIES:
+        raise refuse("text", "too-many", f"At most {MAX_ENTRIES:,} keys and addresses a wallet.")
     if not 1 <= body.gapLimit <= 200:
         raise refuse("gapLimit", "gap-invalid", "From 1 to 200 unused addresses: 20 is usual.")
     with server(request).db.tx() as s:

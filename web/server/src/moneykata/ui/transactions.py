@@ -716,10 +716,14 @@ def change_transaction(
                 lot.costBasis = body.costBasis
                 lot.basisMissing = body.costBasis is None
             changed.append("costBasis")
-        if t.kind in ("buy", "reinvest") and {"quantity", "amount", "date"} & set(changed):
+        if t.kind in ("buy", "reinvest", "transfer-in") and {"quantity", "amount", "date"} & set(
+            changed
+        ):
+            # The lot follows its trade; a transfer-in's basis is the one typed with it.
             for lot in s.scalars(select(Lot).where(Lot.transactionId == t.id)):
                 lot.quantity, lot.acquiredOn = t.quantity, t.date
-                lot.costBasis = -t.amount
+                if t.kind != "transfer-in":
+                    lot.costBasis = -t.amount
         if body.splits is not None and "splits" in sent:
             _set_splits(s, t, body.splits, c.id)
             changed.append("splits")
@@ -1015,6 +1019,6 @@ def keep_off_chain(
         t, a, level = _editable(s, c, txn_id, version, True)
         if t.offChainAt is None:
             raise refuse(None, "on-chain", "It is still on the chain.")
-        t.offChainAt = None
+        t.offChainAt, t.offChainMissedAt, t.offChainKeptAt = None, None, clock.now()
         s.flush()
         return shape(s, c.id, [t], {a.id: level})[0]

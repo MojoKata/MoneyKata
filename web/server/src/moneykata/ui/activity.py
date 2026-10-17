@@ -2,11 +2,12 @@
 made it and what it is about, to the people concerned: the owner, those an item is shared
 with, and admins for users, groups and Settings. Amounts are never named (R3.8)."""
 
+import contextlib
 import datetime as dt
 import json
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, or_, select
 
 from .. import access
 from ..store.entities.accounts import Account
@@ -51,6 +52,10 @@ TEXT = {
     "prices.source-added": "{actor} added the price source {source}",
     "prices.source-changed": "{actor} changed {fields} of the price source {source}",
     "prices.source-removed": "{actor} removed the price source {source}",
+    "key.made": "A master key was made on the host ({fingerprint})",
+    "key.fingerprint-shown": "The master key's fingerprint was read on the host",
+    "key.unlocked": "The server was unlocked from the host",
+    "key.unlock-refused": "An unlock from the host was refused",
     "key.verified": "The master key's recovery phrase was confirmed on the host ({fingerprint})",
     "key.verify-failed": "A recovery phrase typed on the host did not match ({fingerprint})",
     "key.rotated": "The master key was rotated on the host ({from} → {to})",
@@ -119,8 +124,9 @@ TEXT = {
     "link.resumed": "{actor} resumed a link",
     "link.ended": "{actor} ended a link",
     "link.ended-by-peer": "A linked server ended its link with this one",
-    "link.pulled": "A linked server sent {count} changed items",
-    "link.served": "This server sent a linked server {count} changed items",
+    "link.pulled": "A linked server sent {count} changed items{shares}",
+    "link.served": "This server sent a linked server {count} changed items{shares}",
+    "link.pull-asked": "{actor} asked a linked server for its changes now",
     "link.copy-key-made": "{actor} created a linked copy's access key",
     "link.copy-unlocked": "{actor} unlocked a linked copy",
     "link.viewed": "{actor} viewed what {subject} shares",
@@ -222,16 +228,26 @@ def render(a: Activity, names: dict[tuple[str, str], str]) -> str:
         "tool": detail.get("tool", "").replace("_", " "),
         "why": detail.get("why", ""),
         "files": f"{detail.get('files', 0):,}",
+        "shares": (": " + "; ".join(detail["shares"])) if detail.get("shares") else "",
     }
     template = TEXT.get(a.kind, "{actor}: " + a.kind)
     return template.format(**values)
 
 
 def _visible(s, c: Caller):
-    """Entries the caller may see: their own, about them, about what they hold, and for
-    admins, about users, groups, Settings and keys."""
+    """Entries the caller may see (S10.8): their own, about them, about whatever is shared with
+    them, the one that says a share with them was removed, and for admins, about users,
+    groups, Settings and keys."""
+    from ..taxes import books
+
     accounts = [a.id for a, _ in access.visible_accounts(s, c.id)]
     portfolios = [p.id for p, _ in access.visible_portfolios(s, c.id)]
+    shared: dict[str, set[str]] = {}
+    for kind, item in access.reach(s, c.id).levels:
+        shared.setdefault(kind, set()).add(item)
+    shared.setdefault("tax-book", set()).update(b.id for b, _ in books.visible(s, c.id))
+    groups = access.groups_of(s, c.id)
+    grantee = func.json_extract(Activity.detail, "$.granteeId")
     conds = [
         Activity.actorId == c.id,
         Activity.ownerId == c.id,
@@ -240,6 +256,15 @@ def _visible(s, c: Caller):
         and_(
             Activity.subjectKind == "budget",
             Activity.subjectId.in_([b.id for b, _ in access.visible_budgets(s, c.id)]),
+        ),
+        *(
+            and_(Activity.subjectKind == kind, Activity.subjectId.in_(sorted(items)))
+            for kind, items in shared.items()
+            if kind not in ("account", "portfolio", "budget")
+        ),
+        and_(
+            Activity.kind == "share.removed",
+            or_(grantee == c.id, grantee.in_(groups)),
         ),
     ]
     if c.admin:
@@ -332,4 +357,18 @@ def _names(s, rows: list[Activity]) -> dict[tuple[str, str], str]:
     link_ids = {a.subjectId for a in rows if a.subjectKind == "link"}
     for k in s.scalars(select(Link).where(Link.id.in_(link_ids))):
         names[("link", k.id)] = k.householdName or k.peerName or "a linked household"
+    # The other kinds that are shared (S10.3), named as the Share dialog names them.
+    from .. import sharing
+    from ..errors import Problem
+
+    for a in rows:
+        key = (a.subjectKind or "", a.subjectId or "")
+        if key[0] in ("person", "gift-plan", "giving-plan", "tax-book") and key not in names:
+            with contextlib.suppress(Problem):  # deleted since: "something"
+                obj = sharing.item(s, key[0], key[1])
+                names[key] = (
+                    sharing.name_of(s, key[0], obj)
+                    if hasattr(obj, "name") or key[0] == "gift-plan"
+                    else f"the {key[0].replace('-', ' ')} for {obj.year}"
+                )
     return names

@@ -35,6 +35,7 @@ port = {port}
 [paths]
 data = "{tmp / "data"}"
 backups = "{tmp / "backups"}"
+socket = "{tmp / "run" / "sock"}"
 """)
     key = keys_cli.init(load(config), say=lambda _: None, confirm=False)
     log = open(tmp / "server.log", "wb")  # noqa: SIM115 - a file: an unread pipe fills up

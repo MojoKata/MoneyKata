@@ -293,3 +293,66 @@ def test_the_tracking_floor_is_a_minimum_width():
     D = Decimal
     assert widened(D(100), D(100), D(100)) == (D(98), D(100), D(102))
     assert widened(D(80), D(100), D(120)) == (D(80), D(100), D(120))
+
+
+def test_the_years_a_projection_runs_are_bounded(alice):
+    # A birth year centuries back, or a date a thousand years on, would stall the server.
+    r = alice.post(
+        "/ui/api/projections",
+        json={
+            "name": "Far",
+            "goal": "retirement",
+            "builtOn": {"kind": "typed", "amount": "1000"},
+            "inputs": {
+                "people": [{"birthYear": 1000}, {"birthYear": 1980}, {"birthYear": 1990}],
+                "income": [{"fromAge": 900, "monthly": 10}],
+                "date": "3026-01-01",
+                "firstYear": 9999,
+            },
+        },
+    )
+    assert r.status_code == 422
+    assert {e["field"] for e in r.json()["errors"]} >= {
+        "inputs.people",
+        "inputs.income.0.fromAge",
+        "inputs.date",
+        "inputs.firstYear",
+    }
+    r = alice.post(
+        "/ui/api/projections",
+        json={
+            "name": "Old",
+            "goal": "retirement",
+            "builtOn": {"kind": "typed", "amount": "1000"},
+            "inputs": {"people": [{"birthYear": 1800}]},
+        },
+    )
+    assert r.json()["errors"][0]["field"] == "inputs.people.0.birthYear"
+
+
+def test_a_viewer_tracks_only_the_accounts_shared_with_them(server, alice):
+    # S6.1: the projection's results, and the balance of only the accounts they can see.
+    shared = new_account(alice, name="Joint savings", type="savings")
+    own = new_account(alice, name="Alice's savings", type="savings")
+    add(alice, shared["id"], "1000.00", "2026-10-01")
+    add(alice, own["id"], "9000.00", "2026-10-01")
+    r = alice.post(
+        "/ui/api/projections",
+        json={
+            "name": "House",
+            "goal": "savings",
+            "builtOn": {"kind": "accounts", "ids": [shared["id"], own["id"]]},
+            "inputs": {"target": 50000, "date": "2030-01-01", "monthly": 500},
+        },
+    )
+    pid = r.json()["id"]
+    alice.post(f"/ui/api/projections/{pid}/activate")
+    bob = make_user(server, "bob")
+    for kind, item in (("projection", pid), ("account", shared["id"])):
+        r = alice.put(f"/ui/api/shares/{kind}/{item}", json={"users": {bob.id: "read"}})
+        assert r.status_code == 200, r.text
+    mine = alice.get(f"/ui/api/projections/{pid}").json()["tracking"]
+    assert mine["band"] and Decimal(str(mine["points"][-1][1])) == 10000
+    theirs = sign_in(server, "bob").get(f"/ui/api/projections/{pid}").json()["tracking"]
+    assert theirs["partial"] and theirs["band"] == [] and theirs["status"] == mine["status"]
+    assert Decimal(str(theirs["points"][-1][1])) == 1000, "only the joint account's balance"

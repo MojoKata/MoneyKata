@@ -263,7 +263,8 @@ function Plain({ section }) {
           <p class="small dim" style=${{
             marginTop: '-6px',
           }}>Receipts are kept encrypted in the data
-            directory, each file once, and go into every backup.</p>
+            directory, each file once. Backups hold the database alone: the host's own backup of
+            the data directory keeps the files.</p>
           <div class="list-item"><span class="grow dim">File types</span>PDF, JPEG, PNG, WebP, HEIC
             <span class="small dim">· checked from the content</span></div>
           <${Field} label="Largest file (MB)" id="receipt-max-mb" error=${errAt(e, 'receiptMaxMb')}>
@@ -342,7 +343,8 @@ function Plain({ section }) {
         style=${{
           marginTop: '-6px',
         }}>Accounts are kept current from the files people bring: OFX, QFX and CSV
-            downloads, and statements. No bank or exchange is connected.</p>
+            downloads, and statements, and by the MoneyKata Connector for accounts whose sync
+            is on.</p>
       <div
         class="list-item"><span class="grow dim">File types</span>OFX, QFX, CSV; statements as PDF, JPEG, PNG, WebP, HEIC <span class="small dim">· checked from the content</span></div>
       <${Field} label="Largest file (MB)" error=${errAt(e, 'importMaxMb')}>

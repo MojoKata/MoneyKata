@@ -233,7 +233,7 @@ def expire_due(s: Session, today: dt.date) -> int:
     return done
 
 
-def per_share(s: Session, c: OptionContract, day: dt.date | None):
+def per_share(s: Session, c: OptionContract, day: dt.date | None, owner: str | None = None):
     """What a contract delivers, per share of its multiplier, at a day's closes, and the
     oldest close used: the underlying's price, or for an adjusted contract its deliverable's
     value (its shares and cash) divided by the multiplier (S3.10.5). None without closes."""
@@ -242,10 +242,10 @@ def per_share(s: Session, c: OptionContract, day: dt.date | None):
     from .. import valuation
 
     if not c.deliverable:
-        p = valuation.prices(s, [c.underlyingId], day).get(c.underlyingId)
+        p = valuation.prices(s, [c.underlyingId], day, owner).get(c.underlyingId)
         return (p.price, p.asOf) if p is not None else None
     rows = json.loads(c.deliverable)
-    found = valuation.prices(s, [x["instrumentId"] for x in rows], day)
+    found = valuation.prices(s, [x["instrumentId"] for x in rows], day, owner)
     if any(x["instrumentId"] not in found for x in rows):
         return None
     worth = sum(

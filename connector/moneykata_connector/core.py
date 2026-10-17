@@ -264,10 +264,15 @@ class Core:
                 raise
             self.last_report, self.last_error = time.time(), None
             self._apply(answer)
+            ran = False
             for c in list(self.connections.values()):
                 if self._due(c):
                     self._run(c)
+                    ran = True
             self._post_backlogs()
+            if ran:  # what each run came to, at once rather than at the next round (S18.5)
+                self._apply(self.server.call("/connector/v1/report", self._report()))
+                self.last_report = time.time()
 
     def _report(self) -> dict:
         return {

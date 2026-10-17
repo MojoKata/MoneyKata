@@ -8,16 +8,13 @@ receipts and tax books, and prepares the numbers a tax return needs. Several peo
 server, and households on other MoneyKata servers can share with named people here, read
 only, in a window of their own.
 
-**Status:** the first seven milestones (requirements S17.9.1–S17.9.7) are built: the server in
-`web/`, the MoneyKata Connector in `connector/`. Milestone 8 (S17.9.8), what the second review
-of the requirements against the code found the first release still needs
-([`docs/reviews/initial-code-review-2.md`](docs/reviews/initial-code-review-2.md)), is next, so
-the requirements describe some things the code doesn't do yet: re-encryption that runs at an
-unlock, rotation that re-encrypts, host commands over a Unix socket, verified TLS on links and
-the connector, link data sealed end to end, the reader's sandbox, and the removal of the
-connector's Folder driver among them. What the build couldn't try for real is in
-[`docs/test-plan.md`](docs/test-plan.md); the gaps and the open questions are listed in the
-requirements' README.
+**Status:** the eight milestones of the first release (requirements S17.9.1–S17.9.8) are
+built: the server in `web/`, the MoneyKata Connector in `connector/`. Milestone 8 built what the
+second review of the requirements against the code found the release still needed
+([`docs/reviews/initial-code-review-2.md`](docs/reviews/initial-code-review-2.md)). The branch
+merges into `main` once the requirements have their final approval. What the build couldn't
+try for real is in [`docs/test-plan.md`](docs/test-plan.md); the gaps and the open questions
+are listed in the requirements' README.
 
 ## Where to start
 

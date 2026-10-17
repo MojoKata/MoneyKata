@@ -134,10 +134,10 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     assert state.state == "ok" and state.last_added == 2 and state.message == "1 statement"
     with server.db.read() as s:
         assert s.query(Transaction).filter_by(accountId=aid).count() == 2
-    # The report carries the run; Settings shows it; nothing posted twice.
-    core.tick()
+    # The run is reported at once, and Settings shows it; nothing is posted twice.
     shown = admin.get("/ui/api/settings/connector").json()["connections"][0]
     assert shown["state"] == "ok" and shown["lastRunAt"]
+    core.tick()
     with server.db.read() as s:
         assert s.query(Transaction).filter_by(accountId=aid).count() == 2
 

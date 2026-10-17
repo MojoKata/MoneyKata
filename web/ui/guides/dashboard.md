@@ -40,7 +40,7 @@ the baseline.
 ## Needs attention
 
 Transactions to categorise, lots without a cost basis, accounts whose reported balance doesn't match
-or that have had none for 45 days, and stale prices. Each line links to where it's fixed.
+or whose next statement is overdue, and stale prices. Each line links to where it's fixed.
 
 > Prices are daily closes, never live. The dot by **Prices** at the top turns amber when a held
 > instrument's price is stale.

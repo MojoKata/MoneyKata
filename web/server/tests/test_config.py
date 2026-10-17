@@ -34,6 +34,7 @@ def test_parses_a_full_config():
         ({"tls": {"cert": "/a.crt"}}, "both cert and key"),
         ({"tls": {"names": "money.lan"}}, "list of host names"),
         ({"extra": {}}, "unknown section"),
+        ({"server": {"trusted_proxy": ["10.0.0.1"]}}, "unknown key server.trusted_proxy"),
     ],
 )
 def test_refuses_what_an_operator_must_fix(change, reason):

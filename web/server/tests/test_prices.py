@@ -111,6 +111,16 @@ class Broken(TickerSource):
         raise SourceError("Broken answered HTTP 500")
 
 
+@register
+class Garbled(TickerSource):
+    name = "garbled-test"
+    label = "Garbled"
+    classes = frozenset({"etf"})
+
+    def history(self, ref, start, end):
+        raise ValueError("unexpected token at line 1")
+
+
 def _book(server, user):
     with server.db.tx() as s:
         a = Account(id=ids.new_id("Acct"), ownerId=user.id, name="B", type="brokerage")
@@ -188,7 +198,45 @@ def test_refresh_fails_when_every_source_does(server):
         pricing.refresh(server)
 
 
+def test_an_unreadable_answer_falls_back_like_a_failure(server):
+    pricing.install()
+    server.config = server.config.__class__(**{**server.config.__dict__, "dev": True})
+    _book(server, make_user(server, "alice"))
+    _source(server, "garbled-test", 1)
+    _source(server, "stub", 2)
+    assert pricing.refresh(server)["stored"] > 10
+    with server.db.read() as s:
+        rows = {r.name: r for r in s.scalars(select(PriceSource))}
+        assert rows["garbled-test"].lastError == "an answer it couldn't read"
+
+
+def test_only_what_is_held_is_priced(server):
+    from moneykata.store.entities.accounts import Transaction
+
+    account_id, inst_id = _book(server, make_user(server, "alice"))
+    with server.db.read() as s:
+        assert inst_id in {i.id for i, _ in pricing.priced(s, benchmarks=False)}
+    with server.db.tx() as s:
+        s.add(
+            Transaction(
+                id=ids.new_id("Txn"),
+                accountId=account_id,
+                date=TODAY - dt.timedelta(days=2),
+                kind="sell",
+                amount=D("1100.00"),
+                instrumentId=inst_id,
+                quantity=D(4),
+                price=D(275),
+            )
+        )
+    with server.db.read() as s:
+        assert pricing.priced(s, benchmarks=False) == []  # sold: no longer fetched
+
+
 def test_staleness():
+    friday = dt.date(2026, 10, 9)
+    assert not pricing.is_stale("option", "close", friday, dt.date(2026, 10, 12))
+    assert pricing.is_stale("option", "close", friday, dt.date(2026, 10, 13))
     friday = dt.date(2026, 10, 9)
     assert not pricing.is_stale("etf", "close", friday, dt.date(2026, 10, 13))
     assert pricing.is_stale("etf", "close", friday, dt.date(2026, 10, 15))
@@ -255,6 +303,27 @@ def test_typed_prices_win_and_only_for_holders(server):
     status = alice.get("/ui/api/prices/status").json()
     assert status["stale"] is False and status["running"] is False
     assert alice.post("/ui/api/prices/refresh").status_code in (202, 503)
+
+
+def test_a_typed_price_values_only_its_typers_accounts(server):
+    """S4.10: Bob holds what Alice holds; her typed price values her account alone, and his
+    holding has no price from her trade either."""
+    pricing.install()
+    alice_user, bob_user = make_user(server, "alice"), make_user(server, "bob")
+    a_id, inst_id = _book(server, alice_user)
+    b_id, same = _book(server, bob_user)
+    assert same == inst_id
+    alice, bob = sign_in(server, "alice"), sign_in(server, "bob")
+    day = (TODAY - dt.timedelta(days=1)).isoformat()
+    r = alice.post(f"/ui/api/instruments/{inst_id}/prices", json={"date": day, "price": "300"})
+    assert r.status_code == 201
+    mine = alice.get(f"/ui/api/accounts/{a_id}/holdings").json()["holdings"][0]
+    assert mine["value"] == "1200.00" and mine["priceSource"] == "manual"
+    theirs = bob.get(f"/ui/api/accounts/{b_id}/holdings").json()["holdings"][0]
+    assert theirs["priceSource"] == "trade" and theirs["value"] == "1000.00", "his own trade"
+    assert [
+        p["close"] for p in bob.get(f"/ui/api/instruments/{inst_id}/prices").json()["items"]
+    ] == []
 
 
 def test_sources_registered():

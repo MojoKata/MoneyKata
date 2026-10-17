@@ -134,6 +134,7 @@ def map_all() -> None:
     _map(acc.LotPick, accounts.LotPicks)
     _versioned(pr.PriceSource, prices.PriceSource)
     _versioned(pr.Price, prices.Price)
+    _versioned(pr.TypedPrice, prices.TypedPrice)
     _versioned(sh.Portfolio, sharing.Portfolio)
     _versioned(sh.Share, sharing.Share)
     _map(sh.PortfolioAccount, sharing.PortfolioAccounts)

@@ -84,9 +84,33 @@ def take(srv, link_id: str, change: dict, delivered: dict[str, str] | None = Non
             "link.pulled",
             actor=None,
             for_admins=True,
-            detail={"count": len(change.get("items") or []) + len(change.get("removed") or [])},
+            detail={
+                "count": len(change.get("items") or []) + len(change.get("removed") or []),
+                "shares": shares_of(s, link_id, change, here=True),
+            },
         )
     changes.enqueue(srv, link_id, change, {"fileNames": names})
+
+
+def shares_of(s, link_id: str, change: dict, here: bool) -> list[str]:
+    """Which shares a change carried, for Activity (S11.8): whose item, of what kind, and for
+    whom, never its name (*Alice Griffin's account for Carol*). `here`: its viewers are this
+    server's users (a change taken); else the peer's (a change sent)."""
+    key = User.id if here else User.remoteId
+    rows = s.execute(
+        select(key, User.displayName).where(
+            User.linkId.is_(None) if here else User.linkId == link_id
+        )
+    )
+    names = dict(rows.all())
+    out = []
+    for it in (change.get("items") or [])[:20]:
+        whom = ", ".join(sorted(names.get(v, "someone") for v in it.get("viewers") or []))
+        kind = str(it.get("kind") or "item").replace("-", " ")
+        out.append(
+            f"{it.get('ownerName') or 'someone'}'s {kind}" + (f" for {whom}" if whom else "")
+        )
+    return out
 
 
 def forget(srv, link_id: str) -> None:

@@ -101,11 +101,15 @@ def test_the_server_service_is_locked_down_and_mounts_no_key():
         mounts = _mounts(service)
         assert mounts[str(config.DEFAULT_CONFIG)][1], f"{name}: moneykata.toml must be read only"
         assert not mounts[str(EXAMPLE.data_dir)][1] and not mounts[str(EXAMPLE.backup_dir)][1]
+        # And the host's time zone, read only, which backups and daily emails follow (S14.9.2).
+        assert mounts["/etc/localtime"] == ("/etc/localtime", True), name
+        assert service["environment"]["TZ"] == "${TZ:-}", name
         assert set(mounts) == {
             str(EXAMPLE.data_dir),
             str(EXAMPLE.backup_dir),
             str(config.DEFAULT_CONFIG),
-        }, f"{name}: the server mounts its data, its backups and its config, nothing else"
+            "/etc/localtime",
+        }, f"{name}: the server mounts its data, its backups, its config and the zone, nothing else"
         for spec in compose["services"].values():
             for v in spec.get("volumes", []):
                 assert "keys" not in str(v), f"{name}: no key directory exists any more"

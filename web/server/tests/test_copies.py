@@ -6,6 +6,7 @@ import sqlite3
 
 import pytest
 from conftest import make_user, sign_in
+from test_accounts import wait_job
 
 from moneykata import clock, ids
 from moneykata.links import copy as lcopy
@@ -70,6 +71,10 @@ def test_an_admin_makes_the_words_and_a_named_person_unlocks_with_them(server, s
     assert r.status_code == 200, r.text
     st = r.json()
     assert not st["household"]["locked"] and st["unlockedBy"] and st["locksInSeconds"] > 3500
+    # Open already, it still takes only its own words (S11.9.4).
+    other = " ".join(lcopy.phrase.to_words(bytes(16)))
+    r = alice.post(f"/ui/api/linked/{link_id}/unlock", json={"words": other})
+    assert r.status_code == 422 and r.json()["code"] == "words-wrong"
     assert (
         bob.post(f"/ui/api/linked/{link_id}/unlock", json={"words": " ".join(words)}).status_code
         == 404
@@ -112,7 +117,10 @@ def test_an_unused_copy_locks_and_reset_starts_again(server, setup):
     now[0] += 2 * 60
     assert copies.sweep(server) == [link_id]
     assert alice.get(f"/ui/api/linked/{link_id}").json()["household"]["locked"]
-    out = admin.post(f"/ui/api/settings/links/{link_id}/reset-copy").json()
+    job = admin.post(f"/ui/api/settings/links/{link_id}/reset-copy")
+    assert job.status_code == 202 and job.headers["Location"] == f"/ui/api/jobs/{job.json()['id']}"
+    assert wait_job(admin, job.json())["state"] == "done", "a reset copy is a job (S13.8.7)"
+    out = admin.get("/ui/api/settings/links").json()["links"][0]
     assert out["linkedCopy"]["keyMadeAt"] is None
     assert not lcopy.folder(server.config.data_dir, link_id).exists()
     r = alice.post(f"/ui/api/linked/{link_id}/unlock", json={"words": " ".join(words)})

@@ -540,9 +540,14 @@ def test_every_dialog_has_its_guide(page):
     page.get_by_role("button", name=re.compile("^Self-custody wallet")).click()
     wait_guide(page, "dialog-account-form")
     check_guide(page, ".dialog", "the wallet form")
-    page.fill(".dialog #f-wallet-keys", "abandon " * 11 + "about")
-    assert page.input_value(".dialog #f-wallet-keys") == ""
-    assert "never accepts one" in page.inner_text(".dialog #f-wallet-keys-err")
+    # On one line: Playwright fills a textarea's lines with extra input events, which a paste
+    # doesn't send.
+    numbered = " ".join(f"{i}. {w}" for i, w in enumerate(["abandon"] * 11 + ["about"], 1))
+    wif = "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ"
+    for secret in ("abandon " * 11 + "about", numbered, f"wpkh({wif})#qwer1234"):
+        page.fill(".dialog #f-wallet-keys", secret)
+        assert page.input_value(".dialog #f-wallet-keys") == "", secret
+        assert "never accepts one" in page.inner_text(".dialog #f-wallet-keys-err"), secret
     close_dialog(page)
     # An education projection's inputs.
     open_dialog(page, "/ui/projections", "New projection", "dialog-new-projection")

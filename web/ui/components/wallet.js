@@ -25,9 +25,17 @@ const SCRIPT = /** @type {Record<string, string>} */ ({
  * @param {string} text
  */
 export function looksSecret(text) {
-  const words = text.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (words.length >= 12 && words.every((w) => /^[a-z]{3,8}$/.test(w))) return 'seed phrase';
-  for (const tok of text.split(/[\s,]+/)) {
+  // Twelve words in a row, one perhaps mistyped, however separated or numbered (1. or 1)).
+  let run = 0, misses = 0;
+  for (const tok of text.toLowerCase().split(/[\s,;]+/)) {
+    if (!tok || /^\d+[.):]?$/.test(tok)) continue;
+    if (/^(?:\d+[.):]?)?[a-z]{3,8}\.?$/.test(tok)) run += 1;
+    else if (run && !misses) [run, misses] = [run + 1, 1];
+    else [run, misses] = [0, 0];
+    if (run >= 12) return 'seed phrase';
+  }
+  // A key alone or inside a descriptor: wpkh(…), [origin]xprv…/0/*.
+  for (const tok of text.split(/[^0-9A-Za-z]+/)) {
     if (/^[0-9a-fA-F]{64}$/.test(tok)) return 'private key (64 hex digits)';
     if (/^[xyztuv]prv/.test(tok)) return 'extended private key';
     if (/^[5KLc9][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(tok)) return 'private key (WIF)';

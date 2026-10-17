@@ -267,13 +267,13 @@ def change_password(body: PasswordChange, request: Request, c: Caller = Depends(
     return Response(status_code=204)
 
 
-@router.post("/profile/email", status_code=202)
+@router.post("/profile/email", status_code=204)
 def change_email(body: EmailChange, request: Request, c: Caller = Depends(caller)):
     recent_auth(c)
     srv = server(request)
     with srv.db.tx() as s:
         accounts.request_email_change(s, srv.services, s.get(User, c.id), body.email)
-    return Response(status_code=202)
+    return Response(status_code=204)
 
 
 @router.post("/profile/two-step", response_model=TwoStepSetup)

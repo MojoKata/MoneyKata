@@ -422,3 +422,53 @@ class Locked:
             )(send)
             return
         await self.app(scope, receive, send)
+
+
+def location_of(path: str, body: bytes) -> str:
+    """Where a 201's record is read (S13.8.4): the list's path and the new record's id; for an
+    answer that is the record it was added to (a tax book with a new filing), that record;
+    and the list itself when the answer names no record."""
+    try:
+        made = json.loads(body).get("id") if body else None
+    except ValueError, AttributeError:
+        made = None
+    parts = path.rstrip("/").split("/")
+    if isinstance(made, str) and made:
+        if made in parts:
+            return "/".join(parts[: parts.index(made) + 1])
+        return "/".join([*parts, made])
+    return "/".join(parts)
+
+
+class Created:
+    """Every 201 of the API names what it made in `Location` (S13.8.4): the route's own, or
+    one worked out from its answer."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or not scope["path"].startswith("/ui/api/"):
+            await self.app(scope, receive, send)
+            return
+        held: dict | None = None
+        chunks: list[bytes] = []
+
+        async def wrapped(message):
+            nonlocal held
+            if message["type"] == "http.response.start":
+                named = any(k.lower() == b"location" for k, _ in message.get("headers", []))
+                if message["status"] == 201 and not named:
+                    held = message
+                    return
+            elif held is not None and message["type"] == "http.response.body":
+                chunks.append(message.get("body", b""))
+                if message.get("more_body"):
+                    return
+                body = b"".join(chunks)
+                where = location_of(scope["path"], body).encode()
+                await send({**held, "headers": [*held.get("headers", []), (b"location", where)]})
+                message = {"type": "http.response.body", "body": body}
+            await send(message)
+
+        await self.app(scope, receive, wrapped)

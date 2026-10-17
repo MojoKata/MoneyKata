@@ -6,7 +6,6 @@ import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import Response
 from pydantic import Field
 from sqlalchemy import select, text
 
@@ -15,6 +14,7 @@ from ..errors import FieldError, Problem, refuse
 from ..store.entities.core import Setting
 from .conventions import Deleted, ExactRoute, Loose, Model, check_version, if_match, version_of
 from .deps import Caller, admin, server
+from .imports import JobOut, accepted
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["settings"])
 
@@ -938,14 +938,16 @@ def backups(request: Request, c: Caller = Depends(admin)):
         )
 
 
-@router.post("/settings/backups/run", status_code=202)
+@router.post("/settings/backups/run", response_model=JobOut, status_code=202)
 def backup_now(request: Request, c: Caller = Depends(admin)):
+    """Back up now: the daily task, at once, followed as a job (S13.8.7)."""
     srv = server(request)
-    if not srv.tasks.run_now("backups"):
+    job = srv.jobs.create("backup", c.id)
+    if not srv.tasks.run_now("backups", srv.jobs.follow(job)):
         raise Problem(503, "not-available", "Backups can't run right now.")
     with srv.db.tx() as s:
         activity.record(s, "backups.started", actor=c.id, for_admins=True)
-    return Response(status_code=202)
+    return accepted(job)
 
 
 # ---- Storage and file pruning (S16.17, S14.10) ----

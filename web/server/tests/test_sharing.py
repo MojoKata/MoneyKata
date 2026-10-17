@@ -200,3 +200,30 @@ def test_activity_goes_to_the_people_concerned_without_amounts(server, admin_cli
     assert c["alice"].get("/ui/api/activity/newer", params={"since": newest}).json()["count"] == 1
     filtered = c["alice"].get("/ui/api/activity", params={"account": private["id"]}).json()
     assert all("Secret savings" in x["text"] for x in filtered["items"])
+
+
+def test_receivers_see_what_happens_to_what_is_shared_and_its_removal(server):
+    """S10.8: whoever a projection or a person is shared with sees its entries in Activity,
+    and someone whose share is removed keeps the one entry that says so."""
+    u, c = setup(server)
+    p = (
+        c["alice"]
+        .post(
+            "/ui/api/projections",
+            json={
+                "name": "Retire early",
+                "goal": "savings",
+                "builtOn": {"kind": "typed", "amount": "1000"},
+                "inputs": {"target": 5000, "date": "2031-01-01"},
+            },
+        )
+        .json()
+    )
+    share(c["alice"], "projection", p["id"], users={u["bob"].id: "read"})
+    texts = [e["text"] for e in c["bob"].get("/ui/api/activity").json()["items"]]
+    assert any("shared Retire early with Bob" in t for t in texts), texts
+    share(c["alice"], "projection", p["id"], users={u["bob"].id: "none"})
+    texts = [e["text"] for e in c["bob"].get("/ui/api/activity").json()["items"]]
+    assert any("stopped sharing Retire early with Bob" in t for t in texts), texts
+    carols = [e["text"] for e in c["carol"].get("/ui/api/activity").json()["items"]]
+    assert not any("Retire early" in t for t in carols)

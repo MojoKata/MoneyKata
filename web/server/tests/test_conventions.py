@@ -99,3 +99,33 @@ def test_the_document_lists_the_problems_and_their_codes():
                 method,
                 path,
             )
+
+
+def test_every_201_names_what_it_made_and_every_202_is_a_job(store, keyed_config):
+    """S13.8.4, S13.8.7: Location on every 201 (the document says so, and the server adds it
+    where a route doesn't), and a job resource for every 202."""
+    from moneykata import contract
+    from moneykata.ui.imports import JobOut
+
+    app = create_app(Server(config=keyed_config, store=store, ready=True))
+    not_jobs = [
+        r.path
+        for r in app.routes
+        if isinstance(r, APIRoute) and r.status_code == 202 and r.response_model is not JobOut
+    ]
+    assert not_jobs == []
+    doc = contract.openapi_document()
+    assert doc["info"]["version"] == app.version, "the document states the release (S13.8.9)"
+    for path, ops in doc["paths"].items():
+        for method, op in ops.items():
+            if "201" in op["responses"]:
+                assert "Location" in op["responses"]["201"].get("headers", {}), (method, path)
+
+
+def test_a_201_without_its_own_location_is_given_one():
+    from moneykata.middleware import location_of
+
+    assert location_of("/ui/api/rules", b'{"items": []}') == "/ui/api/rules"
+    assert location_of("/ui/api/persons", b'{"id": "Prsn_1"}') == "/ui/api/persons/Prsn_1"
+    book = b'{"id": "TxBk_1", "filings": []}'
+    assert location_of("/ui/api/tax-books/TxBk_1/filings", book) == "/ui/api/tax-books/TxBk_1"

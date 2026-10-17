@@ -15,10 +15,12 @@ from ..prices import SOURCES
 from ..prices import refresh as pricing
 from ..store.entities.accounts import Instrument, Transaction
 from ..store.entities.prices import Price, PriceSource
+from ..store.entities.prices import TypedPrice as Typed
 from ..store.entities.users import User
 from ..store.repos import secrets as secret_repo
 from .conventions import Deleted, ExactRoute, Model, Quantity, check, gone, if_match, stale
 from .deps import Caller, admin, caller, recent_auth, server
+from .imports import JobOut, accepted
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["prices"])
 
@@ -161,17 +163,19 @@ def apply_egress(srv) -> None:
 def price_status(request: Request, c: Caller = Depends(caller)):
     srv = server(request)
     with srv.db.read() as s:
-        st = pricing.status(s, srv.config.dev)
+        st = pricing.status(s, srv.config.dev, c.id)
     running = srv.tasks.status().get("prices", {}).get("running", False)
     return PriceStatus(**st, running=running)
 
 
-@router.post("/prices/refresh", status_code=202)
+@router.post("/prices/refresh", response_model=JobOut, status_code=202)
 def refresh_prices(request: Request, c: Caller = Depends(caller)):
-    """Refresh prices: the daily task, now (S4.4)."""
-    if not server(request).tasks.run_now("prices"):
+    """Refresh prices: the daily task, now (S4.4), followed as a job (S13.8.7)."""
+    srv = server(request)
+    job = srv.jobs.create("prices", c.id)
+    if not srv.tasks.run_now("prices", srv.jobs.follow(job)):
         raise Problem(503, "not-available", "Prices can't be refreshed right now.")
-    return Response(status_code=202)
+    return accepted(job)
 
 
 @router.get("/price-sources", response_model=SourcesView)
@@ -330,19 +334,12 @@ def type_price(instrument_id: str, body: TypedPrice, request: Request, c: Caller
         inst = s.get(Instrument, instrument_id)
         if inst is None or inst.deleted or not _held_writable(s, c.id, inst.id):
             raise Problem(404, "not-found", "Not found")
-        row = s.get(Price, (inst.id, body.date))
+        # Its typer's alone: it values their own accounts, never another user's (S4.10).
+        row = s.get(Typed, (inst.id, c.id, body.date))
         if row is None:
-            s.add(
-                Price(
-                    instrumentId=inst.id,
-                    date=body.date,
-                    close=body.price,
-                    source="manual",
-                    enteredById=c.id,
-                )
-            )
+            s.add(Typed(instrumentId=inst.id, userId=c.id, date=body.date, close=body.price))
         else:
-            row.close, row.source, row.enteredById = body.price, "manual", c.id
+            row.close = body.price
             row.restore()
     server(request).events.publish("prices", {"instrumentId": instrument_id})
     return Response(status_code=201)
@@ -361,11 +358,15 @@ def closes(
         if inst is None or inst.deleted:
             raise Problem(404, "not-found", "Not found")
         q = select(Price).where(Price.instrumentId == inst.id, Price.deleted == false())
+        t = select(Typed).where(
+            Typed.instrumentId == inst.id, Typed.userId == c.id, Typed.deleted == false()
+        )
         if start:
-            q = q.where(Price.date >= start)
+            q, t = q.where(Price.date >= start), t.where(Typed.date >= start)
         if end:
-            q = q.where(Price.date <= end)
-        return [
-            Close(date=p.date, close=p.close, source=p.source)
-            for p in s.scalars(q.order_by(Price.date))
-        ]
+            q, t = q.where(Price.date <= end), t.where(Typed.date <= end)
+        # The closes every account shares, and the prices this user typed, which win their day.
+        by_day = {p.date: Close(date=p.date, close=p.close, source=p.source) for p in s.scalars(q)}
+        for p in s.scalars(t):
+            by_day[p.date] = Close(date=p.date, close=p.close, source="manual")
+        return [by_day[d] for d in sorted(by_day)]

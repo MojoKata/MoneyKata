@@ -20,8 +20,8 @@ PriceSource = record(
 )
 unique_live(PriceSource, "name")
 
-# One close per instrument and market day, kept for ever (S4.6). A typed price is stored the
-# same way, with the source "manual".
+# One close per instrument and market day, kept for ever (S4.6). Typed prices are kept apart,
+# each its typer's (TypedPrice).
 Price = keyed(
     "Price",
     Column("instrumentId", Text, ForeignKey("Instrument.id"), nullable=False),
@@ -32,4 +32,16 @@ Price = keyed(
     Column("enteredById", Text, ForeignKey("User.id")),
     PrimaryKeyConstraint("instrumentId", "date"),
     Index("ix_Price_date", "date"),
+)
+
+# A price a user typed (S4.10), with its date: it values their own accounts, and never another
+# user's; kept for ever, as closes are.
+TypedPrice = keyed(
+    "TypedPrice",
+    Column("instrumentId", Text, ForeignKey("Instrument.id"), nullable=False),
+    Column("userId", Text, ForeignKey("User.id"), nullable=False),
+    Column("date", Day, nullable=False),
+    Column("close", Dec, nullable=False),
+    PrimaryKeyConstraint("instrumentId", "userId", "date"),
+    Index("ix_TypedPrice_user", "userId", "instrumentId", "date"),
 )

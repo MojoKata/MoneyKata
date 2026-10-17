@@ -10,9 +10,8 @@ import itertools
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from . import balances
+from . import balances, expected
 
-ANCHOR_DAYS = 45
 ZERO = Decimal(0)
 
 
@@ -139,12 +138,10 @@ def checks(
     return out
 
 
-def needs_anchor(anchors: list, transactions: list, today: dt.date) -> bool:
-    """No reported balance for 45 days: the Reconcile tab asks for one (S1.11.2)."""
-    reported = balances.points(anchors, transactions)
-    if not reported:
-        return bool(transactions)
-    return (today - reported[-1][0]).days > ANCHOR_DAYS
+def needs_anchor(account, imports: list, today: dt.date) -> bool:
+    """The account's next statement or import is overdue (S1.11.7.3): the Reconcile tab asks
+    for one, or for a balance typed from the institution's site (S1.11.2)."""
+    return expected.overdue(account, imports, today) is not None
 
 
 VALUE_TOLERANCE = Decimal("0.005")  # half a percent: prices a day apart, rounding

@@ -19,6 +19,7 @@ def test_build_registers_every_background_task(keyed_config, master_key):
             "bitcoin",
             "links",
             "linked-copies",
+            "host-events",
         }
         assert server.tasks.run_now("prices")
     finally:

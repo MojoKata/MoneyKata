@@ -1,7 +1,7 @@
 # Receipts
 
-How receipts are kept: encrypted in the data directory, each file once however often it is uploaded,
-and in every backup.
+How receipts are kept: encrypted in the data directory, each file once however often it is uploaded.
+Backups hold the database alone; the host's own backup of the data directory keeps the files.
 
 ## Largest file (MB) {#receipt-max-mb}
 

@@ -1,6 +1,7 @@
 """Manual prices (requirements S4.3): for what has no free ticker (529 portfolios, 401(k)
 collective trusts, single bonds), a value from a statement or a typed price with its date.
-Nothing is fetched; typed prices are stored as closes with the source "manual"."""
+Nothing is fetched; a typed price is kept as its typer's (TypedPrice), and values their own
+accounts (S4.10)."""
 
 import datetime as dt
 from decimal import Decimal

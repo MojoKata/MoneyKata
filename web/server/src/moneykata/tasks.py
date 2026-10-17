@@ -69,6 +69,7 @@ class Task:
     last: TaskRun | None = None
     running: bool = False
     requested: bool = False
+    waiting: list = field(default_factory=list)  # called when the next run ends
 
 
 @dataclass
@@ -176,13 +177,16 @@ class Tasks:
             }
         return out
 
-    def run_now(self, name: str) -> bool:
+    def run_now(self, name: str, ended: Callable[[TaskRun], None] | None = None) -> bool:
         """Ask for a run (Refresh prices, Back up now): at once once the tasks have started,
-        else at the first tick. A task already running runs again when it finishes."""
+        else at the first tick. A task already running runs again when it finishes. `ended`
+        is called with the run this asks for, when it ends (its job, S13.8.7)."""
         task = self._tasks.get(name)
         if task is None:
             return False
         with self._lock:
+            if ended is not None:
+                task.waiting.append(ended)
             if self._runner is not None and not task.running and not self._stop.is_set():
                 self._launch(task)
             else:
@@ -192,6 +196,7 @@ class Tasks:
     def _launch(self, task: Task) -> None:
         task.running = True
         task.requested = False
+        waiting, task.waiting = task.waiting, []
         run = TaskRun(started=self._now())
         ctx = TaskContext(task.name, self._stop, self.limits)
 
@@ -215,6 +220,11 @@ class Tasks:
                         self._record(task.name, run)
                     except Exception:
                         log.exception("recording task %s failed", task.name)
+                for ended in waiting:
+                    try:
+                        ended(run)
+                    except Exception:
+                        log.exception("ending a job of task %s failed", task.name)
 
         self._pool.submit(body)
 

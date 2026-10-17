@@ -15255,6 +15255,7 @@
               "theme-invalid",
               "token-refused",
               "too-large",
+              "too-long",
               "too-many",
               "too-many-rules",
               "trade-incomplete",
@@ -15591,6 +15592,7 @@
               "theme-invalid",
               "token-refused",
               "too-large",
+              "too-long",
               "too-many",
               "too-many-rules",
               "trade-incomplete",
@@ -25061,7 +25063,7 @@
   "info": {
     "description": "The browser app's API, /ui/api (requirements S13.8). It is served with the app and carries no version of its own.",
     "title": "MoneyKata",
-    "version": "see web/VERSION"
+    "version": "0.1.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -25144,7 +25146,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -25340,7 +25350,15 @@
                 "schema": {}
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -25394,7 +25412,15 @@
                 "schema": {}
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -25493,7 +25519,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -25563,7 +25597,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -25667,7 +25709,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -25757,7 +25807,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -26021,7 +26079,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -26245,7 +26311,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -26422,7 +26496,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -26724,7 +26806,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -26803,7 +26893,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -27002,7 +27100,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -27745,7 +27851,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -28303,7 +28417,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -28959,7 +29081,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -29452,7 +29582,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -29709,7 +29847,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -29952,7 +30098,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -30513,7 +30667,15 @@
                 "schema": {}
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -30968,7 +31130,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -31176,7 +31346,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -31924,12 +32102,7 @@
           "required": true
         },
         "responses": {
-          "202": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
+          "204": {
             "description": "Successful Response"
           },
           "422": {
@@ -32070,7 +32243,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -32273,7 +32454,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -32662,7 +32851,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -33246,7 +33443,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -33368,13 +33573,15 @@
     },
     "/ui/api/prices/refresh": {
       "post": {
-        "description": "Refresh prices: the daily task, now (S4.4).",
+        "description": "Refresh prices: the daily task, now (S4.4), followed as a job (S13.8.7).",
         "operationId": "refresh_prices_ui_api_prices_refresh_post",
         "responses": {
           "202": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
               }
             },
             "description": "Successful Response"
@@ -33558,7 +33765,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -33749,12 +33964,7 @@
           "required": true
         },
         "responses": {
-          "202": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
+          "204": {
             "description": "Successful Response"
           },
           "422": {
@@ -33894,7 +34104,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -34158,7 +34376,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -34475,12 +34701,7 @@
           "required": true
         },
         "responses": {
-          "202": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
+          "204": {
             "description": "Successful Response"
           },
           "422": {
@@ -34613,7 +34834,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -35225,7 +35454,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -35436,7 +35673,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -35965,12 +36210,15 @@
     },
     "/ui/api/settings/backups/run": {
       "post": {
+        "description": "Back up now: the daily task, at once, followed as a job (S13.8.7).",
         "operationId": "backup_now_ui_api_settings_backups_run_post",
         "responses": {
           "202": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
               }
             },
             "description": "Successful Response"
@@ -36211,7 +36459,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36719,7 +36975,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36753,7 +37017,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -37068,7 +37340,7 @@
     },
     "/ui/api/settings/links/{link_id}/pull": {
       "post": {
-        "description": "An exchange now rather than at the next hour (S11.7).",
+        "description": "An exchange now rather than at the next hour (S11.7), recorded with who asked (S11.8).",
         "operationId": "pull_now_ui_api_settings_links__link_id__pull_post",
         "parameters": [
           {
@@ -37114,7 +37386,7 @@
     },
     "/ui/api/settings/links/{link_id}/reset-copy": {
       "post": {
-        "description": "The copy deleted and taken again in full; the password again if given over 10 minutes\nago (S13.6.2).",
+        "description": "The copy deleted and taken again in full, as a job (S11.9.8, S13.8.7); the password\nagain if given over 10 minutes ago (S13.6.2).",
         "operationId": "reset_copy_ui_api_settings_links__link_id__reset_copy_post",
         "parameters": [
           {
@@ -37128,11 +37400,11 @@
           }
         ],
         "responses": {
-          "200": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/moneykata__ui__links__LinkOut"
+                  "$ref": "#/components/schemas/JobOut"
                 }
               }
             },
@@ -37616,12 +37888,7 @@
           "required": true
         },
         "responses": {
-          "202": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
+          "204": {
             "description": "Successful Response"
           },
           "403": {
@@ -37863,7 +38130,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -38064,7 +38339,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -38441,7 +38724,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -38496,7 +38787,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -38666,7 +38965,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -39207,7 +39514,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {
@@ -39920,7 +40235,15 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "headers": {
+              "Location": {
+                "description": "Where what was made is read.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "content": {

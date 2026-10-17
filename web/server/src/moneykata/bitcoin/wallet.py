@@ -63,11 +63,15 @@ def extend(s: Session, k: WalletKey) -> int:
     """Derive the key's addresses until `gapLimit` past the last used one on each chain; a
     typed address is its own one address. Returns how many were added."""
     now = clock.now()
+    # An address another key derives too, or one typed as well, is watched once (S1.6.1).
+    taken = set(
+        s.scalars(select(WalletAddress.address).where(WalletAddress.accountId == k.accountId))
+    )
     if k.kind == "address":
         have = s.scalar(
             select(func.count()).select_from(WalletAddress).where(WalletAddress.keyId == k.id)
         )
-        if not have:
+        if not have and k.value not in taken:
             s.add(
                 WalletAddress(
                     id=ids.new_id("WAddr"),
@@ -106,12 +110,16 @@ def extend(s: Session, k: WalletKey) -> int:
         last_used = max((r.idx for r in rows if r.used), default=-1)
         top = max((r.idx for r in rows), default=-1)
         for i in range(top + 1, last_used + k.gapLimit + 1):
+            at = address(chain, i)
+            if at in taken:
+                continue
+            taken.add(at)
             s.add(
                 WalletAddress(
                     id=ids.new_id("WAddr"),
                     accountId=k.accountId,
                     keyId=k.id,
-                    address=address(chain, i),
+                    address=at,
                     chain=chain,
                     idx=i,
                     createdAt=now,

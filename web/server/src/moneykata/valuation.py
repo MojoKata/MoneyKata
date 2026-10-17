@@ -2,8 +2,9 @@
 the price's source and `as_of`. Charts and screens read stored prices only, never a price
 source during a request.
 
-Prices come, in order, from: the stored daily closes (S4), a value a broker's file reported
-for the holding, and the account's last trade in it.
+Prices come, in order, from: the stored daily closes (S4), or a later price the account's
+owner typed (S4.10); a value a broker's file reported for the holding; and the owner's last
+trade in it. Another user's typed prices, statements and trades never value an account.
 """
 
 import datetime as dt
@@ -17,9 +18,11 @@ from sqlalchemy.orm import Session
 from . import clock
 from .ledger import balances
 from .money import CENT
-from .store.entities.accounts import Holding, Instrument, Transaction
+from .store.entities.accounts import Account, Holding, Instrument, Transaction
+from .store.entities.prices import TypedPrice
 
 ZERO = Decimal(0)
+TYPED_STALE_DAYS = 90  # a typed price, as a statement's value (S4.7)
 
 
 @dataclass(frozen=True)
@@ -44,8 +47,33 @@ def use_closes(lookup: CloseLookup, history: CloseHistory | None = None) -> None
     _history[:] = [history] if history else []
 
 
-def prices(s: Session, instrument_ids: list[str], day: dt.date | None = None) -> dict[str, Price]:
-    """The latest price on or before the day for each instrument."""
+def _owned(stmt, entity, owner: str | None):
+    """Only what the owner's own accounts hold: another user's files and trades never value
+    theirs (S4.10)."""
+    if owner is None:
+        return stmt
+    return stmt.join(Account, Account.id == entity.accountId).where(Account.ownerId == owner)
+
+
+def typed(s: Session, owner: str, instrument_ids: list[str], first: dt.date | None, last: dt.date):
+    """The prices the owner typed for these instruments, oldest first: those after `first`
+    up to `last`, or with `first` None, every one up to `last`."""
+    q = select(TypedPrice).where(
+        TypedPrice.userId == owner,
+        TypedPrice.instrumentId.in_(instrument_ids),
+        TypedPrice.deleted == false(),
+        TypedPrice.date <= last,
+    )
+    if first is not None:
+        q = q.where(TypedPrice.date > first)
+    return list(s.scalars(q.order_by(TypedPrice.date)))
+
+
+def prices(
+    s: Session, instrument_ids: list[str], day: dt.date | None = None, owner: str | None = None
+) -> dict[str, Price]:
+    """The latest price on or before the day for each instrument, for the accounts of `owner`
+    (none: closes alone and every fallback)."""
     day = day or clock.today()
     ids_ = list(dict.fromkeys(instrument_ids))
     out: dict[str, Price] = {}
@@ -58,10 +86,17 @@ def prices(s: Session, instrument_ids: list[str], day: dt.date | None = None) ->
     if _closes:
         for iid, p in _closes[0](s, [i for i in ids_ if i not in out], day).items():
             out[iid] = p
+    if owner is not None:
+        for t in typed(
+            s, owner, [i for i in ids_ if i not in out or out[i].source != "fixed"], None, day
+        ):
+            if t.instrumentId not in out or t.date >= out[t.instrumentId].asOf:
+                stale = (min(day, clock.today()) - t.date).days > TYPED_STALE_DAYS
+                out[t.instrumentId] = Price(t.close, t.date, "manual", stale)
     missing = [i for i in ids_ if i not in out]
     if missing:
         for h in s.scalars(
-            select(Holding)
+            _owned(select(Holding), Holding, owner)
             .where(
                 Holding.instrumentId.in_(missing),
                 Holding.deleted == false(),
@@ -76,7 +111,7 @@ def prices(s: Session, instrument_ids: list[str], day: dt.date | None = None) ->
     missing = [i for i in ids_ if i not in out and i not in multipliers(s, ids_)]
     if missing:
         for txn in s.scalars(
-            select(Transaction)
+            _owned(select(Transaction), Transaction, owner)
             .where(
                 Transaction.instrumentId.in_(missing),
                 Transaction.deleted == false(),
@@ -116,11 +151,11 @@ def positions(s: Session, ledger, day: dt.date | None = None) -> list[Position]:
     by: dict[str, list] = {}
     for lot in replay.open:
         by.setdefault(lot.instrumentId, []).append(lot)
-    found = prices(s, list(by), day)
+    found = prices(s, list(by), day, ledger.account.ownerId)
     mult = multipliers(s, list(by))
     for iid in by:
         if iid in mult and iid not in found:
-            mark = intrinsic(s, iid, day)
+            mark = intrinsic(s, iid, day, ledger.account.ownerId)
             if mark is not None:
                 found[iid] = mark
     out = []
@@ -135,7 +170,9 @@ def positions(s: Session, ledger, day: dt.date | None = None) -> list[Position]:
     return out
 
 
-def intrinsic(s: Session, instrument_id: str, day: dt.date | None = None) -> Price | None:
+def intrinsic(
+    s: Session, instrument_id: str, day: dt.date | None = None, owner: str | None = None
+) -> Price | None:
     """An option's value at the underlying's close, when no close or typed mark is known:
     what exercising it would be worth, labelled as such (S3.7)."""
     from . import options
@@ -143,7 +180,7 @@ def intrinsic(s: Session, instrument_id: str, day: dt.date | None = None) -> Pri
     c = options.contract_of(s, instrument_id)
     if c is None:
         return None
-    under = options.per_share(s, c, day)
+    under = options.per_share(s, c, day, owner)
     if under is None:
         return None
     price, asof = under
@@ -184,16 +221,21 @@ def account_value(s: Session, ledger, investing: bool, day: dt.date | None = Non
 
 
 def price_points(
-    s: Session, instrument_ids: list[str], first: dt.date, last: dt.date
+    s: Session,
+    instrument_ids: list[str],
+    first: dt.date,
+    last: dt.date,
+    owner: str | None = None,
 ) -> dict[str, list[tuple[dt.date, Decimal]]]:
     """Every known price of each instrument up to last, oldest first, from the same sources
-    as `prices` and in the same precedence: an instrument with stored closes is valued from
-    them alone; one without, from statement values and trades."""
+    as `prices` and in the same precedence, for the accounts of `owner`: an instrument with
+    stored closes or typed prices is valued from them alone; one without, from statement
+    values and trades."""
     out: dict[str, list[tuple[dt.date, Decimal]]] = {i: [] for i in instrument_ids}
     if not instrument_ids:
         return out
     closed: set[str] = set()
-    for iid, p in prices(s, instrument_ids, first).items():
+    for iid, p in prices(s, instrument_ids, first, owner).items():
         out[iid].append((p.asOf, p.price))
         if p.source in ("close", "manual", "fixed"):
             closed.add(iid)
@@ -201,10 +243,18 @@ def price_points(
         for iid, rows in _history[0](s, instrument_ids, first, last).items():
             out[iid] += rows
             closed.add(iid)
+    if owner is not None:
+        # A typed price stands on its day, after the close of that day (S4.10).
+        later = {}
+        for t in typed(s, owner, instrument_ids, first, last):
+            later.setdefault(t.instrumentId, []).append((t.date, t.close))
+            closed.add(t.instrumentId)
+        for iid, rows in later.items():
+            out[iid] += rows
     others = [i for i in instrument_ids if i not in closed]
     if others:
         for h in s.scalars(
-            select(Holding).where(
+            _owned(select(Holding), Holding, owner).where(
                 Holding.instrumentId.in_(others),
                 Holding.deleted == false(),
                 Holding.asOf > first,
@@ -216,7 +266,7 @@ def price_points(
                 out[h.instrumentId].append((h.asOf, h.marketValue / h.quantity))
         statement = {iid for iid in others if out[iid]}
         for t in s.scalars(
-            select(Transaction).where(
+            _owned(select(Transaction), Transaction, owner).where(
                 Transaction.instrumentId.in_(others),
                 Transaction.deleted == false(),
                 Transaction.price.is_not(None),
@@ -268,7 +318,7 @@ def series(
     for day in changes:
         held.append((day, _positions_on(ledger, day)))
     ids_ = sorted({i for _, pos in held for i in pos})
-    points = price_points(s, ids_, first, last)
+    points = price_points(s, ids_, first, last, ledger.account.ownerId)
     mult = multipliers(s, ids_)
     out = []
     h_i = 0

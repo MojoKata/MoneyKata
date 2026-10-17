@@ -451,9 +451,9 @@ def register(sub) -> None:
     ks = k.add_subparsers(dest="keys_command", required=True)
     ks.add_parser(
         "init", help="a new master key, shown as its phrase, and a new data key"
-    ).set_defaults(func=lambda a: (init(load(Path(a.config))), 0)[1])
+    ).set_defaults(func=_init_cmd)
     ks.add_parser("fingerprint", help="print the fingerprint of the key in use").set_defaults(
-        func=lambda a: (print(fingerprint_of(load(Path(a.config)))), 0)[1]
+        func=_fingerprint_cmd
     )
     ks.add_parser("verify", help="check a typed phrase against the keyring").set_defaults(
         func=_verify_cmd
@@ -475,8 +475,39 @@ def register(sub) -> None:
     h.add_argument("--leave-all", action="store_true", help="leave every copy as it is")
     e.set_defaults(func=_reencrypt_cmd)
     ks.add_parser("unlock", help="unlock the server running on this host").set_defaults(
-        func=lambda a: unlock(load(Path(a.config)))
+        func=_unlock_cmd
     )
+
+
+# Every `keys` command is queued for Activity (S15.4.7), whichever way it ends.
+
+
+def _init_cmd(args) -> int:
+    from ..store.maintenance import queue_host_event
+
+    config = load(Path(args.config))
+    key = init(config)
+    queue_host_event(config, "key.made", {"fingerprint": master.fingerprint(key)})
+    return 0
+
+
+def _fingerprint_cmd(args) -> int:
+    from ..store.maintenance import queue_host_event
+
+    config = load(Path(args.config))
+    fp = fingerprint_of(config)
+    print(fp)
+    queue_host_event(config, "key.fingerprint-shown", {"fingerprint": fp})
+    return 0
+
+
+def _unlock_cmd(args) -> int:
+    from ..store.maintenance import queue_host_event
+
+    config = load(Path(args.config))
+    code = unlock(config)
+    queue_host_event(config, "key.unlocked" if code == 0 else "key.unlock-refused", {})
+    return code
 
 
 def _verify_cmd(args) -> int:

@@ -73,8 +73,19 @@ def test_a_changed_cut_reordered_or_renamed_file_fails():
     assert not opens(b"MKR0" + blob[4:])
 
 
-def signed_change(key, seq, **body):
-    return changes.sign(key, {"seq": seq, "asOf": clock.now().isoformat(), **body})
+def signed_change(key, seq, server, link_id, **body):
+    """A change as a peer sends it: its registry in the open, the rest sealed to this copy's
+    key for the peer-to-here direction, and signed by the peer (link-protocol.md §4.4)."""
+    from moneykata.links.keys import direction, fingerprint, public_of, unb64
+
+    part = {"seq": seq, "asOf": clock.now().isoformat(), **body}
+    with server.db.tx() as s:  # this server's link key is made on first use
+        link = s.get(Link, link_id)
+        way = direction(
+            fingerprint(unb64(link.peerKey)), fingerprint(public_of(s, server.keys.secrets))
+        )
+        copy_key = unb64(link.copyPublicKey)
+    return changes.sign(key, changes.seal_part(part, copy_key, way))
 
 
 def test_changes_wait_in_the_inbox_and_apply_in_order_once_unlocked(server, setup):  # noqa: F811
@@ -90,7 +101,14 @@ def test_changes_wait_in_the_inbox_and_apply_in_order_once_unlocked(server, setu
     changes.enqueue(
         server,
         link_id,
-        signed_change(peer, 1, full=True, items=[{**item, "viewers": [alice_id], "version": 1}]),
+        signed_change(
+            peer,
+            1,
+            server,
+            link_id,
+            full=True,
+            items=[{**item, "viewers": [alice_id], "version": 1}],
+        ),
     )
     changes.enqueue(
         server,
@@ -98,6 +116,8 @@ def test_changes_wait_in_the_inbox_and_apply_in_order_once_unlocked(server, setu
         signed_change(
             peer,
             2,
+            server,
+            link_id,
             items=[{**item, "name": "Mom's Roth IRA", "viewers": [alice_id], "version": 2}],
             docs=[
                 {
@@ -124,7 +144,7 @@ def test_changes_wait_in_the_inbox_and_apply_in_order_once_unlocked(server, setu
         doc = conn.execute(select(copydb.Doc.c.body)).scalar_one()
         assert json.loads(doc)["balance"] == "412880.00"
     # While it stays unlocked, a new change applies as it arrives.
-    changes.enqueue(server, link_id, signed_change(peer, 3, removed=["Acct_1"]))
+    changes.enqueue(server, link_id, signed_change(peer, 3, server, link_id, removed=["Acct_1"]))
     with o.engine.connect() as conn:
         assert conn.execute(select(copydb.Item.c.id)).all() == []
 
@@ -137,14 +157,19 @@ def test_a_change_not_signed_by_the_peer_stops_the_apply(server, setup):  # noqa
             peer.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
         )
     words = admin.post(f"/ui/api/settings/links/{link_id}/copy-key").json()["words"]
-    changes.enqueue(server, link_id, signed_change(peer, 1, items=[]))
-    changes.enqueue(
-        server, link_id, signed_change(stranger, 2, items=[{"id": "x", "kind": "account"}])
-    )
+    changes.enqueue(server, link_id, signed_change(peer, 1, server, link_id, items=[]))
+    forged = signed_change(stranger, 2, server, link_id, items=[{"id": "x", "kind": "account"}])
+    changes.enqueue(server, link_id, forged)
     alice.post(f"/ui/api/linked/{link_id}/unlock", json={"words": " ".join(words)})
-    assert len(changes.waiting(server.config.data_dir, link_id)) == 2, "nothing applied"
+    # Nothing applied: set aside, recorded, and everything asked for again (S11.9.5.3).
+    assert changes.waiting(server.config.data_dir, link_id) == []
+    aside = lcopy.folder(server.config.data_dir, link_id) / "set-aside"
+    assert len(list(aside.glob("*.mks"))) == 2
     with server.db.read() as s:
-        assert "signature" in s.get(Link, link_id).lastError
+        link = s.get(Link, link_id)
+        assert "signature" in link.lastError and link.needsFull
+    with server.copies.get(link_id).engine.connect() as conn:
+        assert conn.execute(select(copydb.Item.c.id)).all() == []
 
 
 def test_an_overflowing_inbox_is_discarded_for_a_full_snapshot(server, setup, monkeypatch):  # noqa: F811
@@ -152,9 +177,13 @@ def test_an_overflowing_inbox_is_discarded_for_a_full_snapshot(server, setup, mo
     peer = Ed25519PrivateKey.generate()
     admin.post(f"/ui/api/settings/links/{link_id}/copy-key")
     monkeypatch.setattr(changes, "MAX_CHANGES", 3)
+    with server.db.tx() as s:
+        s.get(Link, link_id).peerKey = b64(
+            peer.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        )
     for n in range(1, 4):
-        assert changes.enqueue(server, link_id, signed_change(peer, n))
-    assert not changes.enqueue(server, link_id, signed_change(peer, 4))
+        assert changes.enqueue(server, link_id, signed_change(peer, n, server, link_id))
+    assert not changes.enqueue(server, link_id, signed_change(peer, 4, server, link_id))
     assert changes.waiting(server.config.data_dir, link_id) == []
     with server.db.read() as s:
         assert s.get(Link, link_id).needsFull

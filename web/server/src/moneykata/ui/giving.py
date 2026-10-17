@@ -13,7 +13,7 @@ from sqlalchemy import select
 from .. import access, activity, clock, exactjson, giving, ids, receipts
 from ..errors import FieldError, Problem, refuse
 from ..ledger.lots import long_term as held_long
-from ..store.entities.accounts import Category, Instrument, Lot, LotPick, Transaction
+from ..store.entities.accounts import Account, Category, Instrument, Lot, LotPick, Transaction
 from ..store.entities.giving import Donation, GivingPlan, Organisation
 from ..store.entities.receipts import ReceiptLink
 from ..store.repos import ledger as repo
@@ -469,7 +469,8 @@ def _shares_given(s, c: Caller, body: DonationIn, to: str) -> dict:
     if value is None:
         from .. import valuation
 
-        price = valuation.prices(s, [lot.instrumentId], body.date).get(lot.instrumentId)
+        owner = s.get(Account, lot.accountId).ownerId  # their own typed prices (S4.10)
+        price = valuation.prices(s, [lot.instrumentId], body.date, owner).get(lot.instrumentId)
         if price is None:
             raise refuse("amount", "value-missing", "The shares' market value on the day.")
         value = (price.price * qty).quantize(Decimal("0.01"))

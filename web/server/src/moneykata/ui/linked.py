@@ -376,18 +376,23 @@ def file(link_id: str, file_id: str, request: Request, c: Caller = Depends(calle
         "Cache-Control": "private, no-store",
     }
 
-    def rest():
+    def checked():
+        # Each piece goes once the next is read, so the last goes only after the hash checks:
+        # a file that isn't the one its source sent ends the answer with an error (S11.9.6.5).
+        held = first
         try:
             for chunk in chunks:
                 h.update(chunk)
-                yield chunk
+                yield held
+                held = chunk
         finally:
             f.close()
         if h.hexdigest() != row.sha256:
             raise sealed.SealError("the receipt is not the one its source sent")
+        yield held
 
     if kind == "image/heic":
-        data = first + b"".join(rest())
+        data = b"".join(checked())
         from .. import parsing
 
         try:
@@ -396,8 +401,4 @@ def file(link_id: str, file_id: str, request: Request, c: Caller = Depends(calle
             raise Problem(415, "receipt-type", "That photo can't be shown.") from None
         return Response(jpeg, media_type="image/jpeg", headers=headers)
 
-    def body():
-        yield first
-        yield from rest()
-
-    return StreamingResponse(body(), media_type=kind, headers=headers)
+    return StreamingResponse(checked(), media_type=kind, headers=headers)

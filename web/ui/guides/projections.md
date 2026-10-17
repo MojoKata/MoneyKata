@@ -20,7 +20,9 @@ $500 more a month. **New projection** starts one.
 
 For an active projection, the actual balance of what it is built on against its baseline: **on
 track** inside the band, **ahead** above it, **behind** below it. Falling behind raises an alert,
-checked at each month's end.
+checked at each month's end. In a projection shared with you, you see the status, and the balance
+of only the accounts that are shared with you too; when some aren't, there is no band to show it
+against.
 
 ## Show on my Dashboard {#show-on-dashboard}
 

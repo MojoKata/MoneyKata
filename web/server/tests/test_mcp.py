@@ -75,6 +75,10 @@ def test_tools_read_what_the_user_can_see_and_record_each_call(server, alice, ag
     refused = call(agent, secret, "get_account_holdings", account_id=hidden["id"])
     assert refused["isError"]
     assert call(agent, secret, "list_transactions", nonsense=1)["isError"]
+    for wrong in ({"limit": -1}, {"limit": 100000}, {"limit": "5"}, {"from": "yesterday"}):
+        assert call(agent, secret, "list_transactions", **wrong)["isError"], wrong
+    assert call(agent, secret, "list_positions", kind="bonds")["isError"]
+    assert call(agent, secret, "get_budget_month", budget_id="x", month="Oct")["isError"]
     feed = alice.get("/ui/api/activity").json()
     texts = [e["text"] for e in (feed["items"] if isinstance(feed, dict) else feed)]
     assert any("access token Claude read list accounts" in x for x in texts), texts[:5]

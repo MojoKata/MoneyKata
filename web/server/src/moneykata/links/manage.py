@@ -514,7 +514,7 @@ def exchange(srv, link_id: str) -> None:
         if answer.get("have") != part.get("seq"):
             break  # the peer missed one: its next exchange asks again
     if mine:
-        _served(srv, mine[0])
+        _served(srv, link_id, mine[0])
 
 
 def _copy_key(value) -> str | None:
@@ -540,14 +540,19 @@ def _deliver_file(srv, link_id: str, file_id: str) -> None:
         path.unlink(missing_ok=True)
 
 
-def _served(srv, change: dict) -> None:
+def _served(srv, link_id: str, change: dict) -> None:
+    from .receive import shares_of
+
     with srv.db.tx() as s:
         activity.record(
             s,
             "link.served",
             actor=None,
             for_admins=True,
-            detail={"count": len(change.get("items") or []) + len(change.get("removed") or [])},
+            detail={
+                "count": len(change.get("items") or []) + len(change.get("removed") or []),
+                "shares": shares_of(s, link_id, change, here=False),
+            },
         )
 
 
@@ -581,7 +586,7 @@ def answer_exchange(srv, link: Link, body: dict, version: str | None) -> dict:
             out["more"] = len(parts) - 1
             # Kept for the peer to ask for, one at a time, while it is pulling.
             PENDING[link.id] = parts[1:]
-            _served(srv, parts[0])
+            _served(srv, link.id, parts[0])
     return out
 
 

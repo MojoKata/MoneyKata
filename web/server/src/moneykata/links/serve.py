@@ -122,10 +122,11 @@ def _paths(srv, it: Item) -> list[tuple[str, callable]]:
             (f"/accounts/{i}/holdings", lambda c: accounts.account_holdings(i, r, c)),
             (
                 f"/transactions?account={i}",
+                # The whole history: a long one travels in parts by date (S11.4).
                 lambda c: txns.list_transactions(
                     r,
                     c,
-                    Paging(offset=0, limit=500),
+                    Paging(offset=0, limit=ALL),
                     [i],
                     None,
                     None,
@@ -438,6 +439,7 @@ def stream_file(path):
 
 
 PART_BYTES = 4 * 1024 * 1024  # a change larger than this travels in parts
+ALL = 10**9  # every record of a list document
 DAY = re.compile(r"\b(\d{4}-\d{2}-\d{2})")
 
 
@@ -451,17 +453,49 @@ def _size(entry) -> int:
     return len(exactjson.dumps(entry))
 
 
+def _records(doc: dict) -> list[dict]:
+    """A long list document (an account's transactions, newest first) as pieces of whole
+    records up to a date, oldest first: the first replaces the document, each after it adds
+    its records ahead of those before (`append`). Any other document is one piece."""
+    body = doc.get("body")
+    rows = body.get("items") if isinstance(body, dict) else None
+    if not isinstance(rows, list) or _size(doc) <= PART_BYTES // 4:
+        return [doc]
+    pieces: list[list] = []
+    end = len(rows)
+    while end > 0:
+        start, size = end, 0
+        while start > 0 and (size < PART_BYTES // 4 or start == end):
+            start -= 1
+            size += _size(rows[start])
+        # Whole records up to a date: one day's records stay in one piece.
+        while start > 0 and _newest(rows[start - 1]) == _newest(rows[start]):
+            start -= 1
+        pieces.append(rows[start:end])
+        end = start
+    return [
+        {**doc, "body": {**body, "items": rows_}, **({"append": True} if i else {})}
+        for i, rows_ in enumerate(pieces)
+    ]
+
+
 def split(change: dict) -> list[dict]:
     """A large change as parts that travel oldest to newest (S11.4): the first carries the
     items and what was removed, then the documents and files, each by the newest date it
-    holds, so the copy fills from its earliest records and is usable up to a date while the
-    rest arrives. Each part says how far it reaches and how much of the whole has come."""
+    holds, a long document in pieces of whole records up to a date, so the copy fills from
+    its earliest records and is usable up to a date while the rest arrives. Each part says
+    how far it reaches and how much of the whole has come."""
     entries = [("docs", d) for d in change.get("docs") or []] + [
         ("files", f) for f in change.get("files") or []
     ]
     total = sum(_size(e) for _, e in entries) or 1
     if total <= PART_BYTES:
         return [change]
+    entries = [("docs", p) for kind, d in entries if kind == "docs" for p in _records(d)] + [
+        (kind, f) for kind, f in entries if kind == "files"
+    ]
+    total = sum(_size(e) for _, e in entries)
+    # Stable: a document's pieces keep their order where their dates tie with another's.
     entries.sort(key=lambda e: _newest(e[1]))
     head = {k: v for k, v in change.items() if k not in ("docs", "files")}
     parts: list[dict] = []

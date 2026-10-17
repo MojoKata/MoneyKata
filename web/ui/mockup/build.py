@@ -35,6 +35,9 @@ OUT = ROOT / "docs" / "mockups" / "MoneyKata-app.html"
 # The day the sample data is shown on: the seed's year ends here.
 AT = "2026-10-12T16:00:00+00:00"
 SHOWN_DIR = "/srv/moneykata"
+# Each run's server makes a new self-signed certificate; the mockup shows one fixed fingerprint.
+OWN_CERT = re.compile(r'("certificate":\s*")[0-9a-f]{64}(")')
+SHOWN_CERT = "5e1a77c20b9d3f48c07e9a1255b3e8f09d04e1b722fa6c034b8e5a19d7c20e66"
 PASSWORD = "moneykata-dev"  # noqa: S105 - dev mode's seed users
 USERS = ("alice", "bob", "admin")
 # The API allows a session 600 requests a minute (requirements S13.7.5); the crawl keeps under it.
@@ -225,6 +228,7 @@ class Recorder:
             return
         # Where this run kept its data is a temporary directory; the mockup shows a fixed one.
         text = r.text().replace(self.data, SHOWN_DIR)
+        text = OWN_CERT.sub(lambda m: m.group(1) + SHOWN_CERT + m.group(2), text)
         self.answers["GET " + key_of(req.url)] = {
             "status": r.status,
             "body": exactjson.loads(text) if text else None,

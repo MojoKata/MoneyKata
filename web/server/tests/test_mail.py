@@ -205,7 +205,7 @@ def test_sign_up_confirm_and_approve(admin_client, server, smtp):
     open_signup(admin_client, server)
     with new_client(server) as c:
         assert c.get("/ui/api/signup").json()["open"] is True
-    assert sign_up(server).status_code == 202
+    assert sign_up(server).status_code == 204
     path, token = outbox_link(server)
     assert path.endswith("/ui/signup/confirm")
     assert admin_client.get("/ui/api/signup-requests").json()["items"] == [], "not until confirmed"
@@ -254,7 +254,7 @@ def test_sign_up_never_says_an_email_has_an_account(admin_client, server, smtp):
     make_user(server, "bob", email="bob@home.lan")
     waiting = len(server.services.mailer.waiting())
     r = sign_up(server, email="Bob@home.lan", username="bobby")
-    assert r.status_code == 202
+    assert r.status_code == 204
     assert len(server.services.mailer.waiting()) == waiting, "no link for a known address"
 
 

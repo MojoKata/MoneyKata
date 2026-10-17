@@ -68,6 +68,12 @@ def test_addresses_are_checked():
         (HEX, "private key (64 hex digits)"),
         (XPRV, "extended private key"),
         (ZPUB + "\n" + WIF, "private key (WIF)"),
+        ("\n".join(f"{i}. {w}" for i, w in enumerate(SEED.split(), 1)), "seed phrase"),
+        (" ".join(f"{i}) {w}" for i, w in enumerate(SEED.split(), 1)), "seed phrase"),
+        (",".join(SEED.split()), "seed phrase"),
+        (f"wpkh({WIF})", "private key (WIF)"),
+        (f"wpkh([d34db33f/84h/0h/0h]{XPRV}/0/*)#qwer1234", "extended private key"),
+        (f"tr({HEX})", "private key (64 hex digits)"),
     ],
 )
 def test_secrets_are_recognised(text, what):
@@ -476,20 +482,52 @@ def test_a_transaction_that_leaves_the_chain_is_marked_and_kept_or_deleted(
             return [t for t in super().history(addresses) if t.txid != "a" * 64]
 
     monkeypatch.setattr(sync, "source", lambda srv, s: Reorged(fake.far))
-    alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync")
-    items = alice.get("/ui/api/transactions", params={"account": w["id"]}).json()["items"]
-    gone = [t for t in items if t["offChainAt"]]
-    assert [t["quantity"] for t in gone] == ["0.5"], "marked, never deleted"
+
+    def gone():
+        alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync")
+        items = alice.get("/ui/api/transactions", params={"account": w["id"]}).json()["items"]
+        return [t for t in items if t["offChainAt"]]
+
+    assert gone() == [], "one read that misses it isn't enough"
+    assert [t["quantity"] for t in gone()] == ["0.5"], "two in a row: marked, never deleted"
     from moneykata import alerts
 
     alerts.evaluate(server)
     titles = [a["title"] for a in alice.get("/ui/api/alerts").json()["open"]]
     assert "Cold storage: a bitcoin transaction is no longer on the chain" in titles
-    t = gone[0]
+    t = alice.get("/ui/api/transactions", params={"account": w["id"]}).json()["items"]
+    t = next(x for x in t if x["offChainAt"])
     r = alice.post(
         f"/ui/api/transactions/{t['id']}/keep", headers={"If-Match": f'"{t["version"]}"'}
     )
     assert r.status_code == 200 and r.json()["offChainAt"] is None
+    assert gone() == [] and gone() == [], "a transaction kept stays kept"
+
+
+def test_an_address_two_keys_derive_is_watched_once(server, alice):
+    # The same zpub typed with one of its own addresses: neither is refused, nor stops a sync.
+    w = new_account(alice, name="Cold storage", type="crypto-wallet")
+    first = keys.extended(ZPUB).address(0, 0)
+    r = alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": f"{first}\n{ZPUB}"})
+    assert r.status_code == 200, r.text
+    watched = [a["address"] for a in r.json()["addresses"]]
+    assert watched.count(first) == 1
+
+
+def test_one_wallet_failing_leaves_the_others_read(server, alice, monkeypatch):
+    one = new_account(alice, name="One", type="crypto-wallet")
+    two = new_account(alice, name="Two", type="crypto-wallet")
+    read = []
+
+    def sync_one(srv, account_id):
+        read.append(account_id)
+        if account_id == one["id"]:
+            raise RuntimeError("an answer it couldn't read")
+
+    monkeypatch.setattr(sync, "sync_account", sync_one)
+    with pytest.raises(sync.SourceError):
+        sync.sync_all(server)
+    assert set(read) == {one["id"], two["id"]}
 
 
 def test_a_node_certificate_is_trusted_once_confirmed(server, admin_client):

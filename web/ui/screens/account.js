@@ -433,7 +433,7 @@ function Reconcile({ a, all, reload }) {
       ? html`
         <div class="notice warn mt">
           <${Icon} name="info" />
-          <div>No balance from the institution for 45 days. Type today's from its site, or import a recent file.</div>
+          <div>The next statement or import is overdue. Import it, or type today's balance from the institution's site.</div>
         </div>
       `
       : null}

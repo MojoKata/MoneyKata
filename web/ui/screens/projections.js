@@ -263,12 +263,23 @@ function Tracking({ x }) {
   return html`
     <div class="card mt"><h3>Tracking since ${date(t.since)}<span class="spacer"></span><span
       class=${'pill ' + (TONE[t.status] || '')}>${t.status}</span></h3>
+      ${t.partial
+        ? html`<p class="small dim">Some of the accounts it is built on
+            aren't shared with you: the status is the whole projection's, the balance only that of
+            the accounts you can see.</p>`
+        : null}
       ${t.points.length > 1
-        ? html`<${TimeChart} label="Actual balance against the baseline" series=${[
+        ? html`<${TimeChart} label=${
+          t.partial
+            ? 'Actual balance of the accounts shared with you'
+            : 'Actual balance against the baseline'
+        } series=${[
           { name: 'Actual', color: '--accent', points: t.points.map(([d, v]) => [d, String(v)]) },
-          { name: 'Baseline median', color: '--fg-muted', dash: true, points: at(2) },
-          { name: '10th percentile', color: '--border-strong', dash: true, points: at(1) },
-          { name: '90th percentile', color: '--border-strong', dash: true, points: at(3) },
+          ...(t.partial ? [] : [
+            { name: 'Baseline median', color: '--fg-muted', dash: true, points: at(2) },
+            { name: '10th percentile', color: '--border-strong', dash: true, points: at(1) },
+            { name: '90th percentile', color: '--border-strong', dash: true, points: at(3) },
+          ]),
         ]} />`
         : html`<p class="small dim">Tracking starts from the baseline; the chart fills in as days pass.</p>`}
       <p class="small dim">On track inside the baseline's 10th–90th percentile band, ahead above

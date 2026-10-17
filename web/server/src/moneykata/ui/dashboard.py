@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import false, func, select
 
 from .. import access, figures, valuation
-from ..ledger import reconcile
+from ..ledger import expected, reconcile
 from ..ledger import types as atypes
 from ..prices import refresh as pricing
 from ..store.entities.accounts import Lot, Split, Transaction
@@ -179,12 +179,12 @@ def _attention(
                     link=f"/ui/accounts/{a.id}/reconcile",
                 )
             )
-        elif reconcile.needs_anchor(led.anchors, led.transactions, today):
+        elif late := expected.overdue(a, led.imports, today):
             out.append(
                 Attention(
                     kind="anchor",
                     count=1,
-                    text=f"{a.name}: no reported balance for 45 days",
+                    text=f"{a.name}: {late.name} is overdue",
                     link=f"/ui/accounts/{a.id}/reconcile",
                 )
             )
@@ -219,7 +219,7 @@ def _attention(
                         link="/ui/taxes/filings",
                     )
                 )
-    status = pricing.status(s, dev)
+    status = pricing.status(s, dev, c.id)
     if status["stale"]:
         out.append(
             Attention(

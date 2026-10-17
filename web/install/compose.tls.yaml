@@ -13,6 +13,9 @@ services:
       - ./data:/var/lib/moneykata
       - ./backups:/var/backups/moneykata
       - ./moneykata-tls.toml:/etc/moneykata.toml:ro
+      - /etc/localtime:/etc/localtime:ro   # the host's time zone, which backups and emails follow
+    environment:
+      TZ: ${TZ:-}   # or name it here, or in .env beside this file: TZ=America/Denver (S14.9.2)
     read_only: true
     tmpfs:
       - /tmp
@@ -33,8 +36,6 @@ services:
     restart: unless-stopped
     volumes:
       - connector-data:/var/lib/moneykata-connector
-      # The Folder driver (S18.9.1): a Downloads folder, mounted read only.
-      # - /home/alice/Downloads:/downloads:ro
     read_only: true
     tmpfs:
       - /tmp
