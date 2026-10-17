@@ -105,7 +105,7 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 
 ### 2.2 On TrueNAS
 
-[`DEPLOY.md`](DEPLOY.md) §4 installs it on TrueNAS Community Edition, step by step: two
+[`DEPLOY.md`](DEPLOY.md) §4 installs it on TrueNAS Community Edition manually, step by step: two
 datasets for data and backups, owned by uid 10001; the image built and the key made from
 **System › Shell** (`docker run -it … keys init`, since a custom app has no compose folder to
 run it from); and a **custom app** from **Install via YAML**, with the datasets as host paths.

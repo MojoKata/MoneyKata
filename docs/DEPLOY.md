@@ -175,11 +175,12 @@ The VM starts with the host (`--onboot 1`), and Docker starts MoneyKata with it
 `docker compose ps` in `~/moneykata` shows `health: starting` for its first two minutes or
 so, then `unhealthy` while it waits for the phrase, and `healthy` once it has it.
 
-## 4. TrueNAS
+## 4. TrueNAS, installed manually
 
 [TrueNAS Community Edition](https://www.truenas.com/truenas-community-edition/) 25.10
-("Goldeye") runs apps as Docker Compose projects, and MoneyKata installs as a **custom app**
-from YAML. If TrueNAS isn't installed yet: [download](https://www.truenas.com/download/) the
+("Goldeye") runs apps as Docker Compose projects. These steps install MoneyKata by hand, as a
+**custom app** from YAML; they work whether or not you use an app from TrueNAS's catalog, and
+give full control of its datasets and configuration. If TrueNAS isn't installed yet: [download](https://www.truenas.com/download/) the
 ISO and follow the
 [installation guide](https://www.truenas.com/docs/scale/25.10/gettingstarted/install/).
 The steps below use a pool named `tank` and the NAS's address `192.168.1.20`.
