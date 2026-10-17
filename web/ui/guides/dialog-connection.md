@@ -8,25 +8,13 @@ was given over 10 minutes ago, and waits until an admin has confirmed the connec
 ## Institution {#driver}
 
 Which driver fetches it: **Schwab** (its official Trader API, signed in on Schwab's own page),
-**OFX Direct Connect** (a bank or credit union that still runs an OFX server, with a username
-and password), or **a folder of downloads** on the connector's host, which needs no sign-in at
-all.
+or **OFX Direct Connect** (a bank or credit union that still runs an OFX server, with a username
+and password). An institution neither reaches is kept current by the statements and exports
+you download and upload yourself.
 
 ## Connection name {#label}
 
 A name to tell it apart: *Schwab login*, *Credit union*.
-
-## Folder inside the watched folder {#folder-path}
-
-A folder inside the one mounted read only into the connector (its watched folder: a Downloads
-folder, for example), relative to it, such as `alice/umb`; empty means the whole watched
-folder. The connector never reads outside that mount, whatever a path says. Each statement or
-export that appears is posted to the account its rule names.
-
-## Rules {#folder-rules}
-
-One per line: a file-name pattern and the last four digits of the account it goes to, such as
-`umb-*.pdf → 3311`. A file no rule matches waits in the folder.
 
 ## OFX server address {#ofx-url}
 

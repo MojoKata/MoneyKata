@@ -150,10 +150,11 @@ async def report(request: Request):
 async def credential_taken(connection_id: str, request: Request):
     srv = request.app.state.server
     try:
-        row, _caller, _, _ = await verified(request)
+        row, _caller, body, _ = await verified(request)
     except signing.Refused as e:
         return refusal(request, e)
-    if not manage.credential_taken(srv, row, connection_id):
+    at = exactjson.loads(body or b"{}").get("sealedAt")
+    if not manage.credential_taken(srv, row, connection_id, at if isinstance(at, str) else None):
         return refusal(request, signing.Refused("not-found", "No such Connection."))
     return answer(srv, {"ok": True}, asked(request))
 
@@ -168,7 +169,13 @@ async def sign_in(connection_id: str, request: Request):
     address = str(exactjson.loads(body or b"{}").get("address") or "")
     if not address.startswith("https://"):
         return refusal(request, signing.Refused("address-invalid", "The address must be https."))
-    if not manage.sign_in_address(srv, row, connection_id, address):
+    took = manage.sign_in_address(srv, row, connection_id, address)
+    if took is None:
+        return refusal(
+            request,
+            signing.Refused("address-invalid", "That isn't the institution's own sign-in page."),
+        )
+    if not took:
         return refusal(request, signing.Refused("not-found", "No such Connection."))
     srv.tasks.run_now("alerts")
     return answer(srv, {"ok": True}, asked(request))

@@ -15,9 +15,19 @@ from . import client, keys, sealed
 from .client import Egress, ServerError, Transport
 from .drivers import Account, Driver, File, registry
 from .vault import Vault, VaultError
+from .words import PhraseError
 
 log = logging.getLogger("connector")
 REPORT_SECONDS = 300
+# MoneyKata down or locked is waited for, never a reason to stop (S18.3.2): the wait grows
+# from 15 seconds to the report's 5 minutes.
+RETRY_FIRST = 15
+# While a Connection waits for a sign-in, the report comes every 15 seconds for 10 minutes, so
+# an address pasted back is exchanged at once (S18.5).
+SIGN_IN_SECONDS = 15
+SIGN_IN_FOR = 600
+SEALING_LABEL = b"moneykata connector sealing key\x00"
+SHOWN = ("label", "driver", "state", "message")  # each Connection, in `status`
 
 
 @dataclass
@@ -33,6 +43,7 @@ class ConnectionState:
     last_added: int | None = None
     found: list[dict] = field(default_factory=list)
     sign_in: str | None = None
+    sign_in_at: float | None = None  # since when the sign-in has waited
     backlog: list[File] = field(default_factory=list)
 
 
@@ -52,8 +63,11 @@ class Core:
         self._lock = threading.RLock()
         self._wake = threading.Event()
         self._stop = threading.Event()
+        self.retry = 0.0  # the wait before trying MoneyKata again; none while it answers
         if self.pairing:
-            self._attach(self.pairing)
+            # Reached from the loop, once the socket is open: MoneyKata may be down or locked
+            # at the connector's start, and an admin must still be able to unlock it (B30).
+            self.egress.allow(_host(self.pairing.address))
 
     # ----- pairing -----
 
@@ -93,12 +107,22 @@ class Core:
                 "The server at that address doesn't have the key the code names: nothing sent.",
             )
         private, public = keys.new_sealing_key()
-        pairing = keys.make(self.data / "pairing.json", c["a"], c["f"], public, cert)
+        pairing = keys.make(c["a"], c["f"], public, cert)
         server = client.Server(pairing, self.transport, client.server_key(hi), self._certificate)
+        # The identity key signs the sealing key, so a browser seals only to the key of the
+        # connector an admin confirmed (S18.4.5).
+        signed = pairing.identity.sign(SEALING_LABEL + public)
         out = server.call(
             "/connector/v1/pair",
-            {"code": code, "sealingKey": keys.b64(public), "version": client.VERSION},
+            {
+                "code": code,
+                "sealingKey": keys.b64(public),
+                "sealingSignature": keys.b64(signed),
+                "version": client.VERSION,
+            },
         )
+        # Only now, MoneyKata having taken it, does the new pairing replace the old (S18.4.2).
+        keys.save(self.data / "pairing.json", pairing)
         with self._lock:
             self.pairing, self.server = pairing, server
             self.connections = {}
@@ -116,12 +140,31 @@ class Core:
                     self.server.call("/connector/v1/unpaired")
                 except (ServerError, Exception) as e:
                     log.warning("the server wasn't told of the unpairing: %s", e)
+            self._forget()
+
+    def _forget(self) -> None:
+        """The pairing gone: its file, every credential, and the sealing key, so no box sealed
+        to it opens here again (S18.4.4)."""
+        keys.forget(self.data / "pairing.json")
+        self.pairing = self.server = None
+        self.connections = {}
+        if not self.vault.locked:
+            for cid in self.vault.ids():
+                self.vault.delete(cid)
+            self.vault.keep_sealing_key(b"")
+
+    def reset(self, phrase: str) -> str:
+        """Lost words (S18.3.4): a new vault under the words typed at the command line, and
+        unpaired, so the next `pair` makes both keys afresh. Returns its fingerprint."""
+        with self._lock:
             keys.forget(self.data / "pairing.json")
             self.pairing = self.server = None
             self.connections = {}
-            if not self.vault.locked:
-                for cid in self.vault.ids():
-                    self.vault.delete(cid)
+            try:
+                self.vault.reset(phrase)
+            except PhraseError as e:
+                raise VaultError(str(e)) from None
+            return self.vault.fingerprint()
 
     # ----- the loop -----
 
@@ -135,14 +178,10 @@ class Core:
                 "vault": self.vault.fingerprint(),
                 "lastReport": self.last_report,
                 "lastError": self.last_error,
+                "reachable": self.server is not None,
+                "retryIn": int(self.retry) if self.retry else None,
                 "connections": {
-                    c.id: {
-                        "label": c.label,
-                        "driver": c.driver,
-                        "state": c.state,
-                        "message": c.message,
-                    }
-                    for c in self.connections.values()
+                    c.id: {k: getattr(c, k) for k in SHOWN} for c in self.connections.values()
                 },
             }
 
@@ -175,22 +214,54 @@ class Core:
         while not self._stop.is_set():
             try:
                 self.tick()
+                self.retry = 0.0
             except Exception as e:  # the loop never dies on one bad report
                 self.last_error = f"{type(e).__name__}: {e}"
-                log.warning("report failed: %s", e)
-            self._wake.wait(REPORT_SECONDS)
+                self.retry = min(max(self.retry * 2, RETRY_FIRST), REPORT_SECONDS)
+                log.warning("report failed, trying again in %ds: %s", self.retry, e)
+            self._wake.wait(self.next_wait())
             self._wake.clear()
+
+    def next_wait(self) -> float:
+        """Seconds to the next report: the retry's growing wait after a failure; 15 while a
+        sign-in waits, for 10 minutes; else 5 minutes."""
+        if self.retry:
+            return self.retry
+        now = time.time()
+        for c in self.connections.values():
+            if c.sign_in and now - (c.sign_in_at or now) < SIGN_IN_FOR:
+                return SIGN_IN_SECONDS
+        return REPORT_SECONDS
 
     def stop(self) -> None:
         self._stop.set()
         self._wake.set()
 
     def tick(self) -> None:
-        """One round: report, collect, run what is due, post."""
+        """One round: report, collect, run what is due, post. Unattached, it says hello first;
+        MoneyKata not answering raises, for the loop to try again later."""
         if self.server is None:
-            return
+            if self.pairing is None:
+                return
+            try:
+                self._attach(self.pairing)
+            except ServerError, VaultError:
+                raise
+            except Exception as e:
+                raise ServerError(
+                    "server-unreachable",
+                    f"MoneyKata at {self.pairing.address} isn't answering ({type(e).__name__}); "
+                    "waiting for it",
+                ) from e
         with self._lock:
-            answer = self.server.call("/connector/v1/report", self._report())
+            try:
+                answer = self.server.call("/connector/v1/report", self._report())
+            except ServerError as e:
+                if e.code == "not-paired":
+                    # MoneyKata, in a signed answer, no longer knows this connector: unpaired
+                    # there, after a lost host, so nothing it held is kept (S18.4.4).
+                    self._forget()
+                raise
             self.last_report, self.last_error = time.time(), None
             self._apply(answer)
             for c in list(self.connections.values()):
@@ -231,9 +302,9 @@ class Core:
                 Account(a["id"], a.get("syncAccount"), a.get("formats") or [])
                 for a in rep.get("accounts") or []
             ]
-            box = (rep.get("sealed") or {}).get("ciphertext")
-            if box and not self.vault.locked:
-                self._collect(c, box)
+            box = rep.get("sealed") or {}
+            if box.get("ciphertext") and not self.vault.locked:
+                self._collect(c, box["ciphertext"], box.get("sealedAt"))
         for cid in answer.get("removed") or []:
             self.connections.pop(cid, None)
             if not self.vault.locked:
@@ -242,16 +313,27 @@ class Core:
             if cid not in seen:
                 self.connections.pop(cid)
 
-    def _collect(self, c: ConnectionState, box: str) -> None:
+    def _collect(self, c: ConnectionState, box: str, server_at: str | None) -> None:
         """A sealed credential, opened with the sealing key from the vault and filed bound to
-        the host the Connection's settings name now (S18.7.1, S18.7.3)."""
+        the host the Connection's settings name now (S18.7.1, S18.7.3). The time sealed into it
+        must be later than the credential held's, so an older box handed over again is
+        refused; MoneyKata is told which box was taken, so a newer one waits."""
         try:
-            creds = sealed.open_box(box, self.vault.sealing_key() or b"", c.id)
+            opened = sealed.open_box(box, self.vault.sealing_key() or b"", c.id)
         except Exception:
             c.state, c.message = "failing", "the credentials were sealed for another connector"
             return
-        self.vault.put(c.id, creds, self._binds(c))
-        self.server.call(f"/connector/v1/connections/{c.id}/credential/taken")
+        at, host = opened.get("sealedAt"), opened.get("host")
+        if host != self._binds(c):
+            c.state, c.message = "failing", "the credentials were sealed for another server"
+            return
+        if not isinstance(at, int | float) or at <= self.vault.sealed_at(c.id):
+            c.state, c.message = "failing", "a box older than the credentials held was refused"
+            return
+        self.vault.put(c.id, opened.get("credentials") or {}, host, at)
+        self.server.call(
+            f"/connector/v1/connections/{c.id}/credential/taken", {"sealedAt": server_at}
+        )
         c.state, c.message, c.sign_in, c.last_run = "ok", "credentials received", None, None
 
     def _due(self, c: ConnectionState) -> bool:
@@ -268,7 +350,7 @@ class Core:
             if creds is None:
                 address = d.sign_in(c.settings)
                 if address and c.sign_in != address:
-                    c.sign_in = address
+                    c.sign_in, c.sign_in_at = address, time.time()
                     self.server.call(
                         f"/connector/v1/connections/{c.id}/sign-in", {"address": address}
                     )
@@ -299,6 +381,8 @@ class Core:
             return
         c.state, c.message, c.last_run = r.state, r.message, time.time()
         c.found = r.found or c.found
+        if r.sign_in and r.sign_in != c.sign_in:
+            c.sign_in_at = time.time()
         c.sign_in = r.sign_in
         if r.credentials is not None:
             self.vault.put(c.id, r.credentials, self.vault.host(c.id))
@@ -330,34 +414,25 @@ class Core:
     def _post(self, c: ConnectionState, f: File) -> dict:
         import hashlib
 
-        meta = json.dumps(
-            {
-                "connectionId": c.id,
-                "format": f.fmt,
-                "fileName": f.name,
-                "sha256": hashlib.sha256(f.data).hexdigest(),
-                "fetchedAt": _iso(time.time()),
-            }
-        ).encode()
-        boundary = "mk-connector-" + hashlib.sha256(f.data).hexdigest()[:16]
-        body = (
-            (
-                f'--{boundary}\r\nContent-Disposition: form-data; name="meta"\r\n'
-                f"Content-Type: application/json\r\n\r\n"
-            ).encode()
-            + meta
-            + (
-                f'\r\n--{boundary}\r\nContent-Disposition: form-data; name="file"; '
-                f'filename="{f.name}"\r\nContent-Type: application/octet-stream\r\n\r\n'
-            ).encode()
-            + f.data
-            + f"\r\n--{boundary}--\r\n".encode()
+        digest = hashlib.sha256(f.data).hexdigest()
+        meta = {"connectionId": c.id, "format": f.fmt, "fileName": f.name, "sha256": digest}
+        meta["fetchedAt"] = _iso(time.time())
+        b = "mk-connector-" + digest[:16]
+        part = '--{}\r\nContent-Disposition: form-data; name="{}"{}\r\nContent-Type: {}\r\n\r\n'
+        body = b"".join(
+            [
+                part.format(b, "meta", "", "application/json").encode(),
+                json.dumps(meta).encode(),
+                (
+                    "\r\n"
+                    + part.format(b, "file", f'; filename="{f.name}"', "application/octet-stream")
+                ).encode(),
+                f.data,
+                f"\r\n--{b}--\r\n".encode(),
+            ]
         )
-        return self.server.call(
-            f"/connector/v1/accounts/{f.account_id}/files",
-            body=body,
-            ctype=f"multipart/form-data; boundary={boundary}",
-        )
+        path = f"/connector/v1/accounts/{f.account_id}/files"
+        return self.server.call(path, body=body, ctype=f"multipart/form-data; boundary={b}")
 
 
 def decode_code(code: str) -> dict:

@@ -70,8 +70,7 @@ def handle(core, request: dict) -> dict:
             core.connect(request["id"], request.get("credentials") or {})
             return {"ok": True}
         if what == "reset":
-            words = core.vault.reset()
-            return {"ok": True, "words": words, "fingerprint": core.vault.fingerprint()}
+            return {"ok": True, "fingerprint": core.reset(request.get("words", ""))}
     except (VaultError, ServerError) as e:
         return {"error": str(e)}
     return {"error": f"unknown command {what!r}"}

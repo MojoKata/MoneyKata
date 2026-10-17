@@ -6,7 +6,7 @@ import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { withReauth } from './reauth.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { canSeal, seal } from '../app/sealed.js';
+import { canSeal, seal, sealingKeyIsSigned } from '../app/sealed.js';
 import { Dialog, openDialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, Select, SwitchRow } from './fields.js';
@@ -18,8 +18,16 @@ import { connectionState, DRIVERS } from './connector.js';
 const DRIVER_OPTIONS = /** @type {[string, string][]} */ ([
   ['schwab', 'Schwab'],
   ['ofx-direct', 'OFX Direct Connect (a bank or credit union)'],
-  ['folder', 'A folder of downloads'],
 ]);
+
+/** @param {string} url */
+function hostOf(url) {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
 
 /** @param {any} c */
 function accountsOf(c) {
@@ -75,14 +83,10 @@ export function Connections() {
                 : ''}</div>${c.credentialWaiting
                 ? html`<div class="small dim">credentials sealed, waiting for the connector</div>`
                 : null}</div>${connectionState(c)}
-              ${c.driver !== 'folder'
-                ? html`<button class="btn sm" onClick=${() => credentials(c)}>${
-                  c.state ===
-                      'needs-sign-in' || c.signInAddress
-                    ? 'Sign in again'
-                    : 'Change credentials'
-                }</button>`
-                : null}
+              <button class="btn sm" onClick=${() =>
+                credentials(c)}>${c.state === 'needs-sign-in' || c.signInAddress
+                ? 'Sign in again'
+                : 'Change credentials'}</button>
               <button class="btn sm danger" disabled=${remove.busy}
                 onClick=${() =>
                   armed === c.id ? remove.run(c).catch(() => {}) : setArmed(c.id)}>${armed === c.id
@@ -106,8 +110,6 @@ export function ConnectionDialog({ close, connection }) {
   const [f, setF] = useState({
     driver: existing?.driver || 'schwab',
     label: existing?.label || '',
-    path: '',
-    rules: '',
     url: '',
     org: '',
     fid: '',
@@ -131,9 +133,7 @@ export function ConnectionDialog({ close, connection }) {
     const key = /** @type {any} */ (info.data)?.sealingKey;
     let c = existing;
     if (!c) {
-      const settings = f.driver === 'folder'
-        ? { path: f.path, rules: f.rules.split('\n').map((r) => r.trim()).filter(Boolean) }
-        : f.driver === 'ofx-direct'
+      const settings = f.driver === 'ofx-direct'
         ? {
           url: f.url,
           org: f.org,
@@ -151,18 +151,23 @@ export function ConnectionDialog({ close, connection }) {
       c = out.connection;
       setMade(out);
     }
-    if (f.driver === 'folder') {
-      toast(`${c.label} made`);
-      close(c);
-      return;
-    }
     if (f.how === 'host') {
       setMade({ connection: c, command: made?.command || command(c) });
       return;
     }
-    const plain = f.driver === 'schwab'
-      ? JSON.stringify({ appSecret: f.appSecret, landed: f.landed })
-      : JSON.stringify({ username: f.username, password: f.password });
+    // The box holds the host the credentials are for and when they were sealed, so the
+    // connector refuses one for another server or older than what it holds (protocol §4.3).
+    const credentials = f.driver === 'schwab'
+      ? { appSecret: f.appSecret, landed: f.landed }
+      : { username: f.username, password: f.password };
+    const host = f.driver === 'ofx-direct' ? hostOf(c.settings?.url || f.url) : null;
+    const plain = JSON.stringify({ credentials, host, sealedAt: Date.now() });
+    const v = /** @type {any} */ (info.data);
+    if (!(await sealingKeyIsSigned(key, v?.identityKey, v?.sealingSignature))) {
+      throw new Error(
+        "The connector's sealing key isn't signed by the key an admin confirmed: nothing was sent. Pair the connector again.",
+      );
+    }
     const box = await seal(plain, key, c.id);
     await withReauth(() => api.put(`/profile/connections/${c.id}/credential`, { sealed: box }));
     toast(`${c.label}: sealed for the connector`);
@@ -201,7 +206,7 @@ export function ConnectionDialog({ close, connection }) {
       close=${close} onSubmit=${() => save.run().catch(() => {})}
       note=${v.fingerprint ? `Sealed with the connector's key ${v.fingerprint}.` : ''}
       footer=${html`<button class="btn primary" disabled=${save.busy}>${
-        f.driver === 'folder' ? 'Make it' : f.how === 'host' ? 'Show the command' : 'Seal and send'
+        f.how === 'host' ? 'Show the command' : 'Seal and send'
       }</button>`}>
       <p class="small dim" style=${{ marginTop: 0 }}>A sign-in at one institution, kept by the
         MoneyKata Connector. What you type here is encrypted in your browser for the connector
@@ -226,23 +231,7 @@ export function ConnectionDialog({ close, connection }) {
                 required />
               </${Field}>
               </div>
-        ${f.driver === 'folder'
-          ? html`
-            <${Field} label="Folder inside the watched folder" id="folder-path" error=${errAt(
-              e,
-              'settings.path',
-            )}
-              hint="Relative to the folder mounted read only into the connector; empty for all of it. Each file that appears is posted.">
-              <${Input} value=${f.path} onInput=${set('path')} placeholder="alice/umb" />
-              </${Field}>
-              <${Field} label="Rules" id="folder-rules" error=${errAt(e, 'settings.rules')}
-                hint="One per line: a file-name pattern and the account's last 4 digits, such as umb-*.pdf → 3311.">
-                <textarea class="in" rows="3" value=${f.rules}
-                  onInput=${(/** @type {any} */ ev) =>
-                    set('rules')(ev.currentTarget.value)}></textarea>
-                </${Field}>
-          `
-          : f.driver === 'ofx-direct'
+        ${f.driver === 'ofx-direct'
           ? html`
             <${Field} label="OFX server address" id="ofx-url" error=${errAt(e, 'settings.url')}
               hint="From the institution, or ofxhome.com. The sign-in is bound to this address: changing it later asks for the sign-in again.">
@@ -290,7 +279,7 @@ export function ConnectionDialog({ close, connection }) {
               </${Field}>
           `}
       `}
-      ${f.driver === 'folder' ? null : html`
+      ${html`
         <${Field} label="How you sign in" id="how-you-sign-in">
           <${Select} value=${f.how} onChange=${set('how')} options=${[
             ['sealed', 'Here, sealed for the connector'],
@@ -313,7 +302,7 @@ export function ConnectionDialog({ close, connection }) {
               <div>Schwab signs you in on its own page.
               ${existing?.signInAddress
                 ? html`<a href=${existing.signInAddress} target="_blank" rel="noopener">Open
-                    Schwab's sign-in</a>, sign in, then paste the address you land on below.`
+                    Schwab's sign-in at ${existing.signInHost}</a>, sign in, then paste the address you land on below.`
                 : 'Once the connector has the app key it reports the sign-in address here; open it, sign in, then paste the address you land on below.'} It lasts seven
               days; you'll be asked again each week.</div>
             </div>

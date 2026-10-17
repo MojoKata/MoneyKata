@@ -29,10 +29,11 @@ sign-in can be sealed yet.
 
 ## Accept {#accept}
 
-Shown when the connector's reports come from an address other than the one known. If the
-connector moved (a laptop on another network, a new host), **Accept** the new address, after
-your password, and the alert closes. If its host or volume was lost or stolen, **Unpair**
-instead: whoever has the copy is reporting as the connector.
+Shown when the connector reported from an address other than the one known, and kept until an
+admin answers it, whichever address reports next. If the connector moved (a laptop on another
+network, a new host), **Accept** the new address, after your password, and the alert closes. If
+it didn't, its host or volume may have been copied: **Unpair** at once, since whoever has the
+copy can report as the connector.
 
 ## Unpair {#unpair}
 

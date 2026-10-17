@@ -68,10 +68,19 @@ class FakeConnector:
         )
         return r
 
-    def pair(self, code: str):
+    def pair(self, code: str, signed: bool = True):
+        from moneykata.connector.manage import SEALING_LABEL
+
+        sealing = b"\x11" * 32
+        signature = self.key.sign(SEALING_LABEL + sealing) if signed else b"\x00" * 64
         return self.call(
             "/connector/v1/pair",
-            {"code": code, "sealingKey": keys.b64(b"\x11" * 32), "version": "0.1.0-test"},
+            {
+                "code": code,
+                "sealingKey": keys.b64(sealing),
+                "sealingSignature": keys.b64(signature),
+                "version": "0.1.0-test",
+            },
         )
 
 
@@ -304,21 +313,30 @@ def test_a_report_updates_connections_and_answers_with_the_work_waiting(server, 
     assert (
         shown["credentialWaiting"] is True and shown["accounts"][0]["name"] == "Everyday Checking"
     )
-    # Taken: MoneyKata deletes its copy of the sealed credential.
-    r = paired.call(f"/connector/v1/connections/{cid}/credential/taken", {})
+    # Taken: MoneyKata deletes its copy of the sealed credential, the box the call names
+    # (protocol §4.3.2); naming another leaves the one waiting.
+    at = c["sealed"]["sealedAt"]
+    r = paired.call(f"/connector/v1/connections/{cid}/credential/taken", {"sealedAt": "older"})
+    assert r.status_code == 200
+    out = paired.call("/connector/v1/report", {"locked": False, "connections": []}).json()
+    assert out["connections"][0]["sealed"]["sealedAt"] == at
+    r = paired.call(f"/connector/v1/connections/{cid}/credential/taken", {"sealedAt": at})
     assert r.status_code == 200
     out = paired.call("/connector/v1/report", {"locked": False, "connections": []}).json()
     assert out["connections"][0]["sealed"] is None
     r = paired.call("/connector/v1/connections/Conn_nothere/credential/taken", {})
     assert r.status_code == 404
-    # A sign-in address for the owner (S18.7.1).
-    r = paired.call(
-        f"/connector/v1/connections/{cid}/sign-in", {"address": "https://api.schwab.com/oauth"}
-    )
+    # A sign-in address for the owner (S18.7.1): Schwab's own page, and no other.
+    page = "https://api.schwabapi.com/v1/oauth/authorize?client_id=KEY&state=s"
+    r = paired.call(f"/connector/v1/connections/{cid}/sign-in", {"address": page})
     assert r.status_code == 200
     with server.db.read() as s:
         c = s.get(Connection, cid)
-        assert c.state == "needs-sign-in" and c.signInAddress == "https://api.schwab.com/oauth"
+        assert c.state == "needs-sign-in" and c.signInAddress == page
+    r = paired.call(
+        f"/connector/v1/connections/{cid}/sign-in", {"address": "https://schwab.evil/oauth"}
+    )
+    assert r.status_code == 403 and r.json()["code"] == "address-invalid"
     r = paired.call(f"/connector/v1/connections/{cid}/sign-in", {"address": "http://x"})
     assert r.status_code == 403 and r.json()["code"] == "address-invalid"
 
@@ -384,7 +402,7 @@ def test_a_posted_file_goes_through_the_import_once(server, paired):
 
 def test_a_posted_statement_is_kept_without_reading_once(server, paired):
     alice = make_user(server, "alice").id
-    cid = connection(server, alice, driver="folder")
+    cid = connection(server, alice, driver="ofx-direct")
     aid = account(server, alice, cid)
     pdf = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
     body, ctype = _multipart(pdf, {"connectionId": cid}, name="umb-2026-09.pdf")
@@ -538,3 +556,53 @@ def activity_rows(server):
 
     with server.db.read() as s:
         return list(s.query(Activity))
+
+
+def test_a_sealing_key_its_identity_key_didnt_sign_is_refused(server, admin, client):
+    # K24: browsers seal only to the key of the connector an admin confirmed (S18.4.5).
+    fake = FakeConnector(server, client)
+    r = fake.pair(pair_code(admin), signed=False)
+    assert r.status_code == 403 and r.json()["code"] == "sealing-unsigned"
+    assert admin.get("/ui/api/settings/connector").json()["state"] == "pairing"
+
+
+def test_unpair_ends_the_pairing_and_any_code_still_out(server, admin, client, paired):
+    # K20: after Pair, then Unpair, no connector stays paired and the code can't be used.
+    code = pair_code(admin)
+    assert admin.post("/ui/api/settings/connector/unpair").status_code == 200
+    assert admin.get("/ui/api/settings/connector").json()["state"] in (None, "ended", "none")
+    late = FakeConnector(server, client)
+    assert late.pair(code).json()["code"] == "code-used"
+    assert paired.call("/connector/v1/report", {"locked": False}).json()["code"] == "not-paired"
+
+
+def test_a_new_address_stays_alerted_until_an_admin_accepts_it(server, admin, paired):
+    # K20: the genuine connector reporting again from its own address doesn't clear a
+    # thief's (S18.5.4).
+    from moneykata import alerts
+    from moneykata.connector import manage
+
+    def report(address):
+        with server.db.read() as s:
+            row = manage.paired(s)
+        manage.apply_report(server, row, {"locked": False}, "0.1.0", 1, address=address)
+
+    def moved() -> bool:
+        from moneykata.store.entities.alerts import Alert
+
+        alerts.evaluate(server)
+        with server.db.read() as s:
+            return (
+                s.query(Alert).filter_by(kind="connector-moved", resolvedAt=None).first()
+                is not None
+            )
+
+    report("192.0.2.10")
+    report("198.51.100.7")  # from somewhere else
+    report("192.0.2.10")  # and the known one again
+    assert moved()
+    assert admin.get("/ui/api/settings/connector").json()["newAddress"] == "198.51.100.7"
+    assert admin.post("/ui/api/settings/connector/accept-address").status_code == 200
+    view = admin.get("/ui/api/settings/connector").json()
+    assert view["knownAddress"] == "198.51.100.7" and view["newAddress"] is None
+    assert not moved()

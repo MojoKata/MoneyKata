@@ -51,21 +51,23 @@ class Vault:
     def exists(self) -> bool:
         return self.path.exists()
 
-    def create(self) -> list[str]:
-        """A new random key, the vault sealed empty under it; the words shown once."""
+    def create(self, key: bytes | None = None) -> list[str]:
+        """A new key (random, or the one the words typed at `reset` give), the vault sealed
+        empty under it; the words shown once."""
         if self.path.exists():
             raise VaultError(f"{self.path} already exists; `reset` replaces it")
-        key = os.urandom(16)
+        key = key or os.urandom(16)
         self._key = key
         self._write({"connections": {}, "sealing": None})
         return words.to_words(key)
 
-    def reset(self) -> list[str]:
-        """Lost words (S18.3.4): the vault deleted, new words made."""
+    def reset(self, phrase: str | None = None) -> list[str]:
+        """Lost words (S18.3.4): the vault deleted, a new one made under new words."""
+        key = words.from_words(phrase) if phrase else None
         if self.path.exists():
             self.path.unlink()
         self._key = None
-        return self.create()
+        return self.create(key)
 
     @property
     def locked(self) -> bool:
@@ -157,12 +159,18 @@ class Vault:
         entry = self._read()["connections"].get(connection_id)
         return entry.get("host") if entry else None
 
-    def put(self, connection_id: str, credentials: dict, host: str | None = None) -> None:
+    def put(self, connection_id: str, credentials: dict, host: str | None = None, at=None) -> None:
         """File credentials, bound to the host they may be sent to: a driver with a host of
-        its own binds none."""
+        its own binds none. `at`: when the owner sealed them, kept to refuse an older box."""
         content = self._read()
+        held = content["connections"].get(connection_id) or {}
+        at = at or held.get("sealedAt", 0)
         content["connections"][connection_id] = {"credentials": credentials, "host": host}
+        content["connections"][connection_id]["sealedAt"] = at
         self._write(content)
+
+    def sealed_at(self, connection_id: str) -> float:
+        return (self._read()["connections"].get(connection_id) or {}).get("sealedAt", 0)
 
     def delete(self, connection_id: str) -> None:
         content = self._read()

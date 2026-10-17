@@ -21,6 +21,8 @@ class Connector(Record):
     connectorVersion: str | None = None
     lastAddress: str | None = None
     knownAddress: str | None = None
+    newAddress: str | None = None
+    sealingSignature: str | None = None
     protocol: int | None = None
 
 

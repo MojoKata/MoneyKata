@@ -8,6 +8,7 @@ account, which MoneyKata imports as a broker's download."""
 import base64
 import datetime as dt
 import json
+import secrets
 import time
 import uuid
 from decimal import Decimal
@@ -198,11 +199,17 @@ class Schwab(Driver):
     needs = ("appSecret",)
     interval = 24 * 3600
 
+    def __init__(self) -> None:
+        # A random state for each app's sign-in, checked in the address pasted back, so an
+        # address from a sign-in this connector didn't start is refused (RFC 6749 §10.12).
+        self._state: dict[str, str] = {}
+
     def sign_in(self, settings: dict) -> str | None:
         key = settings.get("appKey")
         if not key:
             return None
-        query = urlencode({"client_id": key, "redirect_uri": REDIRECT})
+        state = self._state.setdefault(key, secrets.token_urlsafe(16))
+        query = urlencode({"client_id": key, "redirect_uri": REDIRECT, "state": state})
         return f"https://{HOST}/v1/oauth/authorize?{query}"
 
     def _tokens(self, settings: dict, creds: dict, http) -> tuple[str, dict]:
@@ -214,9 +221,14 @@ class Schwab(Driver):
         if creds.get("refreshToken") and now < float(creds.get("refreshUntil") or 0):
             fields = {"grant_type": "refresh_token", "refresh_token": creds["refreshToken"]}
         elif creds.get("landed"):
-            code = parse_qs(urlsplit(creds["landed"]).query).get("code", [""])[0]
+            back = parse_qs(urlsplit(creds["landed"]).query)
+            code = back.get("code", [""])[0]
             if not code:
                 raise PermissionError("the address pasted carries no sign-in code")
+            if back.get("state", [""])[0] != self._state.get(settings.get("appKey") or ""):
+                raise PermissionError(
+                    "the address pasted back isn't from the sign-in this connector started"
+                )
             fields = {"grant_type": "authorization_code", "code": code, "redirect_uri": REDIRECT}
         else:
             raise PermissionError("the sign-in has expired")

@@ -2,8 +2,6 @@
 sign-ins kept by the connector, credentials sealed in the browser that MoneyKata can't open,
 the account's Sync using MoneyKata Connector switch for its owner alone, and Remove."""
 
-import json
-
 import pytest
 from conftest import make_user, sign_in
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
@@ -13,17 +11,23 @@ from moneykata import ids
 from moneykata.connector import sealed
 from moneykata.links import keys
 from moneykata.store.entities.accounts import Account
-from moneykata.store.entities.connector import Connection
 
 
 @pytest.fixture
 def paired(server, admin, client):
     fake = FakeConnector(server, client)
     fake.sealing_private = X25519PrivateKey.generate()
-    public = keys.b64(fake.sealing_private.public_key().public_bytes_raw())
+    from moneykata.connector.manage import SEALING_LABEL
+
+    raw = fake.sealing_private.public_key().public_bytes_raw()
     r = fake.call(
         "/connector/v1/pair",
-        {"code": pair_code(admin), "sealingKey": public, "version": "0.1.0-test"},
+        {
+            "code": pair_code(admin),
+            "sealingKey": keys.b64(raw),
+            "sealingSignature": keys.b64(fake.key.sign(SEALING_LABEL + raw)),
+            "version": "0.1.0-test",
+        },
     )
     assert r.status_code == 200, r.text
     # The admin compared the fingerprints (S18.4.3).
@@ -116,8 +120,10 @@ def test_a_user_makes_a_connection_seals_credentials_and_the_connector_collects_
     assert "sealed" not in str(mine) and mine[0]["credentialWaiting"] is True
     acts = c.get("/ui/api/activity").json()
     assert "oauth-code" not in str(acts) and box not in str(acts)
-    # Taken: the box is gone.
-    assert paired.call(f"/connector/v1/connections/{cid}/credential/taken", {}).status_code == 200
+    # Taken, naming the box: it is gone.
+    taken = {"sealedAt": conn["sealed"]["sealedAt"]}
+    r = paired.call(f"/connector/v1/connections/{cid}/credential/taken", taken)
+    assert r.status_code == 200
     assert c.get("/ui/api/profile/connections").json()["items"][0]["credentialWaiting"] is False
     # Change the label and settings; versions apply.
     v = c.get("/ui/api/profile/connections").json()["items"][0]["version"]
@@ -139,11 +145,31 @@ def test_only_the_owner_turns_an_accounts_sync_on_naming_their_own_connection(se
     alice, bob = sign_in(server, "alice"), sign_in(server, "bob")
     cid = alice.post(
         "/ui/api/profile/connections",
-        json={"driver": "folder", "label": "Downloads", "settings": {"path": "in"}},
+        json={
+            "driver": "ofx-direct",
+            "label": "Credit union",
+            "settings": {
+                "url": "https://ofx.cu.example/ofx",
+                "org": "CU",
+                "fid": "1",
+                "accountType": "CHECKING",
+                "accountId": "4417",
+            },
+        },
     ).json()["connection"]["id"]
     bobs = bob.post(
         "/ui/api/profile/connections",
-        json={"driver": "folder", "label": "Downloads", "settings": {"path": "in"}},
+        json={
+            "driver": "ofx-direct",
+            "label": "Credit union",
+            "settings": {
+                "url": "https://ofx.cu.example/ofx",
+                "org": "CU",
+                "fid": "1",
+                "accountType": "CHECKING",
+                "accountId": "4417",
+            },
+        },
     ).json()["connection"]["id"]
     aid = account(server, alice.get("/ui/api/session").json()["user"]["id"])
     a = alice.get(f"/ui/api/accounts/{aid}").json()
@@ -194,32 +220,16 @@ def test_only_the_owner_turns_an_accounts_sync_on_naming_their_own_connection(se
     assert cid in out["removed"] and all(x["id"] != cid for x in out["connections"])
 
 
-def test_a_folder_connection_stays_inside_the_watched_folder(server, paired):
-    """S18.9.1: the path is relative to the folder mounted into the connector; empty is the
-    folder itself; anything that reaches outside it is refused at the field."""
+def test_a_watched_folder_is_no_driver(server, paired):
+    """S18.9: what nothing can fetch is downloaded and uploaded by its owner, never watched in
+    a folder on the server."""
     make_user(server, "alice")
     c = sign_in(server, "alice")
-    for path in ("/downloads", "../x", "a/../../b", "\\\\host\\share"):
-        r = c.post(
-            "/ui/api/profile/connections",
-            json={"driver": "folder", "label": f"D {path}", "settings": {"path": path}},
-        )
-        assert r.status_code == 422 and r.json()["errors"][0]["code"] == "path-outside", path
     r = c.post(
         "/ui/api/profile/connections",
-        json={"driver": "folder", "label": "All of it", "settings": {"rules": ["* → 1234"]}},
+        json={"driver": "folder", "label": "Downloads", "settings": {"path": "in"}},
     )
-    assert r.status_code == 201, r.text
-    whole = r.json()["connection"]["id"]
-    r = c.post(
-        "/ui/api/profile/connections",
-        json={"driver": "folder", "label": "Sub", "settings": {"path": "alice/umb"}},
-    )
-    assert r.status_code == 201, r.text
-    sub = r.json()["connection"]["id"]
-    with server.db.read() as s:
-        assert json.loads(s.get(Connection, whole).settings) == {"rules": ["* → 1234"]}
-        assert json.loads(s.get(Connection, sub).settings) == {"path": "alice/umb", "rules": []}
+    assert r.status_code == 422 and r.json()["errors"][0]["code"] == "driver-invalid"
 
 
 def test_a_connection_needs_a_paired_connector(server, admin_client):
@@ -228,6 +238,16 @@ def test_a_connection_needs_a_paired_connector(server, admin_client):
     assert c.get("/ui/api/connector").json()["paired"] is False
     r = c.post(
         "/ui/api/profile/connections",
-        json={"driver": "folder", "label": "Downloads", "settings": {"path": "in"}},
+        json={
+            "driver": "ofx-direct",
+            "label": "Credit union",
+            "settings": {
+                "url": "https://ofx.cu.example/ofx",
+                "org": "CU",
+                "fid": "1",
+                "accountType": "CHECKING",
+                "accountId": "4417",
+            },
+        },
     )
     assert r.status_code == 409 and r.json()["code"] == "no-connector"

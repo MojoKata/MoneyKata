@@ -4,9 +4,7 @@ institution offers into files MoneyKata already imports, posted for one account.
 host its owner names (OFX Direct Connect) binds each credential to that host when it is filed
 (S18.7.3), so a changed setting can never send a password elsewhere."""
 
-import os
 from dataclasses import dataclass, field
-from pathlib import Path
 
 
 @dataclass
@@ -66,14 +64,10 @@ class Driver:
         raise NotImplementedError
 
 
-WATCH = Path(os.environ.get("MONEYKATA_CONNECTOR_WATCH", "/watch"))
-
-
-def registry(watch: Path | None = None) -> dict[str, Driver]:
-    """Every driver; the Folder driver rooted at the watched folder mounted into the
-    connector (S18.9.1), never at a path MoneyKata names."""
-    from .folder import Folder
+def registry() -> dict[str, Driver]:
+    """Every driver: each fetches from an institution; what nothing can fetch is downloaded and
+    uploaded by its owner (S18.9)."""
     from .ofx_direct import OfxDirect
     from .schwab import Schwab
 
-    return {d.name: d for d in (Folder(root=watch or WATCH), OfxDirect(), Schwab())}
+    return {d.name: d for d in (OfxDirect(), Schwab())}

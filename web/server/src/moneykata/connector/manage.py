@@ -127,6 +127,22 @@ def _end(s, row: Connector, by: str | None, reason: str) -> None:
     activity.record(s, f"connector.{reason}", actor=by, for_admins=True)
 
 
+# What the connector's identity key signs at pairing: its sealing key, so a browser seals only
+# to the key of the connector an admin confirmed (S18.4.5).
+SEALING_LABEL = b"moneykata connector sealing key\x00"
+
+
+def sealing_signed(identity: bytes, sealing: bytes, signature: bytes) -> bool:
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    try:
+        Ed25519PublicKey.from_public_bytes(identity).verify(signature, SEALING_LABEL + sealing)
+    except InvalidSignature, ValueError:
+        return False
+    return True
+
+
 def answer_pair(srv, caller_public: bytes, body: dict, version: str | None, protocol: int | None):
     """The connector introduces itself with the code (S18.4.2): the code's secret must match
     the hash kept, within its time; the keys are then recorded, and a connector paired before
@@ -138,6 +154,17 @@ def answer_pair(srv, caller_public: bytes, body: dict, version: str | None, prot
             raise ValueError
     except ConnectorError, ValueError:
         return {"error": ("code-used", "The pairing code was used, expired or withdrawn.")}
+    try:
+        signature = keys.unb64(str(body.get("sealingSignature") or ""))
+    except ValueError:
+        signature = b""
+    if not sealing_signed(caller_public, sealing, signature):
+        return {
+            "error": (
+                "sealing-unsigned",
+                "The sealing key isn't signed by the connector's identity key: update it.",
+            )
+        }
     now = clock.now()
     with srv.db.tx() as s:
         row = s.scalars(
@@ -158,6 +185,7 @@ def answer_pair(srv, caller_public: bytes, body: dict, version: str | None, prot
         row.codeExpiresAt = None
         row.identityKey = keys.b64(caller_public)
         row.sealingKey = keys.b64(sealing)
+        row.sealingSignature = keys.b64(signature)
         row.pairedAt = now
         row.lastReportAt = now
         row.connectorVersion = version
@@ -198,24 +226,35 @@ def accept_address(srv, by: str) -> bool:
         row = paired(s)
         if row is None:
             return False
-        row.knownAddress = row.lastAddress
+        accepted = row.newAddress or row.lastAddress
+        row.knownAddress, row.newAddress = accepted, None
         activity.record(
             s,
             "connector.address-accepted",
             actor=by,
             for_admins=True,
-            detail={"to": row.lastAddress},
+            detail={"to": accepted},
         )
         return True
 
 
 def unpair(srv, by: str | None, reason: str = "unpaired") -> bool:
-    """Settings › Connector › Unpair, or the connector's own `unpaired` call."""
+    """Settings › Connector › Unpair, or the connector's own `unpaired` call: the paired
+    connector ends, and so does any code still out, which a thief could otherwise use
+    (S18.4.4)."""
     with srv.db.tx() as s:
-        row = current(s)
-        if row is None:
+        rows = list(
+            s.scalars(
+                select(Connector).where(
+                    Connector.deleted == false(), Connector.state.in_(("paired", "pairing"))
+                )
+            )
+        )
+        if not rows:
             return False
-        _end(s, row, by, reason)
+        for row in rows:
+            row.newAddress = None
+            _end(s, row, by, reason)
         return True
 
 
@@ -267,6 +306,7 @@ def apply_report(
             if row.lastAddress is None and row.knownAddress is None:
                 row.knownAddress = address
             elif address != row.knownAddress:
+                row.newAddress = address  # kept until accepted or unpaired
                 activity.record(
                     s,
                     "connector.address-changed",
@@ -358,13 +398,16 @@ def connection_of(s, row: Connector, connection_id: str) -> Connection | None:
     return c
 
 
-def credential_taken(srv, row: Connector, connection_id: str) -> bool:
+def credential_taken(srv, row: Connector, connection_id: str, at: str | None = None) -> bool:
     """The connector filed the sealed credential in its vault: MoneyKata deletes its copy
-    (S18.7.1); the Connection waits for its first run."""
+    (S18.7.1); the Connection waits for its first run. The call names the box taken by when
+    it was sealed (protocol §4.3.2): a newer one sealed since stays for the next report."""
     with srv.db.tx() as s:
         c = connection_of(s, row, connection_id)
         if c is None:
             return False
+        if c.sealedAt is not None and at != c.sealedAt.isoformat():
+            return True  # another box waits now; this one was already replaced
         c.sealedCredential = None
         c.sealedAt = None
         c.signInAddress = None
@@ -374,13 +417,29 @@ def credential_taken(srv, row: Connector, connection_id: str) -> bool:
         return True
 
 
-def sign_in_address(srv, row: Connector, connection_id: str, address: str) -> bool:
+# The only sign-in pages a driver may send its owner to (S18.7.1): its institution's own
+# OAuth page, so a connector that isn't ours can't phish a password with "Open Schwab's
+# sign-in".
+SIGN_IN_PAGES = {"schwab": ("api.schwabapi.com", "/v1/oauth/authorize")}
+
+
+def sign_in_allowed(driver: str, address: str) -> bool:
+    from urllib.parse import urlsplit
+
+    page = SIGN_IN_PAGES.get(driver)
+    u = urlsplit(address)
+    return page is not None and u.scheme == "https" and (u.hostname, u.path) == page
+
+
+def sign_in_address(srv, row: Connector, connection_id: str, address: str) -> bool | None:
     """A driver needs the owner to sign in at the institution's page (S18.7.1): the address is
-    shown to the owner under Profile › Connections."""
+    shown to the owner under Profile › Connections. None when it isn't the driver's own page."""
     with srv.db.tx() as s:
         c = connection_of(s, row, connection_id)
         if c is None:
             return False
+        if not sign_in_allowed(c.driver, address):
+            return None
         c.signInAddress = address[:2000]
         c.state = "needs-sign-in"
         c.message = "sign in at the institution's page"

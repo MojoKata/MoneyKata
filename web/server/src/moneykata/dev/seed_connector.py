@@ -1,5 +1,5 @@
 """Dev mode's MoneyKata Connector (requirements S17.7, S18): paired, unlocked, reporting, with
-Alice's Schwab and credit-union sign-ins and Bob's folder of downloads, so the screens and the
+Alice's Schwab and credit-union sign-ins and Bob's bank, so the screens and the
 generated mockup show the connector as a household uses it. Its keys are fixed so the sample
 data is the same on every run; it never answers, since nothing calls it (S18.2.2)."""
 
@@ -86,20 +86,26 @@ def seed_connector(s, people: dict) -> None:
             "accountId": "1204",
         },
     )
-    folder = connection(
+    bank = connection(
         bob,
-        "folder",
-        "UMB downloads",
+        "ofx-direct",
+        "UMB Bank",
         "ok",
         "1 statement",
         dt.timedelta(days=1),
         1,
-        [],
-        {"path": "/downloads", "rules": ["umb-*.pdf → 3311"]},
+        [{"name": "Checking", "last4": "3311"}],
+        {
+            "url": "https://ofx.umb.example/ofx",
+            "org": "UMB",
+            "fid": "1001",
+            "accountType": "CHECKING",
+            "accountId": "3311",
+        },
     )
     s.flush()
     # The accounts they keep current (S18.6.2): Alice's brokerage from Schwab, Bob's checking
-    # from the folder.
+    # from his bank's OFX server.
     brokerage = s.scalars(
         select(Account).where(
             Account.ownerId == alice.id, Account.type == "brokerage", Account.deleted == false()
@@ -113,4 +119,4 @@ def seed_connector(s, people: dict) -> None:
         )
     ).first()
     if checking is not None:
-        checking.connectionId, checking.syncAccount = folder.id, "Joint Household ••3311"
+        checking.connectionId, checking.syncAccount = bank.id, "Joint Household ••3311"

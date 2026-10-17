@@ -32,6 +32,36 @@ export async function canSeal() {
   }
 }
 
+const SIGNED = new TextEncoder().encode('moneykata connector sealing key\0');
+
+/**
+ * Whether the sealing key is the paired connector's own: signed by the identity key whose
+ * fingerprint an admin confirmed (S18.4.5). Nothing is sealed to a key that isn't.
+ * @param {string} sealingKey base64url
+ * @param {string} identityKey base64url, Ed25519
+ * @param {string} signature base64url
+ */
+export async function sealingKeyIsSigned(sealingKey, identityKey, signature) {
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      unb64(identityKey),
+      { name: 'Ed25519' },
+      false,
+      [
+        'verify',
+      ],
+    );
+    const sealing = unb64(sealingKey);
+    const message = new Uint8Array(SIGNED.length + sealing.length);
+    message.set(SIGNED, 0);
+    message.set(sealing, SIGNED.length);
+    return await crypto.subtle.verify({ name: 'Ed25519' }, key, unb64(signature), message);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Seal `plaintext` to the connector's sealing key for one Connection.
  * @param {string} plaintext

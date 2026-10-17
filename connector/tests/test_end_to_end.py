@@ -1,29 +1,41 @@
 """The connector against a real MoneyKata (requirements S18.4–S18.8): paired from a code,
-reporting, collecting a credential the owner sealed, running the Folder driver and posting
-what it found through the import, a post refused for a limit kept for a later run, and
-unpairing. MoneyKata runs in-process; the connector's HTTPS transport is wired to it."""
+reporting, collecting a credential the owner sealed, running OFX Direct Connect against a bank
+and posting what it found through the import, a post refused for a limit kept for a later run,
+and unpairing. MoneyKata runs in-process; the connector's HTTPS transport is wired to it, and
+the bank's server answers from the test."""
 
 import json
 
 import pytest
 from moneykata_connector import client
 from moneykata_connector.core import Core
-from moneykata_connector.drivers.folder import Folder
 from server_conftest import ORIGIN, make_user, sign_in
+
+BANK = "ofx.cu.example"
+
+
+def keys_short(core) -> str:
+    from moneykata_connector import keys
+
+    return keys.short(core.pairing.fingerprint)
 
 
 class Wired(client.Transport):
-    """The connector's requests delivered to MoneyKata's app in-process."""
+    """The connector's requests delivered to MoneyKata's app in-process; the bank's OFX server
+    answers with what `bank` holds."""
 
     def __init__(self, app_client, egress):
         super().__init__(egress)
         self.app = app_client
+        self.bank = {"ofx": OFX}
 
     def request(self, method, url, headers, body, pins=None):
         from urllib.parse import urlsplit
 
         u = urlsplit(url)
         self.egress.check(u.hostname or "")
+        if u.hostname == BANK:
+            return client.Answer(200, {}, self.bank["ofx"])
         r = self.app.request(method, u.path, content=body, headers=headers)
         return client.Answer(r.status_code, dict(r.headers), r.content)
 
@@ -43,10 +55,7 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     from moneykata.store.entities.accounts import Account, Transaction
 
     server, admin, app = money
-    downloads = tmp_path / "downloads"
-    downloads.mkdir()
-    folder = Folder(tmp_path / "posted.json", root=tmp_path)
-    core = Core(tmp_path / "data", transport=None, drivers={"folder": folder})
+    core = Core(tmp_path / "data", transport=None)
     core.transport = Wired(app, core.egress)
     phrase = " ".join(core.vault.create())
 
@@ -57,6 +66,12 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     view = admin.get("/ui/api/settings/connector").json()
     assert view["state"] == "paired" and view["fingerprint"] == shown
     assert "sealingPublic" in (tmp_path / "data" / "pairing.json").read_text()
+    # B31: a pairing MoneyKata refuses (the code is used) leaves the working one as it was.
+    before = (tmp_path / "data" / "pairing.json").read_bytes()
+    with pytest.raises(client.ServerError):
+        core.pair(code)
+    assert (tmp_path / "data" / "pairing.json").read_bytes() == before
+    assert keys_short(core) == shown
     # Until an admin confirms the fingerprints match, a posted file waits (S18.4.3).
     assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
     core.vault.lock()
@@ -64,15 +79,21 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     core.tick()
     assert admin.get("/ui/api/settings/connector").json()["locked"] is True
 
-    # Alice makes a folder Connection and syncs her checking account to it.
+    # Alice makes a Connection to her credit union and syncs her checking account to it.
     alice = make_user(server, "alice").id
     c = sign_in(server, "alice")
     conn = c.post(
         "/ui/api/profile/connections",
         json={
-            "driver": "folder",
-            "label": "Downloads",
-            "settings": {"path": "downloads", "rules": ["umb-*.ofx → 4417"]},
+            "driver": "ofx-direct",
+            "label": "Credit union",
+            "settings": {
+                "url": f"https://{BANK}/ofx",
+                "org": "CU",
+                "fid": "1",
+                "accountType": "CHECKING",
+                "accountId": "4417",
+            },
         },
     ).json()["connection"]
     with server.db.tx() as s:
@@ -88,21 +109,29 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
         headers={"If-Match": f'"{v}"'},
     )
     assert r.status_code == 200, r.text
-    # A sealed credential for a (pretend) sign-in: collected once unlocked, then gone.
+    # Her sealed sign-in: collected once unlocked, then gone from MoneyKata.
     public = mk_keys.unb64(c.get("/ui/api/connector").json()["sealingKey"])
-    box = mk_sealed.seal(b'{"note": "none needed"}', public, conn["id"])
+    box = mk_sealed.seal(
+        json.dumps(
+            {
+                "credentials": {"username": "alice", "password": "pw"},
+                "host": BANK,
+                "sealedAt": 1792000000000,
+            }
+        ).encode(),
+        public,
+        conn["id"],
+    )
     c.put(f"/ui/api/profile/connections/{conn['id']}/credential", json={"sealed": box})
     core.tick()
-    assert core.vault.locked and core.connections[conn["id"]].label == "Downloads"
+    assert core.vault.locked and core.connections[conn["id"]].label == "Credit union"
     assert c.get("/ui/api/profile/connections").json()["items"][0]["credentialWaiting"] is True
     core.unlock(phrase)
-    (downloads / "umb-2026-09.ofx").write_bytes(OFX)
-    (downloads / "other-bank.ofx").write_bytes(OFX)
     core.tick()
-    assert core.vault.get(conn["id"]) == {"note": "none needed"}
+    assert core.vault.get(conn["id"]) == {"username": "alice", "password": "pw"}
     assert c.get("/ui/api/profile/connections").json()["items"][0]["credentialWaiting"] is False
     state = core.connections[conn["id"]]
-    assert state.state == "ok" and state.last_added == 2 and "no rule" in state.message
+    assert state.state == "ok" and state.last_added == 2 and state.message == "1 statement"
     with server.db.read() as s:
         assert s.query(Transaction).filter_by(accountId=aid).count() == 2
     # The report carries the run; Settings shows it; nothing posted twice.
@@ -115,7 +144,7 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     # The owner's upload limit: the file waits for a later run.
     for _ in range(60):
         server.upload_rate.hit(alice)
-    (downloads / "umb-2026-10.ofx").write_bytes(OFX.replace(b"20260912", b"20261002"))
+    core.transport.bank["ofx"] = OFX.replace(b"20260912", b"20261002")
     state.last_run = None
     core.tick()
     assert len(state.backlog) == 1 and "upload limit" in (state.message or "")

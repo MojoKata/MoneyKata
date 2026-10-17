@@ -46,6 +46,7 @@ class ConnectionOut(Model):
     accounts: list[SyncedAccount]
     credentialWaiting: bool  # sealed for the connector, not yet collected
     signInAddress: str | None
+    signInHost: str | None = None  # shown on the button, so the page is known (S18.7.1)
     createdAt: dt.datetime
     version: int
 
@@ -62,6 +63,7 @@ class ConnectorOut(Model):
     confirmedBy: str | None
     lastAddress: str | None  # where its reports come from (S18.2.4.4)
     knownAddress: str | None  # the address admins accepted; a difference is alerted
+    newAddress: str | None  # one it reported from that no admin has accepted (S18.5.4)
     lastReportAt: dt.datetime | None
     silentForSeconds: int | None  # past the 15 minutes allowed
     connectorVersion: str | None
@@ -73,6 +75,12 @@ class PairingOut(Model):
     code: str  # shown once
     expiresAt: dt.datetime
     command: str  # what to run on the connector's host
+
+
+def _host(address: str | None) -> str | None:
+    from urllib.parse import urlsplit
+
+    return urlsplit(address).hostname if address else None
 
 
 def connection_out(s, c: Connection) -> ConnectionOut:
@@ -101,6 +109,7 @@ def connection_out(s, c: Connection) -> ConnectionOut:
         ],
         credentialWaiting=bool(c.sealedCredential),
         signInAddress=c.signInAddress,
+        signInHost=_host(c.signInAddress),
         createdAt=c.createdAt,
         version=c.version,
     )
@@ -122,6 +131,7 @@ def view(s, srv) -> ConnectorOut:
             confirmedBy=None,
             lastAddress=None,
             knownAddress=None,
+            newAddress=None,
             lastReportAt=None,
             silentForSeconds=None,
             connectorVersion=None,
@@ -154,6 +164,7 @@ def view(s, srv) -> ConnectorOut:
         confirmedBy=confirmed_by.displayName if confirmed_by else None,
         lastAddress=row.lastAddress,
         knownAddress=row.knownAddress,
+        newAddress=row.newAddress,
         lastReportAt=row.lastReportAt,
         silentForSeconds=int(silent.total_seconds()) if silent else None,
         connectorVersion=row.connectorVersion,

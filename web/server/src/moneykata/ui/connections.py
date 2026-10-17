@@ -21,11 +21,12 @@ from .deps import Caller, caller, server
 
 router = APIRouter(prefix="/ui/api", route_class=ExactRoute, tags=["connections"])
 
-DRIVERS = ("folder", "ofx-direct", "schwab")
+# A watched folder was weighed and turned down (rejected ideas, S18.9): a Connection made
+# before keeps the name `folder` in its row, as history, and is never made again.
+DRIVERS = ("ofx-direct", "schwab")
 # What each driver's settings hold (docs/connector-protocol.md §6), checked here so the
 # connector gets what it expects. Values are text the owner typed; none is a credential.
 SETTINGS = {
-    "folder": {"path": None, "rules": list},  # path: inside the watched folder, or empty
     "ofx-direct": {
         "url": str,
         "org": str,
@@ -49,6 +50,10 @@ class ConnectorInfo(Model):
     locked: bool
     fingerprint: str | None  # four groups of four
     sealingKey: str | None  # base64url, for sealing in the browser (S18.7.1)
+    # The connector's identity key and its signature over the sealing key: the browser checks
+    # the one against the other before sealing (S18.4.5).
+    identityKey: str | None = None
+    sealingSignature: str | None = None
 
 
 class NewConnection(Model):
@@ -85,6 +90,8 @@ def _info(s) -> ConnectorInfo:
         locked=row.locked,
         fingerprint=keys.short(keys.fingerprint(keys.unb64(row.identityKey))),
         sealingKey=row.sealingKey,
+        identityKey=row.identityKey,
+        sealingSignature=row.sealingSignature,
     )
 
 
@@ -121,18 +128,6 @@ def _check_settings(driver: str, settings: dict) -> dict:
                 errors.append(FieldError(f"settings.{key}", "settings-invalid", "Too long."))
                 continue
             out[key] = v.strip()
-    if driver == "folder":
-        # A folder inside the connector's watched folder (S18.9.1): relative, no `..`. The
-        # connector checks again; this refusal is for the person at the form.
-        path = out.get("path", "")
-        if path.startswith(("/", "\\")) or ".." in path.replace("\\", "/").split("/"):
-            errors.append(
-                FieldError(
-                    "settings.path",
-                    "path-outside",
-                    "A folder inside the connector's watched folder, or empty for all of it.",
-                )
-            )
     if errors:
         raise Problem(422, errors[0].code, errors[0].message, errors)
     return out
@@ -163,7 +158,7 @@ def list_connections(request: Request, c: Caller = Depends(caller)):
 @router.post("/profile/connections", response_model=ConnectionMade, status_code=201)
 def new_connection(body: NewConnection, request: Request, c: Caller = Depends(caller)):
     if body.driver not in DRIVERS:
-        raise refuse("driver", "driver-invalid", "Schwab, OFX Direct Connect or a folder.")
+        raise refuse("driver", "driver-invalid", "Schwab or OFX Direct Connect.")
     label = body.label.strip()
     if not 1 <= len(label) <= 60:
         raise refuse("label", "label-invalid", "A name to tell it apart: up to 60 letters.")

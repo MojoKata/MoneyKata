@@ -35,6 +35,12 @@ Connector = record(
     Column("lastAddress", Text),
     Column("knownAddress", Text),
     Column("protocol", Integer),
+    # An address it reported from that no admin has accepted: kept, and alerted, until one
+    # accepts it or unpairs, whatever the connector reports from next (S18.5.4).
+    Column("newAddress", Text),
+    # Its identity key's signature over its sealing key (S18.4.5), which a browser checks
+    # before sealing, so the key sealed to is the paired connector's own.
+    Column("sealingSignature", Text),
     CheckConstraint("state IN ('pairing', 'paired', 'ended')", name="state"),
 )
 unique_live(Connector, "identityKey")

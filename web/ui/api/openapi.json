@@ -2988,6 +2988,17 @@
             ],
             "title": "Signinaddress"
           },
+          "signInHost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signinhost"
+          },
           "state": {
             "title": "State",
             "type": "string"
@@ -3036,6 +3047,17 @@
             ],
             "title": "Fingerprint"
           },
+          "identityKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identitykey"
+          },
           "locked": {
             "title": "Locked",
             "type": "boolean"
@@ -3054,6 +3076,17 @@
               }
             ],
             "title": "Sealingkey"
+          },
+          "sealingSignature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sealingsignature"
           }
         },
         "required": [
@@ -3171,6 +3204,17 @@
             "title": "Locked",
             "type": "boolean"
           },
+          "newAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newaddress"
+          },
           "pairedAt": {
             "anyOf": [
               {
@@ -3237,6 +3281,7 @@
           "confirmedBy",
           "lastAddress",
           "knownAddress",
+          "newAddress",
           "lastReportAt",
           "silentForSeconds",
           "connectorVersion",
@@ -15121,7 +15166,6 @@
               "part-unknown",
               "password-is-default",
               "password-wrong",
-              "path-outside",
               "pattern-invalid",
               "payee-too-long",
               "people-missing",
@@ -15458,7 +15502,6 @@
               "part-unknown",
               "password-is-default",
               "password-wrong",
-              "path-outside",
               "pattern-invalid",
               "payee-too-long",
               "people-missing",

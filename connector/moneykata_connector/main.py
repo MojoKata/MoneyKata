@@ -19,20 +19,19 @@ DATA = Path(os.environ.get("MONEYKATA_CONNECTOR_DATA", "/var/lib/moneykata-conne
 SOCKET = Path(os.environ.get("MONEYKATA_CONNECTOR_SOCKET", "/run/moneykata-connector/sock"))
 
 
+SHEET = """MoneyKata Connector vault words
+
+  vault:  {fingerprint}
+
+{rows}
+
+Keep them in the household's password manager. They are never stored: the vault
+opens only with them, and `reset` is the only way on without them."""
+
+
 def sheet(phrase: list[str], fingerprint: str) -> str:
-    rows = [f"  {i:>2}. {w}" for i, w in enumerate(phrase, 1)]
-    return "\n".join(
-        [
-            "MoneyKata Connector vault words",
-            "",
-            f"  vault:  {fingerprint}",
-            "",
-            *rows,
-            "",
-            "Keep them in the household's password manager. They are never stored: the vault",
-            "opens only with them, and `reset` is the only way on without them.",
-        ]
-    )
+    rows = "\n".join(f"  {i:>2}. {w}" for i, w in enumerate(phrase, 1))
+    return SHEET.format(fingerprint=fingerprint, rows=rows)
 
 
 def confirm_three(phrase: list[str], ask=input, say=print) -> bool:
@@ -49,7 +48,30 @@ def confirm_three(phrase: list[str], ask=input, say=print) -> bool:
     return False
 
 
-def cmd_init(args) -> int:
+class Terminal:
+    """The words go to the terminal, never standard output, so no log keeps them (S18.3.1);
+    without one, `init` and `reset` refuse."""
+
+    def __init__(self) -> None:
+        try:
+            self.f = open("/dev/tty", "r+", encoding="utf-8")  # noqa: SIM115 - held for the run
+        except OSError:
+            raise SystemExit(
+                "refused: the words are shown on a terminal only; run it with -it"
+            ) from None
+
+    def say(self, text: str = "") -> None:
+        self.f.write(text + "\n")
+        self.f.flush()
+
+    def ask(self, prompt: str) -> str:
+        self.f.write(prompt)
+        self.f.flush()
+        return self.f.readline()
+
+
+def cmd_init(args, tty=None) -> int:
+    t = tty or Terminal()
     DATA.mkdir(parents=True, exist_ok=True)
     v = Vault(DATA / "vault.json")
     try:
@@ -57,13 +79,35 @@ def cmd_init(args) -> int:
     except VaultError as e:
         print(f"refused: {e}", file=sys.stderr)
         return 78
-    print(sheet(phrase, v.fingerprint()))
-    print("\nType back three of the words to show they are written down.")
-    if not confirm_three(phrase):
+    t.say(sheet(phrase, v.fingerprint()))
+    t.say("\nType back three of the words to show they are written down.")
+    if not confirm_three(phrase, ask=t.ask, say=t.say):
         (DATA / "vault.json").unlink()
         print("refused: the words were not confirmed; no vault was made", file=sys.stderr)
         return 78
     print(f"Made {v.fingerprint()}. Start the connector, then unlock it with the words.")
+    return 0
+
+
+def cmd_reset(args, tty=None) -> int:
+    """Lost words (S18.3.4): new words made here and shown on the terminal, three typed back,
+    then handed to the running connector, which replaces the vault and unpairs."""
+    from .vault import fingerprint
+
+    t = tty or Terminal()
+    t.say("This deletes the vault: every credential in it, and the pairing with MoneyKata.")
+    if t.ask("Type RESET to go on: ").strip() != "RESET":
+        print("refused: not confirmed; nothing changed", file=sys.stderr)
+        return 1
+    key = secrets.token_bytes(16)
+    phrase = words.to_words(key)
+    t.say(sheet(phrase, fingerprint(key)))
+    t.say("\nType back three of the words to show they are written down.")
+    if not confirm_three(phrase, ask=t.ask, say=t.say):
+        print("refused: the words were not confirmed; nothing changed", file=sys.stderr)
+        return 1
+    out = _ask({"command": "reset", "words": " ".join(phrase)})
+    print(f"Made {out['fingerprint']}, unpaired. Pair again: every credential is entered anew.")
     return 0
 
 
@@ -113,8 +157,6 @@ def cmd_simple(what: str):
         if what == "status":
             for k, v in out.items():
                 print(f"{k}: {v}")
-        elif what == "reset":
-            print(sheet(out["words"], out["fingerprint"]))
         else:
             print(what + "ed" if what != "lock" else "locked")
         return 0
@@ -144,25 +186,27 @@ def cmd_connect(args) -> int:
     return 0
 
 
+COMMANDS = {
+    "serve": ("run the connector (the default)", lambda: cmd_serve, None),
+    "init": ("make the vault and show its words", lambda: cmd_init, None),
+    "unlock": ("unlock the vault with its words", lambda: cmd_unlock, None),
+    "lock": ("lock the vault", lambda: cmd_simple("lock"), None),
+    "status": ("what the connector is doing", lambda: cmd_simple("status"), None),
+    "unpair": ("forget the paired server and its credentials", lambda: cmd_simple("unpair"), None),
+    "reset": ("a new vault with new words (the old one is lost)", lambda: cmd_reset, None),
+    "pair": ("pair with MoneyKata, with the code Settings shows", lambda: cmd_pair, "code"),
+    "connect": ("type a Connection's credentials here", lambda: cmd_connect, "id"),
+}
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="moneykata-connector", description=__doc__.split("\n")[0])
     sub = p.add_subparsers(dest="command")
-    sub.add_parser("serve", help="run the connector (the default)").set_defaults(func=cmd_serve)
-    sub.add_parser("init", help="make the vault and show its words").set_defaults(func=cmd_init)
-    sub.add_parser("unlock", help="unlock the vault with its words").set_defaults(func=cmd_unlock)
-    for what, text in (
-        ("lock", "lock the vault"),
-        ("status", "what the connector is doing"),
-        ("unpair", "forget the paired server and its credentials"),
-        ("reset", "a new vault with new words (the old one is lost)"),
-    ):
-        sub.add_parser(what, help=text).set_defaults(func=cmd_simple(what))
-    pr = sub.add_parser("pair", help="pair with MoneyKata, with the code Settings shows")
-    pr.add_argument("code")
-    pr.set_defaults(func=cmd_pair)
-    co = sub.add_parser("connect", help="type a Connection's credentials here")
-    co.add_argument("id")
-    co.set_defaults(func=cmd_connect)
+    for name, (text, func, arg) in COMMANDS.items():
+        cmd = sub.add_parser(name, help=text)
+        if arg:
+            cmd.add_argument(arg)
+        cmd.set_defaults(func=func())
     return p
 
 

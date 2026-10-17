@@ -6,7 +6,10 @@ pairing code pinned (protocol §1.2). The signature on each answer proves who wr
 
 import hashlib
 import http.client
+import ipaddress
 import json
+import os
+import socket
 import ssl
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
@@ -20,6 +23,28 @@ from .keys import Pairing, unb64
 
 class EgressRefused(Exception):
     pass
+
+
+MAX_ANSWER = 25 * 1024 * 1024  # what one answer may hold (S18.1.2)
+LOOPBACK_OK = os.environ.get("MONEYKATA_CONNECTOR_DEV") == "1"  # a dev MoneyKata on localhost
+
+
+def vetted(host: str, port: int) -> str:
+    """The address to connect to, resolved once: loopback, link-local (cloud metadata among
+    them), multicast and unspecified addresses are refused, as MoneyKata's guard does (S13.5),
+    and the connection goes to the address checked, never a second lookup's."""
+    addr = None
+    for *_, sa in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM):
+        ip = ipaddress.ip_address(sa[0])
+        ip = ip.ipv4_mapped or ip if ip.version == 6 else ip
+        if (ip.is_loopback and not LOOPBACK_OK) or ip.is_link_local or ip.is_multicast:
+            raise EgressRefused(f"{host} resolves to {ip}, an address the connector never calls")
+        if ip.is_unspecified:
+            raise EgressRefused(f"{host} resolves to {ip}")
+        addr = addr or sa[0]
+    if addr is None:
+        raise EgressRefused(f"{host} doesn't resolve")
+    return addr
 
 
 @dataclass
@@ -90,9 +115,11 @@ class Transport:
         if pins is not None:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
-        conn = http.client.HTTPSConnection(host, u.port, timeout=60, context=ctx)
+        port = u.port or 443
+        conn = http.client.HTTPSConnection(host, port, timeout=60, context=ctx)
         try:
-            conn.connect()
+            raw = socket.create_connection((vetted(host, port), port), timeout=60)
+            conn.sock = ctx.wrap_socket(raw, server_hostname=host)
             cert = None
             if pins is not None:
                 cert = key_fingerprint(conn.sock.getpeercert(binary_form=True) or b"")
@@ -101,7 +128,10 @@ class Transport:
             path = u.path + (f"?{u.query}" if u.query else "")
             conn.request(method, path, body=body, headers=headers)
             r = conn.getresponse()
-            return Answer(r.status, {k: v for k, v in r.getheaders()}, r.read(), cert)
+            body = r.read(MAX_ANSWER + 1)
+            if len(body) > MAX_ANSWER:
+                raise EgressRefused(f"{host} answered more than 25 MB")
+            return Answer(r.status, {k: v for k, v in r.getheaders()}, body, cert)
         finally:
             conn.close()
 

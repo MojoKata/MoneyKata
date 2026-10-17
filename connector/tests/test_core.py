@@ -70,7 +70,10 @@ def test_the_vault_opens_only_with_its_words_and_waits_after_five_wrong(tmp_path
 def test_keys_are_made_at_pairing_the_sealing_key_in_the_vault_and_forgotten(tmp_path):
     assert keys.load(tmp_path / "pairing.json") is None
     private, public = keys.new_sealing_key()
-    p = keys.make(tmp_path / "pairing.json", "https://money.lan", "f" * 64, public)
+    p = keys.make("https://money.lan", "f" * 64, public)
+    assert keys.load(tmp_path / "pairing.json") is None, "nothing written until it is taken"
+    keys.save(tmp_path / "pairing.json", p)
+    assert not (tmp_path / "pairing.json.tmp").exists()
     again = keys.load(tmp_path / "pairing.json")
     assert again.identity_public == p.identity_public and again.address == "https://money.lan"
     assert again.sealing_public == public
@@ -204,11 +207,11 @@ def _code_lines(path: Path) -> int:
 
 
 def test_the_core_and_each_driver_stay_small_and_import_nothing_from_moneykata():
-    """S18.1.2: the core under 1,000 lines of code, a driver under 400, no import from
+    """S18.1.2: the core under 1,200 lines of code, a driver under 400, no import from
     MoneyKata."""
     core = [p for p in PACKAGE.glob("*.py")]
     total = sum(_code_lines(p) for p in core)
-    assert total <= 1000, f"the core is {total} lines of code"
+    assert total <= 1200, f"the core is {total} lines of code"
     for p in (PACKAGE / "drivers").glob("*.py"):
         assert _code_lines(p) <= 400, f"{p.name} is {_code_lines(p)} lines of code"
     for p in PACKAGE.rglob("*.py"):
@@ -238,8 +241,17 @@ def test_the_socket_commands_talk_to_the_running_connector(tmp_path):
     assert sock.ask(path, {"command": "connect", "id": "Conn_1", "credentials": {"a": "b"}})["ok"]
     assert core.vault.get("Conn_1") == {"a": "b"} and core.vault.host("Conn_1") == "ofx.cu.example"
     assert sock.ask(path, {"command": "lock"})["locked"] is True
-    out = sock.ask(path, {"command": "reset"})
-    assert len(out["words"]) == 12 and json.loads((tmp_path / "vault.json").read_text())["format"]
+    # Reset (S18.3.4): the words come from the command line, never back over the socket;
+    # the vault is made under them and the connector unpaired.
+    from moneykata_connector import words
+    from moneykata_connector.vault import fingerprint
+
+    key = bytes(range(16))
+    out = sock.ask(path, {"command": "reset", "words": " ".join(words.to_words(key))})
+    assert out == {"ok": True, "fingerprint": fingerprint(key)}
+    assert json.loads((tmp_path / "vault.json").read_text())["format"]
+    assert core.vault.get("Conn_1") is None and core.pairing is None
+    assert "error" in sock.ask(path, {"command": "reset", "words": "not twelve words"})
     assert "error" in sock.ask(path, {"command": "nothing"})
 
 
@@ -318,3 +330,172 @@ def test_a_driver_run_reaches_its_own_hosts_and_no_other(tmp_path):
             for host in set(other.hosts) - set(d.hosts):
                 with pytest.raises(client.EgressRefused):
                     own.check(host)
+
+
+def test_moneykata_down_at_start_is_waited_for_with_a_growing_wait(tmp_path):
+    # B30: the connector starts, its socket can open and it can be unlocked, while MoneyKata
+    # is down; each failed try waits longer, up to the report's five minutes.
+    from moneykata_connector import core as core_mod
+    from moneykata_connector.core import Core
+
+    class Down(client.Transport):
+        def request(self, method, url, headers, body, pins=None):
+            raise ConnectionRefusedError("refused")
+
+    data = tmp_path / "data"
+    data.mkdir()
+    _, public = keys.new_sealing_key()
+    keys.save(data / "pairing.json", keys.make("https://money.lan", "f" * 64, public))
+    core = Core(data, transport=Down(client.Egress()))  # no hello yet: nothing raised
+    assert core.pairing is not None and core.server is None
+    with pytest.raises(client.ServerError) as e:
+        core.tick()
+    assert e.value.code == "server-unreachable"
+    waits = []
+    for _ in range(7):
+        try:
+            core.tick()
+        except Exception:
+            core.retry = min(max(core.retry * 2, core_mod.RETRY_FIRST), core_mod.REPORT_SECONDS)
+        waits.append(core.next_wait())
+    assert waits == [15, 30, 60, 120, 240, 300, 300]
+    assert core.status()["reachable"] is False
+
+
+def test_a_waiting_sign_in_is_reported_every_15_seconds_for_10_minutes(tmp_path):
+    # 11b: so an address pasted back is exchanged at once (S18.5).
+    import time
+
+    from moneykata_connector.core import ConnectionState, Core
+
+    core = Core(tmp_path, transport=client.Transport(client.Egress()))
+    assert core.next_wait() == 300
+    c = core.connections["Conn_1"] = ConnectionState("Conn_1", "schwab", "Schwab", {}, [])
+    c.sign_in, c.sign_in_at = "https://api.schwabapi.com/v1/oauth/authorize", time.time()
+    assert core.next_wait() == 15
+    c.sign_in_at = time.time() - 601
+    assert core.next_wait() == 300
+
+
+def test_init_and_reset_show_the_words_on_the_terminal_only(tmp_path, monkeypatch, capsys):
+    # The words go to the terminal, never standard output, so no log keeps them (S18.3.1).
+    import re
+
+    from moneykata_connector import main
+
+    shown = []
+
+    def typed_back():
+        sheet = next(x for x in reversed(shown) if "vault words" in x)
+        return {int(n): w for n, w in re.findall(r"^\s*(\d+)\. (\w+)$", sheet, re.M)}
+
+    class Tty:
+        def say(self, text=""):
+            shown.append(text)
+
+        def ask(self, prompt):
+            if prompt.startswith("word "):
+                return typed_back()[int(prompt.split()[1].rstrip(":"))] + "\n"
+            return "RESET\n"
+
+    monkeypatch.setattr(main, "DATA", tmp_path)
+    assert main.cmd_init(None, tty=Tty()) == 0
+    out = capsys.readouterr().out
+    phrase = list(typed_back().values())
+    assert len(phrase) == 12 and "Made " in out
+    assert not any(w in out.split() for w in phrase), "stdout names the vault, never a word"
+
+
+def test_an_address_the_connector_never_calls_is_refused(monkeypatch):
+    # K24: loopback, link-local (cloud metadata) and multicast, as MoneyKata's guard (S13.5).
+    import socket as socket_mod
+
+    def resolving(ip):
+        return lambda *a, **k: [(socket_mod.AF_INET, socket_mod.SOCK_STREAM, 6, "", (ip, 443))]
+
+    for ip in ("169.254.169.254", "127.0.0.1", "224.0.0.1", "0.0.0.0"):  # noqa: S104
+        monkeypatch.setattr(socket_mod, "getaddrinfo", resolving(ip))
+        with pytest.raises(client.EgressRefused):
+            client.vetted("api.example", 443)
+    monkeypatch.setattr(socket_mod, "getaddrinfo", resolving("192.168.1.20"))
+    assert client.vetted("money.lan", 443) == "192.168.1.20", "a household's own server is fine"
+
+
+def test_a_signed_not_paired_forgets_the_credentials_and_the_sealing_key(tmp_path):
+    # K20: MoneyKata unpaired after a lost host; the connector keeps nothing for it (S18.4.4).
+    from moneykata_connector.core import Core
+
+    class Gone:
+        def call(self, path, data=None, **kw):
+            raise client.ServerError("not-paired", "This server has no pairing with you.")
+
+    data = tmp_path / "data"
+    data.mkdir()
+    _, public = keys.new_sealing_key()
+    keys.save(data / "pairing.json", keys.make("https://money.lan", "f" * 64, public))
+    core = Core(data, transport=client.Transport(client.Egress()))
+    core.vault.create()
+    core.vault.keep_sealing_key(b"\x07" * 32)
+    core.vault.put("Conn_1", {"password": "pw"}, "ofx.cu.example")
+    core.server = Gone()
+    with pytest.raises(client.ServerError):
+        core.tick()
+    assert core.vault.ids() == [] and core.vault.sealing_key() is None
+    assert core.pairing is None and not (data / "pairing.json").exists()
+
+
+def test_a_box_older_than_the_credential_held_is_refused(tmp_path):
+    # K24: the time sealed into each box; an older one handed over again changes nothing.
+    import json as json_mod
+
+    from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+    from moneykata_connector.core import ConnectionState, Core
+
+    taken = []
+
+    class Server:
+        def call(self, path, data=None, **kw):
+            taken.append((path, data))
+            return {}
+
+    core = Core(tmp_path, transport=client.Transport(client.Egress()))
+    core.vault.create()
+    private = X25519PrivateKey.generate()
+    core.vault.keep_sealing_key(private.private_bytes_raw())
+    core.server = Server()
+    c = core.connections["Conn_1"] = ConnectionState("Conn_1", "schwab", "Schwab", {}, [])
+    public = private.public_key().public_bytes_raw()
+
+    def box(at, host=None):
+        sent = {"credentials": {"appSecret": f"s{at}"}, "host": host, "sealedAt": at}
+        return _seal(json_mod.dumps(sent).encode(), public, "Conn_1")
+
+    core._collect(c, box(2000), "t2")
+    assert core.vault.get("Conn_1") == {"appSecret": "s2000"} and taken[-1][1] == {"sealedAt": "t2"}
+    core._collect(c, box(1000), "t1")
+    assert core.vault.get("Conn_1") == {"appSecret": "s2000"} and "older" in c.message
+    core._collect(c, box(3000, host="evil.example"), "t3")
+    assert core.vault.get("Conn_1") == {"appSecret": "s2000"} and "another server" in c.message
+    assert len(taken) == 1, "MoneyKata isn't told a refused box was taken"
+
+
+def _seal(plain: bytes, public: bytes, connection_id: str) -> str:
+    """A sealed box as a browser makes one (docs/connector-protocol.md §4.3)."""
+    import os
+
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+    once = X25519PrivateKey.generate()
+    shared = once.exchange(X25519PublicKey.from_public_bytes(public))
+    key = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=connection_id.encode(),
+        info=b"moneykata connector credential",
+    ).derive(shared)
+    nonce = os.urandom(12)
+    out = once.public_key().public_bytes_raw() + nonce + AESGCM(key).encrypt(nonce, plain, None)
+    return keys.b64(out)

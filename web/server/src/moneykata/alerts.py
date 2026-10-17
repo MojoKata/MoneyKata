@@ -255,12 +255,14 @@ def connector(s: Session, server) -> Iterable[Cause]:
             icon="sync",
             since=row.lastReportAt,
         )
-    if row.lastAddress and row.knownAddress and row.lastAddress != row.knownAddress:
+    # Open until an admin accepts the new address or unpairs, whatever the connector reports
+    # from next: the genuine one reporting again doesn't clear a thief's (S18.5.4).
+    if row.newAddress and row.knownAddress:
         yield Cause(
             key="connector:moved",
             kind="connector-moved",
             title="The MoneyKata Connector reports from a new address",
-            about=f"Connector · was {row.knownAddress}, now {row.lastAddress} · accept it if "
+            about=f"Connector · was {row.knownAddress}, now {row.newAddress} · accept it if "
             "the connector moved; unpair if its host was lost",
             link="/ui/settings/connector",
             fix="Connector settings",

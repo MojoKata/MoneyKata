@@ -20,7 +20,7 @@ to: the one sealed with it, fixed when it is filed. Requirements S18 defines the
  connector                                                  MoneyKata
    |  GET  /connector/v1/hello                                 |  unsigned: {protocol, version, fingerprint, key}
    |---------------------------------------------------------->|
-   |  POST /connector/v1/pair {code, sealingKey}               |  once; signed by the new identity key
+   |  POST /connector/v1/pair {code, sealingKey, sealingSig}   |  once; signed by the new identity key
    |---------------------------------------------------------->|
    |  POST /connector/v1/report {locked, connections[]}        |  every 5 minutes, signed
    |---------------------------------------------------------->|

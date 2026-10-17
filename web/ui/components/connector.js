@@ -92,10 +92,11 @@ export function ConnectorSection() {
                 toast('Pairing confirmed');
                 res.reload();
               }, (e) => toast(e.message))}>Confirm</button></div>`}
-          ${v.lastAddress && v.knownAddress && v.lastAddress !== v.knownAddress
-            ? html`<div class="notice"><${Icon} name="alert" /><div>The connector now reports from
-                <code>${v.lastAddress}</code>, not <code>${v.knownAddress}</code> as before. If it
-                moved, accept the new address; if its host or volume was lost, unpair.</div>
+          ${v.newAddress
+            ? html`<div class="notice" data-help="accept"><${Icon} name="alert" /><div>The connector
+                reports from <code>${v.newAddress}</code>, not its known address <code>${v.knownAddress}</code>.
+                If it moved, accept the new address; if not, its host or volume may have been copied:
+                unpair it now.</div>
                 <button class="btn" onClick=${() =>
               withReauth(() => api.post('/settings/connector/accept-address')).then(() => {
                 toast('Address accepted');
