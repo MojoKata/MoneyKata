@@ -1,12 +1,13 @@
 """Makes the help guides' screenshots (requirements S12.7.5) from the generated mockup:
 docs/mockups/MoneyKata-app.html opened from disk in headless Chromium, dark theme, 1280 px
-wide, saved as WebP in web/ui/guides/shots/. Run web/dev.sh mockup first when the app changed.
+wide, saved as PNG quantized to 256 colours in web/ui/guides/shots/. Run web/dev.sh mockup first
+when the app changed.
 
     python web/ui/mockup/help_shots.py [key ...]   every screenshot, or the ones named
 """
 
 import argparse
-import base64
+import io
 import re
 import sys
 from pathlib import Path
@@ -36,23 +37,12 @@ SETTINGS = (
     "alerts",
 )
 
-TO_WEBP = """async (png) => {
-  const img = new Image();
-  img.src = 'data:image/png;base64,' + png;
-  await img.decode();
-  const c = document.createElement('canvas');
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
-  c.getContext('2d').drawImage(img, 0, 0);
-  return c.toDataURL('image/webp', 0.85).split(',')[1];
-}"""
-
 
 def wanted() -> set[str]:
     """Every screenshot a guide shows."""
     keys = set()
     for md in (UI / "guides").glob("*.md"):
-        keys |= set(re.findall(r"\(shots/([\w-]+)\.webp\)", md.read_text()))
+        keys |= set(re.findall(r"\(shots/([\w-]+)\.png\)", md.read_text()))
     return keys
 
 
@@ -131,6 +121,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.exit(f"no {PAGE.relative_to(ROOT)}: run web/dev.sh mockup first")
     keys = set(args.keys) or wanted()
 
+    from PIL import Image
     from playwright.sync_api import sync_playwright
 
     SHOTS.mkdir(exist_ok=True)
@@ -157,9 +148,10 @@ def main(argv: list[str] | None = None) -> int:
                     break
                 page.wait_for_timeout(50)
             page.wait_for_timeout(600)
-            png = base64.b64encode(page.screenshot()).decode()
-            (SHOTS / f"{key}.webp").write_bytes(base64.b64decode(page.evaluate(TO_WEBP, png)))
-            print(f"shots/{key}.webp")
+            shot = Image.open(io.BytesIO(page.screenshot())).convert("RGB")
+            shot = shot.quantize(colors=256, method=Image.Quantize.FASTOCTREE)
+            shot.save(SHOTS / f"{key}.png", optimize=True)
+            print(f"shots/{key}.png")
         browser.close()
     if problems:
         print("\n".join(problems), file=sys.stderr)

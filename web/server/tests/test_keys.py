@@ -228,27 +228,66 @@ def test_a_recovery_sheet_goes_to_the_terminal_only(config, monkeypatch):
     import builtins
     import io
 
-    real = builtins.open
+    def no_tty():
+        raise OSError(6, "No such device or address")
 
-    def no_tty(path, *a, **k):
-        if str(path) == "/dev/tty":
-            raise OSError(6, "No such device or address")
-        return real(path, *a, **k)
-
-    monkeypatch.setattr(builtins, "open", no_tty)
+    monkeypatch.setattr(cli, "open_tty", no_tty)
     with pytest.raises(RefuseStart, match="on a terminal only"):
         cli.init(config)
     assert not config.keyring_path.exists()
     tty = io.StringIO()
-
-    def fake_tty(path, *a, **k):
-        if str(path) == "/dev/tty":
-            return tty
-        return real(path, *a, **k)
-
-    monkeypatch.setattr(builtins, "open", fake_tty)
+    monkeypatch.setattr(cli, "open_tty", lambda: tty)
     printed = []
     monkeypatch.setattr(builtins, "print", lambda *a, **k: printed.append(a))
     key = cli.init(config, confirm=False)
     assert " ".join(phrase.to_words(key)).split()[0] in tty.getvalue()
     assert printed == [], "nothing on standard output"
+
+
+ON_A_TERMINAL = """
+import os, sys
+os.close(os.open(os.ttyname(0), os.O_RDWR))  # the pty becomes this session's terminal
+from moneykata.keys.cli import Terminal
+t = Terminal()
+t.say("the sheet")
+sys.stdout.write(t.ask("word 3? ").strip() + "\\n")
+"""
+
+
+def test_the_terminal_opens_on_a_real_one():
+    """`keys init` and `keys rotate` reach the sheet's terminal on a real one: a terminal can't
+    seek, so it is opened as getpass opens it, never as a file to read and write."""
+    import pty
+    import select
+    import subprocess
+    import sys
+    import time
+
+    leader, follower = pty.openpty()
+    child = subprocess.Popen(
+        [sys.executable, "-c", ON_A_TERMINAL],
+        stdin=follower,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
+    os.close(follower)
+    shown = b""
+    deadline = time.monotonic() + 30
+    while b"word 3? " not in shown:
+        ready, _, _ = select.select([leader], [], [], max(0, deadline - time.monotonic()))
+        assert ready, f"no prompt on the terminal: {shown!r}"
+        try:
+            chunk = os.read(leader, 1024)
+        except OSError:  # the terminal closed: the command ended before it asked
+            chunk = b""
+        if not chunk:
+            child.wait(timeout=30)
+            pytest.fail(f"it ended before it asked: {child.stderr.read().decode()}")
+        shown += chunk
+    os.write(leader, b"abandon\n")
+    out, err = child.communicate(timeout=30)
+    os.close(leader)
+    assert child.returncode == 0, err.decode()
+    assert b"the sheet" in shown
+    assert out == b"abandon\n", "the answer came back from the terminal, and only it"

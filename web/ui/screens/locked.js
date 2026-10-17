@@ -65,8 +65,8 @@ export default function Locked() {
           }}>
           <div style=${{ width: `${pct}%`, height: '100%', background: 'var(--accent)' }}></div>
         </div>
-        <p class="small dim" style=${{ marginTop: '12px' }}>Sign-in opens when it is done;
-          <code>/healthz</code> answers <code>re-encrypting</code> meanwhile.</p>
+        <p class="small dim" style=${{ marginTop: '12px' }}>Sign-in opens when it is done; <code
+          >/healthz</code> answers <code>re-encrypting</code> meanwhile.</p>
         </${AuthCard}>
     `;
   }
@@ -79,9 +79,10 @@ export default function Locked() {
       }}>
         <${Field} label="Recovery phrase" id="recovery-phrase"
           hint="The 12 words from the recovery sheet, in order. Four letters of each are enough.">
-          <span class="pw"><input class="in" type=${shown ? 'text' : 'password'} value=${words}
-              required autocomplete="off" autocapitalize="none" autocorrect="off"
-              spellcheck=${false} data-1p-ignore data-lpignore="true"
+          <span class="pw" id="recovery-phrase-box"><input class="in" id="f-recovery-phrase"
+              type=${shown ? 'text' : 'password'} value=${words} required
+              autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck=${false}
+              data-1p-ignore data-lpignore="true"
               onInput=${(/** @type {any} */ ev) => setWords(ev.currentTarget.value)} /><button
               type="button" class="icon-btn" aria-pressed=${shown ? 'true' : 'false'}
               aria-label=${shown ? 'Hide the phrase' : 'Show the phrase'}
@@ -96,8 +97,8 @@ export default function Locked() {
           <${FormError} error=${unlock.error} />
           <button class="btn primary" style=${{ width: '100%', justifyContent: 'center' }}
             disabled=${unlock.busy}>${unlock.busy ? 'Opening…' : 'Unlock'}</button>
-          <p class="small dim" style=${{ marginTop: '12px' }}>Or on the host:
-            <code>docker compose exec moneykata moneykata keys unlock</code>. The server locks
+          <p class="small dim" style=${{ marginTop: '12px' }}>Or on the host: <code
+            >docker compose exec moneykata moneykata keys unlock</code>. The server locks
             again at every restart; nothing of the phrase is kept.</p>
           </form>
           </${AuthCard}>

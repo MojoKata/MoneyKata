@@ -2,7 +2,7 @@
 
 Where daily closes come from. Prices are free and daily, never live.
 
-![Settings: Prices](shots/settings-prices.webp)
+![Settings: Prices](shots/settings-prices.png)
 
 ## Price sources
 

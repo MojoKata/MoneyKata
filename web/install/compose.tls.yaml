@@ -6,7 +6,7 @@
 services:
   moneykata:
     image: moneykata:0.1.0
-    restart: on-failure:3
+    restart: unless-stopped   # back after every reboot, locked (S13.6)
     ports:
       - "37373:37373"
     volumes:

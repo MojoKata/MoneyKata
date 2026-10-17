@@ -3,7 +3,7 @@
 What a physical-asset account holds, each item with its cost basis, value and gain. The account is
 worth what its items are.
 
-![An account's Items](shots/account-items.webp)
+![An account's Items](shots/account-items.png)
 
 ## By metal
 

@@ -89,25 +89,23 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 
 ### 2.1 On Proxmox
 
-*Not yet tried on a real host: these steps follow the compose file.*
-
-- **In a VM** (Debian or Ubuntu with Docker): as above. Give the VM 2 GB of memory, or 1 GB
-  with receipt reading turned off (Settings › Receipts).
-- **In an LXC container**: turn on **nesting** (Options › Features), install Docker inside,
-  then as above.
+- **In a VM**: [`DEPLOY.md`](DEPLOY.md) §3 makes a fresh Debian VM on Proxmox VE with Docker
+  and runs a test server on it in `tls` mode; for real use, the same VM runs §2's steps, with
+  `compose.yaml` behind your reverse proxy. Give the VM 2 GB of memory, or 1 GB with receipt
+  reading turned off (Settings › Receipts).
+- **In an LXC container** (*not yet tried on a real host*): turn on **nesting** (Options ›
+  Features), install Docker inside, then as above.
 - Proxmox's own backups of the VM or container can include everything: no key is on the
   disk, and nothing in them opens without the phrase.
 
 ### 2.2 On TrueNAS
 
-*Not yet tried on a real host: these steps follow the compose file.*
-
-- Make two datasets, for data and backups, owned by uid 10001. Both go into snapshot and
-  replication tasks as they are: nothing in them opens without the phrase.
-- Install it as a **custom app** from `compose.yaml`, with the two datasets as host paths in
-  place of `./data` and `./backups`.
-- Run the key step once from a shell on the NAS: `docker compose run --rm moneykata keys init`,
-  and unlock after each start (§2 step 5).
+[`DEPLOY.md`](DEPLOY.md) §4 installs it on TrueNAS Community Edition, step by step: two
+datasets for data and backups, owned by uid 10001; the image built and the key made from
+**System › Shell** (`docker run -it … keys init`, since a custom app has no compose folder to
+run it from); and a **custom app** from **Install via YAML**, with the datasets as host paths.
+Both datasets go into snapshot and replication tasks as they are: nothing in them opens
+without the phrase. Unlock after each start (§2 step 5).
 
 ### 2.3 On ZFS, with snapshots and replication
 
@@ -177,8 +175,10 @@ start:` line (§5.1).
 ### 5.1 When it won't start
 
 A problem only you can fix stops the start with one line beginning `refusing to start:`
-and exit code 78. The compose file restarts it three times at most, then leaves it stopped.
-`docker compose logs moneykata` shows the line. The usual causes:
+and exit code 78. The compose file tries again with Docker's back-off, which reaches once a
+minute, so `docker compose ps` shows it `Restarting` until the cause is fixed or it is stopped
+(`docker compose stop moneykata`). `docker compose logs moneykata` shows the line. The usual
+causes:
 
 | The line says                         | Do                                                      |
 |---------------------------------------|---------------------------------------------------------|

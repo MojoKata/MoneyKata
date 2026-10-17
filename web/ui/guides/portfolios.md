@@ -3,7 +3,7 @@
 Sets of accounts charted as one. **All my accounts** is everyone's first: your accounts, and shared
 ones you count in your totals.
 
-![Portfolios](shots/portfolios.webp)
+![Portfolios](shots/portfolios.png)
 
 ## New portfolio
 

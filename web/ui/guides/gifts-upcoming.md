@@ -3,7 +3,7 @@
 The next 60 days of everyone's birthdays, anniversaries, holidays and other dates, each with its
 budget, the gifts planned so far, and what's still missing.
 
-![Upcoming occasions](shots/gifts-upcoming.webp)
+![Upcoming occasions](shots/gifts-upcoming.png)
 
 ## Next 60 days
 

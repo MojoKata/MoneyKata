@@ -2,7 +2,7 @@
 
 What you hold now, in every investing account you can see.
 
-![Open positions](shots/positions-open.webp)
+![Open positions](shots/positions-open.png)
 
 ## Show
 

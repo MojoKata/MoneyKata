@@ -2,7 +2,7 @@
 
 Every account you own or that someone has shared with you, grouped by kind.
 
-![Accounts](shots/accounts.webp)
+![Accounts](shots/accounts.png)
 
 ## Show
 

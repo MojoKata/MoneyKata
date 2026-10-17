@@ -3,7 +3,7 @@
 The beneficiary's education projection: what the 529 may hold when school starts, against what the
 years of school will cost.
 
-![A 529's Goal](shots/account-goal.webp)
+![A 529's Goal](shots/account-goal.png)
 
 ## Funded
 

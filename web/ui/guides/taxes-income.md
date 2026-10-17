@@ -2,7 +2,7 @@
 
 Interest and dividends in the book's taxable accounts, as the 1099s report them.
 
-![Income](shots/taxes-income.webp)
+![Income](shots/taxes-income.png)
 
 ## Tax book
 

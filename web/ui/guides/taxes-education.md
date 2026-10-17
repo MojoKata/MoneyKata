@@ -2,7 +2,7 @@
 
 529 plans' contributions and distributions, and the gifts that need Form 709.
 
-![Education and gifts](shots/taxes-education.webp)
+![Education and gifts](shots/taxes-education.png)
 
 ## Tax book
 

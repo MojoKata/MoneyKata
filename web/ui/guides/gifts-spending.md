@@ -2,7 +2,7 @@
 
 What gifts cost, by person against their budget, by occasion, and by year.
 
-![Spending](shots/gifts-spending.webp)
+![Spending](shots/gifts-spending.png)
 
 ## Year
 

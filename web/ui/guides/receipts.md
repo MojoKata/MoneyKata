@@ -3,7 +3,7 @@
 PDFs and photos of receipts, invoices and statements, kept encrypted on this server and attached to
 the transactions they belong to.
 
-![Receipts](shots/receipts.webp)
+![Receipts](shots/receipts.png)
 
 ## Drop PDFs or photos here {#receipt-files}
 

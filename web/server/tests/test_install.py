@@ -1,6 +1,6 @@
 """The image and the compose files keep what requirements S17.8, S15.4 and S13.6 promise:
 the unprivileged user, the port, the mounts, the read-only key directory, the health check and
-the refused start's restart policy. Checked on the files themselves, so a tag or a path can't
+the restart policy. Checked on the files themselves, so a tag or a path can't
 drift from the server's own constants."""
 
 import re
@@ -96,8 +96,9 @@ def test_the_server_service_is_locked_down_and_mounts_no_key():
         assert service["cap_drop"] == ["ALL"], name
         assert "no-new-privileges:true" in service["security_opt"], name
         assert "/tmp" in service["tmpfs"], name
-        # A refused start (exit 78) is retried a few times, never in a loop (S13.6).
-        assert service["restart"] == "on-failure:3", name
+        # Back after every reboot, locked: a server stopped by a shutdown exited cleanly, which
+        # on-failure would leave down (S13.6).
+        assert service["restart"] == "unless-stopped", name
         mounts = _mounts(service)
         assert mounts[str(config.DEFAULT_CONFIG)][1], f"{name}: moneykata.toml must be read only"
         assert not mounts[str(EXAMPLE.data_dir)][1] and not mounts[str(EXAMPLE.backup_dir)][1]
@@ -168,3 +169,24 @@ def test_the_smoke_script_is_there_for_each_platform():
     )
     text = script.read_text()
     assert "linux/arm64" in text and "keys unlock" in text and "503" in text
+
+
+def test_the_deploy_guide_keeps_the_compose_files_promises():
+    """docs/DEPLOY.md's TrueNAS app (S17.8.3) is the tls example's server with the datasets for
+    host paths: the same lockdown, port, restart and logs, and the version being built."""
+    guide = (paths.ROOT / "docs" / "DEPLOY.md").read_text()
+    blocks = re.findall(r"^```yaml\n(.*?)^```", guide, re.M | re.S)
+    assert len(blocks) == 1, "one app to paste into TrueNAS"
+    app = yaml.safe_load(blocks[0])["services"]["moneykata"]
+    tls = COMPOSE["compose.tls.yaml"]["services"]["moneykata"]
+    differ = {"volumes", "environment", "pull_policy"}
+    assert {k: v for k, v in app.items() if k not in differ} == {
+        k: v for k, v in tls.items() if k not in differ
+    }
+    assert {t: ro for t, (_, ro) in _mounts(app).items()} == {
+        t: ro for t, (_, ro) in _mounts(tls).items()
+    }
+    assert app["pull_policy"] == "never", "there is no registry (S17.8.2)"
+    version = paths.version()
+    tags = re.findall(r"moneykata[:-](\d+\.\d+\.\d+)", guide)
+    assert tags and set(tags) == {version}, f"the guide names {set(tags)}, the build {version}"

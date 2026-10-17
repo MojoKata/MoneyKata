@@ -1,6 +1,6 @@
 # Settings: Passwords
 
-![Settings: Passwords](shots/settings-passwords.webp)
+![Settings: Passwords](shots/settings-passwords.png)
 
 ## Minimum length
 

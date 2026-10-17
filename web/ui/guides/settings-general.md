@@ -2,7 +2,7 @@
 
 The server's name and the household it belongs to.
 
-![Settings: General](shots/settings-general.webp)
+![Settings: General](shots/settings-general.png)
 
 ## Server name
 

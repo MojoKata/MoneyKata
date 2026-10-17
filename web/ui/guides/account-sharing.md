@@ -2,7 +2,7 @@
 
 Who else has this account.
 
-![An account's Sharing tab](shots/account-sharing.webp)
+![An account's Sharing tab](shots/account-sharing.png)
 
 ## Who has this account
 

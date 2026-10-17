@@ -2,7 +2,7 @@
 
 How the portfolio grew, apart from the money you put in.
 
-![A portfolio's Performance](shots/portfolio-performance.webp)
+![A portfolio's Performance](shots/portfolio-performance.png)
 
 ## Value
 

@@ -2,7 +2,7 @@
 
 The documents for the year: those received, against those expected, and those filed.
 
-![Documents](shots/taxes-documents.webp)
+![Documents](shots/taxes-documents.png)
 
 ## Tax book
 

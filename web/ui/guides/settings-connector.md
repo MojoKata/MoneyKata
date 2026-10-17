@@ -4,7 +4,7 @@ The MoneyKata Connector is a second service that keeps people's sign-ins at thei
 fetches with its drivers, and pushes what it fetches into imports. MoneyKata can't reach it or
 read its vault: it only hears its signed reports, every five minutes. Admins only.
 
-![Connector](shots/settings-connector.webp)
+![Connector](shots/settings-connector.png)
 
 The card shows whether a connector is paired, its key's fingerprint, the version it runs, when
 it last reported and whether it is **locked**. It starts locked after every restart of its own;

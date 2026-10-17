@@ -2,7 +2,7 @@
 
 Missing or doubtful data to look at before the return is prepared.
 
-![Issues](shots/taxes-issues.webp)
+![Issues](shots/taxes-issues.png)
 
 ## Tax book
 
