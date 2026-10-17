@@ -102,7 +102,8 @@ def job_out(job: Job) -> JobOut:
         kind=job.kind,
         state=job.state,
         progress=job.progress,
-        result=job.result,
+        # Every amount, quantity and price in a result is written as an exact number (R1.9).
+        result=exactjson.marked(job.result),
         error=job.error,
     )
 
@@ -361,13 +362,13 @@ def _figures(st, have: set) -> dict:
         "institution": st.institution,
         "periodStart": st.periodStart.isoformat() if st.periodStart else None,
         "periodEnd": st.periodEnd.isoformat() if st.periodEnd else None,
-        "opening": str(st.opening) if st.opening is not None else None,
-        "closing": str(st.closing) if st.closing is not None else None,
+        "opening": st.opening,
+        "closing": st.closing,
         "rows": [
             {
                 "date": r.date.isoformat(),
                 "description": r.description,
-                "amount": str(r.amount),
+                "amount": r.amount,
                 "confidence": r.confidence,
                 "present": (r.date, r.amount) in have,
             }
@@ -617,7 +618,7 @@ def _run_brokerage(srv, job, s, account, user_id, data, name, lines, method) -> 
                 {
                     "date": a.date.isoformat(),
                     "description": a.description,
-                    "amount": str(a.amount),
+                    "amount": a.amount,
                     "kind": a.kind,
                     "notRead": a.notRead,
                     "symbol": a.symbol,
@@ -632,8 +633,9 @@ def _run_brokerage(srv, job, s, account, user_id, data, name, lines, method) -> 
     return True
 
 
-def _text(v) -> str | None:
-    return str(v) if v is not None else None
+def _text(v):
+    """A figure as it is: a Decimal is written as an exact number (R1.9)."""
+    return v
 
 
 def holdingcheck_row(p, instrument_id: str | None) -> HoldingCheck:
@@ -902,6 +904,8 @@ def _apply(s, c: Caller, held: Held, account: Account, st, body: StatementIn, ke
         coveredTo=body.periodEnd,
         institution=st.institution,
     )
+    # What the account already held before this import: lines left out for that teach nothing.
+    have = _present(s, account.id)
     applied = repo.apply_import(
         s,
         account,
@@ -910,7 +914,7 @@ def _apply(s, c: Caller, held: Held, account: Account, st, body: StatementIn, ke
         held.fileName or "statement",
         hashlib.sha256(held.data).hexdigest(),
     )
-    _learn(s, account, st, kept)
+    _learn(s, account, st, kept, have)
     return applied
 
 
@@ -1146,7 +1150,7 @@ def keep_statement(upload_id: str, body: KeepIn, request: Request, c: Caller = D
     )
 
 
-def _learn(s, account: Account, st, kept: list[StatementRowIn]) -> None:
+def _learn(s, account: Account, st, kept: list[StatementRowIn], have: set = frozenset()) -> None:
     by_key = {(x.date, x.description): x for x in st.rows}
     rows = [
         statements.StatementRow(
@@ -1161,7 +1165,7 @@ def _learn(s, account: Account, st, kept: list[StatementRowIn]) -> None:
     if not key:
         return
     row = _layout(s, account.ownerId, key)
-    learned = statements.learn(json.loads(row.layout) if row else None, st, rows)
+    learned = statements.learn(json.loads(row.layout) if row else None, st, rows, have)
     text = exactjson.dumps(learned, sort_keys=True)
     if row is None:
         s.add(

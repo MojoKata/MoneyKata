@@ -6772,19 +6772,6 @@
         "title": "GroupTotal",
         "type": "object"
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "title": "Detail",
-            "type": "array"
-          }
-        },
-        "title": "HTTPValidationError",
-        "type": "object"
-      },
       "HoldingCheckRow": {
         "additionalProperties": false,
         "properties": {
@@ -15028,6 +15015,7 @@
               "benchmark-invalid",
               "beneficiary-invalid",
               "birthday-incomplete",
+              "bitcoin-not-set",
               "built-in",
               "built-on-invalid",
               "cadence-invalid",
@@ -15094,10 +15082,12 @@
               "group-unknown",
               "holiday-invalid",
               "how-invalid",
+              "http-error",
               "image-too-large",
               "income-missing",
               "input-invalid",
               "instrument-unknown",
+              "invalid-request",
               "invalid-setting",
               "items-missing",
               "jurisdiction-invalid",
@@ -15129,6 +15119,7 @@
               "mask-invalid",
               "metal-invalid",
               "method-invalid",
+              "method-not-allowed",
               "month-invalid",
               "months-invalid",
               "multiplier-invalid",
@@ -15235,6 +15226,7 @@
               "sealed-invalid",
               "secret-refused",
               "sent-invalid",
+              "server-error",
               "session-expired",
               "settings-invalid",
               "settings-missing",
@@ -15342,303 +15334,316 @@
       "ProblemFieldError": {
         "properties": {
           "code": {
-            "enum": [
-              "account-disabled",
-              "account-missing",
-              "account-not-counted",
-              "account-unknown",
-              "accounts-unknown",
-              "action-invalid",
-              "admins-only",
-              "already-joined",
-              "amends-itself",
-              "amount-invalid",
-              "amount-mismatch",
-              "amount-negative",
-              "ancestor-loop",
-              "assumption-invalid",
-              "avatar-invalid",
-              "bad-credentials",
-              "basis-invalid",
-              "benchmark-invalid",
-              "beneficiary-invalid",
-              "birthday-incomplete",
-              "built-in",
-              "built-on-invalid",
-              "cadence-invalid",
-              "cannot-join",
-              "cannot-unlock",
-              "cash-invalid",
-              "cash-missing",
-              "category-twice",
-              "category-unknown",
-              "choice-invalid",
-              "claimed-as-invalid",
-              "class-invalid",
-              "class-not-served",
-              "closed-year",
-              "code-wrong",
-              "colour-invalid",
-              "contracts-invalid",
-              "contracts-missing",
-              "contributor-invalid",
-              "copy-locked",
-              "corporate-kind",
-              "count-mismatch",
-              "daf-invalid",
-              "date-ahead",
-              "date-in-future",
-              "date-invalid",
-              "date-past",
-              "dates-invalid",
-              "day-invalid",
-              "days-invalid",
-              "deliverable-invalid",
-              "deliverable-missing",
-              "dependent-filer",
-              "dependent-twice",
-              "description-missing",
-              "died-on-invalid",
-              "direction-invalid",
-              "draw-invalid",
-              "driver-invalid",
-              "duration-invalid",
-              "ein-invalid",
-              "email-change-by-user",
-              "email-domain",
-              "email-invalid",
-              "email-taken",
-              "every-invalid",
-              "expired",
-              "fees-invalid",
-              "figure-invalid",
-              "figure-not-of-year",
-              "file-empty",
-              "file-pruned",
-              "filed-on-missing",
-              "filers-invalid",
-              "filers-only",
-              "filing-missing",
-              "filing-unknown",
-              "fingerprint-invalid",
-              "form-missing",
-              "fund-missing",
-              "gap-invalid",
-              "goal-invalid",
-              "group-inactive",
-              "group-unknown",
-              "holiday-invalid",
-              "how-invalid",
-              "image-too-large",
-              "income-missing",
-              "input-invalid",
-              "instrument-unknown",
-              "invalid-setting",
-              "items-missing",
-              "jurisdiction-invalid",
-              "kept-by-invalid",
-              "key-invalid",
-              "key-needed",
-              "kind-invalid",
-              "kind-not-for-account",
-              "label-invalid",
-              "label-taken",
-              "last-admin",
-              "lead-invalid",
-              "leg-grouped",
-              "leg-not-held",
-              "legs-differ",
-              "legs-twice",
-              "level-invalid",
-              "link-not-active",
-              "link-not-valid",
-              "locked",
-              "locked-out",
-              "long-assign",
-              "lot-method-invalid",
-              "lot-unknown",
-              "made-by-an-assignment",
-              "mapping-does-not-read",
-              "mapping-incomplete",
-              "margin-invalid",
-              "mask-invalid",
-              "metal-invalid",
-              "method-invalid",
-              "month-invalid",
-              "months-invalid",
-              "multiplier-invalid",
-              "name-invalid",
-              "name-missing",
-              "name-taken",
-              "no-beneficiary",
-              "no-connector",
-              "no-email",
-              "no-key",
-              "no-option",
-              "no-terms",
-              "no-thumbnail",
-              "not-a-529",
-              "not-a-fund",
-              "not-a-loan",
-              "not-a-marriage",
-              "not-a-transfer",
-              "not-a-wallet",
-              "not-an-option",
-              "not-available",
-              "not-balanced",
-              "not-creator",
-              "not-found",
-              "not-in-it",
-              "not-married",
-              "not-physical",
-              "not-scheduled",
-              "not-shared",
-              "not-signed-in",
-              "not-told-apart",
-              "not-yours-to-confirm",
-              "note-required",
-              "notes-too-long",
-              "nothing-held",
-              "nothing-open",
-              "nothing-to-close",
-              "nothing-to-prune",
-              "old-version",
-              "on-chain",
-              "one-spouse",
-              "opening-incomplete",
-              "option-kind",
-              "organisation-missing",
-              "organisation-unknown",
-              "origin-refused",
-              "owner-counts",
-              "owner-only",
-              "owner-sees-it",
-              "pairing-unconfirmed",
-              "parent-invalid",
-              "part-unknown",
-              "password-is-default",
-              "password-wrong",
-              "pattern-invalid",
-              "payee-too-long",
-              "people-missing",
-              "percent-invalid",
-              "period-backwards",
-              "period-missing",
-              "person-exists",
-              "person-is-user",
-              "person-read-only",
-              "person-unknown",
-              "phrase-invalid",
-              "phrase-wrong",
-              "place-missing",
-              "plan-exists",
-              "portfolio-unknown",
-              "premium-invalid",
-              "price-missing",
-              "price-negative",
-              "principal-invalid",
-              "progress-invalid",
-              "public-url-needed",
-              "purity-invalid",
-              "quantity-invalid",
-              "quarter-invalid",
-              "range-invalid",
-              "rate-invalid",
-              "rate-limited",
-              "ratio-invalid",
-              "re-encrypting",
-              "read-only",
-              "reading-off",
-              "reauth-required",
-              "receipt-linked",
-              "receipt-read-only",
-              "receipt-type",
-              "receipt-unreadable",
-              "receipt-unshowable",
-              "reconciled-period",
-              "reencrypt-pending",
-              "reencrypt-running",
-              "relation-invalid",
-              "relationship-exists",
-              "result-invalid",
-              "right-invalid",
-              "root-invalid",
-              "row-not-cash",
-              "rule-sets-nothing",
-              "same-person",
-              "scope-invalid",
-              "sealed-invalid",
-              "secret-refused",
-              "sent-invalid",
-              "session-expired",
-              "settings-invalid",
-              "settings-missing",
-              "setup-done",
-              "setup-required",
-              "sex-invalid",
-              "share-invalid",
-              "share-read-only",
-              "short-exercise",
-              "signup-needs-email",
-              "signup-off",
-              "smtp-failed",
-              "smtp-not-set",
-              "sold-before-bought",
-              "source-added",
-              "source-failed",
-              "source-invalid",
-              "source-unknown",
-              "split-does-not-add-up",
-              "splits-unbalanced",
-              "stale-version",
-              "statement-does-not-add-up",
-              "statement-interval-invalid",
-              "statement-kept-already",
-              "statements-off",
-              "status-invalid",
-              "strike-invalid",
-              "symbol-invalid",
-              "symbol-missing",
-              "sync-account-missing",
-              "tag-too-long",
-              "tags-invalid",
-              "target-invalid",
-              "term-invalid",
-              "theme-invalid",
-              "token-refused",
-              "too-large",
-              "too-long",
-              "too-many",
-              "too-many-rules",
-              "trade-incomplete",
-              "two-step-expired",
-              "two-step-not-started",
-              "two-step-off",
-              "two-step-on",
-              "type-invalid",
-              "type-not-allowed",
-              "unit-invalid",
-              "unknown-setting",
-              "unlocked-already",
-              "unsupported-type",
-              "until-before-from",
-              "upload-gone",
-              "uploads-in-flight",
-              "user-inactive",
-              "user-unknown",
-              "username-invalid",
-              "username-taken",
-              "valuation-invalid",
-              "value-missing",
-              "version-required",
-              "weight-invalid",
-              "year-invalid",
-              "year-missing",
-              "year-unknown",
-              "years-invalid",
-              "zone-invalid"
-            ],
-            "type": "string"
+            "anyOf": [
+              {
+                "enum": [
+                  "account-disabled",
+                  "account-missing",
+                  "account-not-counted",
+                  "account-unknown",
+                  "accounts-unknown",
+                  "action-invalid",
+                  "admins-only",
+                  "already-joined",
+                  "amends-itself",
+                  "amount-invalid",
+                  "amount-mismatch",
+                  "amount-negative",
+                  "ancestor-loop",
+                  "assumption-invalid",
+                  "avatar-invalid",
+                  "bad-credentials",
+                  "basis-invalid",
+                  "benchmark-invalid",
+                  "beneficiary-invalid",
+                  "birthday-incomplete",
+                  "bitcoin-not-set",
+                  "built-in",
+                  "built-on-invalid",
+                  "cadence-invalid",
+                  "cannot-join",
+                  "cannot-unlock",
+                  "cash-invalid",
+                  "cash-missing",
+                  "category-twice",
+                  "category-unknown",
+                  "choice-invalid",
+                  "claimed-as-invalid",
+                  "class-invalid",
+                  "class-not-served",
+                  "closed-year",
+                  "code-wrong",
+                  "colour-invalid",
+                  "contracts-invalid",
+                  "contracts-missing",
+                  "contributor-invalid",
+                  "copy-locked",
+                  "corporate-kind",
+                  "count-mismatch",
+                  "daf-invalid",
+                  "date-ahead",
+                  "date-in-future",
+                  "date-invalid",
+                  "date-past",
+                  "dates-invalid",
+                  "day-invalid",
+                  "days-invalid",
+                  "deliverable-invalid",
+                  "deliverable-missing",
+                  "dependent-filer",
+                  "dependent-twice",
+                  "description-missing",
+                  "died-on-invalid",
+                  "direction-invalid",
+                  "draw-invalid",
+                  "driver-invalid",
+                  "duration-invalid",
+                  "ein-invalid",
+                  "email-change-by-user",
+                  "email-domain",
+                  "email-invalid",
+                  "email-taken",
+                  "every-invalid",
+                  "expired",
+                  "fees-invalid",
+                  "figure-invalid",
+                  "figure-not-of-year",
+                  "file-empty",
+                  "file-pruned",
+                  "filed-on-missing",
+                  "filers-invalid",
+                  "filers-only",
+                  "filing-missing",
+                  "filing-unknown",
+                  "fingerprint-invalid",
+                  "form-missing",
+                  "fund-missing",
+                  "gap-invalid",
+                  "goal-invalid",
+                  "group-inactive",
+                  "group-unknown",
+                  "holiday-invalid",
+                  "how-invalid",
+                  "http-error",
+                  "image-too-large",
+                  "income-missing",
+                  "input-invalid",
+                  "instrument-unknown",
+                  "invalid-request",
+                  "invalid-setting",
+                  "items-missing",
+                  "jurisdiction-invalid",
+                  "kept-by-invalid",
+                  "key-invalid",
+                  "key-needed",
+                  "kind-invalid",
+                  "kind-not-for-account",
+                  "label-invalid",
+                  "label-taken",
+                  "last-admin",
+                  "lead-invalid",
+                  "leg-grouped",
+                  "leg-not-held",
+                  "legs-differ",
+                  "legs-twice",
+                  "level-invalid",
+                  "link-not-active",
+                  "link-not-valid",
+                  "locked",
+                  "locked-out",
+                  "long-assign",
+                  "lot-method-invalid",
+                  "lot-unknown",
+                  "made-by-an-assignment",
+                  "mapping-does-not-read",
+                  "mapping-incomplete",
+                  "margin-invalid",
+                  "mask-invalid",
+                  "metal-invalid",
+                  "method-invalid",
+                  "method-not-allowed",
+                  "month-invalid",
+                  "months-invalid",
+                  "multiplier-invalid",
+                  "name-invalid",
+                  "name-missing",
+                  "name-taken",
+                  "no-beneficiary",
+                  "no-connector",
+                  "no-email",
+                  "no-key",
+                  "no-option",
+                  "no-terms",
+                  "no-thumbnail",
+                  "not-a-529",
+                  "not-a-fund",
+                  "not-a-loan",
+                  "not-a-marriage",
+                  "not-a-transfer",
+                  "not-a-wallet",
+                  "not-an-option",
+                  "not-available",
+                  "not-balanced",
+                  "not-creator",
+                  "not-found",
+                  "not-in-it",
+                  "not-married",
+                  "not-physical",
+                  "not-scheduled",
+                  "not-shared",
+                  "not-signed-in",
+                  "not-told-apart",
+                  "not-yours-to-confirm",
+                  "note-required",
+                  "notes-too-long",
+                  "nothing-held",
+                  "nothing-open",
+                  "nothing-to-close",
+                  "nothing-to-prune",
+                  "old-version",
+                  "on-chain",
+                  "one-spouse",
+                  "opening-incomplete",
+                  "option-kind",
+                  "organisation-missing",
+                  "organisation-unknown",
+                  "origin-refused",
+                  "owner-counts",
+                  "owner-only",
+                  "owner-sees-it",
+                  "pairing-unconfirmed",
+                  "parent-invalid",
+                  "part-unknown",
+                  "password-is-default",
+                  "password-wrong",
+                  "pattern-invalid",
+                  "payee-too-long",
+                  "people-missing",
+                  "percent-invalid",
+                  "period-backwards",
+                  "period-missing",
+                  "person-exists",
+                  "person-is-user",
+                  "person-read-only",
+                  "person-unknown",
+                  "phrase-invalid",
+                  "phrase-wrong",
+                  "place-missing",
+                  "plan-exists",
+                  "portfolio-unknown",
+                  "premium-invalid",
+                  "price-missing",
+                  "price-negative",
+                  "principal-invalid",
+                  "progress-invalid",
+                  "public-url-needed",
+                  "purity-invalid",
+                  "quantity-invalid",
+                  "quarter-invalid",
+                  "range-invalid",
+                  "rate-invalid",
+                  "rate-limited",
+                  "ratio-invalid",
+                  "re-encrypting",
+                  "read-only",
+                  "reading-off",
+                  "reauth-required",
+                  "receipt-linked",
+                  "receipt-read-only",
+                  "receipt-type",
+                  "receipt-unreadable",
+                  "receipt-unshowable",
+                  "reconciled-period",
+                  "reencrypt-pending",
+                  "reencrypt-running",
+                  "relation-invalid",
+                  "relationship-exists",
+                  "result-invalid",
+                  "right-invalid",
+                  "root-invalid",
+                  "row-not-cash",
+                  "rule-sets-nothing",
+                  "same-person",
+                  "scope-invalid",
+                  "sealed-invalid",
+                  "secret-refused",
+                  "sent-invalid",
+                  "server-error",
+                  "session-expired",
+                  "settings-invalid",
+                  "settings-missing",
+                  "setup-done",
+                  "setup-required",
+                  "sex-invalid",
+                  "share-invalid",
+                  "share-read-only",
+                  "short-exercise",
+                  "signup-needs-email",
+                  "signup-off",
+                  "smtp-failed",
+                  "smtp-not-set",
+                  "sold-before-bought",
+                  "source-added",
+                  "source-failed",
+                  "source-invalid",
+                  "source-unknown",
+                  "split-does-not-add-up",
+                  "splits-unbalanced",
+                  "stale-version",
+                  "statement-does-not-add-up",
+                  "statement-interval-invalid",
+                  "statement-kept-already",
+                  "statements-off",
+                  "status-invalid",
+                  "strike-invalid",
+                  "symbol-invalid",
+                  "symbol-missing",
+                  "sync-account-missing",
+                  "tag-too-long",
+                  "tags-invalid",
+                  "target-invalid",
+                  "term-invalid",
+                  "theme-invalid",
+                  "token-refused",
+                  "too-large",
+                  "too-long",
+                  "too-many",
+                  "too-many-rules",
+                  "trade-incomplete",
+                  "two-step-expired",
+                  "two-step-not-started",
+                  "two-step-off",
+                  "two-step-on",
+                  "type-invalid",
+                  "type-not-allowed",
+                  "unit-invalid",
+                  "unknown-setting",
+                  "unlocked-already",
+                  "unsupported-type",
+                  "until-before-from",
+                  "upload-gone",
+                  "uploads-in-flight",
+                  "user-inactive",
+                  "user-unknown",
+                  "username-invalid",
+                  "username-taken",
+                  "valuation-invalid",
+                  "value-missing",
+                  "version-required",
+                  "weight-invalid",
+                  "year-invalid",
+                  "year-missing",
+                  "year-unknown",
+                  "years-invalid",
+                  "zone-invalid"
+                ],
+                "type": "string"
+              },
+              {
+                "pattern": "^invalid-[a-z0-9-]+$",
+                "type": "string"
+              }
+            ]
           },
           "field": {
             "type": [
@@ -22323,46 +22328,6 @@
         "title": "UserRow",
         "type": "object"
       },
-      "ValidationError": {
-        "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "title": "Location",
-            "type": "array"
-          },
-          "msg": {
-            "title": "Message",
-            "type": "string"
-          },
-          "type": {
-            "title": "Error Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError",
-        "type": "object"
-      },
       "ValuationIn": {
         "additionalProperties": false,
         "properties": {
@@ -25136,14 +25101,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25186,14 +25144,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25232,14 +25183,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25275,14 +25219,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25328,14 +25265,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25390,14 +25320,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25452,14 +25375,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25497,14 +25413,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25559,14 +25468,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25637,14 +25539,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25686,14 +25581,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25749,14 +25637,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25795,14 +25676,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25847,14 +25721,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25892,14 +25759,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -25960,14 +25820,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26013,14 +25866,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26058,14 +25904,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26119,14 +25958,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26164,14 +25996,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26218,14 +26043,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26287,14 +26105,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26351,14 +26162,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26407,14 +26211,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26475,14 +26272,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26536,14 +26326,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26590,14 +26373,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26652,14 +26428,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26717,14 +26486,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26773,14 +26535,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26846,14 +26601,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26933,14 +26681,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -26978,14 +26719,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27031,14 +26765,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27076,14 +26803,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27140,14 +26860,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27196,14 +26909,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27252,14 +26958,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27297,14 +26996,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27351,14 +27043,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27397,14 +27082,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27442,14 +27120,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27533,14 +27204,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27579,14 +27243,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27661,14 +27318,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27729,14 +27379,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27841,14 +27484,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27891,14 +27527,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27936,14 +27565,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -27989,14 +27611,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28050,14 +27665,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28111,14 +27719,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28167,14 +27768,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28236,14 +27830,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28348,14 +27935,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28407,14 +27987,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28457,14 +28030,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28513,14 +28079,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28593,14 +28152,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28676,14 +28228,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28724,14 +28269,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28761,14 +28299,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28827,14 +28358,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28882,14 +28406,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28927,14 +28444,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -28980,14 +28490,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29071,14 +28574,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29121,14 +28617,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29181,14 +28670,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29233,14 +28715,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29292,14 +28767,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29337,14 +28805,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29390,14 +28851,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29445,14 +28899,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29497,14 +28944,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29572,14 +29012,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29622,14 +29055,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29668,14 +29094,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29722,14 +29141,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29778,14 +29190,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29837,14 +29242,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29887,14 +29285,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29932,14 +29323,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -29985,14 +29369,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30029,14 +29406,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30088,14 +29458,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30138,14 +29501,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30193,14 +29549,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30252,14 +29601,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30308,14 +29650,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30364,14 +29699,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30419,14 +29747,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30475,14 +29796,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30545,14 +29859,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30647,14 +29954,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30707,14 +30007,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30751,14 +30044,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30795,14 +30081,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30855,14 +30134,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30900,14 +30172,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30943,14 +30208,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -30996,14 +30254,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31052,14 +30303,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31107,14 +30351,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31170,14 +30407,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31224,14 +30454,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31269,14 +30492,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31323,14 +30539,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31386,14 +30595,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31440,14 +30642,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31485,14 +30680,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31545,14 +30733,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31590,14 +30771,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31646,14 +30820,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31699,14 +30866,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31768,14 +30928,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31821,14 +30974,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31890,14 +31036,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31936,14 +31075,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -31992,14 +31124,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32037,14 +31162,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32097,14 +31215,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32135,14 +31246,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32172,14 +31276,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32232,14 +31329,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32283,14 +31373,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32329,14 +31412,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32383,14 +31459,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32443,14 +31512,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32494,14 +31556,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32540,14 +31595,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32594,14 +31642,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32640,14 +31681,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32696,14 +31730,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32782,14 +31809,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32841,14 +31861,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32891,14 +31904,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32936,14 +31942,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -32979,14 +31978,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33032,14 +32024,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33078,14 +32063,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33147,14 +32125,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33215,14 +32186,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33261,14 +32225,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33324,14 +32281,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33384,14 +32334,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33483,14 +32426,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33528,14 +32464,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33581,14 +32510,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33696,14 +32618,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33755,14 +32670,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33805,14 +32713,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33851,14 +32752,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33904,14 +32798,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33960,14 +32847,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -33997,14 +32877,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34035,14 +32908,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34094,14 +32960,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34144,14 +33003,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34189,14 +33041,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34281,14 +33126,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34365,14 +33203,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34416,14 +33247,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34461,14 +33285,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34504,14 +33321,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34557,14 +33367,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34603,14 +33406,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34641,14 +33437,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34697,14 +33486,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34735,14 +33517,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34821,14 +33596,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34875,14 +33643,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34920,14 +33681,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -34963,14 +33717,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35017,14 +33764,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35056,14 +33796,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35120,14 +33853,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35175,14 +33901,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35230,14 +33949,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35276,14 +33988,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35314,14 +34019,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35369,14 +34067,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35445,14 +34136,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35495,14 +34179,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35540,14 +34217,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35593,14 +34263,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35639,14 +34302,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35714,14 +34370,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35784,14 +34433,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35837,14 +34479,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35893,14 +34528,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -35991,14 +34619,7 @@
             "description": "Forbidden"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "429": {
             "description": "Too Many Requests"
@@ -36032,14 +34653,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36076,14 +34690,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36124,14 +34731,7 @@
             "description": "Unauthorized"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "429": {
             "description": "Too Many Requests"
@@ -36196,14 +34796,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36314,14 +34907,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36359,14 +34945,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36585,14 +35164,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36670,14 +35242,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36716,14 +35281,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36822,14 +35380,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36868,14 +35419,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -36936,14 +35480,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37069,14 +35606,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37115,14 +35645,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37160,14 +35683,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37206,14 +35722,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37252,14 +35761,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37297,14 +35799,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37360,14 +35855,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37406,14 +35894,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37452,14 +35933,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37497,14 +35971,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37641,14 +36108,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37693,14 +36153,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37736,14 +36189,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37800,14 +36246,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37873,14 +36312,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -37936,7 +36368,7 @@
             "description": "Forbidden"
           },
           "422": {
-            "description": "Unprocessable Content"
+            "$ref": "#/components/responses/Problem"
           },
           "429": {
             "description": "Too Many Requests"
@@ -37992,14 +36424,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38047,14 +36472,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38085,14 +36503,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38129,14 +36540,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38182,14 +36586,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38228,14 +36625,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38281,14 +36671,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38340,14 +36723,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38391,14 +36767,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38436,14 +36805,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38479,14 +36841,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38533,14 +36888,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38579,14 +36927,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38644,14 +36985,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38713,14 +37047,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38776,14 +37103,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38839,14 +37159,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38877,14 +37190,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38915,14 +37221,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -38954,14 +37253,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39017,14 +37309,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39063,14 +37348,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39108,14 +37386,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39153,14 +37424,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39206,14 +37470,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39251,14 +37508,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39304,14 +37554,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39550,14 +37793,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39612,14 +37848,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39657,14 +37886,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39704,14 +37926,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39772,14 +37987,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39827,14 +38035,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39890,14 +38091,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39936,14 +38130,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -39982,14 +38169,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40038,14 +38218,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40098,14 +38271,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40158,14 +38324,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40224,14 +38383,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40283,14 +38435,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40333,14 +38478,7 @@
             }
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40388,14 +38526,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40426,14 +38557,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"
@@ -40472,14 +38596,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "$ref": "#/components/responses/Problem"
           },
           "default": {
             "$ref": "#/components/responses/Problem"

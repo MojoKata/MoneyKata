@@ -319,3 +319,37 @@ def test_a_check_that_fails_leaves_its_alerts_open_and_unsent(server, admin_clie
     assert [a["title"] for a in listed(admin_client)["open"]] == before
     alerts.evaluate(server)  # the check runs again: the backup is fixed
     assert listed(admin_client)["open"] == []
+
+
+def test_a_holding_valued_from_an_old_statement_alerts_its_owner(server, frozen):
+    # S4.3, S12.11.1.2: a holding valued from a statement more than 90 days old.
+    from test_accounts import new_account
+
+    from moneykata.store.entities.accounts import Holding, Instrument
+
+    with server.db.tx() as s:
+        settings.put(s, "sessionIdleHours", 168, None)
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    acct = new_account(c, name="Plan", type="brokerage")
+    with server.db.tx() as s:
+        fund = Instrument(id=ids.new_id("Instr"), symbol="XFUNDZ", instrumentClass="mutual-fund")
+        s.add(fund)
+        s.flush()
+        s.add(
+            Holding(
+                id=ids.new_id("Hold"),
+                accountId=acct["id"],
+                instrumentId=fund.id,
+                asOf=(T0 - dt.timedelta(days=89)).date(),
+                quantity=10,
+                marketValue=1000,
+            )
+        )
+    alerts.evaluate(server)
+    assert [a["kind"] for a in listed(c)["open"]] == []
+    at(days=2)
+    alerts.evaluate(server)
+    (a,) = [a for a in listed(c)["open"] if a["kind"] == "statement-value-old"]
+    assert a["title"] == "Plan: a holding is valued from a statement over 90 days old"
+    assert a["link"] == f"/ui/accounts/{acct['id']}/holdings"

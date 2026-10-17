@@ -90,6 +90,18 @@ def test_public_data_is_not_mistaken_for_a_secret():
     )
 
 
+@pytest.fixture(autouse=True)
+def bitcoin_saved(request):
+    """Settings › Bitcoin as an admin saved it: no wallet is read before (S16.7)."""
+    if "server" not in request.fixturenames:
+        return
+    from moneykata import settings
+
+    srv = request.getfixturevalue("server")
+    with srv.db.tx() as s:
+        settings.put(s, "bitcoinSource", "esplora", None)
+
+
 @pytest.fixture
 def alice(server):
     make_user(server, "alice")
@@ -545,3 +557,22 @@ def test_a_node_certificate_is_trusted_once_confirmed(server, admin_client):
     alerts.evaluate(server)
     titles = [a["title"] for a in admin_client.get("/ui/api/alerts").json()["open"]]
     assert "The bitcoin node's certificate changed" not in titles
+
+
+def test_no_wallet_is_read_until_settings_bitcoin_is_saved(server, alice):
+    # S16.7, R3.5: nothing asked of a public explorer before an admin chooses it.
+    from moneykata import settings
+    from moneykata.bitcoin import sync
+    from moneykata.store.entities.core import Setting
+
+    w = new_account(alice, name="Cold storage", type="crypto-wallet")
+    alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB})
+    with server.db.tx() as s:
+        s.delete(s.get(Setting, "bitcoinSource"))
+    r = alice.post(f"/ui/api/accounts/{w['id']}/wallet/sync")
+    assert r.status_code == 409 and r.json()["code"] == "bitcoin-not-set"
+    assert sync.sync_all(server) is None
+    with server.db.tx() as s:
+        settings.put(s, "bitcoinSource", "esplora", None)
+    with server.db.read() as s:
+        assert sync.chosen(server, s)

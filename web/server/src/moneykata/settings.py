@@ -308,6 +308,12 @@ def section(s: Session, name: str) -> dict[str, Any]:
     }
 
 
+def saved(s: Session, key: str) -> bool:
+    """Whether an admin has saved the setting, rather than it standing at its default."""
+    row = s.get(Setting, key)
+    return row is not None and not row.deleted
+
+
 def put(s: Session, key: str, value: Any, by: str | None) -> Any:
     value = coerce(key, value)
     row = s.get(Setting, key)

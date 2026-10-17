@@ -641,7 +641,7 @@ function BrokerageReview({ review, setReview, close, done, accounts }) {
                 }</span>`
                 : Number(p.difference) === 0
                 ? html`<span class="pill"><${Icon} name="check" /> matches</span>`
-                : html`<span class="pill warn">${p.difference.replace(/^-/, '')} ${
+                : html`<span class="pill warn">${String(p.difference).replace(/^-/, '')} ${
                   Number(p.difference) > 0 ? 'short' : 'over'
                 }</span>`}</td>
             </tr>${p.hint

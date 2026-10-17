@@ -370,9 +370,13 @@ def name(institution: str | None, start: dt.date | None, end: dt.date | None) ->
     return f"{who}, {start:%b %-d, %Y} – {end:%b %-d, %Y}"
 
 
-def learn(layout: dict | None, st: Statement, kept: list[StatementRow]) -> dict:
+def learn(
+    layout: dict | None, st: Statement, kept: list[StatementRow], present: set = frozenset()
+) -> dict:
     """What a checked statement teaches about its institution's layout: the sign each section
-    heading gave the rows the person kept, and the descriptions they took out."""
+    heading gave the rows the person kept, and the descriptions they took out by choice. A
+    line left out because it was already in the account (`present`, by date and amount)
+    teaches nothing (S1.3.3.4)."""
     out = {
         "signs": dict((layout or {}).get("signs", {})),
         "skip": list((layout or {}).get("skip", [])),
@@ -382,6 +386,8 @@ def learn(layout: dict | None, st: Statement, kept: list[StatementRow]) -> dict:
         if r.section:
             out["signs"][r.section] = 1 if r.amount > 0 else -1
     for r in st.rows:
+        if (r.date, r.amount) in present:
+            continue
         if (r.date, r.description) not in kept_keys and r.description:
             words = " ".join(r.description.lower().split()[:3])
             if words and words not in out["skip"]:

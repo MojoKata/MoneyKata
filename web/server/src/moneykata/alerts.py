@@ -437,12 +437,15 @@ def accounts(s: Session, server) -> Iterable[Cause]:
     """For each account's owner: a statement overdue at its account's interval (S1.11.7), and a
     balance the institution reported that has disagreed for 7 days (S1.11)."""
     from .ledger import expected, reconcile
+    from .ledger import types as atypes
     from .store.entities.accounts import Account, Import
     from .store.repos import ledger as repo
 
     today = clock.today()
     rows = s.scalars(select(Account).where(Account.deleted == false(), Account.active)).all()
     for a in rows:
+        # A loan is checked on its Overview, against its servicer's balance (S1.11, S1.9.4).
+        where = f"/ui/accounts/{a.id}" + ("/reconcile" if atypes.reconcilable(a.type) else "")
         imports = s.scalars(
             select(Import).where(Import.accountId == a.id, Import.deleted == false())
         ).all()
@@ -459,7 +462,7 @@ def accounts(s: Session, server) -> Iterable[Cause]:
                 f"{late.periodStart - dt.timedelta(days=1):%b %-d} · "
                 f"overdue from {late.due:%b %-d}",
                 user_id=a.ownerId,
-                link=f"/ui/accounts/{a.id}/reconcile",
+                link=where,
                 fix="Import a statement",
                 icon="receipt",
                 since=dt.datetime.combine(late.due, dt.time(), dt.UTC),
@@ -479,6 +482,45 @@ def accounts(s: Session, server) -> Iterable[Cause]:
                 fix="Reconcile",
                 icon="alert",
                 delay=dt.timedelta(days=MISMATCH_DAYS),
+            )
+
+
+@check
+def statement_values(s: Session, server) -> Iterable[Cause]:
+    """For each account's owner: a holding valued from a statement more than 90 days old
+    (S4.3), until a newer statement, a price or a sale replaces it."""
+    from . import valuation
+    from .ledger import types as atypes
+    from .prices.refresh import STATEMENT_STALE_DAYS
+    from .store.entities.accounts import Account
+    from .store.repos import ledger as repo
+
+    today = clock.today()
+    for a in s.scalars(select(Account).where(Account.deleted == false(), Account.active)):
+        if not atypes.investing(a.type):
+            continue
+        held = repo.load(s, a).replay().positions()
+        if not held:
+            continue
+        old = [
+            p.asOf
+            for p in valuation.prices(s, list(held), today, a.ownerId).values()
+            if p.source == "statement" and (today - p.asOf).days > STATEMENT_STALE_DAYS
+        ]
+        if old:
+            oldest = min(old)
+            yield Cause(
+                key=f"statement-value:{a.id}",
+                kind="statement-value-old",
+                title=f"{a.name}: a holding is valued from a statement over 90 days old",
+                about=f"the statement of {oldest:%b %-d, %Y} · import a newer one, or type a price",
+                user_id=a.ownerId,
+                link=f"/ui/accounts/{a.id}/holdings",
+                fix="See the holdings",
+                icon="receipt",
+                since=dt.datetime.combine(
+                    oldest + dt.timedelta(days=STATEMENT_STALE_DAYS + 1), dt.time(), dt.UTC
+                ),
             )
 
 
@@ -802,6 +844,7 @@ _KINDS = {
     "recovery_phrase": {"phrase-check"},
     "key_rotation": {"key-rotation"},
     "accounts": {"statement-overdue", "reconcile-mismatch"},
+    "statement_values": {"statement-value-old"},
     "projections_behind": {"projection-behind"},
     "bitcoin_certificate": {"node-certificate"},
     "bitcoin_off_chain": {"off-chain"},

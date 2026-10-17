@@ -129,3 +129,18 @@ def test_a_201_without_its_own_location_is_given_one():
     assert location_of("/ui/api/persons", b'{"id": "Prsn_1"}') == "/ui/api/persons/Prsn_1"
     book = b'{"id": "TxBk_1", "filings": []}'
     assert location_of("/ui/api/tax-books/TxBk_1/filings", book) == "/ui/api/tax-books/TxBk_1"
+
+
+def test_every_problem_code_and_every_422_is_in_the_openapi_document():
+    # S13.8.3, N16: the codes the error handlers answer are listed too, a field's own codes by
+    # their pattern, and a 422 is a problem document, never FastAPI's shape.
+    from moneykata import contract
+
+    doc = contract.openapi_document()
+    codes = set(doc["components"]["schemas"]["Problem"]["properties"]["code"]["enum"])
+    assert {"invalid-request", "server-error", "method-not-allowed", "http-error"} <= codes
+    assert "HTTPValidationError" not in doc["components"]["schemas"]
+    for ops in doc["paths"].values():
+        for op in ops.values():
+            if isinstance(op, dict) and "422" in op.get("responses", {}):
+                assert op["responses"]["422"] == {"$ref": "#/components/responses/Problem"}

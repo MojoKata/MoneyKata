@@ -186,6 +186,13 @@ def sync_wallet(account_id: str, request: Request, c: Caller = Depends(caller)):
     srv = server(request)
     with srv.db.read() as s:
         a, _ = _wallet_account(s, c, account_id, "write")
+        if not sync.chosen(srv, s):
+            raise refuse(
+                None,
+                "bitcoin-not-set",
+                "No wallet is read until an admin saves Settings › Bitcoin.",
+                409,
+            )
     try:
         made = sync.sync_account(srv, a.id)
     except SourceError as e:

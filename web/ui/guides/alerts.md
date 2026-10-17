@@ -14,8 +14,8 @@ what failed, such as their own Connection, sees it once, as its owner.
 Admins are alerted about a price source or email failing for longer than Settings › Alerts allows, a
 failed backup, the yearly check of the master key's recovery phrase, and the receipt reader running
 without its file sandbox on a host that doesn't offer Landlock. An account's owner is alerted when
-its next statement or import is overdue, and when its balance has disagreed with the institution's
-for a week.
+its next statement or import is overdue, when its balance has disagreed with the institution's
+for a week, and when a holding in it is still valued from a statement over 90 days old.
 
 ## Resolved
 

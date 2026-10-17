@@ -43,7 +43,11 @@ def openapi_document() -> dict:
     return doc
 
 
-PROBLEM_CALLS = {"Problem", "refuse", "FieldError", "_send_problem"}
+PROBLEM_CALLS = {"Problem", "refuse", "FieldError", "_send_problem", "problem_response"}
+# What the error handlers answer beyond the calls above: an HTTP error by its status
+# (errors.py's on_http), and a field refused by its validation type, `invalid-<type>`.
+HANDLER_CODES = ("http-error", "method-not-allowed", "not-found")
+FIELD_CODE = "^invalid-[a-z0-9-]+$"
 
 
 def problem_codes() -> list[str]:
@@ -67,7 +71,7 @@ def problem_codes() -> list[str]:
                 and isinstance(arg.value, str)
             ):
                 codes.add(arg.value)
-    return sorted(codes)
+    return sorted(codes | set(HANDLER_CODES))
 
 
 def _problems(doc: dict) -> None:
@@ -80,7 +84,13 @@ def _problems(doc: dict) -> None:
         "required": ["field", "code", "message"],
         "properties": {
             "field": {"type": ["string", "null"]},
-            "code": {"type": "string", "enum": codes},
+            # One of the codes, or a field refused by its validation type (`invalid-<type>`).
+            "code": {
+                "anyOf": [
+                    {"type": "string", "enum": codes},
+                    {"type": "string", "pattern": FIELD_CODE},
+                ]
+            },
             "message": {"type": "string"},
         },
     }
@@ -111,6 +121,12 @@ def _problems(doc: dict) -> None:
         for op in ops.values():
             if isinstance(op, dict) and "responses" in op:
                 op["responses"].setdefault("default", {"$ref": "#/components/responses/Problem"})
+                # A request refused for its fields is a problem document too, never FastAPI's
+                # own shape (S13.8.3).
+                if "422" in op["responses"]:
+                    op["responses"]["422"] = {"$ref": "#/components/responses/Problem"}
+    for name in ("HTTPValidationError", "ValidationError"):
+        schemas.pop(name, None)
 
 
 def _created(doc: dict) -> None:

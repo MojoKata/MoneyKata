@@ -161,6 +161,11 @@ Fee Detail
     again = parse(text, layout=layout)
     assert [r.amount for r in again.rows] == [Decimal("-10.00"), Decimal("-20.00")]
     assert again.difference == 0
+    # C44, S1.3.3.4: a line left out because it was already in the account teaches nothing.
+    rent = next(r for r in first.rows if r.description == "RENT")
+    only_coffee = [r for r in kept if r.description == "COFFEE"]
+    layout = statements.learn(None, first, only_coffee, {(rent.date, rent.amount)})
+    assert layout["skip"] == ["service charge waived"]
 
 
 # ---------- through the server ----------

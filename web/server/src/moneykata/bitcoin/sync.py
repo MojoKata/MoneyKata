@@ -40,6 +40,13 @@ def config(s, secrets_key: bytes | None) -> Config:
     )
 
 
+def chosen(server, s) -> bool:
+    """Whether wallets may be read: no wallet is read until an admin saves Settings › Bitcoin,
+    so nothing is asked of a public explorer before then (S16.7, R3.5). Dev mode's stub
+    source always reads."""
+    return bool(server.config.stubs) or settings.saved(s, "bitcoinSource")
+
+
 def source(server, s):
     if server.config.stubs:
         from .stub import Stub
@@ -74,6 +81,8 @@ def _scan(src, account_id: str, s) -> tuple[list[sources.Tx], set[str]]:
 def sync_account(server, account_id: str) -> int:
     """Read one wallet now; returns the transactions recorded. Raises SourceError."""
     with server.db.read() as s:
+        if not chosen(server, s):
+            raise SourceError("no wallet is read until an admin saves Settings › Bitcoin")
         src = source(server, s)
     txs: dict[str, sources.Tx] = {}
     for _ in range(ROUNDS):
@@ -253,8 +262,11 @@ def mark_gone(s, account_id: str, txs: list[sources.Tx]) -> int:
 
 
 def sync_all(server, ctx=None) -> str | None:
-    """Every wallet, for the hourly task; returns the first error, if any."""
+    """Every wallet, for the hourly task; returns the first error, if any. Nothing until
+    Settings › Bitcoin is saved."""
     with server.db.read() as s:
+        if not chosen(server, s):
+            return None
         wallets = list(
             s.scalars(
                 select(Account.id).where(

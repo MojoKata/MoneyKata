@@ -336,8 +336,10 @@
        items with cost basis, value, gain and age, and opens each one with its history,
        notes and documents.
 11. **Reconciliation** keeps an account's balance in step with the institution's, for every
-    account kept from files or statements: banking, cards, loans, brokerage cash, and the
-    retirement, plan, 529, HSA, DAF and exchange accounts whose statements S1.11.7 expects. For
+    account kept from files or statements: banking, cards, brokerage cash, and the retirement,
+    plan, 529, HSA, DAF and exchange accounts whose statements S1.11.7 expects, each on its
+    *Reconcile* tab. A loan is checked on its Overview instead, against the balance its servicer
+    reports (S1.9.4), and its overdue statement leads there. For
     a user who only imports files it is a set of quiet, automatic checks; ticking off
     transactions by hand is an option.
     1. **Coverage**: each import records the dates it covers. The account's *Reconcile* tab

@@ -1,5 +1,5 @@
-"""Exact amounts (requirements S14.3): Decimal in Python, strings in JSON, integer cents or
-decimal text in SQLite. Floats are refused at the edge."""
+"""Exact amounts (requirements S14.3, R1.9): Decimal in Python, exact number literals in JSON,
+integer cents or decimal text in SQLite. Floats are refused at the edge."""
 
 import decimal
 from decimal import ROUND_HALF_EVEN, Decimal
