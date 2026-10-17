@@ -66,8 +66,12 @@ def handle(core, request: dict) -> dict:
         if what == "unpair":
             core.unpair()
             return {"ok": True}
+        if what == "goes-to":
+            return {"ok": True, **core.goes_to(request["id"])}
         if what == "connect":
-            core.connect(request["id"], request.get("credentials") or {})
+            if "host" not in request:
+                return {"error": "confirm the host first: moneykata-connector connect <id>"}
+            core.connect(request["id"], request.get("credentials") or {}, request["host"])
             return {"ok": True}
         if what == "reset":
             return {"ok": True, "fingerprint": core.reset(request.get("words", ""))}

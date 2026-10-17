@@ -173,7 +173,14 @@ def cmd_pair(args) -> int:
 
 
 def cmd_connect(args) -> int:
-    """Credentials typed here, never through MoneyKata (S18.7.2)."""
+    """Credentials typed here, never through MoneyKata (S18.7.2): the host they go to is shown
+    first, and they are filed only once the admin confirms it."""
+    where = _ask({"command": "goes-to", "id": args.id})
+    hosts = where["host"] or ", ".join(where["hosts"]) or "no host"
+    print(f"{where['label']} ({where['driver']}): its credentials go to {hosts} only.")
+    if input("Is that the institution's own host? [y/N] ").strip().lower() not in ("y", "yes"):
+        print("nothing filed")
+        return 1
     creds = {}
     print(f"credentials for {args.id} (empty name ends):")
     while True:
@@ -181,8 +188,8 @@ def cmd_connect(args) -> int:
         if not name:
             break
         creds[name] = getpass.getpass(f"{name}: ")
-    _ask({"command": "connect", "id": args.id, "credentials": creds})
-    print("filed in the vault")
+    _ask({"command": "connect", "id": args.id, "credentials": creds, "host": where["host"]})
+    print(f"filed in the vault, bound to {hosts}")
     return 0
 
 

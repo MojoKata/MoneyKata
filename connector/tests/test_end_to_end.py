@@ -178,6 +178,29 @@ def test_a_server_that_isnt_the_one_paired_with_gets_nothing(money, tmp_path):
     assert admin.get("/ui/api/settings/connector").json()["state"] == "pairing"
 
 
+def test_a_hello_naming_the_right_fingerprint_with_another_key_gets_nothing(
+    money, tmp_path, monkeypatch
+):
+    # C23, S18.4.2: the key hello gives must itself hash to the code's fingerprint; a relay
+    # repeating the fingerprint with a key of its own is refused before anything is sent.
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+    from moneykata_connector.keys import b64
+
+    _server, admin, app = money
+    core = Core(tmp_path / "data", transport=None)
+    core.transport = Wired(app, core.egress)
+    core.vault.create()
+    code = admin.post("/ui/api/settings/connector/pairings").json()["code"]
+    real = client.hello
+    other = Ed25519PrivateKey.generate().public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    monkeypatch.setattr(client, "hello", lambda *a, **k: {**real(*a, **k), "key": b64(other)})
+    with pytest.raises(client.ServerError) as e:
+        core.pair(code)
+    assert e.value.code == "fingerprint-mismatch"
+    assert admin.get("/ui/api/settings/connector").json()["state"] == "pairing"
+
+
 OFX = b"""OFXHEADER:100
 DATA:OFXSGML
 VERSION:102

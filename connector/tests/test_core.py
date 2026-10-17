@@ -243,12 +243,19 @@ def test_the_socket_commands_talk_to_the_running_connector(tmp_path):
     assert sock.ask(path, {"command": "unlock", "words": phrase})["locked"] is False
     # Credentials typed here are filed for a Connection the connector knows, bound to the
     # host its settings name (S18.7.3); an unknown one is refused.
-    out = sock.ask(path, {"command": "connect", "id": "Conn_1", "credentials": {"a": "b"}})
+    out = sock.ask(path, {"command": "goes-to", "id": "Conn_1"})
     assert "hasn't heard of that Connection" in out["error"]
     core.connections["Conn_1"] = ConnectionState(
         "Conn_1", "ofx-direct", "CU", {"url": "https://ofx.cu.example/x"}, []
     )
-    assert sock.ask(path, {"command": "connect", "id": "Conn_1", "credentials": {"a": "b"}})["ok"]
+    # The host is shown first, and the credentials filed only for the host confirmed (S18.7.2).
+    where = sock.ask(path, {"command": "goes-to", "id": "Conn_1"})
+    assert (where["label"], where["host"]) == ("CU", "ofx.cu.example")
+    creds = {"command": "connect", "id": "Conn_1", "credentials": {"a": "b"}}
+    assert "confirm the host first" in sock.ask(path, creds)["error"]
+    assert "nothing filed" in sock.ask(path, {**creds, "host": "ofx.elsewhere.example"})["error"]
+    assert core.vault.get("Conn_1") is None
+    assert sock.ask(path, {**creds, "host": "ofx.cu.example"})["ok"]
     assert core.vault.get("Conn_1") == {"a": "b"} and core.vault.host("Conn_1") == "ofx.cu.example"
     assert sock.ask(path, {"command": "lock"})["locked"] is True
     # Reset (S18.3.4): the words come from the command line, never back over the socket;

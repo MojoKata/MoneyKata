@@ -75,11 +75,12 @@ class Core:
         self.pairing = pairing
         self.egress.allow(_host(pairing.address))
         hi = client.hello(self.transport, pairing.address, pairing.pins())
-        if hi.get("fingerprint") != pairing.server_fp:
+        # The key itself must hash to the fingerprint paired with, whatever the answer says it
+        # is (S18.4.2).
+        key = client.server_key(hi)
+        if keys.fingerprint(key) != pairing.server_fp:
             raise ServerError("fingerprint-mismatch", "The server's key isn't the one paired with.")
-        self.server = client.Server(
-            pairing, self.transport, client.server_key(hi), self._certificate
-        )
+        self.server = client.Server(pairing, self.transport, key, self._certificate)
 
     def _certificate(self, pinned: str, following: str | None) -> None:
         """MoneyKata announced its next certificate key, in a signed answer, or started using
@@ -101,14 +102,15 @@ class Core:
         self.egress.allow(_host(c["a"]))
         cert = c.get("t") if isinstance(c.get("t"), str) else None
         hi = client.hello(self.transport, c["a"], frozenset([cert]) if cert else None)
-        if hi.get("fingerprint") != c["f"]:
+        key = client.server_key(hi)
+        if keys.fingerprint(key) != c["f"]:
             raise ServerError(
                 "fingerprint-mismatch",
                 "The server at that address doesn't have the key the code names: nothing sent.",
             )
         private, public = keys.new_sealing_key()
         pairing = keys.make(c["a"], c["f"], public, cert)
-        server = client.Server(pairing, self.transport, client.server_key(hi), self._certificate)
+        server = client.Server(pairing, self.transport, key, self._certificate)
         # The identity key signs the sealing key, so a browser seals only to the key of the
         # connector an admin confirmed (S18.4.5).
         signed = pairing.identity.sign(SEALING_LABEL + public)
@@ -189,20 +191,43 @@ class Core:
         self.vault.unlock(phrase)
         self._wake.set()
 
-    def connect(self, connection_id: str, credentials: dict) -> None:
-        """Credentials typed on this host (S18.7.2), straight into the vault, bound to the host
-        the Connection's settings name now (S18.7.3), so the Connection must be known here."""
-        with self._lock:
+    def _known(self, connection_id: str) -> ConnectionState:
+        c = self.connections.get(connection_id)
+        if c is None and self.server is not None:
+            self.tick()
             c = self.connections.get(connection_id)
-            if c is None and self.server is not None:
-                self.tick()
-                c = self.connections.get(connection_id)
-            if c is None:
+        if c is None:
+            raise VaultError(
+                "the connector hasn't heard of that Connection yet: check its id, or try "
+                "again after its next report"
+            )
+        return c
+
+    def goes_to(self, connection_id: str) -> dict:
+        """Where credentials typed for a Connection would go, for the admin to confirm before
+        typing them (S18.7.2): the host they'd be bound to, or the driver's own hosts."""
+        with self._lock:
+            c = self._known(connection_id)
+            d = self.drivers.get(c.driver)
+            return {
+                "label": c.label,
+                "driver": c.driver,
+                "host": self._binds(c),
+                "hosts": list(d.hosts_for(c.settings)) if d else [],
+            }
+
+    def connect(self, connection_id: str, credentials: dict, host: str | None) -> None:
+        """Credentials typed on this host (S18.7.2), straight into the vault, bound to the host
+        the admin confirmed (S18.7.3), so the Connection must be known here; refused when its
+        settings name another host now."""
+        with self._lock:
+            c = self._known(connection_id)
+            if self._binds(c) != host:
                 raise VaultError(
-                    "the connector hasn't heard of that Connection yet: check its id, or try "
-                    "again after its next report"
+                    f"the Connection now names {self._binds(c) or 'its driver'}'s host, not the "
+                    f"{host or 'driver'}'s you confirmed: nothing filed; run connect again"
                 )
-            self.vault.put(connection_id, credentials, self._binds(c))
+            self.vault.put(connection_id, credentials, host)
             c.state, c.message, c.last_run = "ok", "credentials received", None
         self._wake.set()
 
