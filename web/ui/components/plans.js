@@ -19,8 +19,8 @@ export function PlansFor({ kind, id, all = false }) {
   );
   if (!rows.length) {
     return all
-      ? html`<p class="small dim">No projection is built on it yet. Make one on the
-          <a href="/ui/projections">Projections</a> screen.</p>`
+      ? html`<p class="small dim">No projection is built on it yet. Make one on the <a
+          href="/ui/projections">Projections</a> screen.</p>`
       : null;
   }
   return html`

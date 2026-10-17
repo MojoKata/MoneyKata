@@ -1316,8 +1316,8 @@ function Keys() {
                     .lastReencryption
                     .receiptsSetAside.length} receipt files and left ${v.lastReencryption
                     .secretsSetAside
-                    .length} secrets that opened under neither key: the files are in
-                  <code>receipts-set-aside/</code> in the data directory.</div>
+                    .length} secrets that opened under neither key: the files are in <code
+                  >receipts-set-aside/</code> in the data directory.</div>
         </div>
       `
       : null
