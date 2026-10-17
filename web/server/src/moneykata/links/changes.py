@@ -20,7 +20,7 @@ import shutil
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 
 from .. import clock, exactjson
 from ..store.entities.links import Link
@@ -162,6 +162,8 @@ def apply(srv, link_id: str) -> int:
         peer = unb64(s.get(Link, link_id).peerKey)
         way = direction(fingerprint(peer), fingerprint(public_of(s, srv.keys.secrets)))
     priv = private_key(bytes(o.key))
+    with o.engine.connect() as conn:
+        last = conn.execute(select(func.max(copydb.Applied.c.seq))).scalar() or 0
     changes = []
     try:
         for p in files:
@@ -169,6 +171,15 @@ def apply(srv, link_id: str) -> int:
             raw = p.read_bytes()
             change, local = entry["change"], entry.get("local") or {}
             verify(peer, {**change, "sealed": b64(raw)})
+            # Each must follow the last applied, so an older change put back is refused: the
+            # sequence is the source's, signed and sealed with the change (S11.9.5.3).
+            seq = int(change.get("seq") or 0)
+            if seq <= last:
+                raise ChangeError(
+                    f"change {seq} doesn't follow the last one applied ({last}); if the other "
+                    "server was restored from a backup, reset the copy"
+                )
+            last = seq
             opened = open_part(priv, change, way, raw)
             _shape(opened)
             changes.append((opened, local))

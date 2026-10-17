@@ -548,6 +548,8 @@ def _served(srv, link_id: str, change: dict) -> None:
             s,
             "link.served",
             actor=None,
+            subject_kind="link",
+            subject_id=link_id,
             for_admins=True,
             detail={
                 "count": len(change.get("items") or []) + len(change.get("removed") or []),

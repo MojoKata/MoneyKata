@@ -824,3 +824,124 @@ def test_a_peers_refusal_is_told_in_this_servers_own_words():
     assert client.refusal("whatever", 403) == (
         "The other server refused the call (whatever, HTTP 403)."
     )
+
+
+def test_a_person_crosses_a_link_with_their_relationships_and_a_pull_names_its_link(admins):
+    # S10.3: a person is one of the eight shareable kinds, and goes, read only, to named
+    # people on a linked server; S11.8: a pull's Activity names the household it came from.
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    _, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    rose = alice.post(
+        "/ui/api/persons",
+        json={"name": "Grandma Rose", "sex": "female", "birthMonth": 5, "birthDay": 3,
+              "private": True},
+    ).json()  # fmt: skip
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    r = alice.put(f"/ui/api/shares/person/{rose['id']}", json={"users": {carol_here["id"]: "read"}})
+    assert r.status_code == 200, r.text
+    # S11.7: what flows each way, this side's by kind, owner and the people there it names.
+    (out,) = links_of(ca)["links"][0]["outgoing"]
+    assert (out["kind"], out["names"]) == ("person", [carol_here["displayName"]])
+    words = cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"]
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")
+    assert [x["kind"] for x in links_of(cb)["links"][0]["incoming"]] == ["person"]
+    carol = sign_in(b, "carol")
+    r = carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": " ".join(words)})
+    assert r.status_code == 200, r.text
+    rows = carol.get(f"/ui/api/linked/{b_id}/items").json()["items"]
+    assert [(r["kind"], r["name"]) for r in rows] == [("person", "Grandma Rose")]
+    assert (rows[0]["row"]["birthMonth"], rows[0]["row"]["birthDay"]) == (5, 3)
+    got = carol.get(
+        f"/ui/api/linked/{b_id}/doc", params={"path": f"/persons/{rose['id']}/relations"}
+    )
+    assert got.status_code == 200 and got.json()["items"] == []
+    from moneykata.store.entities.core import Activity
+
+    with b.db.read() as s:
+        pulled = [x for x in s.query(Activity) if x.kind == "link.pulled"]
+    assert pulled and all((x.subjectKind, x.subjectId) == ("link", b_id) for x in pulled)
+
+
+def test_a_refusal_on_its_headers_reads_no_body(pair):
+    # S13.7.5.4: a call naming a key with no link here, with a large body, is refused before
+    # the body is read, unsigned since it can't be signed to a body it didn't read.
+    _, b, (_, url_b), _ = pair
+    srv_b = b
+    from fastapi.testclient import TestClient
+
+    from moneykata.app import create_app
+
+    with TestClient(create_app(srv_b), base_url=url_b) as c:
+        r = c.post(
+            "/link/v1/deliver",
+            content=b"x" * (2 * 1024 * 1024),
+            headers={"MK-Link-Key": keys.b64(b"k" * 32), "Content-Type": "application/json"},
+        )
+    assert r.status_code == 403 and r.json()["code"] == "not-linked"
+    assert "mk-link-signature" not in {k.lower() for k in r.headers}
+
+
+def test_a_change_put_back_in_the_inbox_is_refused_and_everything_asked_for(admins):
+    # S11.9.5.3: a change must follow the last one applied, so an older one put back while
+    # the copy is locked can't bring back what was since removed.
+    import shutil as sh
+
+    a, b, ca, cb, _ = admins
+    make_user(b, "carol")
+    _, b_id = linked(ca, cb)
+    make_user(a, "alice")
+    alice = sign_in(a, "alice")
+    acct = alice.post("/ui/api/accounts", json={"name": "Old", "type": "checking"}).json()
+    carol_here = next(u for u in links_of(ca)["links"][0]["users"] if u["username"] == "carol")
+    alice.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {carol_here["id"]: "read"}})
+    words = " ".join(cb.post(f"/ui/api/settings/links/{b_id}/copy-key").json()["words"])
+    cb.post(f"/ui/api/settings/links/{b_id}/pull")  # waits in the inbox: the copy is locked
+    inbox = lcopy.folder(b.config.data_dir, b_id) / "inbox"
+    kept = b.config.data_dir / "kept"
+    sh.copytree(inbox, kept)
+    carol = sign_in(b, "carol")
+    assert carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": words}).status_code == 200
+    assert [r["name"] for r in carol.get(f"/ui/api/linked/{b_id}/items").json()["items"]]
+    carol.post(f"/ui/api/linked/{b_id}/lock")
+    for f in kept.iterdir():
+        sh.copy(f, inbox / f.name)
+    carol.post(f"/ui/api/linked/{b_id}/unlock", json={"words": words})
+    with b.db.read() as s:
+        link = s.get(Link, b_id)
+        assert link.needsFull and "doesn't follow the last one applied" in (link.lastError or "")
+
+
+def test_a_released_copys_key_opens_nothing_more():
+    # K25: the copy's database key is overwritten at the release, and no new connection opens.
+    from moneykata.store.db import HeldKey, WrongKey
+
+    k = HeldKey(bytes(range(32)))
+    assert k.text().startswith("x'000102")
+    k.release()
+    with pytest.raises(WrongKey):
+        k.text()
+
+
+def test_an_unsigned_limit_or_locked_answer_is_taken_as_it_says(pair, monkeypatch):
+    # link-protocol.md §7: refused before the answering server could sign to the call.
+    import httpx
+
+    a, b, (_, url_b), _ = pair
+    reach(a, "b.test")
+    for status, code in ((429, "limit"), (503, "locked")):
+
+        class Answer:
+            def __init__(self, status: int) -> None:
+                self.status = status
+
+            def post(self, *args, **kw):
+                return httpx.Response(self.status, json={"code": "rate-limited"})
+
+        answer = Answer(status)
+        monkeypatch.setattr(client, "_client", lambda *a, answer=answer, **k: answer)
+        with pytest.raises(client.LinkError) as e:
+            client.call(a, url_b, public(b), "/link/v1/ping")
+        assert e.value.code == code

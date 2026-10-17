@@ -88,9 +88,7 @@ def _unreachable(address: str, e: Exception) -> LinkError:
 
 
 def _own(srv):
-    with srv.db.tx() as s:
-        own = keys.private_key(s, srv.keys.secrets)
-    return own, keys.fingerprint(keys.raw_public(own.public_key()))
+    return keys.signing_key(srv), keys.own_public(srv)[1]
 
 
 def hello(srv, address: str, pins=None) -> dict:
@@ -128,6 +126,11 @@ def call(
         r = _client(srv, pins).post(_url(address, path), content=body, headers=headers)
     except net.httpx.HTTPError as e:
         raise _unreachable(address, e) from None
+    if r.status_code in (429, 503) and "mk-link-signature" not in r.headers:
+        # Refused before the answering server could sign to the call: it limits calls, or it
+        # is locked; asked again at the next exchange (link-protocol.md §7).
+        code = "limit" if r.status_code == 429 else "locked"
+        raise LinkError(code, refusal(code, r.status_code))
     asked = signing.Asked(signed.nonce, own_fp, signed.body_hash)
     try:
         signing.verify_answer(peer_key, r.status_code, r.content, asked, r.headers)

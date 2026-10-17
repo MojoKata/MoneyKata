@@ -265,3 +265,24 @@ def test_recurring_finds_series_and_flags_missed_and_changed():
     assert found["City"].changed and found["City"].next == d(2026, 10, 31)
     assert found["Acme"].every == "2 weeks" and found["Acme"].usual == Decimal("4820.00")
     assert found["Spotify"].missed
+
+
+def test_a_shared_budget_names_only_the_accounts_shared_with_its_viewer(server, frozen):
+    # S7.1.1, S11.3.1: a receiver sees the owner's recurring payments, but the account behind
+    # one is named only to someone it is shared with too.
+    c, acct, _, b = setup_budget(server)
+    for m in (7, 8, 9, 10):
+        add(c, acct["id"], "-15.49", f"2026-{m:02d}-05", payee="Netflix")
+    make_user(server, "bob")
+    bob = sign_in(server, "bob")
+    bob_id = bob.get("/ui/api/session").json()["user"]["id"]
+    c.put(f"/ui/api/shares/budget/{b['id']}", json={"users": {bob_id: "read"}})
+    (mine,) = [
+        r for r in c.get(f"/ui/api/budgets/{b['id']}/recurring").json()["items"] if r["payee"]
+    ]
+    (theirs,) = bob.get(f"/ui/api/budgets/{b['id']}/recurring").json()["items"]
+    assert mine["accountId"] == acct["id"] and mine["accountName"] == acct["name"]
+    assert theirs["accountId"] is None and theirs["accountName"] == "an account not shared"
+    c.put(f"/ui/api/shares/account/{acct['id']}", json={"users": {bob_id: "read"}})
+    (theirs,) = bob.get(f"/ui/api/budgets/{b['id']}/recurring").json()["items"]
+    assert theirs["accountName"] == acct["name"]

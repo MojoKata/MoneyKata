@@ -57,6 +57,27 @@ def private_key(s, secrets_key: bytes, by: str | None = None) -> Ed25519PrivateK
     return Ed25519PrivateKey.from_private_bytes(unb64(raw))
 
 
+def signing_key(srv) -> Ed25519PrivateKey:
+    """The link key, to sign with: opened in a read transaction, made in a write one only the
+    first time (S13.7.5.4: a call takes no write lock before it is checked)."""
+    with srv.db.read() as s:
+        raw = secret_repo.use(s, srv.keys.secrets, *SECRET)
+    if raw is not None:
+        return Ed25519PrivateKey.from_private_bytes(unb64(raw))
+    with srv.db.tx() as s:
+        return private_key(s, srv.keys.secrets)
+
+
+def own_public(srv) -> tuple[bytes, str]:
+    """The link key's public half and its fingerprint, held once worked out: a call is checked
+    against them without opening the private key."""
+    held = getattr(srv, "link_public", None)
+    if held is None:
+        public = raw_public(signing_key(srv).public_key())
+        held = srv.link_public = (public, fingerprint(public))
+    return held
+
+
 def public_of(s, secrets_key: bytes) -> bytes:
     return raw_public(private_key(s, secrets_key).public_key())
 

@@ -38,7 +38,7 @@ const SCREENS = /** @type {[string, string, string, string[]][]} */ ([
   ['transactions', 'Transactions', 'tx', ['account']],
   ['projections', 'Projections', 'trend', ['projection']],
   ['budgets', 'Budgets', 'target', ['budget']],
-  ['gifts', 'Gifts', 'gift', ['gift-plan']],
+  ['gifts', 'Gifts', 'gift', ['gift-plan', 'person']],
   ['giving', 'Giving', 'heart', ['giving-plan']],
   ['taxes', 'Taxes', 'tax', ['tax-book']],
   ['receipts', 'Receipts', 'receipt', ['receipts']],
@@ -294,7 +294,7 @@ function Screen({ id, rows, sub, subId, tab }) {
   }
   if (sub === 'projections') return html`<${Projections} rows=${of('projection')} />`;
   if (sub === 'giving') return html`<${Giving} rows=${of('giving-plan')} />`;
-  if (sub === 'gifts') return html`<${Gifts} rows=${of('gift-plan')} />`;
+  if (sub === 'gifts') return html`<${Gifts} rows=${of('gift-plan')} people=${of('person')} />`;
   if (sub === 'receipts') return html`<${Receipts} id=${id} />`;
   return html`<${Dashboard} base=${base} rows=${rows} />`;
 }
@@ -347,7 +347,7 @@ function Dashboard({ base, rows }) {
               ? 'tax-book'
               : r.kind === 'projection'
               ? 'projections'
-              : r.kind === 'gift-plan'
+              : r.kind === 'gift-plan' || r.kind === 'person'
               ? 'gifts'
               : 'giving'
           }${
@@ -369,6 +369,7 @@ const KIND = /** @type {Record<string, string>} */ ({
   portfolio: 'Portfolio',
   budget: 'Budget',
   'gift-plan': 'Gift plan',
+  person: 'Person',
   'giving-plan': 'Giving plan',
   'tax-book': 'Tax book',
   projection: 'Projection',
@@ -939,11 +940,40 @@ function Donations({ year }) {
   `;
 }
 
-/** @param {{ rows: any[] }} p */
-function Gifts({ rows }) {
+/** @param {{ rows: any[], people: any[] }} p */
+function Gifts({ rows, people }) {
   useGuide('linked-gifts');
-  return html`${rows.map((r) => html`<${PersonGifts} person=${r} />`)}`;
+  return html`${
+    people.length
+      ? html`<div class="card"><h3 data-help="people">People shared with you</h3>${
+        people.map((p) => html`<${SharedPerson} person=${p} />`)
+      }</div>`
+      : null
+  }${rows.map((r) => html`<${PersonGifts} person=${r} />`)}`;
 }
+
+/** A person shared on their own (S10.3): their name, birthday and relationships. */
+/** @param {{ person: any }} p */
+function SharedPerson({ person }) {
+  const res = useList(`/persons/${person.id}/relations`);
+  const rel = /** @type {any[]} */ (res.data);
+  const row = person.row || {};
+  const born = row.birthMonth
+    ? `born ${MONTHS[row.birthMonth - 1]} ${row.birthDay || ''}${
+      row.birthYear ? ', ' + row.birthYear : ''
+    }`
+    : '';
+  return html`
+    <div class="list-item">
+      <div class="grow">${person.name}<div class="small dim">${[
+        born,
+        ...(rel || []).map((x) => `${x.word} of ${x.name}`),
+      ].filter(Boolean).join(' · ') || 'shared by ' + person.ownerName}</div></div>
+    </div>
+  `;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** @param {{ person: any }} p */
 function PersonGifts({ person }) {

@@ -40,13 +40,32 @@ def connect(path: Path, key: str | None) -> sqlcipher3.Connection:
     return conn
 
 
-def make_engine(path: Path, key: str | None) -> Engine:
+class HeldKey:
+    """A database key a release overwrites: each new connection reads it, and once it is
+    overwritten none can open (S11.9.4)."""
+
+    def __init__(self, raw: bytes) -> None:
+        self._raw = bytearray(raw)
+        self.released = False
+
+    def text(self) -> str:
+        if self.released:
+            raise WrongKey("the copy was locked: its key is gone")
+        return f"x'{self._raw.hex()}'"
+
+    def release(self) -> None:
+        for i in range(len(self._raw)):
+            self._raw[i] = 0
+        self.released = True
+
+
+def make_engine(path: Path, key: str | HeldKey | None) -> Engine:
     # The URL names no file (the creator opens it with its key), which SQLAlchemy would take for
     # an in-memory database and give a SingletonThreadPool; that pool closes connections other
     # threads still use. A QueuePool keeps one connection per checkout.
     engine = create_engine(
         "sqlite://",
-        creator=lambda: connect(path, key),
+        creator=lambda: connect(path, key.text() if isinstance(key, HeldKey) else key),
         module=sqlcipher3,
         poolclass=QueuePool,
         # More connections than the server has worker threads (40), so a thread never waits

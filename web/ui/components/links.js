@@ -19,7 +19,8 @@ const KIND = /** @type {Record<string, string>} */ ({
   account: 'An account',
   portfolio: 'A portfolio',
   budget: 'A budget',
-  person: "A person's gifts",
+  'gift-plan': "A person's gifts",
+  person: 'A person',
   'giving-plan': 'A giving plan',
   'tax-book': 'A tax book',
   projection: 'A projection',
@@ -268,6 +269,19 @@ export function LinksSection() {
       <${FormError} error=${act.error} />
     </div>
     ${copies(live, values, res.reload, copyAct, release, armed, setArmed)}
+    ${live.filter((/** @type {any} */ l) => l.outgoing.length).map((/** @type {any} */ l) =>
+      html`<div class="card mt"><h3 data-help="outgoing">Shared from here with ${l.peerName}</h3>
+        <p class="small dim" style=${{ marginTop: '-6px' }}>What this server sends at each pull,
+          each to the people there it names, read only. Only the kinds and their owners show here.</p>
+        ${
+        l.outgoing.map((/** @type {any} */ x) =>
+          html`<div class="list-item"><div class="grow"><b>${KIND[x.kind] || 'An item'}</b>
+            <span class="small dim">of ${x.ownerName} since ${date(x.sharedAt)}${
+            x.includeReceipts ? ', with its receipts' : ''
+          }</span></div><span class="small">to ${x.names.join(', ')}</span></div>`
+        )
+      }</div>`
+    )}
     ${live.filter((/** @type {any} */ l) => l.incoming.length).map((/** @type {any} */ l) =>
       html`<div class="card mt"><h3 data-help="incoming">Shared from ${l.peerName}</h3>
         <p class="small dim" style=${{ marginTop: '-6px' }}>The owner there chooses who here sees

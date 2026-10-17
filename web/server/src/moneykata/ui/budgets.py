@@ -111,7 +111,7 @@ class TrendPoint(Model):
 
 class RecurringRow(Model):
     payee: str
-    accountId: str
+    accountId: str | None  # None for an account not shared with the viewer (S11.3.1)
     accountName: str
     every: str
     last: dt.date
@@ -415,12 +415,19 @@ def budget_recurring(budget_id: str, request: Request, c: Caller = Depends(calle
                 Transaction.date >= today - dt.timedelta(days=460),
             )
         ).all()
-        names = {a.id: a.name for a in s.scalars(select(Account).where(Account.id.in_(accts)))}
+        # An entry names its account only to someone the account is shared with too; the owner's
+        # other accounts are *an account not shared* (S7.1.1, S11.3.1).
+        reach = access.reach(s, c.id) if c.id != b.ownerId else None
+        names = {
+            a.id: a.name
+            for a in s.scalars(select(Account).where(Account.id.in_(accts)))
+            if reach is None or access.account_level(s, c.id, a, reach) is not None
+        }
         return [
             RecurringRow(
                 payee=x.payee,
-                accountId=x.accountId,
-                accountName=names.get(x.accountId, ""),
+                accountId=x.accountId if x.accountId in names else None,
+                accountName=names.get(x.accountId, "an account not shared"),
                 every=x.every,
                 last=x.last,
                 next=x.next,

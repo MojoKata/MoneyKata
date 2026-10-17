@@ -227,9 +227,10 @@ preparer.
       7. This is the AES-GCM-HKDF streaming construction (the one Tink uses), built on the
          `cryptography` library. It needs no further dependency.
    7. **Who can open what.** The owner's shares decide what each user sees (S11.3), and the
-      words decide whether the copy can be opened at all. Removing a share hides the item
-      from that user at once, with no re-keying. New words are needed only if they reach
-      someone who could also read this server's disk (S11.9.10).
+      words decide whether the copy can be opened at all. A share removed at the source
+      reaches the copy at its next exchange (S11.4), which then hides the item from that user,
+      with no re-keying. New words are needed only if they reach someone who could also read
+      this server's disk (S11.9.10).
    8. **Lost words.** **Reset copy** (Settings › Linked servers, admins) deletes the folder,
       makes a new copy key with new words, and pulls everything again from the source.
       Nothing is lost: the linked copy is only a copy, and the source keeps the data. The

@@ -26,7 +26,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from sqlalchemy import Engine
 
 from ..keys import phrase
-from ..store.db import make_engine
+from ..store.db import HeldKey, make_engine
 from . import copydb
 from .keys import b64
 
@@ -88,6 +88,7 @@ class Open:
     by: str  # the user who unlocked it
     at: dt.datetime
     used: float  # monotonic time of the last read for a person
+    db_key: HeldKey | None = None  # the database's key, overwritten at the release
 
 
 @dataclass
@@ -149,12 +150,10 @@ class Copies:
         path.mkdir(parents=True, exist_ok=True)
         (path / "receipts").mkdir(exist_ok=True)
         (path / "inbox").mkdir(exist_ok=True)
-        db_key = bytearray(_derive(key, DB_LABEL))
-        engine = make_engine(path / "shared.db", f"x'{db_key.hex()}'")
+        db_key = HeldKey(_derive(key, DB_LABEL))
+        engine = make_engine(path / "shared.db", db_key)
         copydb.upgrade(engine)
-        o = Open(bytearray(key), engine, user_id, at, self.clock())
-        for i in range(len(db_key)):
-            db_key[i] = 0
+        o = Open(bytearray(key), engine, user_id, at, self.clock(), db_key)
         self.open[link_id] = o
         return o
 
@@ -185,6 +184,8 @@ class Copies:
             if o is None:
                 return False
             o.engine.dispose()
+            if o.db_key is not None:
+                o.db_key.release()
             for i in range(len(o.key)):
                 o.key[i] = 0
             return True

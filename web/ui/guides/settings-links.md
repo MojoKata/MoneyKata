@@ -70,6 +70,12 @@ How long an unlocked copy's key stays in memory with nobody viewing it: 15 minut
 default) or 4 hours. Background work, such as a pull, doesn't count as viewing. A restart locks
 every copy.
 
+## Shared from here {#outgoing}
+
+What this server sends each linked server at its pulls: each item shared with people there, by
+its kind and its owner here, since when, and the people there it names. They see it read only,
+and only what changes travels after the first pull.
+
 ## Shared from a linked server {#incoming}
 
 What each linked server shares with people here, as an admin sees it: only its kind, its owner's

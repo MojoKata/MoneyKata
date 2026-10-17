@@ -34,10 +34,38 @@ router = APIRouter(prefix="/link/v1", include_in_schema=False, dependencies=[Dep
 
 
 def own(srv) -> tuple[object, str]:
-    """This server's link key and its fingerprint."""
-    with srv.db.tx() as s:
-        k = keys.private_key(s, srv.keys.secrets)
-    return k, keys.fingerprint(keys.raw_public(k.public_key()))
+    """This server's link key, to sign an answer, and its fingerprint."""
+    return keys.signing_key(srv), keys.own_public(srv)[1]
+
+
+# A call from a key with no link here is answered, signed, once its body is read, so a peer that
+# lost its link learns it (S11.6); one with a larger body is refused unsigned on its headers,
+# before the body is read (S13.7.5.4).
+UNKNOWN_BODY = 1024 * 1024
+
+
+def known(request: Request) -> bool:
+    """Whether the key a call names has a link here, looked up in a read transaction."""
+    srv = request.app.state.server
+    key = request.headers.get("mk-link-key", "")
+    if not key:
+        raise signing.Refused("unsigned", "A linked server's call must be signed.")
+    with srv.db.read() as s:
+        return (
+            s.scalar(select(Link.id).where(Link.peerKey == key, Link.deleted == false()))
+            is not None
+        )
+
+
+async def body_of(request: Request) -> bytes:
+    """The call's body, read only when its key is known or the body is small."""
+    try:
+        size = int(request.headers.get("content-length") or 0)
+    except ValueError:
+        size = UNKNOWN_BODY + 1
+    if not known(request) and size > UNKNOWN_BODY:
+        raise signing.Refused("not-linked", "This server has no link with yours.")
+    return await request.body()
 
 
 def answer(srv, data: dict, asked: signing.Asked, status: int = 200) -> Response:
@@ -56,7 +84,7 @@ def asked(request: Request) -> signing.Asked:
 async def verified(request: Request, states=("active",)) -> tuple[Link, signing.Caller, bytes]:
     """The link a signed call comes from, in one of these states; or a signed refusal."""
     srv = request.app.state.server
-    body = await request.body()
+    body = await body_of(request)
     spoken = request.headers.get("mk-link-protocol", str(PROTOCOL))
     if not spoken.isdigit() or int(spoken) not in SUPPORTED:
         raise signing.Refused(
@@ -64,7 +92,7 @@ async def verified(request: Request, states=("active",)) -> tuple[Link, signing.
             f"This server speaks link protocol {', '.join(map(str, SUPPORTED))}; "
             f"yours sent {spoken}. The older server needs updating.",
         )
-    _, fp = own(srv)
+    _, fp = keys.own_public(srv)
     path = request.url.path + (f"?{request.url.query}" if request.url.query else "")
     caller = signing.verify_request(
         request.headers, request.method, path, body, fp, srv.link_nonces
@@ -93,7 +121,8 @@ def refusal(request: Request, e: signing.Refused) -> Response:
     body = {"code": e.code, "message": e.message}
     if e.code == "protocol-unsupported":
         body["protocols"] = sorted(SUPPORTED)  # those it speaks, for the caller to name
-    call = asked(request)
+    # Signed to the call when its body was read; one refused on its headers alone can't be.
+    call = asked(request) if getattr(request, "_body", None) is not None else None
     if call is None:
         return JSONResponse(body, status_code=status)
     return answer(request.app.state.server, body, call, status)
@@ -104,12 +133,12 @@ def hello(request: Request):
     """Unsigned: the protocol this server speaks and its key's fingerprint, so a joining server
     can check it against the link code before sending anything."""
     srv = request.app.state.server
-    k, fp = own(srv)
+    public, fp = keys.own_public(srv)
     return {
         "protocol": PROTOCOL,
         "version": srv.version,
         "fingerprint": fp,
-        "key": keys.b64(keys.raw_public(k.public_key())),
+        "key": keys.b64(public),
     }
 
 
@@ -135,7 +164,7 @@ async def join(request: Request):
     srv = request.app.state.server
     body = await request.body()
     try:
-        _, fp = own(srv)
+        _, fp = keys.own_public(srv)
         path = request.url.path
         caller = signing.verify_request(
             request.headers, request.method, path, body, fp, srv.link_nonces
@@ -227,6 +256,11 @@ async def _deliver_file(request: Request) -> Response:
 
     srv = request.app.state.server
     fid = request.headers.get("mk-link-file", "")
+    try:
+        if not known(request):  # before a byte of the body
+            raise signing.Refused("not-linked", "This server has no link with yours.")
+    except signing.Refused as e:
+        return JSONResponse({"code": e.code, "message": e.message}, status_code=403)
     folder = srv.config.data_dir / "links-in"
     folder.mkdir(mode=0o700, exist_ok=True)
     tmp = folder / (secrets.token_hex(12) + ".tmp")
@@ -237,7 +271,7 @@ async def _deliver_file(request: Request) -> Response:
                 h.update(chunk)
                 f.write(chunk)
         digest = h.hexdigest()
-        _, fp = own(srv)
+        _, fp = keys.own_public(srv)
         try:
             caller = signing.verify_request(
                 request.headers, "POST", request.url.path, b"", fp, srv.link_nonces, digest=digest

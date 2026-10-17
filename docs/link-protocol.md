@@ -17,7 +17,8 @@ document is the protocol's statement; the code that speaks it is `web/server/src
    4.5). TLS keeps each message private on the way; the signatures (section 3) prove who wrote
    it; and the shared data itself is sealed to the receiving copy's key (section 4.4), so not
    even a proxy in front of the peer reads it.
-3. Everything but `hello` is signed, and every answer to a signed call is signed back.
+3. Everything but `hello` is signed, and every answer to a signed call is signed back, but for
+   the refusals §7 marks unsigned, which come before the answering server can sign to the call.
 4. Bodies are JSON, UTF-8, at most 20 MB. A caller waits 10 seconds to connect and 20 seconds
    for each read, and cuts off an answer past 20 MB.
 
@@ -182,8 +183,10 @@ when they are shown, and its type is found from the bytes then, never from the c
 1. The sender works each item out as each person it names would see it, with the code its own
    screens use (S11.3.1). An item's documents are its row in its list (`path` empty) and what
    its screens read, by API path: an account's detail, balance series, holdings and its
-   transactions; a portfolio's detail, holdings, returns and series; a budget's month and
-   trends; a tax book and its panels; a projection; a year's giving; a person's gifts. An
+   transactions; a portfolio's detail, holdings, returns and series; a budget's month, trends,
+   cash flow and recurring payments; a tax book and its panels; a projection; a year's giving;
+   a person's gifts; and a person shared on their own: their row (name and birthday) and
+   their relationships to those the viewer may see (`/persons/{id}/relations`). An
    account that isn't shared with the same people is named in a document only as *an account
    not shared* (S11.3.1).
 2. The sender keeps a hash of each document it last sent, so only what changed travels. A
@@ -236,10 +239,10 @@ shown (section 5.3).
 
 ## 7. Refusals
 
-A refusal is JSON `{code, message}` with HTTP 403 (or 426 for a protocol), signed as section 3
-says when the call carried a nonce. The `message` is for the caller's log: the caller tells its
-admins of a refusal in its own words, by its code, and never copies the message into an alert or
-an email (S13.7.9).
+A refusal is JSON `{code, message}`, with HTTP 403 unless the table says otherwise, signed to
+the call as section 3 says, unless the table says unsigned. The `message` is for the caller's
+log: the caller tells its admins of a refusal in its own words, by its code, and never copies the
+message into an alert or an email (S13.7.9).
 
 | Code | When |
 |---|---|
@@ -247,17 +250,18 @@ an email (S13.7.9).
 | `clock-skew` | the call's time is more than 60 seconds off |
 | `bad-signature` | the signature doesn't match the key, method, path, body, time, nonce and receiver |
 | `replayed` | the nonce was seen from that key in the last two minutes |
-| `not-linked` | the key has no link here |
+| `not-linked` | the key has no link here; unsigned when the call's body is over 1 MB, refused on its headers before the body is read (S13.7.5.4) |
 | `link-<state>` | the link exists here but its state doesn't allow the call |
-| `limit` | (429, with `Retry-After`) the 60 calls a minute of S13.7.5.4 |
+| `limit` | (429, unsigned, with `Retry-After`) the 60 calls a minute of S13.7.5.4; the caller tries again at its next exchange |
 | `locked` | (503, unsigned) the answering server is locked (S13.6); the caller tries again at its next exchange |
 | `not-shared` | a file no share to that link includes |
-| `protocol-unsupported` | the call's protocol isn't one this server answers |
+| `protocol-unsupported` | (426) the call's protocol isn't one this server answers; `protocols` lists those it does (section 5) |
 | `code-used` | a link code was used, expired or withdrawn |
 | `already-linked` | the two servers already have a link |
 | `change-refused` | a delivered change fails its signature check |
 
 A `link-ended` answer to a signed call ends the link on the calling side, as `end` would: its
 copy, the shares to it and its remote users go. A `not-linked` answer (a peer restored from an
-older backup, say) only marks the link broken and alerts admins (S11.6). A caller refuses an
-answer that isn't signed as `answer-unsigned`.
+older backup, say) only marks the link broken and alerts admins (S11.6). A caller takes an
+unsigned `limit` or `locked` as the table says, and refuses any other answer that isn't signed
+as `answer-unsigned`.

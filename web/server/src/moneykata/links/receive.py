@@ -83,6 +83,8 @@ def take(srv, link_id: str, change: dict, delivered: dict[str, str] | None = Non
             s,
             "link.pulled",
             actor=None,
+            subject_kind="link",
+            subject_id=link_id,
             for_admins=True,
             detail={
                 "count": len(change.get("items") or []) + len(change.get("removed") or []),

@@ -46,8 +46,8 @@ class CopyOut(Model):
 
 
 class Incoming(Model):
-    """A share from the linked server, as an admin here sees it (S11.3): its kind, owner, date
-    and who it names, never its name or figures."""
+    """A share crossing the link, either way, as an admin here sees it (S11.3, S11.7): its
+    kind, owner, date and who it names, never its name or figures."""
 
     kind: str
     ownerName: str
@@ -86,6 +86,7 @@ class LinkOut(Model):
     brokenAt: dt.datetime | None = None
     linkedCopy: CopyOut | None = None
     incoming: list[Incoming] = Field(default_factory=list)
+    outgoing: list[Incoming] = Field(default_factory=list)  # what this server sends (S11.7)
 
 
 class LinksView(Model):
@@ -157,6 +158,47 @@ def _incoming(s, link: Link) -> list[Incoming]:
     return out
 
 
+def _outgoing(s, link: Link) -> list[Incoming]:
+    """The shares this server sends over the link: one entry per item, with the people there
+    it names."""
+    from .. import sharing
+    from ..errors import Problem
+    from ..store.entities.sharing import Share
+
+    remote = {
+        u.id: u
+        for u in s.scalars(select(User).where(User.linkId == link.id, User.deleted == false()))
+    }
+    if not remote:
+        return []
+    out: dict[tuple[str, str], Incoming] = {}
+    for g in s.scalars(
+        select(Share)
+        .where(Share.userId.in_(list(remote)), Share.deleted == false())
+        .order_by(Share.createdAt)
+    ):
+        e = out.get((g.kind, g.itemId))
+        if e is None:
+            try:
+                obj = sharing.item(s, g.kind, g.itemId)
+            except Problem:
+                continue
+            if getattr(obj, "deleted", False):
+                continue
+            owner_id = getattr(obj, "ownerId", None)
+            owner = s.get(User, owner_id) if owner_id else None
+            e = out[(g.kind, g.itemId)] = Incoming(
+                kind=g.kind,
+                ownerName=owner.displayName if owner else "",
+                sharedAt=g.createdAt,
+                names=[],
+                includeReceipts=False,
+            )
+        e.names = sorted({*e.names, remote[g.userId].displayName})
+        e.includeReceipts = e.includeReceipts or g.includeReceipts
+    return list(out.values())
+
+
 def _out(s, link: Link, srv=None) -> LinkOut:
     users = s.scalars(
         select(User)
@@ -194,6 +236,7 @@ def _out(s, link: Link, srv=None) -> LinkOut:
         brokenAt=link.brokenAt,
         linkedCopy=_copy(s, srv, link) if srv is not None else None,
         incoming=_incoming(s, link),
+        outgoing=_outgoing(s, link),
     )
 
 

@@ -7505,7 +7505,7 @@
       },
       "Incoming": {
         "additionalProperties": false,
-        "description": "A share from the linked server, as an admin here sees it (S11.3): its kind, owner, date\nand who it names, never its name or figures.",
+        "description": "A share crossing the link, either way, as an admin here sees it (S11.3, S11.7): its\nkind, owner, date and who it names, never its name or figures.",
         "properties": {
           "includeReceipts": {
             "title": "Includereceipts",
@@ -17218,8 +17218,15 @@
         "additionalProperties": false,
         "properties": {
           "accountId": {
-            "title": "Accountid",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountid"
           },
           "accountName": {
             "title": "Accountname",
@@ -24000,6 +24007,13 @@
                 "type": "null"
               }
             ]
+          },
+          "outgoing": {
+            "items": {
+              "$ref": "#/components/schemas/Incoming"
+            },
+            "title": "Outgoing",
+            "type": "array"
           },
           "pausedUntil": {
             "anyOf": [

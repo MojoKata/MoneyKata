@@ -135,20 +135,23 @@ def level(s: Session, user_id: str, p: Person, r: access.Reach | None = None) ->
     if p.deleted:
         return None
     u = s.get(User, user_id)
-    if u is None or u.linkId is not None:
+    if u is None:
         return None
-    if p.id == u.personId or is_admin(s, user_id):
-        return "owner"
-    # Once they are a user here, a person is changed by that user (and admins) alone; until
-    # then, and for a linked server's user, who never signs in here, by whoever added them
-    # (S10.10.2).
-    mine = user_of(s, p.id)
-    if mine is not None and mine.id == user_id:
-        return "owner"
-    if (mine is None or mine.linkId is not None) and p.ownerId == user_id:
-        return "owner"
-    if not p.private:
-        return "read"
+    # A linked server's user sees a person only through a share, of them or of a gift plan
+    # for them, read only (S10.3.3).
+    if u.linkId is None:
+        if p.id == u.personId or is_admin(s, user_id):
+            return "owner"
+        # Once they are a user here, a person is changed by that user (and admins) alone;
+        # until then, and for a linked server's user, who never signs in here, by whoever
+        # added them (S10.10.2).
+        mine = user_of(s, p.id)
+        if mine is not None and mine.id == user_id:
+            return "owner"
+        if (mine is None or mine.linkId is not None) and p.ownerId == user_id:
+            return "owner"
+        if not p.private:
+            return "read"
     r = r or access.reach(s, user_id)
     if r.levels.get(("person", p.id)):
         return "read"

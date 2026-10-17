@@ -66,6 +66,8 @@ class Server:
     link_unknown: ratelimit.Window = field(default_factory=lambda: ratelimit.Window(60, 60))
     # The unlocked linked copies, in memory only (S11.9.3).
     copies: Copies = field(default_factory=Copies)
+    # This server's link key's public half and fingerprint, once worked out (S11.1).
+    link_public: tuple[bytes, str] | None = None
 
     def __post_init__(self) -> None:
         self.jobs = Jobs(

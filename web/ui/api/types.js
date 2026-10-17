@@ -1290,8 +1290,8 @@
  */
 
 /**
- * A share from the linked server, as an admin here sees it (S11.3): its kind, owner, date
- * and who it names, never its name or figures.
+ * A share crossing the link, either way, as an admin here sees it (S11.3, S11.7): its
+ * kind, owner, date and who it names, never its name or figures.
  * @typedef {Object} Incoming
  * @property {string} kind
  * @property {string} ownerName
@@ -2933,7 +2933,7 @@
 /**
  * @typedef {Object} RecurringRow
  * @property {string} payee
- * @property {string} accountId
+ * @property {(string | null)} accountId
  * @property {string} accountName
  * @property {string} every
  * @property {string} last
@@ -4179,6 +4179,7 @@
  * @property {(string | null)} [brokenAt]
  * @property {(moneykata__ui__links__CopyOut | null)} [linkedCopy]
  * @property {Array<Incoming>} [incoming]
+ * @property {Array<Incoming>} [outgoing]
  */
 
 /**

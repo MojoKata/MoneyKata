@@ -21,7 +21,17 @@ from ..store.entities.sharing import Share
 from ..store.entities.users import User
 from . import changes, keys
 
-KINDS = ("account", "portfolio", "budget", "gift-plan", "giving-plan", "tax-book", "projection")
+# The eight shareable kinds (S10.3), each of which may go to named people on a linked server.
+KINDS = (
+    "account",
+    "portfolio",
+    "budget",
+    "gift-plan",
+    "giving-plan",
+    "tax-book",
+    "projection",
+    "person",
+)
 
 
 @dataclass
@@ -92,7 +102,7 @@ def shared_items(srv, link_id: str) -> tuple[dict[str, Item], dict[str, User]]:
                 from ..store.entities.education import Person
 
                 name = s.get(Person, obj.personId).name
-            owner = s.get(User, obj.ownerId)
+            owner = s.get(User, obj.ownerId) if obj.ownerId else None
             it = out.setdefault(
                 g.itemId,
                 Item(
@@ -170,6 +180,12 @@ def _paths(srv, it: Item) -> list[tuple[str, callable]]:
             (f"/giving?year={year}", lambda c: giving.get_giving(r, year, c)),
             (f"/giving/donations?year={year}", lambda c: giving.list_donations(r, year, c)),
         ]
+    if it.kind == "person":
+        # A private person: their name and birthday (the row) and their relationships, to
+        # those the viewer may see (S10.3, S10.10.2).
+        from ..ui import people as people_ui
+
+        return [(f"/persons/{i}/relations", lambda c: people_ui.person_relations(i, r, None, c))]
     if it.kind == "gift-plan":
         from ..store.entities.education import GiftPlan
 
@@ -186,11 +202,13 @@ ROWS = {
     "tax-book": "/tax-books",
     "projection": "/projections",
     "gift-plan": "/people",
+    "person": "/persons",
 }
 
 
 def _rows(srv, kind: str, c) -> dict[str, dict]:
     from ..ui import accounts, budgets, gifts, portfolios, projections, taxes
+    from ..ui import people as people_ui
 
     r = _req(srv)
     fn = {
@@ -200,6 +218,7 @@ def _rows(srv, kind: str, c) -> dict[str, dict]:
         "tax-book": lambda: taxes.list_books(r, c),
         "projection": lambda: projections.list_projections(r, c),
         "gift-plan": lambda: gifts.list_people(r, c),
+        "person": lambda: people_ui.list_persons(r, c),
     }.get(kind)
     if fn is None:
         return {}
