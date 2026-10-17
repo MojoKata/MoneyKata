@@ -1,0 +1,40 @@
+# Receipts
+
+How receipts are kept: encrypted in the data directory, each file once however often it is uploaded.
+Backups hold the database alone; the host's own backup of the data directory keeps the files.
+
+## Largest file (MB) {#receipt-max-mb}
+
+The largest receipt that can be uploaded, 25 MB by default. The file types are PDF, JPEG, PNG, WebP
+and HEIC, checked from each file's content.
+
+## Read receipts
+
+MoneyKata reads each receipt's date, total and merchant on this server, with RapidOCR, and suggests
+the transaction it belongs to. Nothing leaves the server, and no outside service or download is
+involved. A PDF with text in it is read directly; a photo or scan is read by OCR. Turn it off on a
+host too small to run it: receipts still upload and can be filled in by hand.
+
+## Jobs at a time {#receipt-read-jobs}
+
+How many receipts are read at once, each in its own process limited to 2 threads, a lower priority,
+1.5 GB of memory and 60 seconds a receipt. A batch of uploads works through the queue.
+
+## Reading
+
+The queue: receipts waiting, read, and those that couldn't be read, with the reason on each.
+
+## Without its file sandbox {#file-sandbox}
+
+Every file someone brings (a receipt, a statement, a photo, an OFX or CSV import) is opened only
+by the reader's own process, never by the server, and that process gives up what it doesn't need
+before it reads: it can open no network connection, and on Linux 5.13 or later (Landlock) it
+can't open the data directory either. It uses Landlock wherever the host offers it. On a host
+that doesn't (an older kernel, or a container that doesn't allow it), this section says the
+reader runs without that file sandbox, and admins have an alert while it lasts; the reader still
+has no network and still runs apart from the server.
+
+## Re-read all receipts
+
+After an update with new models: every receipt is read again. Only empty fields, and those still
+holding what was read before, are replaced; anything a person typed stays.

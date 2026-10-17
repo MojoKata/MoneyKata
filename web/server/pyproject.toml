@@ -1,0 +1,74 @@
+[project]
+name = "moneykata"
+dynamic = ["version"]
+description = "A self-hosted personal finance server for a household"
+license = "GPL-3.0-only"
+requires-python = "==3.14.*"
+dependencies = [
+    "fastapi",
+    "pydantic",
+    "hypercorn",
+    "sqlalchemy",
+    "alembic",
+    "argon2-cffi",
+    "cryptography",
+    "httpx",
+    "sqlcipher3",
+    "ofxtools",
+    "pillow",
+    "numpy",
+    "python-multipart",
+    "segno>=1.6.6",
+    "pypdfium2>=5.14.0",
+    "pi-heif>=1.4.0",
+    "rapidocr>=3.10.0",
+    "onnxruntime>=1.31.0",
+]
+
+[project.scripts]
+moneykata = "moneykata.main:main"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+    "playwright",
+    "sigstore>=4.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "../VERSION"
+pattern = "(?P<version>.+)"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/moneykata"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["S101"]
+
+allowed-confusables = ["›", "…", "’", "−", "–", "×"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", "fastapi.File", "fastapi.Form"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S"]
+"src/moneykata/store/alembic/versions/*" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -m 'not audit'"
+markers = [
+    "browser: drives headless Chromium through Playwright",
+    "audit: the no-network run of web/dev.sh audit (S17.2.1)",
+]
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient` is deprecated"]

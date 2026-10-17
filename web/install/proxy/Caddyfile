@@ -1,0 +1,7 @@
+# Caddy in front of MoneyKata in proxy mode. Caddy sets X-Forwarded-For and -Proto itself;
+# list Caddy's address in trusted_proxies in moneykata.toml.
+money.example.lan {
+	reverse_proxy moneykata:37373 {
+		flush_interval -1 # the live stream (/ui/api/events) must not be buffered
+	}
+}

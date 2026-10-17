@@ -1,0 +1,12 @@
+// The Money market account type (requirements S1.1): its fields, icon and help part.
+/** @type {import('./index.js').AccountType} */
+export default {
+  type: 'money-market',
+  label: 'Money market',
+  group: 'banking',
+  icon: 'bank',
+  hint: 'Bank · interest',
+  investing: false,
+  reconcilable: true,
+  contributions: false,
+};

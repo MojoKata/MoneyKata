@@ -1,0 +1,92 @@
+{
+ "quotes/TSLA": {
+  "timestamp": "2026-10-14 21:03:52",
+  "data": {
+   "symbol": "TSLA",
+   "security_type": "stock",
+   "exchange_id": 2,
+   "current_price": 366.78,
+   "price_change": -8.07,
+   "price_change_percent": -2.1507,
+   "bid": 366.78,
+   "ask": 367.1,
+   "bid_size": 480,
+   "ask_size": 80,
+   "open": 371.13,
+   "high": 371.39,
+   "low": 363.82,
+   "close": 367.16,
+   "prev_day_close": 375.23,
+   "volume": 30391688,
+   "iv30": 43.719,
+   "iv30_change": 1.31,
+   "iv30_change_percent": 3.089,
+   "seqno": 24437098032,
+   "last_trade_time": "2026-10-14T15:59:59",
+   "tick": "down"
+  },
+  "symbol": "TSLA"
+ },
+ "charts/historical/TSLA": {
+  "timestamp": "11:19:45",
+  "data": [
+   {
+    "date": "2026-10-05",
+    "volume": 42232669,
+    "open": 369.03,
+    "high": 381.59,
+    "low": 364.91,
+    "close": 378.73
+   },
+   {
+    "date": "2026-10-06",
+    "volume": 27735438,
+    "open": 381.9,
+    "high": 383.33,
+    "low": 378.52,
+    "close": 380.68
+   },
+   {
+    "date": "2026-10-07",
+    "volume": 25594563,
+    "open": 378.3,
+    "high": 382.35,
+    "low": 374.43,
+    "close": 377.81
+   },
+   {
+    "date": "2026-10-08",
+    "volume": 28394945,
+    "open": 374.47,
+    "high": 375.96,
+    "low": 368.03,
+    "close": 375.0
+   },
+   {
+    "date": "2026-10-09",
+    "volume": 38952426,
+    "open": 382.2,
+    "high": 388.56,
+    "low": 379.71,
+    "close": 382.7
+   },
+   {
+    "date": "2026-10-12",
+    "volume": 20244285,
+    "open": 382.61,
+    "high": 382.7,
+    "low": 377.58,
+    "close": 378.03
+   },
+   {
+    "date": "2026-10-13",
+    "volume": 18393043,
+    "open": 372.4,
+    "high": 377.05,
+    "low": 371.3,
+    "close": 375.23
+   }
+  ],
+  "symbol": "TSLA"
+ }
+}

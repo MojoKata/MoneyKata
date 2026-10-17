@@ -1,0 +1,260 @@
+"""529 plans (requirements S1.8): the plan and its beneficiary, contributions totalled per
+contributor per year against the annual gift exclusion (a five-year election spread over five),
+withdrawals against qualified expenses per year, and how much could roll over to the
+beneficiary's Roth IRA."""
+
+import datetime as dt
+from collections import defaultdict
+from dataclasses import dataclass
+from decimal import Decimal
+
+from sqlalchemy import false, select
+from sqlalchemy.orm import Session
+
+from ..projections import taxtables
+from ..store.entities.accounts import Account, Transaction
+from ..store.entities.education import Contribution, EducationPlan, Person, QualifiedExpense
+from ..store.entities.users import User
+
+ZERO = Decimal(0)
+KINDS = {
+    "tuition": "Tuition and fees",
+    "room-board": "Room and board",
+    "books": "Books and supplies",
+    "computer": "A computer and internet",
+    "k12": "K-12 tuition",
+    "apprenticeship": "Apprenticeship",
+    "student-loan": "Student-loan repayment",
+}
+# What happens inside the plan rather than money put in or taken out.
+NOT_MONEY_IN_OR_OUT = (
+    "interest",
+    "dividend",
+    "capital-gain",
+    "return-of-capital",
+    "buy",
+    "sell",
+    "reinvest",
+    "split",
+    "fee",
+    "adjustment",
+)
+ROTH_AFTER_YEARS = 15  # open this long before a rollover
+ROTH_RECENT_YEARS = 5  # contributions this recent can't roll over
+
+
+def plan_of(s: Session, account: Account) -> EducationPlan | None:
+    return s.scalars(
+        select(EducationPlan).where(
+            EducationPlan.accountId == account.id, EducationPlan.deleted == false()
+        )
+    ).first()
+
+
+@dataclass
+class Beneficiary:
+    kind: str  # person
+    id: str
+    name: str
+    birthYear: int | None
+    deleted: bool = False  # kept by name (schema.md §6.4)
+
+
+def beneficiary(s: Session, plan: EducationPlan | None) -> Beneficiary | None:
+    if plan is None or not plan.beneficiaryId:
+        return None
+    p = s.get(Person, plan.beneficiaryId)
+    if p is None:
+        return None
+    return Beneficiary("person", p.id, p.name, p.birthYear, p.deleted)
+
+
+def _years(day: dt.date, n: int) -> dt.date:
+    try:
+        return day.replace(year=day.year + n)
+    except ValueError:  # 29 February
+        return day.replace(year=day.year + n, day=28)
+
+
+@dataclass
+class ContributionRow:
+    transactionId: str
+    date: dt.date
+    amount: Decimal
+    contributor: str  # owner or person:<id>
+    name: str
+    relationship: str | None
+    fiveYear: bool
+
+
+def contributions(s: Session, account: Account) -> list[ContributionRow]:
+    """Every deposit into the 529, with who it came from (the owner unless recorded)."""
+    owner = s.get(User, account.ownerId)
+    txns = s.scalars(
+        select(Transaction)
+        .where(
+            Transaction.accountId == account.id,
+            Transaction.deleted == false(),
+            Transaction.amount > 0,
+            Transaction.kind.not_in(NOT_MONEY_IN_OR_OUT),
+            Transaction.instrumentId.is_(None),
+        )
+        .order_by(Transaction.date)
+    ).all()
+    tags = {
+        c.transactionId: c
+        for c in s.scalars(
+            select(Contribution).where(
+                Contribution.transactionId.in_([t.id for t in txns]),
+                Contribution.deleted == false(),
+            )
+        )
+    }
+    out = []
+    words = None
+    for t in txns:
+        c = tags.get(t.id)
+        key, name, rel = "owner", owner.displayName, "owner"
+        if c is not None and c.fromPersonId:
+            p = s.get(Person, c.fromPersonId)
+            if words is None:
+                from ..people import tree
+
+                words = tree.relation_to(s, owner.personId)
+            found = words.get(p.id)
+            key, name, rel = f"person:{p.id}", p.name, found.word if found else None
+        out.append(ContributionRow(t.id, t.date, t.amount, key, name, rel, bool(c and c.fiveYear)))
+    return out
+
+
+@dataclass
+class GiftYear:
+    contributor: str
+    name: str
+    year: int
+    counted: Decimal  # what counts against this year's exclusion
+    exclusion: Decimal
+    over: bool  # above the exclusion: a gift-tax return (Form 709) is needed
+    fromElection: int | None  # the year of the five-year election this comes from
+
+
+def gift_years(s: Session, rows: list[ContributionRow]) -> list[GiftYear]:
+    """Per contributor per year, what counts against the annual gift exclusion: a five-year
+    election counts a fifth in its year and each of the next four (S1.8.2). The owner's own
+    deposits are not gifts to the beneficiary's account owner, but are to the beneficiary,
+    so they count too."""
+    counted: dict[tuple[str, int], Decimal] = defaultdict(lambda: ZERO)
+    names: dict[str, str] = {}
+    election: dict[tuple[str, int], int] = {}
+    for r in rows:
+        names[r.contributor] = r.name
+        if r.fiveYear:
+            for k in range(5):
+                counted[(r.contributor, r.date.year + k)] += (r.amount / 5).quantize(
+                    Decimal("0.01")
+                )
+                election[(r.contributor, r.date.year + k)] = r.date.year
+        else:
+            counted[(r.contributor, r.date.year)] += r.amount
+    out = []
+    for (who, year), amount in sorted(counted.items(), key=lambda x: (-x[0][1], x[0][0])):
+        limit = Decimal(str(taxtables.figures(s, year)["giftExclusion"]))
+        out.append(
+            GiftYear(
+                who, names[who], year, amount, limit, amount > limit, election.get((who, year))
+            )
+        )
+    return out
+
+
+@dataclass
+class WithdrawalYear:
+    year: int
+    distributions: Decimal  # taken out (Form 1099-Q)
+    expenses: Decimal  # qualified expenses
+    notCovered: Decimal  # distributions beyond the expenses: their earnings may be taxable
+
+
+def withdrawals(s: Session, account: Account) -> list[WithdrawalYear]:
+    taken: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    for t in s.scalars(
+        select(Transaction).where(
+            Transaction.accountId == account.id,
+            Transaction.deleted == false(),
+            Transaction.amount < 0,
+            Transaction.kind.not_in(NOT_MONEY_IN_OR_OUT),
+            Transaction.instrumentId.is_(None),
+        )
+    ):
+        taken[t.date.year] += -t.amount
+    spent: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    for e in expenses(s, account):
+        spent[e.year] += e.amount
+    years = sorted(set(taken) | set(spent), reverse=True)
+    return [WithdrawalYear(y, taken[y], spent[y], max(taken[y] - spent[y], ZERO)) for y in years]
+
+
+def expenses(s: Session, account: Account) -> list[QualifiedExpense]:
+    return list(
+        s.scalars(
+            select(QualifiedExpense)
+            .where(QualifiedExpense.accountId == account.id, QualifiedExpense.deleted == false())
+            .order_by(QualifiedExpense.date.desc())
+        )
+    )
+
+
+@dataclass
+class Rollover:
+    possibleFrom: dt.date | None  # 15 years after opening
+    limit: Decimal  # lifetime, from the tax tables
+    used: Decimal  # rolled over already
+    eligible: Decimal  # contributions made over five years ago, less what was used
+    available: Decimal  # what could still roll over, once possible
+
+
+def rollover(
+    s: Session,
+    account: Account,
+    plan: EducationPlan | None,
+    rows: list[ContributionRow],
+    today: dt.date,
+) -> Rollover:
+    limit = Decimal(str(taxtables.figures(s, today.year)["rothFrom529"]))
+    used = ZERO
+    for t in s.scalars(
+        select(Transaction).where(
+            Transaction.accountId == account.id,
+            Transaction.deleted == false(),
+            Transaction.transferId.is_not(None),
+            Transaction.amount < 0,
+        )
+    ):
+        other = s.get(Transaction, t.transferId)
+        a = s.get(Account, other.accountId) if other is not None else None
+        if a is not None and a.type == "roth-ira":
+            used += -t.amount
+    cutoff = _years(today, -ROTH_RECENT_YEARS)
+    old = sum((r.amount for r in rows if r.date <= cutoff), ZERO)
+    eligible = max(old - used, ZERO)
+    opened = plan.openedOn if plan is not None else None
+    return Rollover(
+        possibleFrom=_years(opened, ROTH_AFTER_YEARS) if opened else None,
+        limit=limit,
+        used=used,
+        eligible=eligible,
+        available=min(max(limit - used, ZERO), eligible),
+    )
+
+
+def accounts_for(s: Session, beneficiary_id: str, account_ids: list[str]) -> list[str]:
+    """Of these accounts, the 529s for this beneficiary."""
+    return list(
+        s.scalars(
+            select(EducationPlan.accountId).where(
+                EducationPlan.beneficiaryId == beneficiary_id,
+                EducationPlan.deleted == false(),
+                EducationPlan.accountId.in_(account_ids),
+            )
+        )
+    )

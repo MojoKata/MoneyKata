@@ -1,0 +1,492 @@
+"""What every request passes through (requirements S13.7): the client's real address, the
+response headers, the Origin check on changes, and the size of request bodies.
+
+Plain ASGI middleware, so streaming responses (the live stream, receipt files) pass straight
+through.
+"""
+
+import hashlib
+import ipaddress
+import json
+import logging
+import time
+from collections.abc import Callable
+
+from .errors import new_error_id
+
+log = logging.getLogger("moneykata.access")
+
+APP_CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; "
+    "connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; "
+    "form-action 'self'; frame-ancestors 'none'"
+)
+
+COMMON_HEADERS = [
+    (b"x-content-type-options", b"nosniff"),
+    (b"referrer-policy", b"no-referrer"),
+    (b"cross-origin-opener-policy", b"same-origin"),
+    (b"cross-origin-resource-policy", b"same-origin"),
+    (b"permissions-policy", b"camera=(), microphone=(), geolocation=(), payment=()"),
+]
+HSTS = (b"strict-transport-security", b"max-age=31536000")
+
+SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+JSON_LIMIT = 1024 * 1024
+# A linked server's change (S11.4) may carry an item's transactions: the ceiling of an answer.
+LINK_LIMIT = 20 * 1024 * 1024
+
+
+def _send_problem(status: int, code: str, detail: str, headers=()):
+    body = json.dumps(
+        {
+            "type": f"https://moneykata.invalid/problems/{code}",
+            "title": {403: "Not allowed", 413: "Too large", 503: "Not available"}.get(
+                status, "Error"
+            ),
+            "status": status,
+            "detail": detail,
+            "code": code,
+            "errorId": new_error_id(),
+            "errors": [],
+        }
+    ).encode()
+
+    async def respond(send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": status,
+                "headers": [
+                    (b"content-type", b"application/problem+json"),
+                    (b"content-length", str(len(body)).encode()),
+                    *headers,
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
+
+    return respond
+
+
+class ClientAddress:
+    """In proxy mode, believe X-Forwarded-For and -Proto only from the configured proxies; in
+    tls mode, ignore them (S13.3)."""
+
+    def __init__(self, app, mode: str, trusted: tuple):
+        self.app = app
+        self.mode = mode
+        self.trusted = trusted
+
+    def _is_trusted(self, host: str) -> bool:
+        try:
+            addr = ipaddress.ip_address(host)
+        except ValueError:
+            return False
+        return any(addr in net for net in self.trusted)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket") and self.mode == "proxy" and scope.get("client"):
+            peer = scope["client"][0]
+            if self._is_trusted(peer):
+                headers = {k.lower(): v.decode("latin-1") for k, v in scope["headers"]}
+                chain = [
+                    h.strip() for h in headers.get(b"x-forwarded-for", "").split(",") if h.strip()
+                ]
+                client = peer
+                for hop in reversed(chain):
+                    client = hop
+                    if not self._is_trusted(hop):
+                        break
+                proto = headers.get(b"x-forwarded-proto", "").split(",")[0].strip()
+                scope = dict(scope)
+                scope["client"] = (client, 0)
+                if proto in ("http", "https"):
+                    scope["scheme"] = proto
+                forwarded_host = headers.get(b"x-forwarded-host", "").split(",")[0].strip()
+                if forwarded_host:
+                    scope["headers"] = [(k, v) for k, v in scope["headers"] if k.lower() != b"host"]
+                    scope["headers"].append((b"host", forwarded_host.encode("latin-1")))
+        await self.app(scope, receive, send)
+
+
+class SecurityHeaders:
+    """The headers of S13.7.7 on every response. A route that needs another CSP (the app's
+    page with its nonce, the demo, a receipt file) sets its own, which is kept."""
+
+    def __init__(self, app, tls: bool):
+        self.app = app
+        self.tls = tls
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def wrapped(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                names = {k.lower() for k, _ in headers}
+                if b"content-security-policy" not in names:
+                    headers.append((b"content-security-policy", APP_CSP.encode()))
+                headers.extend(h for h in COMMON_HEADERS if h[0] not in names)
+                if self.tls:
+                    headers.append(HSTS)
+                message = dict(message, headers=headers)
+            await send(message)
+
+        await self.app(scope, receive, wrapped)
+
+
+class AddressRanges:
+    """Only the address ranges Settings › Network allows reach each path (S16.14): the app
+    (`/ui`, and `/mcp` with it), `/link` and `/connector`; `/healthz` and `/demo` answer any
+    address. An address outside answers 404, as for what doesn't exist. The ranges are read
+    for each request, so a change applies to the next one (R3.7)."""
+
+    PATHS = (("/ui", "app"), ("/mcp", "app"), ("/link", "link"), ("/connector", "connector"))
+
+    def __init__(self, app, ranges: Callable[[], dict[str, list[str]]]):
+        self.app = app
+        self.ranges = ranges
+
+    @staticmethod
+    def _allowed(addr: str, ranges: list[str]) -> bool:
+        if not ranges:
+            return True
+        try:
+            ip = ipaddress.ip_address(addr)
+        except ValueError:
+            return False
+        if ip.version == 6 and ip.ipv4_mapped:
+            ip = ip.ipv4_mapped
+        return any(ip in ipaddress.ip_network(r) for r in ranges)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket") and scope.get("client"):
+            path = scope["path"]
+            which = next((w for p, w in self.PATHS if path == p or path.startswith(p + "/")), None)
+            if which is not None:
+                ranges = self.ranges().get(which) or []
+                if not self._allowed(scope["client"][0], ranges):
+                    await _send_problem(404, "not-found", "Not found.")(send)
+                    return
+        await self.app(scope, receive, send)
+
+
+class OriginCheck:
+    """A request that changes something must come from the app's own origin (S13.7.4)."""
+
+    def __init__(self, app, prefixes=("/ui/",)):
+        self.app = app
+        self.prefixes = prefixes
+
+    async def __call__(self, scope, receive, send):
+        if (
+            scope["type"] == "http"
+            and scope["method"] not in SAFE_METHODS
+            and scope["path"].startswith(self.prefixes)
+        ):
+            headers = {k.lower(): v.decode("latin-1") for k, v in scope["headers"]}
+            origin = headers.get(b"origin")
+            host = headers.get(b"host", "")
+            expected = f"{scope.get('scheme', 'http')}://{host}"
+            if not origin or origin != expected:
+                await _send_problem(
+                    403, "origin-refused", "This request did not come from MoneyKata's own page."
+                )(send)
+                return
+        await self.app(scope, receive, send)
+
+
+IN_FLIGHT = 100 * 1024 * 1024  # uploads arriving at once, per user (S13.7.6)
+
+
+class BodyLimit:
+    """JSON bodies up to 1 MB; uploads (multipart) up to the size Settings allow, and at most
+    100 MB of them arriving at once for one caller (S13.7.6): a session, a linked server's key
+    or the connector's, else an address."""
+
+    def __init__(self, app, upload_limit: Callable[[], int]):
+        self.app = app
+        self.upload_limit = upload_limit
+        self.in_flight: dict[str, int] = {}
+
+    @staticmethod
+    def _caller(scope, headers: dict) -> str:
+        from http.cookies import SimpleCookie
+
+        from .auth.sessions import COOKIE
+
+        cookie = SimpleCookie()
+        try:
+            cookie.load(headers.get(b"cookie", ""))
+        except Exception:  # a malformed cookie is no session
+            cookie = SimpleCookie()
+        if COOKIE in cookie:
+            return "session:" + hashlib.sha256(cookie[COOKIE].value.encode()).hexdigest()
+        for h in (b"mk-link-key", b"mk-conn-key"):
+            if headers.get(h):
+                return "key:" + headers[h]
+        client = scope.get("client")
+        return "address:" + (client[0] if client else "-")
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope["method"] in SAFE_METHODS:
+            await self.app(scope, receive, send)
+            return
+        headers = {k.lower(): v.decode("latin-1") for k, v in scope["headers"]}
+        ctype = headers.get(b"content-type", "")
+        to_link = scope["path"].startswith("/link/")
+        limit = (
+            self.upload_limit()
+            # A receipt a linked server delivers, sealed (link-protocol.md §4.3).
+            if ctype.startswith("multipart/")
+            or (to_link and ctype.startswith("application/octet-stream"))
+            else LINK_LIMIT
+            if to_link
+            else JSON_LIMIT
+        )
+        too_large = _send_problem(
+            413, "too-large", f"The request is larger than {limit // (1024 * 1024)} MB."
+        )
+        length = headers.get(b"content-length")
+        if length and length.isdigit() and int(length) > limit:
+            await too_large(send)
+            return
+        upload = limit != JSON_LIMIT and limit != LINK_LIMIT
+        who = self._caller(scope, headers) if upload else ""
+        # What it says it carries is held for it before the app runs, so a caller past the
+        # cap is answered at once; a body without a length is counted as it arrives.
+        declared = int(length) if upload and length and length.isdigit() else 0
+        if upload and self.in_flight.get(who, 0) + declared > IN_FLIGHT:
+            await _send_problem(
+                429,
+                "uploads-in-flight",
+                "More than 100 MB of uploads are arriving at once. Wait for them to finish.",
+                [(b"retry-after", b"10")],
+            )(send)
+            return
+        if upload:
+            self.in_flight[who] = self.in_flight.get(who, 0) + declared
+        seen = 0
+        started = False
+
+        async def counted():
+            nonlocal seen
+            message = await receive()
+            if message["type"] == "http.request":
+                n = len(message.get("body", b""))
+                seen += n
+                if seen > limit:
+                    raise _TooLarge
+                if upload and seen > declared:
+                    self.in_flight[who] = self.in_flight.get(who, 0) + min(n, seen - declared)
+                    if self.in_flight[who] > IN_FLIGHT:
+                        raise _Busy
+            return message
+
+        async def tracking(message):
+            nonlocal started
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, counted, tracking)
+        except _TooLarge:
+            if not started:
+                await too_large(send)
+        except _Busy:
+            if not started:
+                await _send_problem(
+                    429,
+                    "uploads-in-flight",
+                    "More than 100 MB of uploads are arriving at once. Wait for them to finish.",
+                    [(b"retry-after", b"10")],
+                )(send)
+        finally:
+            if upload:
+                left = self.in_flight.get(who, 0) - max(seen, declared)
+                if left > 0:
+                    self.in_flight[who] = left
+                else:
+                    self.in_flight.pop(who, None)
+
+
+class _TooLarge(Exception):
+    pass
+
+
+class _Busy(Exception):
+    pass
+
+
+class AccessLog:
+    """One line per request: method, path, status, time. Never a query string, body or
+    cookie, which could carry names or amounts (S13.7.9)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        start = time.monotonic()
+        status = 0
+
+        async def wrapped(message):
+            nonlocal status
+            if message["type"] == "http.response.start":
+                status = message["status"]
+            await send(message)
+
+        try:
+            await self.app(scope, receive, wrapped)
+        finally:
+            user = scope.get("state", {}).get("user_id", "-")
+            log.info(
+                "%s %s %s %s %.0fms",
+                scope["method"],
+                scope["path"],
+                status,
+                user,
+                (time.monotonic() - start) * 1000,
+            )
+
+
+class SessionCookie:
+    """Writes the session cookie a route or dependency asked for (request.state.set_cookie):
+    HttpOnly, Secure, SameSite=Strict, Path=/ui (S13.7.1). An empty value clears it."""
+
+    def __init__(self, app, max_age: Callable[[], int]):
+        self.app = app
+        self.max_age = max_age
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def wrapped(message):
+            if message["type"] == "http.response.start":
+                token = scope.get("state", {}).get("set_cookie")
+                if token is not None:
+                    if token:
+                        cookie = (
+                            f"mk_session={token}; Path=/ui; Max-Age={self.max_age()}; "
+                            "HttpOnly; Secure; SameSite=Strict"
+                        )
+                    else:
+                        cookie = (
+                            "mk_session=; Path=/ui; Max-Age=0; HttpOnly; Secure; SameSite=Strict"
+                        )
+                    message = dict(
+                        message,
+                        headers=[*message.get("headers", []), (b"set-cookie", cookie.encode())],
+                    )
+            await send(message)
+
+        await self.app(scope, receive, wrapped)
+
+
+class Locked:
+    """While the server is locked (S13.6, S15.4.3), only what unlocking needs answers: the
+    app's page and files, the health check, the demo and the unlock route. Everything else,
+    the API, the link, connector and MCP listeners included, answers 503 `locked`."""
+
+    OPEN = frozenset({"/", "/healthz", "/demo", "/ui", "/ui/api/unlock"})
+
+    def __init__(self, app, locked: Callable[[], bool]):
+        self.app = app
+        self.locked = locked
+
+    @classmethod
+    def allowed(cls, path: str) -> bool:
+        if path in cls.OPEN:
+            return True
+        return path.startswith("/ui/") and not path.startswith("/ui/api/")
+
+    async def __call__(self, scope, receive, send):
+        if (
+            scope["type"] in ("http", "websocket")
+            and self.locked()
+            and not self.allowed(scope["path"])
+        ):
+            await _send_problem(
+                503,
+                "locked",
+                "MoneyKata is locked: an admin enters the recovery phrase to open it.",
+                [(b"retry-after", b"30"), (b"cache-control", b"no-store")],
+            )(send)
+            return
+        await self.app(scope, receive, send)
+
+
+def location_of(path: str, body: bytes, readable=lambda where: True) -> str:
+    """Where a 201's record is read (S13.8.4): the list's path and the new record's id; for an
+    answer that is the record it was added to (a tax book with a new filing), that record;
+    and the list itself when the answer names no record, or the record has no path of its own
+    that reads it (`readable`)."""
+    try:
+        made = json.loads(body).get("id") if body else None
+    except ValueError, AttributeError:
+        made = None
+    parts = path.rstrip("/").split("/")
+    if isinstance(made, str) and made:
+        own = (
+            "/".join(parts[: parts.index(made) + 1]) if made in parts else "/".join([*parts, made])
+        )
+        if readable(own):
+            return own
+    return "/".join(parts)
+
+
+def _reads(scope, path: str) -> bool:
+    """Whether a GET of the path is answered by one of the API's own routes (never the app's
+    pages, which answer any path under /ui)."""
+    from fastapi.routing import APIRoute
+    from starlette.routing import Match
+
+    probe = {"type": "http", "path": path, "method": "GET"}
+    return any(
+        isinstance(r, APIRoute)
+        and r.path.startswith("/ui/api/")
+        and r.matches(probe)[0] == Match.FULL
+        for r in scope["app"].router.routes
+    )
+
+
+class Created:
+    """Every 201 of the API names what it made in `Location` (S13.8.4): the route's own, or
+    one worked out from its answer."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or not scope["path"].startswith("/ui/api/"):
+            await self.app(scope, receive, send)
+            return
+        held: dict | None = None
+        chunks: list[bytes] = []
+
+        async def wrapped(message):
+            nonlocal held
+            if message["type"] == "http.response.start":
+                named = any(k.lower() == b"location" for k, _ in message.get("headers", []))
+                if message["status"] == 201 and not named:
+                    held = message
+                    return
+            elif held is not None and message["type"] == "http.response.body":
+                chunks.append(message.get("body", b""))
+                if message.get("more_body"):
+                    return
+                body = b"".join(chunks)
+                where = location_of(scope["path"], body, lambda w: _reads(scope, w)).encode()
+                await send({**held, "headers": [*held.get("headers", []), (b"location", where)]})
+                message = {"type": "http.response.body", "body": body}
+            await send(message)
+
+        await self.app(scope, receive, wrapped)

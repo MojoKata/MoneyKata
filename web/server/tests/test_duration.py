@@ -1,0 +1,44 @@
+"""Durations as typed (requirements S12.13), on the server and in the browser."""
+
+import datetime as dt
+
+import pytest
+
+from moneykata import duration
+
+
+@pytest.mark.parametrize(
+    "text, want",
+    [
+        ("1d", dt.timedelta(days=1)),
+        ("90m", dt.timedelta(minutes=90)),
+        ("2w 3d 4h", dt.timedelta(weeks=2, days=3, hours=4)),
+        ("2w3d", dt.timedelta(weeks=2, days=3)),
+        ("  1H 30M ", dt.timedelta(hours=1, minutes=30)),
+    ],
+)
+def test_durations_read_as_typed(text, want):
+    assert duration.parse(text) == want
+
+
+@pytest.mark.parametrize(
+    "text, why",
+    [
+        ("", "Type a duration"),
+        ("3", "isn't a number and a unit"),
+        ("2x", "isn't a unit"),
+        ("1d 2d", "given twice"),
+        ("4h 2d", "largest first"),
+        ("0d", "at least a minute"),
+        ("1 day", "isn't a unit"),
+    ],
+)
+def test_other_text_is_refused_with_why(text, why):
+    with pytest.raises(duration.DurationError, match=why):
+        duration.parse(text)
+
+
+def test_a_duration_shows_as_it_would_be_typed():
+    assert duration.format(dt.timedelta(weeks=2, days=3, hours=4)) == "2w 3d 4h"
+    assert duration.format(dt.timedelta(minutes=90)) == "1h 30m"
+    assert duration.format(duration.parse("2w3d")) == "2w 3d"

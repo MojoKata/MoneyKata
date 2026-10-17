@@ -1,0 +1,62 @@
+{
+  "unstable": [
+    "sloppy-imports"
+  ],
+  "compilerOptions": {
+    "checkJs": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ]
+  },
+  "imports": {
+    "preact": "./vendor/preact/src/index.d.ts",
+    "preact/hooks": "./vendor/preact/hooks/src/index.d.ts",
+    "htm": "./vendor/htm/dist/htm.d.ts",
+    "@preact/signals-core": "./vendor/signals-core/dist/signals-core.d.ts",
+    "@preact/signals": "./vendor/signals/dist/signals.d.ts",
+    "preact-iso": "./vendor/preact-iso/src/index.d.ts",
+    "@mk/preact-iso": "./vendor/preact-iso/src/index.d.ts",
+    "echarts": "./charts/echarts.d.ts"
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "include": [
+      "app/",
+      "api/",
+      "store/",
+      "screens/",
+      "components/",
+      "charts/",
+      "account-types/",
+      "mockup/",
+      "tests/"
+    ],
+    "exclude": [
+      "api/openapi.json"
+    ]
+  },
+  "lint": {
+    "include": [
+      "app/",
+      "api/",
+      "store/",
+      "screens/",
+      "components/",
+      "charts/",
+      "account-types/",
+      "mockup/",
+      "tests/"
+    ],
+    "rules": {
+      "exclude": [
+        "no-window"
+      ]
+    }
+  }
+}

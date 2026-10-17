@@ -1,0 +1,7 @@
+# Versions and hashes of the dev-only downloads. Sourced by dev.sh; never used by the image.
+DENO_VERSION=2.9.7
+DENO_SHA256_x86_64=c6527f24f4b16031d3ae4fa9f658d5f11534c8d84ce7dc8502420280919c3490
+DENO_SHA256_aarch64=c832298b1ad4422481334855f6003e0f54145762c5a134f20a489511d2f65bbf
+# Playwright's Chromium comes with the playwright version pinned in uv.lock; this is the
+# browser build that version installs, checked after `playwright install`.
+PLAYWRIGHT_CHROMIUM_REVISION=1243

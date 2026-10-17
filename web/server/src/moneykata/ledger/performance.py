@@ -1,0 +1,150 @@
+"""Performance (requirements S5.2.1, S5.2.3): contributions apart from growth, time-weighted
+and money-weighted (IRR) returns, and a benchmark that is given the same money at the same
+times. Everything is Decimal; a return is a fraction (0.0512 is 5.12%).
+"""
+
+import bisect
+import datetime as dt
+import itertools
+from decimal import Decimal
+
+from .lots import ZERO
+
+ONE = Decimal(1)
+EXTERNAL = ("deposit", "withdrawal", "transfer", "adjustment")
+
+
+def flows(
+    transactions: list, prices: dict[str, dict[dt.date, Decimal]] | None = None
+) -> dict[dt.date, Decimal]:
+    """Money that came into the account (+) or left it (−) from outside, per day. Dividends,
+    interest and fees are growth, not flows; securities moved in or out count at their price
+    that day when it is known."""
+    out: dict[dt.date, Decimal] = {}
+    for t in transactions:
+        amount = None
+        if t.kind in EXTERNAL and not t.instrumentId:
+            amount = t.amount
+        elif t.kind in ("transfer-in", "transfer-out") and t.instrumentId and t.quantity:
+            price = (prices or {}).get(t.instrumentId, {}).get(t.date)
+            if price is not None:
+                sign = ONE if t.kind == "transfer-in" else -ONE
+                amount = sign * t.quantity * price
+        if amount:
+            out[t.date] = out.get(t.date, ZERO) + amount
+    return out
+
+
+def twr(values: list[tuple[dt.date, Decimal]], flow: dict[dt.date, Decimal]) -> Decimal | None:
+    """Time-weighted return over the series: each step's return chained, with the flows since
+    the previous point taken as arriving at the start of the step."""
+    if len(values) < 2:
+        return None
+    growth = ONE
+    prev_day, prev = values[0]
+    for day, value in values[1:]:
+        base = prev + _flows_between(flow, prev_day, day)
+        if base > 0:
+            growth *= value / base
+        prev_day, prev = day, value
+    return growth - ONE
+
+
+def _flows_between(flow: dict[dt.date, Decimal], after: dt.date, upto: dt.date) -> Decimal:
+    return sum((v for d, v in flow.items() if after < d <= upto), ZERO)
+
+
+def annualise(r: Decimal, days: int) -> Decimal:
+    if days <= 0:
+        return r
+    return Decimal(str((float(ONE + r)) ** (365.25 / days) - 1)) if r > -1 else Decimal(-1)
+
+
+def irr(
+    start: dt.date,
+    start_value: Decimal,
+    flow: dict[dt.date, Decimal],
+    end: dt.date,
+    end_value: Decimal,
+) -> Decimal | None:
+    """The annual rate that makes what went in grow into what is there (money-weighted),
+    found by bisection. None when nothing was invested."""
+    cash = (
+        [(start, -start_value)]
+        + [(d, -v) for d, v in sorted(flow.items()) if start < d <= end]
+        + [(end, end_value)]
+    )
+    if all(c >= 0 for _, c in cash) or all(c <= 0 for _, c in cash):
+        return None
+
+    def npv(rate: Decimal) -> Decimal:
+        total = ZERO
+        base = ONE + rate
+        for day, c in cash:
+            years = Decimal((day - start).days) / Decimal("365.25")
+            total += c / (base**years) if years else c
+        return total
+
+    lo, hi = Decimal("-0.99"), Decimal("10")
+    f_lo, f_hi = npv(lo), npv(hi)
+    if f_lo * f_hi > 0:
+        return None
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        f_mid = npv(mid)
+        if f_mid == 0 or hi - lo < Decimal("1e-9"):
+            return mid
+        if (f_mid > 0) == (f_lo > 0):
+            lo, f_lo = mid, f_mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
+def benchmark(
+    values: list[tuple[dt.date, Decimal]],
+    flow: dict[dt.date, Decimal],
+    index: list[tuple[dt.date, Decimal]],
+) -> list[tuple[dt.date, Decimal]]:
+    """What the same money, put in and taken out on the same days, would be worth in the
+    benchmark: its value follows the index between flows."""
+    if not values or not index:
+        return []
+    levels = dict(index)
+    known = sorted(levels)
+    out = []
+    held = values[0][1]
+    prev_day = values[0][0]
+    prev_level = _level_on(known, levels, prev_day)
+    out.append((prev_day, held))
+    for day, _ in values[1:]:
+        level = _level_on(known, levels, day)
+        held += _flows_between(flow, prev_day, day)
+        if prev_level and level:
+            held = held * level / prev_level
+        out.append((day, held.quantize(Decimal("0.01"))))
+        prev_day, prev_level = day, level or prev_level
+    return out
+
+
+def _level_on(known: list[dt.date], levels: dict[dt.date, Decimal], day: dt.date) -> Decimal | None:
+    i = bisect.bisect_right(known, day) - 1
+    return levels[known[i]] if i >= 0 else None
+
+
+def mix(
+    parts: list[tuple[Decimal, list[tuple[dt.date, Decimal]]]],
+) -> list[tuple[dt.date, Decimal]]:
+    """A blended index rebalanced daily, such as 60% VT and 40% BND, starting at 1."""
+    if not parts or any(not series for _, series in parts):
+        return []
+    days = sorted(set.intersection(*(set(d for d, _ in s) for _, s in parts)))
+    if not days:
+        return []
+    maps = [(w, dict(s)) for w, s in parts]
+    level = ONE
+    out = [(days[0], level)]
+    for prev, day in itertools.pairwise(days):
+        level *= sum((w * m[day] / m[prev] for w, m in maps), ZERO)
+        out.append((day, level))
+    return out

@@ -1,2 +1,10 @@
 shots/
+!web/ui/guides/shots/
 __pycache__/
+web/.tools/
+web/.dev/
+web/.dev-*/
+.venv/
+web/ui/vendor/*/
+.pytest_cache/
+.ruff_cache/

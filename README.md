@@ -8,21 +8,34 @@ receipts and tax books, and prepares the numbers a tax return needs. Several peo
 server, and households on other MoneyKata servers can share with named people here, read
 only, in a window of their own.
 
-**Status:** design complete for the first milestone; no code yet.
+**Status:** the nine milestones of the first release (requirements S17.9.1–S17.9.9) are built:
+the server in `web/`, the MoneyKata Connector in `connector/`. Milestones 8 and 9 built what the
+second review of the requirements against the code found the release still needed
+([`docs/reviews/initial-code-review-2.md`](docs/reviews/initial-code-review-2.md)); its
+section 12 says where each finding went, which no review has checked yet, and the choices
+milestone 9 made. The branch merges into `main` once the requirements have their final
+approval. What the build couldn't
+try for real is in [`docs/test-plan.md`](docs/test-plan.md); the gaps and the open questions
+are listed in the requirements' README.
 
 ## Where to start
 
-1. [`docs/requirements.md`](docs/requirements.md): what MoneyKata is and does, in the present
-   tense. §1 lists the decisions; §20 the stack, the layout and the milestones (§20.9: what
-   to build first); §21 the open questions; §22 the gaps not yet specified, each with a
-   lasting id (G1, G2, …).
+1. [`docs/requirements/`](docs/requirements/README.md): what MoneyKata is and does, in the
+   present tense. Its README holds the decisions (R1), the terminology (R2) and the design
+   principles (R3), and lists the sections S1–S18, the gaps not yet specified (G1, G2, …)
+   and the open questions (Q1, Q2, …). S17 has the stack, the layout and the milestones
+   (S17.9: the order to build in); S18 is the MoneyKata Connector, a second service.
 2. [`docs/schema.md`](docs/schema.md): the database conventions: naming, prefixed UUIDv7
    ids, soft deletes and the table prefixes.
 3. [`docs/mockups/MoneyKata-mock.html`](docs/mockups/MoneyKata-mock.html): the clickable
    mockup, the design reference for every screen. Open it in a browser from disk; it sends
    nothing anywhere. The purple **MOCK** pill jumps to any screen, switches users, changes
    state and opens every dialog. **F1** toggles the help pane.
-4. [`CLAUDE.md`](CLAUDE.md): the working rules: keep the mockup in step with the
+4. [`docs/mockups/MoneyKata-app.html`](docs/mockups/MoneyKata-app.html): the mockup generated
+   from the app for the screens built so far (`web/dev.sh mockup`), on recorded sample data.
+   It opens from disk too; its **MOCK** pill jumps to screens and dialogs and switches users.
+   The help guides' screenshots are made from it (`web/dev.sh help-shots`).
+5. [`CLAUDE.md`](CLAUDE.md): the working rules: keep the mockup in step with the
    requirements, keep the requirements a statement rather than a changelog, keep the repo
    free standing, and track gaps by id.
 
@@ -42,7 +55,31 @@ A Python server (FastAPI under Hypercorn, SQLite encrypted with SQLCipher, SQLAl
 tables mapped onto plain dataclasses, Alembic migrations) and a browser app with no build step
 (Preact, HTM, signals and preact-iso as vendored ES modules under a strict CSP, charts with
 Apache ECharts). Deno type-checks the JavaScript, and Playwright for Python runs the browser
-tests. No Node.js. One Docker image for amd64 and arm64, on port 37373. See requirements §20.
+tests. No Node.js. One Docker image for the server, for amd64 and arm64, on port 37373, and
+one for the connector (S18). See requirements S17; [`docs/dependencies.md`](docs/dependencies.md)
+lists every library with its purpose, its risks and when to look at it again.
+
+## Development
+
+Needs Python 3.14, [uv](https://docs.astral.sh/uv/) and curl; `setup` fetches the pinned Deno
+and Playwright's Chromium.
+
+```
+web/dev.sh setup                 # once
+web/dev.sh run --seed --stubs    # https://localhost:37373, seed users and stub prices
+web/check                        # every check, as CI runs it
+```
+
+`web/dev.sh` alone lists its commands. [`web/dev.md`](web/dev.md) covers testing the dev
+server from a browser on another machine (an SSH forward, a name of its own, port 443). The image builds from the repository's root:
+
+```
+docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) --load .
+```
+
+and `web/install/compose.yaml` is the example to run it from. A new server has one user,
+`admin`, with the published password `moneykata-setup`: its first sign-in leads only to choosing
+a password and an email address. A running server serves the clickable mockup at `/demo`.
 
 ## License
 
