@@ -84,6 +84,7 @@ The prefixes of the tables that exist.
 | Conn   | Connection       | One sign-in at one institution, kept by the connector and owned by a user (S18.6).                    |
 | Dnatn  | Donation         | One charitable gift to an organisation, into a donor-advised fund, or a grant from one.               |
 | EdPln  | EducationPlan    | A 529 account's plan: its state, name, beneficiary and opening date.                                  |
+| Email  | QueuedEmail      | An email waiting to go out through SMTP, until it is sent or its link expires.                        |
 | EstPy  | EstimatedPayment | A filing's estimated tax payment for a quarter, matched to its transaction.                           |
 | Filng  | Filing           | One return in a tax book (federal, state or local), with its progress and result.                     |
 | GfPln  | GiftPlan         | One user's gift plan for a person: holidays, anniversaries, budget, lead time, notes.                 |
@@ -184,8 +185,9 @@ Records are never removed from the database: they are marked deleted. The except
       or token can't be recovered from the database or a later backup;
    3. **linked copies**: another household's data, removed with the share or link it came
       by, at **Reset copy**, and an inbox change once it is applied (requirements S11.9);
-   4. **work queues and counters**: receipt-reading jobs, sign-in and access-key attempt
-      counters, the background tasks' last runs, and the live stream's state;
+   4. **work queues and counters**: receipt-reading jobs, emails waiting to go out (when sent
+      or when their link expires), sign-in and access-key attempt counters, the background
+      tasks' last runs, and the live stream's state;
    5. **caches**, rebuilt from the records: thumbnails, computed series kept for speed, and
       wash sales, worked out again from the trades whenever they change, and a bitcoin
       wallet's addresses, derived again from its keys and its explorer or node, and what a

@@ -62,7 +62,8 @@ class Config:
 
     @property
     def outbox_dir(self) -> Path:
-        """Emails waiting to go out through SMTP; each is removed once the server took it."""
+        """Where an earlier release kept emails waiting for SMTP, in the clear; the mail task
+        moves what it finds into the database's queue (S16.2)."""
         return self.data_dir / "outbox"
 
 

@@ -37,6 +37,18 @@ class TaskRun:
 
 
 @dataclass(kw_only=True, eq=False)
+class QueuedEmail:
+    id: str
+    recipient: str
+    subject: str
+    queuedAt: dt.datetime
+    expiresAt: dt.datetime
+    message: str | None = None
+    refusedAt: dt.datetime | None = None
+    error: str | None = None
+
+
+@dataclass(kw_only=True, eq=False)
 class Activity:
     id: str
     kind: str

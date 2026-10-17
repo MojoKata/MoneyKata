@@ -9,7 +9,7 @@ from conftest import make_user, new_client
 from test_users import kinds, mails, set_public_url
 
 from moneykata import settings
-from moneykata.mail import smtp_settings
+from moneykata.mail import smtp_settings, written
 
 PW = "a long user passphrase"
 
@@ -138,6 +138,80 @@ def test_a_failure_keeps_the_email_and_says_why(admin_client, server, smtp):
     assert admin_client.get("/ui/api/settings/email").json()["setAside"] == 1
 
 
+def test_emails_wait_in_the_database_until_sent_or_their_link_expires(admin_client, server, smtp):
+    # S16.2, S15.1.7: queued in the encrypted database, never in a folder in the clear; one
+    # whose link has expired is dropped unsent; a refused one keeps only who, what and why.
+    import datetime as dt
+
+    from moneykata import clock
+    from moneykata.store.entities.core import QueuedEmail
+
+    set_up_smtp(admin_client)
+    set_public_url(server)
+    for name in ("dave", "erin"):
+        admin_client.post(
+            "/ui/api/users",
+            json={"displayName": name, "username": name, "email": f"{name}@x.lan", "sex": "male"},
+        )
+    assert not server.config.outbox_dir.exists(), "nothing in the data directory in the clear"
+    assert [w.recipient for w in server.services.mailer.waiting()] == ["dave@x.lan", "erin@x.lan"]
+    smtp.fail = smtplib.SMTPRecipientsRefused({"dave@x.lan": (550, b"no such user")})
+    assert server.services.mailer.send_waiting(_smtp(server), server.guard) == 0
+    with server.db.read() as s:
+        refused = s.query(QueuedEmail).filter(QueuedEmail.refusedAt.is_not(None)).all()
+        assert [(r.recipient, r.message) for r in refused] == [
+            ("dave@x.lan", None),
+            ("erin@x.lan", None),
+        ]
+        assert all(r.error for r in refused)
+    assert server.services.mailer.waiting() == []
+    smtp.fail = None
+    admin_client.post(
+        "/ui/api/users",
+        json={"displayName": "fay", "username": "fay", "email": "fay@x.lan", "sex": "female"},
+    )
+    clock.fix(clock.now() + dt.timedelta(days=8))  # past even an invitation's week
+    try:
+        assert server.services.mailer.waiting() == []
+        assert server.services.mailer.expire() == 3
+    finally:
+        clock.fix(None)
+    assert smtp.sent == []
+
+
+def test_an_earlier_outbox_moves_into_the_queue(server):
+    # What an earlier release left in outbox/ in the clear moves into the database.
+    from email.message import EmailMessage
+
+    folder = server.config.outbox_dir
+    folder.mkdir(parents=True)
+    msg = EmailMessage()
+    msg["To"], msg["Subject"] = "fay@x.lan", "Choose your password"
+    msg.set_content("https://mk.test/ui/reset#token")
+    (folder / "20261017-120000-000000-0000000a.eml").write_bytes(bytes(msg))
+    assert server.services.mailer.adopt_outbox() == 1
+    assert not folder.exists()
+    (w,) = server.services.mailer.waiting()
+    assert w.recipient == "fay@x.lan" and "ui/reset" in w.message.get_content()
+
+
+def test_a_written_invitation_stays_a_week_and_the_rest_a_day(server):
+    # S16.2: a written email stays as long as its link works.
+    import datetime as dt
+
+    from moneykata.mail import Email, expire_written
+
+    with server.db.tx() as s:
+        server.services.mailer.send(
+            s, Email("gus@x.lan", "invited", "link", keep=dt.timedelta(days=7))
+        )
+        server.services.mailer.send(s, Email("gus@x.lan", "reset", "link"))
+    now = dt.datetime.now(dt.UTC)
+    assert expire_written(server.config, now + dt.timedelta(days=2)) == 1
+    assert [m.subject for m in written(server.config)] == ["invited"]
+    assert expire_written(server.config, now + dt.timedelta(days=8)) == 1
+
+
 def test_the_egress_guard_refuses_a_host_not_in_settings(admin_client, server, smtp):
     set_up_smtp(admin_client)
     server.guard.allow([])
@@ -184,10 +258,8 @@ def sign_up(server, email="erin@shaw.family", username="erin"):
 
 
 def outbox_link(server) -> tuple[str, str]:
-    import email
 
-    path = server.services.mailer.waiting()[-1]
-    msg = email.message_from_bytes(path.read_bytes(), policy=email.policy.default)
+    msg = server.services.mailer.waiting()[-1].message
     url = re.search(r"https://\S+", msg.get_body().get_content()).group(0)
     p, _, token = url.partition("#")
     return p, token
@@ -228,13 +300,7 @@ def test_sign_up_confirm_and_approve(admin_client, server, smtp):
         r = c.post("/ui/api/session", json={"login": "erin@shaw.family", "password": PW})
         assert r.status_code == 200
     assert {"signup.requested", "signup.approved"} <= set(kinds(server))
-    import email
-
-    last = server.services.mailer.waiting()[-1]
-    assert (
-        "Your MoneyKata account is ready"
-        in email.message_from_bytes(last.read_bytes(), policy=email.policy.default)["Subject"]
-    )
+    assert "Your MoneyKata account is ready" in server.services.mailer.waiting()[-1].subject
 
 
 def test_sign_up_rejected(admin_client, server, smtp):
@@ -297,7 +363,6 @@ def test_written_emails_are_listed_for_admins_and_expire(admin_client, server, t
     lists them, shows one after the password again, and the mail task removes those older
     than their links' life."""
     import datetime as dt
-    import os
 
     from conftest import ORIGIN
 
@@ -332,10 +397,9 @@ def test_written_emails_are_listed_for_admins_and_expire(admin_client, server, t
         opened = s.query(Activity).filter_by(kind="email.opened").one()
         assert opened.ownerId == dave.id and opened.forAdmins
     assert admin_client.get("/ui/api/settings/email/written/../x.eml").status_code in (404, 422)
-    path = server.config.mail_dir / name
-    old = (dt.datetime.now(dt.UTC) - dt.timedelta(hours=26)).timestamp()
-    os.utime(path, (old, old))
-    assert mail.expire_written(server.config) == 1
+    # An invitation's link works for a week, and its written email stays as long (S16.2).
+    week = dt.datetime.now(dt.UTC) + dt.timedelta(days=7, hours=1)
+    assert mail.expire_written(server.config, week) == 1
     assert admin_client.get("/ui/api/settings/email/written").json()["items"] == []
 
 

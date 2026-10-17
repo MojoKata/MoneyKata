@@ -362,6 +362,7 @@ def _send_invitation(s: Db, svc: Services, by: User, u: User) -> None:
                 f"Your username is {u.username}. Choose your password here:\n\n{url}\n\n"
                 f"The link works once, for {INVITATION_DAYS} days.\n"
             ),
+            keep=dt.timedelta(days=INVITATION_DAYS),
         ),
     )
 

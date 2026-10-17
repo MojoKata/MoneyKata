@@ -685,7 +685,7 @@ function ReadingQueue() {
   `;
 }
 
-/** Email (S16.2): the SMTP server, its password as a secret, a test, and the outbox. */
+/** Email (S16.2): the SMTP server, its password as a secret, a test, and the queue. */
 function EmailSection() {
   const res = useApi('/settings/email', {}, ['task']);
   const s = useApi('/settings');
@@ -730,7 +730,7 @@ function EmailSection() {
     }}>
       <h3>Email (SMTP)</h3>
       <p class="small dim" style=${{ marginTop: '-6px' }}>${values.smtpHost
-        ? 'Emails go out through this server.'
+        ? 'Emails go out through this server, waiting in the database, which is encrypted, until sent or until their link expires.'
         : 'Until a host is set, emails are written to the mail folder in the data directory, and listed below for you to pass their links on.'}</p>
       <div class="row">
         <${Field} label="Host" id="smtp-host" error=${errAt(e, 'smtpHost')}

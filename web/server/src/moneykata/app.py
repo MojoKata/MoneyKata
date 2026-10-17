@@ -73,7 +73,9 @@ class Server:
                 "job", {"id": job.id, "state": job.state}, users=[job.userId]
             )
         )
-        self.services = Services(self.config, Mailer(self.config))
+        self.services = Services(
+            self.config, Mailer(self.config, lambda: self.store.db if self.store else None)
+        )
 
     def badges(self, caller) -> dict[str, int]:
         """The navigation's counts (S12.1.1), sent on the live stream; they grow with the

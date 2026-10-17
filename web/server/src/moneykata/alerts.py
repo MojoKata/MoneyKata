@@ -370,7 +370,7 @@ def email(s: Session, server) -> Iterable[Cause]:
     waiting = server.services.mailer.waiting()
     if run is None or not run.error or not waiting:
         return
-    oldest = dt.datetime.fromtimestamp(waiting[0].stat().st_mtime, dt.UTC)
+    oldest = waiting[0].queuedAt
     yield Cause(
         key="mail",
         kind="source-failing",

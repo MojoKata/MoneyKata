@@ -1,8 +1,6 @@
 """Alerts (requirements S12.11)."""
 
 import datetime as dt
-import email
-import email.policy
 
 import pytest
 from conftest import make_user, sign_in
@@ -210,10 +208,7 @@ def test_an_option_expiring_within_a_week_and_a_pledge_due(server, frozen):
 
 
 def _outbox_subjects(server) -> list[str]:
-    return [
-        email.message_from_bytes(p.read_bytes(), policy=email.policy.default)["Subject"]
-        for p in server.services.mailer.waiting()
-    ]
+    return [w.subject for w in server.services.mailer.waiting()]
 
 
 def test_each_alert_is_emailed_once_when_smtp_is_set(server, admin_client, frozen):

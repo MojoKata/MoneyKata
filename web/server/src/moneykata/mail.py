@@ -1,15 +1,18 @@
 """Emails (requirements S10.1.9): plain text. Until SMTP is set up (and always in dev mode)
 each one is written to the mail folder as an .eml file; dev mode also prints its links.
 
-With SMTP set up (S16.2), an email is written to the outbox and the mail task sends it at
-once, in the background, so a request never waits on the mail server. What can't be sent
-stays in the outbox and is tried again every five minutes; Settings › Email shows the queue
-and the last error. The SMTP host is one the egress guard allows, by name (S13.5).
+With SMTP set up (S16.2), an email is queued in the database, which is encrypted, and the mail
+task sends it at once, in the background, so a request never waits on the mail server. What
+can't be sent stays queued and is tried again every five minutes, until its link expires; one
+the server refuses outright keeps only its recipient, subject and the error. Settings › Email
+shows the queue and the last error. The SMTP host is one the egress guard allows, by name
+(S13.5).
 
 Links are built from Settings › General's public URL, never from the request (S16.1). A
 token rides in the link's fragment (#…), which browsers send to no server and no Referer.
 """
 
+import contextlib
 import datetime as dt
 import email
 import email.policy
@@ -26,13 +29,20 @@ from email.message import EmailMessage
 from email.utils import format_datetime, make_msgid, parseaddr
 from pathlib import Path
 
+from sqlalchemy import event
 from sqlalchemy.orm import Session
 
-from . import clock, settings
+from . import clock, ids, settings
 from .config import Config
 from .errors import refuse
 
 log = logging.getLogger("moneykata.mail")
+
+
+# How long an email's link works, unless it says otherwise: a day at most (S10.1); an
+# invitation's works for a week. A written or queued email is kept no longer (S16.2).
+LINK_LIFE = dt.timedelta(days=1)
+EXPIRES = "X-MoneyKata-Expires"
 
 
 @dataclass(frozen=True)
@@ -40,6 +50,7 @@ class Email:
     to: str
     subject: str
     body: str
+    keep: dt.timedelta = LINK_LIFE  # how long its link works
 
 
 def base_url(s: Session, config: Config) -> str:
@@ -127,6 +138,7 @@ def deliver(smtp: Smtp, msg: EmailMessage, guard) -> None:
         if smtp.username:
             conn.login(smtp.username, smtp.password or "")
         del msg["From"]
+        del msg[EXPIRES]
         msg["From"] = smtp.sender
         conn.send_message(msg, from_addr=parseaddr(smtp.sender)[1])
 
@@ -148,9 +160,6 @@ def describe(e: Exception) -> str:
     return str(e) or type(e).__name__
 
 
-# How long a written email stays in the mail folder: the links it carries work for a day at
-# most (S10.1), so a file older than that holds nothing anyone can use (S16.2).
-WRITTEN_KEEP = dt.timedelta(hours=25)
 _counter = itertools.count(1)
 _NAME = re.compile(r"^[0-9]{8}-[0-9]{6}-[0-9]{6}-[0-9a-f]{8}\.eml$")
 
@@ -195,17 +204,27 @@ def read_written(config: Config, name: str) -> str | None:
     return f"To: {msg['To']}\nSubject: {msg['Subject']}\n\n{msg.get_content()}"
 
 
+def _expires(msg: EmailMessage, written_at: dt.datetime) -> dt.datetime:
+    try:
+        return dt.datetime.fromisoformat(str(msg[EXPIRES]))
+    except TypeError, ValueError:
+        return written_at + LINK_LIFE
+
+
 def expire_written(config: Config, now: dt.datetime | None = None) -> int:
-    """Remove written emails older than their links' life (S16.2); the count removed."""
-    now = now or dt.datetime.now(dt.UTC)
+    """Remove written emails whose links have expired (S16.2); the count removed."""
+    now = now or clock.now()
     folder = config.mail_dir
     if not folder.is_dir():
         return 0
     n = 0
     for path in folder.glob("*.eml"):
         try:
+            msg = email.message_from_bytes(
+                path.read_bytes(), _class=EmailMessage, policy=email.policy.default
+            )
             at = dt.datetime.fromtimestamp(path.stat().st_mtime, dt.UTC)
-            if now - at > WRITTEN_KEEP:
+            if now >= _expires(msg, at):
                 path.unlink()
                 n += 1
         except OSError:
@@ -213,9 +232,21 @@ def expire_written(config: Config, now: dt.datetime | None = None) -> int:
     return n
 
 
+@dataclass
+class Waiting:
+    """An email in the queue, as the mail task and Settings › Email see it."""
+
+    id: str
+    recipient: str
+    subject: str
+    queuedAt: dt.datetime
+    message: EmailMessage
+
+
 class Mailer:
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, db: Callable[[], object] = lambda: None) -> None:
         self.config = config
+        self.db = db  # the server's database once it is open, for the queue
         # Set once the background tasks exist: starts the mail task for a queued email.
         self.notify: Callable[[], None] = lambda: None
 
@@ -227,10 +258,24 @@ class Mailer:
         msg["Subject"] = email.subject
         msg["Date"] = format_datetime(dt.datetime.now(dt.UTC))
         msg["Message-ID"] = make_msgid(domain="moneykata.local")
+        expires = clock.now() + email.keep
+        msg[EXPIRES] = expires.isoformat()
         msg.set_content(email.body)
         if not self.config.dev and settings.get(s, "smtpHost"):
-            self._file(self.config.outbox_dir, msg)
-            self.notify()
+            from .store.entities.core import QueuedEmail
+
+            s.add(
+                QueuedEmail(
+                    id=ids.new_id("Email"),
+                    recipient=email.to,
+                    subject=email.subject,
+                    message=msg.as_string(),
+                    queuedAt=clock.now(),
+                    expiresAt=expires,
+                )
+            )
+            # Sent once the request's transaction has committed it.
+            event.listen(s, "after_commit", lambda _: self.notify(), once=True)
             return
         self._write(msg)
 
@@ -254,32 +299,132 @@ class Mailer:
         else:
             log.info("an email was written to the mail folder (SMTP is not set up)")
 
-    def waiting(self) -> list[Path]:
+    def waiting(self) -> list[Waiting]:
+        """The queue, oldest first: what is still to be sent, its link still working."""
+        from sqlalchemy import select
+
+        from .store.entities.core import QueuedEmail
+
+        db = self.db()
+        if db is None:
+            return []
+        with db.read() as s:
+            rows = s.scalars(
+                select(QueuedEmail)
+                .where(QueuedEmail.refusedAt.is_(None), QueuedEmail.expiresAt > clock.now())
+                .order_by(QueuedEmail.queuedAt)
+            ).all()
+            return [
+                Waiting(
+                    r.id,
+                    r.recipient,
+                    r.subject,
+                    r.queuedAt,
+                    email.message_from_string(
+                        r.message or "", _class=EmailMessage, policy=email.policy.default
+                    ),
+                )
+                for r in rows
+            ]
+
+    def set_aside(self) -> int:
+        """Emails the SMTP server refused outright, kept as recipient, subject and error."""
+        from sqlalchemy import func, select
+
+        from .store.entities.core import QueuedEmail
+
+        db = self.db()
+        if db is None:
+            return 0
+        with db.read() as s:
+            return s.scalar(
+                select(func.count())
+                .select_from(QueuedEmail)
+                .where(QueuedEmail.refusedAt.is_not(None))
+            )
+
+    def expire(self) -> int:
+        """Remove queued emails whose links have expired, and refused ones as old: their
+        links work no more, so nothing in them is worth sending (S16.2)."""
+        from sqlalchemy import delete
+
+        from .store.entities.core import QueuedEmail
+
+        db = self.db()
+        if db is None:
+            return 0
+        with db.tx() as s:
+            return s.execute(
+                delete(QueuedEmail).where(QueuedEmail.expiresAt <= clock.now())
+            ).rowcount
+
+    def adopt_outbox(self) -> int:
+        """Emails an earlier release left in `outbox/`, in the clear, move into the queue and
+        their files go; a refused one keeps only its recipient and subject (S16.2)."""
+        from .store.entities.core import QueuedEmail
+
         folder = self.config.outbox_dir
-        return sorted(folder.glob("*.eml")) if folder.is_dir() else []
+        db = self.db()
+        if db is None or not folder.is_dir():
+            return 0
+        moved = []
+        with db.tx() as s:
+            for path in sorted(folder.iterdir()):
+                if path.suffix not in (".eml", ".refused"):
+                    continue
+                try:
+                    msg = email.message_from_bytes(
+                        path.read_bytes(), _class=EmailMessage, policy=email.policy.default
+                    )
+                    at = dt.datetime.fromtimestamp(path.stat().st_mtime, dt.UTC)
+                except OSError:
+                    continue
+                refused = path.suffix == ".refused"
+                s.add(
+                    QueuedEmail(
+                        id=ids.new_id("Email"),
+                        recipient=str(msg["To"] or ""),
+                        subject=str(msg["Subject"] or ""),
+                        message=None if refused else msg.as_string(),
+                        queuedAt=at,
+                        expiresAt=_expires(msg, at),
+                        refusedAt=at if refused else None,
+                        error="the SMTP server refused the recipient" if refused else None,
+                    )
+                )
+                moved.append(path)
+        for path in moved:
+            path.unlink(missing_ok=True)
+        with contextlib.suppress(OSError):
+            folder.rmdir()
+        return len(moved)
 
     def send_waiting(self, smtp: Smtp | None, guard, stop=None) -> int:
-        """The mail task: send what the outbox holds, oldest first. The first failure stops
+        """The mail task: send what the queue holds, oldest first. The first failure stops
         the run, which records it, and the rest wait for the next."""
+        from .store.entities.core import QueuedEmail
+
         if smtp is None:
             return 0
         sent = 0
-        for path in self.waiting():
+        for w in self.waiting():
             if stop is not None and stop.is_set():
                 break
-            msg = email.message_from_bytes(
-                path.read_bytes(), _class=EmailMessage, policy=email.policy.default
-            )
             try:
-                deliver(smtp, msg, guard)
-            except smtplib.SMTPRecipientsRefused:
-                # This address will never take it: set it aside rather than block the rest.
-                path.rename(path.with_suffix(".refused"))
+                deliver(smtp, w.message, guard)
+            except smtplib.SMTPRecipientsRefused as e:
+                # This address will never take it: set aside, without its message.
+                with self.db().tx() as s:
+                    row = s.get(QueuedEmail, w.id)
+                    row.message, row.refusedAt, row.error = None, clock.now(), describe(e)
                 log.warning("the SMTP server refused an email's recipient; it was set aside")
                 continue
             except Exception as e:
                 raise RuntimeError(describe(e)) from None
-            path.unlink()
+            with self.db().tx() as s:
+                row = s.get(QueuedEmail, w.id)
+                if row is not None:
+                    s.delete(row)
             sent += 1
         if sent:
             log.info("sent %d email%s", sent, "" if sent == 1 else "s")

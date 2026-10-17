@@ -24,7 +24,7 @@ LOCK_FILE = "moneykata.lock"
 # What a restore replaces in the data directory. Linked copies go too: they are left out of
 # backups and pulled again from their sources (S11.9.9). The receipts stay in place: a backup
 # is the database and its keyring only, the host backs up the files (S14.6). The TLS pair, the
-# mail folder, the outbox and the pre-upgrade copies stay.
+# mail folder and the pre-upgrade copies stay.
 RESTORED = (
     "moneykata.db",
     "moneykata.db-wal",

@@ -1,6 +1,6 @@
-"""Settings, secrets and the background tasks' last runs."""
+"""Settings, secrets, the background tasks' last runs, and emails waiting to go out."""
 
-from sqlalchemy import Column, ForeignKey, LargeBinary, Text, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Index, LargeBinary, Text, UniqueConstraint
 
 from ..types import UtcTimestamp
 from ._base import exception, keyed
@@ -34,4 +34,21 @@ TaskRun = exception(
     Column("startedAt", UtcTimestamp, nullable=False),
     Column("finishedAt", UtcTimestamp),
     Column("error", Text),
+)
+
+# An email waiting to go out through SMTP (S16.2), in the database, which is encrypted: removed
+# once sent or once its link has expired; one the server refused keeps only its recipient,
+# subject and the error.
+QueuedEmail = exception(
+    "QueuedEmail",
+    "a work queue: removed when sent or when its link expires (§4.4.4)",
+    Column("recipient", Text, nullable=False),
+    Column("subject", Text, nullable=False),
+    Column("message", Text),  # the whole message; none once refused
+    Column("queuedAt", UtcTimestamp, nullable=False),
+    Column("expiresAt", UtcTimestamp, nullable=False),
+    Column("refusedAt", UtcTimestamp),
+    Column("error", Text),
+    Index("ix_QueuedEmail_queuedAt", "queuedAt"),
+    prefix="Email",
 )

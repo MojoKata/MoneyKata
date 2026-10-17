@@ -167,13 +167,12 @@ def _email_view(srv, s) -> EmailView:
     info = secret_repo.info(s, *SMTP_SECRET)
     by = s.get(User, info.setById) if info and info.setById else None
     run = s.get(TaskRun, "mail")
-    outbox = srv.config.outbox_dir
     return EmailView(
         password=SecretSet(setAt=info.setAt, setBy=by.displayName if by else None)
         if info
         else None,
         waiting=len(srv.services.mailer.waiting()),
-        setAside=len(list(outbox.glob("*.refused"))) if outbox.is_dir() else 0,
+        setAside=srv.services.mailer.set_aside(),
         lastRun=run.finishedAt if run else None,
         lastError=run.error if run else None,
     )

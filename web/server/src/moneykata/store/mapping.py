@@ -18,7 +18,7 @@ from .entities import receipts as rc
 from .entities import sharing as sh
 from .entities import taxes as tx
 from .entities.alerts import Alert, AlertState
-from .entities.core import Activity, Secret, Setting, TaskRun
+from .entities.core import Activity, QueuedEmail, Secret, Setting, TaskRun
 from .entities.users import (
     AccessToken,
     Group,
@@ -165,6 +165,7 @@ def map_all() -> None:
     _map(lk.LinkColour, links.LinkColours)
     _map(Secret, core.Secret)
     _map(TaskRun, core.TaskRun)
+    _map(QueuedEmail, core.QueuedEmail)
     _map(Activity, activity.Activity)
 
 
