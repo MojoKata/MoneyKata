@@ -6,8 +6,10 @@
    README.md
    docs/                 requirements/ (README.md and its sections), schema.md, api.md,
                          link-protocol.md, connector-protocol.md, operations.md,
-                         dependencies.md (the register, S17.2.1), test-plan.md (the manual
-                         tests, S17.9.7.8), mockups/MoneyKata-mock.html
+                         DEPLOY.md (a test server on Proxmox or TrueNAS, its screenshots
+                         in deploy/), dependencies.md (the register, S17.2.1),
+                         test-plan.md (the manual tests, S17.9.7.8),
+                         mockups/MoneyKata-mock.html
    web/
      VERSION  dev.sh  check  pins
      ui/                 index.html, deno.json, app/{main,router,config,hooks,format}.js,
@@ -183,8 +185,10 @@
    2. **No registry.** The image is built locally and carried to its host (`docker save` and
       `docker load`), or built on the host itself.
    3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
-      on) and **TrueNAS** (a custom app from the compose file). `operations.md` covers both:
-      mounts, backups and upgrades.
+      on) and **TrueNAS** (a custom app from the compose file). `DEPLOY.md` takes a test
+      server onto each, step by step, from a fresh Debian VM on Proxmox VE and from TrueNAS
+      Community Edition's **Install via YAML**; `operations.md` covers their mounts, backups
+      and upgrades.
    4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
       reverse proxy. A second example runs `tls` mode with a self-signed certificate for
       testing on a local network (S13.3).
@@ -388,7 +392,7 @@
          wallets against Fulcrum, electrs, Bitcoin Core 27 and later and a self-hosted
          mempool; links over an overlay such as Tailscale and over a forwarded port; the
          arm64 image on real hardware; the Schwab driver with a real developer account; an
-         install on Proxmox and on TrueNAS (`operations.md` §2.1–2.2); and a restore drill
+         install on Proxmox and on TrueNAS (`DEPLOY.md` §3–4); and a restore drill
          onto a new host. A release says which were run.
       9. **Hardening**: `web/dev.sh audit` and the register's hash check in `web/check`
          (S17.2.1), the base image's update process (S13.7.11), and the real receipt
