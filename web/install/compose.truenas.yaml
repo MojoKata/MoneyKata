@@ -1,0 +1,24 @@
+# MoneyKata as a TrueNAS custom app (requirements S17.8.3, docs/DEPLOY.md §4): paste it into
+# Apps › Discover Apps › ⋮ › Install via YAML. /mnt/tank/moneykata holds the two datasets and
+# moneykata.toml (DEPLOY.md §4.1-4.2); use your pool's name in place of tank.
+services:
+  moneykata:
+    image: ghcr.io/mojokata/moneykata:0.1.0
+    restart: unless-stopped
+    ports:
+      - "37373:37373"
+    volumes:
+      - /mnt/tank/moneykata/data:/var/lib/moneykata
+      - /mnt/tank/moneykata/backups:/var/backups/moneykata
+      - /mnt/tank/moneykata/moneykata.toml:/etc/moneykata.toml:ro
+      - /etc/localtime:/etc/localtime:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run/moneykata:uid=10001,gid=10001,mode=0700
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 10s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }

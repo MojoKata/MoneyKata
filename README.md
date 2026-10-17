@@ -70,10 +70,12 @@ web/check                        # every check, as CI runs it
 ```
 
 `web/dev.sh` alone lists its commands. [`web/dev.md`](web/dev.md) covers testing the dev
-server from a browser on another machine (an SSH forward, a name of its own, port 443). The image builds from the repository's root:
+server from a browser on another machine (an SSH forward, a name of its own, port 443).
+Releases publish the images to `ghcr.io/mojokata` (`.github/workflows/release.yml`, on a `v*`
+tag); to build the server's image yourself, from the repository's root:
 
 ```
-docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) --load .
+docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
 ```
 
 and `web/install/compose.yaml` is the example to run it from. A new server has one user,

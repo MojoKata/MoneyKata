@@ -1,45 +1,49 @@
 # Deploying MoneyKata
 
-How to build MoneyKata and put a server where people can start testing it, on the first two
-hosts it targets: **a fresh VM on Proxmox VE** and **TrueNAS**. Both run the same image, and
+How to put a MoneyKata server where people can start testing it, on the first two hosts it
+targets: **a fresh VM on Proxmox VE** and **TrueNAS**. Both run the same image, and
 both serve HTTPS themselves on port 37373 with a self-signed certificate (`tls` mode,
 requirements S13.3), which is what a test on a local network needs. A server the household
 relies on goes behind its reverse proxy instead ([`operations.md`](operations.md) §2), and
 `operations.md` is the runbook for everything after the install: upgrades, backups, restoring,
 keys and the connector.
 
-The steps were run as written on Proxmox VE 9.2 with a Debian 13 guest and Docker Engine 29,
-and on TrueNAS Community Edition 25.10.7; the screenshots are from those runs.
+The steps were run on Proxmox VE 9.2 with a Debian 13 guest and Docker Engine 29, and on
+TrueNAS Community Edition 25.10.7, with the image built on each host; the screenshots are from
+those runs. A release's images are published on ghcr.io (§2), and a host pulls them in place
+of that build.
 
 ## 1. What you need
 
-- **A host**: amd64 (arm64 works too, S17.8.1), with **2 GB of memory** for MoneyKata (1 GB
-  with receipt reading turned off, Settings › Receipts) and about **5 GB of disk** for the
-  image, the build and the data.
-- **Internet access** from wherever the image is built: GitHub (the source), Docker Hub (the
-  Python base image) and PyPI (the libraries, each pinned by hash).
+- **A host**: amd64 or arm64 (S17.8.1), with **2 GB of memory** for MoneyKata (1 GB with
+  receipt reading turned off, Settings › Receipts) and about **3 GB of disk** for the image
+  and the data.
+- **Internet access** from the host to `ghcr.io`, where the images are published, and to
+  `raw.githubusercontent.com` for the example files.
 - **Paper and a pen.** The server's master key is a **recovery phrase** of 12 words, shown
   once and never stored (S15). It is asked for after every start of the server: a reboot, an
   upgrade, a restart. Without it the data can't be opened, by anyone.
 - **A browser** on the same network as the host.
 
-## 2. Building the image
+## 2. The image
 
-There is no registry (S17.8.2): the image is built from the source, on the host that runs it
-or on another machine and carried over.
+Each release is published as `ghcr.io/mojokata/moneykata:<version>`, one tag for amd64 and
+arm64 (S17.8.2). Docker pulls it the first time a command below needs it; the image is under
+1 GB. This guide installs **0.1.0**. GitHub records how each release's image was built, and
+anyone can check that the one they pulled is it
+([`gh`](https://cli.github.com/) installed):
 
 ```sh
-git clone https://github.com/MojoKata/MoneyKata.git
-cd MoneyKata
-docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) --load .
+gh attestation verify oci://ghcr.io/mojokata/moneykata:0.1.0 --owner MojoKata
 ```
 
-`web/VERSION` holds the release (`0.1.0`). The build takes about three minutes on a VM with two
-cores, and the image is under 1 GB. To carry it to another host:
+To build it yourself instead, from a checkout of the source (about three minutes on a VM with
+two cores), and to carry it to a host with no internet access:
 
 ```sh
-docker save moneykata:0.1.0 | gzip > moneykata-0.1.0.tar.gz   # where it was built
-docker load -i moneykata-0.1.0.tar.gz                          # on the host that runs it
+docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
+docker save ghcr.io/mojokata/moneykata:0.1.0 | gzip > moneykata-0.1.0.tar.gz   # where it was built
+docker load -i moneykata-0.1.0.tar.gz                                          # on the host
 ```
 
 The **MoneyKata Connector** (S18), which signs in to institutions that have a driver, is a
@@ -70,8 +74,8 @@ In the Proxmox web UI, select the node and open **Shell**, then:
 2. **Put your SSH public key** in a file, for the VM's user: paste it into
    `/root/moneykata.pub` (`nano /root/moneykata.pub`). It is the `.pub` file in `~/.ssh` on
    your own computer; `ssh-keygen -t ed25519` there makes one if you have none.
-3. **Make the VM**: 2 cores, 4 GB of memory (the build is quicker with it; 2 GB runs
-   MoneyKata), a 32 GB disk made from the image, and a cloud-init drive. `120` is the VM's id
+3. **Make the VM**: 2 cores, 4 GB of memory (MoneyKata needs 2 GB; the rest leaves the
+   receipt reader room), a 32 GB disk made from the image, and a cloud-init drive. `120` is the VM's id
    and `local-lvm` the storage for its disks: use a free id, and your storage if it differs
    (**Datacenter › Storage** lists them; a ZFS install calls it `local-zfs`).
 
@@ -105,7 +109,7 @@ Sign in to the VM (`ssh debian@192.168.1.50`) and install Docker Engine from
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl git qemu-guest-agent
+sudo apt-get install -y ca-certificates curl qemu-guest-agent
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -126,19 +130,17 @@ sudo timedatectl set-timezone America/Chicago     # your own: backups and emails
 Sign out and in again, so `docker` works without `sudo`. `qemu-guest-agent` lets the Proxmox
 UI show the VM's address on its **Summary**; it starts by itself at every boot after this one.
 
-### 3.3 Build and set up
+### 3.3 Set up
 
-1. **Build the image** on the VM, as §2 says, from your home folder, so the source is in
-   `~/MoneyKata`.
-2. **Make a folder for the server**, from the examples in the source:
+1. **Make a folder for the server**, with the release's example compose file:
 
    ```sh
    mkdir ~/moneykata && cd ~/moneykata
-   cp ~/MoneyKata/web/install/compose.tls.yaml compose.yaml
+   curl -fsSLo compose.yaml https://raw.githubusercontent.com/MojoKata/MoneyKata/v0.1.0/web/install/compose.tls.yaml
    mkdir data backups && sudo chown 10001:10001 data backups
    ```
 
-3. **Write its configuration**, `moneykata-tls.toml`, naming the address browsers will use, so
+2. **Write its configuration**, `moneykata-tls.toml`, naming the address browsers will use, so
    the self-signed certificate covers it:
 
    ```sh
@@ -157,13 +159,14 @@ UI show the VM's address on its **Summary**; it starts by itself at every boot a
    EOF
    ```
 
-4. **Make the master key**: `docker compose run --rm moneykata keys init`. It shows the
+3. **Make the master key**: `docker compose run --rm moneykata keys init`, which first
+   pulls the image (§2). It shows the
    **recovery phrase**, 12 words. Write them down, then type the three it asks for. Nothing
    shows the phrase again (S15.6 says how to keep it: two copies in two places, one offline).
-5. **Start it**: `docker compose up -d moneykata`. Name the service: the compose file's
-   other one is the connector, whose image isn't built (§2), and a bare `docker compose up -d`
-   stops at it with *pull access denied for moneykata-connector*.
-6. **Unlock it** in a browser, §5.
+4. **Start it**: `docker compose up -d moneykata`. Name the service: the compose file's
+   other one is the connector, which needs a setup of its own before it starts
+   (operations.md §8).
+5. **Unlock it** in a browser, §5.
 
 ### 3.4 After a reboot
 
@@ -193,20 +196,13 @@ The steps below use a pool named `tank` and the NAS's address `192.168.1.20`.
 
 ![The datasets](deploy/truenas-datasets.png)
 
-### 4.2 The image, the configuration and the key
+### 4.2 The configuration and the key
 
 Open **System › Shell**; `sudo` asks for `truenas_admin`'s password. Keep the page open
 until each command has finished. (SSH works as well, once it is turned on under **System ›
 Services**; it is off by default.)
 
-1. **Build the image** straight from GitHub (about two minutes; TrueNAS has git and Docker's
-   BuildKit), or load one built elsewhere (§2) with `sudo docker load -i moneykata-0.1.0.tar.gz`:
-
-   ```sh
-   sudo docker build -t moneykata:0.1.0 -f web/install/Dockerfile https://github.com/MojoKata/MoneyKata.git#main
-   ```
-
-2. **Give the datasets to the container's user** (uid 10001) and **write the configuration**
+1. **Give the datasets to the container's user** (uid 10001) and **write the configuration**
    beside them:
 
    ```sh
@@ -226,27 +222,27 @@ Services**; it is off by default.)
    EOF
    ```
 
-3. **Make the master key**. It shows the **recovery phrase**, 12 words: write them down, then
-   type the three it asks for.
+2. **Make the master key**, which first pulls the image (§2). It shows the **recovery
+   phrase**, 12 words: write them down, then type the three it asks for.
 
    ```sh
    sudo docker run --rm -it \
      -v /mnt/tank/moneykata/data:/var/lib/moneykata \
      -v /mnt/tank/moneykata/backups:/var/backups/moneykata \
      -v /mnt/tank/moneykata/moneykata.toml:/etc/moneykata.toml:ro \
-     moneykata:0.1.0 keys init
+     ghcr.io/mojokata/moneykata:0.1.0 keys init
    ```
 
 ### 4.3 Install the app
 
 **Apps › Discover Apps**, then **⋮** (**More Options**, beside **Custom App**) **› Install
-via YAML**. Name it `moneykata`, paste this as **Custom Config**, and **Save**:
+via YAML**. Name it `moneykata`, paste this as **Custom Config** (it is
+`web/install/compose.truenas.yaml`), and **Save**:
 
 ```yaml
 services:
   moneykata:
-    image: moneykata:0.1.0
-    pull_policy: never   # built or loaded on the NAS: there is no registry to pull from
+    image: ghcr.io/mojokata/moneykata:0.1.0
     restart: unless-stopped
     ports:
       - "37373:37373"
@@ -282,9 +278,8 @@ Settings › Localization › Settings**) is the server's, for backups and email
   in them opens without the phrase; operations.md §2.3 says what a snapshot is and isn't.
 - After the NAS restarts, the app starts again by itself (`restart: unless-stopped`),
   **locked**, and shows **Deploying** until someone enters the phrase (§5).
-- Deleting the app (the app's **Delete**) offers **Remove Images**, ticked: untick it, or the
-  image goes too and has to be built again before the app installs. The datasets stay as
-  they are either way.
+- Deleting the app (the app's **Delete**) offers **Remove Images**, ticked. Either way the
+  datasets stay as they are, and the image is pulled again by the next install.
 
 ## 5. Unlocking and the first sign-in
 
@@ -314,13 +309,12 @@ Instead of the browser, the phrase can be entered on the host:
 `docker compose exec moneykata moneykata keys unlock` in `~/moneykata` on the VM;
 `sudo docker exec -it ix-moneykata-moneykata-1 moneykata keys unlock` on TrueNAS.
 
-## 6. A new build
+## 6. A new release
 
-1. Pull the source and build the new image (§2), with the new version's tag.
-2. Change the tag in the compose file and start it again: `docker compose up -d moneykata`.
-   On TrueNAS, **Edit** under **Application Info** opens **Edit App YAML**; **Save** there
-   makes the container again.
-3. Unlock it (§5). At the unlock the server copies the database aside and migrates it;
+1. Change the image's tag to the new version: in `compose.yaml` on the VM, then
+   `docker compose up -d moneykata`, which pulls it; on TrueNAS, **Edit** under **Application
+   Info** opens **Edit App YAML**, and **Save** there pulls it and makes the container again.
+2. Unlock it (§5). At the unlock the server copies the database aside and migrates it;
    operations.md §3 says how to go back.
 
 ## 7. When something's wrong

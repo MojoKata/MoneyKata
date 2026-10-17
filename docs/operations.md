@@ -44,19 +44,24 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 
 ## 2. Installing
 
-1. **Get the image.** There is no registry: build it on any amd64 machine and carry it over.
+1. **Get the image.** Each release is published as `ghcr.io/mojokata/moneykata:<version>`
+   (and `ghcr.io/mojokata/moneykata-connector`), one tag for amd64 and arm64 (S17.8.2), which
+   the compose files name: Docker pulls it the first time a command needs it.
+   `gh attestation verify oci://ghcr.io/mojokata/moneykata:0.1.0 --owner MojoKata` checks
+   that the image is the one the release workflow built. To build it yourself instead, or to
+   carry it to a host with no internet access:
 
    ```sh
-   docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) .
-   docker save moneykata:0.1.0 | gzip > moneykata-0.1.0.tar.gz      # on the build machine
-   docker load < moneykata-0.1.0.tar.gz                              # on the server
+   docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
+   docker save ghcr.io/mojokata/moneykata:0.1.0 | gzip > moneykata-0.1.0.tar.gz   # on the build machine
+   docker load < moneykata-0.1.0.tar.gz                                           # on the server
    ```
 
-   Add `--platform linux/amd64,linux/arm64` for one image that also runs on arm64 (QEMU
-   on the build machine: `docker run --privileged --rm tonistiigi/binfmt --install arm64`,
-   once). `web/install/smoke.sh [linux/arm64]` builds both images for a platform and runs
-   them once, as a release's gate (S17.8.1): the key from a phrase, a refused start, health,
-   a sign-in, a receipt read, the connector's vault and unlock, and clean stops.
+   `web/install/smoke.sh [linux/arm64]` builds both images for a platform and runs them
+   once, as a release's gate does (S17.8.1): the key from a phrase, a refused start, health,
+   a sign-in, a receipt read, the connector's vault and unlock, and clean stops. Another
+   platform than the machine's own runs under QEMU (`docker run --privileged --rm
+   tonistiigi/binfmt --install arm64`, once).
 2. **Make the folders**, owned by the container's user:
 
    ```sh
@@ -282,8 +287,10 @@ where MoneyKata can't. It is the `connector` service in `compose.yaml`, from the
 `connector/`), with a volume of its own, `connector-data`, that MoneyKata never mounts. It
 publishes no port and only calls out: to MoneyKata, and to each driver's institution.
 
-1. **Build its image** beside MoneyKata's: `docker buildx build -f connector/Dockerfile -t
-   moneykata-connector:0.1.0 connector`, and carry it over as in §2.
+1. **Its image** is published beside MoneyKata's, as
+   `ghcr.io/mojokata/moneykata-connector:<version>`, and pulled by the steps below; or build it
+   (`docker buildx build -f connector/Dockerfile -t ghcr.io/mojokata/moneykata-connector:0.1.0
+   --load connector`) and carry it over as in §2.
 2. **Install it once**: `docker compose run --rm connector init`. It shows **12 words** on the
    terminal only and won't finish until you type three back: save them in the household's
    password manager. They open the connector's vault, and nothing else can.

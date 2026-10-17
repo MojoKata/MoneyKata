@@ -4,6 +4,7 @@
 
    ```
    README.md
+   .github/workflows/    check.yml (web/check on every pull request), release.yml (S17.10)
    docs/                 requirements/ (README.md and its sections), schema.md, api.md,
                          link-protocol.md, connector-protocol.md, operations.md,
                          DEPLOY.md (a test server on Proxmox or TrueNAS, its screenshots
@@ -29,9 +30,11 @@
                          tables), giving/, taxes/ (8949, txf, limits tables), receipts/
                          (storage, thumbnails, the reader and its worker, the field parser,
                          retention), links/, dev/ (dev mode, seed data, the wheel check)
-     install/            Dockerfile, compose.yaml, compose.tls.yaml, moneykata.toml,
-                         proxy/ (reverse-proxy examples)
+     install/            Dockerfile, compose.yaml, compose.tls.yaml, compose.truenas.yaml,
+                         moneykata.toml, smoke.sh, proxy/ (reverse-proxy examples)
    connector/            the MoneyKata Connector (S18): its core, drivers and image
+   publish/truenas/      the app for TrueNAS's catalog and the script that opens its pull
+                         request there (S17.8.3)
    ```
 
 2. **Server dependencies**, each a ruling, kept short because each runs with the database: fastapi, pydantic,
@@ -174,21 +177,35 @@
    about 600 MB, most of it the receipt reader (ONNX Runtime, OpenCV and the models); the
    reader's worker takes about 350 MB more while it runs, which a host too small for it avoids
    by turning reading off (S9.8.7).
-   1. **Architectures**: one multi-architecture image for **amd64** and **arm64**, both built
-      on an amd64 build server with `docker buildx` (arm64 under QEMU emulation). Every
+   1. **Architectures**: one multi-architecture image for **amd64** and **arm64**. A release
+      builds each natively, on a GitHub runner of its own architecture (S17.10); a build of
+      the other architecture on a developer's machine runs under QEMU emulation. Every
       dependency must install from a published wheel for both (onnxruntime, opencv, numpy,
-      pi-heif, sqlcipher3 among them), since compiling under emulation is too slow; a check
-      fails when one has no arm64 wheel. The arm64 image's release gate is a smoke run under
-      emulation (start, migrate, `/healthz`, a sign-in, one receipt read); the trial on real
-      hardware, which alone measures the reader's speed there (S9.8.4.5), is in the manual
-      test plan (S17.9.7.8), and a release says whether it was run.
-   2. **No registry.** The image is built locally and carried to its host (`docker save` and
-      `docker load`), or built on the host itself.
+      pi-heif, sqlcipher3 among them), so nothing is compiled in the image; a check fails
+      when one has no arm64 wheel. Each architecture's release gate is `web/install/smoke.sh`
+      on its own runner (the key from a phrase, a refused start, health, a sign-in, a receipt
+      read, the connector's vault and unlock, clean stops); the trial on household hardware
+      (a Raspberry Pi, an arm64 NAS), which alone measures the reader's speed there
+      (S9.8.4.5), is in the manual test plan (S17.9.7.8), and a release says whether it was
+      run.
+   2. **Published images.** Each release is published as `ghcr.io/mojokata/moneykata` and
+      `ghcr.io/mojokata/moneykata-connector`, tagged with the version, one tag for both
+      architectures, with a build-provenance attestation that anyone can check
+      (`gh attestation verify oci://ghcr.io/mojokata/moneykata:<version> --owner MojoKata`).
+      The compose files name them, so a host pulls them. The image can still be built from
+      the source, and carried to a host with no internet access (`docker save` and
+      `docker load`). Catalogs make the install a form rather than a file: TrueNAS's apps
+      catalog first (S17.8.3); others, such as Docker Hub, may follow.
    3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
-      on) and **TrueNAS** (a custom app from the compose file). `DEPLOY.md` takes a test
-      server onto each, step by step, from a fresh Debian VM on Proxmox VE and from TrueNAS
-      Community Edition's **Install via YAML**; `operations.md` covers their mounts, backups
-      and upgrades.
+      on) and **TrueNAS** (a custom app from `install/compose.truenas.yaml`). `DEPLOY.md`
+      takes a test server onto each, step by step, from a fresh Debian VM on Proxmox VE and
+      from TrueNAS Community Edition's **Install via YAML**; `operations.md` covers their
+      mounts, backups and upgrades. `publish/truenas/` holds MoneyKata as an app for
+      TrueNAS's community catalog (`ix-dev/community/moneykata/` in `truenas/apps`): its
+      metadata, the install form, the compose template and its test values, with
+      `create-pr.sh`, which opens or updates the pull request that proposes it there. TrueNAS
+      decides what its catalog includes; until the app is in it, **Install via YAML** is the
+      way.
    4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
       reverse proxy. A second example runs `tls` mode with a self-signed certificate for
       testing on a local network (S13.3).
@@ -482,3 +499,21 @@
    11. **After the first release**: learned column positions for statements (S1.3.3.7),
        miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of [later
        work](later.md) (L1 to L9).
+10. **Continuous integration and releases**, on GitHub Actions, whose standard runners are
+    free for a public repository.
+    1. **Checks**: `.github/workflows/check.yml` runs `web/check` on every pull request and
+       every push to `main`, after `web/dev.sh setup`, with uv installed from
+       `install/build-requirements.txt` by its hashes.
+    2. **Releases**: `.github/workflows/release.yml`, on a `v<version>` tag matching
+       `web/VERSION`, builds both images on an amd64 and an arm64 runner, runs
+       `smoke.sh` on each (S17.8.1), pushes the images that passed to `ghcr.io/mojokata`
+       under per-architecture tags, joins them under the version's tag, and attests each
+       (GitHub's build provenance, signed through Sigstore's public instance and recorded in
+       its transparency log). On a pull request that touches what goes into the images, it
+       builds and smoke-runs both and pushes nothing. A new package on ghcr.io starts
+       private: after the first release, an owner of MojoKata makes both public, once.
+    3. **Their own dependencies**: the actions are GitHub's own (`actions/checkout`,
+       `actions/attest-build-provenance`), pinned by commit and listed in the register
+       (S17.2.1); everything else is the repository's own scripts. Each job's token has only
+       the permissions it needs: `contents: read` everywhere, `packages: write` to push, and
+       `id-token` and `attestations: write` for the attestation alone.

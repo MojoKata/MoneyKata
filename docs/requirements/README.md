@@ -53,7 +53,7 @@ opens the dialogs.
 | **S14** | [Storage and secrets](S14-storage-and-secrets.md) | The database, files, secrets, backups, time zones and retention |
 | **S15** | [Encryption and the master key](S15-encryption-and-master-key.md) | The master key and its recovery phrase, the data key, rotation and recovery, for the admin who runs the server |
 | **S16** | [Settings (admins)](S16-settings.md) | Every section of the Settings screen |
-| **S17** | [Implementation](S17-implementation.md) | The stack, the repository layout, checks, dev mode, the Docker image and the milestones |
+| **S17** | [Implementation](S17-implementation.md) | The stack, the repository layout, checks, dev mode, the Docker images and where they are published, the milestones, CI and releases |
 | **S18** | [MoneyKata Connector](S18-connector.md) | The second service that holds institutions' credentials, fetches with its drivers and pushes into MoneyKata's import |
 
 ## Gaps

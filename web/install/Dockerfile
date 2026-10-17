@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
-# MoneyKata's image (requirements S17.8). Build from the repository's root:
-#   docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) .
-# One image for amd64 and arm64: add --platform linux/amd64,linux/arm64 (arm64 under QEMU).
+# MoneyKata's image (requirements S17.8). Releases are published as ghcr.io/mojokata/moneykata
+# (S17.8.2, built by .github/workflows/release.yml); to build it yourself, from the repository's root:
+#   docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
+# Another architecture: add --platform linux/arm64 (or amd64), which runs under QEMU.
 
 ARG PYTHON=python:3.14-slim-bookworm@sha256:48b13b003dda20b16f9442b8475aa05fe21bf6579a8c881db92ffb4d8fd20f83
 
@@ -37,6 +38,8 @@ COPY --from=build /opt/moneykata /opt/moneykata
 ENV PATH=/opt/moneykata/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
+LABEL org.opencontainers.image.source="https://github.com/MojoKata/MoneyKata" \
+      org.opencontainers.image.description="MoneyKata: a self-hosted personal finance server for a household"
 USER 10001:10001
 EXPOSE 37373
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
