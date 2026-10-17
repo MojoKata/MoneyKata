@@ -8,6 +8,11 @@ browser app where it seals, unlocks or renders what others send (`web/ui/`), the
 the sections that describe it. Every finding below was checked in the code. Where one was
 also run, or rests on a reading not run, it says so.
 
+**Status.** Sections 1 to 10 are the review as written, against the code at `294792b`.
+Section 11 records the decisions taken on it. Section 12 says where each finding stands now,
+checked against the code rather than the commit messages, and where the next review should
+start.
+
 **Paths.** Code paths are relative to `web/server/src/moneykata/`. `mkc/` is
 `connector/moneykata_connector/`. Other paths start at the repository's root.
 
@@ -1120,9 +1125,120 @@ What each decision wrote is in the requirements, the protocols, `operations.md`,
     types are dropped, the listener shown in Settings › Network instead.
 11. **Q19:** A12 becomes an email queue in the database, A26 an expiry decided on the expiry day's
     close only; A2, A13, A17, A19, A20 and A21 follow the decisions above; A10 and A14 are kept;
-    the other sixteen are confirmed. Q19 is closed.
+    the other seventeen are confirmed. Q19 is closed.
 12. **Everything else** keeps the remedy this review recommends, with one exception: K23's
     third point takes its alternative (S11.9.10 no longer claims protection from this server's
     admin), since item 3 makes admins trusted.
 13. **Order:** these requirement changes first, in one commit, then milestone 8 in its nine
     parts; `initial-code` merges into `main` after milestone 8 (Q15).
+
+## 12. Where things stand, for the next review
+
+Sections 1 to 10 describe the code at `294792b`; their file and line references are to that
+commit. This section says what has become of each finding since. Each one was checked against
+the code at `328589f`, not taken from the commit messages, which in places claim more than
+was built (part 9's "the rest of the review's findings" among them). Paths are relative to
+`web/server/src/moneykata/` unless they say otherwise, and are at `328589f`.
+
+### 12.1 What changed after the review
+
+1. **`f3a4d50`**: section 11's decisions written into the requirements, the protocols,
+   `operations.md`, `later.md`, `rejected-ideas.md` and the hand-written mockup.
+2. **Milestone 8** (S17.9.8), nine parts, each with its tests:
+
+   | Commit | Part | Findings it took |
+   |---|---|---|
+   | `313e27e` | 1: access, host commands over the server's socket | K1, K2, K6, K7, K8, K13, K14, P1–P3, P5, P6 (in part), P7 |
+   | `20944e9` | 2: transport, TLS verified and pinned, link changes sealed end to end | K3, K18, B24 |
+   | `d15ff28` | 3: the reader's sandbox, every file brought parsed in it | K4 (in part) |
+   | `5779299` | 4: key operations, a journaled re-encryption that never runs while serving | K5, K6, K9, K10, K11, N10 |
+   | `2e1a767` | 5: figures, and Form 8949's digital-asset boxes | B1–B23, C50 |
+   | `351f335` | 6: categorisation and payee rules | N1 |
+   | `3ee3dbc` | 7: corporate actions, closed years, and the rest promised | N4, N5, N7, N9, N11 (sweeper, view audit), N12, N13, N15, N16 (in part), N17, K22 (in part) |
+   | `b14b5cb` | 8: the connector, its Folder driver gone | K12 (in part), K20, K21, K24, P4, B30, B31, 11b |
+   | `d7e2a08` | 9: the remaining findings, the generated mockup, both images | P7, P8, B25–B29, B32–B43 |
+
+3. **Decided after milestone 8**, each written into the requirements and the mockup with its
+   code:
+   - `328589f`: a driver's size is tracked green, yellow or red in `connector-protocol.md` §6,
+     and the core has no limit (S18.1.2); an edit made anyway to a closed year stays on the tax
+     book until an amended federal return or *No amendment needed* settles it, and a year whose
+     amended return is being prepared is open (S2.8, S8.15); admins are alerted while reading
+     runs without its file sandbox, on a host without Landlock (S9.8.4.2, S12.11.1.1).
+   - The commit that adds this section: an admin who owns what failed (their Connection,
+     their wallets' explorer or node) has one alert, the owner's, on screen and by email
+     (S12.11.2); the mockup's help says a tax book may go, read only, to a linked server
+     (S8.14.3); an edit's change to the realized gains is kept in cents, as all money is
+     (revision 0024, S14.3); this section.
+
+### 12.2 Every finding, by state
+
+- **Done** as the remedy or the decision says: K1–K3, K5–K11, K13, K14, K18, K20, K24; P1–P3,
+  P5, P7, P8; B1–B21, B23–B32, B34–B40 and B43 (B20 and B38 done differently),
+  and B42 but its first part; N1, N4, N5, N7, N9, N10, N12, N13, N15, N17; C1, C2, C4, C6–C8,
+  C10, C12–C16, C19–C22, C25–C30, C32, C34, C35, C37–C43, C48–C53; and A1–A11, A13–A25, A27,
+  confirmed or changed as section 11 says (K8, C7 and C24 the decided way, not the remedy).
+- **Dropped by a decision**: K21 and P4 with the Folder driver (rejected idea 21), with B42's
+  first part; N8, Settings › TLS.
+- **Moved to later work** (`docs/requirements/later.md`): N2 (L4), N3 (L5), N11's linked
+  window and tax-book files (L6), N14 (L7), N16's `Idempotency-Key` (L8), N6 (L9).
+- **Still open**: the table below. In most, the requirement already says what to build and
+  only the code is missing.
+
+| Id | Rank | What is still missing |
+|---|---|---|
+| C23 | — | The connector never hashes the key `hello` answers with: it compares the fingerprint `hello` states with the code's, then trusts `client.server_key(hi)` as sent, at pairing and when it reattaches (connector `core.py:77-80, 103-109`); `connector-protocol.md` §4.1.2 says it refuses a key that doesn't hash to the code's fingerprint. The link side hashes it (`links/manage.py:244`) |
+| K4 | High | A scanned PDF's pages are rendered at 300 DPI with no pixel cap (`receipts/ocr.py:178`); S9.8.4.3 caps a page at the images' 40 million pixels |
+| K15, A12 | Med | Emails still wait in `outbox/` in the clear (`mail.py:232`), and a refused one is kept whole for ever (`mail.py:257-266`); S16.2 and S15.1.7 say a queue in the database, each removed when sent or when its link expires, a refused one keeping only its recipient, subject and error. No table for it in `docs/schema.md` |
+| K16 | Med | Nothing of the remedy: the pending two-step token survives wrong codes, the sign-in lockout counts the exact address (`ui/session.py:148`; only the separate throttle counts the /64), two guesses on one token can run at once, and the slowdown still follows the count (S10.1.6.3) |
+| K17 | Med | Reactivation still answers `bad-credentials`, `account-active` or `asked-recently` by the account's state, outside the sign-in guard (`auth/users.py:615`); re-authentication uses the throttle, not the guard (`ui/session.py:380`); sign-up returns before hashing when the address is taken (`auth/signup.py:95-103`) (S13.7.5.1) |
+| K19 | Med | No engine sets `hide_parameters` (`store/db.py:47`); refusals aren't logged with their error id (`errors.py:89`); a read error's `detail` can hold a host path (`ui/receipts.py:504`); a peer's `message` is copied into `lastError` and its alert (`links/client.py:107`) (S13.7.8–9) |
+| K12 | Med | `moneykata-connector connect` files the credentials at once, under whatever host the settings name, without showing it for the admin to confirm (connector `main.py:175-186`; S18.7.2). The host in the sealed box is checked (connector `core.py:331`) |
+| P6 | Med | A shared budget's recurring rows still carry the `accountId` and `accountName` of the owner's accounts the viewer can't see, and cross to linked servers (`ui/budgets.py:423`, `links/serve.py:158`); S11.3.1 says *an account not shared*. Gifts are done |
+| K22 | Low-Med | `own()` opens a write transaction and decrypts the link key on every `/link` call, `hello` included, before any signature check (`links/routes.py:36`); an unknown key is rate-limited but not refused before its body is read |
+| K23 | Low-Med | Remove copy asks for the password only, not the phrase too (S16.13, S13.7.2); Settings › Network and its guide don't say the proxy is what limits the locked screen (S16.14, A14). The S11.9.10 point is done |
+| K25 | Low | Four points not done, two half done: the linked copy's key lives on as a hex string in the connection factory, and nothing refuses a connection after release; uploads aren't spooled in memory and the server doesn't refuse to start without a `/tmp` tmpfs (S13.7.6); applying a link change doesn't refuse a sequence at or below the last applied (`links/changes.py:149-207`, S11.9.5.3); `verify-backup` doesn't show or compare the manifest's `made`; the alert event still carries titles; dev mode is in the image and doesn't refuse outside a checkout (`main.py:53`) |
+| A26 | — | An expiry still takes a close from up to four days before the expiry date (`options/__init__.py:227`); S3.6 says the expiry day's close only, and asks without it |
+| N11 | Med | Settings › Linked servers shows the last exchange and the shares coming in, not "what flows each way" (S11.7; `web/ui/components/links.js:140, 271`): nothing lists what this server sends |
+| N16 | Low | The OpenAPI document's problem codes leave out what the error handlers send (`invalid-request`, `method-not-allowed`, `http-error`, `server-error`, the `invalid-*` field codes, `errors.py:100-122`), and 265 operations still document their 422 as FastAPI's `HTTPValidationError`, not problem+json (S13.8.3) |
+| C3 | — | `prune_files` keeps a file while any receipt not yet pruned names it, deleted or not (`receipts/retention.py:324`); S14.10.5 says a deleted receipt doesn't count |
+| C5 | — | A restore still rewrites a before-restore folder's receipts (`store/copies.py:187-200`); S15.6.8 and `operations.md` §6.1 say the receipt files stay where they are |
+| C9 | — | Written emails are kept 25 hours (`mail.py:153`); S16.2 keeps an invitation's a week, as long as its link works |
+| C11 | — | Only `keys verify` counts as a check of the phrase (`alerts.py:415`, `ui/settings.py:613-617`); S15.6.5 says every unlock does too |
+| C17 | — | `link-protocol.md` §1.3 and §7 say every answer to a signed call is signed back, while §7's own table has `locked` as 503 unsigned; §7 still opens "HTTP 403 (or 426 for a protocol)"; "try later" is said for `locked`, not `limit` |
+| C18 | — | S11.9.7 still says removing a share hides the item "at once", against S11.4's "at its next exchange" (R3.4 and S11.4 agree) |
+| C31 | — | `money.py`'s docstring says amounts are strings in JSON, and the import results still send `str(...)` (`ui/imports.py:364-370, 620`); R1.9 says exact number literals |
+| C33 | — | The link carries seven kinds (`links/serve.py:24`, no `person`), and `link-protocol.md` §4.4 names no person item; R1.8 says any of the eight shareable kinds |
+| C36 | — | Wallets are read from mempool.space by default before anyone saves Settings › Bitcoin (`settings.py:222-223`); S16.7 says no wallet is read until an admin saves it |
+| C44 | — | Every row left out teaches a skip, those already in the account included (`ui/imports.py:1149`, `importers/statements.py:373`); S1.3.3.4 says those teach nothing |
+| C45 | — | A statement value older than 90 days is marked stale but raises no alert (`prices/refresh.py`, `alerts.py`); S4.3 and S12.11.1.2 list the alert |
+| C46 | — | A wash sale's replacement in an IRA or a Roth IRA still takes the disallowed loss into its basis (`ledger/lots.py:249`); S3.8.3 says the loss is lost for good there |
+| C47 | — | An adjusted option's strike isn't rounded to the thousandth (`options/adjust.py:129`; S3.10.1) |
+| B33 | Med | Loans still have no Reconcile tab (`ledger/types.py:115`), though S1.11 names them and S1.11.7.1 expects their statements; a loan's statement-overdue alert links to `/reconcile`, which lands on the Overview only by a fallback (`alerts.py:459`, `web/ui/screens/account.js:57`). Either loans get the tab, or S1.11 and the alert say Overview |
+| B21 | Med | A payoff plan's extra payments still add the full PMI after it has ended (`loans/payoff.py:126, 135, 162`) |
+| B22 | Low | Two of its five parts are missing and one is done differently: a portfolio's 1Y, 3Y and 5Y returns drop a deleted account (`ui/portfolios.py:418-426` calls `figures.combine` without `with_deleted`, while the value series keeps it); a donation's term uses the lot's `acquiredOn`, not a replacement's `heldFrom` (`ui/giving.py:467`); TXF leaves the C, L and digital-asset rows out and tells the user to enter them from the CSV (`taxes/exports.py:10-15, 79-81`) |
+| B23 | Low | Three money columns are still decimal text, against S14.3: `BudgetLine.amount`, `EstimatedPayment.amount` and `QualifiedExpense.amount` (`store/tables/budgets.py:41`, `taxes.py:146`, `education.py:41`) |
+| B41 | Low | A pull's Activity names no link, actor or subject (`links/receive.py:82-91`, `links/manage.py:546-556`), so with several links nobody can tell which server pulled (S11.8) |
+| Tests | — | Section 4 asks for a golden-file test with each fix of a figure (S17.5), and `test_golden.py` covers only a simple wash sale, a short-held written put and the digital-asset boxes. B1's test has one sale, not the review's two; B2 has no test of a loss deferred again; B3, B4, B15 and B39, B7's rerun and B37's wallet caps have none. B38's test reads the OpenAPI document, which gives every 201 a `Location`, so it can't fail; nothing checks that a guessed `Location` reads the record |
+
+### 12.3 Open outside this review
+
+1. **Q15**: the requirements' final approval, after which `initial-code` merges into `main`.
+2. **G23**: real receipt fixtures for the reader, waiting on the household's receipts.
+3. **`docs/test-plan.md`**, T1 to T13: what needs systems the build doesn't have. Two more
+   things never ran for real: the reader's Landlock file sandbox (the build host's kernel is
+   4.18, so only the path without it ran, which the new alert now reports), and the arm64
+   image on arm64 hardware (only emulated).
+4. **`docs/requirements/later.md`**, L1 to L9: after the first release.
+
+### 12.4 For the next reviewer
+
+1. Start with 12.2's open rows, and check each against the code rather than the commit message.
+2. Of those, the ones that touch secrets and sign-in first: C23, K16, K15 with A12, K17, K19,
+   K4, K12 and K25.
+3. Then read what milestone 8 built, which no review has read yet: the host commands over the
+   socket (K1, K6), TLS pinning and sealed link changes (K3, B24, B25, B26), the reader's
+   sandbox (K4), the re-encryption journal and restores (K5, K9), categorisation rules (N1),
+   corporate actions (N4), and closed years with amended returns (N5, S2.8, S8.15).
+4. `web/check` runs every automated check (about 18 minutes); the connector's tests run in a
+   pytest session of their own.

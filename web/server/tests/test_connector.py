@@ -514,6 +514,32 @@ def test_a_connection_that_needs_a_sign_in_alerts_its_owner_and_admins(server, p
     assert any(a["title"] == "Alice's Schwab login needs a sign-in" for a in theirs)
 
 
+def test_an_admin_who_owns_the_connection_is_alerted_once(server, paired, admin):
+    # S12.11.2: one alert per cause; an admin who owns what failed has the owner's alert, with
+    # its own way to fix it, and another admin has the admins' one.
+    me = admin.get("/ui/api/session").json()["user"]
+    make_user(server, "root2", admin=True)
+    cid = connection(server, me["id"])
+    paired.call(
+        "/connector/v1/report",
+        {
+            "locked": False,
+            "connections": [{"id": cid, "state": "needs-sign-in", "message": "weekly"}],
+        },
+    )
+    opened = alerts.evaluate(server)
+    mine = [a for a in admin.get("/ui/api/alerts").json()["open"] if "sign-in" in a["title"]]
+    assert [(a["title"], a["fix"]) for a in mine] == [
+        ("Alice's Schwab login needs a sign-in", "Sign in again")
+    ]
+    other = sign_in(server, "root2")
+    theirs = [a for a in other.get("/ui/api/alerts").json()["open"] if "sign-in" in a["title"]]
+    assert [a["fix"] for a in theirs] == ["Connector settings"]
+    with server.db.read() as s:
+        told = sorted(u.username for a in opened for u in alerts.recipients(s, a))
+    assert told == sorted([me["username"], "root2"])
+
+
 @pytest.fixture
 def frozen_clock():
     clock.fix(dt.datetime(2026, 10, 15, 12, 0, tzinfo=dt.UTC))

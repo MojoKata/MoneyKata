@@ -195,8 +195,10 @@
        transaction and writing only what changed. A failing source raises one alert, not one
        per attempt, and a check that fails leaves its alerts as they were. It stays **open**
        while the cause lasts and is **resolved** by itself when the cause clears (the source
-       answers again). A user can **dismiss** an open alert for themselves. Resolved alerts
-       stay listed for 90 days.
+       answers again). A cause raised for admins and for the owner of what failed (a
+       Connection, the wallets' explorer or node) reaches an admin who is that owner once, as
+       the owner's alert, on screen and by email. A user can **dismiss** an open alert for
+       themselves. Resolved alerts stay listed for 90 days.
     3. **The Alerts screen** lists open alerts first, newest first, then resolved ones. Each
        shows what it is about, since when, a link to the place to fix it, and **Dismiss**.
        Opening the screen marks the user's alerts as seen.

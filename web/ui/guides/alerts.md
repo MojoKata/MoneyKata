@@ -8,7 +8,8 @@ What needs you. Activity records what happened; an alert asks you to do somethin
 
 One alert per cause: a failing price source raises one alert, not one per try. It stays open while
 the cause lasts and **resolves by itself** when the cause clears. The button beside it goes where to
-fix it. **Dismiss** hides it for you alone; it stays open for anyone else it's for.
+fix it. **Dismiss** hides it for you alone; it stays open for anyone else it's for. An admin who owns
+what failed, such as their own Connection, sees it once, as its owner.
 
 Admins are alerted about a price source or email failing for longer than Settings › Alerts allows, a
 failed backup, the yearly check of the master key's recovery phrase, and the receipt reader running

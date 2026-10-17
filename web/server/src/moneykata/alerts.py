@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import and_, false, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from . import clock, ids, settings, timezones
 from .store.entities.alerts import Alert, AlertState
@@ -690,7 +690,22 @@ def occasion_title(up) -> str:
 def recipients(s: Session, alert: Alert) -> list[User]:
     from .auth.users import admin_ids
 
-    wanted = [alert.userId] if alert.userId else admin_ids(s)
+    if alert.userId:
+        wanted = [alert.userId]
+    else:
+        # An admin who owns what failed is told once, as its owner (S12.11.2).
+        admins = admin_ids(s)
+        owners = set(
+            s.scalars(
+                select(Alert.userId).where(
+                    Alert.userId.in_(admins),
+                    Alert.causeKey.in_([f"{alert.causeKey}:{a}" for a in admins]),
+                    Alert.openedAt.is_not(None),
+                    Alert.resolvedAt.is_(None),
+                )
+            )
+        )
+        wanted = [a for a in admins if a not in owners]
     return [
         u
         for u in (s.get(User, i) for i in wanted)
@@ -852,10 +867,11 @@ def _state(s: Session, alert_id: str, user_id: str) -> AlertState:
 
 
 def visible(s: Session, user_id: str, admin: bool):
-    """The alerts for one user: their own, and the admins' when they are one."""
+    """The alerts for one user: their own, and the admins' when they are one, but for those
+    they have as the owner of what failed (S12.11.2)."""
     who = Alert.userId == user_id
     if admin:
-        who = or_(who, Alert.userId.is_(None))
+        who = or_(who, and_(Alert.userId.is_(None), ~_owned(user_id)))
     cutoff = clock.now() - dt.timedelta(days=KEEP_RESOLVED_DAYS)
     return (
         select(Alert, AlertState)
@@ -866,6 +882,23 @@ def visible(s: Session, user_id: str, admin: bool):
             or_(Alert.resolvedAt.is_(None), Alert.resolvedAt >= cutoff),
         )
         .order_by(Alert.openedAt.desc())
+    )
+
+
+def _owned(user_id: str):
+    """An admins' alert the user also has as the owner of what failed: a Connection that keeps
+    their accounts current, their wallets' explorer or node. The owner's alert has the admins'
+    key and the owner's id, and opens and resolves with it."""
+    own = aliased(Alert)
+    return (
+        select(own.id)
+        .where(
+            own.userId == user_id,
+            own.causeKey == Alert.causeKey + f":{user_id}",
+            own.openedAt.is_not(None),
+            own.resolvedAt.is_(Alert.resolvedAt),
+        )
+        .exists()
     )
 
 

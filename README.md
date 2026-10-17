@@ -9,10 +9,11 @@ server, and households on other MoneyKata servers can share with named people he
 only, in a window of their own.
 
 **Status:** the eight milestones of the first release (requirements S17.9.1–S17.9.8) are
-built: the server in `web/`, the MoneyKata Connector in `connector/`. Milestone 8 built what the
-second review of the requirements against the code found the release still needed
-([`docs/reviews/initial-code-review-2.md`](docs/reviews/initial-code-review-2.md)). The branch
-merges into `main` once the requirements have their final approval. What the build couldn't
+built: the server in `web/`, the MoneyKata Connector in `connector/`. Milestone 8 built most of
+what the second review of the requirements against the code found the release still needed
+([`docs/reviews/initial-code-review-2.md`](docs/reviews/initial-code-review-2.md)); its
+section 12 lists what is still open, checked against the code. The branch merges into `main`
+once the requirements have their final approval. What the build couldn't
 try for real is in [`docs/test-plan.md`](docs/test-plan.md); the gaps and the open questions
 are listed in the requirements' README.
 

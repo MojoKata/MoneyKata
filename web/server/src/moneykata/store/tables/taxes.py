@@ -126,7 +126,7 @@ TaxBookChange = record(
     "TxChg",
     Column("bookId", Text, ForeignKey("TaxBook.id", ondelete="CASCADE"), nullable=False),
     Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE"), nullable=False),
-    Column("gains", Dec, nullable=False),
+    Column("gains", Cents, nullable=False),
     Column("madeById", Text, ForeignKey("User.id")),
     Column("settled", Text),  # amended, not-needed
     Column("settledAt", UtcTimestamp),
