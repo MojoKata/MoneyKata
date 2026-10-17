@@ -412,7 +412,10 @@ def recovery_phrase(s: Session, server) -> Iterable[Cause]:
     from .store.entities.core import Activity
 
     last = s.scalars(
-        select(Activity.at).where(Activity.kind == "key.verified").order_by(Activity.at.desc())
+        # `keys verify` on the host, or any unlock: both opened the keyring (S15.6.5).
+        select(Activity.at)
+        .where(Activity.kind.in_(("key.verified", "key.unlocked")))
+        .order_by(Activity.at.desc())
     ).first()
     since = last or server.store.keys.ring.master_created
     due = since + dt.timedelta(days=PHRASE_CHECK_DAYS)
@@ -782,9 +785,9 @@ def evaluate(server) -> list[Alert]:
         for a in opened:
             _announce(s, server, a)
         notify = {a.id: [u.id for u in recipients(s, a)] for a in opened}
-        titles = {a.id: a.title for a in opened}
-    for alert_id, users in notify.items():
-        server.events.publish("alert", {"title": titles[alert_id]}, users=users)
+    for users in notify.values():
+        # Its count only, never its title: the screen reads the alert through the API (S12.6).
+        server.events.publish("alert", {"count": 1}, users=users)
     return opened
 
 

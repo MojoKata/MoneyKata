@@ -168,6 +168,17 @@ def test_the_phrase_check_comes_due_after_a_year(server, admin_client, frozen):
     assert alerts.evaluate(server) == []
     clock.fix(created + dt.timedelta(days=366))
     assert sorted(a.kind for a in alerts.evaluate(server)) == ["key-rotation", "phrase-check"]
+    # S15.6.5: every unlock is a check as well, so one resolves it.
+    from moneykata import activity
+
+    with server.db.tx() as s:
+        activity.record(s, "key.unlocked", actor=None, for_admins=True)
+    alerts.evaluate(server)
+    from moneykata.store.entities.alerts import Alert
+
+    with server.db.read() as s:
+        still = {a.kind for a in s.query(Alert).filter(Alert.resolvedAt.is_(None))}
+    assert still == {"key-rotation"}
 
 
 def test_the_rotation_reminder_follows_its_setting(server, admin_client, frozen):

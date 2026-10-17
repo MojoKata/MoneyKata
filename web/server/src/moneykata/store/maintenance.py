@@ -270,6 +270,30 @@ def check_backup(path: Path, master_key: bytes) -> None:
         copy.verify(scratch, master.DataKeys.derive(data_key).sqlcipher_key)
 
 
+def made_of(path: Path) -> dt.datetime | None:
+    """When a backup was made, by its manifest; a folder whose name says another time is
+    refused, so a backup renamed to a newer one's name passes for nothing. None for a copy with
+    no manifest (a pre-upgrade `.db`)."""
+    manifest = path / "manifest.json"
+    if not path.is_dir() or not manifest.exists():
+        return None
+    try:
+        made = dt.datetime.fromisoformat(json.loads(manifest.read_text())["made"])
+    except (OSError, KeyError, TypeError, ValueError) as e:
+        raise RefuseStart(f"{path.name}'s manifest doesn't say when it was made: {e}") from None
+    if path.name.startswith(BACKUP_PREFIX):
+        try:
+            named = dt.datetime.strptime(path.name[len(BACKUP_PREFIX) :], "%Y%m%d-%H%M%S")
+        except ValueError:
+            named = None
+        if named is None or named.replace(tzinfo=dt.UTC) != made.replace(microsecond=0):
+            raise RefuseStart(
+                f"{path.name} was made {made:%Y-%m-%d %H:%M:%S} UTC, not when its name says: "
+                "it was renamed"
+            )
+    return made
+
+
 def verify_backup(config: Config, master_key: bytes, path: Path | None = None) -> Path:
     """`moneykata db verify-backup`: a backup (the newest by default) is whole and opens with
     the phrase typed, which may be a previous one for a backup made before a rotation: the
@@ -279,6 +303,7 @@ def verify_backup(config: Config, master_key: bytes, path: Path | None = None) -
         if not made:
             raise RefuseStart(f"there is no backup in {config.backup_dir}")
         path = made[-1]
+    made_of(path)
     try:
         check_backup(path, master_key)
     except ValueError as e:

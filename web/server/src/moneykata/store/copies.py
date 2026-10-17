@@ -184,23 +184,12 @@ def data_key_of(c: Copy, master_key: bytes) -> bytes:
 
 def reencrypt(c: Copy, master_key: bytes, new_data_key: bytes) -> None:
     """Rewrite a copy's database under a new data key (S15.7.2), and its keyring: for a copy
-    whose keyring opens with this phrase. A before-restore folder's receipts, if any, are
-    rewritten too."""
+    whose keyring opens with this phrase. A restore leaves the receipt files where they are
+    (S15.6.8), so no copy holds any to rewrite."""
     old = data_key_of(c, master_key)
     old_keys, new_keys = master.DataKeys.derive(old), master.DataKeys.derive(new_data_key)
     if c.db_path.exists():
         copy.rekey(c.db_path, old_keys.sqlcipher_key, new_keys.sqlcipher_key)
-    receipts = c.path / "receipts" if c.kind == "before-restore" else None
-    if receipts is not None and receipts.is_dir():
-        from ..keys import files
-
-        for path in sorted(receipts.glob("*.mkr")):
-            files.write(
-                path,
-                files.open_stream(path, old_keys.receipts, path.stem),
-                new_keys.receipts.public_key(),
-                path.stem,
-            )
     assert c.ring is not None
     ring = master.wrap(
         master_key, new_data_key, c.ring.master_created, master.now(), c.ring.previous

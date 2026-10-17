@@ -167,3 +167,22 @@ def test_a_statement_expires_after_its_period_and_the_storage_setting(server, fr
         "Expired Sep 2032, prunable",
         "Statements keeps statements 5 years",
     )
+
+
+def test_a_file_only_a_deleted_receipt_names_is_pruned(server, frozen):
+    # S14.10.5: a file is removed once no live receipt needs it; a deleted one doesn't count.
+    from moneykata.receipts import retention
+    from moneykata.store.entities.receipts import Receipt
+
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    first = upload(c, png((9, 8, 7))).json()["id"]
+    second = upload(c, png((9, 8, 7))).json()["id"]
+    with server.db.tx() as s:
+        a, b = s.get(Receipt, first), s.get(Receipt, second)
+        assert a.fileId == b.fileId, "one file for the same bytes"
+        b.mark_deleted(None)
+        path = retention.file_path(server.config.receipts_dir, a.fileId)
+        assert path.exists()
+        assert retention.prune_files(s, server.config.receipts_dir, [a], a.ownerId) > 0
+    assert not path.exists()

@@ -53,10 +53,13 @@ export function connect(ended) {
   ) {
     source.addEventListener(kind, () => bump(kind));
   }
-  // A new alert shows at once, with its count on the badge (S12.11.4).
-  source.addEventListener('alert', (e) => {
-    const data = parseJson(/** @type {MessageEvent} */ (e).data);
-    toast(`New alert: ${data.title}`);
+  // A new alert shows at once, with its count on the badge (S12.11.4). The event names no
+  // alert (S12.6): the newest is read through the API.
+  source.addEventListener('alert', () => {
+    api.get('/alerts').then((/** @type {any} */ r) => {
+      const a = r?.open?.[0];
+      toast(a ? `New alert: ${a.title}` : 'A new alert');
+    }).catch(() => toast('A new alert'));
   });
   for (const kind of ['alert', 'badges', 'signup']) {
     source.addEventListener(kind, refreshBadges);

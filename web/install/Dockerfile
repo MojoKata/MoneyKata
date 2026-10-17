@@ -19,7 +19,8 @@ COPY web/VERSION web/
 COPY web/server/pyproject.toml web/server/uv.lock web/server/
 RUN cd web/server && uv sync --frozen --no-dev --no-install-project
 COPY web/server/src web/server/src
-RUN cd web/server && uv sync --frozen --no-dev
+# Dev mode's code stays out of the image: its seed users and their fixed password (S17.6).
+RUN cd web/server && uv sync --frozen --no-dev && rm -rf src/moneykata/dev
 COPY web/ui web/ui
 RUN python3 web/ui/vendor/vendor.py extract \
     && rm -f web/ui/vendor/*.tgz \

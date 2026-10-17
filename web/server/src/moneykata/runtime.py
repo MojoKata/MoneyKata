@@ -367,6 +367,19 @@ async def _complete(server: Server, master_key: bytes, seed: bool) -> None:
 
 async def _open(server: Server, master_key: bytes, seed: bool) -> None:
     await asyncio.to_thread(build, server, master_key)
+    # Every unlock is a check of the recovery phrase: a copy that unlocks is a good copy
+    # (S15.6.5).
+    from . import activity
+    from .keys import master
+
+    with server.db.tx() as s:
+        activity.record(
+            s,
+            "key.unlocked",
+            actor=None,
+            for_admins=True,
+            detail={"fingerprint": master.fingerprint(server.store.keys.master_id)},
+        )
     if server.config.dev:
         from .dev import devmode
 

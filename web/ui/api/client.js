@@ -106,8 +106,8 @@ export const api = {
   put: (path, body, version) => call('PUT', path, { body, version }),
   /** @param {string} path @param {any} body @param {number} [version] @param {Record<string, any>} [params] */
   patch: (path, body, version, params) => call('PATCH', path, { body, version, params }),
-  /** @param {string} path @param {number} [version] @param {Record<string, any>} [params] */
-  del: (path, version, params) => call('DELETE', path, { version, params }),
+  /** @param {string} path @param {number} [version] @param {Record<string, any>} [params] @param {any} [body] */
+  del: (path, version, params, body) => call('DELETE', path, { version, params, body }),
   /** @param {string} path @param {File} file */
   upload: (path, file) => {
     const form = new FormData();

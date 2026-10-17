@@ -148,6 +148,11 @@ class Server:
 
 
 def create_app(server: Server) -> FastAPI:
+    # An upload is held in memory, never spooled to a temporary file (S13.7.6): uploads stop
+    # at Settings' size, at most 100 MB, well inside this.
+    from starlette.formparsers import MultiPartParser
+
+    MultiPartParser.spool_max_size = 128 * 1024 * 1024
     app = FastAPI(
         title="MoneyKata",
         version=server.version,

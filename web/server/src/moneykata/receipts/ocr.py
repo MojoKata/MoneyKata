@@ -20,6 +20,9 @@ MAX_PAGES = 3  # a receipt's
 STATEMENT_PAGES = 30  # a scanned statement's, each page read in turn within its time limit
 LONG_SIDE = 2000
 DPI = 300
+# Pixels an image may have, or a PDF page be drawn at, before it is refused or drawn smaller
+# (S9.8.4.3).
+MAX_PIXELS = 40_000_000
 THREADS = 2
 
 MODELS = {
@@ -161,10 +164,20 @@ def text_layer(data: bytes) -> list[str] | None:
     return [ln.strip() for t in texts for ln in t.splitlines() if ln.strip()]
 
 
+def _rendered(page):
+    """A page at the reading DPI, or smaller when that would pass the pixel cap: a page of
+    any size is never drawn bigger than an image may be."""
+    w, h = page.get_size()  # in points
+    scale = DPI / 72
+    if w * h * scale * scale > MAX_PIXELS:
+        scale = (MAX_PIXELS / max(w * h, 1)) ** 0.5
+    return page.render(scale=max(scale, 0.01)).to_pil()
+
+
 def read(data: bytes, media_type: str, pages: int = MAX_PAGES) -> Read:
     from PIL import Image
 
-    Image.MAX_IMAGE_PIXELS = 40_000_000
+    Image.MAX_IMAGE_PIXELS = MAX_PIXELS
     if media_type == "application/pdf":
         import pypdfium2 as pdfium
 
@@ -173,10 +186,9 @@ def read(data: bytes, media_type: str, pages: int = MAX_PAGES) -> Read:
             return Read(lines, "text", "pypdfium2 text layer")
         pdf = pdfium.PdfDocument(data)
         try:
-            # Rendered one at a time, so a long statement holds one page in memory.
-            lines = _ocr(
-                pdf[i].render(scale=DPI / 72).to_pil() for i in range(min(len(pdf), pages))
-            )
+            # Rendered one at a time, so a long statement holds one page in memory, each
+            # within the images' pixel cap (S9.8.4.3).
+            lines = _ocr(_rendered(pdf[i]) for i in range(min(len(pdf), pages)))
         finally:
             pdf.close()
         return Read(lines, "ocr", engine_name())
@@ -185,7 +197,7 @@ def read(data: bytes, media_type: str, pages: int = MAX_PAGES) -> Read:
 
         pi_heif.register_heif_opener()
         img = Image.open(io.BytesIO(data))
-        if img.size[0] * img.size[1] > 40_000_000:
+        if img.size[0] * img.size[1] > MAX_PIXELS:
             raise ReadError("the image is larger than 40 million pixels")
         img.load()
     except ReadError:

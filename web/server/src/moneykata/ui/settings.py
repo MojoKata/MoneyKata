@@ -526,6 +526,7 @@ class Confirmation(Model):
     at: dt.datetime
     fingerprint: str
     matched: bool
+    how: str = "verify"  # verify (`keys verify` on the host) or unlock (S15.6.5)
 
 
 class RestoreReport(Model):
@@ -609,11 +610,13 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
             Confirmation(
                 at=a.at,
                 fingerprint=json.loads(a.detail).get("fingerprint", ""),
-                matched=a.kind == "key.verified",
+                matched=a.kind in ("key.verified", "key.unlocked"),
+                how="unlock" if a.kind == "key.unlocked" else "verify",
             )
             for a in s.scalars(
                 select(Activity)
-                .where(Activity.kind.in_(("key.verified", "key.verify-failed")))
+                # An unlock counts as a confirmation, as `keys verify` does (S15.6.5).
+                .where(Activity.kind.in_(("key.verified", "key.unlocked", "key.verify-failed")))
                 .order_by(Activity.at.desc())
                 .limit(10)
             )
@@ -840,14 +843,32 @@ def key_copies(request: Request, c: Caller = Depends(admin)):
     return copies_out(server(request))
 
 
+class PhraseIn(Model):
+    phrase: str
+
+
 @router.delete("/settings/keys/copies/{name}", response_model=Deleted)
-def remove_copy(name: str, request: Request, c: Caller = Depends(admin)):
-    """Remove one copy (S15.8 step 4). The password again (S13.7.2)."""
+def remove_copy(name: str, body: PhraseIn, request: Request, c: Caller = Depends(admin)):
+    """Remove one copy (S15.8 step 4): the password again and the recovery phrase, so an
+    admin's session alone deletes no backup (S13.7.2, S16.13). A wrong phrase counts toward
+    the sign-in's lockout."""
+    from ..keys import master, phrase
     from ..store import copies
+    from ..store.entities.users import User
     from .deps import recent_auth
+    from .session import count_failure, guarded
 
     recent_auth(c)
     srv = server(request)
+    address = guarded(request, c.user.username)
+    try:
+        right = master.key_id(phrase.from_words(body.phrase)) == srv.store.keys.master_id
+    except phrase.PhraseError:
+        right = False
+    if not right:
+        with srv.db.tx() as s:
+            count_failure(s, srv.sign_in, c.user.username, address, s.get(User, c.id))
+        raise refuse("phrase", "phrase-wrong", "That isn't this server's recovery phrase.", 403)
     found = copies.find(srv.config, name)
     if found is None:
         raise Problem(404, "not-found", "No such copy.")

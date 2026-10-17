@@ -889,3 +889,14 @@ def test_a_failed_write_names_no_value_it_was_given(store):
         s.execute(insert, row)
         s.execute(insert, row)
     assert secret not in str(e.value)
+
+
+def test_a_backup_renamed_to_another_time_is_refused(store, keyed_config, master_key):
+    # K25: verify-backup and restore go by the manifest's own time, so a backup renamed to a
+    # newer one's name passes for nothing.
+    made = maintenance.backup(keyed_config, store)
+    assert maintenance.made_of(made).replace(microsecond=0).strftime("%Y%m%d-%H%M%S") in made.name
+    renamed = made.with_name("moneykata-20991231-235959")
+    made.rename(renamed)
+    with pytest.raises(RefuseStart, match="not when its name says"):
+        maintenance.verify_backup(keyed_config, master_key, renamed)

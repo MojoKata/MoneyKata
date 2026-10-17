@@ -505,6 +505,7 @@
  * @property {string} at
  * @property {string} fingerprint
  * @property {boolean} matched
+ * @property {string} [how]
  */
 
 /**
@@ -2516,6 +2517,11 @@
 
 /**
  * @typedef {Object} Phrase
+ * @property {string} phrase
+ */
+
+/**
+ * @typedef {Object} PhraseIn
  * @property {string} phrase
  */
 

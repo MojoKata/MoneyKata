@@ -53,6 +53,12 @@ def dev_config(
 def refuse_dev(config: Config) -> None:
     if os.geteuid() == 0:
         raise RefuseStart("dev mode does not run as root")
+    # Only from a checkout (S17.6): the image carries no dev.sh, so its seed users and their
+    # fixed password never run where a household's server does.
+    from . import paths
+
+    if not (paths.WEB / "dev.sh").exists():
+        raise RefuseStart("dev mode runs only from a checkout of the repository, not the image")
     installed = Path("/var/lib/moneykata")
     if config.data_dir.resolve().is_relative_to(installed):
         raise RefuseStart("dev mode does not run on an installed server's data directory")

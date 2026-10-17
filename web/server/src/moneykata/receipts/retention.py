@@ -320,8 +320,13 @@ def prune_files(s: Session, receipts_dir: Path, rows: list[Receipt], by: str) ->
     s.flush()
     freed = 0
     for file_id in {r.fileId for r in rows}:
+        # Needed only by a live receipt: a deleted one doesn't count (S14.10.5).
         still = s.scalar(
-            select(Receipt.id).where(Receipt.fileId == file_id, Receipt.filePrunedAt.is_(None))
+            select(Receipt.id).where(
+                Receipt.fileId == file_id,
+                Receipt.filePrunedAt.is_(None),
+                Receipt.deleted == false(),
+            )
         )
         if still is not None:
             continue

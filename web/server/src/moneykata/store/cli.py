@@ -73,12 +73,14 @@ def _backup(args) -> int:
 
 
 def _verify_backup(args) -> int:
-    from .maintenance import queue_host_event, verify_backup
+    from .maintenance import made_of, queue_host_event, verify_backup
 
     config = load(Path(args.config))
     path = verify_backup(config, read_phrase(), Path(args.path) if args.path else None)
     queue_host_event(config, "db.verify-backup", {"name": path.name})
-    print(f"{path.name}: whole, and opens with that phrase")
+    made = made_of(path)
+    when = f", made {made:%Y-%m-%d %H:%M:%S} UTC" if made else ""
+    print(f"{path.name}{when}: whole, and opens with that phrase")
     return 0
 
 

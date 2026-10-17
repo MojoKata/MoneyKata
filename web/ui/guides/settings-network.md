@@ -5,6 +5,10 @@ line, as `192.168.1.0/24` or a single address; an empty list allows any address.
 applies to the next request. Addresses outside a list get *not found*, as if the path didn't
 exist. `/healthz` and `/demo` answer any address. Admins only.
 
+The lists are kept in the database, which can't be read while the server is locked. So until the
+phrase is given, the locked screen and the unlock answer any address that reaches the listener:
+the reverse proxy in front of MoneyKata, and the host's firewall, are what limit them.
+
 ![Network](shots/settings-network.webp)
 
 ## Allowed to use the app {#network-app-ranges}

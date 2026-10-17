@@ -206,3 +206,20 @@ def test_reencryption_is_scheduled_in_settings_never_run_while_serving(server, a
     r = admin_client.delete("/ui/api/settings/keys/reencrypt")
     assert r.status_code == 200 and r.json()["scheduled"] is None
     assert not reencrypt.pending(server.config)
+
+
+def test_removing_a_copy_asks_for_the_phrase_too(server, admin_client, master_key):
+    """S16.13, S13.7.2: Remove takes the password again and the recovery phrase, so an admin's
+    session alone deletes no backup; a wrong phrase is refused and counted."""
+    b = maintenance.backup(server.config, server.store)
+    path = f"/ui/api/settings/keys/copies/{b.name}"
+    wrong = " ".join(phrase.to_words(os.urandom(16)))
+    r = admin_client.request("DELETE", path, json={"phrase": wrong})
+    assert r.status_code == 403 and r.json()["code"] == "phrase-wrong"
+    assert b.exists()
+    words = " ".join(phrase.to_words(master_key))
+    r = admin_client.request("DELETE", path, json={"phrase": words})
+    assert r.status_code == 200, r.text
+    assert not b.exists()
+    with server.db.read() as s:
+        assert "signin.failed" in [a.kind for a in s.query(Activity)]

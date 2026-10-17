@@ -2836,6 +2836,11 @@
             "title": "Fingerprint",
             "type": "string"
           },
+          "how": {
+            "default": "verify",
+            "title": "How",
+            "type": "string"
+          },
           "matched": {
             "title": "Matched",
             "type": "boolean"
@@ -14202,6 +14207,20 @@
           "phrase"
         ],
         "title": "Phrase",
+        "type": "object"
+      },
+      "PhraseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "phrase": {
+            "title": "Phrase",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phrase"
+        ],
+        "title": "PhraseIn",
         "type": "object"
       },
       "PickIn": {
@@ -36768,7 +36787,7 @@
     },
     "/ui/api/settings/keys/copies/{name}": {
       "delete": {
-        "description": "Remove one copy (S15.8 step 4). The password again (S13.7.2).",
+        "description": "Remove one copy (S15.8 step 4): the password again and the recovery phrase, so an\nadmin's session alone deletes no backup (S13.7.2, S16.13). A wrong phrase counts toward\nthe sign-in's lockout.",
         "operationId": "remove_copy_ui_api_settings_keys_copies__name__delete",
         "parameters": [
           {
@@ -36781,6 +36800,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhraseIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {

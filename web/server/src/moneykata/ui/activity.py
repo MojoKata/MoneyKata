@@ -54,7 +54,7 @@ TEXT = {
     "prices.source-removed": "{actor} removed the price source {source}",
     "key.made": "A master key was made on the host ({fingerprint})",
     "key.fingerprint-shown": "The master key's fingerprint was read on the host",
-    "key.unlocked": "The server was unlocked from the host",
+    "key.unlocked": "The server was unlocked with the recovery phrase ({fingerprint})",
     "key.unlock-refused": "An unlock from the host was refused",
     "key.verified": "The master key's recovery phrase was confirmed on the host ({fingerprint})",
     "key.verify-failed": "A recovery phrase typed on the host did not match ({fingerprint})",

@@ -229,6 +229,9 @@ function Plain({ section }) {
       ['networkAppRanges', 'networkLinkRanges', 'networkConnectorRanges'],
       html`
         <h3>Network</h3>
+        <p class="small dim" style=${{ marginTop: '-6px' }}>While the server is locked these ranges
+          can't be read: the locked screen answers any address that reaches it, and the reverse
+          proxy and the host's firewall are what limit it.</p>
         <${Field} label="Allowed to use the app" id="network-app-ranges" error=${errAt(
           e,
           'networkAppRanges',
@@ -527,6 +530,35 @@ function AddSource({ close, sources }) {
 }
 
 /** @param {{ close: (v?: any) => void, src: any }} p */
+/** Removing a copy asks for the recovery phrase as well as the password (S16.13). */
+/** @param {{ close: (v?: any) => void, c: any }} p */
+function RemoveCopy({ close, c }) {
+  useDialogGuide('dialog-remove-copy');
+  const [words, setWords] = useState('');
+  const remove = useSubmit(async () => {
+    close(
+      await withReauth(() =>
+        api.del(`/settings/keys/copies/${encodeURIComponent(c.name)}`, undefined, undefined, {
+          phrase: words,
+        })
+      ),
+    );
+  });
+  return html`
+    <${Dialog} title=${`Remove ${c.name}`} close=${close} onSubmit=${() =>
+      remove.run().catch(() => {})}
+      footer=${html`<button class="btn primary" disabled=${remove.busy}>Remove it</button>`}>
+      <p class="small" style=${{ marginTop: 0 }}>It can't be put back. The server's recovery phrase
+        says it is you, as well as your password.</p>
+      <${Field} label="Recovery phrase" error=${errAt(remove.error, 'phrase')}>
+        <${Input} type="password" value=${words} onInput=${setWords} autocomplete="off"
+          autocorrect="off" autocapitalize="off" spellcheck=${false} required />
+        </${Field}>
+        <${FormError} error=${remove.error} shown=${['phrase']} />
+        </${Dialog}>
+  `;
+}
+
 function SetKey({ close, src }) {
   useDialogGuide('dialog-source-key');
   const [key, setKey] = useState('');
@@ -1131,10 +1163,11 @@ function Keys() {
     res.reload();
   });
   const removeCopy = async (/** @type {any} */ c) => {
-    await withReauth(() => api.del(`/settings/keys/copies/${encodeURIComponent(c.name)}`));
-    toast(`${c.name} removed`);
-    cps.reload();
-    res.reload();
+    if (await openDialog(RemoveCopy, { c })) {
+      toast(`${c.name} removed`);
+      cps.reload();
+      res.reload();
+    }
   };
   const forget = async (/** @type {string} */ fp) => {
     await withReauth(() => api.del(`/settings/keys/previous/${encodeURIComponent(fp)}`));
@@ -1232,8 +1265,10 @@ function Keys() {
       <div class="small dim">${/** @type {any} */ (cps.data)?.note || ''}</div></div></div>
     <div class="list-item"><div class="grow">Recovery phrase<div class="small dim">${
     confirmed
-      ? `Last confirmed with moneykata keys verify on ${date(confirmed.at.slice(0, 10))}.`
-      : 'Not confirmed on the host since install. Check it once a year with moneykata keys verify.'
+      ? `Last confirmed ${
+        confirmed.how === 'unlock' ? 'by the unlock' : 'with moneykata keys verify'
+      } on ${date(confirmed.at.slice(0, 10))}.`
+      : 'Not confirmed since install. Every unlock confirms it; check the copies once a year with moneykata keys verify.'
   }</div></div>
       ${
     confirmed

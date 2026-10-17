@@ -339,3 +339,29 @@ def test_the_server_can_be_made_non_dumpable():
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
     assert out.stdout.strip() == "0"
+
+
+def test_a_pdf_page_is_drawn_within_the_pixel_cap():
+    # S9.8.4.3: a page of any size is never drawn bigger than an image may be.
+    from moneykata.receipts import ocr
+
+    class Page:
+        def get_size(self):
+            return (14400.0, 14400.0)  # the largest page PDF allows, in points
+
+        def render(self, scale):
+            self.scale = scale
+            return self
+
+        def to_pil(self):
+            return self
+
+    page = ocr._rendered(Page())
+    assert (14400 * page.scale) ** 2 <= ocr.MAX_PIXELS * 1.0001
+
+
+def test_an_upload_is_held_in_memory(bare_client):
+    # S13.7.6: never spooled to a temporary file; uploads stop at 100 MB.
+    from starlette.formparsers import MultiPartParser
+
+    assert MultiPartParser.spool_max_size >= 100 * 1024 * 1024

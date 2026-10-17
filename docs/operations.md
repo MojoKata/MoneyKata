@@ -197,7 +197,8 @@ phrase, or the keyring from another server: the line names its fingerprint).
 
 1. Choose the backup: `ls backups/`. Check it first:
    `docker compose run --rm moneykata db verify-backup /var/backups/moneykata/<backup>`,
-   which asks for the phrase.
+   which asks for the phrase and says when the backup was made, by its manifest; it refuses a
+   backup whose name says another time.
 2. Stop the server: `docker compose stop moneykata`.
 3. Restore it: `docker compose run --rm moneykata db restore /var/backups/moneykata/<backup>`,
    with the phrase. It checks the backup again, refuses one from a newer release, and moves
@@ -224,7 +225,7 @@ phrase, or the keyring from another server: the line names its fingerprint).
 ### 6.3 Drills
 
 - **Monthly**: `docker compose run --rm moneykata db verify-backup`, with the phrase. It
-  checks the newest backup's hashes and that it opens, and changes nothing.
+  checks the newest backup's hashes, when it was made and that it opens, and changes nothing.
 - **Yearly**: rehearse §6.2 into a throwaway folder on another machine or a scratch VM, with
   the phrase from its offline copy. That proves the backups, the phrase and these steps
   together. In the same sitting, check the phrase's copies are readable and run

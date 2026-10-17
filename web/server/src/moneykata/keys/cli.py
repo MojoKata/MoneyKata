@@ -506,7 +506,8 @@ def _unlock_cmd(args) -> int:
 
     config = load(Path(args.config))
     code = unlock(config)
-    queue_host_event(config, "key.unlocked" if code == 0 else "key.unlock-refused", {})
+    if code != 0:  # the server records an unlock itself, however it came
+        queue_host_event(config, "key.unlock-refused", {})
     return code
 
 

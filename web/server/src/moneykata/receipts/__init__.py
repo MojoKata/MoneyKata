@@ -36,10 +36,10 @@ from ..store.entities.accounts import Account, Transaction
 from ..store.entities.assets import Item
 from ..store.entities.education import QualifiedExpense
 from ..store.entities.receipts import Receipt, ReceiptLink
+from .ocr import MAX_PIXELS
 
 log = logging.getLogger("moneykata.receipts")
 
-MAX_PIXELS = 40_000_000
 THUMB = 360
 MATCH_DAYS = 5
 TIP = Decimal("1.25")
@@ -100,8 +100,10 @@ def thumbnail(data: bytes, media_type: str) -> bytes | None:
             pdf = pdfium.PdfDocument(data)
             try:
                 page = pdf[0]
-                scale = THUMB / max(page.get_width(), page.get_height())
-                img = page.render(scale=max(scale, 0.1)).to_pil()
+                w, h = page.get_size()
+                # Within the pixel cap, whatever size the page claims (S9.8.4.3).
+                scale = min(max(THUMB / max(w, h), 0.1), (MAX_PIXELS / max(w * h, 1)) ** 0.5)
+                img = page.render(scale=scale).to_pil()
             finally:
                 pdf.close()
         else:

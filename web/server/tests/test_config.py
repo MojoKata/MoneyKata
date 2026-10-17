@@ -111,3 +111,20 @@ def test_tls_names_join_the_self_signed_certificate(tmp_path):
     hypercorn_config(dataclasses.replace(config, host="127.0.0.1"))
     cert = tmp_path / "data" / "tls" / "self-signed.crt"
     assert _covers(cert) == {"money.lan", "192.168.1.20", "home", "localhost"}
+
+
+def test_dev_mode_runs_only_from_a_checkout(tmp_path, monkeypatch):
+    # S17.6: the image carries no dev.sh, and leaves dev mode's code out.
+    from moneykata import main as entry
+    from moneykata import paths
+    from moneykata.config import Config
+
+    config = Config(
+        name="t", mode="proxy", data_dir=tmp_path / "data", backup_dir=tmp_path / "b", dev=True
+    )
+    entry.refuse_dev(config)  # this checkout
+    monkeypatch.setattr(paths, "WEB", tmp_path)
+    with pytest.raises(RefuseStart, match="only from a checkout"):
+        entry.refuse_dev(config)
+    dockerfile = (paths.ROOT / "web" / "install" / "Dockerfile").read_text()
+    assert "rm -rf src/moneykata/dev" in dockerfile
