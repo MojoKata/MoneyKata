@@ -464,7 +464,8 @@ def _shares_given(s, c: Caller, body: DonationIn, to: str) -> dict:
         if open_lot.basis is not None
         else None
     )
-    long_term = held_long(lot.acquiredOn, body.date)  # S3.1's one anniversary rule
+    # S3.1's one anniversary rule, from the day a wash sale's replacement is held from (S3.8.3).
+    long_term = held_long(open_lot.heldFrom or lot.acquiredOn, body.date)
     value = body.amount
     if value is None:
         from .. import valuation

@@ -304,3 +304,14 @@ def test_the_planner_and_plans_through_the_api(server, frozen):
     }
     assert rows["Biweekly"]["following"] and not rows["Extra $300"]["following"]
     assert c.delete(f"/ui/api/accounts/{loan['id']}/loan/plans/{other['id']}").status_code == 200
+
+
+def test_rounding_up_counts_pmi_only_while_it_is_due():
+    # B21, S1.9.5: once PMI ends, the rounded payment rounds what is paid without it.
+    t = mortgage_terms(escrowTax=D(300), pmi=D(90), originalValue=D(360000))
+    r = P.plan_outcomes(t, [], [], dt.date(2025, 1, 15), P.Plan(roundTo=D(100)), 7.0)
+    ahead = [x for x in r.plan.rows if not x.past]
+    assert all(x.payment % D(100) == 0 for x in ahead[:-1]), "every payment a round 100"
+    with_pmi = next(x for x in ahead if x.pmi)
+    without = next(x for x in ahead if not x.pmi)
+    assert with_pmi.payment == D(2200) and without.payment == D(2100), "PMI's 90 no longer in it"

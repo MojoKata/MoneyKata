@@ -54,14 +54,15 @@ class Result:
 
 
 class _Extras:
-    """The plan's overpayment on each payment day, in order."""
+    """The plan's overpayment on each payment day, in order. Rounding up the payment counts
+    the escrow, and PMI only while it is still due (S1.9.5)."""
 
-    def __init__(self, plan: Plan, escrow: Decimal) -> None:
+    def __init__(self, plan: Plan, t: Terms) -> None:
         self.plan = plan
-        self.escrow = escrow
+        self.terms = t
         self.lumps = sorted(plan.lumps)
 
-    def __call__(self, day: dt.date, pi: Decimal) -> Decimal:
+    def __call__(self, day: dt.date, pi: Decimal, owed: Decimal | None = None) -> Decimal:
         p = self.plan
         extra = ZERO
         if (
@@ -77,7 +78,8 @@ class _Extras:
         if p.biweekly:
             extra += cents(pi / 12)
         if p.roundTo > 0:
-            total = pi + self.escrow + extra
+            pmi = self.terms.pmi if owed is None else self.terms.pmi_due(owed)
+            total = pi + self.terms.escrow + pmi + extra
             up = Decimal(math.ceil(total / p.roundTo)) * p.roundTo
             extra += up - total
         return extra
@@ -122,9 +124,7 @@ def plan_outcomes(
     base = _outcome(base_rows, ZERO, None)
     lumps = lump_days(t, plan, [r for r in base_rows if not r.past])
     first_lump = min(lumps) if lumps else None
-    planned = _outcome(
-        schedule(t, payments, draws, today, _Extras(plan, t.escrow + t.pmi)), ZERO, first_lump
-    )
+    planned = _outcome(schedule(t, payments, draws, today, _Extras(plan, t)), ZERO, first_lump)
     recast = None
     if plan.recast and lumps:
         recast_terms = dataclasses.replace(
@@ -132,7 +132,7 @@ def plan_outcomes(
         )
         fees = plan.recastFee * len(lumps)
         recast = _outcome(
-            schedule(recast_terms, payments, draws, today, _Extras(plan, t.escrow + t.pmi)),
+            schedule(recast_terms, payments, draws, today, _Extras(plan, t)),
             fees,
             first_lump,
         )
@@ -157,10 +157,7 @@ def plan_outcomes(
 
 def expected_extra(t: Terms, plan: Plan, since: dt.date, today: dt.date, pi: Decimal) -> Decimal:
     """What the plan has the borrower overpay on the payment days after `since` up to today."""
-    extras = _Extras(
-        dataclasses.replace(plan, lumps=[x for x in plan.lumps if x[0] > since]),
-        t.escrow + t.pmi,
-    )
+    extras = _Extras(dataclasses.replace(plan, lumps=[x for x in plan.lumps if x[0] > since]), t)
     total = ZERO
     k = 1
     day = add_months(t.start, k)

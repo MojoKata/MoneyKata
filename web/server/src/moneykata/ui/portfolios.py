@@ -423,7 +423,9 @@ def portfolio_returns(portfolio_id: str, request: Request, c: Caller = Depends(c
         first = today - dt.timedelta(days=figures.RANGE_DAYS["5Y"])
         step = 7
         rows = []
-        total = figures.combine(s, accounts, first, today, step)
+        # The portfolio's own returns keep an account deleted since, up to its deletion, as its
+        # value series does (R3.10); the rows are the accounts it holds now.
+        total = figures.combine(s, with_deleted(s, c.id, p, accounts), first, today, step)
         for a in accounts:
             led = repo.load(s, a)
             series = total.byAccount[a.id]

@@ -244,3 +244,28 @@ def test_a_shared_plan_counts_its_owners_accounts_only(server, alice):
     assert v["income"] == "9000.00" and v["given"] == "0.00"
     assert alice.get("/ui/api/giving/donations").json()["items"] == []
     assert bob.get("/ui/api/giving").json()["income"] == "9000.00", "he sees her plan"
+
+
+def test_a_donated_replacement_is_held_from_the_sold_shares_purchase(alice):
+    # B22, S3.8.3: a wash sale's replacement carries the sold shares' days, so given away
+    # within a year of its own purchase it can still be long term.
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    add(alice, brk["id"], "10000.00", "2025-01-02", kind="deposit")
+    for date, kind, amount, qty, price in (
+        ("2025-03-01", "buy", "-2000.00", "10", "200"),
+        ("2026-06-01", "sell", "1500.00", "10", "150"),  # a 500 loss
+        ("2026-06-20", "buy", "-620.00", "4", "155"),  # replaces 4 of the 10
+    ):
+        add(alice, brk["id"], amount, date, kind=kind, symbol="AAPL", quantity=qty, price=price)
+    (lot,) = alice.get(f"/ui/api/accounts/{brk['id']}/holdings").json()["holdings"][0]["lots"]
+    d = donate(
+        alice,
+        date="2026-10-01",
+        kind="securities",
+        organisationId=org(alice, "Food Depository")["id"],
+        fromAccountId=brk["id"],
+        lotId=lot["lotId"],
+        quantity="4",
+        amount="700",
+    )
+    assert d["longTerm"], "held since 2025-03-20, over a year"

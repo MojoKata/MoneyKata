@@ -13,7 +13,7 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import Cents, Day, Dec, UtcTimestamp
+from ..types import Cents, Day, UtcTimestamp
 from ._base import pairs, record, unique_live
 
 TaxBook = record(
@@ -143,7 +143,7 @@ EstimatedPayment = record(
     Column("filingId", Text, ForeignKey("Filing.id", ondelete="CASCADE"), nullable=False),
     Column("quarter", Integer, nullable=False),
     Column("dueDate", Day),
-    Column("amount", Dec, nullable=False),
+    Column("amount", Cents, nullable=False),
     Column("paidOn", Day),
     Column("transactionId", Text, ForeignKey("Transaction.id", ondelete="SET NULL")),
     CheckConstraint("quarter BETWEEN 1 AND 4", name="quarter"),

@@ -22,6 +22,7 @@ def held_on(ledger, day: dt.date) -> dict[str, tuple[Decimal, Decimal | None]]:
         [h for h in ledger.snapshots if h.asOf <= day],
         ledger.washes,
         lots.kept_by_snapshots(ledger.transactions, ledger.lots),
+        lots.adds_basis(ledger.account.type),
     )
     out: dict[str, tuple[Decimal, Decimal | None]] = {}
     for lot in rp.open:

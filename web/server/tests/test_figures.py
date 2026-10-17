@@ -142,3 +142,25 @@ def test_a_portfolio_keeps_a_deleted_account_up_to_its_deletion(server):
     by_day = {x["date"]: x["value"] for x in s["points"]}
     assert by_day["2026-08-01"] == "2000.00"
     assert s["end"] == "1000.00" and s["growth"] == "0.00"
+    # Its returns keep it the same way, up to its deletion (R3.10).
+    rows = c.get(f"/ui/api/portfolios/{p['id']}/returns").json()["items"]
+    assert [r["name"] for r in rows] == ["Kept", "Both"]
+
+
+def test_a_portfolios_returns_count_a_deleted_accounts_gain(server):
+    # B22: an account's gain before its deletion stays in the portfolio's returns (R3.10).
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+    a = new_account(c, name="Closed", mask="3333", openingBalance="0.00", openingDate="2026-06-30")
+    add(c, a["id"], "1000.00", "2026-07-01", kind="deposit")
+    add(c, a["id"], "100.00", "2026-08-01", kind="interest")
+    keep = new_account(c, name="Kept", mask="4444", openingBalance="0.00", openingDate="2026-06-30")
+    add(c, keep["id"], "1000.00", "2026-07-01", kind="deposit")
+    p = c.post(
+        "/ui/api/portfolios", json={"name": "Both", "accountIds": [a["id"], keep["id"]]}
+    ).json()
+    before = c.get(f"/ui/api/portfolios/{p['id']}/returns").json()["items"][-1]["periods"]
+    gone = c.get(f"/ui/api/accounts/{a['id']}").json()
+    c.delete(f"/ui/api/accounts/{a['id']}", headers={"If-Match": str(gone["version"])})
+    after = c.get(f"/ui/api/portfolios/{p['id']}/returns").json()["items"][-1]["periods"]
+    assert before["YTD"] and after["YTD"] == before["YTD"], (before, after)

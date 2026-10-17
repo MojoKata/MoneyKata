@@ -154,6 +154,7 @@ def replay(
     snapshots: list,
     washes: list = (),
     by_snapshots: bool | None = None,
+    basis_added: bool = True,
 ) -> Replay:
     """Transactions, lots (acquisitions), specific-identification picks and holding
     snapshots of one account, as entities; returns the open lots, disposals and problems.
@@ -218,15 +219,23 @@ def replay(
                 out, obj, account_method, lots_by_txn.get(obj.id, []), picks_by_sale.get(obj.id, [])
             )
             if obj.id in replaced:
-                _replacement(out, before, replaced[obj.id])
+                _replacement(out, before, replaced[obj.id], basis_added)
     _disallow(out, washes)
     out.open = [lot for lot in out.open if lot.quantity]
     return out
 
 
-def _replacement(out: Replay, before: int, rows: list) -> None:
+def adds_basis(account_type: str) -> bool:
+    """Whether a wash sale's replacement in this account takes the disallowed loss into its
+    basis: not in an IRA or a Roth IRA, where it is lost for good (S3.8.3, Rev. Rul.
+    2008-5)."""
+    return account_type not in ("ira", "roth-ira")
+
+
+def _replacement(out: Replay, before: int, rows: list, basis_added: bool = True) -> None:
     """A wash sale's replacement (S3.8): the shares bought take the disallowed loss into their
-    basis and the sold shares' holding period, split from the rest of the lot."""
+    basis and the sold shares' holding period, split from the rest of the lot. In an IRA or a
+    Roth IRA the loss is disallowed for good, and no basis is added (S3.8.3)."""
     made = out.open[before:]
     for row in rows:
         left = row.quantity
@@ -246,7 +255,7 @@ def _replacement(out: Replay, before: int, rows: list) -> None:
                     lot.instrumentId,
                     lot.acquiredOn,
                     take,
-                    None if share is None else share + row.disallowed,
+                    None if share is None else share + (row.disallowed if basis_added else 0),
                     lot.standIn,
                     row.heldFrom,
                 )

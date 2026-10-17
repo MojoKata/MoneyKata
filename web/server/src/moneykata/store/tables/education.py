@@ -3,7 +3,7 @@ came from, and the qualified expenses its withdrawals are matched with."""
 
 from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Index, Integer, Text, text
 
-from ..types import Cents, Day, Dec
+from ..types import Cents, Day
 from ._base import record, unique_live
 
 EducationPlan = record(
@@ -38,7 +38,7 @@ QualifiedExpense = record(
     Column("year", Integer, nullable=False),  # the tax year it counts in
     Column("kind", Text, nullable=False),
     Column("description", Text),
-    Column("amount", Dec, nullable=False),
+    Column("amount", Cents, nullable=False),
     Column("transactionId", Text, ForeignKey("Transaction.id")),  # how it was paid, if recorded
     CheckConstraint(
         "kind IN ('tuition', 'room-board', 'books', 'computer', 'k12', 'apprenticeship', "

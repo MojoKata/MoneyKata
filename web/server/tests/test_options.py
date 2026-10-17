@@ -331,3 +331,40 @@ def test_assigned_a_call_with_no_shares_opens_a_short_stock_lot(alice):
     assert _held(alice, brk["id"], "MSFT") is None
     gains = alice.get("/ui/api/positions/gains", params={"by": "term"}).json()
     assert "1640.00" in str(gains), gains
+
+
+def test_only_the_expiry_days_close_decides_an_expiry(server, alice):
+    # S3.6, A26: a close from before the expiry day decides nothing; the user is asked.
+    from moneykata import options
+    from moneykata.prices import refresh as pricing
+    from moneykata.store.entities.accounts import Instrument
+    from moneykata.store.entities.prices import Price
+
+    pricing.install()
+    brk = new_account(alice, name="Brokerage", type="brokerage")
+    opt(alice, brk["id"], "sell-to-open", "2026-09-02", "6.40", expiry="2026-10-09", fees="0")
+    with server.db.tx() as s:
+        msft = s.query(Instrument).filter_by(symbol="MSFT").one()
+        s.add(
+            Price(
+                instrumentId=msft.id,
+                date=dt.date(2026, 10, 8),
+                close=500,
+                source="manual",
+                fetchedAt=clock.now(),
+                updatedAt=clock.now(),
+            )
+        )
+    with server.db.tx() as s:
+        assert options.expire_due(s, dt.date(2026, 10, 13)) == 0
+
+
+def test_a_split_strike_is_rounded_to_the_thousandth():
+    # S3.10.1: as the OCC prints it.
+    from decimal import Decimal
+
+    from moneykata.options.adjust import adjusted_strike
+
+    assert adjusted_strike(Decimal("100"), Decimal("3")) == Decimal("33.333")
+    assert adjusted_strike(Decimal("50"), Decimal("1.5")) == Decimal("33.333")
+    assert adjusted_strike(Decimal("200"), Decimal("2")) == Decimal("100")

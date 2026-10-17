@@ -84,15 +84,36 @@ def test_gains_by_month_account_and_term(alice):
 
 def test_a_wash_sale_moves_the_loss_into_the_replacement_lot(server, alice):
     brk = new_account(alice, name="Brokerage", type="brokerage")
+    other = new_account(alice, name="Joint", type="brokerage")
     ira = new_account(alice, name="IRA", type="ira")
     trade(alice, brk["id"], "2025-03-01", "buy", "10", "200", "AAPL")
     trade(alice, brk["id"], "2026-06-01", "sell", "10", "150", "AAPL")  # a 500 loss, long term
-    trade(alice, ira["id"], "2026-06-20", "buy", "4", "155", "AAPL")
+    trade(alice, other["id"], "2026-06-20", "buy", "4", "155", "AAPL")
     v = alice.get("/ui/api/positions").json()
     sale = next(r for r in v["closed"] if r["symbol"] == "AAPL")
     assert sale["realized"] == "-300.00", "200 of the 500 loss disallowed: 4 of 10 replaced"
     held = next(r for r in v["open"] if r["symbol"] == "AAPL")
     assert held["cost"] == "820.00", "620 paid and the 200 disallowed"
+    # In an IRA the replacement's loss is lost for good: no basis added (S3.8.3).
+    trade(alice, ira["id"], "2026-06-21", "buy", "6", "155", "AAPL")
+    v = alice.get("/ui/api/positions").json()
+    sale = next(r for r in v["closed"] if r["symbol"] == "AAPL")
+    assert sale["realized"] == "0.00", "all 500 disallowed: 10 of 10 replaced"
+    in_ira = next(r for r in v["open"] if r["symbol"] == "AAPL" and r["accountId"] == ira["id"])
+    assert in_ira["cost"] == "930.00", "930 paid, nothing added"
+    alice.delete(
+        f"/ui/api/transactions/{_txns(alice, ira)[0]['id']}",
+        headers={"If-Match": f'"{_txns(alice, ira)[0]["version"]}"'},
+    )
+    # The rest of this test replaces in the IRA alone.
+    alice.delete(
+        f"/ui/api/transactions/{_txns(alice, other)[0]['id']}",
+        headers={"If-Match": f'"{_txns(alice, other)[0]["version"]}"'},
+    )
+    trade(alice, ira["id"], "2026-06-20", "buy", "4", "155", "AAPL")
+    v = alice.get("/ui/api/positions").json()
+    held = next(r for r in v["open"] if r["symbol"] == "AAPL")
+    assert held["cost"] == "620.00", "in the IRA, the 200 disallowed adds nothing"
     lot = held["lots"][0]
     assert lot["acquiredOn"] == "2026-06-20", "acquired, and taken in order, by the day bought"
     assert lot["heldFrom"] == "2025-03-20", "the sold shares' 457 days carried over, for the term"
@@ -106,6 +127,10 @@ def test_a_wash_sale_moves_the_loss_into_the_replacement_lot(server, alice):
     assert r.status_code == 200
     sale = next(r for r in alice.get("/ui/api/positions").json()["closed"] if r["symbol"] == "AAPL")
     assert sale["realized"] == "-500.00"
+
+
+def _txns(c, acct):
+    return c.get("/ui/api/transactions", params={"account": acct["id"]}).json()["items"]
 
 
 # ---- Corporate actions (S2.4, N4) ----

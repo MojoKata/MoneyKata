@@ -10,7 +10,7 @@ optionTransactionId, so deleting the split undoes them."""
 import datetime as dt
 import json
 import re
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy import false, select
 from sqlalchemy.orm import Session
@@ -22,6 +22,12 @@ from ..store.repos import ledger as repo
 from . import contract_of, symbol
 
 ADJUSTED_ROOT = re.compile(r"^[A-Z.]+\d+$")
+
+
+def adjusted_strike(strike: Decimal, ratio: Decimal) -> Decimal:
+    """A split's new strike: the old one divided by the ratio, rounded to the thousandth, as
+    the OCC prints it (S3.10.1)."""
+    return (strike / ratio).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP).normalize()
 
 
 def adjusted_contract(
@@ -126,7 +132,7 @@ def with_split(s: Session, user_id: str, account, split: Transaction) -> int:
     done = 0
     for c in open_contracts(s, account, split.instrumentId, split.date):
         old = s.get(Instrument, c.instrumentId)
-        new, _ = adjusted_contract(s, c, c.root, (c.strike / ratio).normalize())
+        new, _ = adjusted_contract(s, c, c.root, adjusted_strike(c.strike, ratio))
         if carry(s, user_id, account, old, new, ratio, split.date, split):
             done += 1
     return done

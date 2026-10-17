@@ -358,14 +358,17 @@ def schedule(
         else:
             interest = cents(owed * rate / 12)
         principal = ZERO if _in_draw(t, day) else min(max(pi - interest, ZERO), owed)
-        bonus = cents(extra(day, pi)) if extra else ZERO
+        # PMI goes by the balance the scheduled payment leaves, so a plan's extra, worked out
+        # with it, rounds what is paid (S1.9.5).
+        scheduled = owed - principal
+        bonus = cents(extra(day, pi, scheduled)) if extra else ZERO
         bonus = min(bonus, owed - principal)
         principal = principal + bonus
         if day >= t.end or owed - principal < 1:
             # The last payment takes what rounding left over.
             principal = owed
         owed -= principal
-        pmi = t.pmi_due(owed)
+        pmi = t.pmi_due(scheduled) if owed > 0 else ZERO
         rows.append(
             Row(
                 day,

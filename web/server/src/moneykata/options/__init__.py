@@ -209,8 +209,9 @@ def deliverable(s: Session, c: OptionContract, day: dt.date) -> list:
 
 
 def expire_due(s: Session, today: dt.date) -> int:
-    """Options past their expiry the underlying's close left out of the money expire the day
-    after (S3.6); those in the money, or without a close, wait for the user."""
+    """Options past their expiry that the underlying's close on the expiry day itself left out
+    of the money expire the day after (S3.6); those in the money, or without that day's
+    close, wait for the user, who is asked."""
     from ..ledger import types as atypes
     from ..store.entities.accounts import Account
 
@@ -224,8 +225,8 @@ def expire_due(s: Session, today: dt.date) -> int:
             if c is None or c.expiry >= today:
                 continue
             close = per_share(s, c, c.expiry)
-            if close is None or close[1] < c.expiry - dt.timedelta(days=4):
-                continue
+            if close is None or close[1] != c.expiry:
+                continue  # only the expiry day's close decides (S3.6)
             if in_the_money(c, close[0]):
                 continue
             settle(s, a.ownerId, a, s.get(Instrument, iid), "expired", c.expiry)

@@ -58,6 +58,7 @@ class Ledger:
             self.picks,
             self.snapshots,
             self.washes,
+            basis_added=lots.adds_basis(self.account.type),
         )
 
 

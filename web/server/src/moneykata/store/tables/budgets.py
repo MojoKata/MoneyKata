@@ -12,7 +12,7 @@ from sqlalchemy import (
     text,
 )
 
-from ..types import Day, Dec
+from ..types import Cents, Day
 from ._base import pairs, record, unique_live
 
 Budget = record(
@@ -38,7 +38,7 @@ BudgetLine = record(
     Column("budgetId", Text, ForeignKey("Budget.id", ondelete="CASCADE"), nullable=False),
     Column("categoryId", Text, ForeignKey("Category.id"), nullable=False),
     Column("fromMonth", Day, nullable=False),
-    Column("amount", Dec, nullable=False),
+    Column("amount", Cents, nullable=False),
     Column("cadence", Text, nullable=False, server_default=text("'month'")),
     Column("rollover", Boolean, nullable=False, server_default=text("0")),
     CheckConstraint("cadence IN ('month', 'year')", name="cadence"),
