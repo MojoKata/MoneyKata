@@ -15,6 +15,7 @@ import { offsetOf, Pager } from '../components/pager.js';
 import { TxTable, useCategories } from '../components/txtable.js';
 import { pageSize } from '../store/prefs.js';
 import { ImportDialog } from './import.js';
+import { openRules } from '../components/rules.js';
 import { TransactionDialog } from './transaction-dialog.js';
 
 const EMPTY = { account: '', category: '', from: '', to: '', min: '', max: '', payee: '', tag: '' };
@@ -85,6 +86,7 @@ export default function Transactions() {
         <option value="">All categories</option><option value="none">Uncategorised</option>
         ${cats.list.map((c) => html`<option value=${c.id}>${c.path}</option>`)}</select>
       <span class="spacer"></span>
+      <button type="button" class="btn" onClick=${() => openRules().then(fresh)}>Rules</button>
       <button type="button" class="btn" disabled=${!all.some((a) => a.level !== 'read')}
         onClick=${() =>
           openDialog(ImportDialog, { accounts: all }).then(

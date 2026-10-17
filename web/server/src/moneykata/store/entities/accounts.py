@@ -56,6 +56,21 @@ class ImportMapping(Record):
 
 
 @dataclass(kw_only=True, eq=False)
+class Rule(Record):
+    id: str
+    ownerId: str
+    position: int
+    payeeMatch: str
+    amountMin: Decimal | None = None
+    amountMax: Decimal | None = None
+    direction: str = "any"
+    accountId: str | None = None
+    categoryId: str | None = None
+    payee: str | None = None
+    tags: str = "[]"
+
+
+@dataclass(kw_only=True, eq=False)
 class StatementLayout(Record):
     id: str
     ownerId: str

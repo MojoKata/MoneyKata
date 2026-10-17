@@ -296,6 +296,11 @@ def save_reading(s, r: Receipt, lines: list[str], method: str, engine: str) -> N
         "amount": found.total.value if found.total else None,
         "payee": found.merchant.value if found.merchant else None,
     }
+    if values["payee"]:
+        # The merchant as the uploader's payee rules show it (S2.7.7, S9.8.2.5.3).
+        from ..store.repos.rules import Rules
+
+        values["payee"] = Rules(s, r.ownerId).rename(values["payee"])
     for f in FIELDS:
         empty = getattr(r, f) in (None, "")
         if (empty or f in filled) and values[f] is not None:

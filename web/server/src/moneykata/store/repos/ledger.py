@@ -224,6 +224,7 @@ class Applied:
     matched: int = 0
     changed: int = 0
     transfers: int = 0
+    categorised: int = 0  # set by the importer's rules (S2.7)
     coveredFrom: dt.date | None = None
     coveredTo: dt.date | None = None
     warnings: list[str] = field(default_factory=list)
@@ -452,6 +453,12 @@ def apply_import(
     for txn in added:
         if match_transfer(s, txn, account.ownerId):
             result.transfers += 1
+    # The importer's rules, on the new bank rows that aren't transfers (S2.7.3).
+    from .rules import Rules
+
+    rules = Rules(s, user_id)
+    if rules:
+        result.categorised = sum(rules.apply(txn) for txn in added)
     imp.added, imp.matched, imp.changed = result.added, result.matched, result.changed
     activity.record(
         s,

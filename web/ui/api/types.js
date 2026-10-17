@@ -182,6 +182,11 @@
  */
 
 /**
+ * @typedef {Object} Applied
+ * @property {number} changed
+ */
+
+/**
  * @typedef {Object} Approval
  * @property {Array<string>} [groupIds]
  */
@@ -1693,6 +1698,11 @@
  */
 
 /**
+ * @typedef {Object} Move
+ * @property {number} to
+ */
+
+/**
  * @typedef {Object} Named
  * @property {string} id
  * @property {string} name
@@ -3036,6 +3046,43 @@
  * @property {import('../app/dec.js').Dec} used
  * @property {import('../app/dec.js').Dec} eligible
  * @property {import('../app/dec.js').Dec} available
+ */
+
+/**
+ * @typedef {Object} RuleIn
+ * @property {string} payeeMatch
+ * @property {(import('../app/dec.js').Dec | null)} [amountMin]
+ * @property {(import('../app/dec.js').Dec | null)} [amountMax]
+ * @property {string} [direction]
+ * @property {(string | null)} [accountId]
+ * @property {(string | null)} [categoryId]
+ * @property {(string | null)} [payee]
+ * @property {Array<string>} [tags]
+ */
+
+/**
+ * @typedef {Object} RuleList
+ * @property {Array<RuleOut>} items
+ * @property {number} uncategorised
+ */
+
+/**
+ * @typedef {Object} RuleOut
+ * @property {string} id
+ * @property {number} position
+ * @property {string} payeeMatch
+ * @property {(import('../app/dec.js').Dec | null)} amountMin
+ * @property {(import('../app/dec.js').Dec | null)} amountMax
+ * @property {string} direction
+ * @property {(string | null)} accountId
+ * @property {(string | null)} accountName
+ * @property {boolean} accountDeleted
+ * @property {(string | null)} categoryId
+ * @property {(string | null)} categoryPath
+ * @property {boolean} categoryDeleted
+ * @property {(string | null)} payee
+ * @property {Array<string>} tags
+ * @property {number} version
  */
 
 /**

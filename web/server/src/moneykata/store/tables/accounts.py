@@ -170,6 +170,29 @@ ImportMapping = record(
 )
 unique_live(ImportMapping, "ownerId", "institution")
 
+# A user's categorisation and payee rules (S2.7), in order: what a transaction must match
+# (its payee as written, by text or `re:`, and an amount range, a direction and an account
+# when given), and what the rule sets (a category, a payee shown, tags).
+Rule = record(
+    "Rule",
+    "Rule",
+    Column("ownerId", Text, ForeignKey("User.id"), nullable=False),
+    Column("position", Integer, nullable=False),
+    Column("payeeMatch", Text, nullable=False),
+    Column("amountMin", Cents),
+    Column("amountMax", Cents),
+    Column("direction", Text, nullable=False, server_default=text("'any'")),
+    Column("accountId", Text, ForeignKey("Account.id", ondelete="CASCADE")),
+    Column("categoryId", Text, ForeignKey("Category.id")),
+    Column("payee", Text),
+    Column("tags", Text, nullable=False, server_default=text("'[]'")),
+    CheckConstraint("direction IN ('any', 'in', 'out')", name="direction"),
+    CheckConstraint(
+        "\"categoryId\" IS NOT NULL OR payee IS NOT NULL OR tags != '[]'", name="sets_something"
+    ),
+    Index("ix_Rule_owner", "ownerId", "position"),
+)
+
 # What statement import has learned of one institution's layout (S1.3.3): which section
 # heading means money in or out, and descriptions that are never transactions.
 StatementLayout = record(

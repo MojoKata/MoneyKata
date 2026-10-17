@@ -93,6 +93,7 @@ def map_all() -> None:
         (acc.Account, accounts.Account),
         (acc.Instrument, accounts.Instrument),
         (acc.ImportMapping, accounts.ImportMapping),
+        (acc.Rule, accounts.Rule),
         (acc.StatementLayout, accounts.StatementLayout),
         (acc.Loan, loans.Loan),
         (acc.OptionContract, options.OptionContract),

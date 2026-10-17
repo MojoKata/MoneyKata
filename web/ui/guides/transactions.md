@@ -16,6 +16,12 @@ Shows one account's transactions.
 
 Shows one category's transactions, or the **uncategorised** ones to sort.
 
+## Rules
+
+Your categorisation rules: what a payee looks like, and the category, payee and tags to set.
+They run on what you import, and on the uncategorised when you choose. A transaction's own dialog
+offers **Make a rule** from it.
+
 ## Import
 
 OFX, QFX or CSV into one of your accounts.

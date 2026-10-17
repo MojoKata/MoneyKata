@@ -43,7 +43,8 @@ Who was paid, or who paid you.
 
 ## Category
 
-Where the money went, for budgets and taxes.
+Where the money went, for budgets and taxes. **Make a rule** files this payee the same way from
+now on, from what you import.
 
 ## Split {#split}
 

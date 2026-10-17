@@ -338,6 +338,7 @@ def test_every_dialog_has_its_guide(page):
         ("/ui/accounts", "Import", "dialog-import"),
         ("/ui/accounts", "Share Everyday checking", "dialog-share"),
         ("/ui/transactions", "Add", "dialog-transaction"),
+        ("/ui/transactions", "Rules", "dialog-rules"),
         (
             f"/ui/accounts/{ids['checking']}/reconcile",
             "Type today's balance",
@@ -374,6 +375,14 @@ def test_every_dialog_has_its_guide(page):
     ):
         open_dialog(page, path, button, guide)
         close_dialog(page)
+    # The rules' list leads to a rule.
+    open_dialog(page, "/ui/transactions", "Rules", "dialog-rules")
+    page.get_by_role("button", name="Add a rule").click()
+    wait_guide(page, "dialog-rule")
+    check_guide(page, ".dialog", "a rule")
+    page.keyboard.press("Escape")  # back to the list, then closed
+    wait_guide(page, "dialog-rules")
+    close_dialog(page)
     # The type picker leads to the form.
     open_dialog(page, "/ui/accounts", "New account", "dialog-new-account")
     page.get_by_role("button", name=re.compile("^Brokerage")).click()

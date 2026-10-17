@@ -12,7 +12,7 @@ from ..auth import users as accounts
 from ..store.entities.alerts import Alert
 from ..store.entities.education import Person, Relationship
 from ..store.entities.users import Group, User, UserGroup
-from .seed_accounts import seed_accounts
+from .seed_accounts import seed_accounts, seed_rules
 from .seed_assets import seed_assets
 from .seed_budgets import seed_budgets
 from .seed_connector import seed_connector
@@ -42,6 +42,7 @@ def seed(server) -> None:
         # default's, whatever port this run has, so the generated mockup records the same.
         settings.put(s, "publicUrl", "https://localhost:37373", None)
         seed_accounts(s, people)
+        seed_rules(s, people)
         seed_loans(s, people)
         seed_assets(s, people)
         seed_education(s, people)

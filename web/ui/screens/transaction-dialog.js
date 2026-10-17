@@ -9,6 +9,7 @@ import { api } from '../api/client.js';
 import { useSubmit } from '../app/hooks.js';
 import { Dialog } from '../components/dialog.js';
 import { useDialogGuide } from '../components/help.js';
+import { openRules } from '../components/rules.js';
 import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
 import { toast } from '../components/toast.js';
 import { cents, fromCents, money } from '../app/format.js';
@@ -170,6 +171,17 @@ export function TransactionDialog({ close, txn, start, accounts, accountId }) {
           ${editing && txn.transferId
             ? html`<button type="button" class="btn" onClick=${() =>
               unlink.run()}>Not a transfer</button>`
+            : null}
+          ${editing && !trade && !txn.transferId && (txn.payeeRaw || txn.payee)
+            ? html`<button type="button" class="btn" onClick=${() => {
+              // One dialog at a time: this one closes, and the rule opens filled from it.
+              close();
+              setTimeout(() =>
+                openRules({
+                  payeeMatch: txn.payeeRaw || txn.payee,
+                  categoryId: f.categoryId || null,
+                }), 0);
+            }}>Make a rule</button>`
             : null}
           <span class="spacer" style=${{ flex: 1 }}></span>
           <button type="button" class="btn" onClick=${() => close()}>Cancel</button>

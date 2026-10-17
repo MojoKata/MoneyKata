@@ -470,3 +470,33 @@ def seed_accounts(s, people: dict, today: dt.date | None = None) -> None:
     s.flush()
     for a in (checking, savings, card, brokerage, roth, k401, hsa, bob_checking, bob_ira):
         a.updatedAt = clock.now()
+
+
+def seed_rules(s, people: dict) -> None:
+    """Alice's categorisation rules (S2.7), first match wins."""
+    import json
+
+    from ..store.entities.accounts import Category, Rule
+
+    cats = {
+        c.builtIn: c.id for c in s.scalars(select(Category).where(Category.builtIn.is_not(None)))
+    }
+    for i, (match, key, extra) in enumerate(
+        (
+            ("re:^WHOLE ?FOODS", "food.groceries", {"payee": "Whole Foods"}),
+            ("kroger", "food.groceries", {}),
+            ("shell", "transport.fuel", {"direction": "out", "amountMax": D(100)}),
+            ("netflix", "personal.subscriptions", {"tags": json.dumps(["streaming"])}),
+            ("acme corp payroll", "income.salary", {"direction": "in"}),
+        )
+    ):
+        s.add(
+            Rule(
+                id=ids.new_id("Rule"),
+                ownerId=people["alice"].id,
+                position=i,
+                payeeMatch=match,
+                categoryId=cats[key],
+                **extra,
+            )
+        )

@@ -1127,6 +1127,20 @@
         "title": "Amount",
         "type": "object"
       },
+      "Applied": {
+        "additionalProperties": false,
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "changed"
+        ],
+        "title": "Applied",
+        "type": "object"
+      },
       "Approval": {
         "additionalProperties": false,
         "properties": {
@@ -9998,6 +10012,20 @@
         "title": "MonthView",
         "type": "object"
       },
+      "Move": {
+        "additionalProperties": false,
+        "properties": {
+          "to": {
+            "title": "To",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "to"
+        ],
+        "title": "Move",
+        "type": "object"
+      },
       "Named": {
         "additionalProperties": false,
         "properties": {
@@ -17157,6 +17185,261 @@
           "available"
         ],
         "title": "RolloverOut",
+        "type": "object"
+      },
+      "RuleIn": {
+        "additionalProperties": false,
+        "properties": {
+          "accountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountid"
+          },
+          "amountMax": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amountmax"
+          },
+          "amountMin": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amountmin"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "direction": {
+            "default": "any",
+            "title": "Direction",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "payeeMatch": {
+            "title": "Payeematch",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "payeeMatch"
+        ],
+        "title": "RuleIn",
+        "type": "object"
+      },
+      "RuleList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RuleOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "uncategorised": {
+            "title": "Uncategorised",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "uncategorised"
+        ],
+        "title": "RuleList",
+        "type": "object"
+      },
+      "RuleOut": {
+        "additionalProperties": false,
+        "properties": {
+          "accountDeleted": {
+            "title": "Accountdeleted",
+            "type": "boolean"
+          },
+          "accountId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountid"
+          },
+          "accountName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accountname"
+          },
+          "amountMax": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amountmax"
+          },
+          "amountMin": {
+            "anyOf": [
+              {
+                "examples": [
+                  1234.5
+                ],
+                "format": "money",
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amountmin"
+          },
+          "categoryDeleted": {
+            "title": "Categorydeleted",
+            "type": "boolean"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "categoryPath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categorypath"
+          },
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "payee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payee"
+          },
+          "payeeMatch": {
+            "title": "Payeematch",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "payeeMatch",
+          "amountMin",
+          "amountMax",
+          "direction",
+          "accountId",
+          "accountName",
+          "accountDeleted",
+          "categoryId",
+          "categoryPath",
+          "categoryDeleted",
+          "payee",
+          "tags",
+          "version"
+        ],
+        "title": "RuleOut",
         "type": "object"
       },
       "Sale": {
@@ -33505,6 +33788,234 @@
         "summary": "Confirm Relationship",
         "tags": [
           "people"
+        ]
+      }
+    },
+    "/ui/api/rules": {
+      "get": {
+        "operationId": "list_rules_ui_api_rules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Rules",
+        "tags": [
+          "rules"
+        ]
+      },
+      "post": {
+        "description": "A new rule, last in the list.",
+        "operationId": "add_rule_ui_api_rules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Rule",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
+    "/ui/api/rules/apply": {
+      "post": {
+        "description": "The rules over the uncategorised transactions in the accounts the user can change; how\nmany changed is recorded, never which (S2.7.4).",
+        "operationId": "apply_rules_ui_api_rules_apply_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Applied"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Apply Rules",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
+    "/ui/api/rules/{rule_id}": {
+      "delete": {
+        "operationId": "delete_rule_ui_api_rules__rule_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deleted_NoneType_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Rule",
+        "tags": [
+          "rules"
+        ]
+      },
+      "patch": {
+        "operationId": "change_rule_ui_api_rules__rule_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Rule",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
+    "/ui/api/rules/{rule_id}/move": {
+      "post": {
+        "description": "Up or down the list: first match wins, so the order is what a rule means.",
+        "operationId": "move_rule_ui_api_rules__rule_id__move_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Move"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Move Rule",
+        "tags": [
+          "rules"
         ]
       }
     },
