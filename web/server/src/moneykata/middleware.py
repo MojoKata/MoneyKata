@@ -424,20 +424,38 @@ class Locked:
         await self.app(scope, receive, send)
 
 
-def location_of(path: str, body: bytes) -> str:
+def location_of(path: str, body: bytes, readable=lambda where: True) -> str:
     """Where a 201's record is read (S13.8.4): the list's path and the new record's id; for an
     answer that is the record it was added to (a tax book with a new filing), that record;
-    and the list itself when the answer names no record."""
+    and the list itself when the answer names no record, or the record has no path of its own
+    that reads it (`readable`)."""
     try:
         made = json.loads(body).get("id") if body else None
     except ValueError, AttributeError:
         made = None
     parts = path.rstrip("/").split("/")
     if isinstance(made, str) and made:
-        if made in parts:
-            return "/".join(parts[: parts.index(made) + 1])
-        return "/".join([*parts, made])
+        own = (
+            "/".join(parts[: parts.index(made) + 1]) if made in parts else "/".join([*parts, made])
+        )
+        if readable(own):
+            return own
     return "/".join(parts)
+
+
+def _reads(scope, path: str) -> bool:
+    """Whether a GET of the path is answered by one of the API's own routes (never the app's
+    pages, which answer any path under /ui)."""
+    from fastapi.routing import APIRoute
+    from starlette.routing import Match
+
+    probe = {"type": "http", "path": path, "method": "GET"}
+    return any(
+        isinstance(r, APIRoute)
+        and r.path.startswith("/ui/api/")
+        and r.matches(probe)[0] == Match.FULL
+        for r in scope["app"].router.routes
+    )
 
 
 class Created:
@@ -466,7 +484,7 @@ class Created:
                 if message.get("more_body"):
                     return
                 body = b"".join(chunks)
-                where = location_of(scope["path"], body).encode()
+                where = location_of(scope["path"], body, lambda w: _reads(scope, w)).encode()
                 await send({**held, "headers": [*held.get("headers", []), (b"location", where)]})
                 message = {"type": "http.response.body", "body": body}
             await send(message)

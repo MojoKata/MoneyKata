@@ -87,6 +87,14 @@ def list_persons(request: Request, c: Caller = Depends(caller)):
         return _rows(s, c)
 
 
+@router.get("/persons/{person_id}", response_model=PersonRow)
+def get_person(person_id: str, request: Request, c: Caller = Depends(caller)):
+    """One person the caller can see: where a new one's Location leads (S13.8.4)."""
+    with server(request).db.read() as s:
+        people.get(s, c.id, person_id)
+        return _row(s, c, person_id)
+
+
 @router.post("/persons", response_model=PersonRow, status_code=201)
 def add_person(body: PersonIn, request: Request, c: Caller = Depends(caller)):
     """A person, added once (S10.10.3)."""

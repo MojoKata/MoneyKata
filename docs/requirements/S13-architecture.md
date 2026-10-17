@@ -185,7 +185,8 @@
       `detail`, the error id of S13.7.8, and `errors`, a list of `{field, code, message}` so
       the UI shows each refusal at its field (R3.7). Codes are stable strings
       (`key-too-short`, `share-not-allowed`), listed in the OpenAPI document.
-   4. **Status codes**: 200, 201 with `Location`, 202 for work that continues (S13.8.7),
+   4. **Status codes**: 200, 201 with `Location` (where the record made is read: its own path
+      where it has one, otherwise the list that holds it), 202 for work that continues (S13.8.7),
       204 for signing out and changes that answer nothing, 400 for a malformed request, 401
       when not signed in, 403 when not allowed, 404 for what doesn't exist *or* isn't visible
       to the caller (never revealing which), 409 for a conflict, 412 for a stale version, 413,

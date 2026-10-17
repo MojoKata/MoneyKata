@@ -162,6 +162,40 @@ def test_deductions_loans_and_issues(alice):
     assert {"sale-without-lot", "sale-basis"} <= kinds
 
 
+def test_an_ira_limit_holds_across_a_persons_accounts(alice):
+    # B15, S8.6: two IRAs of one person share one limit: each under it, both together over.
+    one = new_account(alice, name="IRA at Fidelity", type="ira")
+    two = new_account(alice, name="IRA at Vanguard", type="roth-ira")
+    add(alice, one["id"], "5000.00", "2026-02-01", kind="deposit")
+    add(alice, two["id"], "4000.00", "2026-03-01", kind="deposit")
+    c = {x["account"]: x for x in panels(alice, book(alice))["retirement"]["contributions"]}
+    first, second = c["IRA at Fidelity"], c["IRA at Vanguard"]
+    assert first["personTotal"] == second["personTotal"] == "9000.00"
+    assert first["over"] and second["over"], "9,000 against the person's 8,600 (with catch-up)"
+    assert first["across"] == "IRAs"
+
+
+def test_a_split_counts_toward_its_tag_as_a_whole_transaction_would(alice):
+    # B4: a split part takes its transaction's sign: $60 of a $100 pharmacy run is $60 of
+    # medical, not $-60, and the rest counts nowhere.
+    card = new_account(alice, name="Card", type="credit-card")
+    cats = {x["name"]: x["id"] for x in alice.get("/ui/api/categories").json()["items"]}
+    add(
+        alice,
+        card["id"],
+        "-100.00",
+        "2026-04-02",
+        payee="Pharmacy",
+        splits=[
+            {"categoryId": cats["Doctor"], "amount": "-60.00"},
+            {"categoryId": cats["Groceries"], "amount": "-40.00"},
+        ],
+    )
+    p = panels(alice, book(alice))
+    tags = {d["label"]: d for d in p["deductions"]}
+    assert tags["Medical and dental"]["total"] == "60.00"
+
+
 def test_a_replacement_covers_only_its_own_shares(alice):
     brk = new_account(alice, name="Brokerage", type="brokerage")
     ira = new_account(alice, name="IRA", type="ira")

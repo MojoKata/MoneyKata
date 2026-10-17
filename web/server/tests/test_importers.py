@@ -183,3 +183,12 @@ def test_bad_rows_name_their_row():
     m["dateFormat"] = "%Y-%m-%d"
     with pytest.raises(ReadError, match="Row 3"):
         csvfile.read(data, m)
+
+
+def test_a_reinvested_dividend_is_income_once_and_a_buy_with_none():
+    # B3, S2.5: a dividend row carries the income; the buy carries none, so the income panel
+    # counts $100 as $100 of 1099-DIV, never $200.
+    p = ofx.read((FIX / "reinvest.ofx").read_bytes())
+    got = [(r.kind, r.amount, r.dividendType) for r in p.rows]
+    assert got == [("dividend", D("100.00"), "ordinary"), ("reinvest", D("-100.00"), None)]
+    assert p.rows[1].quantity == D("0.4") and p.rows[1].price == D("250.00")

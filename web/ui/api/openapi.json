@@ -27576,6 +27576,43 @@
           "budgets"
         ]
       },
+      "get": {
+        "description": "One budget, as its list shows it: where a new one's Location leads (S13.8.4).",
+        "operationId": "get_budget_ui_api_budgets__budget_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "budget_id",
+            "required": true,
+            "schema": {
+              "title": "Budget Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "summary": "Get Budget",
+        "tags": [
+          "budgets"
+        ]
+      },
       "patch": {
         "operationId": "change_budget_ui_api_budgets__budget_id__patch",
         "parameters": [
@@ -31602,6 +31639,43 @@
           }
         },
         "summary": "Delete Person",
+        "tags": [
+          "people"
+        ]
+      },
+      "get": {
+        "description": "One person the caller can see: where a new one's Location leads (S13.8.4).",
+        "operationId": "get_person_ui_api_persons__person_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonRow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "summary": "Get Person",
         "tags": [
           "people"
         ]
@@ -38042,6 +38116,43 @@
           }
         },
         "summary": "Delete Transaction",
+        "tags": [
+          "transactions"
+        ]
+      },
+      "get": {
+        "description": "One transaction the caller can see: where a new one's Location leads (S13.8.4).",
+        "operationId": "get_transaction_ui_api_transactions__txn_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "txn_id",
+            "required": true,
+            "schema": {
+              "title": "Txn Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TxnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "summary": "Get Transaction",
         "tags": [
           "transactions"
         ]

@@ -144,3 +144,36 @@ def test_every_problem_code_and_every_422_is_in_the_openapi_document():
         for op in ops.values():
             if isinstance(op, dict) and "422" in op.get("responses", {}):
                 assert op["responses"]["422"] == {"$ref": "#/components/responses/Problem"}
+
+
+def test_a_created_records_location_reads_it(server):
+    # S13.8.4, B38: a 201's Location is followed and answers the record made, not just named.
+    from conftest import make_user, sign_in
+
+    make_user(server, "alice")
+    c = sign_in(server, "alice")
+
+    def made(path, body):
+        r = c.post(f"/ui/api{path}", json=body)
+        assert r.status_code == 201, (path, r.text)
+        where = r.headers["location"]
+        got = c.get(where)
+        assert got.status_code == 200, (path, where, got.text)
+        return r.json(), got.json()
+
+    def holds(seen, made_id) -> bool:
+        """The record itself, or the list that holds it."""
+        return seen.get("id") == made_id or made_id in {x.get("id") for x in seen.get("items", [])}
+
+    acct, seen = made("/accounts", {"name": "Checking", "type": "checking"})
+    assert seen["id"] == acct["id"]
+    for path, body in (
+        ("/portfolios", {"name": "Mine", "accountIds": [acct["id"]]}),
+        ("/budgets", {"name": "Home", "accountIds": [acct["id"]]}),
+        ("/persons", {"name": "Aunt May", "sex": "female"}),
+        ("/giving/organisations", {"name": "Food Bank", "deductible": True}),
+        ("/transactions", {"accountId": acct["id"], "date": "2026-10-01", "amount": "-5.00"}),
+        ("/categories", {"name": "Hobbies", "kind": "expense"}),
+    ):
+        out, seen = made(path, body)
+        assert holds(seen, out["id"]), (path, seen)

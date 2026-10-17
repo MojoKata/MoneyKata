@@ -666,6 +666,17 @@ def _editable(
     return t, a, level
 
 
+@router.get("/transactions/{txn_id}", response_model=TxnOut)
+def get_transaction(txn_id: str, request: Request, c: Caller = Depends(caller)):
+    """One transaction the caller can see: where a new one's Location leads (S13.8.4)."""
+    with server(request).db.read() as s:
+        t = s.get(Transaction, txn_id)
+        if t is None or t.deleted:
+            raise Problem(404, "not-found", "Not found")
+        a, level = access.account(s, c.id, t.accountId)
+        return shape(s, c.id, [t], {a.id: level})[0]
+
+
 @router.patch("/transactions/{txn_id}", response_model=TxnOut)
 def change_transaction(
     txn_id: str,

@@ -196,6 +196,14 @@ def list_budgets(request: Request, c: Caller = Depends(caller)):
         return [shape(s, b, lvl, c.id) for b, lvl in access.visible_budgets(s, c.id)]
 
 
+@router.get("/budgets/{budget_id}", response_model=BudgetRow)
+def get_budget(budget_id: str, request: Request, c: Caller = Depends(caller)):
+    """One budget, as its list shows it: where a new one's Location leads (S13.8.4)."""
+    with server(request).db.read() as s:
+        b, lvl = access.budget(s, c.id, budget_id)
+        return shape(s, b, lvl, c.id)
+
+
 @router.post("/budgets", response_model=BudgetRow, status_code=201)
 def create_budget(body: NewBudget, request: Request, c: Caller = Depends(caller)):
     with server(request).db.tx() as s:

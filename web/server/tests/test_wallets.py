@@ -576,3 +576,17 @@ def test_no_wallet_is_read_until_settings_bitcoin_is_saved(server, alice):
         settings.put(s, "bitcoinSource", "esplora", None)
     with server.db.read() as s:
         assert sync.chosen(server, s)
+
+
+def test_a_wallets_keys_are_bounded(alice):
+    # B37: the text and the number of keys and addresses are capped, so no wallet stalls the
+    # server (S1.6.1).
+    w = new_account(alice, name="Huge", type="crypto-wallet")
+    r = alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": "x" * 200_001})
+    assert r.status_code == 422 and r.json()["code"] == "too-long"
+    from moneykata.ui import wallets
+
+    z = keys.extended(ZPUB)
+    lines = "\n".join(z.address(0, i) for i in range(wallets.MAX_ENTRIES + 1))
+    r = alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": lines})
+    assert r.status_code == 422 and r.json()["code"] == "too-many", r.text
