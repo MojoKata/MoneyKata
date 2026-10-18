@@ -2,7 +2,7 @@
 
 Charitable donations for Schedule A, with their acknowledgements.
 
-![Giving](shots/taxes-giving.webp)
+![Giving](shots/taxes-giving.png)
 
 ## Tax book
 

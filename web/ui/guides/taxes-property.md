@@ -2,7 +2,7 @@
 
 Mortgage and student-loan interest, and physical assets sold.
 
-![Loans and property](shots/taxes-property.webp)
+![Loans and property](shots/taxes-property.png)
 
 ## Tax book
 

@@ -44,19 +44,24 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 
 ## 2. Installing
 
-1. **Get the image.** There is no registry: build it on any amd64 machine and carry it over.
+1. **Get the image.** Each release is published as `ghcr.io/mojokata/moneykata:<version>`
+   (and `ghcr.io/mojokata/moneykata-connector`), one tag for amd64 and arm64 (S17.8.2), which
+   the compose files name: Docker pulls it the first time a command needs it.
+   `gh attestation verify oci://ghcr.io/mojokata/moneykata:0.1.0 --owner MojoKata` checks
+   that the image is the one the release workflow built. To build it yourself instead, or to
+   carry it to a host with no internet access:
 
    ```sh
-   docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) .
-   docker save moneykata:0.1.0 | gzip > moneykata-0.1.0.tar.gz      # on the build machine
-   docker load < moneykata-0.1.0.tar.gz                              # on the server
+   docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
+   docker save ghcr.io/mojokata/moneykata:0.1.0 | gzip > moneykata-0.1.0.tar.gz   # on the build machine
+   docker load < moneykata-0.1.0.tar.gz                                           # on the server
    ```
 
-   Add `--platform linux/amd64,linux/arm64` for one image that also runs on arm64 (QEMU
-   on the build machine: `docker run --privileged --rm tonistiigi/binfmt --install arm64`,
-   once). `web/install/smoke.sh [linux/arm64]` builds both images for a platform and runs
-   them once, as a release's gate (S17.8.1): the key from a phrase, a refused start, health,
-   a sign-in, a receipt read, the connector's vault and unlock, and clean stops.
+   `web/install/smoke.sh [linux/arm64]` builds both images for a platform and runs them
+   once, as a release's gate does (S17.8.1): the key from a phrase, a refused start, health,
+   a sign-in, a receipt read, the connector's vault and unlock, and clean stops. Another
+   platform than the machine's own runs under QEMU (`docker run --privileged --rm
+   tonistiigi/binfmt --install arm64`, once).
 2. **Make the folders**, owned by the container's user:
 
    ```sh
@@ -89,25 +94,23 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 
 ### 2.1 On Proxmox
 
-*Not yet tried on a real host: these steps follow the compose file.*
-
-- **In a VM** (Debian or Ubuntu with Docker): as above. Give the VM 2 GB of memory, or 1 GB
-  with receipt reading turned off (Settings › Receipts).
-- **In an LXC container**: turn on **nesting** (Options › Features), install Docker inside,
-  then as above.
+- **In a VM**: [`DEPLOY.md`](DEPLOY.md) §3 makes a fresh Debian VM on Proxmox VE with Docker
+  and runs a test server on it in `tls` mode; for real use, the same VM runs §2's steps, with
+  `compose.yaml` behind your reverse proxy. Give the VM 2 GB of memory, or 1 GB with receipt
+  reading turned off (Settings › Receipts).
+- **In an LXC container** (*not yet tried on a real host*): turn on **nesting** (Options ›
+  Features), install Docker inside, then as above.
 - Proxmox's own backups of the VM or container can include everything: no key is on the
   disk, and nothing in them opens without the phrase.
 
 ### 2.2 On TrueNAS
 
-*Not yet tried on a real host: these steps follow the compose file.*
-
-- Make two datasets, for data and backups, owned by uid 10001. Both go into snapshot and
-  replication tasks as they are: nothing in them opens without the phrase.
-- Install it as a **custom app** from `compose.yaml`, with the two datasets as host paths in
-  place of `./data` and `./backups`.
-- Run the key step once from a shell on the NAS: `docker compose run --rm moneykata keys init`,
-  and unlock after each start (§2 step 5).
+[`DEPLOY.md`](DEPLOY.md) §4 installs it on TrueNAS Community Edition manually, step by step: two
+datasets for data and backups, owned by uid 10001; the image built and the key made from
+**System › Shell** (`docker run -it … keys init`, since a custom app has no compose folder to
+run it from); and a **custom app** from **Install via YAML**, with the datasets as host paths.
+Both datasets go into snapshot and replication tasks as they are: nothing in them opens
+without the phrase. Unlock after each start (§2 step 5).
 
 ### 2.3 On ZFS, with snapshots and replication
 
@@ -177,8 +180,10 @@ start:` line (§5.1).
 ### 5.1 When it won't start
 
 A problem only you can fix stops the start with one line beginning `refusing to start:`
-and exit code 78. The compose file restarts it three times at most, then leaves it stopped.
-`docker compose logs moneykata` shows the line. The usual causes:
+and exit code 78. The compose file tries again with Docker's back-off, which reaches once a
+minute, so `docker compose ps` shows it `Restarting` until the cause is fixed or it is stopped
+(`docker compose stop moneykata`). `docker compose logs moneykata` shows the line. The usual
+causes:
 
 | The line says                         | Do                                                      |
 |---------------------------------------|---------------------------------------------------------|
@@ -282,8 +287,10 @@ where MoneyKata can't. It is the `connector` service in `compose.yaml`, from the
 `connector/`), with a volume of its own, `connector-data`, that MoneyKata never mounts. It
 publishes no port and only calls out: to MoneyKata, and to each driver's institution.
 
-1. **Build its image** beside MoneyKata's: `docker buildx build -f connector/Dockerfile -t
-   moneykata-connector:0.1.0 connector`, and carry it over as in §2.
+1. **Its image** is published beside MoneyKata's, as
+   `ghcr.io/mojokata/moneykata-connector:<version>`, and pulled by the steps below; or build it
+   (`docker buildx build -f connector/Dockerfile -t ghcr.io/mojokata/moneykata-connector:0.1.0
+   --load connector`) and carry it over as in §2.
 2. **Install it once**: `docker compose run --rm connector init`. It shows **12 words** on the
    terminal only and won't finish until you type three back: save them in the household's
    password manager. They open the connector's vault, and nothing else can.

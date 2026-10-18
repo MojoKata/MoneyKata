@@ -3,7 +3,7 @@
 Other MoneyKata servers that share read-only with this one: another household's, or a
 preparer's. Admins only.
 
-![Linked servers](shots/settings-links.webp)
+![Linked servers](shots/settings-links.png)
 
 **Invite a server** makes a one-time code for the other server's admin. **Enter a link code**
 answers one: MoneyKata connects to the address in the code, checks the server's key against the

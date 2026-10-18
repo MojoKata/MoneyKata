@@ -1,6 +1,6 @@
 """The image and the compose files keep what requirements S17.8, S15.4 and S13.6 promise:
 the unprivileged user, the port, the mounts, the read-only key directory, the health check and
-the refused start's restart policy. Checked on the files themselves, so a tag or a path can't
+the restart policy. Checked on the files themselves, so a tag or a path can't
 drift from the server's own constants."""
 
 import re
@@ -13,6 +13,7 @@ from moneykata.dev import wheels
 from moneykata.keys.cli import SERVER_UID
 
 INSTALL = paths.WEB / "install"
+REGISTRY = "ghcr.io/mojokata"  # where releases are published (S17.8.2)
 DOCKERFILE = (INSTALL / "Dockerfile").read_text()
 COMPOSE = {
     name: yaml.safe_load((INSTALL / name).read_text())
@@ -58,11 +59,16 @@ def test_the_image_makes_the_directories_the_example_config_names():
 
 
 def test_every_compose_service_runs_the_image_of_this_version():
-    tags = {f"moneykata:{paths.version()}", f"moneykata-connector:{paths.version()}"}
+    tags = {
+        f"{REGISTRY}/moneykata:{paths.version()}",
+        f"{REGISTRY}/moneykata-connector:{paths.version()}",
+    }
     for name, compose in COMPOSE.items():
         for service, spec in compose["services"].items():
             assert spec["image"] in tags, f"{name}: {service} runs {spec['image']}"
-        assert compose["services"]["connector"]["image"].startswith("moneykata-connector:")
+        assert compose["services"]["connector"]["image"].startswith(
+            f"{REGISTRY}/moneykata-connector:"
+        )
 
 
 def test_the_connector_service_is_apart_locked_down_and_reaches_nothing_in():
@@ -96,8 +102,9 @@ def test_the_server_service_is_locked_down_and_mounts_no_key():
         assert service["cap_drop"] == ["ALL"], name
         assert "no-new-privileges:true" in service["security_opt"], name
         assert "/tmp" in service["tmpfs"], name
-        # A refused start (exit 78) is retried a few times, never in a loop (S13.6).
-        assert service["restart"] == "on-failure:3", name
+        # Back after every reboot, locked: a server stopped by a shutdown exited cleanly, which
+        # on-failure would leave down (S13.6).
+        assert service["restart"] == "unless-stopped", name
         mounts = _mounts(service)
         assert mounts[str(config.DEFAULT_CONFIG)][1], f"{name}: moneykata.toml must be read only"
         assert not mounts[str(EXAMPLE.data_dir)][1] and not mounts[str(EXAMPLE.backup_dir)][1]
@@ -168,3 +175,41 @@ def test_the_smoke_script_is_there_for_each_platform():
     )
     text = script.read_text()
     assert "linux/arm64" in text and "keys unlock" in text and "503" in text
+
+
+def test_the_truenas_app_keeps_the_compose_files_promises():
+    """install/compose.truenas.yaml (S17.8.3), which docs/DEPLOY.md shows to paste, is the tls
+    example's server with the datasets for host paths: the same lockdown, port, restart and
+    logs, and the version being built."""
+    truenas = yaml.safe_load((INSTALL / "compose.truenas.yaml").read_text())
+    guide = (paths.ROOT / "docs" / "DEPLOY.md").read_text()
+    blocks = re.findall(r"^```yaml\n(.*?)^```", guide, re.M | re.S)
+    assert [yaml.safe_load(b) for b in blocks] == [truenas], "the guide shows the file as it is"
+    app = truenas["services"]["moneykata"]
+    tls = COMPOSE["compose.tls.yaml"]["services"]["moneykata"]
+    differ = {"volumes", "environment"}
+    assert {k: v for k, v in app.items() if k not in differ} == {
+        k: v for k, v in tls.items() if k not in differ
+    }
+    assert {t: ro for t, (_, ro) in _mounts(app).items()} == {
+        t: ro for t, (_, ro) in _mounts(tls).items()
+    }
+    version = paths.version()
+    tags = re.findall(r"moneykata[:-](\d+\.\d+\.\d+)", guide)
+    assert tags and set(tags) == {version}, f"the guide names {set(tags)}, the build {version}"
+
+
+def test_the_workflows_pin_their_actions_and_the_register_lists_them():
+    """S17.10.3: every action is pinned by a full commit, named in docs/dependencies.md with
+    that commit, and a workflow's token can only read unless a job asks for more."""
+    register = (paths.ROOT / "docs" / "dependencies.md").read_text()
+    workflows = sorted((paths.ROOT / ".github" / "workflows").glob("*.yml"))
+    assert workflows
+    for wf in workflows:
+        text = wf.read_text()
+        assert yaml.safe_load(text)["permissions"] == {"contents": "read"}, wf.name
+        for action, ref in re.findall(r"uses:\s*([\w.-]+/[\w.-]+)@(\S+)", text):
+            assert re.fullmatch(r"[0-9a-f]{40}", ref), f"{wf.name}: {action}@{ref} is not a commit"
+            assert f"| {action} |" in register and ref in register, (
+                f"{action} isn't in the register"
+            )

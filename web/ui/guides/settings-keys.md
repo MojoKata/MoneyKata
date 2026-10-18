@@ -3,7 +3,7 @@
 Read only. Everything the server stores is encrypted under one master key, which is the
 recovery phrase: never stored, entered when the server starts, and changed only on the host.
 
-![Settings: Key storage](shots/settings-keys.webp)
+![Settings: Key storage](shots/settings-keys.png)
 
 ## Fingerprint
 

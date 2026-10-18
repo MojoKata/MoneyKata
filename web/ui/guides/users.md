@@ -2,7 +2,7 @@
 
 For admins: who uses this server and the groups shares are given to.
 
-![Users and Groups](shots/users.webp)
+![Users and Groups](shots/users.png)
 
 ## Requests
 

@@ -5,6 +5,7 @@
 import argparse
 import contextlib
 import getpass
+import io
 import logging
 import os
 import secrets
@@ -48,13 +49,20 @@ def confirm_three(phrase: list[str], ask=input, say=print) -> bool:
     return False
 
 
+def open_tty() -> io.TextIOWrapper:
+    """The controlling terminal, to read and write, opened as getpass opens it: a terminal
+    can't seek, and open("/dev/tty", "r+") asks for a file that can."""
+    fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
+    return io.TextIOWrapper(io.FileIO(fd, "w+"), encoding="utf-8")
+
+
 class Terminal:
     """The words go to the terminal, never standard output, so no log keeps them (S18.3.1);
     without one, `init` and `reset` refuse."""
 
     def __init__(self) -> None:
         try:
-            self.f = open("/dev/tty", "r+", encoding="utf-8")  # noqa: SIM115 - held for the run
+            self.f = open_tty()  # held for the run
         except OSError:
             raise SystemExit(
                 "refused: the words are shown on a terminal only; run it with -it"

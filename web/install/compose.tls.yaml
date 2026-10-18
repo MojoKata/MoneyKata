@@ -5,8 +5,8 @@
 
 services:
   moneykata:
-    image: moneykata:0.1.0
-    restart: on-failure:3
+    image: ghcr.io/mojokata/moneykata:0.1.0
+    restart: unless-stopped   # back after every reboot, locked (S13.6)
     ports:
       - "37373:37373"
     volumes:
@@ -32,7 +32,7 @@ services:
   # install it once with `docker compose run --rm connector init`, and after every start
   # unlock it with `docker compose exec connector moneykata-connector unlock` (operations.md §8).
   connector:
-    image: moneykata-connector:0.1.0
+    image: ghcr.io/mojokata/moneykata-connector:0.1.0
     restart: unless-stopped
     volumes:
       - connector-data:/var/lib/moneykata-connector

@@ -2,7 +2,7 @@
 
 The organisations you give to, with what each received this year.
 
-![Organisations](shots/giving-organisations.webp)
+![Organisations](shots/giving-organisations.png)
 
 ## Year
 

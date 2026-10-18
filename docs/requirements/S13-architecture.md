@@ -55,19 +55,23 @@
    cannot start for a reason only an operator can fix (a config file it can't use or with a key
    it doesn't know, a missing or unreadable keyring, a certificate it can't load, a data
    directory another server is using), it says why in one `refusing to start:` line and exits
-   78 (`EX_CONFIG`). The example `compose.yaml` restarts it only on failure, three times at
-   most, so a refused start isn't retried in a loop. **A locked start**: with no key anywhere
-   (S15.4), the server comes up **locked**: `/healthz` answers 503 `locked`, `/ui` serves only
-   the locked screen, and every other path, `/link`, `/connector` and `/mcp` included, answers
-   503 `locked` with `Retry-After`, until an admin enters the recovery phrase (S15.4.3). What
-   the phrase then cannot open (a database from a newer release) is refused at the unlock, with
-   the reason in the log, and the server stays locked. `/healthz` answers 503 `re-encrypting`
-   while a re-encryption runs at the unlock (S15.7.2) and `starting` between the unlock and
-   readiness, and `GET /ui/api/unlock` tells anyone who reaches `/ui` whether the server is
-   locked, the fingerprint its keyring is wrapped under, and the version. **Host commands**
-   (`keys unlock`, `keys rotate`, `db backup`, S15.4.7) reach the running server over its Unix
-   socket, `/run/moneykata/sock`, in a 0700 directory of the server's account on a tmpfs
-   (`web/.dev/` in dev mode), never over the listener.
+   78 (`EX_CONFIG`). The example compose files restart it unless it was stopped
+   (`unless-stopped`), so it comes back after every reboot, locked: a server stopped by a
+   shutdown stopped cleanly, and a policy of restarting only on failure would leave it down. A
+   refused start is retried with Docker's back-off, which reaches once a minute, each try
+   saying why in its one line, until an operator fixes the cause or stops it. **A locked
+   start**: with no key anywhere (S15.4), the server comes up **locked**: `/healthz` answers
+   503 `locked`, `/ui` serves only the locked screen, and every other path, `/link`,
+   `/connector` and `/mcp` included, answers 503 `locked` with `Retry-After`, until an admin
+   enters the recovery phrase (S15.4.3). What the phrase then cannot open (a database from a
+   newer release) is refused at the unlock, with the reason in the log, and the server stays
+   locked. `/healthz` answers 503 `re-encrypting` while a re-encryption runs at the unlock
+   (S15.7.2) and `starting` between the unlock and readiness, and `GET /ui/api/unlock` tells
+   anyone who reaches `/ui` whether the server is locked, the fingerprint its keyring is
+   wrapped under, and the version. **Host commands** (`keys unlock`, `keys rotate`,
+   `db backup`, S15.4.7) reach the running server over its Unix socket, `/run/moneykata/sock`,
+   in a 0700 directory of the server's account on a tmpfs (`web/.dev/` in dev mode), never
+   over the listener.
 7. **Security policies**. One place for the rules every request
    passes through; other sections refer here.
    1. **Sessions**: a 256-bit random token in a cookie named `mk_session`, `HttpOnly`,

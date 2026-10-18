@@ -2,7 +2,7 @@
 
 What was taken out of a 529 each year, against the qualified expenses it paid for.
 
-![A 529's Withdrawals](shots/account-withdrawals.webp)
+![A 529's Withdrawals](shots/account-withdrawals.png)
 
 ## Each year
 

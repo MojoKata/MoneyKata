@@ -3,7 +3,7 @@
 Where self-custody wallets' balances and history come from: a public explorer, or the
 household's own node. Admins only.
 
-![Bitcoin settings](shots/settings-bitcoin.webp)
+![Bitcoin settings](shots/settings-bitcoin.png)
 
 ## Explorer or node
 

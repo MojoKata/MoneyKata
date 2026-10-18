@@ -2,7 +2,7 @@
 
 Every donation in the year: those recorded here, and transactions categorised Giving.
 
-![Donations](shots/giving-donations.webp)
+![Donations](shots/giving-donations.png)
 
 ## Year
 

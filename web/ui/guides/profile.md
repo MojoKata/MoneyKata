@@ -2,7 +2,7 @@
 
 Your name, email, password, two-step sign-in and how MoneyKata shows things to you.
 
-![Profile](shots/profile.webp)
+![Profile](shots/profile.png)
 
 ## Change avatar {#avatar}
 

@@ -1,0 +1,35 @@
+# web/check on every pull request and every push to main (requirements S17.10), on GitHub's
+# standard runners, free for a public repository. The actions are pinned by commit and listed
+# in the register (docs/dependencies.md); everything else is the repository's own scripts.
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: uv, pinned with its hashes
+        run: |
+          python3 -m venv "$RUNNER_TEMP/uv"
+          "$RUNNER_TEMP/uv/bin/pip" install --quiet --require-hashes -r web/install/build-requirements.txt
+          echo "$RUNNER_TEMP/uv/bin" >> "$GITHUB_PATH"
+      - name: web/dev.sh setup (Python 3.14, Deno and Chromium, each pinned)
+        run: web/dev.sh setup
+      - name: web/check
+        run: web/check

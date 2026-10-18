@@ -95,6 +95,18 @@ for amd64 and arm64 (S17.8.1). *Direct* means named in `pyproject.toml`.
 | cffi, pycparser | 2.1.1, 3.11 | cryptography's binding | come with it | none known | — |
 | python:3.14-slim-bookworm | by digest in `connector/Dockerfile` | the image's base | the same digest as the server's; moved with it (S17.8.5) | as the server's | with the server's |
 
+## GitHub Actions (checks and releases)
+
+The workflows in `.github/workflows/` (S17.10) use GitHub's own actions only, each pinned by
+the commit its release tag named; a release is adopted after 14 days, as a browser library is
+(S17.3.1). Everything else they run is the repository's own scripts.
+
+| Action | Version | Commit | Purpose | Risks | Revisit |
+|---|---|---|---|---|---|
+| actions/checkout | 7.0.1 (2026-07-20) | `3d3c42e5aac5ba805825da76410c181273ba90b1` | the source, in both workflows, without keeping the token (`persist-credentials: false`) | none known | when its major version changes |
+| actions/attest-build-provenance | 4.2.2 (2026-08-06) | `4d101475d8b20a2381f78447822ac1eab6504dd8` | the build-provenance attestation of each released image (Sigstore's public instance) | **egress** to Sigstore and the registry, by design, in the release's last job only, which alone holds `id-token: write` | when its major version changes |
+| GitHub-hosted runners | `ubuntu-24.04`, `ubuntu-24.04-arm` | — | the checks; the amd64 and arm64 builds and smoke runs | the images are GitHub's; free for a public repository | if GitHub's terms for public repositories change |
+
 ## JavaScript (the browser app)
 
 Vendored as npm tarballs under `web/ui/vendor/`, adopted only through `web/dev.sh vendor

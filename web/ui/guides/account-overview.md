@@ -2,7 +2,7 @@
 
 One account's balance over time and its details.
 
-![An account's Overview](shots/account-overview.webp)
+![An account's Overview](shots/account-overview.png)
 
 ## Range
 

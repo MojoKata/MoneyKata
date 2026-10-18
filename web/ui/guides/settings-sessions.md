@@ -2,7 +2,7 @@
 
 How long a sign-in lasts and when repeated failures lock the address they come from.
 
-![Settings: Sign-in and sessions](shots/settings-sessions.webp)
+![Settings: Sign-in and sessions](shots/settings-sessions.png)
 
 ## Idle timeout {#idle-timeout}
 

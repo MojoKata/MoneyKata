@@ -18,7 +18,7 @@ which were not.
 | T8 | The Schwab driver with a real account | a Schwab developer account with an app approved for the Trader API |
 | T9 | OFX Direct Connect with a real institution | an institution still running an OFX server, and its ORG and FID |
 | T10 | An install on Proxmox | a Proxmox host |
-| T11 | An install on TrueNAS | a TrueNAS SCALE box |
+| T11 | An install on TrueNAS | a TrueNAS Community Edition box |
 | T12 | A restore onto a new host | a second machine or a scratch VM, and the phrase from its offline copy |
 | T13 | The connector on another machine | a laptop reaching the server's address |
 
@@ -117,10 +117,10 @@ as ofxhome.com lists them), a routing and account number, and a sign-in.
 
 ## T10–T11: Proxmox and TrueNAS
 
-Follow `operations.md` §2.1 or §2.2 on the real host. Passing: the install reaches healthy
+Follow `DEPLOY.md` §3 or §4 on the real host. Passing: the install reaches healthy
 once unlocked, a restart comes back locked and the phrase opens it with the data intact, a
 snapshot of the host holds no key (search it for the keyring's fingerprint and the phrase's
-words: neither is there), and a backup lands on the other pool or disk. Record what the page
+words: neither is there), and the daily backup lands in `backups/`. Record what the page
 didn't say and fix it.
 
 ## T12: a restore onto a new host

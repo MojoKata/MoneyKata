@@ -2,7 +2,7 @@
 
 What the portfolio's accounts hold, added up by instrument.
 
-![A portfolio's Holdings](shots/portfolio-holdings.webp)
+![A portfolio's Holdings](shots/portfolio-holdings.png)
 
 ## Weight
 

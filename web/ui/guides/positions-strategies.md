@@ -3,7 +3,7 @@
 Legs held together, such as a covered call, a vertical spread or an iron condor, shown as one.
 Grouping is a label: each leg keeps its own lots, gains and wash sales.
 
-![Strategies](shots/positions-strategies.webp)
+![Strategies](shots/positions-strategies.png)
 
 ## Proposed
 

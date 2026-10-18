@@ -3,7 +3,7 @@
 The year's giving against its target: what was given, the even pace to the target, and where it
 went.
 
-![Giving](shots/giving-overview.webp)
+![Giving](shots/giving-overview.png)
 
 ## Year
 

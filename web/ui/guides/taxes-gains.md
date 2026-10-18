@@ -3,7 +3,7 @@
 Every sale in the book's taxable accounts in the year, and each physical asset sold, as Form 8949
 rows, with the Schedule D totals.
 
-![Capital gains (8949)](shots/taxes-gains.webp)
+![Capital gains (8949)](shots/taxes-gains.png)
 
 ## Tax book
 

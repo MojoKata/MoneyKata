@@ -13,10 +13,9 @@ the server in `web/`, the MoneyKata Connector in `connector/`. Milestones 8 and 
 second review of the requirements against the code found the release still needed
 ([`docs/reviews/initial-code-review-2.md`](docs/reviews/initial-code-review-2.md)); its
 section 12 says where each finding went, which no review has checked yet, and the choices
-milestone 9 made. The branch merges into `main` once the requirements have their final
-approval. What the build couldn't
-try for real is in [`docs/test-plan.md`](docs/test-plan.md); the gaps and the open questions
-are listed in the requirements' README.
+milestone 9 made. What the build couldn't try for real is in
+[`docs/test-plan.md`](docs/test-plan.md); the gaps and the open questions are listed in the
+requirements' README.
 
 ## Where to start
 
@@ -71,15 +70,24 @@ web/check                        # every check, as CI runs it
 ```
 
 `web/dev.sh` alone lists its commands. [`web/dev.md`](web/dev.md) covers testing the dev
-server from a browser on another machine (an SSH forward, a name of its own, port 443). The image builds from the repository's root:
+server from a browser on another machine (an SSH forward, a name of its own, port 443).
+Releases publish the images to `ghcr.io/mojokata` (`.github/workflows/release.yml`, on a `v*`
+tag); to build the server's image yourself, from the repository's root:
 
 ```
-docker buildx build -f web/install/Dockerfile -t moneykata:$(cat web/VERSION) --load .
+docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
 ```
 
 and `web/install/compose.yaml` is the example to run it from. A new server has one user,
 `admin`, with the published password `moneykata-setup`: its first sign-in leads only to choosing
 a password and an email address. A running server serves the clickable mockup at `/demo`.
+
+## Deploying
+
+[`docs/DEPLOY.md`](docs/DEPLOY.md) builds the image and puts a server where people can test
+it, step by step, on a fresh VM on Proxmox VE or on TrueNAS.
+[`docs/operations.md`](docs/operations.md) is the runbook from then on: upgrades, backups,
+restoring, keys and the connector.
 
 ## License
 

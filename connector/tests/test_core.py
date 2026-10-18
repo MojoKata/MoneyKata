@@ -423,6 +423,56 @@ def test_init_and_reset_show_the_words_on_the_terminal_only(tmp_path, monkeypatc
     assert not any(w in out.split() for w in phrase), "stdout names the vault, never a word"
 
 
+ON_A_TERMINAL = """
+import os, sys
+os.close(os.open(os.ttyname(0), os.O_RDWR))  # the pty becomes this session's terminal
+from moneykata_connector.main import Terminal
+t = Terminal()
+t.say("the words")
+sys.stdout.write(t.ask("word 3: ").strip() + "\\n")
+"""
+
+
+def test_the_terminal_opens_on_a_real_one():
+    """`init` and `reset` reach the words' terminal on a real one: a terminal can't seek, so
+    it is opened as getpass opens it, never as a file to read and write."""
+    import os
+    import pty
+    import select
+    import subprocess
+    import sys
+
+    leader, follower = pty.openpty()
+    child = subprocess.Popen(  # noqa: S603 - this interpreter, on the test's own code
+        [sys.executable, "-c", ON_A_TERMINAL],
+        stdin=follower,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+        env={**os.environ, "PYTHONPATH": str(PACKAGE.parent)},
+    )
+    os.close(follower)
+    shown = b""
+    deadline = time.monotonic() + 30
+    while b"word 3: " not in shown:
+        ready, _, _ = select.select([leader], [], [], max(0, deadline - time.monotonic()))
+        assert ready, f"no prompt on the terminal: {shown!r}"
+        try:
+            chunk = os.read(leader, 1024)
+        except OSError:  # the terminal closed: the command ended before it asked
+            chunk = b""
+        if not chunk:
+            child.wait(timeout=30)
+            pytest.fail(f"it ended before it asked: {child.stderr.read().decode()}")
+        shown += chunk
+    os.write(leader, b"abandon\n")
+    out, err = child.communicate(timeout=30)
+    os.close(leader)
+    assert child.returncode == 0, err.decode()
+    assert b"the words" in shown
+    assert out == b"abandon\n", "the answer came back from the terminal, and only it"
+
+
 def test_an_address_the_connector_never_calls_is_refused(monkeypatch):
     # K24: loopback, link-local (cloud metadata) and multicast, as MoneyKata's guard (S13.5).
     import socket as socket_mod

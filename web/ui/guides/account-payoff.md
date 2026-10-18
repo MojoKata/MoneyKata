@@ -3,7 +3,7 @@
 The payoff planner: what overpaying would do, against the schedule. It's worked out as you type,
 from the loan's terms and the payments made so far.
 
-![A loan's Payoff](shots/account-payoff.webp)
+![A loan's Payoff](shots/account-payoff.png)
 
 ## The chart
 

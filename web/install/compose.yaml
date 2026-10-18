@@ -9,8 +9,9 @@
 
 services:
   moneykata:
-    image: moneykata:0.1.0
-    restart: on-failure:3   # a refused start (exit 78) is not retried in a loop (S13.6)
+    image: ghcr.io/mojokata/moneykata:0.1.0
+    restart: unless-stopped   # back after every reboot, locked; a refused start (exit 78)
+                              # is retried at most once a minute (S13.6)
     # Plain HTTP in proxy mode, so it is published on the host's loopback only: a proxy on
     # the host reaches 127.0.0.1:37373, and one in this compose project reaches
     # moneykata:37373 by name (proxy/) with no published port needed at all.
@@ -49,7 +50,7 @@ services:
   # install it once with `docker compose run --rm connector init`, and after every start
   # unlock it with `docker compose exec connector moneykata-connector unlock` (operations.md §8).
   connector:
-    image: moneykata-connector:0.1.0
+    image: ghcr.io/mojokata/moneykata-connector:0.1.0
     restart: unless-stopped
     volumes:
       - connector-data:/var/lib/moneykata-connector

@@ -2,7 +2,7 @@
 
 This account's transactions, newest first.
 
-![An account's transactions](shots/account-transactions.webp)
+![An account's transactions](shots/account-transactions.png)
 
 ## Import
 

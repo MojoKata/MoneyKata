@@ -2,7 +2,7 @@
 
 Each option trade from its first contract opened to its last one closed, with what it made.
 
-![Option trades](shots/positions-trades.webp)
+![Option trades](shots/positions-trades.png)
 
 ## Show
 

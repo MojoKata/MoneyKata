@@ -2,7 +2,7 @@
 
 Realized gains and losses grouped, and unrealized ones now.
 
-![Gains](shots/positions-gains.webp)
+![Gains](shots/positions-gains.png)
 
 ## Show
 

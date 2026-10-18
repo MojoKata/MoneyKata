@@ -3,7 +3,7 @@
 Keeps the account's balance in step with the institution's. For files you import, it is a set of
 quiet checks; ticking off is there when you want it.
 
-![An account's Reconcile tab](shots/account-reconcile.webp)
+![An account's Reconcile tab](shots/account-reconcile.png)
 
 ## Coverage
 

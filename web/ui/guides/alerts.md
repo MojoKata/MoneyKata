@@ -2,7 +2,7 @@
 
 What needs you. Activity records what happened; an alert asks you to do something about it.
 
-![Alerts](shots/alerts.webp)
+![Alerts](shots/alerts.png)
 
 ## Open
 

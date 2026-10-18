@@ -2,7 +2,7 @@
 
 One filing per return: federal, a state's or a locality's. An amended return is a filing of its own.
 
-![Filings](shots/taxes-filings.webp)
+![Filings](shots/taxes-filings.png)
 
 ## Tax book
 

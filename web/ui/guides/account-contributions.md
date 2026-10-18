@@ -3,7 +3,7 @@
 Deposits into a 529 and who made them, totalled per contributor per year against the annual gift
 exclusion.
 
-![A 529's Contributions](shots/account-contributions.webp)
+![A 529's Contributions](shots/account-contributions.png)
 
 ## Record a contribution
 
