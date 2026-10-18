@@ -138,9 +138,10 @@ The rulings the rest of the requirements apply.
     to transactions, tax items or nothing (S9).
 13. **Everything the server stores is encrypted at rest**: the database
     (SQLCipher), the receipt files, and each secret on its own. All of it opens with one
-    **master key**, which is a **12-word recovery phrase** that is never stored anywhere: the
-    server starts locked and an admin enters the phrase, on its locked screen or on the host,
-    after every start (S15.4). There is no key file, no separate keys process, and **no Vault
+    **master key**, which is a **12-word recovery phrase** that is never stored anywhere: a new
+    server's welcome shows it once to its first admin, who writes it down, and after every
+    start the server is locked until an admin enters the phrase, on its locked screen or on the
+    host (S15.4). There is no key file, no separate keys process, and **no Vault
     or other external key service** (S15.2).
 14. **Charts: Apache ECharts**, vendored and loaded only by the screens that draw charts
     (S17.4).

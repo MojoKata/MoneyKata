@@ -8,9 +8,11 @@
       digits, dots, dashes or underscores, beginning with a letter or digit; usernames and
       email addresses match without regard to case. A display name is at most 80 characters, an
       email address at most 254.
-   2. **The default admin.** A server with no users creates `admin` with a published default
-      password at start. Its first sign-in leads only to a setup step: choose a password, give
-      an email address, and give the admin's name and sex (male until then, S10.10.1).
+   2. **The first admin** is made by the welcome (S12.14): once the key is made, **Set up the
+      admin account** asks for the admin's name, sex (S10.10.1), email address and password,
+      makes `admin` with them, and signs them in. No password is published, and nobody signs
+      in before the admin exists. A server whose key was made on a terminal shows the same
+      step at its first unlock, for as long as it has no users.
    3. **Invitations.** Admins never set passwords. Creating a user (name, sex, username,
       email, groups) emails an invitation link, and the user chooses their password from it.
       The link works once, for 7 days; sending a new one ends the one before.

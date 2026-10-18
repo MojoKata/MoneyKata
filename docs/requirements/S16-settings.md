@@ -60,17 +60,19 @@ Backups, and Connector (18), which follows Linked servers; 15 is not a section:
     the backup directory is set on the host. The section says what a backup is: the
     database with its keyring, never the receipt files, which the host backs up with the
     data directory (S14.6).
-13. **Key storage** (S15): read-only but for the rotation reminder's period (12 months by
-    default; off is allowed, S15.8.4). The master key's fingerprint and age, when the phrase
-    last opened the keyring and how (an unlock, or `keys verify` on the host), the previous
-    keys, each with how many copies on this host still need its phrase and **Forget**, the
-    **copies on this host** (every backup, pre-upgrade copy and before-restore folder, with its
-    date, size and how it opens, and **Remove**, which asks for the password and the phrase)
-    under one line that says the host's own snapshots and backups are copies too (counting the
-    backup directory's own copies only, and saying so: copies kept elsewhere are the admin's to
-    count, S15.7.1.4), the last re-encryption's progress and outcome, and anything that cannot
-    be opened, the receipts and secrets a re-encryption set aside among them. Buttons: **Test**
-    and **Re-encrypt at the next restart**, which asks, for each copy on the host, whether to
+13. **Key storage** (S15): read-only but for **Verify key** and the rotation reminder's period
+    (12 months by default; off is allowed, S15.8.4). The master key's fingerprint and age, when
+    the phrase last opened the keyring and how (an unlock, **Verify key**, or `keys verify` on
+    the host), the previous keys, each with how many copies on this host still need its phrase
+    and **Forget**, the **copies on this host** (every backup, pre-upgrade copy and
+    before-restore folder, with its date, size and how it opens, and **Remove**, which asks for
+    the password and the phrase) under one line that says the host's own snapshots and backups
+    are copies too (counting the backup directory's own copies only, and saying so: copies kept
+    elsewhere are the admin's to count, S15.7.1.4), the last re-encryption's progress and
+    outcome, and anything that cannot be opened, the receipts and secrets a re-encryption set
+    aside among them. Buttons: **Verify key** (the 12 words, checked against the keyring
+    without changing anything and recorded as a confirmation, S15.6.5), **Test** and
+    **Re-encrypt at the next restart**, which asks, for each copy on the host, whether to
     re-encrypt, delete or leave it, with what re-encryption is for and that it closes no copy
     made before it, and schedules the re-encryption for the next unlock, which runs it with the
     phrase given there (S15.7.2); **Cancel** withdraws one scheduled. The master key itself is
