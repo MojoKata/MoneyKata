@@ -136,6 +136,7 @@ def init(
             f"{config.keyring_path} already exists: this data directory has a key. A backup "
             "brings its own keyring back with `db restore`; `keys init` is for a new server."
         )
+    master.refuse_a_database_without_its_keyring(config)
     if say is None or (confirm and ask is None):
         tty = Terminal()
         ask, say = ask or tty.ask, say or tty.say

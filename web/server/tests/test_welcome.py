@@ -2,7 +2,8 @@
 uninitialised and answers only what the welcome needs; every visit shows a new phrase, none
 written until three of its words are typed back; then the key is made, the server unlocks,
 and the first admin is set up and signed in, once. Verify key (S15.6.5) and the image's
-health check, which counts any answer as alive (S13.6), are here too."""
+health check, which counts any answer as alive (S13.6), are here too, and so is a database
+whose keyring is gone, which refuses the start rather than getting a new key (S15.4.5)."""
 
 import json
 
@@ -137,6 +138,28 @@ def test_a_key_made_on_the_host_turns_the_welcome_into_the_locked_screen(new_ser
     assert r.status_code == 409 and r.json()["code"] == "initialised"
     r = c.post("/ui/api/unlock", json={"phrase": " ".join(phrase.to_words(key))})
     assert r.status_code == 200 and c.get("/ui/api/unlock").json()["needsAdmin"] is True
+
+
+def test_a_database_without_its_keyring_refuses_the_start_and_keys_init(config, tmp_path, capsys):
+    """A household starting a claimed server over empties its data directory: with the
+    keyring alone removed, a new key would not open the database left behind (S15.4.5)."""
+    from moneykata import main
+    from moneykata.config import RefuseStart
+
+    config.data_dir.mkdir(parents=True, exist_ok=True)
+    config.db_path.write_bytes(b"a database made under a key nobody wrote down")
+    toml = tmp_path / "moneykata.toml"
+    toml.write_text(
+        f'[server]\nmode = "proxy"\n[paths]\ndata = "{config.data_dir}"\n'
+        f'backups = "{config.backup_dir}"\n'
+    )
+    assert main.main(["--config", str(toml), "serve"]) == 78
+    said = capsys.readouterr().err.strip().splitlines()[-1]
+    assert said.startswith("refusing to start: ") and "has no keyring beside it" in said
+    assert "db restore" in said and str(config.data_dir) in said
+    with pytest.raises(RefuseStart, match="has no keyring beside it"):
+        keys_cli.init(config, say=lambda _: None, confirm=False)
+    assert not config.keyring_path.exists()
 
 
 def test_verify_key_checks_a_copy_of_the_phrase_and_changes_nothing(

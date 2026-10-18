@@ -265,6 +265,12 @@ backups and emails.
   in them opens without the phrase; operations.md §2.3 says what a snapshot is and isn't.
 - After the NAS restarts, the app starts again by itself (`restart: unless-stopped`),
   **locked**, until someone enters the phrase (§5).
+- **Running doesn't mean open.** TrueNAS shows **Running** whenever MoneyKata answers: new,
+  locked or open alike. Whatever restarts the app locks it: the NAS restarting (a TrueNAS
+  update among them), the Apps service stopping or moving to another pool, and every **Edit**
+  of the app's YAML, upgrades included (§6). `https://192.168.1.20:37373/healthz` says which
+  it is, `uninitialised`, `locked` or `ok`, and an uptime monitor pointed at it notices a
+  lock (operations.md §5).
 - Deleting the app (the app's **Delete**) offers **Remove Images**, ticked. Either way the
   datasets stay as they are, and the image is pulled again by the next install.
 
@@ -329,8 +335,14 @@ whenever you make a new copy; the yearly alert opens it.
   `[tls] names` and restart; the server makes a new certificate.
 - **It says it's locked**: it waits for the phrase after every start (§5).
 - **A key nobody wrote down**: if someone else on the network finished the welcome first, the
-  new server asks for words you never saw. Stop it, remove the keyring
-  (`data/keyring`; on TrueNAS, in the `data` dataset), start it again, and the welcome comes
-  back. Nothing is lost on a new server.
+  new server asks for words you never saw. Stop it, empty its `data` and `backups` folders,
+  and start it again: the welcome comes back, and nothing is lost on a new server. Remove
+  everything in them, not only the keyring: a new key can't open the database left behind,
+  and the server refuses to start beside it. On the VM, in `~/moneykata`:
+  `docker compose stop moneykata`, then
+  `sudo find data backups -mindepth 1 -delete` and `docker compose up -d moneykata`. On
+  TrueNAS: the app's **Stop**, then in **System › Shell**
+  `sudo find /mnt/tank/moneykata/data /mnt/tank/moneykata/backups -mindepth 1 -delete`,
+  and **Start**.
 - **A lost phrase**: a running, unlocked server can still make a new one,
   `keys rotate` (operations.md §7). Once it restarts without one, nothing opens the data.

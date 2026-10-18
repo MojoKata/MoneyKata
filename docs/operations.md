@@ -90,7 +90,8 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    once (S10.1.2). The phrase is the key: nothing of it is written, and nothing shows it again.
    Store it as S15.6 says: two copies in two places, one offline, never with the backups.
    Whoever reaches a new server first can finish its welcome; one that asks for words nobody
-   wrote down is started again without its keyring (`data/keyring`). On a terminal instead,
+   wrote down is stopped, its `data/` emptied (the database too: a new key can't open the
+   one left behind), and started again. On a terminal instead,
    `docker compose run --rm moneykata keys init` makes the key before the first start (it
    shows the phrase on the terminal only, never in Docker's logs); the page then sets up the
    first admin at the first unlock.
@@ -196,6 +197,7 @@ causes:
 | The line says                         | Do                                                      |
 |---------------------------------------|---------------------------------------------------------|
 | the keyring can't be read              | restore it with a backup (§6); a new server has no keyring at all, and starts uninitialised |
+| the database has no keyring beside it  | restore a backup, which brings its keyring (§6); a new server whose welcome someone else finished is emptied instead (§2 step 4) |
 | the config file has a problem, or a key it doesn't know | fix `moneykata.toml` as the line says |
 | the data directory is in use          | another server, or a host command, is using the same `data/`: stop it |
 

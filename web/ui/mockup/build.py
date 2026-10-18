@@ -111,6 +111,14 @@ def steady(value):
     return value
 
 
+# The backup made at the server's start races the stub prices' first fill, so its size differs
+# from one run to the next: the mockup shows the size of one run.
+SHOWN_BACKUP_BYTES = {
+    "/ui/api/settings/backups": ("backups", 2642261),
+    "/ui/api/settings/keys/copies": ("copies", 2642771),
+}
+
+
 def free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -246,10 +254,14 @@ class Recorder:
         # Where this run kept its data is a temporary directory; the mockup shows a fixed one.
         text = r.text().replace(self.data, SHOWN_DIR)
         text = OWN_CERT.sub(lambda m: m.group(1) + SHOWN_CERT + m.group(2), text)
-        self.answers["GET " + key_of(req.url)] = {
-            "status": r.status,
-            "body": steady(exactjson.loads(text)) if text else None,
-        }
+        body = steady(exactjson.loads(text)) if text else None
+        shown = SHOWN_BACKUP_BYTES.get(urlsplit(req.url).path)
+        if shown and body:
+            listed, size = shown
+            for item in body[listed]:
+                if item.get("kind", "backup") == "backup":
+                    item["bytes"] = size
+        self.answers["GET " + key_of(req.url)] = {"status": r.status, "body": body}
         route.fulfill(response=r, body=text)
 
     def visit(self, path: str) -> None:

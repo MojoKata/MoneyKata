@@ -404,7 +404,8 @@ async def start(config: Config, seed: bool = False) -> int:
 
     lock = lock_data_dir(config, "only one server may use a data directory")  # noqa: F841 - held while running
     # No keyring: the server starts uninitialised and its page makes the key (S15.4.4). One
-    # it can't read refuses the start (S15.4.5).
+    # it can't read, or a database without one, refuses the start (S15.4.5).
+    master.refuse_a_database_without_its_keyring(config)
     if config.keyring_path.exists():
         master.read_keyring(config.keyring_path)
     # No other process of this account reads the server's memory, keys and all (S9.8.4.2);

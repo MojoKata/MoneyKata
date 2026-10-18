@@ -196,6 +196,16 @@ def read_keyring(path: Path) -> Keyring:
         raise RefuseStart(f"the keyring {path} cannot be read: {e}") from None
 
 
+def refuse_a_database_without_its_keyring(config: Config) -> None:
+    """A database whose keyring is gone opens with no key made now, so neither the welcome
+    nor `keys init` may make one for it: the start is refused (S15.4.5)."""
+    if config.db_path.exists() and not config.keyring_path.exists():
+        raise RefuseStart(
+            f"{config.db_path} has no keyring beside it: bring its own back with `moneykata db "
+            f"restore <backup>`, or, on a new server, empty {config.data_dir} to start again"
+        )
+
+
 # ---------- what the data key gives ----------
 
 

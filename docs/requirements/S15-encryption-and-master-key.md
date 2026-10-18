@@ -167,12 +167,14 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       which the running server finds at its next request; it is then locked and opens with
       the phrase. Both refuse where a keyring exists: a backup brings its own keyring back
       with `db restore`. Whoever reaches an uninitialised server first can make its key: a
-      household that finds its new server asking for words nobody wrote down removes the
-      keyring (or reinstalls) and starts again, with nothing lost.
+      household that finds its new server asking for words nobody wrote down empties its
+      data directory (or reinstalls) and starts again, with nothing lost.
    5. **Uninitialised, refused and locked.** With no keyring the server is uninitialised:
       `/healthz` answers 503 `uninitialised`, `/ui` shows only the welcome, and every other
       path answers 503 (S13.6). It **refuses to start** (exit 78, S13.6) when the keyring
-      cannot be read. A wrong phrase at unlock is refused and the server stays locked. A
+      cannot be read, and when the database is there without its keyring: a key made then
+      could not open it, so neither the welcome nor `keys init` makes one, and the refusal
+      names the two ways on, `db restore` or an emptied data directory. A wrong phrase at unlock is refused and the server stays locked. A
       database the phrase opens the keyring for but the server cannot use (one from a newer
       release) is refused at the unlock, with the reason in the log, and the server stays
       locked.
