@@ -9,9 +9,9 @@ relies on goes behind its reverse proxy instead ([`operations.md`](operations.md
 keys and the connector.
 
 The steps were run on Proxmox VE 9.2 with a Debian 13 guest and Docker Engine 29, and on
-TrueNAS Community Edition 25.10.7, with the image built on each host; the screenshots are from
-those runs. A release's images are published on ghcr.io (§2), and a host pulls them in place
-of that build.
+TrueNAS Community Edition 25.10.7, with the image built on each host; their screenshots are from
+those runs, and §5's are from a server built from the same source. A release's images are
+published on ghcr.io (§2), and a host pulls them in place of that build.
 
 ## 1. What you need
 
@@ -159,21 +159,18 @@ UI show the VM's address on its **Summary**; it starts by itself at every boot a
    EOF
    ```
 
-3. **Make the master key**: `docker compose run --rm moneykata keys init`, which first
-   pulls the image (§2). It shows the
-   **recovery phrase**, 12 words. Write them down, then type the three it asks for. Nothing
-   shows the phrase again (S15.6 says how to keep it: two copies in two places, one offline).
-4. **Start it**: `docker compose up -d moneykata`. Name the service: the compose file's
-   other one is the connector, which needs a setup of its own before it starts
-   (operations.md §8).
-5. **Unlock it** in a browser, §5.
+3. **Start it**: `docker compose up -d moneykata`, which first pulls the image (§2). Name the
+   service: the compose file's other one is the connector, which needs a setup of its own
+   before it starts (operations.md §8).
+4. **Open it** in a browser: the welcome makes its master key and your account (§5).
 
 ### 3.4 After a reboot
 
 The VM starts with the host (`--onboot 1`), and Docker starts MoneyKata with it
 (`restart: unless-stopped`, S13.6), **locked**: open it and enter the phrase (§5).
-`docker compose ps` in `~/moneykata` shows `health: starting` for its first two minutes or
-so, then `unhealthy` while it waits for the phrase, and `healthy` once it has it.
+`docker compose ps` in `~/moneykata` shows it `healthy` whenever it answers, locked or not;
+`curl -k https://192.168.1.50:37373/healthz` says whether it is waiting for its phrase
+(`locked`) or open (`ok`).
 
 ## 4. TrueNAS, installed manually
 
@@ -197,14 +194,14 @@ The steps below use a pool named `tank` and the NAS's address `192.168.1.20`.
 
 ![The datasets](deploy/truenas-datasets.png)
 
-### 4.2 The configuration and the key
+### 4.2 The configuration
 
 Open **System › Shell**; `sudo` asks for `truenas_admin`'s password. Keep the page open
 until each command has finished. (SSH works as well, once it is turned on under **System ›
 Services**; it is off by default.)
 
-1. **Give the datasets to the container's user** (uid 10001) and **write the configuration**
-   beside them:
+**Give the datasets to the container's user** (uid 10001) and **write the configuration**
+beside them:
 
    ```sh
    sudo chown 10001:10001 /mnt/tank/moneykata/data /mnt/tank/moneykata/backups
@@ -223,16 +220,6 @@ Services**; it is off by default.)
    EOF
    ```
 
-2. **Make the master key**, which first pulls the image (§2). It shows the **recovery
-   phrase**, 12 words: write them down, then type the three it asks for.
-
-   ```sh
-   sudo docker run --rm -it \
-     -v /mnt/tank/moneykata/data:/var/lib/moneykata \
-     -v /mnt/tank/moneykata/backups:/var/backups/moneykata \
-     -v /mnt/tank/moneykata/moneykata.toml:/etc/moneykata.toml:ro \
-     ghcr.io/mojokata/moneykata:0.1.0 keys init
-   ```
 
 ### 4.3 Install the app
 
@@ -266,11 +253,10 @@ services:
 
 ![Install via YAML](deploy/truenas-install-yaml.png)
 
-The install finishes at once. The app shows **Deploying** while MoneyKata waits for the
-phrase, and **Running** once it is unlocked (§5). The NAS's time zone (**System › General
-Settings › Localization › Settings**) is the server's, for backups and emails.
-
-![The app, Deploying until it is unlocked](deploy/truenas-app-locked.png)
+The install pulls the image (§2) and finishes once the container answers: the app shows
+**Running**. Then open it: the welcome makes its master key and your account (§5). The NAS's
+time zone (**System › General Settings › Localization › Settings**) is the server's, for
+backups and emails.
 
 ### 4.4 Snapshots and restarts
 
@@ -278,27 +264,35 @@ Settings › Localization › Settings**) is the server's, for backups and email
   **Recursive** ticked, **Save**; by default it keeps two weeks of daily snapshots. Nothing
   in them opens without the phrase; operations.md §2.3 says what a snapshot is and isn't.
 - After the NAS restarts, the app starts again by itself (`restart: unless-stopped`),
-  **locked**, and shows **Deploying** until someone enters the phrase (§5).
+  **locked**, until someone enters the phrase (§5).
 - Deleting the app (the app's **Delete**) offers **Remove Images**, ticked. Either way the
   datasets stay as they are, and the image is pulled again by the next install.
 
-## 5. Unlocking and the first sign-in
+## 5. The welcome
 
 1. Open `https://<address>:37373` (`https://192.168.1.50:37373` for the VM,
    `https://192.168.1.20:37373` for the NAS). The browser warns that the certificate isn't
    trusted, since MoneyKata made it itself: continue to the site.
-2. The **locked** screen asks for the recovery phrase. Enter the 12 words; the server opens
-   its database and the sign-in page follows.
+2. A new server shows **Welcome to MoneyKata**. Have paper and a pen ready, then **Show my
+   recovery phrase**.
 
-   ![The locked screen](deploy/moneykata-locked.png)
+   ![The welcome](deploy/moneykata-welcome.png)
 
-3. Sign in as **`admin`** with the published password **`moneykata-setup`**. The first sign-in
-   leads only to **Set up the admin account** (S10.1.2): a name, sex, an email address and a
-   new password of at least 12 characters.
+3. **Write the 12 words down**, in order, with the fingerprint. They're the master key, and
+   nothing shows them again: keep two copies in two places, one of them offline, and never
+   with the backups (S15.6). Every visit, or another browser, shows other words; only the ones
+   you confirm become the key. Then **I've written them down**.
 
-   ![The admin's first sign-in](deploy/moneykata-setup.png)
+   ![The recovery phrase (blurred here: never put a real one in a picture)](deploy/moneykata-phrase.png)
 
-4. Then the **Dashboard**. **Users and Groups** invites the other testers. An invitation is
+4. **Type three of the words back**, by their number, then **Make the key**. MoneyKata writes
+   its key and opens.
+5. **Set up the admin account**: a name, sex, an email address and a password of at least 12
+   characters. You sign in as **`admin`** from now on (S10.1.2).
+
+   ![The admin's account](deploy/moneykata-setup.png)
+
+6. Then the **Dashboard**. **Users and Groups** invites the other testers. An invitation is
    an email: until **Settings › Email** has an SMTP server, each is written to the mail folder
    instead, and **Settings › Email** lists them, with **Open** to show the link to pass on.
    The help pane (**F1**) explains every screen, and `/demo` on the same address is the
@@ -306,9 +300,15 @@ Settings › Localization › Settings**) is the server's, for backups and email
 
    ![The Dashboard](deploy/moneykata-dashboard.png)
 
-Instead of the browser, the phrase can be entered on the host:
-`docker compose exec moneykata moneykata keys unlock` in `~/moneykata` on the VM;
+**After every restart** the server is **locked** until someone enters the phrase: the page
+asks for the 12 words, and sign-in follows. Instead of the browser, the phrase can be entered on
+the host: `docker compose exec moneykata moneykata keys unlock` in `~/moneykata` on the VM;
 `sudo docker exec -it ix-moneykata-moneykata-1 moneykata keys unlock` on TrueNAS.
+
+![The locked screen](deploy/moneykata-locked.png)
+
+**Check a copy of the phrase** once a year with **Verify key** in Settings › Key storage, and
+whenever you make a new copy; the yearly alert opens it.
 
 ## 6. A new release
 
@@ -328,5 +328,9 @@ Instead of the browser, the phrase can be entered on the host:
   certificate outright was given an address the certificate doesn't name: add it under
   `[tls] names` and restart; the server makes a new certificate.
 - **It says it's locked**: it waits for the phrase after every start (§5).
+- **A key nobody wrote down**: if someone else on the network finished the welcome first, the
+  new server asks for words you never saw. Stop it, remove the keyring
+  (`data/keyring`; on TrueNAS, in the `data` dataset), start it again, and the welcome comes
+  back. Nothing is lost on a new server.
 - **A lost phrase**: a running, unlocked server can still make a new one,
   `keys rotate` (operations.md §7). Once it restarts without one, nothing opens the data.

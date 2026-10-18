@@ -183,8 +183,9 @@
       dependency must install from a published wheel for both (onnxruntime, opencv, numpy,
       pi-heif, sqlcipher3 among them), so nothing is compiled in the image; a check fails
       when one has no arm64 wheel. Each architecture's release gate is `web/install/smoke.sh`
-      on its own runner (the key from a phrase, a refused start, health, a sign-in, a receipt
-      read, the connector's vault and unlock, clean stops); the trial on household hardware
+      on its own runner (a refused start, the welcome's key and first admin, a locked restart and
+      its unlock, health, a sign-in, a receipt read, the connector's vault and unlock, clean
+      stops); the trial on household hardware
       (a Raspberry Pi, an arm64 NAS), which alone measures the reader's speed there
       (S9.8.4.5), is in the manual test plan (S17.9.7.8), and a release says whether it was
       run.

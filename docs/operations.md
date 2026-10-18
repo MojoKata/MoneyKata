@@ -15,7 +15,8 @@ listening on port 37373. It needs three things from the host, and one thing from
 | `backups/`      | `/var/backups/moneykata`  | the daily backups                               |
 | `moneykata.toml`| `/etc/moneykata.toml` (read only) | the configuration; never a secret       |
 
-The master key is the **recovery phrase**, and it is never stored: the server starts locked
+The master key is the **recovery phrase**, and it is never stored: a new server's page
+welcomes its first admin and shows the phrase once, and after that the server starts locked
 after every start (a restart, an upgrade, a reboot) until someone enters the phrase, on the
 locked screen in a browser or with `docker compose exec moneykata moneykata keys unlock`
 (S15.4). Nothing on the host holds a key, so the host can be snapshotted and backed up whole.
@@ -58,8 +59,9 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    ```
 
    `web/install/smoke.sh [linux/arm64]` builds both images for a platform and runs them
-   once, as a release's gate does (S17.8.1): the key from a phrase, a refused start, health,
-   a sign-in, a receipt read, the connector's vault and unlock, and clean stops. Another
+   once, as a release's gate does (S17.8.1): a refused start, the welcome's key and first
+   admin, a locked restart and its unlock, health, a sign-in, a receipt read, the connector's
+   vault and unlock, and clean stops. Another
    platform than the machine's own runs under QEMU (`docker run --privileged --rm
    tonistiigi/binfmt --install arm64`, once).
 2. **Make the folders**, owned by the container's user:
@@ -71,12 +73,7 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    Keep `backups/` inside what the host backs up, beside `data/` (S14.6): a backup here is the
    database only, and the host's own backup of both is what keeps the receipts. A further copy
    off the host is welcome, as long as the phrase never goes with it.
-3. **Make the master key**: `docker compose run --rm moneykata keys init`. It shows the
-   **recovery phrase**, 12 words, on the terminal only (never in Docker's logs; it refuses to
-   run without a terminal), and won't finish until you type three of them back. The phrase is
-   the key: nothing of it is written, and nothing shows it again. Store it as S15.6 says: two
-   copies in two places, one offline, never with the backups.
-4. **Start it**: `docker compose up -d`, then point the reverse proxy at it and set
+3. **Start it**: `docker compose up -d`, then point the reverse proxy at it and set
    `trusted_proxies` in `moneykata.toml` to the proxy's own address, never a whole range
    (S13.3): anything else in the range could pose as the proxy. The listener speaks plain HTTP
    in `proxy` mode, so the compose file publishes it on the host's loopback only. A proxy in
@@ -87,10 +84,19 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    `127.0.0.1:37373` from the bridge's gateway, `172.30.37.1`, as every other process on the
    host does. The compose file gives the container the host's time zone (`/etc/localtime` and
    `TZ`), which backups and daily emails follow.
-5. **Unlock it**: it starts locked. Open the app and enter the phrase on the locked screen,
-   or run `docker compose exec moneykata moneykata keys unlock` and type it there. Do this
-   after every start. A server with no users then makes `admin` with a default password; its
-   first sign-in asks for a new password and an email address (S10.1.2).
+4. **Open it: the welcome.** With no keyring, the server starts uninitialised and its page
+   welcomes the first admin (S15.4.4): **Show my recovery phrase** shows the 12 words once,
+   three typed back make the key, and **Set up the admin account** makes `admin`, signed in at
+   once (S10.1.2). The phrase is the key: nothing of it is written, and nothing shows it again.
+   Store it as S15.6 says: two copies in two places, one offline, never with the backups.
+   Whoever reaches a new server first can finish its welcome; one that asks for words nobody
+   wrote down is started again without its keyring (`data/keyring`). On a terminal instead,
+   `docker compose run --rm moneykata keys init` makes the key before the first start (it
+   shows the phrase on the terminal only, never in Docker's logs); the page then sets up the
+   first admin at the first unlock.
+5. **Unlock it after every start**: it starts locked. Open the app and enter the phrase on the
+   locked screen, or run `docker compose exec moneykata moneykata keys unlock` and type it
+   there.
 
 ### 2.1 On Proxmox
 
@@ -106,9 +112,9 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 ### 2.2 On TrueNAS
 
 [`DEPLOY.md`](DEPLOY.md) §4 installs it on TrueNAS Community Edition manually, step by step: two
-datasets for data and backups, owned by uid 10001; the image built and the key made from
-**System › Shell** (`docker run -it … keys init`, since a custom app has no compose folder to
-run it from); and a **custom app** from **Install via YAML**, with the datasets as host paths.
+datasets for data and backups, owned by uid 10001, and `moneykata.toml` beside them, made in
+**System › Shell**; a **custom app** from **Install via YAML**, with the datasets as host paths;
+and the welcome, which makes the key and the admin.
 Both datasets go into snapshot and replication tasks as they are: nothing in them opens
 without the phrase. Unlock after each start (§2 step 5).
 
@@ -129,8 +135,7 @@ without the phrase. Unlock after each start (§2 step 5).
    `moneykata` service and the key commands), and run `docker compose up -d`.
 2. At the unlock the server copies the database into `data/pre-upgrade/` and checks the copy,
    then migrates it one revision at a time. The three newest copies are kept.
-3. Unlock it (§2 step 5), then watch it come up: `docker compose ps` shows `healthy` once
-   it answers; it shows `unhealthy` while locked.
+3. Unlock it (§2 step 5), then watch it come up: `/healthz` answers `ok` once it serves.
 
 **Going back** to the earlier release: stop it, set the old tag again, and restore the copy
 made before the upgrade with `db restore data/pre-upgrade/<copy>` (or the last backup, §6). An
@@ -162,12 +167,15 @@ start:` line (§5.1).
   household do): signed calls between servers and from the connector are refused when the
   clocks differ by more than a minute, and two-step codes drift with them.
 - **Health**: the image checks itself every 30 seconds (`moneykata health`, which asks
-  `/healthz`). `docker compose ps` shows `starting`, `healthy` or `unhealthy`. From outside,
+  `/healthz`): it is healthy whenever the server answers, ready, locked or uninitialised, so
+  `docker compose ps` (and an orchestrator waiting for healthy containers) shows `healthy`
+  while the server waits for its phrase, and `unhealthy` only when nothing answers (S13.6).
+  Whether it is ready is `/healthz`'s own answer. From outside,
   point an uptime monitor (Uptime Kuma, for example) at `https://<your address>/healthz`: it
   answers `{"status": "ok", "version": …}` once the server is unlocked and ready, 503 with
-  `"re-encrypting"` while a re-encryption runs at the unlock, and 503 with `"locked"` while it
+  `"re-encrypting"` while a re-encryption runs at the unlock, 503 with `"locked"` while it
   waits for the phrase, which is how anyone learns that a reboot happened and the phrase is
-  needed.
+  needed, and 503 with `"uninitialised"` on a new server, until its welcome makes the key.
 - **Alerts**: problems that need someone show in Alerts for admins, and are emailed to those
   who chose it: a failed backup, a price source, email, the bitcoin node or a linked server
   failing for longer than Settings › Alerts allows, and a recovery phrase not confirmed.
@@ -187,7 +195,7 @@ causes:
 
 | The line says                         | Do                                                      |
 |---------------------------------------|---------------------------------------------------------|
-| the keyring is missing or can't be read | a new server: `keys init` (§2); a rebuilt one: restore a backup (§6.2) |
+| the keyring can't be read              | restore it with a backup (§6); a new server has no keyring at all, and starts uninitialised |
 | the config file has a problem, or a key it doesn't know | fix `moneykata.toml` as the line says |
 | the data directory is in use          | another server, or a host command, is using the same `data/`: stop it |
 
@@ -220,8 +228,9 @@ phrase, or the keyring from another server: the line names its fingerprint).
 
 ### 6.2 Onto a new host
 
-1. Install the image and make the folders as in §2, but don't run `keys init`: the backup
-   brings its keyring, and the phrase is the key.
+1. Install the image and make the folders as in §2, but don't start it: a server started on
+   an empty `data/` would welcome a new admin and make a new key, and the backup brings its own
+   keyring, under its phrase.
 2. Put `data/receipts/` back from the host's own backup, taken as near the backup's time as it
    has: a backup here holds no receipts (§4).
 3. Copy the backup folder into the new `backups/`, then restore, start and unlock as in §6.1,
@@ -233,16 +242,17 @@ phrase, or the keyring from another server: the line names its fingerprint).
   checks the newest backup's hashes, when it was made and that it opens, and changes nothing.
 - **Yearly**: rehearse §6.2 into a throwaway folder on another machine or a scratch VM, with
   the phrase from its offline copy. That proves the backups, the phrase and these steps
-  together. In the same sitting, check the phrase's copies are readable and run
-  `docker compose run --rm moneykata keys verify` (S15.6.5). Every unlock after a restart is
-  a check as well.
+  together. In the same sitting, check the phrase's copies are readable and check each with
+  **Verify key** in Settings › Key storage (or `docker compose run --rm moneykata keys verify`,
+  S15.6.5). Every unlock after a restart is a check as well.
 
 ## 7. Keys
 
 - **Unlock after a start**: `docker compose exec moneykata moneykata keys unlock`, which hands
   the phrase to the server over its socket, or the locked screen in a browser. Nothing shows
   the phrase again: it is never stored.
-- **Check a copy of the phrase**: `docker compose run --rm moneykata keys verify`.
+- **Check a copy of the phrase**: **Verify key** in Settings › Key storage, or `docker compose
+  run --rm moneykata keys verify`.
 - **Rotate the master key** (S15.7.1): a rotation brings a new data key as well, so the data is
   re-encrypted. With the server running, `docker compose exec moneykata moneykata keys rotate`.
   It needs no old phrase (the running server holds the data key), shows the new one on the

@@ -174,7 +174,10 @@ def test_the_smoke_script_is_there_for_each_platform():
         "web/install/smoke.sh must be executable"
     )
     text = script.read_text()
-    assert "linux/arm64" in text and "keys unlock" in text and "503" in text
+    assert "linux/arm64" in text and "keys unlock" in text
+    # A new server's welcome, then the locked start after a restart (S15.4).
+    assert "wait_for uninitialised" in text and "/ui/api/welcome/key" in text
+    assert "wait_for locked" in text
 
 
 def test_the_truenas_app_keeps_the_compose_files_promises():

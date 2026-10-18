@@ -78,9 +78,9 @@ tag); to build the server's image yourself, from the repository's root:
 docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
 ```
 
-and `web/install/compose.yaml` is the example to run it from. A new server has one user,
-`admin`, with the published password `moneykata-setup`: its first sign-in leads only to choosing
-a password and an email address. A running server serves the clickable mockup at `/demo`.
+and `web/install/compose.yaml` is the example to run it from. A new server welcomes its first
+admin: it shows the recovery phrase once, takes three of its words back, and sets up the
+`admin` account. A running server serves the clickable mockup at `/demo`.
 
 ## Deploying
 

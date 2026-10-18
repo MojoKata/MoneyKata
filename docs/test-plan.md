@@ -117,8 +117,8 @@ as ofxhome.com lists them), a routing and account number, and a sign-in.
 
 ## T10–T11: Proxmox and TrueNAS
 
-Follow `DEPLOY.md` §3 or §4 on the real host. Passing: the install reaches healthy
-once unlocked, a restart comes back locked and the phrase opens it with the data intact, a
+Follow `DEPLOY.md` §3 or §4 on the real host. Passing: the welcome makes the key and the
+admin, and `/healthz` answers `ok`; a restart comes back locked and the phrase opens it with the data intact, a
 snapshot of the host holds no key (search it for the keyring's fingerprint and the phrase's
 words: neither is there), and the daily backup lands in `backups/`. Record what the page
 didn't say and fix it.
