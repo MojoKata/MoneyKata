@@ -32,4 +32,15 @@ jobs:
       - name: web/dev.sh setup (Python 3.14, Deno and Chromium, each pinned)
         run: web/dev.sh setup
       - name: web/check
-        run: web/check
+        run: |
+          set -o pipefail
+          web/check 2>&1 | tee "$RUNNER_TEMP/check.log"
+      # What failed, as annotations: they show on the pull request and through the API, where
+      # a reader without access to the run's log can see them.
+      - name: say what failed
+        if: failure()
+        run: |
+          log="$RUNNER_TEMP/check.log"
+          grep -E '^FAILED: ' "$log" | sed 's/^/::error title=web\/check::/' || true
+          grep -E '^(FAILED|ERROR) tests/' "$log" | head -n 8 | sed 's/^/::error title=pytest::/' || true
+          tail -n 40 "$log" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g;s/^/::error title=the end of the log::/'
