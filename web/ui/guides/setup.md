@@ -1,6 +1,7 @@
 # Set up the admin account
 
-A new server's first sign-in, with the published default password, leads only here.
+The welcome's last step, once the key is made: the account you'll sign in with, as **admin**. (A
+server made before the welcome leads its admin's first sign-in here too.)
 
 ## Your name
 
@@ -16,4 +17,4 @@ Where invitations and resets for this account go.
 
 ## New password {#password}
 
-Not the published default, and not a common password.
+At least the minimum length (12 characters to start with), and not a common password.

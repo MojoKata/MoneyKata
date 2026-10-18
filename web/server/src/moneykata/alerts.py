@@ -426,8 +426,8 @@ def recovery_phrase(s: Session, server) -> Iterable[Cause]:
             kind="phrase-check",
             title="Check the recovery phrase: it's been a year",
             about="type a copy of the phrase into Verify key, in Settings › Key storage",
-            link="/ui/settings/keys",
-            fix="Key storage",
+            link="/ui/settings/keys?verify",
+            fix="Verify key",
             icon="lock",
             since=due,
         )

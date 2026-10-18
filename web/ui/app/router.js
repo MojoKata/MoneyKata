@@ -79,7 +79,8 @@ export function PublicScreens() {
   `;
 }
 
-// The default admin's setup step, at whatever address it was reached. It is in a Router too,
+// The first admin's setup (the welcome's last step), at whatever address it was reached; or
+// the setup step of an admin made before the welcome (S10.1.2). It is in a Router too,
 // which is what waits for a lazy screen's module.
 const Setup = screen('setup');
 

@@ -7,7 +7,8 @@ import { setBitcoinUnit, setZone } from '../app/format.js';
 export const session = signal(null);
 /**
  * Why there is no session: 'signed-out', 'expired', 'disabled', 'locked' (the server waits
- * for its recovery phrase, S15.4.3), or '' while loading.
+ * for its recovery phrase, or a new one for its welcome, S15.4), 'needs-admin' (unlocked with
+ * no users: the welcome's last step, S10.1.2), or '' while loading.
  */
 export const ended = signal('');
 
@@ -21,8 +22,21 @@ export async function loadSession() {
     return info;
   } catch (e) {
     session.value = null;
-    ended.value = /** @type {any} */ (e)?.code === 'locked' ? 'locked' : 'signed-out';
+    ended.value = /** @type {any} */ (e)?.code === 'locked'
+      ? 'locked'
+      : (await needsAdmin())
+      ? 'needs-admin'
+      : 'signed-out';
     return null;
+  }
+}
+
+/** Whether the server is open with no users yet, so its first admin is to be set up. */
+async function needsAdmin() {
+  try {
+    return Boolean((await api.get('/unlock')).needsAdmin);
+  } catch {
+    return false;
   }
 }
 
