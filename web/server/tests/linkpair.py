@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 
 from moneykata import net
 from moneykata.app import Server, create_app
-from moneykata.auth import users as accounts
 from moneykata.config import Config
 from moneykata.keys import cli as keys_cli
 from moneykata.links import client as link_client
@@ -28,7 +27,6 @@ def make_server(tmp_path, name: str) -> Server:
     # The test names resolve to an address on a LAN, as a peer's does (S13.5).
     srv.guard = net.Guard(resolver=lambda host, port: ["192.0.2.10"])
     with srv.db.tx() as s:
-        accounts.ensure_default_admin(s)
         ensure_categories(s)
     return srv
 
@@ -87,7 +85,8 @@ def with_config(srv: Server, **kw) -> None:
 
 
 def admin_of(srv: Server, base: str) -> TestClient:
-    """An admin signed in on that server's own UI (its setup step done)."""
+    """An admin signed in on that server's own UI: the first one, made as the welcome makes it
+    (S10.1.2), and signed in again when it exists."""
     from moneykata import settings
 
     with srv.db.tx() as s:
@@ -95,16 +94,19 @@ def admin_of(srv: Server, base: str) -> TestClient:
     c = TestClient(
         create_app(srv), base_url=base, headers={"Origin": base}, client=("127.0.0.1", 50000)
     )
-    r = c.post("/ui/api/session", json={"login": "admin", "password": "moneykata-setup"})
-    assert r.status_code == 200, r.text
+    host = urlsplit(base).hostname
     r = c.post(
-        "/ui/api/session/setup",
+        "/ui/api/welcome/admin",
         json={
             "password": "a long admin passphrase",
-            "email": f"admin@{urlsplit(base).hostname}",
-            "displayName": f"Admin {urlsplit(base).hostname[0].upper()}",
+            "email": f"admin@{host}",
+            "displayName": f"Admin {host[0].upper()}",
+            "sex": "male",
         },
     )
+    if r.status_code == 409:
+        login = {"login": "admin", "password": "a long admin passphrase"}
+        r = c.post("/ui/api/session", json=login)
     assert r.status_code == 200, r.text
     return c
 

@@ -13,6 +13,7 @@ from .auth.users import Services
 from .config import Config
 from .events import STREAM_SECONDS, Broker
 from .jobs import Jobs
+from .keys.welcome import Phrases
 from .links.copy import Copies
 from .links.signing import Nonces
 from .mail import Mailer
@@ -38,6 +39,8 @@ class Server:
     # progress for the locked screen, and why the last unlock failed, if it did.
     reencrypting: Any = None
     unlock_error: str | None = None
+    # A new server's welcome: the phrases on offer until one is confirmed (S15.4.4).
+    phrases: Phrases = field(default_factory=Phrases)
     background: set = field(default_factory=set)
     # Backups and re-encryption never run at the same time (S15.7.2).
     maintenance_lock: threading.Lock = field(default_factory=threading.Lock)
@@ -165,16 +168,19 @@ def create_app(server: Server) -> FastAPI:
 
     @app.get("/healthz", include_in_schema=False)
     def healthz():
-        """`ok` once unlocked and ready; `locked` until the phrase is entered (S15.4.3), and
-        `starting` in between; both of those are 503, which an uptime monitor reports."""
+        """`ok` once unlocked and ready; `uninitialised` until the welcome makes the key
+        (S15.4.4), `locked` until the phrase is entered (S15.4.3), and `starting` in between:
+        all 503, which an uptime monitor reports."""
         status = (
             "ok"
             if server.ready
             else "re-encrypting"
             if server.reencrypting is not None
-            else "locked"
-            if server.store is None
             else "starting"
+            if server.store is not None
+            else "locked"
+            if server.config.keyring_path.exists()
+            else "uninitialised"
         )
         return JSONResponse(
             {"status": status, "version": server.version},
@@ -216,6 +222,7 @@ def create_app(server: Server) -> FastAPI:
         unlock,
         users,
         wallets,
+        welcome,
     )
     from .ui import (
         connector as connector_settings,
@@ -224,6 +231,7 @@ def create_app(server: Server) -> FastAPI:
 
     for module in (
         unlock,
+        welcome,
         session,
         users,
         profile,

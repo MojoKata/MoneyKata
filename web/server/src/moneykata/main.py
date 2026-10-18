@@ -98,8 +98,10 @@ def cmd_dev(args) -> int:
 
 
 def cmd_health(args) -> int:
-    """The image's health check: is this container's server answering /healthz? A locked
-    server prints `locked` and counts as unhealthy, until the phrase is entered."""
+    """The image's health check: is this container's server alive, answering /healthz at
+    all (S13.6)? It prints the answer: `ok`, or `starting`, `re-encrypting`, `locked` or
+    `uninitialised`, all alive, so an orchestrator waiting for healthy containers lets the
+    server wait for its phrase. Whether it is ready is /healthz's own answer, for a monitor."""
     import httpx
 
     config = load(Path(args.config))
@@ -110,8 +112,13 @@ def cmd_health(args) -> int:
     except httpx.HTTPError as e:
         print(f"unhealthy: {e}", file=sys.stderr)
         return 1
-    print(r.json().get("status", r.status_code))
-    return 0 if r.status_code == 200 else 1
+    try:
+        status = r.json()["status"]
+    except ValueError, KeyError, TypeError:
+        print(f"unhealthy: /healthz answered {r.status_code}", file=sys.stderr)
+        return 1
+    print(status)
+    return 0
 
 
 def cmd_openapi(args) -> int:
