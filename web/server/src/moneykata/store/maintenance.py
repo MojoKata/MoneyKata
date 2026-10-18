@@ -182,8 +182,13 @@ def backup(config: Config, store: Store, now: dt.datetime | None = None) -> Path
     database the host picks up has a consistent twin beside it. It opens only with the
     phrase."""
     now = now or clock.now()
-    name = BACKUP_PREFIX + now.strftime("%Y%m%d-%H%M%S")
     config.backup_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    # A backup's name is when it was made, to the second, and its manifest must agree. Two
+    # made within one second (a fast host, a test) would share it: the later one takes the
+    # next free second, which its manifest then records.
+    while (config.backup_dir / (BACKUP_PREFIX + now.strftime("%Y%m%d-%H%M%S"))).exists():
+        now += dt.timedelta(seconds=1)
+    name = BACKUP_PREFIX + now.strftime("%Y%m%d-%H%M%S")
     part = config.backup_dir / (name + ".part")
     if part.exists():
         shutil.rmtree(part)

@@ -891,6 +891,19 @@ def test_a_failed_write_names_no_value_it_was_given(store):
     assert secret not in str(e.value)
 
 
+def test_two_backups_in_one_second_take_two_names(store, keyed_config, master_key):
+    """A fast host can make two backups within one second: the later one takes the next free
+    second, and its manifest says so, so each still passes its name check (S14.6)."""
+    at = dt.datetime(2026, 10, 18, 4, 3, 38, 250000, tzinfo=dt.UTC)
+    first = maintenance.backup(keyed_config, store, now=at)
+    second = maintenance.backup(keyed_config, store, now=at.replace(microsecond=750000))
+    assert first.name == "moneykata-20261018-040338"
+    assert second.name == "moneykata-20261018-040339"
+    for b in (first, second):
+        maintenance.verify_backup(keyed_config, master_key, b)
+    assert maintenance.made_of(second) == at.replace(second=39, microsecond=750000)
+
+
 def test_a_backup_renamed_to_another_time_is_refused(store, keyed_config, master_key):
     # K25: verify-backup and restore go by the manifest's own time, so a backup renamed to a
     # newer one's name passes for nothing.

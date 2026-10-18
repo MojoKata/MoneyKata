@@ -40,7 +40,20 @@ jobs:
       - name: say what failed
         if: failure()
         run: |
-          log="$RUNNER_TEMP/check.log"
-          grep -E '^FAILED: ' "$log" | sed 's/^/::error title=web\/check::/' || true
-          grep -E '^(FAILED|ERROR) tests/' "$log" | head -n 8 | sed 's/^/::error title=pytest::/' || true
-          tail -n 40 "$log" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g;s/^/::error title=the end of the log::/'
+          python3 - "$RUNNER_TEMP/check.log" <<'EOF'
+          import sys
+
+          log = open(sys.argv[1], errors="replace").read()
+          def say(title, text):
+              text = text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error title={title.replace(',', ';').replace(':', ' ')}::{text}")
+
+          # Each step web/check reports failed, with the end of its own output.
+          for section in log.split("\n== ")[1:]:
+              name, _, body = section.partition("\n")
+              if "\n   FAILED: " in "\n" + body:
+                  say(name, "\n".join(body.rstrip("\n").splitlines()[-40:]))
+          for line in log.splitlines():
+              if line.startswith(("FAILED tests/", "ERROR tests/")):
+                  say("pytest", line)
+          EOF
