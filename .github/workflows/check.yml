@@ -48,11 +48,15 @@ jobs:
               text = text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
               print(f"::error title={title.replace(',', ';').replace(':', ' ')}::{text}")
 
-          # Each step web/check reports failed, with the end of its own output.
+          # Each step web/check reports failed, with its own output, in parts of 60 lines
+          # (GitHub keeps 10 annotations a step: the last 7 parts of each, at most).
           for section in log.split("\n== ")[1:]:
               name, _, body = section.partition("\n")
               if "\n   FAILED: " in "\n" + body:
-                  say(name, "\n".join(body.rstrip("\n").splitlines()[-40:]))
+                  lines = body.rstrip("\n").splitlines()
+                  parts = [lines[i : i + 60] for i in range(0, len(lines), 60)][-7:]
+                  for n, part in enumerate(parts, 1):
+                      say(f"{name} ({n} of {len(parts)})", "\n".join(part))
           for line in log.splitlines():
               if line.startswith(("FAILED tests/", "ERROR tests/")):
                   say("pytest", line)

@@ -23,6 +23,7 @@ import sys
 import tempfile
 import time
 from collections import deque
+from decimal import Decimal
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
@@ -95,6 +96,19 @@ DIALOGS = (
 COMPUTED = re.compile(r"/ui/api/accounts/[^/]+/loan/(payoff|split)$")
 IMPORTS = re.compile(r"""(\bfrom\s*|\bimport\s*\(?\s*)(['"])(\.{1,2}/[^'"]+)\2""")
 SCREENS = re.compile(r"import\(`\.\./screens/\$\{name\}\.js`\)")
+
+
+def steady(value):
+    """A recorded answer without the last digits of floating-point arithmetic, which differ
+    from one CPU to the next (a projection's percentiles): a decimal of more than 12
+    significant digits is kept to 10, which no screen shows the difference of."""
+    if isinstance(value, Decimal) and len(value.as_tuple().digits) > 12:
+        return Decimal(format(value, ".10g"))
+    if isinstance(value, dict):
+        return {k: steady(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [steady(v) for v in value]
+    return value
 
 
 def free_port() -> int:
@@ -234,7 +248,7 @@ class Recorder:
         text = OWN_CERT.sub(lambda m: m.group(1) + SHOWN_CERT + m.group(2), text)
         self.answers["GET " + key_of(req.url)] = {
             "status": r.status,
-            "body": exactjson.loads(text) if text else None,
+            "body": steady(exactjson.loads(text)) if text else None,
         }
         route.fulfill(response=r, body=text)
 
@@ -560,7 +574,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         now = OUT.read_text() if OUT.exists() else ""
         if now != html:
-            for line in itertools.islice(drift(now, html), 40):
+            for line in itertools.islice(drift(now, html), 400):
                 print(line, file=sys.stderr)
             print(f"{OUT.relative_to(ROOT)} is out of date: run web/dev.sh mockup", file=sys.stderr)
             return 1
