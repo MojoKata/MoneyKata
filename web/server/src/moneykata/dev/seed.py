@@ -69,10 +69,10 @@ def seed_users(s) -> dict[str, User]:
     settings.put(
         s, "householdAvatar", {"kind": "initials", "initials": "AB", "color": "#3b7a57"}, None
     )
-    admin = s.scalars(select(User).where(User.username == "admin")).one()
-    admin.passwordHash = passwords.hash_password(PASSWORD)
-    admin.needsSetup = False
-    admin.email = "admin@griffin.home"
+    # The first admin, as the welcome makes it (S10.1.2), with the seed users' password.
+    admin = s.scalars(select(User).where(User.username == "admin")).one_or_none()
+    if admin is None:
+        admin = accounts.make_first_admin(s, "Admin", "male", "admin@griffin.home", PASSWORD)
     people = {"admin": admin}
     for username, name, sex, born in (
         ("alice", "Alice Griffin", "female", dt.date(1979, 4, 12)),
