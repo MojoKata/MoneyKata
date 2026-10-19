@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { date } from '../app/format.js';
+import { date, thisYear } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -249,7 +249,7 @@ function GiftList() {
 }
 
 function Spending() {
-  const now = new Date().getFullYear();
+  const now = thisYear();
   const [year, setYear] = useState(String(now));
   const res = useApi('/gifts/spending', { year });
   const v = /** @type {any} */ (res.data);
@@ -705,7 +705,7 @@ function GiftDialog({ close, gift, start }) {
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const list = /** @type {any[]} */ (people.data) || [];
   const canWrite = !gift || gift.canWrite;
-  const year = new Date().getFullYear();
+  const year = thisYear();
   // The occasions of the chosen people, this year and next.
   const chosen = list.filter((p) => f.people.includes(p.id));
   /** @type {[string, string][]} */

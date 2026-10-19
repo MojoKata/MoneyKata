@@ -13,7 +13,7 @@ import { SyncCard } from '../components/connections.js';
 import { Contributions, Goal, PlanCard, PlanFacts, Withdrawals } from '../components/edu.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { ago, bitcoin, date, price, quantity } from '../app/format.js';
+import { ago, bitcoin, date, price, quantity, today } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -594,7 +594,7 @@ function Mismatch({ a, check, all, again }) {
 function TypeBalance({ close, a }) {
   useDialogGuide('dialog-type-balance');
   const [balance, setBalance] = useState('');
-  const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
+  const [day, setDay] = useState(today());
   const save = useSubmit(async () => {
     await api.post(`/accounts/${a.id}/anchors`, {
       date: day,

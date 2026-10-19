@@ -6,7 +6,9 @@ secret: the master key is a recovery phrase that is never stored anywhere (S15.4
 """
 
 import ipaddress
+import os
 import tomllib
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -80,6 +82,25 @@ def _path(table: dict, key: str, where: str) -> Path:
     if not isinstance(value, str) or not value:
         raise RefuseStart(f"{where}: [{key}] must be set to a path")
     return Path(value)
+
+
+# The configuration given in the environment instead of a file (S17.8): the same TOML, for
+# hosts where mounting a file is awkward, such as TrueNAS's Install via YAML.
+CONFIG_ENV = "MONEYKATA_CONFIG"
+
+
+def configured(given: str | None = None, env: Mapping[str, str] = os.environ) -> Config:
+    """The server's configuration: the file named with --config, else the TOML in
+    MONEYKATA_CONFIG, else /etc/moneykata.toml. It holds no secret either way."""
+    if given:
+        return load(Path(given))
+    if text := env.get(CONFIG_ENV, "").strip():
+        try:
+            raw = tomllib.loads(text)
+        except tomllib.TOMLDecodeError as e:
+            raise RefuseStart(f"{CONFIG_ENV} is not valid TOML: {e}") from None
+        return parse(raw, CONFIG_ENV)
+    return load(DEFAULT_CONFIG)
 
 
 def load(path: Path) -> Config:

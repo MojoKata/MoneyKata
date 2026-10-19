@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from . import paths
-from .config import DEFAULT_CONFIG, Config, RefuseStart, load
+from .config import CONFIG_ENV, DEFAULT_CONFIG, Config, RefuseStart, configured
 
 EX_CONFIG = 78
 log = logging.getLogger("moneykata")
@@ -71,7 +71,7 @@ def serve(config: Config, seed: bool = False) -> int:
 
 
 def cmd_serve(args) -> int:
-    return serve(load(Path(args.config)))
+    return serve(configured(args.config))
 
 
 def cmd_dev(args) -> int:
@@ -104,7 +104,7 @@ def cmd_health(args) -> int:
     server wait for its phrase. Whether it is ready is /healthz's own answer, for a monitor."""
     import httpx
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     scheme = "https" if config.mode == "tls" else "http"
     try:
         # Loopback to this container's own listener; its certificate may be self-signed.
@@ -132,8 +132,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="moneykata", description="MoneyKata server")
     p.add_argument(
         "--config",
-        default=os.fspath(DEFAULT_CONFIG),
-        help=f"the config file (default {DEFAULT_CONFIG})",
+        help=f"the config file (default: the TOML in {CONFIG_ENV}, else {DEFAULT_CONFIG})",
     )
     p.add_argument("-v", "--verbose", action="store_true")
     sub = p.add_subparsers(dest="command")

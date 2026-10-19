@@ -5,7 +5,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { date, money } from '../app/format.js';
+import { date, money, thisYear } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Chips, Empty, Failed, Loading } from '../components/bits.js';
@@ -595,7 +595,7 @@ function NewProjection({ close }) {
   const [child, setChild] = useState('');
   const save = useSubmit(async () => {
     const p = /** @type {any} */ (me.data);
-    const born = p?.birthYear || new Date().getFullYear() - 40;
+    const born = p?.birthYear || thisYear() - 40;
     const people = [{ name: p?.displayName || 'Me', birthYear: born, retireAge: 65 }];
     if (who === 'couple' && p?.spouse) {
       people.push({
@@ -604,7 +604,7 @@ function NewProjection({ close }) {
         retireAge: 65,
       });
     }
-    const year = new Date().getFullYear();
+    const year = thisYear();
     const inputs = goal === 'retirement'
       ? {
         people,

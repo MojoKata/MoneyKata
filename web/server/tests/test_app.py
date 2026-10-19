@@ -590,6 +590,25 @@ def test_privacy_mode_blurs_amounts(page):
     page.get_by_role("button", name="Show amounts").click()
 
 
+def test_a_moment_shows_its_day_in_the_viewers_zone(page):
+    """S14.9: a moment's day and "today" are the viewer's; a calendar date never shifts. Late
+    on Oct 18 in Los Angeles is already Oct 19 in UTC. (A module of its own, by its query, so
+    the page's zone is left as it is.)"""
+    got = page.evaluate("""async () => {
+        const main = document.querySelector('script[src$="/app/main.js"]').src;
+        const f = await import(new URL('format.js?zone-test', main).href);
+        f.setZone('America/Los_Angeles');
+        const days = [f.day('2026-10-19T00:26:00Z'), f.date('2026-10-19'), f.day(null)];
+        f.setZone('Pacific/Kiritimati');
+        const ahead = [f.today(), f.thisYear()];
+        f.setZone('Etc/GMT+12');
+        return { days, ahead, behind: f.today() };
+    }""")
+    assert got["days"] == ["Oct 18, 2026", "Oct 19, 2026", "—"]
+    ahead, year = got["ahead"]
+    assert ahead > got["behind"] and len(ahead) == 10 and year == int(ahead[:4])
+
+
 def test_every_password_field_has_an_eye_that_reveals_it(page):
     visit(page, "/ui/profile")
     fields = page.locator("input.in[type=password]")

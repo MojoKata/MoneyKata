@@ -23,6 +23,7 @@ import sys
 import tempfile
 import time
 from collections import deque
+from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit
@@ -111,12 +112,50 @@ def steady(value):
     return value
 
 
-# The backup made at the server's start races the stub prices' first fill, so its size differs
-# from one run to the next: the mockup shows the size of one run.
-SHOWN_BACKUP_BYTES = {
-    "/ui/api/settings/backups": ("backups", 2642261),
-    "/ui/api/settings/keys/copies": ("copies", 2642771),
-}
+@dataclass(frozen=True)
+class Mask:
+    """A recorded value that differs from one machine or run to the next, and what the mockup
+    shows in its place. `field` is dotted, with `[]` for every item of a list."""
+
+    path: str
+    field: str
+    shown: object
+    why: str
+
+
+# What else keeps the recording the same everywhere: the crawl's server runs with TZ=UTC (the
+# zone also decides the dates it works out), and steady() keeps long decimals to 10 digits.
+MASKS = (
+    Mask(
+        "/ui/api/settings/backups",
+        "backups[].bytes",
+        2642261,
+        "the backup made at the server's start races the stub prices' first fill",
+    ),
+    Mask("/ui/api/settings/keys/copies", "copies[].bytes", 2642771, "that backup, as a copy"),
+)
+
+
+def masked(path: str, body):
+    """A recorded answer with each of MASKS for its path in place."""
+    for m in MASKS:
+        if m.path == path:
+            _mask(body, m.field.split("."), m.shown)
+    return body
+
+
+def _mask(value, steps: list[str], shown) -> None:
+    key, rest = steps[0], steps[1:]
+    if not isinstance(value, dict) or key.removesuffix("[]") not in value:
+        return
+    inner = value[key.removesuffix("[]")]
+    if not rest:
+        value[key.removesuffix("[]")] = shown
+    elif key.endswith("[]"):
+        for item in inner:
+            _mask(item, rest, shown)
+    else:
+        _mask(inner, rest, shown)
 
 
 def free_port() -> int:
@@ -254,13 +293,7 @@ class Recorder:
         # Where this run kept its data is a temporary directory; the mockup shows a fixed one.
         text = r.text().replace(self.data, SHOWN_DIR)
         text = OWN_CERT.sub(lambda m: m.group(1) + SHOWN_CERT + m.group(2), text)
-        body = steady(exactjson.loads(text)) if text else None
-        shown = SHOWN_BACKUP_BYTES.get(urlsplit(req.url).path)
-        if shown and body:
-            listed, size = shown
-            for item in body[listed]:
-                if item.get("kind", "backup") == "backup":
-                    item["bytes"] = size
+        body = masked(urlsplit(req.url).path, steady(exactjson.loads(text))) if text else None
         self.answers["GET " + key_of(req.url)] = {"status": r.status, "body": body}
         route.fulfill(response=r, body=text)
 

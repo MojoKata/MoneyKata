@@ -5,7 +5,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { date } from '../app/format.js';
+import { date, today } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Empty, Failed, Loading } from './bits.js';
 import { Dialog, openDialog } from './dialog.js';
@@ -395,7 +395,7 @@ export function PaymentDialog({ close, a, v }) {
     x.group === 'banking' && x.active && ['owner', 'write'].includes(x.level)
   );
   const [f, setF] = useState({
-    date: v.nextDate || new Date().toISOString().slice(0, 10),
+    date: v.nextDate || today(),
     amount: v.total,
     from: '',
   });
@@ -474,7 +474,7 @@ export function PaymentDialog({ close, a, v }) {
 function ServicerDialog({ close, a }) {
   useDialogGuide('dialog-servicer-balance');
   const [balance, setBalance] = useState('');
-  const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
+  const [day, setDay] = useState(today());
   const save = useSubmit(async () => {
     await api.post(`/accounts/${a.id}/anchors`, {
       date: day,

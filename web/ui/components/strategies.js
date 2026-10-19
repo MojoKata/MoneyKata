@@ -6,7 +6,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { date, quantity } from '../app/format.js';
+import { date, quantity, today } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Dec, dec } from '../app/dec.js';
 import { Empty, Failed, Loading } from './bits.js';
@@ -209,7 +209,7 @@ function AdjustDialog({ close }) {
   const groups = /** @type {any[] | null} */ ((/** @type {any} */ (res.data))?.items ?? null);
   const [under, setUnder] = useState('');
   const [rows, setRows] = useState(/** @type {Record<string, any>} */ ({}));
-  const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
+  const [day, setDay] = useState(today());
   const g = groups?.find((x) => x.underlyingId === under) || groups?.[0];
   const row = (/** @type {any} */ c) =>
     rows[c.instrumentId] || {

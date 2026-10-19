@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { date, money, quantity } from '../app/format.js';
+import { date, money, quantity, thisYear, today } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -33,12 +33,11 @@ const KINDS = /** @type {[string, string][]} */ ([
   ['daf-grant', 'Grant from a donor-advised fund'],
 ]);
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,\s]/g, '') : '');
-const today = () => new Date().toISOString().slice(0, 10);
 
 /** @param {{ tab?: string }} p */
 export default function Giving({ tab }) {
   const current = TABS.some(([k]) => k === tab) ? /** @type {string} */ (tab) : 'overview';
-  const now = new Date().getFullYear();
+  const now = thisYear();
   const [year, setYear] = useState(String(now));
   useTitle('Giving');
   useGuide('giving-' + current);
@@ -71,9 +70,7 @@ function Overview({ v, reload }) {
   const months = v.byMonth.map((/** @type {string} */ x, /** @type {number} */ i) => [
     new Date(Date.UTC(v.year, i + 1, 0)).toISOString().slice(0, 10),
     x,
-  ]).filter((/** @type {[string, string]} */ p) =>
-    p[0] <= today() || v.year < new Date().getFullYear()
-  );
+  ]).filter((/** @type {[string, string]} */ p) => p[0] <= today() || v.year < thisYear());
   const pace = months.map((/** @type {[string, string]} */ [d]) => {
     const start = Date.UTC(v.year, 0, 1);
     const days = (Date.parse(d) - start) / 86400000 + 1;

@@ -12,7 +12,7 @@ import { useDialogGuide } from '../components/help.js';
 import { openRules } from '../components/rules.js';
 import { errAt, Field, FormError, Input, Select } from '../components/fields.js';
 import { toast } from '../components/toast.js';
-import { cents, fromCents, money } from '../app/format.js';
+import { cents, fromCents, money, today } from '../app/format.js';
 import { useCategories } from '../components/txtable.js';
 import { BY_TYPE } from '../account-types/index.js';
 
@@ -58,7 +58,7 @@ export function TransactionDialog({ close, txn, start, accounts, accountId }) {
   const cats = useCategories();
   const init = txn || start;
   const [f, setF] = useState({
-    date: init?.date || new Date().toISOString().slice(0, 10),
+    date: init?.date || today(),
     kind: init?.kind || (type.investing ? 'buy' : 'withdrawal'),
     amount: init?.amount || '',
     payee: init?.payee || '',

@@ -166,8 +166,10 @@
    S18.10) holding its own Python and venv, the browser app, RapidOCR's models and the
    `moneykata` command, running as an unprivileged user (uid 10001). It serves on port 37373
    and takes two mounts: the **data directory** (database, keyring, receipts, linked copies)
-   and the **backup directory**. `moneykata.toml` is mounted too; secrets never come from
-   environment variables, and no key is mounted at all: the master key is the recovery phrase,
+   and the **backup directory**. `moneykata.toml` is mounted too, at `/etc/moneykata.toml`;
+   where mounting a file is awkward, the same TOML is given in the environment variable
+   `MONEYKATA_CONFIG`, read when `--config` names no file. The configuration holds no secret
+   either way: secrets never come from environment variables, and no key is mounted at all: the master key is the recovery phrase,
    entered after every start (S15.4). `install/compose.yaml` is the example to start from; it
    publishes the plain-HTTP listener on the host's loopback only (the proxy examples reach the
    service by name), gives the container the host's time zone (`/etc/localtime` and `TZ`,
@@ -198,7 +200,9 @@
       `docker load`). Catalogs make the install a form rather than a file: TrueNAS's apps
       catalog first (S17.8.3); others, such as Docker Hub, may follow.
    3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
-      on) and **TrueNAS** (a custom app from `install/compose.truenas.yaml`). `DEPLOY.md`
+      on) and **TrueNAS** (a custom app from `install/compose.truenas.yaml`, its configuration
+      in `MONEYKATA_CONFIG` and a one-time step giving the datasets to the server's account,
+      so nothing is typed in a shell). `DEPLOY.md`
       takes a test server onto each, step by step, from a fresh Debian VM on Proxmox VE and
       from TrueNAS Community Edition's **Install via YAML**; `operations.md` covers their
       mounts, backups and upgrades. `publish/truenas/` holds MoneyKata as an app for

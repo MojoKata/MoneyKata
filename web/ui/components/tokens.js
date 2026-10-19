@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useList, useSubmit } from '../app/hooks.js';
-import { ago, date } from '../app/format.js';
+import { ago, day } from '../app/format.js';
 import { Dialog, openDialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, Select } from './fields.js';
@@ -51,7 +51,7 @@ export function AccessTokens() {
                 ? 'everything I can see'
                 : t.items.map((/** @type {any} */ i) => i.name).join(', ')} · ${t.expired
                 ? html`<span class="pill warn">expired</span>`
-                : `expires ${date(t.expiresAt)}`} · ${t.lastUsedAt
+                : `expires ${day(t.expiresAt)}`} · ${t.lastUsedAt
                 ? `last used ${ago(t.lastUsedAt)}`
                 : 'never used'}</div></div><button class="btn sm danger" disabled=${revoke.busy}
                         onClick=${() =>

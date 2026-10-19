@@ -5,7 +5,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { ago, date, moment } from '../app/format.js';
+import { ago, day, moment } from '../app/format.js';
 import { parseDuration } from '../app/duration.js';
 import { withReauth } from './reauth.js';
 import { Dialog, openDialog } from './dialog.js';
@@ -175,7 +175,7 @@ export function LinksSection() {
                         .brokenAt
                       ? 'broken'
                       : l.failingSince
-                      ? `unreachable since ${date(l.failingSince)}`
+                      ? `unreachable since ${day(l.failingSince)}`
                       : l.state === 'paused' && l.pausedUntil
                       ? `paused until ${moment(l.pausedUntil)}`
                       : STATE[l.state][0]}</span>${l.syncTotal
@@ -203,7 +203,7 @@ export function LinksSection() {
                         their admin before accepting it.</div>`
                       : null}</td>
                     <td class="small dim">${l.state === 'invited'
-                      ? `code valid until ${date(l.codeExpiresAt)}`
+                      ? `code valid until ${day(l.codeExpiresAt)}`
                       : l.state === 'requested'
                       ? 'Compare the fingerprint with them before approving.'
                       : ago(l.lastOkAt)}</td>
@@ -262,7 +262,7 @@ export function LinksSection() {
       ${ended.length
         ? html`<p class="small dim">Ended: ${
           ended.map((/** @type {any} */ l) =>
-            `${l.peerName || 'an invitation'} (${date(l.endedAt)})`
+            `${l.peerName || 'an invitation'} (${day(l.endedAt)})`
           ).join(', ')
         }.</p>`
         : null}
@@ -276,7 +276,7 @@ export function LinksSection() {
         ${
         l.outgoing.map((/** @type {any} */ x) =>
           html`<div class="list-item"><div class="grow"><b>${KIND[x.kind] || 'An item'}</b>
-            <span class="small dim">of ${x.ownerName} since ${date(x.sharedAt)}${
+            <span class="small dim">of ${x.ownerName} since ${day(x.sharedAt)}${
             x.includeReceipts ? ', with its receipts' : ''
           }</span></div><span class="small">to ${x.names.join(', ')}</span></div>`
         )
@@ -289,7 +289,7 @@ export function LinksSection() {
         ${
         l.incoming.map((/** @type {any} */ x) =>
           html`<div class="list-item"><div class="grow"><b>${KIND[x.kind] || 'An item'}</b>
-            <span class="small dim">shared by ${x.ownerName} on ${date(x.sharedAt)}${
+            <span class="small dim">shared by ${x.ownerName} on ${day(x.sharedAt)}${
             x
                 .includeReceipts
               ? ', with its receipts'
@@ -440,7 +440,7 @@ function copies(live, values, reload, act, release, armed, setArmed) {
                       ? `${c.waiting} change${c.waiting === 1 ? '' : 's'}`
                       : html`<span class="dim">none</span>`}</td>
                     <td class="small">${c.keyMadeAt
-                      ? html`${date(c.keyMadeAt)}<div class="dim">by ${
+                      ? html`${day(c.keyMadeAt)}<div class="dim">by ${
                         c.keyMadeBy || 'an admin'
                       }</div>`
                       : html`<span class="pill warn">not made</span>`}</td>

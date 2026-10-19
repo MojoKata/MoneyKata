@@ -112,10 +112,12 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 
 ### 2.2 On TrueNAS
 
-[`DEPLOY.md`](DEPLOY.md) §4 installs it on TrueNAS Community Edition manually, step by step: two
-datasets for data and backups, owned by uid 10001, and `moneykata.toml` beside them, made in
-**System › Shell**; a **custom app** from **Install via YAML**, with the datasets as host paths;
-and the welcome, which makes the key and the admin.
+[`DEPLOY.md`](DEPLOY.md) §4 installs it on TrueNAS Community Edition manually, step by step,
+with nothing typed in a shell: two datasets for data and backups; a **custom app** from
+**Install via YAML** (`install/compose.truenas.yaml`), with the datasets as host paths, a
+one-time `permissions` step that gives them to uid 10001, and the configuration in
+`MONEYKATA_CONFIG` (the same TOML as `moneykata.toml`, which the server reads when no file is
+named with `--config`); and the welcome, which makes the key and the admin.
 Both datasets go into snapshot and replication tasks as they are: nothing in them opens
 without the phrase. Unlock after each start (§2 step 5).
 

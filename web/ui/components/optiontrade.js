@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useList, useSubmit } from '../app/hooks.js';
-import { money } from '../app/format.js';
+import { money, today } from '../app/format.js';
 import { Dialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, Seg, Select } from './fields.js';
@@ -28,7 +28,7 @@ export function OptionTrade({ close, accountId, start }) {
   );
   const [f, setF] = useState({
     accountId: accountId || '',
-    date: new Date().toISOString().slice(0, 10),
+    date: today(),
     action: start?.action || 'sell-to-open',
     underlying: start?.underlying || '',
     right: start?.right || 'put',
@@ -146,7 +146,7 @@ export function Settle({ close, row }) {
   const short = row.side === 'short';
   const [f, setF] = useState({
     how: row.inTheMoney === false ? 'expired' : short ? 'assign' : 'exercise',
-    date: row.expiry || new Date().toISOString().slice(0, 10),
+    date: row.expiry || today(),
     contracts: String(dec(row.quantity).abs()).replace(/\.0+$/, ''),
   });
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
@@ -191,7 +191,7 @@ export function Settle({ close, row }) {
 /** @param {{ close: (v?: any) => void, row: any }} p */
 export function Mark({ close, row }) {
   useDialogGuide('dialog-option-mark');
-  const [f, setF] = useState({ date: new Date().toISOString().slice(0, 10), price: '' });
+  const [f, setF] = useState({ date: today(), price: '' });
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const save = useSubmit(async () => {
     await api.post(`/instruments/${row.instrumentId}/prices`, {

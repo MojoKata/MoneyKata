@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from moneykata.config import RefuseStart, load, parse
+from moneykata.config import CONFIG_ENV, DEFAULT_CONFIG, RefuseStart, configured, load, parse
 from moneykata.main import main
 
 BASE = {
@@ -52,6 +52,41 @@ def test_missing_or_broken_file_refuses(tmp_path):
     bad.write_text("[server\n")
     with pytest.raises(RefuseStart, match="not valid TOML"):
         load(bad)
+
+
+def test_the_config_comes_from_the_file_named_then_the_environment_then_the_default(tmp_path):
+    """S17.8: --config names a file; without it the same TOML may be given in MONEYKATA_CONFIG
+    (TrueNAS's Install via YAML has no file to mount); else /etc/moneykata.toml."""
+    text = (
+        '[server]\nname = "from-env"\nmode = "tls"\n[paths]\ndata = "/d"\nbackups = "/b"\n'
+        '[tls]\nnames = ["192.168.1.20"]\n'
+    )
+    c = configured(None, {CONFIG_ENV: text})
+    assert (c.name, c.mode, c.data_dir, c.cert_names) == (
+        "from-env",
+        "tls",
+        Path("/d"),
+        ("192.168.1.20",),
+    )
+    named = tmp_path / "named.toml"
+    named.write_text(text.replace("from-env", "from-file"))
+    assert configured(str(named), {CONFIG_ENV: text}).name == "from-file"
+    with pytest.raises(RefuseStart, match=f"config file {DEFAULT_CONFIG} does not exist"):
+        configured(None, {CONFIG_ENV: "  "})
+    with pytest.raises(RefuseStart, match=f"{CONFIG_ENV} is not valid TOML"):
+        configured(None, {CONFIG_ENV: "[server"})
+    with pytest.raises(RefuseStart, match=f"{CONFIG_ENV}: unknown key server.colour"):
+        configured(None, {CONFIG_ENV: text.replace('name = "from-env"', 'colour = "red"')})
+
+
+def test_a_command_reads_its_config_from_the_environment(tmp_path, monkeypatch, capsys):
+    data = tmp_path / "data"
+    monkeypatch.setenv(
+        CONFIG_ENV,
+        f'[server]\nmode = "proxy"\n[paths]\ndata = "{data}"\nbackups = "{tmp_path}/b"\n',
+    )
+    assert main(["keys", "fingerprint"]) == 78
+    assert str(data / "keyring") in capsys.readouterr().err  # the paths it was given
 
 
 def test_refused_start_exits_78_with_one_line(tmp_path, capsys):
