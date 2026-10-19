@@ -27,7 +27,7 @@ ENV PATH=/opt/connector/venv/bin:$PATH \
     PYTHONPATH=/opt/connector \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
-LABEL org.opencontainers.image.source="https://github.com/MojoKata/MoneyKata" \
+LABEL org.opencontainers.image.source="https://github.com/MojoKata/MoolaKata" \
       org.opencontainers.image.description="The MoolaKata Connector: keeps accounts current from their institutions"
 USER 10002:10002
 VOLUME ["/var/lib/moolakata-connector"]

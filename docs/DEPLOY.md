@@ -136,7 +136,7 @@ UI show the VM's address on its **Summary**; it starts by itself at every boot a
 
    ```sh
    mkdir ~/moolakata && cd ~/moolakata
-   curl -fsSLo compose.yaml https://raw.githubusercontent.com/MojoKata/MoneyKata/v0.1.0/web/install/compose.tls.yaml
+   curl -fsSLo compose.yaml https://raw.githubusercontent.com/MojoKata/MoolaKata/v0.1.0/web/install/compose.tls.yaml
    mkdir data backups && sudo chown 10001:10001 data backups
    ```
 

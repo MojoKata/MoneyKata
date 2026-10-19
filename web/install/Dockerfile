@@ -38,7 +38,7 @@ COPY --from=build /opt/moolakata /opt/moolakata
 ENV PATH=/opt/moolakata/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
-LABEL org.opencontainers.image.source="https://github.com/MojoKata/MoneyKata" \
+LABEL org.opencontainers.image.source="https://github.com/MojoKata/MoolaKata" \
       org.opencontainers.image.description="MoolaKata: a self-hosted personal finance server for a household"
 USER 10001:10001
 EXPOSE 37373
