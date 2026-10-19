@@ -9,7 +9,7 @@ from PIL import Image
 from test_accounts import FIX, add, new_account, upload
 from test_receipts import upload as upload_receipt
 
-from moneykata.ledger import rules as match
+from moolakata.ledger import rules as match
 
 
 def cats(c) -> dict[str, str]:
@@ -131,8 +131,8 @@ def test_a_rule_is_its_owners_alone_and_can_be_deleted(server, alice):
 
 
 def test_a_receipts_merchant_is_renamed_by_the_rules(server, alice):
-    from moneykata.receipts.reading import save_reading
-    from moneykata.store.entities.receipts import Receipt
+    from moolakata.receipts.reading import save_reading
+    from moolakata.store.entities.receipts import Receipt
 
     alice.post("/ui/api/rules", json={"payeeMatch": "re:blue ?bottle", "payee": "Blue Bottle"})
     buf = io.BytesIO()

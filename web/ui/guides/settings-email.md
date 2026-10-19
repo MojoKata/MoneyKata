@@ -1,6 +1,6 @@
 # Email (SMTP)
 
-How MoneyKata sends its emails: invitations, password resets, sign-up links and decisions, alerts.
+How MoolaKata sends its emails: invitations, password resets, sign-up links and decisions, alerts.
 Until a host is set, each email is written to the `mail` folder in the data directory instead, in
 the clear, and listed here for an admin to pass its link on.
 
@@ -12,7 +12,7 @@ its subject and the error. This section shows the queue and the last error.
 ## Host {#smtp-host}
 
 The mail server's name, such as your email provider's SMTP server or a relay on your network.
-MoneyKata reaches only this host for email. Changing it asks for your password again and clears
+MoolaKata reaches only this host for email. Changing it asks for your password again and clears
 the stored SMTP password, so it is never sent to the new host: type it again for that host.
 
 ## Port {#smtp-port}
@@ -37,7 +37,7 @@ ago.
 
 ## From address {#smtp-from}
 
-The sender emails show, such as `MoneyKata <money@example.com>`. Your provider may insist it matches
+The sender emails show, such as `MoolaKata <money@example.com>`. Your provider may insist it matches
 the username.
 
 ## Send a test email

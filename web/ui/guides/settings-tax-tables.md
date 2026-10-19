@@ -1,7 +1,7 @@
 # Tax tables
 
-Figures that change each year and ship with MoneyKata: contribution limits, the gift exclusion, the
-QCD limit, the bitcoin models' published figures, and more. They are updated with MoneyKata; correct
+Figures that change each year and ship with MoolaKata: contribution limits, the gift exclusion, the
+QCD limit, the bitcoin models' published figures, and more. They are updated with MoolaKata; correct
 one here if it changes before an update. A corrected figure is marked, and setting it back to the
 shipped value removes the correction.
 

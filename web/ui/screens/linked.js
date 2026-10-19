@@ -79,7 +79,7 @@ function Frame({ id, st, reload, sub, subId, tab }) {
   const rows = /** @type {any[]} */ (items.data) || [];
   const files = useList(h.locked ? '' : `/linked/${id}/files`);
   useEffect(() => {
-    document.title = `${h.name || h.serverName} · MoneyKata`;
+    document.title = `${h.name || h.serverName} · MoolaKata`;
     document.body.classList.toggle('privacy', privacy.value);
   }, [h.name, privacy.value]);
   useEffect(() => {
@@ -304,7 +304,7 @@ function Dashboard({ base, rows }) {
   useGuide('linked-dashboard');
   if (!rows.length) return html`<${Empty}>Nothing is shared with you yet.</${Empty}>`;
   const accounts = rows.filter((r) => r.kind === 'account');
-  // A newer MoneyKata on the other side may share kinds this one can't show yet (version skew).
+  // A newer MoolaKata on the other side may share kinds this one can't show yet (version skew).
   const unknown = rows.filter((r) => !KIND[r.kind]);
   rows = rows.filter((r) => KIND[r.kind]);
   const total = Dec.sum(accounts.map((r) => dec(r.row?.balance)));
@@ -330,7 +330,7 @@ function Dashboard({ base, rows }) {
         <p
           class="notice mt">${unknown.length} more item${unknown.length === 1
             ? ' is'
-            : 's are'} shared with you by a newer MoneyKata, which this one can't show yet.</p>
+            : 's are'} shared with you by a newer MoolaKata, which this one can't show yet.</p>
       `
       : null}
     <div class="card mt"><h3>Shared with you</h3>${rows.map((r) =>

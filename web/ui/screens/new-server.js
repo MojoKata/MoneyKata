@@ -36,11 +36,11 @@ export default function NewServer({ refresh }) {
 
   if (step === 'welcome' || !offer) {
     return html`
-      <${AuthCard} title="Welcome to MoneyKata" guide="new-server"
+      <${AuthCard} title="Welcome to MoolaKata" guide="new-server"
         sub="This server is new. Two steps make it yours: its master key, then your account.">
-        <p class="small" style=${{ marginTop: 0 }}>Everything MoneyKata keeps is encrypted under one
+        <p class="small" style=${{ marginTop: 0 }}>Everything MoolaKata keeps is encrypted under one
           <b> master key</b>, which is a <b>recovery phrase</b> of 12 words. You write it down;
-          nothing keeps it for you. MoneyKata asks for it after every restart, and nobody can
+          nothing keeps it for you. MoolaKata asks for it after every restart, and nobody can
           recover it if it's lost.</p>
         <p class="small dim">Have paper and a pen ready. Two copies in two places, one of them
           offline, is the rule.</p>

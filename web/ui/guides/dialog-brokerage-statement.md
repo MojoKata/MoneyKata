@@ -12,7 +12,7 @@ account was worth that day, cash and holdings at that day's prices.
 
 ## Positions {#positions}
 
-Each holding the statement shows, against what MoneyKata holds that day. A difference is shown,
+Each holding the statement shows, against what MoolaKata holds that day. A difference is shown,
 and pointed at the statement's own trade lines when they account for it (a reinvestment or a buy
 not entered yet). The statement's cost basis is kept beside the lots' and never written over them.
 For an account kept by snapshots (kept from statements only, with no trades of its own), the

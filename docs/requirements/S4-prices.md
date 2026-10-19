@@ -1,7 +1,7 @@
 # S4. Prices
 
 1. **What prices must be**: **free** for a household to use, and **daily**. An end-of-day
-   close is enough, and a delay of hours is fine: MoneyKata is not a trading app and fetches
+   close is enough, and a delay of hours is fine: MoolaKata is not a trading app and fetches
    no intraday quotes. A source that needs a paid plan can be added (S4.2), but none is
    required.
 2. **Price sources are integrations behind one interface, `TickerSource`.** Each is one module
@@ -15,7 +15,7 @@
    3. **Settings › Prices** lists the enabled sources, each with its classes, its key
       (*set*, with when and by whom; a key is a secret, S14.4), its order of preference per
       class, its last run and its last error. **Add a source** picks from every source
-      MoneyKata ships. A source that needs a key can't be enabled without one.
+      MoolaKata ships. A source that needs a key can't be enabled without one.
 3. **Starting sources**, chosen for being free and daily. Their terms change, so each is
    checked again when a release ships.
 

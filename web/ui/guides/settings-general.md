@@ -26,5 +26,5 @@ The avatar's colour.
 
 ## Public URL
 
-The address people reach MoneyKata at, such as `https://money.example.lan`. Links in emails
+The address people reach MoolaKata at, such as `https://money.example.lan`. Links in emails
 (invitations, resets) are built from it, never from the request.

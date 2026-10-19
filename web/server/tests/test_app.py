@@ -62,7 +62,7 @@ def dev_server(tmp_path_factory):
         [
             sys.executable,
             "-m",
-            "moneykata.main",
+            "moolakata.main",
             "dev",
             "--seed",
             "--stubs",
@@ -122,7 +122,7 @@ def page(dev_server):
         )
         pg.goto(dev_server + "/ui/")
         pg.fill("#f-username-or-email", "alice")
-        pg.fill("#f-password", "moneykata-dev")
+        pg.fill("#f-password", "moolakata-dev")
         pg.click("button.btn.primary")
         pg.wait_for_selector(".side")
         pg.base = dev_server
@@ -265,7 +265,7 @@ def test_every_screen_and_tab_has_its_guide(page):
 def test_a_linked_households_window_opens_with_its_words(page):
     """griffin-parents' window (S12.10): locked, then opened with the dev copy's words, then
     each of its screens with its guide."""
-    from moneykata.dev.seed_links import words
+    from moolakata.dev.seed_links import words
 
     homes = page.evaluate("async () => (await (await fetch('/ui/api/linked')).json()).items")
     assert [h["name"] for h in homes] == ["Margaret & Tom"]
@@ -658,14 +658,14 @@ def signed_in_page(page, username: str):
     )
     pg.goto(page.base + "/ui/")
     pg.fill("#f-username-or-email", username)
-    pg.fill("#f-password", "moneykata-dev")
+    pg.fill("#f-password", "moolakata-dev")
     pg.click("button.btn.primary")
     return pg
 
 
 def test_two_step_sign_in_through_the_app(page):
     """Turn it on in Profile, sign in with a recovery code, and an admin resets it (S10.1.6)."""
-    from moneykata.auth import twostep
+    from moolakata.auth import twostep
 
     bob = signed_in_page(page, "bob")
     bob.wait_for_selector(".side")
@@ -799,11 +799,11 @@ def test_import_a_statement_through_the_app(page):
 
 def test_a_credential_sealed_in_the_browser_opens_only_with_the_connectors_key(page):
     """The box web/ui/app/sealed.js makes with WebCrypto (S18.7.1) is the construction
-    moneykata.connector.sealed opens: X25519, HKDF-SHA256 over the Connection's id, AES-GCM."""
+    moolakata.connector.sealed opens: X25519, HKDF-SHA256 over the Connection's id, AES-GCM."""
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
-    from moneykata.connector import sealed
-    from moneykata.links import keys
+    from moolakata.connector import sealed
+    from moolakata.links import keys
 
     key = X25519PrivateKey.generate()
     public = keys.b64(key.public_key().public_bytes_raw())

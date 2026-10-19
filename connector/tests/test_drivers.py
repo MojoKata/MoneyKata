@@ -1,5 +1,5 @@
 """The drivers (requirements S18.9): OFX Direct Connect and Schwab against mocks of their
-institutions, and what each sends: files MoneyKata's importer reads, for the accounts whose
+institutions, and what each sends: files MoolaKata's importer reads, for the accounts whose
 sync names the Connection."""
 
 import datetime as dt
@@ -8,10 +8,10 @@ import time
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from moneykata_connector import client
-from moneykata_connector.drivers import Account, registry
-from moneykata_connector.drivers.ofx_direct import OfxDirect, request
-from moneykata_connector.drivers.schwab import Schwab, to_ofx
+from moolakata_connector import client
+from moolakata_connector.drivers import Account, registry
+from moolakata_connector.drivers.ofx_direct import OfxDirect, request
+from moolakata_connector.drivers.schwab import Schwab, to_ofx
 
 
 class Fake(client.Transport):
@@ -212,8 +212,8 @@ def test_schwab_signs_in_from_the_landed_address_keeps_the_refresh_token_and_pos
     assert [f.account_id for f in r.files] == ["Acct_1"] and r.files[0].fmt == "ofx"
     token_call = http.calls[0]
     assert token_call[2]["Authorization"].startswith("Basic ") and b"code=abc" in token_call[3]
-    # MoneyKata's own importer reads what was made: positions, the trade, the dividend, cash.
-    from moneykata.importers import ofx as mk_ofx
+    # MoolaKata's own importer reads what was made: positions, the trade, the dividend, cash.
+    from moolakata.importers import ofx as mk_ofx
 
     parsed = mk_ofx.read(r.files[0].data)
     assert parsed.accountKind == "investment" and parsed.accountNumber == "12344417"

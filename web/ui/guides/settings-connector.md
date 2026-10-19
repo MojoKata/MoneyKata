@@ -1,28 +1,37 @@
 # Connector
 
-The MoneyKata Connector is a second service that keeps people's sign-ins at their institutions,
-fetches with its drivers, and pushes what it fetches into imports. MoneyKata can't reach it or
+The MoolaKata Connector is a second service that keeps people's sign-ins at their institutions,
+fetches with its drivers, and pushes what it fetches into imports. MoolaKata can't reach it or
 read its vault: it only hears its signed reports, every five minutes. Admins only.
 
 ![Connector](shots/settings-connector.png)
 
 The card shows whether a connector is paired, its key's fingerprint, the version it runs, when
 it last reported and whether it is **locked**. It starts locked after every restart of its own;
-an admin unlocks it on its host with its 12 words. A connector not heard from for 15 minutes,
-or locked, raises an alert for admins.
+an admin unlocks it with its 12 words on its page, or on its host. A connector not heard from
+for 15 minutes, or locked, raises an alert for admins.
+
+## Its page {#its-page}
+
+The connector serves a small page of its own, on its own port, linked here once it has
+reported. There its vault is made and its words are given: **Unlock** after a restart,
+**Lock**, **Pair** with the code from here, **Unpair** and **Reset**. Anyone on the network can
+see its status there, which names no institution, sign-in or account; every action asks for
+the words. MoolaKata only links to it and never sees the words.
 
 ## Pair {#pair}
 
-Shows a one-time pairing code, in the command to run on the connector's host, valid 24 hours.
-It holds this server's address and key fingerprint; the connector then introduces itself, and
+Shows a one-time pairing code, valid 24 hours, to paste into **Pair** on the connector's page
+with its words, or in the command to run on its host. It holds this server's address and key
+fingerprint; the connector then introduces itself, and
 both sides show its fingerprint for you to compare. One connector is paired at a time: pairing
 another replaces it, as Unpair does. Needs your password again when it was given over 10
 minutes ago.
 
 ## Confirm {#confirm}
 
-After pairing, compare the fingerprint shown here with the one `moneykata-connector pair`
-printed on the connector's host. If they match, **Confirm**, after your password: only then does
+After pairing, compare the fingerprint shown here with the one the connector's page showed (or
+`moolakata-connector pair` printed on its host). If they match, **Confirm**, after your password: only then does
 the connector get sealed sign-ins and post files. If they differ, someone else answered the
 pairing code first: **Unpair**. Until confirmed, people see in the connection dialog that no
 sign-in can be sealed yet.

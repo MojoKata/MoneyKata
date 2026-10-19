@@ -4,7 +4,7 @@ and when the next statement is overdue."""
 import datetime as dt
 from types import SimpleNamespace as NS
 
-from moneykata.ledger import expected
+from moolakata.ledger import expected
 
 
 def acct(type_="checking", kept='["file"]', every=None, dismissed=None):
@@ -69,8 +69,8 @@ def test_the_account_sets_its_interval_and_answers_the_proposal(server):
     from conftest import make_user, sign_in
     from test_accounts import new_account
 
-    from moneykata import ids
-    from moneykata.store.entities.accounts import Import
+    from moolakata import ids
+    from moolakata.store.entities.accounts import Import
 
     alice = make_user(server, "alice")
     c = sign_in(server, "alice")

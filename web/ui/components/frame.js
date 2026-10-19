@@ -29,7 +29,7 @@ export const title = signal(
 export function useTitle(text, crumbs) {
   useEffect(() => {
     title.value = { text, crumbs };
-    document.title = text ? `${text} · MoneyKata` : 'MoneyKata';
+    document.title = text ? `${text} · MoolaKata` : 'MoolaKata';
   }, [text, JSON.stringify(crumbs || [])]);
 }
 
@@ -151,7 +151,7 @@ export function Frame({ children, onSignOut }) {
       : html`<${HouseholdAvatar} house=${s.household} />`
   }
         <div class="brand-text"><div class="brand-name">${s.household.name}</div>
-          <div class="brand-ver">MoneyKata ${version} ${
+          <div class="brand-ver">MoolaKata ${version} ${
     mockup
       ? html`<button type="button" class="pill-mock" aria-haspopup="menu" onClick=${(
         /** @type {MouseEvent} */ e,
@@ -167,7 +167,7 @@ export function Frame({ children, onSignOut }) {
       ${
     updated.value
       ? html`<button type="button" class="pill-update" onClick=${() =>
-        location.reload()}>MoneyKata was updated: reload</button>`
+        location.reload()}>MoolaKata was updated: reload</button>`
       : null
   }
       <button type="button" class="collapse-btn" aria-label=${

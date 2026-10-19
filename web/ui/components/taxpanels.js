@@ -111,7 +111,7 @@ export function SummaryFigures({ b }) {
         class="small dim">Every sale in the book's taxable accounts, by box</div></div><a
         class="btn sm" href=${`${base}/8949.csv`} download><${Icon} name="download" /> CSV</a></div>
       <div class="list-item"><div class="grow">TXF for tax software<div class="small dim">TurboTax,
-        H&R Block and others import it</div></div><a class="btn sm" href=${`${base}/moneykata.txf`}
+        H&R Block and others import it</div></div><a class="btn sm" href=${`${base}/moolakata.txf`}
         download><${Icon} name="download" /> TXF</a></div>
       <div class="list-item"><div class="grow">Summary for a preparer (PDF)<div class="small dim">What
         each panel holds, with its sources</div></div><a class="btn sm"

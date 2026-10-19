@@ -1,27 +1,27 @@
-"""The connector against a real MoneyKata (requirements S18.4–S18.8): paired from a code,
+"""The connector against a real MoolaKata (requirements S18.4–S18.8): paired from a code,
 reporting, collecting a credential the owner sealed, running OFX Direct Connect against a bank
 and posting what it found through the import, a post refused for a limit kept for a later run,
-and unpairing. MoneyKata runs in-process; the connector's HTTPS transport is wired to it, and
+and unpairing. MoolaKata runs in-process; the connector's HTTPS transport is wired to it, and
 the bank's server answers from the test."""
 
 import json
 
 import pytest
-from moneykata_connector import client
-from moneykata_connector.core import Core
+from moolakata_connector import client
+from moolakata_connector.core import Core
 from server_conftest import ORIGIN, make_user, sign_in
 
 BANK = "ofx.cu.example"
 
 
 def keys_short(core) -> str:
-    from moneykata_connector import keys
+    from moolakata_connector import keys
 
     return keys.short(core.pairing.fingerprint)
 
 
 class Wired(client.Transport):
-    """The connector's requests delivered to MoneyKata's app in-process; the bank's OFX server
+    """The connector's requests delivered to MoolaKata's app in-process; the bank's OFX server
     answers with what `bank` holds."""
 
     def __init__(self, app_client, egress):
@@ -42,7 +42,7 @@ class Wired(client.Transport):
 
 @pytest.fixture
 def money(server, admin_client, client):
-    from moneykata import settings
+    from moolakata import settings
 
     with server.db.tx() as s:
         settings.put(s, "publicUrl", ORIGIN, None)
@@ -50,9 +50,9 @@ def money(server, admin_client, client):
 
 
 def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
-    from moneykata.connector import sealed as mk_sealed
-    from moneykata.links import keys as mk_keys
-    from moneykata.store.entities.accounts import Account, Transaction
+    from moolakata.connector import sealed as mk_sealed
+    from moolakata.links import keys as mk_keys
+    from moolakata.store.entities.accounts import Account, Transaction
 
     server, admin, app = money
     core = Core(tmp_path / "data", transport=None)
@@ -66,7 +66,7 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     view = admin.get("/ui/api/settings/connector").json()
     assert view["state"] == "paired" and view["fingerprint"] == shown
     assert "sealingPublic" in (tmp_path / "data" / "pairing.json").read_text()
-    # B31: a pairing MoneyKata refuses (the code is used) leaves the working one as it was.
+    # B31: a pairing MoolaKata refuses (the code is used) leaves the working one as it was.
     before = (tmp_path / "data" / "pairing.json").read_bytes()
     with pytest.raises(client.ServerError):
         core.pair(code)
@@ -75,7 +75,7 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     # Until an admin confirms the fingerprints match, a posted file waits (S18.4.3).
     assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
     core.vault.lock()
-    # A locked connector reports so, and MoneyKata alerts.
+    # A locked connector reports so, and MoolaKata alerts.
     core.tick()
     assert admin.get("/ui/api/settings/connector").json()["locked"] is True
 
@@ -109,7 +109,7 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
         headers={"If-Match": f'"{v}"'},
     )
     assert r.status_code == 200, r.text
-    # Her sealed sign-in: collected once unlocked, then gone from MoneyKata.
+    # Her sealed sign-in: collected once unlocked, then gone from MoolaKata.
     public = mk_keys.unb64(c.get("/ui/api/connector").json()["sealingKey"])
     box = mk_sealed.seal(
         json.dumps(
@@ -152,7 +152,7 @@ def test_the_connector_pairs_reports_collects_and_posts(money, tmp_path):
     core.tick()
     assert state.backlog == []
 
-    # Unpair from MoneyKata: the next report is refused and the connector's loop survives.
+    # Unpair from MoolaKata: the next report is refused and the connector's loop survives.
     admin.post("/ui/api/settings/connector/unpair")
     with pytest.raises(client.ServerError) as e:
         core.tick()
@@ -169,7 +169,7 @@ def test_a_server_that_isnt_the_one_paired_with_gets_nothing(money, tmp_path):
     code = admin.post("/ui/api/settings/connector/pairings").json()["code"]
     bad = json.loads(client.unb64(code[5:]))
     bad["f"] = "0" * 64
-    from moneykata_connector.keys import b64
+    from moolakata_connector.keys import b64
 
     forged = "mkp1." + b64(json.dumps(bad).encode())
     with pytest.raises(client.ServerError) as e:
@@ -185,7 +185,7 @@ def test_a_hello_naming_the_right_fingerprint_with_another_key_gets_nothing(
     # repeating the fingerprint with a key of its own is refused before anything is sent.
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
-    from moneykata_connector.keys import b64
+    from moolakata_connector.keys import b64
 
     _server, admin, app = money
     core = Core(tmp_path / "data", transport=None)
@@ -220,3 +220,38 @@ NEWFILEUID:NONE
 </BANKTRANLIST><LEDGERBAL><BALAMT>3457.63<DTASOF>20260930</LEDGERBAL></STMTRS></STMTTRNRS>
 </BANKMSGSRSV1></OFX>
 """
+
+
+def test_its_page_pairs_it_and_shows_the_confirmation(money, tmp_path):
+    """S18.11: the welcome on its page, then Pair with the code and the words; MoolaKata learns
+    the page's address from the report and links to it, and the page shows the pairing
+    unconfirmed until an admin confirms it."""
+    from moolakata_connector import page
+    from test_page import call, free_port, make_vault
+
+    _, admin, app = money
+    data = tmp_path / "data"
+    core = Core(data, transport=None)
+    core.transport = Wired(app, core.egress)
+    settings = page.Settings(port=free_port(), names=("127.0.0.1",))
+    core.page = settings.address
+    served = page.serve(core, settings, data)
+    running = (core, settings, data / "tls" / "cert.pem")
+    try:
+        phrase = make_vault(running)
+        core.lock()
+        code = admin.post("/ui/api/settings/connector/pairings").json()["code"]
+        status, _, text = call(running, "POST", "/pair", {"code": code, "words": phrase})
+        assert status == 200, text
+        view = admin.get("/ui/api/settings/connector").json()
+        assert view["state"] == "paired" and view["fingerprint"] in text
+        core.tick()
+        assert admin.get("/ui/api/settings/connector").json()["page"] == settings.address
+        assert "not confirmed yet" in call(running, "GET", "/")[2]
+        assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
+        core.tick()
+        text = call(running, "GET", "/")[2]
+        assert "confirmed" in text and "not confirmed" not in text
+    finally:
+        served.shutdown()
+        served.server_close()

@@ -6,17 +6,17 @@ import pytest
 from conftest import make_user, sign_in
 from sqlalchemy import func, select
 
-from moneykata import clock, figures, ids, valuation
-from moneykata.ledger.types import investing
-from moneykata.prices import SOURCES, SourceError, TickerSource, register
-from moneykata.prices import refresh as pricing
-from moneykata.prices.base import Ref
-from moneykata.prices.coinbase import Coinbase
-from moneykata.prices.stub import Stub, walk
-from moneykata.prices.tiingo import Tiingo
-from moneykata.store.entities.accounts import Account
-from moneykata.store.entities.prices import Price, PriceSource
-from moneykata.store.repos import ledger as repo
+from moolakata import clock, figures, ids, valuation
+from moolakata.ledger.types import investing
+from moolakata.prices import SOURCES, SourceError, TickerSource, register
+from moolakata.prices import refresh as pricing
+from moolakata.prices.base import Ref
+from moolakata.prices.coinbase import Coinbase
+from moolakata.prices.stub import Stub, walk
+from moolakata.prices.tiingo import Tiingo
+from moolakata.store.entities.accounts import Account
+from moolakata.store.entities.prices import Price, PriceSource
+from moolakata.store.repos import ledger as repo
 
 TODAY = dt.date.today()
 
@@ -127,7 +127,7 @@ def _book(server, user):
         s.add(a)
         s.flush()
         inst = repo.instrument(s, "VTI", "Total market", "etf")
-        from moneykata.store.entities.accounts import Lot, Transaction
+        from moolakata.store.entities.accounts import Lot, Transaction
 
         t = Transaction(
             id=ids.new_id("Txn"),
@@ -211,7 +211,7 @@ def test_an_unreadable_answer_falls_back_like_a_failure(server):
 
 
 def test_only_what_is_held_is_priced(server):
-    from moneykata.store.entities.accounts import Transaction
+    from moolakata.store.entities.accounts import Transaction
 
     account_id, inst_id = _book(server, make_user(server, "alice"))
     with server.db.read() as s:
@@ -277,7 +277,7 @@ def test_price_sources_in_settings(admin_client, server):
         f"/ui/api/price-sources/{src['id']}", headers={"If-Match": str(row["version"])}
     )
     assert r.status_code == 200
-    from moneykata.store.repos import secrets as secret_repo
+    from moolakata.store.repos import secrets as secret_repo
 
     with server.db.read() as s:
         assert secret_repo.info(s, "PriceSource", src["id"], "apiKey") is None
@@ -345,7 +345,7 @@ def test_cboe_marks_options_from_one_chain_per_underlying():
     middle of the bid and the ask; SPX contracts are found under SPXW too."""
     from pathlib import Path
 
-    from moneykata.prices.cboe import Cboe
+    from moolakata.prices.cboe import Cboe
 
     chains = json.loads((Path(__file__).parent / "fixtures" / "cboe-chains.json").read_text())
     client = FakeClient(lambda u: (200, chains[u.rsplit("/", 1)[-1].removesuffix(".json")]))
@@ -377,7 +377,7 @@ def test_cboe_prices_listed_stocks_and_waits_for_the_close():
     source."""
     from pathlib import Path
 
-    from moneykata.prices.cboe import Cboe
+    from moolakata.prices.cboe import Cboe
 
     answers = json.loads((Path(__file__).parent / "fixtures" / "cboe-listed.json").read_text())
 

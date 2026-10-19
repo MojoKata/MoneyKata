@@ -5,8 +5,8 @@ import hashlib
 
 import pytest
 
-from moneykata.bitcoin import descriptor as dsc
-from moneykata.bitcoin import keys as bk
+from moolakata.bitcoin import descriptor as dsc
+from moolakata.bitcoin import keys as bk
 
 # BIP 86's and BIP 84's test vectors, from "abandon … about".
 TR_XPUB = (

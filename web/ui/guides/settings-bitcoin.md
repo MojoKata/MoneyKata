@@ -9,7 +9,7 @@ household's own node. Admins only.
 
 **Public: mempool.space** or **Blockstream**: nothing to set up, but the explorer sees which
 addresses are asked about. **Own node**, which keeps them private: a **mempool or Esplora**
-instance, an **Electrum server** (Fulcrum or electrs), or **Bitcoin Core**, where MoneyKata keeps a
+instance, an **Electrum server** (Fulcrum or electrs), or **Bitcoin Core**, where MoolaKata keeps a
 watch-only descriptor wallet for each wallet account. Only public keys and addresses are ever sent.
 
 ## Esplora address {#esplora-url}
@@ -18,7 +18,7 @@ Your own instance's API: `http://umbrel.local:3006/api`, for example.
 
 ## Node address {#node-host}
 
-The node's host name or address on your network. Naming it here lets MoneyKata reach it there,
+The node's host name or address on your network. Naming it here lets MoolaKata reach it there,
 past the guard that otherwise keeps it off local addresses. Changing it clears the node's stored
 password, so it is never sent to the new host.
 

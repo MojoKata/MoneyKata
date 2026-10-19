@@ -10,10 +10,10 @@ from conftest import make_user, sign_in
 from sqlalchemy import select
 from test_accounts import new_account
 
-from moneykata import assets, clock, ids
-from moneykata.prices import TickerSource, register
-from moneykata.prices import refresh as pricing
-from moneykata.store.entities.prices import Price, PriceSource
+from moolakata import assets, clock, ids
+from moolakata.prices import TickerSource, register
+from moolakata.prices import refresh as pricing
+from moolakata.store.entities.prices import Price, PriceSource
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 

@@ -7,7 +7,7 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import clock
+from moolakata import clock
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 

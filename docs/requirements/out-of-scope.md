@@ -9,7 +9,7 @@ collectables (values are typed or appraised). Refinancing or payoff advice: the 
 planner compares, and does not recommend. Shopping, wish-list or registry services for
 gifts. State 529 deduction rules. Tax filing or tax computation. Running a relay for links. Phone support in the web app: a
 mobile PWA with a narrower, focused set of features comes later, as its own piece of work.
-Storing the private keys or seed phrases of crypto wallets, ever (MoneyKata's own recovery
+Storing the private keys or seed phrases of crypto wallets, ever (MoolaKata's own recovery
 phrases are words for its keys, not wallets). Opting users in or out of the list a server
 sends its linked peers (S10.3.3): every active user is listed, which suits a household; a
 server for more people would need it.

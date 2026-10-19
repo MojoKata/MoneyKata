@@ -1,6 +1,6 @@
 # A dependent
 
-Someone the filers claim for the year, from the household's people. MoneyKata doesn't decide who
+Someone the filers claim for the year, from the household's people. MoolaKata doesn't decide who
 qualifies: what you enter here feeds the panels, the documents expected and a few flags.
 
 ## Person {#person}

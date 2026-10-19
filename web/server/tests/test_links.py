@@ -6,9 +6,9 @@ import time
 import pytest
 from linkpair import Wire, make_server
 
-from moneykata import ids
-from moneykata.links import client, keys, signing
-from moneykata.store.entities.links import Link
+from moolakata import ids
+from moolakata.links import client, keys, signing
+from moolakata.store.entities.links import Link
 
 
 def reach(srv, *hosts):
@@ -155,7 +155,7 @@ def links_of(c):
 
 
 def test_an_invitation_is_joined_approved_and_each_side_sees_the_others_users(admins):
-    from moneykata.store.entities.education import Person
+    from moolakata.store.entities.education import Person
 
     a, b, ca, cb, _ = admins
     make_user(a, "alice")
@@ -194,7 +194,7 @@ def test_the_directory_follows_the_peers_users(admins):
     assert ca.post(f"/ui/api/settings/links/{a_id}/pull").status_code == 200
     names = {u["username"] for u in links_of(ca)["links"][0]["users"]}
     assert "dave" in names
-    from moneykata.store.entities.users import User
+    from moolakata.store.entities.users import User
 
     with b.db.tx() as s:
         s.query(User).filter(User.username == "dave").one().active = False
@@ -211,7 +211,7 @@ def test_the_directory_follows_the_peers_users(admins):
 def test_a_code_for_another_key_or_a_damaged_code_is_refused(admins):
     _a, _b, ca, cb, _ = admins
     code = ca.post("/ui/api/settings/links/invitations").json()["code"]
-    from moneykata.links import manage
+    from moolakata.links import manage
 
     c = manage.decode_code(code)
     forged = manage.encode_code(c["a"], "0" * 64, c["c"])
@@ -278,7 +278,7 @@ def test_an_item_is_shared_read_only_with_a_linked_servers_people(admins):
     ca.post(f"/ui/api/settings/links/{a_id}/end")
     v = alice.get(f"/ui/api/shares/account/{acct['id']}").json()
     assert v["links"] == []
-    from moneykata.store.entities.sharing import Share
+    from moolakata.store.entities.sharing import Share
 
     with a.db.read() as s:
         assert s.query(Share).filter(Share.deleted.is_(False)).count() == 0
@@ -288,8 +288,8 @@ def test_an_item_is_shared_read_only_with_a_linked_servers_people(admins):
 
 from test_accounts import add, wait_job  # noqa: E402
 
-from moneykata.links import copy as lcopy  # noqa: E402
-from moneykata.links import copydb  # noqa: E402
+from moolakata.links import copy as lcopy  # noqa: E402
+from moolakata.links import copydb  # noqa: E402
 
 
 def docs_in(srv, link_id):
@@ -362,7 +362,7 @@ def test_a_shared_account_reaches_the_people_it_names_as_its_screens_show_it(adm
     items, docs = docs_in(b, b_id)
     assert docs[(acct["id"], f"/accounts/{acct['id']}", carol_id)]["balance"] == "1160.00"
     nothing = a  # the next exchange with nothing new sends no change
-    from moneykata.store.entities.links import Link
+    from moolakata.store.entities.links import Link
 
     with nothing.db.read() as s:
         seq = s.get(Link, a_id).sentSeq
@@ -490,7 +490,7 @@ def test_a_linked_receipts_type_comes_from_its_bytes(tmp_path):
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
     from test_receipts import png
 
-    from moneykata.links import changes, sealed
+    from moolakata.links import changes, sealed
 
     copy = X25519PrivateKey.generate()
     public = copy.public_key().public_bytes_raw()
@@ -510,7 +510,7 @@ def test_a_linked_receipts_type_comes_from_its_bytes(tmp_path):
 
 
 def test_a_share_waiting_for_its_access_key_alerts_the_admins(admins):
-    from moneykata import alerts
+    from moolakata import alerts
 
     a, b, ca, cb, _ = admins
     make_user(b, "carol")
@@ -533,8 +533,8 @@ def test_a_share_waiting_for_its_access_key_alerts_the_admins(admins):
 def test_a_pause_lasts_its_duration_and_the_peer_isnt_alerted(admins):
     import datetime as dt
 
-    from moneykata import clock
-    from moneykata.links import manage
+    from moolakata import clock
+    from moolakata.links import manage
 
     a, _b, ca, cb, _ = admins
     a_id, b_id = linked(ca, cb)
@@ -557,7 +557,7 @@ def test_a_pause_lasts_its_duration_and_the_peer_isnt_alerted(admins):
 
 
 def test_a_large_change_arrives_in_parts_oldest_first(admins, monkeypatch):
-    from moneykata.links import serve
+    from moolakata.links import serve
 
     a, b, ca, cb, _ = admins
     make_user(b, "carol")
@@ -615,8 +615,8 @@ def test_a_large_change_arrives_in_parts_oldest_first(admins, monkeypatch):
 def test_a_remote_user_is_a_person_of_their_own_until_someone_joins_them(admins):
     """S10.10.1 (P5): a linked server's user never takes over a person here by its name; one
     who may change that person joins them, and its privacy stays as it was."""
-    from moneykata.store.entities.education import Person
-    from moneykata.store.entities.users import User
+    from moolakata.store.entities.education import Person
+    from moolakata.store.entities.users import User
 
     a, b, ca, cb, _ = admins
     make_user(a, "alice")
@@ -664,8 +664,8 @@ def test_an_answer_names_its_caller_and_its_call():
 def test_only_link_ended_ends_a_link_and_not_linked_marks_it_broken(admins):
     """S11.6: a peer restored from an older backup answers `not-linked`; the link is marked
     broken and alerts admins, and nothing is deleted."""
-    from moneykata import alerts
-    from moneykata.links import manage
+    from moolakata import alerts
+    from moolakata.links import manage
 
     a, b, ca, cb, _ = admins
     a_id, _b_id = linked(ca, cb)
@@ -713,7 +713,7 @@ def test_what_crosses_a_link_is_sealed_to_the_receiving_copy(admins, monkeypatch
         c.post = spy
         return c
 
-    from moneykata.links import client as link_client
+    from moolakata.links import client as link_client
 
     monkeypatch.setattr(link_client.net, "Client", watching)
     cb.post(f"/ui/api/settings/links/{b_id}/pull")
@@ -729,8 +729,8 @@ def test_what_crosses_a_link_is_sealed_to_the_receiving_copy(admins, monkeypatch
 def test_a_malformed_change_is_set_aside_and_everything_asked_for(admins, monkeypatch):
     """S11.9.5.3: a signed change that isn't in a change's shape stops nothing: it is set
     aside, recorded on the link, and the next pull asks for everything."""
-    from moneykata.links import changes
-    from moneykata.store.entities.links import Link
+    from moolakata.links import changes
+    from moolakata.store.entities.links import Link
 
     a, b, ca, cb, _wire = admins
     make_user(b, "carol")
@@ -761,8 +761,8 @@ def test_a_peers_own_certificate_is_pinned_announced_and_accepted(admins, monkey
     """link-protocol.md §4.5: an announced key is accepted beside the pinned one and becomes
     the pinned one once in use; one presented unannounced waits for an admin to accept it,
     after the password again."""
-    from moneykata.links import client as link_client
-    from moneykata.links import manage
+    from moolakata.links import client as link_client
+    from moolakata.links import manage
 
     a, _b, ca, cb, _ = admins
     a_id, _ = linked(ca, cb)
@@ -858,7 +858,7 @@ def test_a_person_crosses_a_link_with_their_relationships_and_a_pull_names_its_l
         f"/ui/api/linked/{b_id}/doc", params={"path": f"/persons/{rose['id']}/relations"}
     )
     assert got.status_code == 200 and got.json()["items"] == []
-    from moneykata.store.entities.core import Activity
+    from moolakata.store.entities.core import Activity
 
     with b.db.read() as s:
         pulled = [x for x in s.query(Activity) if x.kind == "link.pulled"]
@@ -872,7 +872,7 @@ def test_a_refusal_on_its_headers_reads_no_body(pair):
     srv_b = b
     from fastapi.testclient import TestClient
 
-    from moneykata.app import create_app
+    from moolakata.app import create_app
 
     with TestClient(create_app(srv_b), base_url=url_b) as c:
         r = c.post(
@@ -916,7 +916,7 @@ def test_a_change_put_back_in_the_inbox_is_refused_and_everything_asked_for(admi
 
 def test_a_released_copys_key_opens_nothing_more():
     # K25: the copy's database key is overwritten at the release, and no new connection opens.
-    from moneykata.store.db import HeldKey, WrongKey
+    from moolakata.store.db import HeldKey, WrongKey
 
     k = HeldKey(bytes(range(32)))
     assert k.text().startswith("x'000102")

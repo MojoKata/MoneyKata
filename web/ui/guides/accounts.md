@@ -23,7 +23,7 @@ When the account last changed: its newest import or transaction.
 
 ## Mismatch
 
-A balance the institution reported doesn't match MoneyKata's for that day. Open the account's
+A balance the institution reported doesn't match MoolaKata's for that day. Open the account's
 **Reconcile** tab to see what's suspect. **Balance needed** means its next statement or import is overdue.
 
 ## Share
@@ -32,6 +32,6 @@ Opens the Share dialog for that account. Only its owner shares it.
 
 ## Linked households {#linked-households}
 
-Other households, on their own MoneyKata servers, that share something with you. Each opens in a
+Other households, on their own MoolaKata servers, that share something with you. Each opens in a
 window of its own, never mixed with yours: its accounts never count in your totals. The household
 avatar at the top of the sidebar lists them too.

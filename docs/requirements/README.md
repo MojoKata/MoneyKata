@@ -1,12 +1,12 @@
-# MoneyKata: requirements
+# MoolaKata: requirements
 
-MoneyKata is a self-hosted **personal finance server** for a
+MoolaKata is a self-hosted **personal finance server** for a
 household or a small group of people. It holds their accounts (bank, brokerage, crypto
 exchange, self-custody wallets, IRA, Roth IRA, 401(k)), tracks holdings and positions (options
 included), charts portfolios, projects future value, keeps budgets and receipts, and prepares
 the numbers a tax return needs. Several people use one server. They share accounts and
 portfolios with each other, read-only or read/write, and share read-only with people on
-**other MoneyKata servers** on other LANs.
+**other MoolaKata servers** on other LANs.
 
 **How the requirements are organised.** This file holds what applies everywhere: the
 decisions (R1), the terminology (R2) and the design principles (R3). Each subject has its own
@@ -23,11 +23,11 @@ gap, `L1` later work and `Q8` an open question.
    items to files of their own, named by the item's number (`S1-accounts-02-brokerage.md`
    holds S1.2), and keeps a summary with a table of them in the form of the one below.
    References do not change.
-3. **A statement, not a changelog.** The requirements say what MoneyKata is and does, in the
+3. **A statement, not a changelog.** The requirements say what MoolaKata is and does, in the
    present tense, and carry no dates, versions or status of their own; git holds their
    history, and the repository's README says where the build stands.
 
-**Mockup:** [`../mockups/MoneyKata-mock.html`](../mockups/MoneyKata-mock.html) is the
+**Mockup:** [`../mockups/MoolaKata-mock.html`](../mockups/MoolaKata-mock.html) is the
 clickable mockup. It is one file that opens from disk and sends nothing anywhere. It is
 hand-written, and alongside it a second mockup is generated from the app for the screens built
 so far (S12.9). Its purple **MOCK** pill jumps to any screen, switches between users, and
@@ -47,14 +47,14 @@ opens the dialogs.
 | **S8** | [Taxes](S8-taxes.md) | Tax books, tax documents, what a return needs, and the tax tables |
 | **S9** | [Receipts](S9-receipts.md) | Upload, encrypted storage, viewing, links, sharing, retention and reading receipts on the server |
 | **S10** | [Users, groups and sharing](S10-users-and-sharing.md) | Users, sign-in, groups, what can be shared and how, Activity and the MCP endpoint |
-| **S11** | [Linked servers](S11-linked-servers.md) | Read-only sharing between households on separate MoneyKata servers |
+| **S11** | [Linked servers](S11-linked-servers.md) | Read-only sharing between households on separate MoolaKata servers |
 | **S12** | [Web UI](S12-web-ui.md) | The frame, navigation, screens, help pane, live updates, linked households' windows and Alerts |
 | **S13** | [Architecture](S13-architecture.md) | The listener and its modes, background tasks, the egress guard, the refused start, security policies and API conventions |
 | **S14** | [Storage and secrets](S14-storage-and-secrets.md) | The database, files, secrets, backups, time zones and retention |
 | **S15** | [Encryption and the master key](S15-encryption-and-master-key.md) | The master key and its recovery phrase, the data key, rotation and recovery, for the admin who runs the server |
 | **S16** | [Settings (admins)](S16-settings.md) | Every section of the Settings screen |
 | **S17** | [Implementation](S17-implementation.md) | The stack, the repository layout, checks, dev mode, the Docker images and where they are published, the milestones, CI and releases |
-| **S18** | [MoneyKata Connector](S18-connector.md) | The second service that holds institutions' credentials, fetches with its drivers and pushes into MoneyKata's import |
+| **S18** | [MoolaKata Connector](S18-connector.md) | The second service that holds institutions' credentials, fetches with its drivers and pushes into MoolaKata's import |
 
 ## Gaps
 
@@ -92,7 +92,7 @@ Work planned for after the first release ([later.md](later.md), S17.9.11).
 
 - [Open questions](questions.md): what waits on a decision, listed above.
 - [Later work](later.md): what comes after the first release.
-- [Out of scope](out-of-scope.md): what MoneyKata does not do.
+- [Out of scope](out-of-scope.md): what MoolaKata does not do.
 - [Rejected ideas](rejected-ideas.md): ideas weighed and turned down, with the reason.
 
 # R1. Decisions
@@ -113,7 +113,7 @@ The rulings the rest of the requirements apply.
    no heading in its guide.
 4. **A clickable mockup** in `docs/mockups/`, opened from disk. It shows every screen and
    dialog on sample data, and its MOCK pill drives it (S12.9).
-5. **A dev mode, `moneykata dev`**, runs the whole server from a checkout as the current user.
+5. **A dev mode, `moolakata dev`**, runs the whole server from a checkout as the current user.
    It uses a self-signed certificate, writes emails to a folder, uses canned price feeds and
    seed data, and keeps every rule as strict as production (S17.7).
 6. **Users, groups, invitations, sign-up approval, two-step sign-in and deactivation** (S10.1).
@@ -123,15 +123,15 @@ The rulings the rest of the requirements apply.
    (S10.2).
 7. **Users own accounts.** Any user can create accounts and portfolios and share them with
    users or groups, **read** or **read/write** (S10).
-8. **Linked servers.** Two MoneyKata servers on different LANs can be linked. A link carries
+8. **Linked servers.** Two MoolaKata servers on different LANs can be linked. A link carries
    **read-only** shares of any of the eight shareable kinds (S10.3), each to named people on
    the other server, both ways, and is never read/write (S11).
 9. **Money is never a float.** Amounts and quantities are decimals end to end: `Decimal` in
    Python, exact number literals in JSON (S13.8.2.1), and integers or decimal text in SQLite
    (S14.3).
-10. **Prices are delayed, never live.** MoneyKata is not a trading app. It reads end-of-day
+10. **Prices are delayed, never live.** MoolaKata is not a trading app. It reads end-of-day
     closes from free sources, through pluggable **price sources** (S4).
-11. **Read-only by construction toward institutions.** MoneyKata never moves money, places an
+11. **Read-only by construction toward institutions.** MoolaKata never moves money, places an
     order or signs a transaction. It never stores a self-custody wallet's private key or seed
     phrase, only public addresses or extended public keys (S1.6).
 12. **Receipts are files on the server**, PDF or image, uploaded from the browser and attached
@@ -146,8 +146,8 @@ The rulings the rest of the requirements apply.
 14. **Charts: Apache ECharts**, vendored and loaded only by the screens that draw charts
     (S17.4).
 15. **The code lives in `web/`**: `web/ui` (the browser app) and `web/server` (the Python
-    package `moneykata`). The docs are in `docs/` (S17.1).
-16. **MoneyKata informs and does not advise.** Tax reports, projections and gain/loss figures
+    package `moolakata`). The docs are in `docs/` (S17.1).
+16. **MoolaKata informs and does not advise.** Tax reports, projections and gain/loss figures
     are worksheets for the user or their preparer. They are not tax, legal or investment
     advice, and the screens say so where it matters (S8.18).
 17. **Receipts are read on the server with RapidOCR**: open source, CPU
@@ -159,7 +159,7 @@ The rulings the rest of the requirements apply.
     receiving household keeps in its password manager, never with the master key. The key
     protects the copy at rest; who sees what is decided by the owner's shares. The copy
     keeps syncing while it is locked, and its key is released after an hour unused (S11.9).
-19. **Beyond investments**: MoneyKata also covers **529 plans** (S1.8),
+19. **Beyond investments**: MoolaKata also covers **529 plans** (S1.8),
     **mortgages and other loans** with payoff and overpayment projections (S1.9, S6.10),
     **physical assets** such as precious metals, collectables, property and vehicles, with
     notes, purchase dates and cost basis (S1.10), **gifts** to the people in a user's life
@@ -174,7 +174,7 @@ The rulings the rest of the requirements apply.
     and year. A tax book holds the documents received and one **filing** per return
     (federal, state, local), each with the forms as filed, the tax authority's letters and
     any amendment. Another user can be given write access to help prepare it (S8.14).
-    MoneyKata still prepares worksheets only and never files.
+    MoolaKata still prepares worksheets only and never files.
 22. **Owners choose people on other servers**. Linked servers exchange their lists of active
     users, so an owner shares any of the eight shareable kinds (account, portfolio, budget,
     gift plan, giving plan, tax book, projection, person) with named people on another server,
@@ -193,7 +193,7 @@ The rulings the rest of the requirements apply.
 26. **Account data comes from files the user brings.** Bank, card, brokerage and exchange
     accounts are kept current from files: OFX/QFX and CSV downloads, PDF statements, and
     photos of statements read on the server. There is no bank-aggregation service (S1.3,
-    [rejected ideas](rejected-ideas.md)); the household's own MoneyKata Connector fetches
+    [rejected ideas](rejected-ideas.md)); the household's own MoolaKata Connector fetches
     such files for the accounts whose owners turn its sync on (S18). **Bitcoin** is the one chain watched, through a public explorer or the household's
     own node; other coins and exchanges' APIs come later (S1.5, S1.6).
 
@@ -220,7 +220,7 @@ The rulings the rest of the requirements apply.
 9. **Share:** a grant of one item, of the eight kinds of S10.3, to a user, a group or named
    users of a linked server, at a **level**: `read` or `write` (S10). A share to a linked
    server's users is always `read`.
-10. **Linked server (peer):** another MoneyKata server this one has a **link** with (S11).
+10. **Linked server (peer):** another MoolaKata server this one has a **link** with (S11).
     What a link brings in is kept in that link's **linked copy**, encrypted under its own
     **access key**: 12 generated words that the receiving household keeps. The copy is
     **locked** until someone it shares with enters the words, and locks again after an hour
@@ -239,7 +239,7 @@ The rulings the rest of the requirements apply.
     **filing** per return (federal, state or local) with the forms as filed and what the tax
     authority sent back (S8.14–S8.17). The Taxes screen shows one tax book at a time.
 16. **Loan:** a liability account with terms (principal, rate, term, payment) from which
-    MoneyKata computes an **amortization schedule**. A **mortgage** is a loan secured by a
+    MoolaKata computes an **amortization schedule**. A **mortgage** is a loan secured by a
     property. An **overpayment** is principal paid beyond the schedule (S1.9).
 17. **Physical asset:** a thing of value that is not a security: precious metals,
     collectables, property, a vehicle. A physical-asset account holds **items**, each with
@@ -256,9 +256,9 @@ The rulings the rest of the requirements apply.
     its own for a security: the UI says holding or instrument, and keeps *asset* for
     *physical asset* (term 17). *Trade* as an entity: a trade is a pair of
     transactions on a position.
-21. **MoneyKata Connector (the connector):** the second service that holds institutions'
-    credentials in a vault MoneyKata can't open, fetches with its drivers, and pushes what they
-    fetch into MoneyKata's import (S18). It is **paired** with one MoneyKata server.
+21. **MoolaKata Connector (the connector):** the second service that holds institutions'
+    credentials in a vault MoolaKata can't open, fetches with its drivers, and pushes what they
+    fetch into MoolaKata's import (S18). It is **paired** with one MoolaKata server.
 22. **Driver:** the part of the connector for one institution, which fetches from it (Schwab,
     OFX Direct Connect).
 23. **Connection:** one sign-in at one institution, kept by the connector and owned by the
@@ -271,7 +271,7 @@ The rulings the rest of the requirements apply.
     lots, which keep their own gains (S3.5).
 26. **Identity key, sealing key:** the connector's two key pairs, made at pairing. The
     identity key signs its calls and sits beside its vault; the sealing key is what a browser
-    encrypts a credential to (a **sealed box**), its public half held by MoneyKata and its
+    encrypts a credential to (a **sealed box**), its public half held by MoolaKata and its
     private half kept in the vault (S18.4.5).
 
 # R3. Design principles
@@ -279,7 +279,7 @@ The rulings the rest of the requirements apply.
 1. **One server, on the household's own LAN.** All data stays on hardware its users control.
    The only outbound calls are to price sources, the bitcoin explorer or node, the SMTP server,
    and linked servers that a user or admin set up, and each is visible in Settings (S16). The
-   MoneyKata Connector, a second service, calls the institutions its Connections name, each
+   MoolaKata Connector, a second service, calls the institutions its Connections name, each
    Connection's host shown in Settings › Connector (S18).
 2. **The ledger is the truth.** Holdings, balances, positions, gains and charts are derived
    from transactions and lots. A **balance snapshot** may stand in for history where none is
@@ -293,8 +293,8 @@ The rulings the rest of the requirements apply.
    something is shared with it. Price sources and the bitcoin explorer are off until
    configured.
 6. **Never hold the keys to the money.** There are no private keys, seed phrases or trading
-   permissions, and MoneyKata itself holds no credentials for a bank or an exchange: the
-   sign-ins the MoneyKata Connector keeps live only in its own vault, which MoneyKata can
+   permissions, and MoolaKata itself holds no credentials for a bank or an exchange: the
+   sign-ins the MoolaKata Connector keeps live only in its own vault, which MoolaKata can
    neither open nor ask for (S18.2).
 7. **One store, live on the next request.** There are no caches between the database and a
    request, so a change (a share revoked, a rule edited) applies to the very next one. A record

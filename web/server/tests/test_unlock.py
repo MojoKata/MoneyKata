@@ -9,10 +9,10 @@ import pytest
 from conftest import LOOPBACK, ORIGIN
 from fastapi.testclient import TestClient
 
-from moneykata.app import Server, create_app
-from moneykata.keys import phrase
-from moneykata.store import maintenance
-from moneykata.store.entities.core import Activity
+from moolakata.app import Server, create_app
+from moolakata.keys import phrase
+from moolakata.store import maintenance
+from moolakata.store.entities.core import Activity
 
 
 @pytest.fixture
@@ -78,7 +78,7 @@ def test_ten_wrong_phrases_lock_the_unlock_out(locked):
 def test_rotation_and_backups_go_over_the_host_socket_only(locked, master_key):
     """Host commands reach the running server over its Unix socket (S13.6); the listener has
     no route for them, whatever address a request claims to come from."""
-    from moneykata.host import create_host_app
+    from moolakata.host import create_host_app
 
     srv, c = locked
     host = TestClient(create_host_app(srv), base_url="http://host")
@@ -110,7 +110,7 @@ def test_rotation_and_backups_go_over_the_host_socket_only(locked, master_key):
 
 
 def test_keys_unlock_hands_the_phrase_over_the_socket(locked, master_key):
-    """`moneykata keys unlock` against a server serving its host socket (S15.4.2): the socket
+    """`moolakata keys unlock` against a server serving its host socket (S15.4.2): the socket
     is the server account's alone, and the phrase never crosses the network."""
     import asyncio
     import stat
@@ -118,8 +118,8 @@ def test_keys_unlock_hands_the_phrase_over_the_socket(locked, master_key):
 
     from hypercorn.asyncio import serve
 
-    from moneykata import host
-    from moneykata.keys import cli as keys_cli
+    from moolakata import host
+    from moolakata.keys import cli as keys_cli
 
     srv, _ = locked
     said: list[str] = []
@@ -161,7 +161,7 @@ def test_a_scheduled_reencryption_runs_at_the_unlock_before_the_server_serves(lo
     progress and /healthz answering re-encrypting, then the server serves under a new key."""
     import time
 
-    from moneykata.store import reencrypt
+    from moolakata.store import reencrypt
 
     srv, c = locked
     maintenance.open_store(srv.config, master_key).db.dispose()  # a database to re-encrypt
@@ -192,7 +192,7 @@ def test_reencryption_is_scheduled_in_settings_never_run_while_serving(server, a
     again; until it begins it can be cancelled."""
     from conftest import stale
 
-    from moneykata.store import reencrypt
+    from moolakata.store import reencrypt
 
     stale(server)
     r = admin_client.post("/ui/api/settings/keys/reencrypt", json={"copies": {}})

@@ -4,7 +4,7 @@ cash activity, as Schwab, Fidelity and Empower lay them out; trades are not read
 import datetime as dt
 from decimal import Decimal
 
-from moneykata.importers import brokerage
+from moolakata.importers import brokerage
 
 TODAY = dt.date(2026, 10, 13)
 
@@ -155,7 +155,7 @@ def test_a_brokerage_statement_is_checked_and_saved(server):
     make_user(server, "alice")
     c = sign_in(server, "alice")
     a = new_account(c, name="Individual Brokerage", type="brokerage", institution="Schwab")
-    # What MoneyKata holds: SCHD short by the reinvestment, the dividend and deposit present.
+    # What MoolaKata holds: SCHD short by the reinvestment, the dividend and deposit present.
     for sym, qty, price, day in (
         ("AAPL", "140", "180.00", "2026-01-05"),
         ("VTI", "412", "240.00", "2026-01-05"),

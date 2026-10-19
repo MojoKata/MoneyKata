@@ -54,7 +54,7 @@ accounts count once.
 
 How the account is kept current: from files you import (OFX, QFX or CSV), or by hand.
 
-## Sync using MoneyKata Connector {#sync-using-moneykata-connector}
+## Sync using MoolaKata Connector {#sync-using-moolakata-connector}
 
 The connector fetches this account from its institution with one of your connections and
 imports what it fetches as an upload would. Only the account's owner turns it on; an account
@@ -78,5 +78,5 @@ it follows the account's type: monthly for banking, cards, brokerage, IRAs, HSAs
 for 401(k)s, 403(b)s, 457(b)s and 529s; none for accounts kept by hand. A statement is overdue once
 its period has passed and a grace after it (15 days monthly, 30 quarterly, 60 yearly): an alert
 names the one missing, and clears when it arrives, read or kept. Once three statements or imports
-have arrived, MoneyKata proposes the interval they arrive at when it differs; dismissed, it isn't
+have arrived, MoolaKata proposes the interval they arrive at when it differs; dismissed, it isn't
 proposed again.

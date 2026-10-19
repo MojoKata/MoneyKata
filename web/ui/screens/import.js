@@ -170,7 +170,7 @@ export function ImportDialog({ close, accounts, accountId }) {
         <p class="small dim" style=${{
           marginTop: 0,
         }}>A CSV from this institution for the first time.
-              Check the columns MoneyKata guessed.</p>
+              Check the columns MoolaKata guessed.</p>
         <div class="split-form">
               ${COLUMNS.map(([k, label, hint]) =>
                 html`
@@ -623,7 +623,7 @@ function BrokerageReview({ review, setReview, close, done, accounts }) {
         review.periodEnd,
       )}</h4>
       <div class="table-wrap"><table class="t">
-        <thead><tr><th>Holding</th><th class="num">Statement</th><th class="num">MoneyKata</th><th
+        <thead><tr><th>Holding</th><th class="num">Statement</th><th class="num">MoolaKata</th><th
           class="num">Market value</th><th></th></tr></thead>
         <tbody>${review.positions.map((/** @type {any} */ p) =>
           html`

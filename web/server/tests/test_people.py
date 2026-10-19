@@ -10,9 +10,9 @@ from conftest import make_user, sign_in
 from test_accounts import new_account
 from test_positions import trade
 
-from moneykata import alerts, clock, people
-from moneykata.people import tree
-from moneykata.store.entities.education import Person, Relationship
+from moolakata import alerts, clock, people
+from moolakata.people import tree
+from moolakata.store.entities.education import Person, Relationship
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 
@@ -101,7 +101,7 @@ def test_one_person_once_and_asking_to_share_a_private_one(server, two):
     assert "Priya Shah" in {x["name"] for x in bob.get("/ui/api/persons").json()["items"]}
     alerts.evaluate(server)
     with server.db.read() as s:
-        from moneykata.store.entities.alerts import Alert
+        from moolakata.store.entities.alerts import Alert
 
         assert all(a.resolvedAt for a in s.query(Alert).filter_by(kind="share-asked"))
 
@@ -378,15 +378,15 @@ def test_a_relationship_is_changed_and_removed_with_its_version(two):
 
 def test_a_person_who_becomes_a_user_is_theirs_to_change(server, two):
     """S10.10.2 (P5): whoever made a person before they were invited no longer changes them."""
-    from moneykata.auth import users as accounts
-    from moneykata.store.entities.users import User
+    from moolakata.auth import users as accounts
+    from moolakata.store.entities.users import User
 
     alice, _ = two
     made = alice.post("/ui/api/persons", json={"name": "Dana Ortiz", "sex": "female"})
     assert made.status_code == 201, made.text
     person = made.json()
     assert person["canChange"]
-    from moneykata import settings
+    from moolakata import settings
 
     with server.db.tx() as s:  # invited under the same name, she becomes that person
         settings.put(s, "publicUrl", "https://money.home.lan", None)

@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from moneykata.config import CONFIG_ENV, DEFAULT_CONFIG, RefuseStart, configured, load, parse
-from moneykata.main import main
+from moolakata.config import CONFIG_ENV, DEFAULT_CONFIG, RefuseStart, configured, load, parse
+from moolakata.main import main
 
 BASE = {
     "server": {"name": "home", "mode": "proxy", "trusted_proxies": ["10.0.0.0/8"]},
-    "paths": {"data": "/var/lib/moneykata", "backups": "/var/backups/moneykata"},
+    "paths": {"data": "/var/lib/moolakata", "backups": "/var/backups/moolakata"},
 }
 
 
@@ -17,9 +17,9 @@ def test_parses_a_full_config():
     assert c.mode == "proxy"
     assert c.port == 37373
     assert str(c.trusted_proxies[0]) == "10.0.0.0/8"
-    assert c.db_path == Path("/var/lib/moneykata/moneykata.db")
-    assert c.mail_dir == Path("/var/lib/moneykata/mail")
-    assert c.keyring_path == Path("/var/lib/moneykata/keyring")
+    assert c.db_path == Path("/var/lib/moolakata/moolakata.db")
+    assert c.mail_dir == Path("/var/lib/moolakata/mail")
+    assert c.keyring_path == Path("/var/lib/moolakata/keyring")
 
 
 @pytest.mark.parametrize(
@@ -28,7 +28,7 @@ def test_parses_a_full_config():
         ({"server": {"mode": "open"}}, "server.mode"),
         ({"server": {"port": 0}}, "server.port"),
         ({"server": {"trusted_proxies": ["nope"]}}, "trusted_proxies"),
-        ({"keys": {"master": "/etc/moneykata/master.key"}}, "is not used"),
+        ({"keys": {"master": "/etc/moolakata/master.key"}}, "is not used"),
         ({"paths": {"data": "/d", "backups": "/d/backups"}}, "inside the data directory"),
         ({"paths": {"data": "relative", "backups": "/b"}}, "absolute"),
         ({"tls": {"cert": "/a.crt"}}, "both cert and key"),
@@ -55,8 +55,8 @@ def test_missing_or_broken_file_refuses(tmp_path):
 
 
 def test_the_config_comes_from_the_file_named_then_the_environment_then_the_default(tmp_path):
-    """S17.8: --config names a file; without it the same TOML may be given in MONEYKATA_CONFIG
-    (TrueNAS's Install via YAML has no file to mount); else /etc/moneykata.toml."""
+    """S17.8: --config names a file; without it the same TOML may be given in MOOLAKATA_CONFIG
+    (TrueNAS's Install via YAML has no file to mount); else /etc/moolakata.toml."""
     text = (
         '[server]\nname = "from-env"\nmode = "tls"\n[paths]\ndata = "/d"\nbackups = "/b"\n'
         '[tls]\nnames = ["192.168.1.20"]\n'
@@ -101,8 +101,8 @@ def test_refused_start_exits_78_with_one_line(tmp_path, capsys):
 def test_a_connection_is_not_closed_after_a_thousand_requests(tmp_path):
     """Over HTTP/2 everything a browser asks travels on one connection; Hypercorn's default
     cap of 1,000 requests closed it under the live stream and stranded requests in flight."""
-    from moneykata.listener import hypercorn_config
-    from moneykata.main import dev_config
+    from moolakata.listener import hypercorn_config
+    from moolakata.main import dev_config
 
     hc = hypercorn_config(dev_config(37373, stubs=False, peer=False, base=tmp_path))
     assert hc.keep_alive_max_requests >= 1_000_000
@@ -110,8 +110,8 @@ def test_a_connection_is_not_closed_after_a_thousand_requests(tmp_path):
 
 def test_dev_hostnames_join_the_self_signed_certificate_which_is_remade_to_cover_them(tmp_path):
     """Testing from another machine (web/dev.md): the certificate names what the browser uses."""
-    from moneykata.listener import _covers, hypercorn_config
-    from moneykata.main import dev_config
+    from moolakata.listener import _covers, hypercorn_config
+    from moolakata.main import dev_config
 
     hypercorn_config(dev_config(37373, stubs=False, peer=False, base=tmp_path))
     cert = tmp_path / "data" / "tls" / "self-signed.crt"
@@ -119,11 +119,11 @@ def test_dev_hostnames_join_the_self_signed_certificate_which_is_remade_to_cover
     first = cert.read_bytes()
 
     config = dev_config(
-        37373, False, False, tmp_path, listen="0.0.0.0", hostnames=("moneykata.loco", "10.0.0.5")
+        37373, False, False, tmp_path, listen="0.0.0.0", hostnames=("moolakata.loco", "10.0.0.5")
     )
     hc = hypercorn_config(config)
     assert hc.bind == ["0.0.0.0:37373"]
-    assert _covers(cert) == {"moneykata.loco", "10.0.0.5", "localhost", "127.0.0.1"}
+    assert _covers(cert) == {"moolakata.loco", "10.0.0.5", "localhost", "127.0.0.1"}
     second = cert.read_bytes()
     assert second != first
 
@@ -135,7 +135,7 @@ def test_tls_names_join_the_self_signed_certificate(tmp_path):
     """tls mode on a local network: the certificate also names what the browser uses."""
     import dataclasses
 
-    from moneykata.listener import _covers, hypercorn_config
+    from moolakata.listener import _covers, hypercorn_config
 
     raw = {k: dict(v) for k, v in BASE.items()}
     raw["server"]["mode"] = "tls"
@@ -150,9 +150,9 @@ def test_tls_names_join_the_self_signed_certificate(tmp_path):
 
 def test_dev_mode_runs_only_from_a_checkout(tmp_path, monkeypatch):
     # S17.6: the image carries no dev.sh, and leaves dev mode's code out.
-    from moneykata import main as entry
-    from moneykata import paths
-    from moneykata.config import Config
+    from moolakata import main as entry
+    from moolakata import paths
+    from moolakata.config import Config
 
     config = Config(
         name="t", mode="proxy", data_dir=tmp_path / "data", backup_dir=tmp_path / "b", dev=True
@@ -162,4 +162,4 @@ def test_dev_mode_runs_only_from_a_checkout(tmp_path, monkeypatch):
     with pytest.raises(RefuseStart, match="only from a checkout"):
         entry.refuse_dev(config)
     dockerfile = (paths.ROOT / "web" / "install" / "Dockerfile").read_text()
-    assert "rm -rf src/moneykata/dev" in dockerfile
+    assert "rm -rf src/moolakata/dev" in dockerfile

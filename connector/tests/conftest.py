@@ -1,8 +1,8 @@
 """The connector's tests run under the server's environment (web/check), which has
-`cryptography` and, for the end-to-end test, MoneyKata itself. The connector's package is put
-on the path here; it imports nothing from MoneyKata (S18.1.2). The server's own test
+`cryptography` and, for the end-to-end test, MoolaKata itself. The connector's package is put
+on the path here; it imports nothing from MoolaKata (S18.1.2). The server's own test
 fixtures (a server, its clients, users) are loaded from its conftest under another name and
-registered here, so the end-to-end test can stand up a real MoneyKata in-process."""
+registered here, so the end-to-end test can stand up a real MoolaKata in-process."""
 
 import importlib.util
 import sys

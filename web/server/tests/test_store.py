@@ -10,22 +10,22 @@ from alembic.autogenerate import compare_metadata
 from alembic.runtime.migration import MigrationContext
 from sqlalchemy import Column, ForeignKey, MetaData, Table, Text, select, text
 
-from moneykata import ids, settings
-from moneykata.config import RefuseStart
-from moneykata.keys import master
-from moneykata.keys import secrets as sealing
-from moneykata.store import copy, maintenance, migrate, schema_check, views
-from moneykata.store.db import Database, live, make_engine
-from moneykata.store.entities.core import Secret
-from moneykata.store.entities.users import User
-from moneykata.store.repos import secrets as secret_repo
-from moneykata.store.tables import metadata
-from moneykata.store.tables._base import record
-from moneykata.store.tables.receipts import is_search_table
+from moolakata import ids, settings
+from moolakata.config import RefuseStart
+from moolakata.keys import master
+from moolakata.keys import secrets as sealing
+from moolakata.store import copy, maintenance, migrate, schema_check, views
+from moolakata.store.db import Database, live, make_engine
+from moolakata.store.entities.core import Secret
+from moolakata.store.entities.users import User
+from moolakata.store.repos import secrets as secret_repo
+from moolakata.store.tables import metadata
+from moolakata.store.tables._base import record
+from moolakata.store.tables.receipts import is_search_table
 
 
 def new_user(s, name="alice"):
-    from moneykata import people
+    from moolakata import people
 
     u = User(
         id=ids.new_id("User"),
@@ -118,7 +118,7 @@ def test_schema_checks_catch_breaks():
 
 
 def test_effective_views_follow_what_records_belong_to(tmp_path):
-    from moneykata.store.tables import _base
+    from moolakata.store.tables import _base
 
     saved = _base.metadata
     md = MetaData(naming_convention=_base.NAMING)
@@ -178,7 +178,7 @@ def test_live_leaves_out_deleted_records(db):
         a = new_user(s, "a")
         new_user(s, "b")
         a.mark_deleted(None)
-    from moneykata.store.tables.users import User as UserTable
+    from moolakata.store.tables.users import User as UserTable
 
     with db.read() as s:
         names = [u.username for u in s.scalars(live(User, UserTable))]
@@ -189,7 +189,7 @@ def test_a_newer_database_refuses_the_start(store, keyed_config, master_key):
     with store.db.engine.begin() as conn:
         conn.exec_driver_sql("UPDATE \"SchemaRevision\" SET version_num = '9999'")
     store.db.dispose()
-    with pytest.raises(RefuseStart, match="newer MoneyKata"):
+    with pytest.raises(RefuseStart, match="newer MoolaKata"):
         maintenance.open_store(keyed_config, master_key)
 
 
@@ -228,7 +228,7 @@ def test_secrets_are_bound_to_their_record_and_field(store):
 
 
 def test_settings_have_defaults_and_are_checked(db):
-    from moneykata.errors import Problem
+    from moolakata.errors import Problem
 
     with db.tx() as s:
         assert settings.get(s, "passwordMinLength") == 12
@@ -253,16 +253,16 @@ def test_backup_is_verified_restorable_and_pruned(store, keyed_config, tmp_path,
     for b in made:
         maintenance.check_backup(b, key)
         # The database and its keyring only: the host backs up the files (S14.6).
-        assert sorted(p.name for p in b.iterdir()) == ["keyring", "manifest.json", "moneykata.db"]
+        assert sorted(p.name for p in b.iterdir()) == ["keyring", "manifest.json", "moolakata.db"]
     assert maintenance.prune(keyed_config, 2) == made[:1]
     assert maintenance.backups(keyed_config) == made[1:]
 
     # The restore of S15.6.8: the key from its phrase, the data directory from a backup.
-    from moneykata.config import Config
+    from moolakata.config import Config
 
     restored = Config(**{**keyed_config.__dict__, "data_dir": tmp_path / "restored"})
     restored.data_dir.mkdir()
-    shutil.copy(made[-1] / "moneykata.db", restored.db_path)
+    shutil.copy(made[-1] / "moolakata.db", restored.db_path)
     shutil.copy(made[-1] / "keyring", restored.keyring_path)
     again = maintenance.open_store(restored, master_key)
     with again.db.read() as s:
@@ -299,7 +299,7 @@ def test_an_interrupted_reencrypt_is_finished_at_start(
 ):
     """S15.7.2: a crash part-way leaves a journal; the next unlock carries it on, redoing
     nothing, and the data opens under the new key."""
-    from moneykata.store import reencrypt as journaled
+    from moolakata.store import reencrypt as journaled
 
     with store.db.tx() as s:
         secret_repo.put(s, store.keys.keys.secrets, "Smtp", "Smtp_x", "password", "hunter2", None)
@@ -330,8 +330,8 @@ def test_an_interrupted_reencrypt_is_finished_at_start(
 
 def test_a_file_or_secret_under_neither_key_is_set_aside_not_fatal(store, keyed_config, master_key):
     """S15.7.2: one bad file never stops a re-encryption for ever."""
-    from moneykata.keys import files
-    from moneykata.store import reencrypt as journaled
+    from moolakata.keys import files
+    from moolakata.store import reencrypt as journaled
 
     keyed_config.receipts_dir.mkdir(parents=True)
     public = store.keys.keys.receipts.public_key()
@@ -339,7 +339,7 @@ def test_a_file_or_secret_under_neither_key_is_set_aside_not_fatal(store, keyed_
     (keyed_config.receipts_dir / "broken.mkr").write_bytes(b"not sealed at all")
     with store.db.tx() as s:
         secret_repo.put(s, store.keys.keys.secrets, "Smtp", "Smtp_x", "password", "hunter2", None)
-        from moneykata.store.entities.core import Secret
+        from moolakata.store.entities.core import Secret
 
         row = s.query(Secret).one()
         row.nonce = bytes(len(row.nonce))  # a secret that opens under no key
@@ -378,13 +378,13 @@ def test_migration_copies_the_database_first(store, keyed_config, monkeypatch, m
     older = keyed_config.data_dir / "pre-upgrade"
     older.mkdir()
     for i in range(3):  # three copies from earlier upgrades, oldest first
-        (older / f"moneykata-before-000{i}-x.db").write_bytes(b"old")
-        os.utime(older / f"moneykata-before-000{i}-x.db", (1_000_000 + i, 1_000_000 + i))
+        (older / f"moolakata-before-000{i}-x.db").write_bytes(b"old")
+        os.utime(older / f"moolakata-before-000{i}-x.db", (1_000_000 + i, 1_000_000 + i))
     maintenance.open_store(keyed_config, master_key).db.dispose()
     copies = sorted(p.name for p in older.glob("*.db"))
     assert calls == ["head"]
     # The new copy and the two newest before it: the oldest is removed.
-    assert len(copies) == migrate.PRE_UPGRADE_KEPT and "moneykata-before-0000-x.db" not in copies
+    assert len(copies) == migrate.PRE_UPGRADE_KEPT and "moolakata-before-0000-x.db" not in copies
     new = [p for p in older.glob("*.db") if "0002" in p.name and "-x" not in p.name]
     assert len(new) == 1 and os.stat(new[0]).st_mode & 0o777 == 0o600
     # It carries its keyring, so it still opens after a re-encryption (S15.7).
@@ -518,9 +518,9 @@ def test_revisions_carry_a_database_from_0001_to_head(tmp_path):
 
 
 def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_config, master_key):
-    """`moneykata db restore` (S15.6.8): the backup checked, what it replaces moved aside, and
+    """`moolakata db restore` (S15.6.8): the backup checked, what it replaces moved aside, and
     the restored database opens at the server's next start."""
-    from moneykata.keys import files
+    from moolakata.keys import files
 
     def receipt(name: str, data: bytes) -> None:
         public = store.keys.keys.receipts.public_key()
@@ -546,14 +546,14 @@ def test_restore_puts_a_backup_back_and_keeps_what_it_replaced(store, keyed_conf
 
     aside = maintenance.restore(keyed_config, made, master_key)
     # The receipts stay where they are; the database and keyring are set aside (S14.6).
-    assert sorted(p.name for p in aside.iterdir()) == ["keyring", "moneykata.db"]
+    assert sorted(p.name for p in aside.iterdir()) == ["keyring", "moolakata.db"]
     assert (keyed_config.data_dir / "restored.json").exists(), "the next unlock checks it"
     assert sorted(p.name for p in keyed_config.receipts_dir.iterdir()) == ["abc.mkr", "later.mkr"]
     again = maintenance.open_store(keyed_config, master_key)
     with again.db.read() as s:
         assert [u.username for u in s.scalars(select(User))] == ["alice"]
         # A file no record names is counted, for Settings › Storage to offer removing.
-        from moneykata.receipts import retention
+        from moolakata.receipts import retention
 
         assert retention.orphan_files(s, keyed_config.receipts_dir) == [
             keyed_config.receipts_dir / "abc.mkr",
@@ -576,10 +576,10 @@ def test_restore_refuses_a_changed_backup_or_one_from_a_newer_release(
     # ...and one a newer release wrote, signed by it, is refused for its revision.
     m = json.loads(manifest.read_text())
     maintenance.write_manifest(manifest, m, store.keys.data_key)
-    with pytest.raises(RefuseStart, match="from a newer MoneyKata"):
+    with pytest.raises(RefuseStart, match="from a newer MoolaKata"):
         maintenance.restore(keyed_config, made, master_key)
     assert keyed_config.db_path.exists()  # nothing was moved
-    with open(made / "moneykata.db", "ab") as f:
+    with open(made / "moolakata.db", "ab") as f:
         f.write(b"x")
     with pytest.raises(RuntimeError, match="has changed since the backup"):
         maintenance.verify_backup(keyed_config, master_key, made)
@@ -590,7 +590,7 @@ def test_the_copies_on_the_host_are_listed_rewrapped_reencrypted_and_removed(
 ):
     """S15.7: every copy carries its keyring; a rotation re-wraps it, a re-encryption rewrites
     it, Settings removes it; each says how it opens."""
-    from moneykata.store import copies
+    from moolakata.store import copies
 
     with store.db.tx() as s:
         new_user(s)
@@ -598,16 +598,16 @@ def test_the_copies_on_the_host_are_listed_rewrapped_reencrypted_and_removed(
     older = keyed_config.data_dir / "pre-upgrade"
     older.mkdir()
     key = store.keys.keys.sqlcipher_key
-    copy.export(store.db.engine, older / "moneykata-before-0009-t.db", key)
-    shutil.copy2(keyed_config.keyring_path, older / "moneykata-before-0009-t.keyring")
+    copy.export(store.db.engine, older / "moolakata-before-0009-t.db", key)
+    shutil.copy2(keyed_config.keyring_path, older / "moolakata-before-0009-t.keyring")
     aside = keyed_config.data_dir / "before-restore-20261001-000000"
     aside.mkdir()
-    copy.export(store.db.engine, aside / "moneykata.db", key)
+    copy.export(store.db.engine, aside / "moolakata.db", key)
     shutil.copy2(keyed_config.keyring_path, aside / "keyring")
     found = copies.copies(keyed_config)
     assert [(c.kind, c.name) for c in found] == [
         ("backup", b.name),
-        ("pre-upgrade", "moneykata-before-0009-t.db"),
+        ("pre-upgrade", "moolakata-before-0009-t.db"),
         ("before-restore", aside.name),
     ]
     assert all(copies.opens_with(c, store.keys) == "current" for c in found)
@@ -615,19 +615,19 @@ def test_the_copies_on_the_host_are_listed_rewrapped_reencrypted_and_removed(
     # Rotation through the running server (S15.7.1): the keyring under the new phrase at
     # once, one copy deleted now, and a re-encryption scheduled that will rewrite one copy and
     # leave the other.
-    from moneykata.store import reencrypt as journaled
+    from moolakata.store import reencrypt as journaled
 
     new_key = os.urandom(16)
     store2, outcomes = maintenance.rotate_running(
         keyed_config,
         store,
         new_key,
-        {b.name: "reencrypt", aside.name: "delete", "moneykata-before-0009-t.db": "leave"},
+        {b.name: "reencrypt", aside.name: "delete", "moolakata-before-0009-t.db": "leave"},
     )
     assert outcomes == {
         b.name: "re-encrypted at the next unlock",
         aside.name: "deleted",
-        "moneykata-before-0009-t.db": "left",
+        "moolakata-before-0009-t.db": "left",
     }
     assert journaled.journal(keyed_config)["why"] == "rotation"
     assert maintenance.verify_backup(keyed_config, master_key) == b, "still under its day's key"
@@ -643,12 +643,12 @@ def test_the_copies_on_the_host_are_listed_rewrapped_reencrypted_and_removed(
     found = {c.name: c for c in copies.copies(keyed_config)}
     first = journaled.report(keyed_config)["backup"]
     assert copies.opens_with(found[b.name], store3.keys) == "current"
-    assert copies.opens_with(found["moneykata-before-0009-t.db"], store3.keys) == "previous"
+    assert copies.opens_with(found["moolakata-before-0009-t.db"], store3.keys) == "previous"
     assert copies.opens_with(found[first], store3.keys) == "phrase", "the old data key"
     assert maintenance.verify_backup(keyed_config, new_key, b) == b
     assert journaled.report(keyed_config)["copies"] == {
         b.name: "re-encrypted",
-        "moneykata-before-0009-t.db": "left",
+        "moolakata-before-0009-t.db": "left",
         # The backup the re-encryption made first, under the replaced data key.
         journaled.report(keyed_config)["backup"]: "left",
     }
@@ -658,9 +658,9 @@ def test_the_copies_on_the_host_are_listed_rewrapped_reencrypted_and_removed(
     assert copies.forget_previous(keyed_config, master.fingerprint(master_key))
     assert master.read_keyring(keyed_config.keyring_path).previous == ()
     assert not copies.forget_previous(keyed_config, "mk-none")
-    copies.remove(found["moneykata-before-0009-t.db"])
+    copies.remove(found["moolakata-before-0009-t.db"])
     assert [c.kind for c in copies.copies(keyed_config)] == ["backup", "backup"]
-    assert not (older / "moneykata-before-0009-t.keyring").exists()
+    assert not (older / "moolakata-before-0009-t.keyring").exists()
 
 
 def test_a_pending_reencryption_under_another_phrase_is_refused_by_name(
@@ -669,7 +669,7 @@ def test_a_pending_reencryption_under_another_phrase_is_refused_by_name(
     """S15.7.2: a re-encryption interrupted, then a rotation offline: the next unlock says
     which phrase finishes it instead of crashing."""
 
-    from moneykata.store import reencrypt as journaled
+    from moolakata.store import reencrypt as journaled
 
     def crash(*a, **k):
         raise KeyboardInterrupt
@@ -694,12 +694,12 @@ def test_a_restore_after_a_reencryption_rewraps_the_receipts_and_resets_the_link
     """S15.6.8: the receipts stay where they are, under the data key a re-encryption made
     since the backup; the restore re-wraps them to the backup's, and the first unlock after it
     starts each link's copy again and reports what doesn't open."""
-    from moneykata import ids
-    from moneykata.app import Server
-    from moneykata.keys import files
-    from moneykata.runtime import check_restored
-    from moneykata.store import reencrypt as journaled
-    from moneykata.store.entities.links import Link
+    from moolakata import ids
+    from moolakata.app import Server
+    from moolakata.keys import files
+    from moolakata.runtime import check_restored
+    from moolakata.store import reencrypt as journaled
+    from moolakata.store.entities.links import Link
 
     keyed_config.receipts_dir.mkdir(parents=True)
     public = store.keys.keys.receipts.public_key()
@@ -734,7 +734,7 @@ def test_a_restore_under_an_earlier_phrase_asks_first(store, keyed_config, maste
     new_key = os.urandom(16)
     store2, _ = maintenance.rotate_running(keyed_config, store, new_key)
     store2.db.dispose()
-    from moneykata.store import reencrypt as journaled
+    from moolakata.store import reencrypt as journaled
 
     journaled.cancel(keyed_config)
     asked = []
@@ -754,12 +754,12 @@ def test_a_pre_upgrade_copy_restores_like_a_backup(store, keyed_config, master_k
     older = keyed_config.data_dir / "pre-upgrade"
     older.mkdir()
     key = store.keys.keys.sqlcipher_key
-    copy.export(store.db.engine, older / "moneykata-before-0009-t.db", key)
-    shutil.copy2(keyed_config.keyring_path, older / "moneykata-before-0009-t.keyring")
+    copy.export(store.db.engine, older / "moolakata-before-0009-t.db", key)
+    shutil.copy2(keyed_config.keyring_path, older / "moolakata-before-0009-t.keyring")
     with store.db.tx() as s:
         new_user(s, "bob")
     store.db.dispose()
-    maintenance.restore(keyed_config, older / "moneykata-before-0009-t.db", master_key)
+    maintenance.restore(keyed_config, older / "moolakata-before-0009-t.db", master_key)
     again = maintenance.open_store(keyed_config, master_key)
     with again.db.read() as s:
         assert [u.username for u in s.scalars(select(User))] == ["alice"]
@@ -771,7 +771,7 @@ def test_an_offline_backup_needs_the_server_stopped_and_changes_nothing(
 ):
     """S15.4.7: on the host, with the server stopped: the lock taken, read only, nothing
     pending run and nothing migrated."""
-    from moneykata.store import reencrypt as journaled
+    from moolakata.store import reencrypt as journaled
 
     store.db.dispose()
     journaled.schedule(keyed_config, {}, None, "settings")
@@ -897,8 +897,8 @@ def test_two_backups_in_one_second_take_two_names(store, keyed_config, master_ke
     at = dt.datetime(2026, 10, 18, 4, 3, 38, 250000, tzinfo=dt.UTC)
     first = maintenance.backup(keyed_config, store, now=at)
     second = maintenance.backup(keyed_config, store, now=at.replace(microsecond=750000))
-    assert first.name == "moneykata-20261018-040338"
-    assert second.name == "moneykata-20261018-040339"
+    assert first.name == "moolakata-20261018-040338"
+    assert second.name == "moolakata-20261018-040339"
     for b in (first, second):
         maintenance.verify_backup(keyed_config, master_key, b)
     assert maintenance.made_of(second) == at.replace(second=39, microsecond=750000)
@@ -909,7 +909,7 @@ def test_a_backup_renamed_to_another_time_is_refused(store, keyed_config, master
     # newer one's name passes for nothing.
     made = maintenance.backup(keyed_config, store)
     assert maintenance.made_of(made).replace(microsecond=0).strftime("%Y%m%d-%H%M%S") in made.name
-    renamed = made.with_name("moneykata-20991231-235959")
+    renamed = made.with_name("moolakata-20991231-235959")
     made.rename(renamed)
     with pytest.raises(RefuseStart, match="not when its name says"):
         maintenance.verify_backup(keyed_config, master_key, renamed)

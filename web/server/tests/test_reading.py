@@ -11,9 +11,9 @@ from conftest import make_user, sign_in
 from PIL import Image
 from test_receipts import upload
 
-from moneykata.dev.seed_receipts import draw
-from moneykata.receipts import ocr, parser
-from moneykata.receipts.reading import Reader, Worker
+from moolakata.dev.seed_receipts import draw
+from moolakata.receipts import ocr, parser
+from moolakata.receipts.reading import Reader, Worker
 
 TODAY = dt.date(2026, 10, 13)
 
@@ -285,7 +285,7 @@ def test_fixture_receipts_stay_above_the_accuracy_floor():
 def test_the_worker_gives_up_the_network_and_its_environment(tmp_path):
     """S9.8.4.2: no network socket (seccomp), no environment, and the data directory closed
     where the kernel has Landlock; it says which it holds."""
-    from moneykata import sandbox
+    from moolakata import sandbox
 
     (tmp_path / "secret").write_text("x")
     w = Worker(tmp_path)
@@ -304,8 +304,8 @@ def test_the_worker_gives_up_the_network_and_its_environment(tmp_path):
 
 def test_an_answer_out_of_shape_is_refused(monkeypatch):
     """The server checks every field of what the worker answers, never trusting its shape."""
-    from moneykata import parsing
-    from moneykata.importers import parsed
+    from moolakata import parsing
+    from moolakata.importers import parsed
 
     w = Worker()
     monkeypatch.setattr(
@@ -334,7 +334,7 @@ def test_the_server_can_be_made_non_dumpable():
     import sys
 
     code = (
-        "import ctypes; from moneykata import sandbox; sandbox.not_dumpable();"
+        "import ctypes; from moolakata import sandbox; sandbox.not_dumpable();"
         "libc = ctypes.CDLL(None); print(libc.prctl(3, 0, 0, 0, 0))"
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
@@ -343,7 +343,7 @@ def test_the_server_can_be_made_non_dumpable():
 
 def test_a_pdf_page_is_drawn_within_the_pixel_cap():
     # S9.8.4.3: a page of any size is never drawn bigger than an image may be.
-    from moneykata.receipts import ocr
+    from moolakata.receipts import ocr
 
     class Page:
         def get_size(self):

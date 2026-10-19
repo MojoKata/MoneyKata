@@ -8,7 +8,7 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import clock
+from moolakata import clock
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 
@@ -326,7 +326,7 @@ def test_last_years_book_waits_for_every_filer_and_an_added_account_for_its_adde
     assert [a["name"] for a in r.json()["accounts"]] == ["Emma's custodial"]
     # Alice names Bob; until he accepts, the book has nothing of his 2025.
     joint = book(alice, 2026, [a_id, b_id], fromLastYear=True)
-    from moneykata.store.entities.taxes import TaxBook, TaxBookAccount
+    from moolakata.store.entities.taxes import TaxBook, TaxBookAccount
 
     with server.db.read() as s:
         assert s.query(TaxBookAccount).filter_by(bookId=joint["id"]).count() == 0
@@ -365,7 +365,7 @@ def test_a_due_date_skips_weekends_and_legal_holidays():
     # 2018, 2022 and 2023.
     import datetime as dt
 
-    from moneykata.taxes.dates import next_business_day
+    from moolakata.taxes.dates import next_business_day
 
     got = [next_business_day(dt.date(y, 4, 15)) for y in (2017, 2018, 2022, 2023, 2026)]
     assert got == [

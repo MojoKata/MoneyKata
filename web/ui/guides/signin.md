@@ -10,7 +10,7 @@ Ten wrong passwords in 15 minutes lock the username for a while.
 
 ## Code
 
-When two-step sign-in is on, the six-digit code your authenticator app shows for MoneyKata. A new
+When two-step sign-in is on, the six-digit code your authenticator app shows for MoolaKata. A new
 one comes every 30 seconds, and each works once. Wrong codes count like wrong passwords, and the
 fifth wrong one ends the sign-in: start again with your password.
 

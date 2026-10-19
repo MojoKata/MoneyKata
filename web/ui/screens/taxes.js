@@ -245,7 +245,7 @@ function Summary({ b, done }) {
           basis).</p>`}</div>
     </div>
     <${Dependents} b=${b} done=${done} />
-    <p class="small dim mt">MoneyKata gathers what a preparer or tax software needs. It never
+    <p class="small dim mt">MoolaKata gathers what a preparer or tax software needs. It never
       computes the tax, chooses a filing status, or files.</p>
   `;
 }
@@ -413,7 +413,7 @@ function DependentDialog({ close, b, d }) {
               against the Form 8615 threshold.</div></div>`
         : null}
       <p class="small dim">Each dependent's age on Dec 31 shows in the panels: under 17, under 13,
-        and who ages out this year. MoneyKata doesn't decide who qualifies.</p>
+        and who ages out this year. MoolaKata doesn't decide who qualifies.</p>
       <${FormError} error=${e} />
     </${Dialog}>
   `;
@@ -773,7 +773,7 @@ function FilingDialog({ close, b, f: filing }) {
         </div>
         <div class="row">
           <${Field} label="Filing status" id="filing-status" error=${errAt(e, 'filingStatus')}
-            hint="As filed. MoneyKata never chooses it."><${Select} value=${f.filingStatus}
+            hint="As filed. MoolaKata never chooses it."><${Select} value=${f.filingStatus}
             onChange=${set('filingStatus')} options=${[
               ['', 'Not chosen yet'],
               ...statuses.map((

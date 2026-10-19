@@ -5,11 +5,11 @@ beside it."""
 
 import pytest
 
-from moneykata import paths
+from moolakata import paths
 
 pytestmark = pytest.mark.browser
 
-PAGE = paths.ROOT / "docs" / "mockups" / "MoneyKata-app.html"
+PAGE = paths.ROOT / "docs" / "mockups" / "MoolaKata-app.html"
 LOCAL = ("file:", "blob:", "data:")
 
 

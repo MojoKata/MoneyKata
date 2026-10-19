@@ -42,7 +42,7 @@
    the data directory (S14.6). Its file is kept for as long as its category says, shown on the
    receipt as *Kept until…* or *Kept for ever*, and the receipt's **Keep** toggle holds it for
    ever (S14.10).
-8. **Reading receipts (OCR)**: MoneyKata reads the date, total and merchant from each receipt
+8. **Reading receipts (OCR)**: MoolaKata reads the date, total and merchant from each receipt
    **on the server, with RapidOCR**, and suggests the transaction it belongs to. Nothing
    leaves the server, and no external service, model download or GPU is involved.
    1. **What it produces**: the receipt's full text, and **suggested fields**: date, total,
@@ -63,7 +63,7 @@
          receipts are within what these models are trained for.
       4. **Lines are put in reading order** from their boxes, and amounts that the
          recognizer split are joined (`14 2.18` → `142.18`).
-      5. **The field parser** (MoneyKata's own code, rules plus tests):
+      5. **The field parser** (MoolaKata's own code, rules plus tests):
          1. **total**: the amount on a line labelled TOTAL, AMOUNT DUE, BALANCE DUE, GRAND
             TOTAL or similar, skipping SUBTOTAL, TAX, CHANGE, CASH, SAVINGS and TIP lines,
             preferring the last such line; failing that, the largest amount;

@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from moneykata.app import Server, create_app
-from moneykata.config import Config
+from moolakata.app import Server, create_app
+from moolakata.config import Config
 
 
 def test_every_response_carries_the_security_headers(bare_client):
@@ -52,7 +52,7 @@ def test_healthz_says_starting_until_ready(config):
 def test_forwarded_headers_only_from_trusted_proxies(config):
     import ipaddress
 
-    from moneykata.middleware import ClientAddress
+    from moolakata.middleware import ClientAddress
 
     seen = {}
 
@@ -83,7 +83,7 @@ def test_an_outbound_client_always_verifies_tls():
 
     import pytest
 
-    from moneykata import net
+    from moolakata import net
 
     with pytest.raises(TypeError):
         net.Client(net.Guard(), verify=False)
@@ -96,7 +96,7 @@ def test_uploads_in_flight_are_capped_per_caller(server, monkeypatch):
     # N9: at most 100 MB arriving at once for one caller (S13.7.6), here a smaller cap.
     from conftest import make_user, sign_in
 
-    from moneykata import middleware
+    from moolakata import middleware
 
     make_user(server, "alice")
     c = sign_in(server, "alice")
@@ -108,7 +108,7 @@ def test_uploads_in_flight_are_capped_per_caller(server, monkeypatch):
 
 
 def test_an_ipv6_address_counts_by_its_64():
-    from moneykata.ratelimit import address_key
+    from moolakata.ratelimit import address_key
 
     assert address_key("2001:db8:1:2::5") == address_key("2001:db8:1:2:ffff::1")
     assert address_key("2001:db8:1:2::5") != address_key("2001:db8:1:3::5")
@@ -117,7 +117,7 @@ def test_an_ipv6_address_counts_by_its_64():
 
 def test_every_problem_is_logged_by_its_id_status_and_code(bare_client, caplog):
     # S13.7.8: a refusal's id is in the log with its status and code, never its detail.
-    with caplog.at_level("INFO", logger="moneykata.errors"):
+    with caplog.at_level("INFO", logger="moolakata.errors"):
         r = bare_client.get("/ui/api/no-such-thing")
     assert r.status_code == 404
     line = f"problem {r.json()['errorId']} 404 not-found"

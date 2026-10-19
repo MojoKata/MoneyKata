@@ -11,7 +11,7 @@ and the next one when it fails.
 
 ## Add a source
 
-Every source MoneyKata ships. One that needs a key can't be enabled until its key is set.
+Every source MoolaKata ships. One that needs a key can't be enabled until its key is set.
 
 ## Enabled {#enabled}
 

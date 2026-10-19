@@ -51,7 +51,7 @@ jobs:
           version="$(cat web/VERSION)"
           owner="${GITHUB_REPOSITORY_OWNER,,}"
           echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-          for image in moneykata moneykata-connector; do
+          for image in moolakata moolakata-connector; do
             docker tag "$image:$version-smoke" "ghcr.io/$owner/$image:$version-${{ matrix.arch }}"
             docker push --quiet "ghcr.io/$owner/$image:$version-${{ matrix.arch }}"
           done
@@ -77,7 +77,7 @@ jobs:
           owner="${GITHUB_REPOSITORY_OWNER,,}"
           echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           echo "registry=ghcr.io/$owner" >> "$GITHUB_OUTPUT"
-          for image in moneykata moneykata-connector; do
+          for image in moolakata moolakata-connector; do
             ref="ghcr.io/$owner/$image"
             docker buildx imagetools create -t "$ref:$version" "$ref:$version-amd64" "$ref:$version-arm64"
             digest="$(docker buildx imagetools inspect "$ref:$version" --format '{{json .Manifest}}' | jq -r .digest)"
@@ -86,12 +86,12 @@ jobs:
       - name: attest the server's image
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-name: ${{ steps.join.outputs.registry }}/moneykata
-          subject-digest: ${{ steps.join.outputs.moneykata }}
+          subject-name: ${{ steps.join.outputs.registry }}/moolakata
+          subject-digest: ${{ steps.join.outputs.moolakata }}
           push-to-registry: true
       - name: attest the connector's image
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-name: ${{ steps.join.outputs.registry }}/moneykata-connector
-          subject-digest: ${{ steps.join.outputs.moneykata_connector }}
+          subject-name: ${{ steps.join.outputs.registry }}/moolakata-connector
+          subject-digest: ${{ steps.join.outputs.moolakata_connector }}
           push-to-registry: true

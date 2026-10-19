@@ -5,10 +5,10 @@ import datetime as dt
 import pytest
 from conftest import make_user, sign_in
 
-from moneykata import alerts, clock, ids, settings
-from moneykata.store.entities.accounts import Account, Import
-from moneykata.store.entities.core import TaskRun
-from moneykata.store.entities.prices import PriceSource
+from moolakata import alerts, clock, ids, settings
+from moolakata.store.entities.accounts import Account, Import
+from moolakata.store.entities.core import TaskRun
+from moolakata.store.entities.prices import PriceSource
 
 T0 = dt.datetime(2026, 10, 13, 12, 0, tzinfo=dt.UTC)
 
@@ -169,12 +169,12 @@ def test_the_phrase_check_comes_due_after_a_year(server, admin_client, frozen):
     clock.fix(created + dt.timedelta(days=366))
     assert sorted(a.kind for a in alerts.evaluate(server)) == ["key-rotation", "phrase-check"]
     # S15.6.5: every unlock is a check as well, so one resolves it.
-    from moneykata import activity
+    from moolakata import activity
 
     with server.db.tx() as s:
         activity.record(s, "key.unlocked", actor=None, for_admins=True)
     alerts.evaluate(server)
-    from moneykata.store.entities.alerts import Alert
+    from moolakata.store.entities.alerts import Alert
 
     with server.db.read() as s:
         still = {a.kind for a in s.query(Alert).filter(Alert.resolvedAt.is_(None))}
@@ -211,7 +211,7 @@ def test_an_option_expiring_within_a_week_and_a_pledge_due(server, frozen):
     assert titles == ["MSFT 16OCT26 480 P expires in 3 days"], titles
     at(days=13)  # Oct 26: the month's pledge is due; the option has expired
     assert "pledge-due" in [a.kind for a in alerts.evaluate(server)]
-    from moneykata.store.entities.alerts import Alert
+    from moolakata.store.entities.alerts import Alert
 
     with server.db.read() as s:
         open_ = {a.kind for a in s.query(Alert).filter(Alert.resolvedAt.is_(None))}
@@ -235,7 +235,7 @@ def test_each_alert_is_emailed_once_when_smtp_is_set(server, admin_client, froze
         s.get(TaskRun, "backups").error = "disk full again"
     alerts.evaluate(server)
     alerts.evaluate(server)
-    assert _outbox_subjects(server) == ["MoneyKata alert: Backup failed"]
+    assert _outbox_subjects(server) == ["MoolaKata alert: Backup failed"]
 
 
 def test_the_daily_summary_goes_once_a_day_after_its_time(server, frozen):
@@ -265,19 +265,19 @@ def test_the_daily_summary_goes_once_a_day_after_its_time(server, frozen):
     alerts.evaluate(server)
     # 12:00 UTC is 08:00 in New York, past the 07:00 default.
     with server.db.tx() as s:
-        from moneykata.store.entities.users import User
+        from moolakata.store.entities.users import User
 
         s.get(User, alice.id).timeZone = "America/New_York"
     assert alerts.daily_summaries(server) == 1
     assert alerts.daily_summaries(server) == 0, "once a day"
-    assert _outbox_subjects(server)[-1] == "MoneyKata: 1 new alert"
+    assert _outbox_subjects(server)[-1] == "MoolaKata: 1 new alert"
     at(days=1)
     assert alerts.daily_summaries(server) == 0, "none on a day without new alerts"
 
 
 def test_reading_without_its_file_sandbox_alerts_admins(server, admin_client, frozen):
     # S9.8.4.2: a host without Landlock keeps reading on, and admins are told while it lasts.
-    from moneykata import parsing
+    from moolakata import parsing
 
     alerts.evaluate(server)
     assert listed(admin_client)["open"] == []
@@ -325,7 +325,7 @@ def test_a_holding_valued_from_an_old_statement_alerts_its_owner(server, frozen)
     # S4.3, S12.11.1.2: a holding valued from a statement more than 90 days old.
     from test_accounts import new_account
 
-    from moneykata.store.entities.accounts import Holding, Instrument
+    from moolakata.store.entities.accounts import Holding, Instrument
 
     with server.db.tx() as s:
         settings.put(s, "sessionIdleHours", 168, None)

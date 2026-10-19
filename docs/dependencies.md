@@ -1,7 +1,7 @@
 # Dependencies
 
-Every library MoneyKata runs with: what it is for, why it was chosen, what it could do that
-MoneyKata must not (above all, reach out of the house), and when to look at it again. The
+Every library MoolaKata runs with: what it is for, why it was chosen, what it could do that
+MoolaKata must not (above all, reach out of the house), and when to look at it again. The
 requirements set the rules (S17.2 the server's, S17.3.1 the browser's, S13.5 egress); this
 page is the register.
 
@@ -24,7 +24,7 @@ server's own HTTP client, not native code or a library's own client. So:
    files, which costs nothing. The audit itself runs when a dependency changes, not on every
    test cycle.
 3. **A finding is recorded here, with its switch.** A library that *can* reach out is marked
-   **egress** in its Risks column with what turns it off and where MoneyKata does so; a
+   **egress** in its Risks column with what turns it off and where MoolaKata does so; a
    library that is *known* to send telemetry is marked **telemetry** as well, and is the first
    to revisit when an alternative appears.
 
@@ -53,16 +53,16 @@ for amd64 and arm64 (S17.8.1). *Direct* means named in `pyproject.toml`.
 | segno | 1.6.6 | the two-step QR code (S10.1.6) | pure Python, no image dependency | none known | — |
 | pypdfium2 | 5.14.0 | a PDF's text layer and first-page render (S9.5, S9.8.2) | PDFium is the engine browsers ship; wheels for both architectures | parses untrusted PDFs: only in the worker, with its limits | on PDFium advisories |
 | pi-heif | 1.4.0 | reading iPhone photos (HEIC) (S9.1) | decodes only, smaller than pillow-heif | libheif parses untrusted input: worker only | — |
-| rapidocr | 3.10.0 | the OCR pipeline over the PP-OCR models (S9.8) | runs the models on ONNX Runtime with no service and no GPU; ships the models in its wheel | **egress**: downloads a model when its path is missing (`requests`); MoneyKata names every model's path and checks its hash first (S9.8.3), so it never does. Brings opencv, shapely, pyclipper, omegaconf, tqdm, requests, six, colorlog | when a smaller English-only model ships, or an engine without the `requests` and `tqdm` baggage |
-| onnxruntime | 1.31.0 | runs the OCR models on the CPU (S9.8.2) | the runtime RapidOCR targets; CPU wheels for amd64 and arm64 | **egress, telemetry**: carries Microsoft's 1DS telemetry client with its collector URL (`mobile.events.data.microsoft.com`) compiled in. MoneyKata calls `disable_telemetry_events()` before the first session (`receipts/ocr.py`); a probe of the image saw no connection either way. In the image, where the home directory is unwritable, the import logs *Failed to persist telemetry device ID; using an in-memory identifier* once per worker start: expected, and better than the file it wanted to write. First on the list to replace | each release: whether the wheel's telemetry became opt-out at run time, and whether a build without it (or another runtime) is available |
+| rapidocr | 3.10.0 | the OCR pipeline over the PP-OCR models (S9.8) | runs the models on ONNX Runtime with no service and no GPU; ships the models in its wheel | **egress**: downloads a model when its path is missing (`requests`); MoolaKata names every model's path and checks its hash first (S9.8.3), so it never does. Brings opencv, shapely, pyclipper, omegaconf, tqdm, requests, six, colorlog | when a smaller English-only model ships, or an engine without the `requests` and `tqdm` baggage |
+| onnxruntime | 1.31.0 | runs the OCR models on the CPU (S9.8.2) | the runtime RapidOCR targets; CPU wheels for amd64 and arm64 | **egress, telemetry**: carries Microsoft's 1DS telemetry client with its collector URL (`mobile.events.data.microsoft.com`) compiled in. MoolaKata calls `disable_telemetry_events()` before the first session (`receipts/ocr.py`); a probe of the image saw no connection either way. In the image, where the home directory is unwritable, the import logs *Failed to persist telemetry device ID; using an in-memory identifier* once per worker start: expected, and better than the file it wanted to write. First on the list to replace | each release: whether the wheel's telemetry became opt-out at run time, and whether a build without it (or another runtime) is available |
 
 ### Transitive, worth knowing
 
 | Library | Version | Pulled by | Risks |
 |---|---|---|---|
 | opencv-python-headless | 5.0.0.93 | rapidocr | native; parses images, but only after Pillow has decoded them; no network code known |
-| requests, urllib3 | 2.34.2, 2.8.0 | rapidocr | **egress**: a general HTTP client; nothing in MoneyKata calls it; rapidocr uses it only for a model download that never happens (above) |
-| tqdm | 4.70.1 | rapidocr | progress bars; **egress** by name only: its optional notifiers for Slack, Telegram and Discord, which nothing in MoneyKata or rapidocr imports |
+| requests, urllib3 | 2.34.2, 2.8.0 | rapidocr | **egress**: a general HTTP client; nothing in MoolaKata calls it; rapidocr uses it only for a model download that never happens (above) |
+| tqdm | 4.70.1 | rapidocr | progress bars; **egress** by name only: its optional notifiers for Slack, Telegram and Discord, which nothing in MoolaKata or rapidocr imports |
 | opentelemetry-api | from `uv.lock` | fastapi | the tracing API alone, which records nothing and sends nothing without an SDK and an exporter, neither of which is installed; its files name telemetry, which is what the audit's word scan flags |
 | email-validator, dnspython | from `uv.lock` | fastapi (its email field types) | dnspython can look up DNS; email validation's deliverability check, which would, is never asked for |
 | omegaconf, pyyaml | 2.4.0, 6.0.3 | rapidocr | config parsing; none |

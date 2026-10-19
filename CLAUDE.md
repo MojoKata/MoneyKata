@@ -1,8 +1,8 @@
-# MoneyKata: working rules
+# MoolaKata: working rules
 
 ## Keep the mockup in step with the requirements
 
-`docs/mockups/MoneyKata-mock.html` is the reference for every screen. Any change to
+`docs/mockups/MoolaKata-mock.html` is the reference for every screen. Any change to
 the requirements (`docs/requirements/`) that touches what a user sees or does (a screen, field, button, dialog,
 setting, state, message, or the order of any of them) updates the mockup **in the same
 change**. That includes its help-pane guides (`GUIDES` in the file), its sample data, and the
@@ -24,13 +24,13 @@ The web app and its mockup are for desktop browsers. Phone layouts are not check
 phones will get a separate, focused PWA later (requirements S12.8).
 
 While the app is being built there are two mockups (requirements S12.9): the hand-written
-`MoneyKata-mock.html`, which stays the design reference and is updated with every UI-facing
-change, and `MoneyKata-app.html`, generated from the app by `web/ui/mockup/build.py` for the
+`MoolaKata-mock.html`, which stays the design reference and is updated with every UI-facing
+change, and `MoolaKata-app.html`, generated from the app by `web/ui/mockup/build.py` for the
 screens built so far, which `web/check` keeps current.
 
 ## Requirements are a statement, not a changelog
 
-The requirements (`docs/requirements/`) say what MoneyKata is and does, in the present tense.
+The requirements (`docs/requirements/`) say what MoolaKata is and does, in the present tense.
 They carry no dates, versions or status lines, no "now", "no longer", "revised", "proposed"
 or "approved", and no record of what changed: git holds the history. `docs/schema.md` follows
 the same rule. The repository's root README is where repo, build and product status goes,
@@ -57,7 +57,7 @@ also without dates or words of approval.
 
 ## Free standing
 
-This repository is self-contained. Docs, mockups and code describe MoneyKata in its own terms
+This repository is self-contained. Docs, mockups and code describe MoolaKata in its own terms
 and never refer to other projects as the source of a design or behaviour.
 
 ## Vendored browser libraries

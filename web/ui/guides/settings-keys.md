@@ -13,7 +13,7 @@ A short name for the key that reveals nothing about it, such as `mk-3f9a…c21e`
 ## Unlocked
 
 When the phrase was last entered. The server locks again at every restart, until someone
-enters the phrase on the locked screen or with `moneykata keys unlock` on the host.
+enters the phrase on the locked screen or with `moolakata keys unlock` on the host.
 
 ## Recovery phrase
 
@@ -22,9 +22,9 @@ nothing shows it again: without it nothing here, no backup, and no restart of th
 
 ## Verify key
 
-Type the 12 words from one of your copies: MoneyKata checks that they open this server's key,
+Type the 12 words from one of your copies: MoolaKata checks that they open this server's key,
 changes nothing, and records the check. Do it once a year for each copy, and whenever you make a
-new one; the yearly alert opens it. `moneykata keys verify` on the host does the same.
+new one; the yearly alert opens it. `moolakata keys verify` on the host does the same.
 
 ## Test
 
@@ -41,7 +41,7 @@ nothing needs it; destroy its sheet and password-manager entry then.
 
 ## Copies on this host
 
-Every copy MoneyKata can see: the backups in the backup directory, the copies made before a
+Every copy MoolaKata can see: the backups in the backup directory, the copies made before a
 migration (`pre-upgrade/`) and what a restore set aside (`before-restore-*/`). Each carries its
 own keyring and says how it opens: with this phrase, with this phrase but an earlier data key,
 or only with a previous phrase. **Remove** deletes one, after your password. The host's own
@@ -76,4 +76,4 @@ For when the data key may have been read: a memory dump or a debugging session o
 or a master key or recovery phrase that leaked while any copy of the data directory or a backup
 could have been taken with it. It closes nothing made before it: every earlier copy still opens
 with the key it was made under, so a leak also means deleting those copies wherever they are. It
-doesn't change the master key, which is rotated on the host with `moneykata keys rotate`.
+doesn't change the master key, which is rotated on the host with `moolakata keys rotate`.

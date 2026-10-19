@@ -1,15 +1,15 @@
-# MoneyKata
+# MoolaKata
 
 A self-hosted personal finance server for a household: bank, card, brokerage, retirement,
 529 and bitcoin accounts in one place, kept current from files the household downloads
 (OFX/QFX, CSV, PDF statements and photos of them, read on the server). It charts portfolios,
 tracks options, projects retirement and education goals, keeps budgets, gifts, giving,
 receipts and tax books, and prepares the numbers a tax return needs. Several people share one
-server, and households on other MoneyKata servers can share with named people here, read
+server, and households on other MoolaKata servers can share with named people here, read
 only, in a window of their own.
 
 **Status:** the nine milestones of the first release (requirements S17.9.1–S17.9.9) are built:
-the server in `web/`, the MoneyKata Connector in `connector/`. Milestones 8 and 9 built what the
+the server in `web/`, the MoolaKata Connector in `connector/`. Milestones 8 and 9 built what the
 second review of the requirements against the code found the release still needed
 ([`docs/reviews/initial-code-review-2.md`](docs/reviews/initial-code-review-2.md)); its
 section 12 says where each finding went, which no review has checked yet, and the choices
@@ -19,18 +19,18 @@ requirements' README.
 
 ## Where to start
 
-1. [`docs/requirements/`](docs/requirements/README.md): what MoneyKata is and does, in the
+1. [`docs/requirements/`](docs/requirements/README.md): what MoolaKata is and does, in the
    present tense. Its README holds the decisions (R1), the terminology (R2) and the design
    principles (R3), and lists the sections S1–S18, the gaps not yet specified (G1, G2, …)
    and the open questions (Q1, Q2, …). S17 has the stack, the layout and the milestones
-   (S17.9: the order to build in); S18 is the MoneyKata Connector, a second service.
+   (S17.9: the order to build in); S18 is the MoolaKata Connector, a second service.
 2. [`docs/schema.md`](docs/schema.md): the database conventions: naming, prefixed UUIDv7
    ids, soft deletes and the table prefixes.
-3. [`docs/mockups/MoneyKata-mock.html`](docs/mockups/MoneyKata-mock.html): the clickable
+3. [`docs/mockups/MoolaKata-mock.html`](docs/mockups/MoolaKata-mock.html): the clickable
    mockup, the design reference for every screen. Open it in a browser from disk; it sends
    nothing anywhere. The purple **MOCK** pill jumps to any screen, switches users, changes
    state and opens every dialog. **F1** toggles the help pane.
-4. [`docs/mockups/MoneyKata-app.html`](docs/mockups/MoneyKata-app.html): the mockup generated
+4. [`docs/mockups/MoolaKata-app.html`](docs/mockups/MoolaKata-app.html): the mockup generated
    from the app for the screens built so far (`web/dev.sh mockup`), on recorded sample data.
    It opens from disk too; its **MOCK** pill jumps to screens and dialogs and switches users.
    The help guides' screenshots are made from it (`web/dev.sh help-shots`).
@@ -75,7 +75,7 @@ Releases publish the images to `ghcr.io/mojokata` (`.github/workflows/release.ym
 tag); to build the server's image yourself, from the repository's root:
 
 ```
-docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
+docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:$(cat web/VERSION) --load .
 ```
 
 and `web/install/compose.yaml` is the example to run it from. A new server welcomes its first

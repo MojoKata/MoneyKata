@@ -57,7 +57,7 @@
       2. **Each model states its source and record.** Stock-to-flow has run below its own
          band since 2022; the targets of Saylor and ARK are forecasts by people with a stake
          in the outcome; the curve fits describe the past and say nothing about why it
-         should continue. MoneyKata shows these as models others publish, not as its own
+         should continue. MoolaKata shows these as models others publish, not as its own
          view, and not as advice (R1.16).
       3. **Their figures ship with the app**, dated and with their source, in Settings ›
          Tax tables, and are updated with it (a new ARK target, a refit of the power law).

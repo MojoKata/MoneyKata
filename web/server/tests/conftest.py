@@ -5,20 +5,20 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 
-from moneykata import exactjson
-from moneykata.app import Server, create_app
-from moneykata.auth import passwords
-from moneykata.auth import users as accounts
-from moneykata.config import Config
-from moneykata.keys import cli as keys_cli
-from moneykata.store.maintenance import open_store
+from moolakata import exactjson
+from moolakata.app import Server, create_app
+from moolakata.auth import passwords
+from moolakata.auth import users as accounts
+from moolakata.config import Config
+from moolakata.keys import cli as keys_cli
+from moolakata.store.maintenance import open_store
 
 
 @pytest.fixture(autouse=True)
 def file_sandbox_shown():
     """What a test sees doesn't depend on the kernel it runs on: the reader's file sandbox is
     shown as there (S9.8.4.2), unless the test pins it otherwise."""
-    from moneykata import parsing
+    from moolakata import parsing
 
     parsing.PINNED = True
     yield
@@ -80,7 +80,7 @@ LOOPBACK = ("127.0.0.1", 50000)
 
 @pytest.fixture
 def server(store, keyed_config):
-    from moneykata.store.repos.ledger import ensure_categories
+    from moolakata.store.repos.ledger import ensure_categories
 
     srv = Server(config=keyed_config, store=store, ready=True)
     with srv.db.tx() as s:
@@ -171,8 +171,8 @@ def make_user(
     born: int | None = None,
 ):
     """A user who has joined, made straight in the database, with their person."""
-    from moneykata import ids, people
-    from moneykata.store.entities.users import User, UserGroup
+    from moolakata import ids, people
+    from moolakata.store.entities.users import User, UserGroup
 
     with srv.db.tx() as s:
         u = User(
@@ -208,7 +208,7 @@ def stale(srv) -> None:
 
     from sqlalchemy import select
 
-    from moneykata.store.entities.users import Session
+    from moolakata.store.entities.users import Session
 
     with srv.db.tx() as s:
         for row in s.scalars(select(Session)):

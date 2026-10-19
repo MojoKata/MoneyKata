@@ -1,4 +1,4 @@
-"""Two MoneyKata servers in one test, their link calls wired to each other's app."""
+"""Two MoolaKata servers in one test, their link calls wired to each other's app."""
 
 import dataclasses
 from urllib.parse import urlsplit
@@ -6,13 +6,13 @@ from urllib.parse import urlsplit
 import httpx
 from fastapi.testclient import TestClient
 
-from moneykata import net
-from moneykata.app import Server, create_app
-from moneykata.config import Config
-from moneykata.keys import cli as keys_cli
-from moneykata.links import client as link_client
-from moneykata.store.maintenance import open_store
-from moneykata.store.repos.ledger import ensure_categories
+from moolakata import net
+from moolakata.app import Server, create_app
+from moolakata.config import Config
+from moolakata.keys import cli as keys_cli
+from moolakata.links import client as link_client
+from moolakata.store.maintenance import open_store
+from moolakata.store.repos.ledger import ensure_categories
 
 
 def make_server(tmp_path, name: str) -> Server:
@@ -87,7 +87,7 @@ def with_config(srv: Server, **kw) -> None:
 def admin_of(srv: Server, base: str) -> TestClient:
     """An admin signed in on that server's own UI: the first one, made as the welcome makes it
     (S10.1.2), and signed in again when it exists."""
-    from moneykata import settings
+    from moolakata import settings
 
     with srv.db.tx() as s:
         settings.put(s, "publicUrl", base, None)

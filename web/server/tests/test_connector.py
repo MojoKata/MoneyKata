@@ -1,4 +1,4 @@
-"""The MoneyKata Connector's side on the server (requirements S18.4–S18.8,
+"""The MoolaKata Connector's side on the server (requirements S18.4–S18.8,
 docs/connector-protocol.md): pairing from a one-time code, signed calls and signed answers,
 reports and what they are answered with, sealed credentials, file posts through the import,
 Settings › Connector, the address ranges of Settings › Network, and the alerts."""
@@ -9,12 +9,12 @@ import json
 import pytest
 from conftest import ORIGIN, make_user, new_client, sign_in
 
-from moneykata import alerts, clock, exactjson, ids, settings
-from moneykata.connector import PROTOCOL, manage
-from moneykata.links import keys, signing
-from moneykata.links.signing import Ed25519PrivateKey
-from moneykata.store.entities.accounts import Account, Import, Transaction
-from moneykata.store.entities.connector import Connection, Connector
+from moolakata import alerts, clock, exactjson, ids, settings
+from moolakata.connector import PROTOCOL, manage
+from moolakata.links import keys, signing
+from moolakata.links.signing import Ed25519PrivateKey
+from moolakata.store.entities.accounts import Account, Import, Transaction
+from moolakata.store.entities.connector import Connection, Connector
 
 OFX = b"""OFXHEADER:100
 DATA:OFXSGML
@@ -69,7 +69,7 @@ class FakeConnector:
         return r
 
     def pair(self, code: str, signed: bool = True):
-        from moneykata.connector.manage import SEALING_LABEL
+        from moolakata.connector.manage import SEALING_LABEL
 
         sealing = b"\x11" * 32
         signature = self.key.sign(SEALING_LABEL + sealing) if signed else b"\x00" * 64
@@ -95,7 +95,7 @@ def pair_code(admin) -> str:
     r = admin.post("/ui/api/settings/connector/pairings")
     assert r.status_code == 201, r.text
     out = r.json()
-    assert out["code"].startswith("mkp1.") and "moneykata-connector pair mkp1." in out["command"]
+    assert out["code"].startswith("mkp1.") and "moolakata-connector pair mkp1." in out["command"]
     return out["code"]
 
 
@@ -117,7 +117,7 @@ def test_a_connector_reporting_from_a_new_address_is_alerted_until_accepted(
     from conftest import ORIGIN
     from fastapi.testclient import TestClient
 
-    from moneykata import alerts
+    from moolakata import alerts
 
     paired.call("/connector/v1/report", {"locked": False, "connections": []})
     view = admin.get("/ui/api/settings/connector").json()
@@ -171,6 +171,39 @@ def test_an_unconfirmed_pairing_gets_no_credential_and_posts_no_file(server, adm
     assert "connector.confirmed" in [a.kind for a in activity_rows(server)]
 
 
+def test_a_report_names_its_page_and_the_answer_says_whether_confirmed(server, admin, client):
+    """S18.11.1, S18.11.3: the connector's page, from its reports, for Settings › Connector to
+    link to (an https host and port, nothing else); the answer says whether an admin confirmed
+    the pairing, which its page shows."""
+    fake = FakeConnector(server, client)
+    assert fake.pair(pair_code(admin)).status_code == 200
+
+    def report(**extra) -> dict:
+        r = fake.call("/connector/v1/report", {"locked": True, "connections": [], **extra})
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    page = "https://connector.griffin.home:37374"
+    assert report(page=page)["confirmed"] is False
+    assert admin.get("/ui/api/settings/connector").json()["page"] == page
+    for bad in (
+        "http://connector.lan:37374",
+        "https://u:p@connector.lan",
+        "https://connector.lan/somewhere",
+        "https://connector.lan:37374/?next=x",
+        "https://connector.lan:port",
+        "javascript:alert(1)",
+        "https://",
+        7,
+    ):
+        report(page=bad)
+        assert admin.get("/ui/api/settings/connector").json()["page"] is None, bad
+    assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
+    assert report(page=page)["confirmed"] is True
+    report()  # a connector that names no page any more
+    assert admin.get("/ui/api/settings/connector").json()["page"] is None
+
+
 def test_pairing_takes_the_code_once_and_records_the_keys(server, admin, client):
     fake = FakeConnector(server, client)
     hello = client.get("/connector/v1/hello").json()
@@ -216,7 +249,7 @@ def test_a_pairing_code_needs_the_address_and_expires(server, admin_client, admi
 def test_calls_are_signed_and_answers_are_signed_back(server, paired, client):
     r = paired.call("/connector/v1/report", {"locked": True, "connections": []})
     assert r.status_code == 200, r.text
-    assert r.json() == {"connections": [], "removed": []}
+    assert r.json() == {"connections": [], "removed": [], "confirmed": True}
     # Unsigned, a stranger's key, and a replay are refused (signed when there is a nonce).
     r = client.post("/connector/v1/report", json={}, headers={"Origin": ORIGIN})
     assert r.status_code == 403 and r.json()["code"] == "unsigned"
@@ -313,7 +346,7 @@ def test_a_report_updates_connections_and_answers_with_the_work_waiting(server, 
     assert (
         shown["credentialWaiting"] is True and shown["accounts"][0]["name"] == "Everyday Checking"
     )
-    # Taken: MoneyKata deletes its copy of the sealed credential, the box the call names
+    # Taken: MoolaKata deletes its copy of the sealed credential, the box the call names
     # (protocol §4.3.2); naming another leaves the one waiting.
     at = c["sealed"]["sealedAt"]
     r = paired.call(f"/connector/v1/connections/{cid}/credential/taken", {"sealedAt": "older"})
@@ -379,7 +412,7 @@ def test_a_posted_file_goes_through_the_import_once(server, paired):
     c = sign_in(server, "alice")
     acts = c.get("/ui/api/activity").json()["items"]
     mine = [a for a in acts if a.get("via")]
-    assert mine and mine[0]["via"] == "MoneyKata Connector, Alice's Schwab login"
+    assert mine and mine[0]["via"] == "MoolaKata Connector, Alice's Schwab login"
     assert "42.37" not in json.dumps(acts)
     # An account whose sync doesn't name this Connection is refused.
     r = paired.call(
@@ -467,7 +500,7 @@ def test_unpair_stops_every_connection_and_turns_sync_off(server, paired, admin,
 
 
 def test_pairing_and_unpairing_need_the_password_again(server, admin, monkeypatch):
-    from moneykata.ui import deps
+    from moolakata.ui import deps
 
     monkeypatch.setattr(deps, "REAUTH_MINUTES", 0)
     clock.fix(dt.datetime.now(dt.UTC) + dt.timedelta(minutes=1))
@@ -482,7 +515,7 @@ def test_the_connector_alerts_admins_when_locked_or_silent(server, paired, admin
     paired.call("/connector/v1/report", {"locked": True, "connections": []})
     alerts.evaluate(server)
     titles = [a["title"] for a in admin.get("/ui/api/alerts").json()["open"]]
-    assert "The MoneyKata Connector is locked" in titles
+    assert "The MoolaKata Connector is locked" in titles
     paired.call("/connector/v1/report", {"locked": False, "connections": []})
     alerts.evaluate(server)
     open_ = admin.get("/ui/api/alerts").json()["open"]
@@ -490,7 +523,7 @@ def test_the_connector_alerts_admins_when_locked_or_silent(server, paired, admin
     clock.fix(clock.now() + dt.timedelta(minutes=16))
     alerts.evaluate(server)
     open_ = admin.get("/ui/api/alerts").json()["open"]
-    assert any(a["title"] == "The MoneyKata Connector hasn't been heard from" for a in open_)
+    assert any(a["title"] == "The MoolaKata Connector hasn't been heard from" for a in open_)
     view = admin.get("/ui/api/settings/connector").json()
     assert view["silentForSeconds"] and view["silentForSeconds"] >= 60
 
@@ -569,7 +602,7 @@ def test_network_ranges_decide_who_reaches_each_path(server, admin):
         assert c.get("/link/v1/hello").status_code == 404
         assert c.get("/connector/v1/hello").status_code == 404
         assert c.get("/healthz").status_code == 200
-    from moneykata.middleware import AddressRanges
+    from moolakata.middleware import AddressRanges
 
     assert AddressRanges._allowed("192.168.1.7", ["192.168.1.7/32"])
     assert AddressRanges._allowed("::ffff:192.168.1.7", ["192.168.1.0/24"])
@@ -580,7 +613,7 @@ def test_network_ranges_decide_who_reaches_each_path(server, admin):
 
 
 def activity_rows(server):
-    from moneykata.store.entities.core import Activity
+    from moolakata.store.entities.core import Activity
 
     with server.db.read() as s:
         return list(s.query(Activity))
@@ -607,8 +640,8 @@ def test_unpair_ends_the_pairing_and_any_code_still_out(server, admin, client, p
 def test_a_new_address_stays_alerted_until_an_admin_accepts_it(server, admin, paired):
     # K20: the genuine connector reporting again from its own address doesn't clear a
     # thief's (S18.5.4).
-    from moneykata import alerts
-    from moneykata.connector import manage
+    from moolakata import alerts
+    from moolakata.connector import manage
 
     def report(address):
         with server.db.read() as s:
@@ -616,7 +649,7 @@ def test_a_new_address_stays_alerted_until_an_admin_accepts_it(server, admin, pa
         manage.apply_report(server, row, {"locked": False}, "0.1.0", 1, address=address)
 
     def moved() -> bool:
-        from moneykata.store.entities.alerts import Alert
+        from moolakata.store.entities.alerts import Alert
 
         alerts.evaluate(server)
         with server.db.read() as s:

@@ -1,7 +1,7 @@
 # The link protocol
 
-How two MoneyKata servers talk once their admins have linked them (requirements S11). This
-document is the protocol's statement; the code that speaks it is `web/server/src/moneykata/links/`.
+How two MoolaKata servers talk once their admins have linked them (requirements S11). This
+document is the protocol's statement; the code that speaks it is `web/server/src/moolakata/links/`.
 
 ## 1. Transport
 
@@ -42,7 +42,7 @@ document is the protocol's statement; the code that speaks it is `web/server/src
    | `MK-Link-Nonce` | 16 random bytes, base64url |
    | `MK-Link-Signature` | Ed25519 over the lines below, base64url |
    | `MK-Link-Protocol` | the protocol version the call speaks (section 5) |
-   | `MK-Link-Version` | the caller's MoneyKata version, for Settings to show |
+   | `MK-Link-Version` | the caller's MoolaKata version, for Settings to show |
 
    The signed text is these lines, joined by `\n`:
 
@@ -172,10 +172,10 @@ the receiving server keeps in its main database while the copy is locked (S11.9.
 | `removed` | registry | ids of items no longer shared |
 | `progress` | registry | in a large change's parts: `through`, the newest date the parts so far reach; `bytes`, what they hold; `total`, what the whole change holds |
 | `fetch` | registry | the ids of the receipts the part sends, so the receiver can fetch them (or take them from the `deliver` calls before it) while its copy is locked |
-| `sealed` | sealed | the rest, sealed to the receiver's `copyKey` in the streaming format of S11.9.6 under the label `moneykata link change`, its associated data naming the link (the sender's and the receiver's fingerprints, `<sender>><receiver>`, so a change sealed for one direction opens for no other) and `seq`, in unpadded base64url: each item's `name`; `docs`, documents added or changed (`itemId`, `path`, `viewer`, `body`); `docsRemoved`; `files`, receipts' files added, when their share includes them (their id, item, type, length, hash, thumbnail and what was read from them); and `filesRemoved` (unshared, or pruned at the source, S14.10.6) |
+| `sealed` | sealed | the rest, sealed to the receiver's `copyKey` in the streaming format of S11.9.6 under the label `moolakata link change`, its associated data naming the link (the sender's and the receiver's fingerprints, `<sender>><receiver>`, so a change sealed for one direction opens for no other) and `seq`, in unpadded base64url: each item's `name`; `docs`, documents added or changed (`itemId`, `path`, `viewer`, `body`); `docsRemoved`; `files`, receipts' files added, when their share includes them (their id, item, type, length, hash, thumbnail and what was read from them); and `filesRemoved` (unshared, or pruned at the source, S14.10.6) |
 | `signature` | — | Ed25519 by the sender's link key over the registry and the SHA-256 of `sealed`, as canonical JSON (keys sorted, no spaces) |
 
-A receipt's bytes are sealed by the source the same way, under the label `moneykata link
+A receipt's bytes are sealed by the source the same way, under the label `moolakata link
 receipt`, the associated data naming the link (as for a change) and the receipt, and cross in
 `deliver` or in the answer to `file`. The receiver keeps them as they came; its copy opens them
 when they are shown, and its type is found from the bytes then, never from the change.
@@ -221,14 +221,14 @@ admin reads out from their Settings › Linked servers.
 1. The protocol has one number, `1`, sent in `MK-Link-Protocol` on every call. A server
    answers the versions it lists as supported, and refuses any other with
    `protocol-unsupported`, naming those it speaks in `protocols` (a list of numbers), so the
-   admins learn which server needs updating. A newer MoneyKata keeps answering the older protocol for at least one release
+   admins learn which server needs updating. A newer MoolaKata keeps answering the older protocol for at least one release
    after it adds a new one.
 2. Within a protocol version, a message may gain fields: a receiver ignores fields it doesn't
    know, and a sender never relies on a new field being understood.
 3. Shared items carry their kind (section 6). An item of a kind this server doesn't know is
-   kept in the linked copy but not shown, and the window notes that a newer MoneyKata on the
+   kept in the linked copy but not shown, and the window notes that a newer MoolaKata on the
    other side shares something this one can't show yet.
-4. Each server shows the peer's MoneyKata version (from `MK-Link-Version`) in Settings ›
+4. Each server shows the peer's MoolaKata version (from `MK-Link-Version`) in Settings ›
    Linked servers.
 
 ## 6. Shared items

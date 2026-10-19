@@ -315,9 +315,9 @@ def test_reimports_match_by_cents_by_row_and_keep_a_repeated_id(server):
     first = upload(c, b["id"], "repeat.qfx", repeat)["result"]
     assert first["added"] == 5
     assert upload(c, b["id"], "repeat.qfx", repeat)["result"]["added"] == 0
-    from moneykata.ledger import reconcile
-    from moneykata.store.entities.accounts import Account
-    from moneykata.store.repos import ledger as repo
+    from moolakata.ledger import reconcile
+    from moolakata.store.entities.accounts import Account
+    from moolakata.store.repos import ledger as repo
 
     with server.db.read() as s:
         txns = repo.load(s, s.get(Account, b["id"])).transactions
@@ -369,8 +369,8 @@ def test_brokerage_ofx_makes_holdings(server):
 def test_option_trades_and_an_assignment_from_a_brokers_file(server):
     # B5: OFX option trades are the four option trades, and an assignment is settled with the
     # broker's own stock trade, its premium in the shares' basis; a re-import adds nothing.
-    from moneykata.store.entities.accounts import Account, Instrument, Transaction
-    from moneykata.store.repos import ledger as repo
+    from moolakata.store.entities.accounts import Account, Instrument, Transaction
+    from moolakata.store.repos import ledger as repo
 
     make_user(server, "alice")
     c = sign_in(server, "alice")
@@ -401,7 +401,7 @@ def test_option_trades_and_an_assignment_from_a_brokers_file(server):
 def test_a_sale_keeps_the_lot_method_in_force_when_it_was_made(server):
     # B7: an imported sale records the account's method; changing the method later applies to
     # the sales after it, never rewriting the ones before.
-    from moneykata.store.entities.accounts import Transaction
+    from moolakata.store.entities.accounts import Transaction
 
     make_user(server, "alice")
     c = sign_in(server, "alice")

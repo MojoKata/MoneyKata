@@ -10,7 +10,7 @@
                          DEPLOY.md (a test server on Proxmox or TrueNAS, its screenshots
                          in deploy/), dependencies.md (the register, S17.2.1),
                          test-plan.md (the manual tests, S17.9.7.8),
-                         mockups/MoneyKata-mock.html
+                         mockups/MoolaKata-mock.html
    web/
      VERSION  dev.sh  check  pins
      ui/                 index.html, deno.json, app/{main,router,config,hooks,format}.js,
@@ -18,7 +18,7 @@
                          account-types/ (one module per type: fields, icon, help),
                          styles/{tokens,base,components}.css, assets/icons.svg,
                          guides/, vendor/, tests/, mockup/
-     server/             src/moneykata/: main.py, app.py, config.py, runtime.py, listener.py,
+     server/             src/moolakata/: main.py, app.py, config.py, runtime.py, listener.py,
                          middleware.py, static.py, settings.py, tasks.py, alerts.py, mail.py,
                          mcp.py, ui/ (routes per area), auth/, keys/ (the master key, its
                          phrase, secrets), store/ (tables/, entities/, repos/, mapping.py,
@@ -31,8 +31,9 @@
                          (storage, thumbnails, the reader and its worker, the field parser,
                          retention), links/, dev/ (dev mode, seed data, the wheel check)
      install/            Dockerfile, compose.yaml, compose.tls.yaml, compose.truenas.yaml,
-                         moneykata.toml, smoke.sh, proxy/ (reverse-proxy examples)
-   connector/            the MoneyKata Connector (S18): its core, drivers and image
+                         compose.connector-truenas.yaml, moolakata.toml, smoke.sh, proxy/
+                         (reverse-proxy examples)
+   connector/            the MoolaKata Connector (S18): its core, drivers, page and image
    publish/truenas/      the app for TrueNAS's catalog and the script that opens its pull
                          request there (S17.8.3)
    ```
@@ -44,15 +45,15 @@
    linked copies, S14.1, S11.9), **rapidocr** with **onnxruntime** (receipt reading, S9.8). rapidocr brings
    numpy, opencv-python-headless, shapely, pyclipper and pyyaml with it, about 100 MB in all;
    the image carries them, and they load only in the receipt worker. **ofxtools** reads OFX
-   and QFX files (pure Python, GPL-3.0-only, compatible with MoneyKata's GPLv3). **pi-heif** reads iPhone photos
+   and QFX files (pure Python, GPL-3.0-only, compatible with MoolaKata's GPLv3). **pi-heif** reads iPhone photos
    (HEIC): it decodes only, so it is smaller than pillow-heif, which also encodes. **numpy** is a direct dependency for projections
    (S6) as well as RapidOCR's.
    Standard library for email (`smtplib`), config (`tomllib`), logging and the command line.
    Pinned exactly in `uv.lock`, Python 3.14 (S17.9.7.1).
    1. **The dependency register and the egress audit.** `docs/dependencies.md` lists every
       library the server, the browser app and the build run with: its version, what it is for,
-      why it was chosen, what it could do that MoneyKata must not (a call out of the house
-      above all), with the switch that stops it and where MoneyKata throws it, and when to look
+      why it was chosen, what it could do that MoolaKata must not (a call out of the house
+      above all), with the switch that stops it and where MoolaKata throws it, and when to look
       at it again. A library that can reach out is marked **egress**, one that sends telemetry
       **telemetry** as well. **Every change to `uv.lock` or the vendor manifest is followed by
       an audit** before it is committed: `web/dev.sh audit` scans the installed wheels and the
@@ -145,7 +146,7 @@
    `run`, `test`, `check`, `mail`, `mockup`, `help-shots`, `deno`, `vendor`, `audit`,
    `base-update`, `mocks`). `web/pins` holds the versions and hashes of the dev-only downloads
    (Deno, Playwright's Chromium).
-7. **Dev mode** (`web/dev.sh run --seed --stubs`, `moneykata dev`) runs the whole server from a
+7. **Dev mode** (`web/dev.sh run --seed --stubs`, `moolakata dev`) runs the whole server from a
    checkout as the current user, relaxing the surroundings, never the rules: sessions, CSP,
    encryption and sharing behave as in production. The one exception is the recovery phrase: a
    dev server makes its key on first run and keeps the phrase in `web/.dev/phrase`, so it
@@ -164,17 +165,17 @@
    dev mode's code out.
 8. **Packaging: one Docker (OCI) image for the server** (the connector has an image of its own,
    S18.10) holding its own Python and venv, the browser app, RapidOCR's models and the
-   `moneykata` command, running as an unprivileged user (uid 10001). It serves on port 37373
+   `moolakata` command, running as an unprivileged user (uid 10001). It serves on port 37373
    and takes two mounts: the **data directory** (database, keyring, receipts, linked copies)
-   and the **backup directory**. `moneykata.toml` is mounted too, at `/etc/moneykata.toml`;
+   and the **backup directory**. `moolakata.toml` is mounted too, at `/etc/moolakata.toml`;
    where mounting a file is awkward, the same TOML is given in the environment variable
-   `MONEYKATA_CONFIG`, read when `--config` names no file. The configuration holds no secret
+   `MOOLAKATA_CONFIG`, read when `--config` names no file. The configuration holds no secret
    either way: secrets never come from environment variables, and no key is mounted at all: the master key is the recovery phrase,
    entered after every start (S15.4). `install/compose.yaml` is the example to start from; it
    publishes the plain-HTTP listener on the host's loopback only (the proxy examples reach the
    service by name), gives the container the host's time zone (`/etc/localtime` and `TZ`,
    S14.9.2), and keeps the logs Docker holds to five files of 10 MB. The example
-   `moneykata.toml` trusts only the proxy's own address (S13.3). `docs/operations.md` is the
+   `moolakata.toml` trusts only the proxy's own address (S13.3). `docs/operations.md` is the
    runbook: installing, upgrading, backups, health, logs, restoring and drills. The image is
    about 600 MB, most of it the receipt reader (ONNX Runtime, OpenCV and the models); the
    reader's worker takes about 350 MB more while it runs, which a host too small for it avoids
@@ -186,27 +187,27 @@
       pi-heif, sqlcipher3 among them), so nothing is compiled in the image; a check fails
       when one has no arm64 wheel. Each architecture's release gate is `web/install/smoke.sh`
       on its own runner (a refused start, the welcome's key and first admin, a locked restart and
-      its unlock, health, a sign-in, a receipt read, the connector's vault and unlock, clean
-      stops); the trial on household hardware
+      its unlock, health, a sign-in, a receipt read, the connector's vault made on its page and
+      its unlock after a restart, clean stops); the trial on household hardware
       (a Raspberry Pi, an arm64 NAS), which alone measures the reader's speed there
       (S9.8.4.5), is in the manual test plan (S17.9.7.8), and a release says whether it was
       run.
-   2. **Published images.** Each release is published as `ghcr.io/mojokata/moneykata` and
-      `ghcr.io/mojokata/moneykata-connector`, tagged with the version, one tag for both
+   2. **Published images.** Each release is published as `ghcr.io/mojokata/moolakata` and
+      `ghcr.io/mojokata/moolakata-connector`, tagged with the version, one tag for both
       architectures, with a build-provenance attestation that anyone can check
-      (`gh attestation verify oci://ghcr.io/mojokata/moneykata:<version> --owner MojoKata`).
+      (`gh attestation verify oci://ghcr.io/mojokata/moolakata:<version> --owner MojoKata`).
       The compose files name them, so a host pulls them. The image can still be built from
       the source, and carried to a host with no internet access (`docker save` and
       `docker load`). Catalogs make the install a form rather than a file: TrueNAS's apps
       catalog first (S17.8.3); others, such as Docker Hub, may follow.
    3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
       on) and **TrueNAS** (a custom app from `install/compose.truenas.yaml`, its configuration
-      in `MONEYKATA_CONFIG` and a one-time step giving the datasets to the server's account,
+      in `MOOLAKATA_CONFIG` and a one-time step giving the datasets to the server's account,
       so nothing is typed in a shell). `DEPLOY.md`
       takes a test server onto each, step by step, from a fresh Debian VM on Proxmox VE and
       from TrueNAS Community Edition's **Install via YAML**; `operations.md` covers their
-      mounts, backups and upgrades. `publish/truenas/` holds MoneyKata as an app for
-      TrueNAS's community catalog (`ix-dev/community/moneykata/` in `truenas/apps`): its
+      mounts, backups and upgrades. `publish/truenas/` holds MoolaKata as an app for
+      TrueNAS's community catalog (`ix-dev/community/moolakata/` in `truenas/apps`): its
       metadata, the install form, the compose template and its test values, with
       `create-pr.sh`, which opens or updates the pull request that proposes it there. TrueNAS
       decides what its catalog includes; until the app is in it, **Install via YAML** is the
@@ -391,10 +392,10 @@
          protocol (pairing from the one-time code, the signed calls, the report, collecting
          a sealed credential, posting a file, the refusals, the version rule), and the
          `Connector` and `Connection` tables (`schema.md` §3.2).
-      3. **MoneyKata's side** (S18.4, S18.5): the `/connector/v1/` routes, pairing with its
+      3. **MoolaKata's side** (S18.4, S18.5): the `/connector/v1/` routes, pairing with its
          code and re-authentication, Settings › Connector with Pair and Unpair, the two
          admin alerts and the silent-connector check (S13.4).
-      4. **Connections in the app** (S18.6, S18.7): the account's **Sync using MoneyKata
+      4. **Connections in the app** (S18.6, S18.7): the account's **Sync using MoolaKata
          Connector** switch, Profile › Connections, the credential dialog sealing to the
          connector's key in the browser (X25519 in WebCrypto), the command for typing them
          on the connector's host, and the owner's alert.
@@ -407,7 +408,7 @@
          institution: a fake OFX server, and a stub serving recorded shapes of the Trader API's
          answers. The live Schwab trial is in the test plan.
       8. **Mocks and the manual test plan**: a fake Esplora, Electrum server and Bitcoin
-         Core RPC speaking the subset MoneyKata uses, for the tests and the generated
+         Core RPC speaking the subset MoolaKata uses, for the tests and the generated
          mockup's recordings; the arm64 image built under QEMU and smoke-run under
          emulation; and `docs/test-plan.md`, one numbered test per thing the build can't
          try, each with the environment it needs, its steps and what passing looks like:
@@ -469,7 +470,7 @@
       2. **Email queued in the database** (S16.2, S15.1.7): an email waits there until it is
          sent or its link expires, a refused one keeps only its recipient, subject and error,
          and a written email stays in the mail folder as long as its link works.
-      3. **The connector**: the key MoneyKata's `hello` gives hashed against the pairing's
+      3. **The connector**: the key MoolaKata's `hello` gives hashed against the pairing's
          fingerprint (S18.4.2), and `connect` showing the host the credentials will go to and
          filing them once the admin confirms it (S18.7.2).
       4. **Links**: a call not yet signed by a known key refused before it opens a transaction

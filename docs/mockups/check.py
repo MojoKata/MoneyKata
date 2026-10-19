@@ -14,7 +14,7 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-MOCKUP = Path(__file__).resolve().parent / "MoneyKata-mock.html"
+MOCKUP = Path(__file__).resolve().parent / "MoolaKata-mock.html"
 VIEWPORT = {"width": 2880, "height": 1800}
 
 

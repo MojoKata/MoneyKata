@@ -68,7 +68,7 @@ export default function Activity() {
                           .actorId} /> ${a.actorName}</span>
                     `
                     : html`<span class="pill">${
-                      a.via === 'host' ? 'On the host' : 'MoneyKata'
+                      a.via === 'host' ? 'On the host' : 'MoolaKata'
                     }</span>`}</td>
                   <td>${a.text}</td>
                 </tr>

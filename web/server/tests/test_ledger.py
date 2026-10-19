@@ -7,8 +7,8 @@ from decimal import Decimal as D
 from pathlib import Path
 from types import SimpleNamespace
 
-from moneykata import paths
-from moneykata.ledger import balances, lots, reconcile, transfers
+from moolakata import paths
+from moolakata.ledger import balances, lots, reconcile, transfers
 
 T0 = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
 _n = iter(range(1, 10_000))

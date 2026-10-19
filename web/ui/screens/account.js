@@ -451,13 +451,13 @@ function Reconcile({ a, all, reload }) {
         ? html`
           <div class="table-wrap">
             <table class="t">
-              <caption class="sr-only">Balances the institution reported, and MoneyKata's</caption>
+              <caption class="sr-only">Balances the institution reported, and MoolaKata's</caption>
               <thead>
                 <tr>
                   <th>Date</th>
                   <th>From</th>
                   <th class="num">Institution</th>
-                  <th class="num">MoneyKata</th>
+                  <th class="num">MoolaKata</th>
                   <th>Check</th>
                 </tr>
               </thead>
@@ -575,7 +575,7 @@ function Mismatch({ a, check, all, again }) {
             <div class="list-item">
               <${Icon} name="info" />
               <div
-                class="grow small">The file's running balance parts from MoneyKata's at one row; check the transactions around it.</div>
+                class="grow small">The file's running balance parts from MoolaKata's at one row; check the transactions around it.</div>
             </div>
           `
           : null}
@@ -609,7 +609,7 @@ function TypeBalance({ close, a }) {
       footer=${html`<button class="btn primary" disabled=${save.busy}>Check</button>`}>
       <p class="small dim" style=${{ marginTop: 0 }}>Copy the balance from ${a.institution ||
         'the institution'}'s site or app.
-          MoneyKata checks it against its own for the same day.</p>
+          MoolaKata checks it against its own for the same day.</p>
       <div class="row">
         <${Field} label="Balance" error=${errAt(save.error, 'balance')}>
           <${Input} value=${balance} onInput=${setBalance}
@@ -1053,7 +1053,7 @@ function StatementChecks({ v }) {
               .reverse()
               .map((/** @type {any} */ c) =>
                 html`<div class="list-item"><div class="grow">${date(c.date)}<div class="small dim"
-              >statement <${Amt} v=${c.reported} /> · MoneyKata <${Amt} v=${c.computed} /></div
+              >statement <${Amt} v=${c.reported} /> · MoolaKata <${Amt} v=${c.computed} /></div
               ></div>${
                   c.ok
                     ? html`<span class="pill ok">matches</span>`
@@ -1073,7 +1073,7 @@ function StatementChecks({ v }) {
             html`<div class="list-item"><div class="grow">${
               h.symbol || h.label
             }<div class="small dim"
-            >statement ${h.statement ?? '—'} · MoneyKata ${h.held ?? 'not held'}${
+            >statement ${h.statement ?? '—'} · MoolaKata ${h.held ?? 'not held'}${
               h
                   .statementBasis != null
                 ? html`

@@ -1,6 +1,6 @@
 # S15. Encryption and the master key
 
-This section is for the admin who installs and runs the server. It explains what MoneyKata
+This section is for the admin who installs and runs the server. It explains what MoolaKata
 encrypts and how, how to back up and protect the master key with its recovery phrase, and
 what key rotation does.
 
@@ -15,7 +15,7 @@ what key rotation does.
 | **keyring** | the file in the data directory that holds the wrapped data key, so it travels with every backup. |
 | **database key, receipts key, secrets key** | the keys derived from the data key, one for each kind of thing (S15.3.2). |
 | **fingerprint** | a short name for a master key that reveals nothing about it, `mk-3f9a…c21e` (S15.3.5). |
-| **copy** | anything that holds the data as it was at some moment. **On this host**, where MoneyKata can see and act on it: a backup in the backup directory, a `pre-upgrade/` copy, a `before-restore-*/` folder, each carrying its own keyring. **Elsewhere**, where only the admin can: the host's snapshots, replicas and backups, a VM image, a disk. A copy opens with the keys of its day, for as long as it exists. |
+| **copy** | anything that holds the data as it was at some moment. **On this host**, where MoolaKata can see and act on it: a backup in the backup directory, a `pre-upgrade/` copy, a `before-restore-*/` folder, each carrying its own keyring. **Elsewhere**, where only the admin can: the host's snapshots, replicas and backups, a VM image, a disk. A copy opens with the keys of its day, for as long as it exists. |
 | **rotation** | a new master key and phrase, and with them a new data key: the keyring is wrapped under the new key and everything is re-encrypted (S15.7.1). |
 | **re-encryption** | a new data key; the database, the receipt files and every secret are encrypted again under it, while the server isn't serving. A rotation brings one; on its own it leaves the master key unchanged (S15.7.2). |
 
@@ -66,7 +66,7 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       invitation's for a week and the others' for a day at most, so each file is removed once
       its link has expired. Emails waiting to go out through SMTP are queued in the database,
       which is encrypted.
-2. **No external key service, and no key file.** MoneyKata keeps no master key at all: the
+2. **No external key service, and no key file.** MoolaKata keeps no master key at all: the
    phrase is entered after every start and held in memory only while it is used. HashiCorp
    Vault, cloud KMSs (AWS, GCP, Azure), HSMs and TPM sealing are **not supported**: on a
    household server, an external service adds a dependency that must be running, backed up
@@ -79,14 +79,14 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       as its **recovery phrase**, the same 128 bits written as 12 words from the BIP39
       English word list, the last word carrying a checksum, in the admin's keeping; and in
       the server's memory only while it unwraps the data key at an unlock, or wraps one at a
-      rotation or re-encryption (S15.4). MoneyKata uses the words only as a way to write the
+      rotation or re-encryption (S15.4). MoolaKata uses the words only as a way to write the
       key down. It never applies BIP39's wallet derivation to them. The master key encrypts
       one thing: the data key. It is never stored on the host or in the database, never
       written to a log, never sent over the network beyond the unlock request itself, never
       shown in the UI after install, and never in a backup.
    2. **The data key**: 256 random bits, made at install, stored only **wrapped**
       (AES-256-GCM) under a key derived from the master key with HKDF-SHA256 (label
-      `moneykata master`). The wrapped data key sits in the data directory (`keyring`), so it
+      `moolakata master`). The wrapped data key sits in the data directory (`keyring`), so it
       travels with every backup. From the data key, HKDF-SHA256 derives, each under its own
       label:
       1. the **database key**, which SQLCipher uses as its raw key;
@@ -109,11 +109,11 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       key both derive from the data key, so whoever can open the database can open every
       secret with a few more lines; what the layer stops is a mistake, a query or an export
       that prints a key by accident.
-   5. **The master key id** is the first 16 hex digits of `SHA-256("moneykata key id" ‖ key)`.
+   5. **The master key id** is the first 16 hex digits of `SHA-256("moolakata key id" ‖ key)`.
       It identifies a key without revealing it. Its short form (`mk-3f9a…c21e`) is the
       **fingerprint** shown in Settings, on the recovery sheet and in the commands below. The
       wrapped data key records which master key wrapped it, and names the data key by an id
-      made the same way (`SHA-256("moneykata data key id" ‖ data key)`), so the server knows
+      made the same way (`SHA-256("moolakata data key id" ‖ data key)`), so the server knows
       which copies hold the data key it has without unwrapping them.
    6. **Why three levels**: rotating the master key re-wraps one 32-byte data key and nothing
       else; the database and the files never need re-encrypting for it; the phrase need not
@@ -138,8 +138,8 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       ideas](rejected-ideas.md)). A re-encryption that waits for the unlock (S15.7.2) runs
       then, before the server serves.
    2. **Two ways to enter it**, either of which an admin uses: the locked screen, in a desktop
-      browser; or `moneykata keys unlock` on the host, run inside the server's container, which
-      hands the phrase to the server over its Unix socket (`/run/moneykata/sock`, in a
+      browser; or `moolakata keys unlock` on the host, run inside the server's container, which
+      hands the phrase to the server over its Unix socket (`/run/moolakata/sock`, in a
       directory only the server's account can open, S13.6), never over the network. The phrase
       is the authentication, since no user can be checked before the database opens: a wrong
       phrase is refused, wrong phrases count toward the sign-in lockout (S13.7.5.1), and every
@@ -161,7 +161,7 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       nothing of the key the server keeps. Three of its words typed back (S15.6.1) write the
       keyring, the data key wrapped under the master key, into the data directory, and the
       server is unlocked at once; the welcome goes on to the admin's account (S10.1.2).
-      Nothing else is written. On a terminal, `moneykata keys init` does the same: it shows
+      Nothing else is written. On a terminal, `moolakata keys init` does the same: it shows
       the phrase on the terminal, never on standard output, so that no log keeps it (it
       refuses to run without a terminal), asks for three words back and writes the keyring,
       which the running server finds at its next request; it is then locked and opens with
@@ -182,9 +182,9 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       script. A phrase pasted into a chat, a ticket or a screenshot is a leaked phrase
       (S15.8).
    7. **Commands**, each asking for the phrase it needs and keeping none of it, and showing and
-      reading phrases on the terminal only: `moneykata keys init` (S15.4.4), `fingerprint` (the
+      reading phrases on the terminal only: `moolakata keys init` (S15.4.4), `fingerprint` (the
       key in use, no phrase needed), `verify` (S15.6.5), `rotate` (S15.7.1), `reencrypt`
-      (S15.7.2) and `unlock` (S15.4.2), and `moneykata db backup`, `verify-backup`, `restore`
+      (S15.7.2) and `unlock` (S15.4.2), and `moolakata db backup`, `verify-backup`, `restore`
       (S15.6.8) and `shell` (S14.7). `unlock` and `rotate` speak to the running server over its
       Unix socket from inside its container (`docker compose exec`), and `db backup` asks the
       running server to make the backup the same way. The rest, and `rotate` and `db backup`
@@ -200,7 +200,7 @@ replica holds only the right-hand side, and the whole host can be backed up as i
    key, which exists only as its phrase, so **losing the recovery phrase loses all of it**:
    the database, the receipts, every backup and every copy the host holds, and the server
    cannot even start serving again. There is no back door, and no one can recover it,
-   including the people who make MoneyKata.
+   including the people who make MoolaKata.
    1. **The host lost, the phrase kept** (a failed disk, a rebuilt host): install, put the data
       directory's receipts back from the host's own backup, taken as near the backup's time as
       it has, restore the backup (S15.6.8), start, and unlock with the phrase. Nothing is lost
@@ -208,7 +208,7 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       reported at the unlock.
    2. **The phrase lost while the server is running**: nothing is lost yet, but the next
       restart will lose everything. **Rotate at once** (S15.7.1): through the running server,
-      which still holds the data key, `moneykata keys rotate` needs no old phrase, shows a new
+      which still holds the data key, `moolakata keys rotate` needs no old phrase, shows a new
       one and asks three words back; the keyring is wrapped under it at once, and the
       re-encryption the rotation brings runs at the next unlock, with the new phrase. Back it
       up before anything else. A server stopped before that is a server lost.
@@ -236,7 +236,7 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       database and the phrase protects nothing.
    4. **Never put it** in git, a ticket, a chat message, email, a shared drive, a container
       image, or a screenshot.
-   5. **Check the backup.** **Verify key** in Settings › Key storage, or `moneykata keys
+   5. **Check the backup.** **Verify key** in Settings › Key storage, or `moolakata keys
       verify` on the host, asks for the whole phrase and says whether it unwraps the keyring,
       without changing anything; a wrong phrase counts toward the lockout, as at the unlock
       (S15.4.2). Settings › Key storage records each confirmation: which fingerprint, and
@@ -256,10 +256,10 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       snapshotted, replicated and sent to a NAS or a cloud bucket as they are, as long as
       the recovery phrase never goes with them. **Know where every copy is**: the copies on
       this host are listed in Settings › Key storage, with how each opens; a copy anywhere
-      else (the host's snapshots and backups above all) is never seen or pruned by MoneyKata,
+      else (the host's snapshots and backups above all) is never seen or pruned by MoolaKata,
       opens with the key of its day for as long as it exists, and is yours to delete after a
       rotation or a leak (S15.7.3, S15.8).
-   8. **Restoring onto a new host**: install MoneyKata, restore the backup with `moneykata db
+   8. **Restoring onto a new host**: install MoolaKata, restore the backup with `moolakata db
       restore`, which asks for the phrase and checks it opens the backup's keyring, then start
       and unlock. The restore runs with the server stopped (the server holds a lock on the data
       directory while it runs): it checks the backup as `db verify-backup` does, refuses one
@@ -281,7 +281,7 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       change only which phrase opens the keyring: an old phrase and any copy made before would
       still give the data key that opens every later copy, so a rotation always re-encrypts. It
       is done on the host:
-      1. `moneykata keys rotate` makes a new key, shows its recovery phrase on the terminal and
+      1. `moolakata keys rotate` makes a new key, shows its recovery phrase on the terminal and
          asks for three words back, and wraps the keyring under it, recording the previous
          key's fingerprint and the date. Run against the running server, over its socket, it
          needs **no old phrase**, since the server holds the data key: this is the way out of a
@@ -305,7 +305,7 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       receipt file is encrypted again under it, and every secret gets a fresh data key and
       nonce. It **never runs while the server serves**: it runs at an unlock, before the server
       serves, with its progress on the locked screen and `/healthz` answering 503
-      `re-encrypting` (S13.6), or on the host with `moneykata keys reencrypt`, the server
+      `re-encrypting` (S13.6), or on the host with `moolakata keys reencrypt`, the server
       stopped, which asks for the phrase. A rotation brings one. On its own, Settings › Key
       storage › **Re-encrypt at the next restart** (admins, the password again) schedules one,
       which the next unlock runs with the phrase given there, the master key unchanged. **A

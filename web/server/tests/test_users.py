@@ -5,11 +5,11 @@ import re
 from conftest import make_user, new_client, sign_in
 from sqlalchemy import select
 
-from moneykata import settings
-from moneykata.auth import passwords
-from moneykata.auth import users as accounts
-from moneykata.store.entities.core import Activity
-from moneykata.store.entities.users import Session, User
+from moolakata import settings
+from moolakata.auth import passwords
+from moolakata.auth import users as accounts
+from moolakata.store.entities.core import Activity
+from moolakata.store.entities.users import Session, User
 
 PW = "a long user passphrase"
 
@@ -48,8 +48,8 @@ def set_public_url(server):
 
 def _legacy_admin(server) -> None:
     """The admin a server made before the welcome: the published password, setup to do."""
-    from moneykata import ids, people
-    from moneykata.store.entities.users import User, UserGroup
+    from moolakata import ids, people
+    from moolakata.store.entities.users import User, UserGroup
 
     with server.db.tx() as s:
         u = User(
@@ -67,7 +67,7 @@ def _legacy_admin(server) -> None:
 
 def test_an_admin_from_before_the_welcome_only_reaches_setup(client, server):
     _legacy_admin(server)
-    r = client.post("/ui/api/session", json={"login": "LEGACY", "password": "moneykata-setup"})
+    r = client.post("/ui/api/session", json={"login": "LEGACY", "password": "moolakata-setup"})
     assert r.status_code == 200
     assert r.json()["user"]["needsSetup"] is True
     first = client.cookies.get("mk_session")
@@ -77,7 +77,7 @@ def test_an_admin_from_before_the_welcome_only_reaches_setup(client, server):
 
     for bad, code in (
         ("short", "password-too-short"),
-        ("moneykata-setup", "password-is-default"),
+        ("moolakata-setup", "password-is-default"),
         ("password1234", "password-too-common"),
     ):
         r = client.post("/ui/api/session/setup", json={"password": bad, "email": "a@b.lan"})
@@ -98,7 +98,7 @@ def test_an_admin_from_before_the_welcome_only_reaches_setup(client, server):
         old.cookies.set("mk_session", first, domain="mk.test", path="/ui")
         assert old.get("/ui/api/session").status_code == 401
     with new_client(server) as c2:
-        r = c2.post("/ui/api/session", json={"login": "legacy", "password": "moneykata-setup"})
+        r = c2.post("/ui/api/session", json={"login": "legacy", "password": "moolakata-setup"})
         assert r.status_code == 401
 
 
@@ -384,7 +384,7 @@ def test_a_reactivation_request_answers_the_same_whatever_the_account(admin_clie
 
 def test_a_wrong_password_asked_again_counts_toward_the_lockout(server, monkeypatch):
     # S13.7.5.1: re-authentication and the current password are guarded as a sign-in is.
-    from moneykata.ui import session
+    from moolakata.ui import session
 
     monkeypatch.setattr(session.time, "sleep", lambda s: None)
     make_user(server, "kim")
@@ -525,7 +525,7 @@ def test_a_sign_in_from_a_new_address_is_emailed(client, server):
     )
     assert r.status_code == 200, r.text
     subjects = [m["Subject"] for m in mails(server)]
-    assert subjects == ["A sign-in to MoneyKata from a new address"]
+    assert subjects == ["A sign-in to MoolaKata from a new address"]
     assert "signin.new-address" in kinds(server)
     far.post("/ui/api/session", json={"login": "gil", "password": PW}, headers={"Origin": ORIGIN})
     assert len(mails(server)) == 1  # now a known address
@@ -535,7 +535,7 @@ def test_making_an_admin_needs_the_password_again(admin_client, server):
     """S13.7.2: changing who is in Admins, whichever route does it."""
     from conftest import stale
 
-    from moneykata.auth import users as accounts
+    from moolakata.auth import users as accounts
 
     with server.db.read() as s:
         admins = accounts.admins_group(s).id

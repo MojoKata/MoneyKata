@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MoneyKata's developer front door. Run alone to list the commands.
+# MoolaKata's developer front door. Run alone to list the commands.
 set -euo pipefail
 
 WEB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,7 +16,7 @@ web/dev.sh <command>
 
   setup        install the Python environment (uv), Deno and Playwright's Chromium,
                and unpack the vendored browser libraries
-  run [args]   run the dev server (moneykata dev): https://localhost:37373
+  run [args]   run the dev server (moolakata dev): https://localhost:37373
                --seed  seed users and a year of data    --stubs  stub price source
                --peer  a second server on another port, for links
                --listen ADDR  --hostname NAME  --port N  --data DIR
@@ -30,7 +30,7 @@ web/dev.sh <command>
                no-network run; --accept records it (docs/dependencies.md)
   base-update [--packages]
                move the base image's digest to the current one
-  mockup       rebuild docs/mockups/MoneyKata-app.html from the app
+  mockup       rebuild docs/mockups/MoolaKata-app.html from the app
   help-shots   rebuild the help guides' screenshots from the mockup
   deno [args]  run the pinned Deno
   vendor add NAME VERSION [--young REASON]
@@ -93,30 +93,30 @@ case "$cmd" in
         *) args+=("$1"); shift ;;
       esac
     done
-    cd "$SERVER" && exec uv run --frozen moneykata dev "${args[@]}"
+    cd "$SERVER" && exec uv run --frozen moolakata dev "${args[@]}"
     ;;
   test)
     cd "$SERVER" && exec uv run --frozen pytest "$@"
     ;;
   mocks)
     # Fake bitcoin backends on local ports (S17.9.7.8); point Settings › Bitcoin at them.
-    cd "$SERVER" && exec uv run --frozen python -m moneykata.dev.mocks "$@"
+    cd "$SERVER" && exec uv run --frozen python -m moolakata.dev.mocks "$@"
     ;;
   audit)
     # The egress audit (S17.2.1): what the wheels and vendored files could reach, and the
     # server run with no network. --accept records the scan and the files' hashes.
     cd "$SERVER"
     if [[ "${1:-}" == "--accept" ]]; then
-      exec uv run --frozen python -m moneykata.dev.audit accept
+      exec uv run --frozen python -m moolakata.dev.audit accept
     fi
-    uv run --frozen python -m moneykata.dev.audit scan || true
+    uv run --frozen python -m moolakata.dev.audit scan || true
     echo
     echo "== the server with no network (unshare -U -n)"
     unshare -U -n uv run --frozen pytest -q -m audit tests/test_no_network.py
     ;;
   base-update)
     # Move the base image's digest to the current one (S17.8.5); --packages diffs Debian's.
-    cd "$SERVER" && exec uv run --frozen python -m moneykata.dev.base update "$@"
+    cd "$SERVER" && exec uv run --frozen python -m moolakata.dev.base update "$@"
     ;;
   check)
     exec "$WEB/check" "$@"

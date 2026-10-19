@@ -1,12 +1,12 @@
-// Credentials sealed for the MoneyKata Connector (requirements S18.7.1,
+// Credentials sealed for the MoolaKata Connector (requirements S18.7.1,
 // docs/connector-protocol.md §4.3): an X25519 sealed box made here, in the browser, with
-// WebCrypto, that only the connector's sealing key opens. MoneyKata keeps the box as it is.
+// WebCrypto, that only the connector's sealing key opens. MoolaKata keeps the box as it is.
 //
 //   box = ephemeral public key (32) ‖ nonce (12) ‖ AES-256-GCM ciphertext, base64url
 //   key = HKDF-SHA256(X25519(ephemeral, sealing key), salt = the Connection's id,
-//                     info = "moneykata connector credential")
+//                     info = "moolakata connector credential")
 
-const LABEL = 'moneykata connector credential';
+const LABEL = 'moolakata connector credential';
 
 /** @param {string} s */
 export function unb64(s) {
@@ -32,7 +32,7 @@ export async function canSeal() {
   }
 }
 
-const SIGNED = new TextEncoder().encode('moneykata connector sealing key\0');
+const SIGNED = new TextEncoder().encode('moolakata connector sealing key\0');
 
 /**
  * Whether the sealing key is the paired connector's own: signed by the identity key whose

@@ -5,7 +5,7 @@ from conftest import make_user, sign_in
 from sqlalchemy import text
 from test_accounts import add, new_account
 
-from moneykata.ledger import performance as perf
+from moolakata.ledger import performance as perf
 
 d = dt.date
 
@@ -115,7 +115,7 @@ def test_key_storage_and_backups_for_admins(admin_client, server):
     assert t["ok"] and [x["name"] for x in t["checks"]][:2] == ["Keyring", "Database"]
     b = admin_client.get("/ui/api/settings/backups").json()
     assert b["copies"] == 14 and b["backups"] == []
-    from moneykata.store import maintenance
+    from moolakata.store import maintenance
 
     maintenance.backup(server.config, server.store)
     b = admin_client.get("/ui/api/settings/backups").json()

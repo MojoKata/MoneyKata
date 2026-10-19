@@ -7,8 +7,8 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import alerts, clock
-from moneykata.projections import engine
+from moolakata import alerts, clock
+from moolakata.projections import engine
 
 T0 = dt.datetime(2026, 10, 13, 12, 0, tzinfo=dt.UTC)
 
@@ -206,8 +206,8 @@ def test_tax_tables_ship_and_can_be_corrected(server, frozen, admin_client):
 
 
 def test_a_bitcoin_model_with_cases_gives_three_paths(server, alice):
-    from moneykata import ids
-    from moneykata.store.entities.accounts import Instrument
+    from moolakata import ids
+    from moolakata.store.entities.accounts import Instrument
 
     with server.db.tx() as s:
         s.add(
@@ -288,7 +288,7 @@ def test_every_year_a_book_may_cover_has_its_own_figures(admin_client):
 
 def test_the_tracking_floor_is_a_minimum_width():
     # B22: a narrow band widens to 2% of its median; a wide one is left as it is.
-    from moneykata.projections import widened
+    from moolakata.projections import widened
 
     D = Decimal
     assert widened(D(100), D(100), D(100)) == (D(98), D(100), D(102))

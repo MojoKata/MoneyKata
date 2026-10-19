@@ -107,7 +107,7 @@ export function LinksSection() {
       <div class="notice" style=${{ marginBottom: '12px' }}>
         <${Icon} name="info" />
         <div>A link
-        carries <b>read-only</b> shares between two MoneyKata servers. This server's key
+        carries <b>read-only</b> shares between two MoolaKata servers. This server's key
         fingerprint: <code>${v.fingerprint}</code>${v.certificate
           ? html`. Its own certificate's key: <code>${grouped(v.certificate)}</code>`
           : ''}</div>
@@ -162,7 +162,7 @@ export function LinksSection() {
                             · <code>${l.fingerprint}</code>
                           `
                           : ''}${l.peerVersion
-                          ? ` · MoneyKata ${l.peerVersion}`
+                          ? ` · MoolaKata ${l.peerVersion}`
                           : ''}${l.certificate
                           ? html`
                             · certificate <code>${l.certificate}</code>
@@ -382,7 +382,7 @@ function JoinLink({ close }) {
           setCode(e.currentTarget.value)} placeholder="mkl1.…"
           spellcheck="false"></textarea>
         </${Field}>
-        <p class="small dim">MoneyKata connects to the address in the code, checks that server's
+        <p class="small dim">MoolaKata connects to the address in the code, checks that server's
         key against the fingerprint in it, and sends this server's address and key. Their admin
         approves it.</p>
         <${FormError} error=${save.error} shown=${['code']} />

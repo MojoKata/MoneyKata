@@ -1,6 +1,6 @@
 """The connector's core (requirements S18.1–S18.5): the vault and its words, the keys, signed
 calls, sealed credentials, the egress allowlist, the socket's commands, and S18.1.2 (no
-import from MoneyKata, each driver's size listed with its colour)."""
+import from MoolaKata, each driver's size listed with its colour)."""
 
 import ast
 import inspect
@@ -12,10 +12,10 @@ from pathlib import Path
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-from moneykata_connector import client, keys, sealed, signing, sock, vault, words
-from moneykata_connector.drivers import registry
+from moolakata_connector import client, keys, sealed, signing, sock, vault, words
+from moolakata_connector.drivers import registry
 
-PACKAGE = Path(__file__).resolve().parents[1] / "moneykata_connector"
+PACKAGE = Path(__file__).resolve().parents[1] / "moolakata_connector"
 
 
 def test_words_round_trip_and_catch_a_wrong_word():
@@ -211,10 +211,10 @@ def _colour(lines: int) -> str:
     return "🟢" if lines < 1000 else "🟡" if lines < 2000 else "🔴"
 
 
-def test_each_drivers_size_is_listed_with_its_colour_and_nothing_imports_moneykata():
+def test_each_drivers_size_is_listed_with_its_colour_and_nothing_imports_moolakata():
     """S18.1.2: each driver's lines of code and colour as the connector protocol's table of
     drivers lists them (§6), whatever the size; no limit on the core; no import from
-    MoneyKata."""
+    MoolaKata."""
     doc = (PACKAGE.parents[1] / "docs" / "connector-protocol.md").read_text()
     table = doc.split("## 6. Drivers", 1)[1].split("\n## ", 1)[0]
     listed = dict(re.findall(r"^\| `([a-z-]+)` \|.*\| (\S+ [\d,]+) \|$", table, re.M))
@@ -225,11 +225,11 @@ def test_each_drivers_size_is_listed_with_its_colour_and_nothing_imports_moneyka
         assert listed.get(name) == size, f"connector-protocol.md §6: {name}'s size is {size}"
     assert set(listed) == set(drivers), "the table of drivers lists one that isn't a driver"
     for p in PACKAGE.rglob("*.py"):
-        assert not re.search(r"^\s*(from|import)\s+moneykata\b", p.read_text(), re.M), p
+        assert not re.search(r"^\s*(from|import)\s+moolakata\b", p.read_text(), re.M), p
 
 
 def test_the_socket_commands_talk_to_the_running_connector(tmp_path):
-    from moneykata_connector.core import ConnectionState, Core
+    from moolakata_connector.core import ConnectionState, Core
 
     core = Core(tmp_path, transport=client.Transport(client.Egress()))
     phrase = " ".join(core.vault.create())
@@ -260,8 +260,8 @@ def test_the_socket_commands_talk_to_the_running_connector(tmp_path):
     assert sock.ask(path, {"command": "lock"})["locked"] is True
     # Reset (S18.3.4): the words come from the command line, never back over the socket;
     # the vault is made under them and the connector unpaired.
-    from moneykata_connector import words
-    from moneykata_connector.vault import fingerprint
+    from moolakata_connector import words
+    from moolakata_connector.vault import fingerprint
 
     key = bytes(range(16))
     out = sock.ask(path, {"command": "reset", "words": " ".join(words.to_words(key))})
@@ -274,8 +274,8 @@ def test_the_socket_commands_talk_to_the_running_connector(tmp_path):
 
 def test_a_changed_server_address_sends_nothing_and_asks_for_the_credentials_again(tmp_path):
     """S18.7.3: the host a credential was filed for is the only one it is ever sent to."""
-    from moneykata_connector.core import ConnectionState, Core
-    from moneykata_connector.drivers.ofx_direct import OfxDirect
+    from moolakata_connector.core import ConnectionState, Core
+    from moolakata_connector.drivers.ofx_direct import OfxDirect
 
     sent = []
 
@@ -292,7 +292,7 @@ def test_a_changed_server_address_sends_nothing_and_asks_for_the_credentials_aga
     core.vault.put("Conn_1", {"username": "alice", "password": "pw"}, "ofx.cu.example")
     core._run(c)
     assert sent == ["https://ofx.cu.example/ofx"] and c.state == "ok"
-    # MoneyKata's next answer names another server: the password never goes there.
+    # MoolaKata's next answer names another server: the password never goes there.
     c.settings = {**c.settings, "url": "https://evil.example/ofx"}
     core._run(c)
     assert sent == ["https://ofx.cu.example/ofx"]
@@ -301,13 +301,13 @@ def test_a_changed_server_address_sends_nothing_and_asks_for_the_credentials_aga
 
 
 def test_a_driver_run_reaches_its_own_hosts_and_no_other(tmp_path):
-    # N17: each run is held to its driver's declared hosts; another driver's, or MoneyKata's,
+    # N17: each run is held to its driver's declared hosts; another driver's, or MoolaKata's,
     # is refused (S18.1.2).
     from urllib.parse import urlsplit
 
-    from moneykata_connector.core import ConnectionState, Core
-    from moneykata_connector.drivers import Driver, Result
-    from moneykata_connector.drivers.schwab import Schwab
+    from moolakata_connector.core import ConnectionState, Core
+    from moolakata_connector.drivers import Driver, Result
+    from moolakata_connector.drivers.schwab import Schwab
 
     asked = []
 
@@ -349,11 +349,11 @@ def test_a_driver_run_reaches_its_own_hosts_and_no_other(tmp_path):
                     own.check(host)
 
 
-def test_moneykata_down_at_start_is_waited_for_with_a_growing_wait(tmp_path):
-    # B30: the connector starts, its socket can open and it can be unlocked, while MoneyKata
+def test_moolakata_down_at_start_is_waited_for_with_a_growing_wait(tmp_path):
+    # B30: the connector starts, its socket can open and it can be unlocked, while MoolaKata
     # is down; each failed try waits longer, up to the report's five minutes.
-    from moneykata_connector import core as core_mod
-    from moneykata_connector.core import Core
+    from moolakata_connector import core as core_mod
+    from moolakata_connector.core import Core
 
     class Down(client.Transport):
         def request(self, method, url, headers, body, pins=None):
@@ -383,7 +383,7 @@ def test_a_waiting_sign_in_is_reported_every_15_seconds_for_10_minutes(tmp_path)
     # 11b: so an address pasted back is exchanged at once (S18.5).
     import time
 
-    from moneykata_connector.core import ConnectionState, Core
+    from moolakata_connector.core import ConnectionState, Core
 
     core = Core(tmp_path, transport=client.Transport(client.Egress()))
     assert core.next_wait() == 300
@@ -398,7 +398,7 @@ def test_init_and_reset_show_the_words_on_the_terminal_only(tmp_path, monkeypatc
     # The words go to the terminal, never standard output, so no log keeps them (S18.3.1).
     import re
 
-    from moneykata_connector import main
+    from moolakata_connector import main
 
     shown = []
 
@@ -426,7 +426,7 @@ def test_init_and_reset_show_the_words_on_the_terminal_only(tmp_path, monkeypatc
 ON_A_TERMINAL = """
 import os, sys
 os.close(os.open(os.ttyname(0), os.O_RDWR))  # the pty becomes this session's terminal
-from moneykata_connector.main import Terminal
+from moolakata_connector.main import Terminal
 t = Terminal()
 t.say("the words")
 sys.stdout.write(t.ask("word 3: ").strip() + "\\n")
@@ -474,7 +474,7 @@ def test_the_terminal_opens_on_a_real_one():
 
 
 def test_an_address_the_connector_never_calls_is_refused(monkeypatch):
-    # K24: loopback, link-local (cloud metadata) and multicast, as MoneyKata's guard (S13.5).
+    # K24: loopback, link-local (cloud metadata) and multicast, as MoolaKata's guard (S13.5).
     import socket as socket_mod
 
     def resolving(ip):
@@ -489,8 +489,8 @@ def test_an_address_the_connector_never_calls_is_refused(monkeypatch):
 
 
 def test_a_signed_not_paired_forgets_the_credentials_and_the_sealing_key(tmp_path):
-    # K20: MoneyKata unpaired after a lost host; the connector keeps nothing for it (S18.4.4).
-    from moneykata_connector.core import Core
+    # K20: MoolaKata unpaired after a lost host; the connector keeps nothing for it (S18.4.4).
+    from moolakata_connector.core import Core
 
     class Gone:
         def call(self, path, data=None, **kw):
@@ -516,7 +516,7 @@ def test_a_box_older_than_the_credential_held_is_refused(tmp_path):
     import json as json_mod
 
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-    from moneykata_connector.core import ConnectionState, Core
+    from moolakata_connector.core import ConnectionState, Core
 
     taken = []
 
@@ -543,7 +543,7 @@ def test_a_box_older_than_the_credential_held_is_refused(tmp_path):
     assert core.vault.get("Conn_1") == {"appSecret": "s2000"} and "older" in c.message
     core._collect(c, box(3000, host="evil.example"), "t3")
     assert core.vault.get("Conn_1") == {"appSecret": "s2000"} and "another server" in c.message
-    assert len(taken) == 1, "MoneyKata isn't told a refused box was taken"
+    assert len(taken) == 1, "MoolaKata isn't told a refused box was taken"
 
 
 def _seal(plain: bytes, public: bytes, connection_id: str) -> str:
@@ -561,7 +561,7 @@ def _seal(plain: bytes, public: bytes, connection_id: str) -> str:
         algorithm=hashes.SHA256(),
         length=32,
         salt=connection_id.encode(),
-        info=b"moneykata connector credential",
+        info=b"moolakata connector credential",
     ).derive(shared)
     nonce = os.urandom(12)
     out = once.public_key().public_bytes_raw() + nonce + AESGCM(key).encrypt(nonce, plain, None)

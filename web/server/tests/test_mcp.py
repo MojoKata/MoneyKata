@@ -5,7 +5,7 @@ import pytest
 from conftest import make_user, new_client, sign_in
 from test_accounts import add, new_account
 
-from moneykata import mcp
+from moolakata import mcp
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def test_an_assistant_initialises_and_lists_read_only_tools(alice, agent):
     r = rpc(agent, secret, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {}})
     assert r.status_code == 200, r.text
     res = r.json()["result"]
-    assert res["protocolVersion"] == "2025-06-18" and res["serverInfo"]["name"] == "MoneyKata"
+    assert res["protocolVersion"] == "2025-06-18" and res["serverInfo"]["name"] == "MoolaKata"
     note = agent.post(
         "/mcp",
         json={"jsonrpc": "2.0", "method": "notifications/initialized"},
@@ -127,8 +127,8 @@ def test_calls_are_limited_to_60_a_minute_per_token(server, alice, agent, monkey
 
 def test_every_tool_is_in_the_api_reference():
     """docs/api.md lists each MCP tool (S10.9): a new tool without its row fails here."""
-    from moneykata import paths
-    from moneykata.mcp import TOOLS
+    from moolakata import paths
+    from moolakata.mcp import TOOLS
 
     text = (paths.ROOT / "docs" / "api.md").read_text()
     missing = [name for name in TOOLS if f"| `{name}`" not in text]

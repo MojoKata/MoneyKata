@@ -3,7 +3,7 @@
 The receipt, its fields, and what it is attached to. A photo opens full size; a PDF opens in the
 browser's own viewer.
 
-When it was uploaded, MoneyKata read it on the server: its date, total and merchant fill the empty
+When it was uploaded, MoolaKata read it on the server: its date, total and merchant fill the empty
 fields, marked _read from the receipt_ with how sure the reader was. Check them; anything you type
 stays yours and is never replaced. **Read again** reads it once more.
 

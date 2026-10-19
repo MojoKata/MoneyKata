@@ -12,7 +12,7 @@ reason.
    to run, back up and secure, for little gain over a phrase entered at each start with its
    copies kept offline (S15.2).
 3. **Leaving the financial data unencrypted** and relying on disk encryption and encrypted
-   backups. Backups leave the house, so the database and receipts are encrypted by MoneyKata
+   backups. Backups leave the house, so the database and receipts are encrypted by MoolaKata
    (S15.1).
 4. **The master key written as base32** on a recovery sheet. Twelve BIP39 words are easier
    to write down, read back and type, and catch typos better (S15.6.1).
@@ -53,7 +53,7 @@ reason.
 17. **A key per backup**, or any way to close a copy already made, after a master-key leak:
     re-wrapping each backup's keyring under a key the leaked phrase does not open. Whoever
     holds the leaked phrase and a copy of the backup as it was already has its data key; a
-    later re-wrap changes only the copy MoneyKata still holds, not theirs. A copy opens with
+    later re-wrap changes only the copy MoolaKata still holds, not theirs. A copy opens with
     the keys of its day for as long as it exists, so the answer to a leak is to delete the
     copies, not to re-key them (S15.7.3, S15.8).
 18. **A master key file on the host**, read by the server's account at start, mounted read

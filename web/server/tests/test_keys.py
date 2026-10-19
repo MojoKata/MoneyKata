@@ -2,9 +2,9 @@ import os
 
 import pytest
 
-from moneykata.config import RefuseStart
-from moneykata.keys import cli, master, phrase
-from moneykata.store import maintenance
+from moolakata.config import RefuseStart
+from moolakata.keys import cli, master, phrase
+from moolakata.store import maintenance
 
 
 def test_phrase_matches_bip39_vectors():
@@ -183,7 +183,7 @@ def test_rotate_offline_refuses_a_wrong_phrase_or_a_pending_reencryption(config,
 def test_rotate_through_the_running_server_needs_no_old_phrase(store, keyed_config, master_key):
     """S15.7.1: the running server holds the data key, so a lost phrase can be replaced while
     it is up; the keyring records the old key."""
-    from moneykata.store import reencrypt as journaled
+    from moolakata.store import reencrypt as journaled
 
     new_key = os.urandom(16)
     store2, outcomes = maintenance.rotate_running(keyed_config, store, new_key)
@@ -247,7 +247,7 @@ def test_a_recovery_sheet_goes_to_the_terminal_only(config, monkeypatch):
 ON_A_TERMINAL = """
 import os, sys
 os.close(os.open(os.ttyname(0), os.O_RDWR))  # the pty becomes this session's terminal
-from moneykata.keys.cli import Terminal
+from moolakata.keys.cli import Terminal
 t = Terminal()
 t.say("the sheet")
 sys.stdout.write(t.ask("word 3? ").strip() + "\\n")

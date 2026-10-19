@@ -4,7 +4,7 @@ mockup's worked numbers; then grouping, proposals, rolls and undo through the AP
 import datetime as dt
 from decimal import Decimal as D
 
-from moneykata.options.strategies import Leg, capital_at_risk, figures, shape
+from moolakata.options.strategies import Leg, capital_at_risk, figures, shape
 
 EXP = dt.date(2026, 11, 20)
 
@@ -86,7 +86,7 @@ from conftest import make_user, sign_in  # noqa: E402
 from test_accounts import new_account  # noqa: E402
 from test_options import opt as option  # noqa: E402
 
-from moneykata import clock  # noqa: E402
+from moolakata import clock  # noqa: E402
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 

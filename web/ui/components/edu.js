@@ -294,7 +294,7 @@ export function Contributions({ a }) {
     <div class="grid g2 mt">
       <div class="card facts">
         <h3>State tax deduction</h3>
-        <p class="small dim" style=${{ marginTop: 0 }}>Typed by the owner: MoneyKata doesn't
+        <p class="small dim" style=${{ marginTop: 0 }}>Typed by the owner: MoolaKata doesn't
           model state rules.</p>
         <div class="list-item"><span class="grow dim">Expected a year</span>${pl.stateDeduction
           ? html`<${Amt} v=${pl.stateDeduction} cents=${false} />`

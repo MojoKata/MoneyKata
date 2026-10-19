@@ -95,7 +95,7 @@
    1. The match is the same instrument, a stock or fund (ETFs and mutual funds included),
       bought or reinvested within 30 days before or after a sale at a loss in a taxable
       account. Whether a different instrument is substantially identical is the preparer's
-      call, and MoneyKata does not guess.
+      call, and MoolaKata does not guess.
    2. Replacement shares are taken nearest the sale date first, each counted against one
       sale only. The shares bought in the lot that was sold are never their own replacement.
       A partial replacement disallows the loss in proportion: 4 shares bought back of 10
@@ -111,7 +111,7 @@
       changed, deleted or imported, so a later purchase that replaces an earlier loss, or a
       deleted one that no longer does, takes effect at once.
    5. **Flagged for review, never adjusted**: where the rules are unsettled or depend on
-      facts MoneyKata can't see, a possible wash sale is listed among the tax book's issues
+      facts MoolaKata can't see, a possible wash sale is listed among the tax book's issues
       (S8.3) with the trades involved, and no basis is changed:
       1. a loss on a **short sale** closed with shares bought within 30 days of another
          short sale of the same stock, or of opening one;

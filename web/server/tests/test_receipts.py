@@ -7,8 +7,8 @@ from conftest import make_user, sign_in
 from PIL import Image
 from test_accounts import add, new_account
 
-from moneykata import receipts
-from moneykata.store import maintenance
+from moolakata import receipts
+from moolakata.store import maintenance
 
 
 def png(color=(200, 30, 30), size=(60, 90)) -> bytes:

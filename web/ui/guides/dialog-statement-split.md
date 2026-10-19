@@ -28,4 +28,4 @@ The part's balance at the end: it becomes the account's balance on the last day.
 
 ## Leave this part out
 
-For an account MoneyKata doesn't hold, or one you keep elsewhere.
+For an account MoolaKata doesn't hold, or one you keep elsewhere.

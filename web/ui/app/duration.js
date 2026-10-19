@@ -1,7 +1,7 @@
 // Durations as people type them (requirements S12.13): one or more parts, each a whole number
 // and a unit, w (weeks), d (days), h (hours) or m (minutes), largest first, each unit at most
 // once, with or without spaces: "1d", "90m", "2w 3d 4h", "2w3d". The server reads them with the
-// same rules (moneykata/duration.py).
+// same rules (moolakata/duration.py).
 
 const MINUTES = /** @type {Record<string, number>} */ ({ w: 10080, d: 1440, h: 60, m: 1 });
 const ORDER = 'wdhm';

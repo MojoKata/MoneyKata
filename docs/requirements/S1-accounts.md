@@ -39,7 +39,7 @@
       day, as a statement's are (S1.3.3.8.2): the lots change only through transactions. For an
       account kept by snapshots (R3.2), with no trades of its own, they are its holdings;
    3. **statement import**: a **PDF statement**, read from its text layer, or a **photo or
-      scan** of one, read with RapidOCR as receipts are (S9.8), all on the server. MoneyKata
+      scan** of one, read with RapidOCR as receipts are (S9.8), all on the server. MoolaKata
       finds the statement's period, its transactions and its opening and closing balances,
       and shows them for the user to check and correct before anything is saved. The
       transactions must add up from the opening to the closing balance; where they don't,
@@ -76,13 +76,13 @@
          account's name followed by its number), and each part is read as a statement of its
          own. A part goes to the account whose last four digits (S1.1) its header shows, and
          to one the person chooses when none or several match; a part for an account
-         MoneyKata doesn't hold can be left out. The parts are checked one after another in
+         MoolaKata doesn't hold can be left out. The parts are checked one after another in
          the same dialog, each against its own opening and closing balances, and nothing is
          saved until each part is saved or left out. The PDF is kept on each account it
          filled, once.
       6. **Kept without reading**: any statement can be kept on its account as it is, for the
          record, without its lines being read: a brokerage statement's trades (L1), a
-         statement whose layout isn't read, or one the person only wants archived. MoneyKata
+         statement whose layout isn't read, or one the person only wants archived. MoolaKata
          reads its period and institution where it can (with statement reading off, the
          person types the period), for the person to check, and keeps the PDF on the account
          as a receipt (S9) named by its period (*UMB statement, Sep 1 – Sep 30, 2026*), as a
@@ -101,7 +101,7 @@
             bands.
          2. **Naming them**: the check dialog shows the bands above the lines, each with a
             choice: *Date*, *Description*, *Debit* (money out), *Credit* (money in),
-            *Amount* (signed), *Balance*, or *Ignore*. MoneyKata proposes names from the
+            *Amount* (signed), *Balance*, or *Ignore*. MoolaKata proposes names from the
             column headings it finds (*Withdrawals*, *Deposits*, *Debits*, *Credits*,
             *Balance*) and from the totals (debits and credits each adding up to a total the
             statement prints); the person corrects them, and each line's sign follows from
@@ -128,7 +128,7 @@
             trades of its own.
          2. **The positions** on the last day: symbol (or CUSIP, or a fund's name),
             quantity, price and market value, a row split over two lines read as one. They
-            become a **holdings check** at that date: each is matched to what MoneyKata
+            become a **holdings check** at that date: each is matched to what MoolaKata
             holds, and a quantity that differs is shown with the difference, as an anchor
             shows a cash difference (a missed split, a dropped reinvestment). For an account
             kept by snapshots, they are its holdings on that date. A cost basis on the
@@ -150,7 +150,7 @@
          rest are entered by hand (L1).
    4. **bitcoin watch** (self-custody wallets): balances and transactions read by address or
       xpub (S1.6);
-   5. **the MoneyKata Connector**: files fetched from the institution by the connector's
+   5. **the MoolaKata Connector**: files fetched from the institution by the connector's
       driver for a Connection the owner set up, and imported as an upload would be (S18).
 
    No bank-aggregation service is used: the user brings the files ([rejected ideas](rejected-ideas.md)).
@@ -165,7 +165,7 @@
 6. **Self-custody wallets** hold **bitcoin**. Other coins and chains come later ([out of scope](out-of-scope.md)).
    1. **What the account holds**: addresses, an **xpub/ypub/zpub**, or an **output
       descriptor**, from which addresses are derived (with a gap limit of 20 unused addresses
-      by default). Where a choice isn't settled here, MoneyKata does as Sparrow does, so a
+      by default). Where a choice isn't settled here, MoolaKata does as Sparrow does, so a
       wallet exported from Sparrow derives the same addresses.
       1. An xpub's addresses are legacy (1…), a ypub's nested segwit (3…) and a zpub's
          native segwit (bc1q…), on the receive chain (0/i) and the change chain (1/i).
@@ -193,14 +193,14 @@
          server** (Fulcrum, electrs), or **Bitcoin Core** over RPC with a watch-only
          descriptor wallet. An own node keeps the household's addresses private, and is
          recommended. Its address is named by the admin, so the egress guard (S13.5) lets
-         MoneyKata reach it on the LAN; its credentials are a secret (S14.4).
+         MoolaKata reach it on the LAN; its credentials are a secret (S14.4).
       3. **How each is read.** Esplora: each address's transactions over HTTPS, with every
          input's previous output, so each transaction's effect on the wallet is known. An
          Electrum server: each address's history by its script hash over TCP (TLS by default),
-         and the raw transactions, read by MoneyKata; its certificate is trusted on first use
+         and the raw transactions, read by MoolaKata; its certificate is trusted on first use
          (below). Bitcoin
          Core over JSON-RPC: a watch-only descriptor wallet for each wallet account
-         (`moneykata-<account id>`), its keys imported as descriptors over the addresses
+         (`moolakata-<account id>`), its keys imported as descriptors over the addresses
          derived, rescanned from the start the first time, then its transactions listed. Only
          public keys and addresses are ever sent.
       4. **An Electrum server's certificate** is trusted on first use: **Test** in Settings ›
@@ -351,7 +351,7 @@
        bottom up), an OFX file's ledger balance, a statement's closing balance (S1.3.3), or a balance the
        user **types** from the institution's site. When an account's next statement or
        import is overdue (S1.11.7), it asks for one.
-    3. **The check**: at each anchor, MoneyKata's balance for that day is compared with the
+    3. **The check**: at each anchor, MoolaKata's balance for that day is compared with the
        anchor. A match stays quiet. A **mismatch** shows the difference, the window between
        the last matching anchor and this one, and what is suspect inside it: likely
        duplicates, amounts that changed between imports, and coverage gaps. With a
@@ -372,7 +372,7 @@
           monthly for banking, cards, brokerage, crypto exchanges, IRAs, HSAs and loans;
           quarterly for 401(k), 403(b), 457(b) and 529 plans and donor-advised funds; none for
           accounts kept by hand, watched wallets and physical assets.
-       2. **Learned**: once an account has three statements or imports, MoneyKata works out
+       2. **Learned**: once an account has three statements or imports, MoolaKata works out
           the interval they arrive at (the typical gap between the ends of what they cover;
           files downloaded more often than every 20 days teach nothing) and, where it differs
           from the one in force, proposes it in

@@ -88,7 +88,7 @@
 
   /** A request's key: its path and its query in order, less what only says "now". */
   const keyOf = (/** @type {string} */ url) => {
-    const u = new URL(url, 'https://moneykata.invalid');
+    const u = new URL(url, 'https://moolakata.invalid');
     const q = [...u.searchParams].filter(([k]) => k !== 'since').sort((a, b) =>
       a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
     );
@@ -165,7 +165,7 @@
       }
       return Promise.resolve(
         fresh
-          ? json(503, { code: 'locked', title: 'Not available', detail: 'MoneyKata is new.' })
+          ? json(503, { code: 'locked', title: 'Not available', detail: 'MoolaKata is new.' })
           : json(401, { code: 'signed-out' }),
       );
     }
@@ -192,7 +192,7 @@
         json(503, {
           code: 'locked',
           title: 'Not available',
-          detail: 'MoneyKata is locked: an admin enters the recovery phrase to open it.',
+          detail: 'MoolaKata is locked: an admin enters the recovery phrase to open it.',
         }),
       );
     }

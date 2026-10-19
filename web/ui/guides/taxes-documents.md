@@ -18,5 +18,5 @@ W-2s, 1099s, 1098s and the like, expected from the accounts counted and from las
 ## Filed
 
 The return as filed, the e-file acknowledgement, an extension, and what the tax authority sends:
-notices, letters, your replies, transcripts. MoneyKata doesn't produce these; it keeps them because
+notices, letters, your replies, transcripts. MoolaKata doesn't produce these; it keeps them because
 next year often needs them.

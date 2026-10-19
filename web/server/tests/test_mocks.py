@@ -4,9 +4,9 @@ sockets, reading the same chain, and a wallet synced from each through the serve
 
 import pytest
 
-from moneykata import net
-from moneykata.bitcoin import sources
-from moneykata.dev.mocks import TIP, Mocks
+from moolakata import net
+from moolakata.bitcoin import sources
+from moolakata.dev.mocks import TIP, Mocks
 
 
 @pytest.fixture(scope="module")
@@ -78,9 +78,9 @@ def test_the_fake_core_makes_a_watch_only_wallet_and_lists_its_transactions(mock
     )
     core = sources.Core(cfg, guard())
     assert core.test() == f"Bitcoin Core answered: block {TIP:,}"
-    core.wallet("moneykata-test", [("wpkh(xpub/0/*)", 25), ("wpkh(xpub/1/*)", 25)])
-    core.wallet("moneykata-test", [("wpkh(xpub/0/*)", 25)])  # already there: nothing imported twice
-    txs, used = core.history_of("moneykata-test")
+    core.wallet("moolakata-test", [("wpkh(xpub/0/*)", 25), ("wpkh(xpub/1/*)", 25)])
+    core.wallet("moolakata-test", [("wpkh(xpub/0/*)", 25)])  # already there: nothing imported twice
+    txs, used = core.history_of("moolakata-test")
     c = mocks.chain
     assert used == {c.first, c.change, c.far}
     got = _by_kind(c, txs)
@@ -90,9 +90,9 @@ def test_the_fake_core_makes_a_watch_only_wallet_and_lists_its_transactions(mock
 def test_a_wallet_syncs_from_the_fake_esplora_through_the_server(server, mocks):
     from conftest import make_user, sign_in
 
-    from moneykata import settings
-    from moneykata.bitcoin import sync
-    from moneykata.dev.seed_wallets import TEST_ZPUB
+    from moolakata import settings
+    from moolakata.bitcoin import sync
+    from moolakata.dev.seed_wallets import TEST_ZPUB
 
     make_user(server, "alice")
     c = sign_in(server, "alice")

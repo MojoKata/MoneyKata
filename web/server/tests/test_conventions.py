@@ -3,8 +3,8 @@ so a new route can't drift from them."""
 
 from fastapi.routing import APIRoute
 
-from moneykata.app import Server, create_app
-from moneykata.ui.conventions import Deleted, if_match
+from moolakata.app import Server, create_app
+from moolakata.ui.conventions import Deleted, if_match
 
 # Changes to what has no version of its own (S13.8.6): pairs that only link two records, and
 # secrets, which are replaced outright. Signing out ends a session, not a record.
@@ -66,7 +66,7 @@ def test_every_list_is_paged(store, keyed_config):
     """Every GET that answers a list takes offset and limit and answers a Page (S13.8.5)."""
     app = create_app(Server(config=keyed_config, store=store, ready=True))
     doc = app.openapi() if app.openapi_url else None
-    from moneykata import contract
+    from moolakata import contract
 
     doc = doc or contract.openapi_document()
     bare = [
@@ -87,7 +87,7 @@ def test_every_list_is_paged(store, keyed_config):
 
 def test_the_document_lists_the_problems_and_their_codes():
     # N16: the problem document and its stable codes are in the OpenAPI document (S13.8.3).
-    from moneykata import contract
+    from moolakata import contract
 
     doc = contract.openapi_document()
     codes = doc["components"]["schemas"]["Problem"]["properties"]["code"]["enum"]
@@ -104,8 +104,8 @@ def test_the_document_lists_the_problems_and_their_codes():
 def test_every_201_names_what_it_made_and_every_202_is_a_job(store, keyed_config):
     """S13.8.4, S13.8.7: Location on every 201 (the document says so, and the server adds it
     where a route doesn't), and a job resource for every 202."""
-    from moneykata import contract
-    from moneykata.ui.imports import JobOut
+    from moolakata import contract
+    from moolakata.ui.imports import JobOut
 
     app = create_app(Server(config=keyed_config, store=store, ready=True))
     not_jobs = [
@@ -123,7 +123,7 @@ def test_every_201_names_what_it_made_and_every_202_is_a_job(store, keyed_config
 
 
 def test_a_201_without_its_own_location_is_given_one():
-    from moneykata.middleware import location_of
+    from moolakata.middleware import location_of
 
     assert location_of("/ui/api/rules", b'{"items": []}') == "/ui/api/rules"
     assert location_of("/ui/api/persons", b'{"id": "Prsn_1"}') == "/ui/api/persons/Prsn_1"
@@ -134,7 +134,7 @@ def test_a_201_without_its_own_location_is_given_one():
 def test_every_problem_code_and_every_422_is_in_the_openapi_document():
     # S13.8.3, N16: the codes the error handlers answer are listed too, a field's own codes by
     # their pattern, and a 422 is a problem document, never FastAPI's shape.
-    from moneykata import contract
+    from moolakata import contract
 
     doc = contract.openapi_document()
     codes = set(doc["components"]["schemas"]["Problem"]["properties"]["code"]["enum"])
