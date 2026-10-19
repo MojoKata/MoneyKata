@@ -4,7 +4,7 @@ The **MoneyKata Connector** keeps accounts current from their institutions witho
 ever holding, using or seeing an institution's credentials. It is a second service: it keeps
 the credentials in a vault of its own, its **drivers** fetch from each institution, and it
 pushes what they fetch into MoneyKata's import. MoneyKata can't reach it, read its vault or
-ask it for anything.
+ask it for anything. People give it its words on **its page**, which it serves itself.
 
 **Terms used here.**
 
@@ -13,6 +13,7 @@ ask it for anything.
 | **the vault** | one encrypted file in the connector's volume holding every Connection's credentials, the host each is bound to, and the sealing key's private half. It opens only with the words (S18.3). |
 | **the words** | 12 BIP-39 words that are the vault's key, kept in the household's password manager and never stored. |
 | **locked / unlocked** | whether the words have been given since the connector last started. Locked, it reports and nothing more. |
+| **its page** | the connector's own HTTPS page, on a port of its own, where its vault is made, its words given and its pairing done; anyone on the network sees its status, and every action asks for the words (S18.11). |
 | **identity key** | an Ed25519 key pair made at pairing, kept **beside** the vault (not in it), whose private half signs every call so MoneyKata knows the paired connector. A locked connector can still report with it (S18.4.5). |
 | **sealing key** | an X25519 key pair made at pairing. MoneyKata holds the public half and gives it to browsers; the private half lives **in** the vault and is the only thing that opens a sealed box (S18.4.5). |
 | **sealed box** | a credential encrypted in the owner's browser to the sealing key, which MoneyKata stores and hands over but cannot open (S18.7.1). |
@@ -71,11 +72,13 @@ ask it for anything.
       that volume; the connector never mounts MoneyKata's data, keys or backups. The volume is
       `/var/lib/moneykata-connector` (mode 0700): `vault.json`, and `pairing.json` (mode 0600:
       MoneyKata's address and fingerprint, the identity key's private half and the sealing
-      key's public half). The socket is `/run/moneykata-connector/sock` (mode 0600, on a
-      tmpfs). `MONEYKATA_CONNECTOR_DATA` and `MONEYKATA_CONNECTOR_SOCKET` move the volume and
-      the socket.
+      key's public half), and `tls/`, its page's certificate when it makes its own (S18.11.1).
+      The socket is `/run/moneykata-connector/sock` (mode 0600, on a tmpfs).
+      `MONEYKATA_CONNECTOR_DATA` and `MONEYKATA_CONNECTOR_SOCKET` move the volume and the
+      socket.
    2. **One way.** The connector only opens connections: to its institutions and to MoneyKata.
-      It listens on no network port; its only way in is a Unix socket inside its own container,
+      It listens on one network port, for its own page (S18.11), which serves that page and
+      its forms and nothing else; its other way in is a Unix socket inside its own container,
       for the commands an admin runs there (S18.3). MoneyKata has nothing to call and no way to
       ask for a credential. A call it makes follows no redirect (a 3xx answer is a failure, so
       nothing is sent again elsewhere), waits at most 60 seconds, and reads at most 25 MB of an
@@ -114,12 +117,20 @@ ask it for anything.
          the new address (the connector moved) or unpairs (S18.5.4). The vault stays closed
          without the words: no credential, and no sealing key, so no box sealed before or
          after the theft opens. This is why the sealing key lives in the vault.
+      5. **Someone on the network without the words** can open its page and read its status
+         (S18.11.3), which names no institution, Connection, account or credential, and can
+         make wrong guesses, each logged with their address and counted toward the wait of
+         S18.3.3. They can't unlock, lock, pair, unpair or reset it. On a connector with no
+         vault yet they could make one, whose words the household never saw: its page then
+         asks for words nobody wrote down, and the household starts it again empty
+         (S18.11.2), having lost nothing.
 3. **The vault and its words.**
-   1. **Made at install**: `docker compose run --rm connector init` makes a random 128-bit key
-      and shows it as **12 BIP-39 words** with the vault's fingerprint, on the terminal and
-      never on standard output, so no log keeps them, and won't finish until three of them,
-      chosen at random, are typed back. The admin keeps the words in the household's password
-      manager. They are never stored; the vault key comes from them. The vault holds every
+   1. **Made at install**, on its page (S18.11.2): a random 128-bit key, shown as **12 BIP-39
+      words** with the vault's fingerprint, and the vault is made only once three of them,
+      chosen at random, are typed back. On a terminal instead, `docker compose run --rm
+      connector init` does the same before the first start, showing the words on the
+      terminal and never on standard output, so no log keeps them. The admin keeps the words
+      in the household's password manager. They are never stored; the vault key comes from them. The vault holds every
       Connection's credentials with the host each is bound to (S18.7.3), and the sealing key's
       private half (S18.4.5); a Schwab Connection's entry also holds the app's secret and its
       tokens with when they run out. It is one file, `vault.json`: its format's name, the
@@ -132,27 +143,34 @@ ask it for anything.
       vault's words from a damaged file.
    2. **Locked at every start**: the connector starts locked, fetches nothing, and reports that
       it is locked (S18.5); MoneyKata down or locked is a state it reports and retries with a
-      growing wait, never a reason to stop. An admin unlocks it with `docker compose exec
-      connector moneykata-connector unlock`, which asks for the words without echo and hands
-      them to the running connector over its Unix socket; the key stays in memory only. A
-      restart, a crash or the host's reboot locks it again. `lock` locks it at once, and
-      `status` says what the connector is doing: whether it is locked and paired, its last
-      report, and each Connection's state; the image's health check runs `status`.
+      growing wait, never a reason to stop. An admin unlocks it on its page (S18.11.4), or
+      with `docker compose exec connector moneykata-connector unlock`, which asks for the
+      words without echo and hands them to the running connector over its Unix socket; the
+      key stays in memory only. A restart, a crash or the host's reboot locks it again.
+      **Lock** on its page, or `lock`, locks it at once, and `status` says what the connector
+      is doing: whether it is locked and paired, its last report, and each Connection's
+      state. The image's health check runs `status`, which answers whenever the connector
+      runs, with a vault or without one, locked or not: healthy means alive.
    3. **Wrong words**: the checksum catches most typing slips at once; a phrase that is a
       valid one but not this vault's is refused by the vault's fingerprint. Five wrong
-      attempts in a row make the next wait 15 minutes.
-   4. **Lost words**: the vault can't be opened. `moneykata-connector reset` asks for it to be
-      confirmed, deletes the vault, makes new words (shown as at `init`, three typed back), and
-      unpairs, so the next `pair` makes a new identity key and a new sealing key and every
-      Connection's credentials are entered again (S18.7).
+      attempts in a row, on its page and at the command line alike, make the next wait 15
+      minutes. Each wrong attempt on its page is logged with the address it came from.
+   4. **Lost words**: the vault can't be opened. `moneykata-connector reset` on its host asks
+      for it to be confirmed, deletes the vault, makes new words (shown as at `init`, three
+      typed back), and unpairs, so the next `pair` makes a new identity key and a new sealing
+      key and every Connection's credentials are entered again (S18.7). **Reset** on its page
+      does the same for a household that still has the words but wants new ones (some were
+      seen): it asks for the words, then shows new ones as its welcome does. Without the
+      words, reset is done on the host, whose access is the authority.
 4. **Pairing with MoneyKata**, once, as two servers are linked (S11.1).
    1. An admin chooses **Settings › Connector › Pair** in MoneyKata, which shows a one-time
       **pairing code**: MoneyKata's address, its link key's fingerprint, a one-time secret,
       and, when MoneyKata's certificate is its own rather than a public one, the fingerprint of
       the certificate's key, valid 24 hours, in the form of a link code (`mkp1.`,
       `docs/link-protocol.md` §4.1), of which MoneyKata keeps only the secret's hash.
-   2. On the connector's host, with the vault unlocked: `docker compose exec connector
-      moneykata-connector pair <code>`. The connector makes its **identity key** (Ed25519, for
+   2. On the connector's page, **Pair** with the code and the words (S18.11.4), or on its host
+      with the vault unlocked: `docker compose exec connector moneykata-connector pair
+      <code>`. The connector makes its **identity key** (Ed25519, for
       signing) and its **sealing key** (X25519, for credentials sent to it, S18.7.1), files the
       sealing key's private half in the vault (so `pair` is refused while the vault is locked),
       introduces itself with the code in one call (`POST /connector/v1/pair`: the code and the
@@ -220,7 +238,8 @@ ask it for anything.
    says the connector is unlocked** (a locked one couldn't open them, S18.4.5) **and the
    pairing is confirmed** (S18.4.2), and Connections removed (S18.6.4), whose credentials it
    then deletes. MoneyKata shows the report and alerts admins (S12.11):
-   1. **the connector is locked**: unlock it on its host;
+   1. **the connector is locked**: unlock it on its page, which Settings › Connector links to
+      (S18.11.1), or on its host;
    2. **the connector hasn't been heard from for 15 minutes**: it is stopped, down, or can't
       reach MoneyKata;
    3. **a Connection needs a sign-in or is failing**, to admins and to the owner of each
@@ -344,6 +363,43 @@ ask it for anything.
       `docs/external/schwab-py-auth.rst`.
 10. **Packaging**: `install/compose.yaml` carries the `connector` service, from the
     `moneykata-connector` image of the same version, `restart: unless-stopped`, read only, all
-    capabilities dropped, no published port and its own volume. `docs/operations.md` covers
-    installing it, its words, unlocking after a restart, pairing, running it on another machine
-    instead, and unpairing a lost one.
+    capabilities dropped, its page's port (37374) its only published one, and its own volume.
+    On TrueNAS it is an app of its own (`install/compose.connector-truenas.yaml`).
+    `docs/operations.md` covers installing it, its words, unlocking after a restart, pairing,
+    running it on another machine instead, and unpairing a lost one.
+11. **Its page.** The connector serves one small page of its own, so a household makes its
+    vault, gives its words after a restart and pairs it from a browser, as MoneyKata's own
+    welcome and locked screen work (S15.4), while MoneyKata never sees the words: the page is
+    the connector's, on its own port, and MoneyKata only links to it.
+    1. **Where**: HTTPS on port 37374 (`MONEYKATA_CONNECTOR_PORT`), with a certificate of its
+       own, made at its first start, kept in `tls/` in its volume and good for 825 days,
+       naming `localhost` and each name in `MONEYKATA_CONNECTOR_NAMES` (the addresses
+       browsers use, separated by commas); or the certificate and key named by
+       `MONEYKATA_CONNECTOR_TLS_CERT` and `MONEYKATA_CONNECTOR_TLS_KEY`. Its address, the
+       first of those names with the port, goes in every report (`page`,
+       `docs/connector-protocol.md`), and Settings › Connector links to it.
+    2. **The welcome**: with no vault, the page says **Welcome to MoneyKata Connector** and
+       offers **Show my words**: a new key on every visit, held in memory only (an hour each,
+       20 at most), shown as its 12 words with the vault's fingerprint; three of them typed
+       back make the vault, unlocked, and drop every other key on offer. Whoever reaches a
+       connector with no vault first can make it: one whose page asks for words nobody wrote
+       down is stopped, its volume emptied, and started again.
+    3. **Its status, for anyone who opens it**: locked or unlocked, the MoneyKata address it
+       is paired with (or not paired) and the connector's fingerprint, whether the pairing is
+       confirmed, its last report and whether MoneyKata answered, how many Connections are
+       working and how many need attention, and its version. Never an institution, a
+       Connection's name, an account or a credential.
+    4. **Its actions, each a form that takes the words**: **Unlock**; **Lock**; **Pair**, with
+       MoneyKata's pairing code (the words unlock a locked vault first), after which it shows
+       the connector's fingerprint to compare with Settings › Connector, where an admin
+       confirms it (S18.4.2); **Unpair**, which forgets the pairing and the credentials kept
+       for that server, as MoneyKata's Unpair makes it do (S18.4.4); and **Reset**, which
+       also asks for RESET to be typed (S18.3.4). The page never takes or shows a
+       credential: those are sealed in MoneyKata (S18.7.1) or typed on the host (S18.7.2).
+    5. **How it is built**: forms the connector renders itself, with no JavaScript, from the
+       standard library's HTTP server and `ssl` and the `cryptography` the core has
+       (S18.1.2). Its content policy allows its own stylesheet and nothing else; forms post
+       only to itself, and one from another origin is refused; no answer is cached or framed;
+       a form's body is at most 16 KB. Its stylesheet uses MoneyKata's colour and type tokens,
+       light and dark as the browser prefers, and a test fails when the two differ, so they
+       read as one product.

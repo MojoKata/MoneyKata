@@ -32,7 +32,7 @@
                          retention), links/, dev/ (dev mode, seed data, the wheel check)
      install/            Dockerfile, compose.yaml, compose.tls.yaml, compose.truenas.yaml,
                          moneykata.toml, smoke.sh, proxy/ (reverse-proxy examples)
-   connector/            the MoneyKata Connector (S18): its core, drivers and image
+   connector/            the MoneyKata Connector (S18): its core, drivers, page and image
    publish/truenas/      the app for TrueNAS's catalog and the script that opens its pull
                          request there (S17.8.3)
    ```
