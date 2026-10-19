@@ -9,9 +9,9 @@ relies on goes behind its reverse proxy instead ([`operations.md`](operations.md
 keys and the connector.
 
 The steps were run on Proxmox VE 9.2 with a Debian 13 guest and Docker Engine 29, and on
-TrueNAS Community Edition 25.10.7, with the image built from the source rather than pulled;
-their screenshots are from those runs, and §5's are from a server built from the same source.
-A release's images are published on ghcr.io (§2), and a host pulls them in place of that build.
+TrueNAS Community Edition 25.10.7, each pulling the published 0.1.0 images (§2) and, on the VM,
+the compose file from the release's tag. The screenshots are from those hosts, and §5's from a
+server built from the same source.
 
 ## 1. What you need
 
@@ -159,9 +159,9 @@ UI show the VM's address on its **Summary**; it starts by itself at every boot a
    EOF
    ```
 
-3. **Start it**: `docker compose up -d moolakata`, which first pulls the image (§2). Name the
-   service: the compose file's other one is the connector, which needs a setup of its own
-   before it starts (operations.md §8).
+3. **Start it**: `docker compose up -d moolakata`, which first pulls the image (§2): a minute
+   or two the first time. Name the service: the compose file's other one is the connector,
+   which needs a setup of its own before it starts (§8).
 4. **Open it** in a browser: the welcome makes its master key and your account (§5).
 
 ### 3.4 After a reboot
@@ -263,10 +263,11 @@ server's account (uid 10001) and ends; MoolaKata starts once it has. `MOOLAKATA_
 server's configuration, the same TOML as `moolakata.toml` on the VM (§3.3), given here so there
 is no file to write.
 
-The install pulls the image (§2), and the app shows **Running** within seconds, before anyone
-has opened it: Running means it answers, not that it is open (§4.3). Then open it: the welcome
-makes its master key and your account (§5). The NAS's time zone (**System › General Settings ›
-Localization › Settings**) is the server's, for backups and emails.
+The install pulls the image (§2), a minute or two the first time, and the app shows
+**Running** within seconds of that, before anyone has opened it: Running means it answers, not
+that it is open (§4.3). Then open it: the welcome makes its master key and your account (§5).
+The NAS's time zone (**System › General Settings › Localization › Settings**) is the server's,
+for backups and emails.
 
 ![The app, Running before the welcome](deploy/truenas-app-running.png)
 
