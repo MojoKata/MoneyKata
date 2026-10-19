@@ -6,6 +6,7 @@ import datetime as dt
 import hashlib
 import json
 import secrets
+from urllib.parse import urlsplit
 
 from sqlalchemy import false, select
 
@@ -300,6 +301,7 @@ def apply_report(
         row.locked = bool(body.get("locked", True))
         row.connectorVersion = version
         row.protocol = protocol
+        row.pageAddress = _page(body.get("page"))
         if address and address != row.lastAddress:
             # A report from somewhere new (S18.2.4.4): the first address is taken as known;
             # a later change is alerted until an admin accepts it.
@@ -371,11 +373,29 @@ def apply_report(
                     ),
                 }
             )
-        return {"connections": live, "removed": removed}
+        # Whether an admin confirmed the pairing, which its page shows (S18.11.3).
+        return {"connections": live, "removed": removed, "confirmed": row.confirmedAt is not None}
 
 
 def _short(v) -> str | None:
     return v.strip()[:200] if isinstance(v, str) and v.strip() else None
+
+
+def _page(v) -> str | None:
+    """The connector's page as it reports it (S18.11.1): an https address of a host and
+    port, nothing more, since Settings › Connector links to it."""
+    if not isinstance(v, str) or len(v) > 300:
+        return None
+    try:
+        u = urlsplit(v.strip())
+        u.port  # noqa: B018 - a port that isn't a number raises here
+    except ValueError:
+        return None
+    if u.scheme != "https" or not u.hostname or u.username or u.password:
+        return None
+    if u.path not in ("", "/") or u.query or u.fragment:
+        return None
+    return f"https://{u.netloc}"
 
 
 def _last4(v) -> str | None:

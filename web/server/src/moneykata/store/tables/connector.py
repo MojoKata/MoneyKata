@@ -41,6 +41,8 @@ Connector = record(
     # Its identity key's signature over its sealing key (S18.4.5), which a browser checks
     # before sealing, so the key sealed to is the paired connector's own.
     Column("sealingSignature", Text),
+    # Its page's address, from its reports (S18.11.1), which Settings › Connector links to.
+    Column("pageAddress", Text),
     CheckConstraint("state IN ('pairing', 'paired', 'ended')", name="state"),
 )
 unique_live(Connector, "identityKey")

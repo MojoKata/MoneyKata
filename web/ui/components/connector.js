@@ -74,6 +74,13 @@ export function ConnectorSection() {
                   <span class="small dim">· version ${v.connectorVersion}</span>
                 `
                 : null}</div>
+          ${v.page
+            ? html`
+              <div class="list-item" data-help="its-page"><span class="grow dim">Its page</span><a
+                  class="mono small" href=${v.page} target="_blank" rel="noopener noreferrer"
+                >${v.page}</a><span class="small dim">· unlock, pair and lock it there</span></div>
+            `
+            : null}
           ${v.confirmedAt
             ? html`
               <div
@@ -84,9 +91,10 @@ export function ConnectorSection() {
                   : ''} <span class="small dim">· the fingerprints were compared</span></div>
             `
             : html`<div class="notice"><${Icon} name="alert" /><div>Compare the fingerprint above with
-                the one <code>moneykata-connector pair</code> printed on the connector's host. If
-                they match, confirm: until then the connector gets no sign-in and posts no file.
-                If they differ, someone else answered the code first: unpair.</div>
+                the one the connector's page showed (or <code>moneykata-connector pair</code>
+                printed on its host). If they match, confirm: until then the connector gets no
+                sign-in and posts no file. If they differ, someone else answered the code first:
+                unpair.</div>
                 <button class="btn primary" onClick=${() =>
               withReauth(() => api.post('/settings/connector/confirm')).then(() => {
                 toast('Pairing confirmed');
@@ -120,8 +128,8 @@ export function ConnectorSection() {
           <div class="notice">
             <${Icon} name="info" />
             <div>A pairing code is out until
-                      ${moment(v.codeExpiresAt)}. Run it on the connector's host, then compare the
-                      fingerprint both sides show.</div>
+                      ${moment(v.codeExpiresAt)}. Paste it into Pair on the connector's page (or run
+                      it on its host), then compare the fingerprint both sides show.</div>
           </div>
         `
         : html`
@@ -209,24 +217,27 @@ function PairDialog({ close }) {
       note="The code works once, for 24 hours."
       footer=${html`
         <button type="button" class="btn" disabled=${!made} onClick=${() =>
-          navigator.clipboard?.writeText(made.command).then(() => toast('Copied'))}>Copy the
-          command</button>
+          navigator.clipboard?.writeText(made.code).then(() => toast('Copied'))}>Copy the
+          code</button>
         <button class="btn primary">Done</button>
       `}>
-      <p class="small dim" style=${{ marginTop: 0 }}>On the connector's host, run this. The
-        code holds this server's address and key fingerprint; the connector then introduces
-        itself, and both sides show its fingerprint for you to compare.</p>
+      <p class="small dim" style=${{ marginTop: 0 }}>Paste this code into <b>Pair</b> on the
+        connector's page, with its words. It holds this server's address and key fingerprint;
+        the connector then introduces itself, and both sides show its fingerprint for you to
+        compare.</p>
       ${make.error ? html`<${FormError} error=${make.error} />` : made
         ? html`
           <div class="field"
-            data-help="pairing-command"><code class="mono" style=${{
+            data-help="pairing-code"><code class="mono" style=${{
               display: 'block',
               padding: '10px 12px',
               background: 'var(--bg-3)',
               borderRadius: '8px',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-all',
-            }}>${made.command}</code></div>
+            }}>${made.code}</code></div>
+          <p class="small dim">Or on the connector's host: <code class="mono">${made
+            .command}</code></p>
         `
         : html`<${Loading} lines=${2} />`}
       <div class="notice mt"><${Icon} name="info" /><div>Pairing another connector replaces

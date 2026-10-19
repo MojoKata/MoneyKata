@@ -24,6 +24,7 @@ class Connector(Record):
     newAddress: str | None = None
     sealingSignature: str | None = None
     protocol: int | None = None
+    pageAddress: str | None = None
 
 
 @dataclass(kw_only=True, eq=False)

@@ -573,6 +573,7 @@
  * @property {(string | null)} knownAddress
  * @property {(string | null)} newAddress
  * @property {(string | null)} lastReportAt
+ * @property {(string | null)} page
  * @property {(number | null)} silentForSeconds
  * @property {(string | null)} connectorVersion
  * @property {(string | null)} codeExpiresAt

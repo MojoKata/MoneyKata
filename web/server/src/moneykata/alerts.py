@@ -276,7 +276,7 @@ def connector(s: Session, server) -> Iterable[Cause]:
             key="connector:locked",
             kind="connector-locked",
             title="The MoneyKata Connector is locked",
-            about="Connector · unlock it on its host with its 12 words",
+            about="Connector · unlock it on its page, or on its host, with its 12 words",
             link="/ui/settings/connector",
             fix="Connector settings",
             icon="lock",

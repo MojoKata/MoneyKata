@@ -171,6 +171,39 @@ def test_an_unconfirmed_pairing_gets_no_credential_and_posts_no_file(server, adm
     assert "connector.confirmed" in [a.kind for a in activity_rows(server)]
 
 
+def test_a_report_names_its_page_and_the_answer_says_whether_confirmed(server, admin, client):
+    """S18.11.1, S18.11.3: the connector's page, from its reports, for Settings › Connector to
+    link to (an https host and port, nothing else); the answer says whether an admin confirmed
+    the pairing, which its page shows."""
+    fake = FakeConnector(server, client)
+    assert fake.pair(pair_code(admin)).status_code == 200
+
+    def report(**extra) -> dict:
+        r = fake.call("/connector/v1/report", {"locked": True, "connections": [], **extra})
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    page = "https://connector.griffin.home:37374"
+    assert report(page=page)["confirmed"] is False
+    assert admin.get("/ui/api/settings/connector").json()["page"] == page
+    for bad in (
+        "http://connector.lan:37374",
+        "https://u:p@connector.lan",
+        "https://connector.lan/somewhere",
+        "https://connector.lan:37374/?next=x",
+        "https://connector.lan:port",
+        "javascript:alert(1)",
+        "https://",
+        7,
+    ):
+        report(page=bad)
+        assert admin.get("/ui/api/settings/connector").json()["page"] is None, bad
+    assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
+    assert report(page=page)["confirmed"] is True
+    report()  # a connector that names no page any more
+    assert admin.get("/ui/api/settings/connector").json()["page"] is None
+
+
 def test_pairing_takes_the_code_once_and_records_the_keys(server, admin, client):
     fake = FakeConnector(server, client)
     hello = client.get("/connector/v1/hello").json()
@@ -216,7 +249,7 @@ def test_a_pairing_code_needs_the_address_and_expires(server, admin_client, admi
 def test_calls_are_signed_and_answers_are_signed_back(server, paired, client):
     r = paired.call("/connector/v1/report", {"locked": True, "connections": []})
     assert r.status_code == 200, r.text
-    assert r.json() == {"connections": [], "removed": []}
+    assert r.json() == {"connections": [], "removed": [], "confirmed": True}
     # Unsigned, a stranger's key, and a replay are refused (signed when there is a nonce).
     r = client.post("/connector/v1/report", json={}, headers={"Origin": ORIGIN})
     assert r.status_code == 403 and r.json()["code"] == "unsigned"

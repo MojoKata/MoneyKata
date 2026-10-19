@@ -65,6 +65,7 @@ class ConnectorOut(Model):
     knownAddress: str | None  # the address admins accepted; a difference is alerted
     newAddress: str | None  # one it reported from that no admin has accepted (S18.5.4)
     lastReportAt: dt.datetime | None
+    page: str | None  # the connector's own page, from its reports (S18.11.1)
     silentForSeconds: int | None  # past the 15 minutes allowed
     connectorVersion: str | None
     codeExpiresAt: dt.datetime | None  # while a pairing code is out
@@ -133,6 +134,7 @@ def view(s, srv) -> ConnectorOut:
             knownAddress=None,
             newAddress=None,
             lastReportAt=None,
+            page=None,
             silentForSeconds=None,
             connectorVersion=None,
             codeExpiresAt=None,
@@ -166,6 +168,7 @@ def view(s, srv) -> ConnectorOut:
         knownAddress=row.knownAddress,
         newAddress=row.newAddress,
         lastReportAt=row.lastReportAt,
+        page=row.pageAddress,
         silentForSeconds=int(silent.total_seconds()) if silent else None,
         connectorVersion=row.connectorVersion,
         codeExpiresAt=row.codeExpiresAt if row.state == "pairing" else None,

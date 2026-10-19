@@ -171,6 +171,7 @@ owner pastes back is exchanged within seconds), `POST /connector/v1/report`:
 {
   "locked": false,
   "unlockedAt": "2026-10-15T06:02:00Z",
+  "page": "https://connector.griffin.home:37374",
   "connections": [
     {
       "id": "Conn_01k7…",
@@ -202,7 +203,8 @@ owner pastes back is exchanged within seconds), `POST /connector/v1/report`:
                       "formats": ["ofx"]}],
         "sealed": {"ciphertext": "…", "sealedAt": "2026-10-15T05:30:00Z"}}
      ],
-     "removed": ["Conn_01k6…"]
+     "removed": ["Conn_01k6…"],
+     "confirmed": true
    }
    ```
 
@@ -211,12 +213,15 @@ owner pastes back is exchanged within seconds), `POST /connector/v1/report`:
    present while a credential waits (section 4.3), **the report said `locked: false`** (a
    locked connector has no sealing key to open it with) **and an admin confirmed the pairing**
    (section 4.1); `removed` names Connections whose owners removed them (S18.6.4), and the
-   connector deletes their credentials and never reports them again.
+   connector deletes their credentials and never reports them again. `confirmed` says whether
+   an admin confirmed the pairing, which the connector's page shows (S18.11.3).
 3. MoneyKata records the report's time, so a connector silent for 15 minutes raises the alert
    of S18.5.2, and shows `locked` as S18.5.1 says. It records the address the report came from
    as well: the first is taken as the connector's; a report from another address is still
    answered but alerts admins until one accepts the new address or unpairs (S18.5.4), whichever
-   address reports after it.
+   address reports after it. It keeps `page`, the address of the connector's own page
+   (S18.11.1), when it is an `https` address of a host and port and nothing more, and Settings ›
+   Connector links to it; a report without one clears it.
 
 ### 4.3 Credentials
 

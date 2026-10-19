@@ -220,3 +220,38 @@ NEWFILEUID:NONE
 </BANKTRANLIST><LEDGERBAL><BALAMT>3457.63<DTASOF>20260930</LEDGERBAL></STMTRS></STMTTRNRS>
 </BANKMSGSRSV1></OFX>
 """
+
+
+def test_its_page_pairs_it_and_shows_the_confirmation(money, tmp_path):
+    """S18.11: the welcome on its page, then Pair with the code and the words; MoneyKata learns
+    the page's address from the report and links to it, and the page shows the pairing
+    unconfirmed until an admin confirms it."""
+    from moneykata_connector import page
+    from test_page import call, free_port, make_vault
+
+    _, admin, app = money
+    data = tmp_path / "data"
+    core = Core(data, transport=None)
+    core.transport = Wired(app, core.egress)
+    settings = page.Settings(port=free_port(), names=("127.0.0.1",))
+    core.page = settings.address
+    served = page.serve(core, settings, data)
+    running = (core, settings, data / "tls" / "cert.pem")
+    try:
+        phrase = make_vault(running)
+        core.lock()
+        code = admin.post("/ui/api/settings/connector/pairings").json()["code"]
+        status, _, text = call(running, "POST", "/pair", {"code": code, "words": phrase})
+        assert status == 200, text
+        view = admin.get("/ui/api/settings/connector").json()
+        assert view["state"] == "paired" and view["fingerprint"] in text
+        core.tick()
+        assert admin.get("/ui/api/settings/connector").json()["page"] == settings.address
+        assert "not confirmed yet" in call(running, "GET", "/")[2]
+        assert admin.post("/ui/api/settings/connector/confirm").status_code == 200
+        core.tick()
+        text = call(running, "GET", "/")[2]
+        assert "confirmed" in text and "not confirmed" not in text
+    finally:
+        served.shutdown()
+        served.server_close()
