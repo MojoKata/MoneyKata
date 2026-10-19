@@ -31,7 +31,8 @@
                          (storage, thumbnails, the reader and its worker, the field parser,
                          retention), links/, dev/ (dev mode, seed data, the wheel check)
      install/            Dockerfile, compose.yaml, compose.tls.yaml, compose.truenas.yaml,
-                         moneykata.toml, smoke.sh, proxy/ (reverse-proxy examples)
+                         compose.connector-truenas.yaml, moneykata.toml, smoke.sh, proxy/
+                         (reverse-proxy examples)
    connector/            the MoneyKata Connector (S18): its core, drivers, page and image
    publish/truenas/      the app for TrueNAS's catalog and the script that opens its pull
                          request there (S17.8.3)
@@ -186,8 +187,8 @@
       pi-heif, sqlcipher3 among them), so nothing is compiled in the image; a check fails
       when one has no arm64 wheel. Each architecture's release gate is `web/install/smoke.sh`
       on its own runner (a refused start, the welcome's key and first admin, a locked restart and
-      its unlock, health, a sign-in, a receipt read, the connector's vault and unlock, clean
-      stops); the trial on household hardware
+      its unlock, health, a sign-in, a receipt read, the connector's vault made on its page and
+      its unlock after a restart, clean stops); the trial on household hardware
       (a Raspberry Pi, an arm64 NAS), which alone measures the reader's speed there
       (S9.8.4.5), is in the manual test plan (S17.9.7.8), and a release says whether it was
       run.

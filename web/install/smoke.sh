@@ -4,7 +4,8 @@
 # uninitialised, locked down as compose runs it, and alive to its health check; makes its key
 # and first admin through the welcome's routes; stops cleanly, starts again locked, is unlocked
 # with `keys unlock`, answers /healthz and a sign-in, reads a receipt, and stops cleanly; the
-# connector refuses to start without a vault, then serves, unlocks and stops.
+# connector starts with no vault, its page's welcome makes one, it stops cleanly, starts again
+# locked, is unlocked with its words, and stops cleanly.
 #
 #   web/install/smoke.sh                 the host's own platform
 #   web/install/smoke.sh linux/arm64     under QEMU: docker run --privileged --rm \
@@ -106,23 +107,56 @@ img = Image.new("L", (600, 300), 255); ImageDraw.Draw(img).text((20, 20), "TOTAL
 b = io.BytesIO(); img.save(b, "PNG")
 r = ocr.read(b.getvalue(), "image/png"); assert r.lines, "nothing read"; print("   read", r.method)'
 
-echo "== the connector: a refused start without a vault (exit 78)"
+echo "== the connector: no vault, and its page's welcome makes one"
 docker volume create mkc-smoke >/dev/null
-CM=(-v mkc-smoke:/var/lib/moneykata-connector --tmpfs /run/moneykata-connector:uid=10002,gid=10002,mode=0700)
-set +e
-docker run --rm "${PF[@]}" "${LOCKED[@]}" "${CM[@]}" "moneykata-connector:$TAG" >/dev/null 2>&1
-[[ $? -eq 78 ]] || { echo "FAILED: expected exit 78"; exit 1; }
-set -e
-echo "== the connector: vault, serve, unlock, stop"
-WORDS="$(docker run --rm "${PF[@]}" "${LOCKED[@]}" "${CM[@]}" --entrypoint python "moneykata-connector:$TAG" -c \
-  'from moneykata_connector.vault import Vault; from pathlib import Path
-print(" ".join(Vault(Path("/var/lib/moneykata-connector/vault.json")).create()))')"
-docker run -d --name mkc-smoke "${PF[@]}" "${LOCKED[@]}" "${CM[@]}" "moneykata-connector:$TAG" >/dev/null
-for i in $(seq 1 60); do docker exec mkc-smoke moneykata-connector status >/dev/null 2>&1 && break; sleep 1; done
+CM=(-v mkc-smoke:/var/lib/moneykata-connector --tmpfs /run/moneykata-connector:uid=10002,gid=10002,mode=0700
+    -e MONEYKATA_CONNECTOR_NAMES=127.0.0.1)
+connector_up() {
+  docker run -d --name mkc-smoke "${PF[@]}" "${LOCKED[@]}" "${CM[@]}" "moneykata-connector:$TAG" >/dev/null
+  for i in $(seq 1 60); do docker exec mkc-smoke moneykata-connector status >/dev/null 2>&1 && return; sleep 1; done
+  echo "FAILED: the connector didn't answer"; docker logs mkc-smoke; exit 1
+}
+connector_stop() {
+  docker stop -t 10 mkc-smoke >/dev/null
+  [[ "$(docker inspect mkc-smoke --format '{{.State.ExitCode}}')" == 0 ]] || { echo "FAILED: unclean stop"; exit 1; }
+  docker rm mkc-smoke >/dev/null
+  echo "   stopped cleanly"
+}
+connector_up
+docker exec mkc-smoke moneykata-connector status | grep -q "vault: None" || { echo "FAILED: a vault before the welcome"; exit 1; }
+# The welcome as a browser goes through it, over HTTPS against the page's own certificate.
+WORDS="$(docker exec mkc-smoke python -c '
+import re, ssl, urllib.error, urllib.parse, urllib.request
+base = "https://127.0.0.1:37374"
+ctx = ssl.create_default_context(cafile="/var/lib/moneykata-connector/tls/cert.pem")
+class Stay(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):
+        return None
+opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx), Stay)
+def post(path, form):
+    data = urllib.parse.urlencode(form).encode()
+    req = urllib.request.Request(base + path, data=data, headers={"Origin": base})
+    try:
+        with opener.open(req) as r:
+            return r.status, r.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode()
+status, text = post("/welcome", {})
+token = re.search(r"name=\"token\" value=\"([^\"]+)\"", text).group(1)
+words = re.findall(r"<b>([a-z]+)</b>", text.split("class=\"words\"")[1].split("</div></div>")[0])
+status, text = post("/welcome/check", {"token": token})
+picks = [int(n) for n in re.findall(r"name=\"word(\d+)\"", text)]
+status, text = post("/welcome/vault", {"token": token, **{f"word{n}": words[n - 1] for n in picks}})
+assert status == 303 and len(words) == 12 and len(picks) == 3, (status, text[:300])
+print(" ".join(words))')"
+docker exec mkc-smoke moneykata-connector status | grep -q "locked: False" || { echo "FAILED: the welcome left it locked"; exit 1; }
+echo "   its page made the vault, unlocked"
+connector_stop
+echo "== the connector: locked after a restart, unlocked with its words"
+connector_up
+docker exec mkc-smoke moneykata-connector status | grep -q "locked: True" || { echo "FAILED: not locked"; exit 1; }
 echo "$WORDS" | docker exec -i mkc-smoke moneykata-connector unlock >/dev/null 2>&1
 docker exec mkc-smoke moneykata-connector status | grep -q "locked: False" || { echo "FAILED: not unlocked"; exit 1; }
-echo "   unlocked after ${i}s"
-docker stop -t 10 mkc-smoke >/dev/null
-[[ "$(docker inspect mkc-smoke --format '{{.State.ExitCode}}')" == 0 ]] || { echo "FAILED: unclean stop"; exit 1; }
-echo "   stopped cleanly"
+echo "   unlocked"
+connector_stop
 echo "smoke passed for ${PLATFORM:-this host}: moneykata:$TAG, moneykata-connector:$TAG"

@@ -71,12 +71,24 @@ def test_every_compose_service_runs_the_image_of_this_version():
         )
 
 
+CONNECTOR_PORT = int(
+    re.search(
+        r"^PORT = (\d+)$",
+        (paths.ROOT / "connector" / "moneykata_connector" / "page.py").read_text(),
+        re.M,
+    ).group(1)
+)
+
+
 def test_the_connector_service_is_apart_locked_down_and_reaches_nothing_in():
-    """Its own volume that MoneyKata never mounts, no published port, read only, all
-    capabilities dropped (S18.2.1, S18.10); its socket on a tmpfs inside the container."""
+    """Its own volume that MoneyKata never mounts, its page's port the only one published,
+    read only, all capabilities dropped (S18.2.1, S18.10, S18.11); its socket on a tmpfs
+    inside the container."""
     for name, compose in COMPOSE.items():
         c = compose["services"]["connector"]
-        assert "ports" not in c and c["restart"] == "unless-stopped", name
+        assert c["ports"] == [f"{CONNECTOR_PORT}:{CONNECTOR_PORT}"], name
+        assert "MONEYKATA_CONNECTOR_NAMES" in c["environment"], name
+        assert c["restart"] == "unless-stopped", name
         assert c["read_only"] is True and c["cap_drop"] == ["ALL"], name
         assert "no-new-privileges:true" in c["security_opt"], name
         assert any(x.startswith("/run/moneykata-connector:uid=10002") for x in c["tmpfs"]), name
@@ -89,7 +101,7 @@ def test_the_connector_service_is_apart_locked_down_and_reaches_nothing_in():
         for h, _ in mounts.values():
             assert h not in {h2 for h2, _ in server.values()}, f"{name}: a mount shared"
     dockerfile = (paths.ROOT / "connector" / "Dockerfile").read_text()
-    assert "USER 10002:10002" in dockerfile and "EXPOSE" not in dockerfile
+    assert "USER 10002:10002" in dockerfile and f"EXPOSE {CONNECTOR_PORT}\n" in dockerfile
     assert re.search(r"^ARG PYTHON=python:3\.14-[\w.-]+@sha256:[0-9a-f]{64}$", dockerfile, re.M)
     assert "--require-hashes" in dockerfile
 
@@ -187,9 +199,22 @@ def test_the_truenas_app_keeps_the_compose_files_promises():
     the same lockdown, port, restart and logs, and the version being built; nothing typed in a
     shell."""
     truenas = yaml.safe_load((INSTALL / "compose.truenas.yaml").read_text())
+    connector = yaml.safe_load((INSTALL / "compose.connector-truenas.yaml").read_text())
     guide = (paths.ROOT / "docs" / "DEPLOY.md").read_text()
     blocks = re.findall(r"^```yaml\n(.*?)^```", guide, re.M | re.S)
-    assert [yaml.safe_load(b) for b in blocks] == [truenas], "the guide shows the file as it is"
+    assert [yaml.safe_load(b) for b in blocks] == [truenas, connector], (
+        "the guide shows the files as they are"
+    )
+    # The connector's app (S18.10) is the compose file's connector, with a dataset for its
+    # volume and the NAS's address for its page.
+    app = connector["services"]["connector"]
+    example = COMPOSE["compose.tls.yaml"]["services"]["connector"]
+    differ = {"volumes", "environment"}
+    assert {k: v for k, v in app.items() if k not in differ} == {
+        k: v for k, v in example.items() if k not in differ
+    }
+    assert set(_mounts(app)) == {"/var/lib/moneykata-connector", "/etc/localtime"}
+    assert app["environment"]["MONEYKATA_CONNECTOR_NAMES"]
     app = truenas["services"]["moneykata"]
     tls = COMPOSE["compose.tls.yaml"]["services"]["moneykata"]
     differ = {"volumes", "environment", "depends_on"}

@@ -27,13 +27,18 @@ services:
       driver: json-file
       options: { max-size: "10m", max-file: "5" }
 
-  # The MoneyKata Connector (S18.10): a second service with a volume of its own, which
-  # MoneyKata never mounts, and no published port: it only calls out. It starts locked;
-  # install it once with `docker compose run --rm connector init`, and after every start
-  # unlock it with `docker compose exec connector moneykata-connector unlock` (operations.md §8).
+  # The MoneyKata Connector (S18.10, S18.11): a second service with a volume of its own, which
+  # MoneyKata never mounts. It calls out, and publishes one port: its own page, where its vault
+  # is made, its words given after every start and its pairing done (operations.md §8).
   connector:
     image: ghcr.io/mojokata/moneykata-connector:0.1.0
     restart: unless-stopped
+    ports:
+      - "37374:37374"
+    environment:
+      # The addresses browsers use for its page, separated by commas: its certificate names
+      # them, and MoneyKata links to the first. "192.168.1.50", say.
+      MONEYKATA_CONNECTOR_NAMES: ""
     volumes:
       - connector-data:/var/lib/moneykata-connector
     read_only: true

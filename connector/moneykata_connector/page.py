@@ -250,10 +250,12 @@ def status_rows(st: dict) -> str:
     fp = " ".join(fp[i : i + 4] for i in range(0, len(fp), 4))
     rows = [
         f'<div class="list-item"><span class="grow">Vault</span>{vault}'
-        f'<span class="small dim mono">{e(fp)}</span></div>'
+        f'<span class="small dim mono">· {e(fp)}</span></div>'
     ]
     if st["paired"]:
-        confirmed = {True: "confirmed", False: "not confirmed yet", None: ""}[st.get("confirmed")]
+        confirmed = {True: "· confirmed", False: "· not confirmed yet", None: ""}[
+            st.get("confirmed")
+        ]
         rows.append(
             f'<div class="list-item"><span class="grow">Paired with</span><span class="mono '
             f'small">{e(st["server"])}</span><span class="small dim">{confirmed}</span></div>'
@@ -263,9 +265,9 @@ def status_rows(st: dict) -> str:
             f'small">{e(st["fingerprint"] or "")}</span></div>'
         )
         answered = (
-            "MoneyKata answered"
+            "· MoneyKata answered"
             if st["reachable"] and not st.get("lastError")
-            else "MoneyKata isn’t answering"
+            else "· MoneyKata isn’t answering"
         )
         rows.append(
             '<div class="list-item"><span class="grow">Last report</span>'

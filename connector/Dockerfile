@@ -31,6 +31,8 @@ LABEL org.opencontainers.image.source="https://github.com/MojoKata/MoneyKata" \
       org.opencontainers.image.description="The MoneyKata Connector: keeps accounts current from their institutions"
 USER 10002:10002
 VOLUME ["/var/lib/moneykata-connector"]
+# Its page (S18.11), its one listening port.
+EXPOSE 37374
 HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
     CMD ["moneykata-connector", "status"]
 ENTRYPOINT ["moneykata-connector"]

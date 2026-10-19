@@ -299,23 +299,33 @@ The connector (S18) keeps accounts current from their institutions, holding thei
 where MoneyKata can't. It is the `connector` service in `compose.yaml`, from the
 `moneykata-connector` image of the same version (`connector/Dockerfile`, built from
 `connector/`), with a volume of its own, `connector-data`, that MoneyKata never mounts. It
-publishes no port and only calls out: to MoneyKata, and to each driver's institution.
+calls out, to MoneyKata and to each driver's institution, and publishes one port, **37374**: its
+own page, where its vault is made, its words given and its pairing done (S18.11). On TrueNAS it
+is an app of its own (DEPLOY.md §8.2).
 
 1. **Its image** is published beside MoneyKata's, as
    `ghcr.io/mojokata/moneykata-connector:<version>`, and pulled by the steps below; or build it
    (`docker buildx build -f connector/Dockerfile -t ghcr.io/mojokata/moneykata-connector:0.1.0
    --load connector`) and carry it over as in §2.
-2. **Install it once**: `docker compose run --rm connector init`. It shows **12 words** on the
-   terminal only and won't finish until you type three back: save them in the household's
-   password manager. They open the connector's vault, and nothing else can.
-3. **Start it**: `docker compose up -d`. It starts **locked**, and MoneyKata alerts admins
-   until it is unlocked.
-4. **Unlock it after every start** (a restart, an update, the host's reboot):
-   `docker compose exec connector moneykata-connector unlock`, then type the 12 words. They
-   are never echoed, and never stored.
-5. **Pair it**, with the vault unlocked: in MoneyKata, Settings › Connector › Pair shows a
-   code; run `docker compose exec connector moneykata-connector pair <code>` and compare the
-   fingerprints both sides show. If they match, **Confirm** in Settings › Connector: until then
+2. **Start it and make its vault**: set `MONEYKATA_CONNECTOR_NAMES` in `compose.yaml` to the
+   addresses browsers use for its page (its certificate names them, and MoneyKata links to the
+   first), `docker compose up -d connector`, and open `https://<address>:37374`. Its welcome
+   shows **12 words**: save them in the household's password manager, type three back, and the
+   vault is made, unlocked. They open the connector's vault, and nothing else can. On a
+   terminal instead, before the first start: `docker compose run --rm connector init`, which
+   shows the words on the terminal only.
+3. **Its page for anyone on the network** shows whether it is locked, what it is paired with,
+   its last report and how many Connections work, never a name, an account or a credential;
+   every action there asks for the words, and wrong ones are logged with their address. A
+   certificate of your own instead of its self-signed one: `MONEYKATA_CONNECTOR_TLS_CERT` and
+   `MONEYKATA_CONNECTOR_TLS_KEY`, mounted read only.
+4. **Unlock it after every start** (a restart, an update, the host's reboot): **Unlock** on its
+   page with the 12 words, or `docker compose exec connector moneykata-connector unlock`. They
+   are never stored. MoneyKata alerts admins while it is locked.
+5. **Pair it**: in MoneyKata, Settings › Connector › Pair shows a code; paste it into **Pair**
+   on the connector's page with the words (or run `docker compose exec connector
+   moneykata-connector pair <code>` with the vault unlocked) and compare the fingerprints both
+   sides show. If they match, **Confirm** in Settings › Connector: until then
    the connector gets no sign-in and posts no file. If they differ, someone else answered the
    code: Unpair. Pairing makes the connector's sealing key and files its private half in the
    vault, so `pair` is refused while the vault is locked. The connector reaches MoneyKata at
@@ -336,19 +346,21 @@ publishes no port and only calls out: to MoneyKata, and to each driver's institu
 9. **On another machine** instead (a laptop): run the same image there with its own
    `connector-data` volume, reaching MoneyKata's address, and add where it calls from to
    Settings › Network › Allowed to connect; nothing else changes.
-10. **Unpair**: Settings › Connector › Unpair in MoneyKata, or `moneykata-connector unpair` on
-    the host; either way the connector deletes the credentials it held for that server, at its
+10. **Unpair**: Settings › Connector › Unpair in MoneyKata, or **Unpair** on the connector's
+    page (or `moneykata-connector unpair` on the host); either way the connector deletes the credentials it held for that server, at its
     next report after an Unpair in MoneyKata.
 11. **Lost words**: `docker compose exec connector moneykata-connector reset` makes a new vault
     and new words and unpairs; pair again (step 5), and every Connection's credentials are
-    entered again.
+    entered again. **Reset** on its page does the same with the words still known, when some
+    may have been seen. A new connector whose page asks for words nobody wrote down (someone
+    else finished its welcome first): stop it, empty its volume, start it again.
 12. **Its logs** say what it did and what failed, never a credential, an amount or an account
     number beyond its last four digits: `docker compose logs -f connector`.
 13. **A lost host or volume** (a stolen laptop, a disk sold with the volume on it): Unpair in
     MoneyKata at once. The copy holds the identity key, so until then whoever has it can
     report as the connector and post files; the vault stays closed without the words, so no
-    sign-in and no sealed credential, before or after, opens for them. Then `init` a fresh
-    vault on the new host, pair again, and have each owner enter their sign-ins again.
+    sign-in and no sealed credential, before or after, opens for them. Then make a fresh vault
+    on the new host (its page's welcome), pair again, and have each owner enter their sign-ins again.
 14. **A Connection that says *the server address changed***: its OFX server address was edited
     after the sign-in was filed. The connector sends nothing to the new address until the owner
     enters the sign-in again under Profile › Connections, which seals it with the new address

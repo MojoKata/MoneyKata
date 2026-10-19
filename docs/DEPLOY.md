@@ -47,8 +47,8 @@ docker load -i moneykata-0.1.0.tar.gz                                          #
 ```
 
 The **MoneyKata Connector** (S18), which signs in to institutions that have a driver, is a
-second image and is not needed to try MoneyKata: accounts are kept current from the files
-you upload. [`operations.md`](operations.md) §8 adds it.
+second image, `ghcr.io/mojokata/moneykata-connector:0.1.0`, and is not needed to try
+MoneyKata: accounts are kept current from the files you upload. §8 adds it.
 
 ## 3. A fresh VM on Proxmox VE
 
@@ -337,6 +337,9 @@ whenever you make a new copy; the yearly alert opens it.
    lines, and **Save** pulls it and makes the containers again.
 2. Unlock it (§5). At the unlock the server copies the database aside and migrates it;
    operations.md §3 says how to go back.
+3. The connector (§8), when you run it, takes the same version: its tag in the same
+   `compose.yaml` and `docker compose up -d connector`, or its own app's YAML on TrueNAS. It
+   comes back locked: unlock it on its page.
 
 ## 7. When something's wrong
 
@@ -364,3 +367,91 @@ whenever you make a new copy; the yearly alert opens it.
   and **Start** in the same place.
 - **A lost phrase**: a running, unlocked server can still make a new one,
   `keys rotate` (operations.md §7). Once it restarts without one, nothing opens the data.
+
+## 8. The MoneyKata Connector
+
+The connector (S18) signs in to institutions that have a driver (Schwab, and banks that run
+OFX Direct Connect) and keeps their accounts current, holding the sign-ins in a vault of its
+own that MoneyKata can't open. It serves a small page of its own on port **37374**, where its
+vault is made, its words are given after every start, and it is paired with MoneyKata. The
+vault's **12 words** are its own, apart from MoneyKata's recovery phrase: keep them in the
+household's password manager.
+
+![The connector's page, locked after a restart](deploy/connector-locked.png)
+
+### 8.1 On the VM
+
+1. In `~/moneykata`, name the address browsers will use for its page, so its certificate
+   covers it, then start it:
+
+   ```sh
+   sed -i 's/MONEYKATA_CONNECTOR_NAMES: ""/MONEYKATA_CONNECTOR_NAMES: "192.168.1.50"/' compose.yaml
+   docker compose up -d connector
+   ```
+
+2. Open `https://192.168.1.50:37374`, past the certificate's warning as for MoneyKata. **Welcome
+   to MoneyKata Connector**, then **Show my words**: put the 12 words in the password manager,
+   **I've kept them**, type three of them back, and **Make the vault**. The page then shows
+   its status, unlocked.
+
+   ![The welcome makes the vault](deploy/connector-welcome.png)
+
+3. Pair it (§8.3).
+
+### 8.2 On TrueNAS
+
+It is an app of its own, beside MoneyKata's.
+
+1. **Datasets**: add a dataset `connector` inside `tank/moneykata`, as in §4.1, and give it to
+   the connector's user (uid 10002) in **System › Shell**:
+   `sudo chown 10002:10002 /mnt/tank/moneykata/connector`.
+2. **Apps › Discover Apps › ⋮ › Install via YAML** again: name it `moneykata-connector`, paste
+   this (it is `web/install/compose.connector-truenas.yaml`), with the NAS's address in
+   `MONEYKATA_CONNECTOR_NAMES`, and **Save**:
+
+```yaml
+services:
+  connector:
+    image: ghcr.io/mojokata/moneykata-connector:0.1.0
+    restart: unless-stopped
+    ports:
+      - "37374:37374"
+    environment:
+      MONEYKATA_CONNECTOR_NAMES: "192.168.1.20"
+    volumes:
+      - /mnt/tank/moneykata/connector:/var/lib/moneykata-connector
+      - /etc/localtime:/etc/localtime:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run/moneykata-connector:uid=10002,gid=10002,mode=0700
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 10s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+```
+
+3. Open `https://192.168.1.20:37374`, and make the vault as in §8.1 step 2.
+4. Pair it (§8.3).
+
+### 8.3 Pairing
+
+1. In MoneyKata, **Settings › General › Public URL** must be the address the connector reaches
+   it at (`https://192.168.1.50:37373` on the VM, `https://192.168.1.20:37373` on the NAS):
+   the pairing code carries it.
+2. **Settings › Connector › Pair** (your password again) shows a one-time code, good for 24
+   hours: **Copy the code**.
+3. On the connector's page, **Pair…**: paste the code, give the words, **Pair**. It shows the
+   connector's fingerprint.
+4. Back in **Settings › Connector**, compare that fingerprint with the one shown there. If they
+   match, **Confirm** (your password again); until then it gets no sign-in and posts no file.
+   Settings › Connector links to the connector's page from its first report.
+5. Each person then adds their sign-ins under **Profile › Connections**, sealed in their
+   browser for the connector: MoneyKata stores them, and can't open them.
+
+**After every restart** the connector is **locked** too, and MoneyKata alerts admins until it
+is unlocked: open its page and **Unlock** with its words. Its page's other actions (**Lock**,
+**Pair**, **Unpair**, **Reset**) each ask for the words as well; operations.md §8 covers
+running it on another machine, unpairing a lost one, and lost words.
