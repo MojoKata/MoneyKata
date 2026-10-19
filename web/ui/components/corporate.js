@@ -8,6 +8,7 @@ import { Dialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, Select } from './fields.js';
 import { toast } from './toast.js';
+import { today } from '../app/format.js';
 
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,%\s]/g, '') : '');
 const KINDS = [
@@ -29,7 +30,7 @@ export function CorporateAction({ close, accountId }) {
   const [f, setF] = useState({
     holding: '',
     kind: 'split',
-    date: new Date().toISOString().slice(0, 10),
+    date: today(),
     ratio: '',
     newSymbol: '',
     basisShare: '',

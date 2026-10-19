@@ -5,7 +5,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { date, money } from '../app/format.js';
+import { date, money, today } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Empty, Failed, Loading } from './bits.js';
 import { errAt, Field, FormError, Input, Select, SwitchRow } from './fields.js';
@@ -17,7 +17,6 @@ import { EducationAnswer } from '../screens/projections.js';
 import { num } from '../app/dec.js';
 
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,\s]/g, '') : '');
-const today = () => new Date().toISOString().slice(0, 10);
 
 /**
  * The plan form's values.

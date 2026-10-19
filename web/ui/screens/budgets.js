@@ -6,7 +6,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { date, money } from '../app/format.js';
+import { date, money, today } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Empty, Failed, Loading, Tabs } from '../components/bits.js';
@@ -48,7 +48,8 @@ export default function Budgets({ id, tab }) {
   const budgets = /** @type {any[]} */ (list.data);
   if (list.error) return html`<${Failed} error=${list.error} />`;
   if (!budgets) return html`<${Loading} lines=${6} />`;
-  const now = new Date();
+  const [y, m] = today().split('-').map(Number);
+  const now = new Date(y, m - 1, 1);
   if (!shown.value) shown.value = monthKey(now);
   const months = Array.from(
     { length: 13 },

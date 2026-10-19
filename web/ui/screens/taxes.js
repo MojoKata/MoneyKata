@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useList, useSubmit } from '../app/hooks.js';
-import { date, money } from '../app/format.js';
+import { date, money, thisYear } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -585,7 +585,7 @@ function NewBook({ close, rows }) {
   useDialogGuide('dialog-tax-book');
   const me = useApi('/profile');
   const p = /** @type {any} */ (me.data);
-  const year = new Date().getFullYear();
+  const year = thisYear();
   const [f, setF] = useState({
     year: String(year - 1),
     joint: false,

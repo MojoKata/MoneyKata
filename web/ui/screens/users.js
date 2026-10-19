@@ -4,7 +4,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useList, useSubmit } from '../app/hooks.js';
-import { ago, date } from '../app/format.js';
+import { ago, day } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Avatar, Chips, Failed, Loading } from '../components/bits.js';
@@ -179,7 +179,7 @@ export default function Users() {
                   `
                   : null;
               })}</td>
-              <td class="dim">${date(x.createdAt.slice(0, 10))}</td>
+              <td class="dim">${day(x.createdAt)}</td>
               <td class="num">${x.active ? 'yes' : 'no'}</td>
             </tr>
           `

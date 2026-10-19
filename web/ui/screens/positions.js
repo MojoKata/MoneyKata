@@ -3,7 +3,7 @@
 import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { useApi, useList } from '../app/hooks.js';
-import { bitcoin, date, quantity } from '../app/format.js';
+import { bitcoin, date, quantity, thisYear } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useGuide } from '../components/help.js';
 import { Amt } from '../components/amount.js';
@@ -62,7 +62,7 @@ export default function Positions({ tab }) {
                   positions</div>
           </div>
           <div class="card kpi">
-            <div class="label">Realized ${new Date().getFullYear()}</div>
+            <div class="label">Realized ${thisYear()}</div>
             <div
               class="value">
               <${Amt} v=${v.summary.realizedThisYear} signed cents=${false} />
@@ -380,7 +380,7 @@ function Trades() {
 }
 
 function Gains() {
-  const now = new Date().getFullYear();
+  const now = thisYear();
   const [by, setBy] = useState('year');
   const [year, setYear] = useState('');
   const res = useApi('/positions/gains', { by, year: year || undefined }, ['import', 'prices']);

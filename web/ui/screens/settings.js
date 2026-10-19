@@ -4,7 +4,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { ago, date, moment } from '../app/format.js';
+import { ago, date, day, moment } from '../app/format.js';
 import { useTitle } from '../components/frame.js';
 import { useDialogGuide, useGuide } from '../components/help.js';
 import { Failed, Loading } from '../components/bits.js';
@@ -810,7 +810,7 @@ function EmailSection() {
                   </${Field}>
                   <${Field} label="Password" id="smtp-password" error=${errAt(e, 'password')}
                     hint=${v.password
-                      ? `Set ${date(v.password.setAt)}${
+                      ? `Set ${day(v.password.setAt)}${
                         v.password.setBy ? ' by ' + v.password.setBy : ''
                       }. Type a new one to replace it.`
                       : 'Not set.'}>
@@ -976,7 +976,7 @@ function BitcoinSection() {
               </${Field}>
               <${Field} label="Node password" id="node-password" error=${errAt(e, 'password')}
                 hint=${v.password
-                  ? `Set ${date(v.password.setAt)}${
+                  ? `Set ${day(v.password.setAt)}${
                     v.password.setBy ? ' by ' + v.password.setBy : ''
                   }. Type a new one to replace it.`
                   : 'Not set.'}>
@@ -1229,7 +1229,7 @@ function Keys() {
       is entered when the server starts, and changed only on the host.</p>
     <div class="list-item"><span class="grow dim">Fingerprint</span><code>${v.fingerprint}</code></div>
     <div class="list-item"><span class="grow dim">Made</span>${
-    date(v.created.slice(0, 10))
+    day(v.created)
   } · ${v.ageDays} days old
       ${
     v.reminderMonths
@@ -1306,7 +1306,7 @@ function Keys() {
           : confirmed.how === 'app'
           ? 'with Verify key'
           : 'with moneykata keys verify'
-      } on ${date(confirmed.at.slice(0, 10))}.`
+      } on ${day(confirmed.at)}.`
       : 'Not confirmed since install. Every unlock confirms it; check each copy once a year with Verify key.'
   }</div></div>
       ${
@@ -1352,7 +1352,7 @@ function Keys() {
         <div class="notice small bad mt" role="status">
           <${Icon} name="alert" />
           <div>The last
-                  re-encryption, ${date(v.lastReencryption.finishedAt)}, set aside ${v
+                  re-encryption, ${day(v.lastReencryption.finishedAt)}, set aside ${v
                     .lastReencryption
                     .receiptsSetAside.length} receipt files and left ${v.lastReencryption
                     .secretsSetAside

@@ -152,6 +152,27 @@ export function moment(iso) {
 }
 
 /**
+ * The day of a moment, in the viewer's zone: "Oct 12, 2026" (S14.9.1). A calendar date is
+ * `date`'s, never shifted.
+ * @param {string | null | undefined} iso
+ */
+export function day(iso) {
+  if (!iso) return '—';
+  return new Intl.DateTimeFormat('en-US', { timeZone: zone, dateStyle: 'medium' })
+    .format(new Date(iso));
+}
+
+/** Today in the viewer's zone, as a calendar date: "2026-10-12" (S14.9.5). */
+export function today() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: zone }).format(new Date());
+}
+
+/** This year in the viewer's zone (S14.9.5). */
+export function thisYear() {
+  return Number(today().slice(0, 4));
+}
+
+/**
  * How long ago, for "last updated" and "synced": "41 min ago", "yesterday".
  * @param {string | null | undefined} iso
  */

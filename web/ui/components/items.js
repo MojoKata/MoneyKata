@@ -5,7 +5,7 @@ import { useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { date, quantity } from '../app/format.js';
+import { date, quantity, today } from '../app/format.js';
 import { Amt } from './amount.js';
 import { Empty, Failed, Loading } from './bits.js';
 import { Dialog, openDialog } from './dialog.js';
@@ -59,7 +59,6 @@ const SOURCE = Object.fromEntries(SOURCES);
 const METAL = Object.fromEntries(METALS);
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,%\s]/g, '') : '');
 const orNull = (/** @type {string} */ s) => (clean(s) === '' ? null : clean(s));
-const today = () => new Date().toISOString().slice(0, 10);
 
 /** @param {{ a: any }} p */
 export function Items({ a }) {

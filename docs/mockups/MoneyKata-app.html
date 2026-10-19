@@ -8310,6 +8310,27 @@ export function moment(iso) {
 }
 
 /**
+ * The day of a moment, in the viewer's zone: "Oct 12, 2026" (S14.9.1). A calendar date is
+ * `date`'s, never shifted.
+ * @param {string | null | undefined} iso
+ */
+export function day(iso) {
+  if (!iso) return '—';
+  return new Intl.DateTimeFormat('en-US', { timeZone: zone, dateStyle: 'medium' })
+    .format(new Date(iso));
+}
+
+/** Today in the viewer's zone, as a calendar date: "2026-10-12" (S14.9.5). */
+export function today() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: zone }).format(new Date());
+}
+
+/** This year in the viewer's zone (S14.9.5). */
+export function thisYear() {
+  return Number(today().slice(0, 4));
+}
+
+/**
  * How long ago, for "last updated" and "synced": "41 min ago", "yesterday".
  * @param {string | null | undefined} iso
  */
@@ -10228,6 +10249,7 @@ import { Dialog } from '@mk/components/dialog.js';
 import { useDialogGuide } from '@mk/components/help.js';
 import { errAt, Field, FormError, Input, Select } from '@mk/components/fields.js';
 import { toast } from '@mk/components/toast.js';
+import { today } from '@mk/app/format.js';
 
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,%\s]/g, '') : '');
 const KINDS = [
@@ -10249,7 +10271,7 @@ export function CorporateAction({ close, accountId }) {
   const [f, setF] = useState({
     holding: '',
     kind: 'split',
-    date: new Date().toISOString().slice(0, 10),
+    date: today(),
     ratio: '',
     newSymbol: '',
     basisShare: '',
@@ -10468,7 +10490,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
-import { date, money } from '@mk/app/format.js';
+import { date, money, today } from '@mk/app/format.js';
 import { Amt } from '@mk/components/amount.js';
 import { Empty, Failed, Loading } from '@mk/components/bits.js';
 import { errAt, Field, FormError, Input, Select, SwitchRow } from '@mk/components/fields.js';
@@ -10480,7 +10502,6 @@ import { EducationAnswer } from '@mk/screens/projections.js';
 import { num } from '@mk/app/dec.js';
 
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,\s]/g, '') : '');
-const today = () => new Date().toISOString().slice(0, 10);
 
 /**
  * The plan form's values.
@@ -11648,7 +11669,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useSubmit } from '@mk/app/hooks.js';
-import { date, quantity } from '@mk/app/format.js';
+import { date, quantity, today } from '@mk/app/format.js';
 import { Amt } from '@mk/components/amount.js';
 import { Empty, Failed, Loading } from '@mk/components/bits.js';
 import { Dialog, openDialog } from '@mk/components/dialog.js';
@@ -11702,7 +11723,6 @@ const SOURCE = Object.fromEntries(SOURCES);
 const METAL = Object.fromEntries(METALS);
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,%\s]/g, '') : '');
 const orNull = (/** @type {string} */ s) => (clean(s) === '' ? null : clean(s));
-const today = () => new Date().toISOString().slice(0, 10);
 
 /** @param {{ a: any }} p */
 export function Items({ a }) {
@@ -12444,7 +12464,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useSubmit } from '@mk/app/hooks.js';
-import { ago, date, moment } from '@mk/app/format.js';
+import { ago, day, moment } from '@mk/app/format.js';
 import { parseDuration } from '@mk/app/duration.js';
 import { withReauth } from '@mk/components/reauth.js';
 import { Dialog, openDialog } from '@mk/components/dialog.js';
@@ -12614,7 +12634,7 @@ export function LinksSection() {
                         .brokenAt
                       ? 'broken'
                       : l.failingSince
-                      ? `unreachable since ${date(l.failingSince)}`
+                      ? `unreachable since ${day(l.failingSince)}`
                       : l.state === 'paused' && l.pausedUntil
                       ? `paused until ${moment(l.pausedUntil)}`
                       : STATE[l.state][0]}</span>${l.syncTotal
@@ -12642,7 +12662,7 @@ export function LinksSection() {
                         their admin before accepting it.</div>`
                       : null}</td>
                     <td class="small dim">${l.state === 'invited'
-                      ? `code valid until ${date(l.codeExpiresAt)}`
+                      ? `code valid until ${day(l.codeExpiresAt)}`
                       : l.state === 'requested'
                       ? 'Compare the fingerprint with them before approving.'
                       : ago(l.lastOkAt)}</td>
@@ -12701,7 +12721,7 @@ export function LinksSection() {
       ${ended.length
         ? html`<p class="small dim">Ended: ${
           ended.map((/** @type {any} */ l) =>
-            `${l.peerName || 'an invitation'} (${date(l.endedAt)})`
+            `${l.peerName || 'an invitation'} (${day(l.endedAt)})`
           ).join(', ')
         }.</p>`
         : null}
@@ -12715,7 +12735,7 @@ export function LinksSection() {
         ${
         l.outgoing.map((/** @type {any} */ x) =>
           html`<div class="list-item"><div class="grow"><b>${KIND[x.kind] || 'An item'}</b>
-            <span class="small dim">of ${x.ownerName} since ${date(x.sharedAt)}${
+            <span class="small dim">of ${x.ownerName} since ${day(x.sharedAt)}${
             x.includeReceipts ? ', with its receipts' : ''
           }</span></div><span class="small">to ${x.names.join(', ')}</span></div>`
         )
@@ -12728,7 +12748,7 @@ export function LinksSection() {
         ${
         l.incoming.map((/** @type {any} */ x) =>
           html`<div class="list-item"><div class="grow"><b>${KIND[x.kind] || 'An item'}</b>
-            <span class="small dim">shared by ${x.ownerName} on ${date(x.sharedAt)}${
+            <span class="small dim">shared by ${x.ownerName} on ${day(x.sharedAt)}${
             x
                 .includeReceipts
               ? ', with its receipts'
@@ -12879,7 +12899,7 @@ function copies(live, values, reload, act, release, armed, setArmed) {
                       ? `${c.waiting} change${c.waiting === 1 ? '' : 's'}`
                       : html`<span class="dim">none</span>`}</td>
                     <td class="small">${c.keyMadeAt
-                      ? html`${date(c.keyMadeAt)}<div class="dim">by ${
+                      ? html`${day(c.keyMadeAt)}<div class="dim">by ${
                         c.keyMadeBy || 'an admin'
                       }</div>`
                       : html`<span class="pill warn">not made</span>`}</td>
@@ -13022,7 +13042,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
-import { date } from '@mk/app/format.js';
+import { date, today } from '@mk/app/format.js';
 import { Amt } from '@mk/components/amount.js';
 import { Empty, Failed, Loading } from '@mk/components/bits.js';
 import { Dialog, openDialog } from '@mk/components/dialog.js';
@@ -13412,7 +13432,7 @@ export function PaymentDialog({ close, a, v }) {
     x.group === 'banking' && x.active && ['owner', 'write'].includes(x.level)
   );
   const [f, setF] = useState({
-    date: v.nextDate || new Date().toISOString().slice(0, 10),
+    date: v.nextDate || today(),
     amount: v.total,
     from: '',
   });
@@ -13491,7 +13511,7 @@ export function PaymentDialog({ close, a, v }) {
 function ServicerDialog({ close, a }) {
   useDialogGuide('dialog-servicer-balance');
   const [balance, setBalance] = useState('');
-  const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
+  const [day, setDay] = useState(today());
   const save = useSubmit(async () => {
     await api.post(`/accounts/${a.id}/anchors`, {
       date: day,
@@ -13853,7 +13873,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useList, useSubmit } from '@mk/app/hooks.js';
-import { money } from '@mk/app/format.js';
+import { money, today } from '@mk/app/format.js';
 import { Dialog } from '@mk/components/dialog.js';
 import { useDialogGuide } from '@mk/components/help.js';
 import { errAt, Field, FormError, Input, Seg, Select } from '@mk/components/fields.js';
@@ -13877,7 +13897,7 @@ export function OptionTrade({ close, accountId, start }) {
   );
   const [f, setF] = useState({
     accountId: accountId || '',
-    date: new Date().toISOString().slice(0, 10),
+    date: today(),
     action: start?.action || 'sell-to-open',
     underlying: start?.underlying || '',
     right: start?.right || 'put',
@@ -13995,7 +14015,7 @@ export function Settle({ close, row }) {
   const short = row.side === 'short';
   const [f, setF] = useState({
     how: row.inTheMoney === false ? 'expired' : short ? 'assign' : 'exercise',
-    date: row.expiry || new Date().toISOString().slice(0, 10),
+    date: row.expiry || today(),
     contracts: String(dec(row.quantity).abs()).replace(/\.0+$/, ''),
   });
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
@@ -14040,7 +14060,7 @@ export function Settle({ close, row }) {
 /** @param {{ close: (v?: any) => void, row: any }} p */
 export function Mark({ close, row }) {
   useDialogGuide('dialog-option-mark');
-  const [f, setF] = useState({ date: new Date().toISOString().slice(0, 10), price: '' });
+  const [f, setF] = useState({ date: today(), price: '' });
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const save = useSubmit(async () => {
     await api.post(`/instruments/${row.instrumentId}/prices`, {
@@ -14724,7 +14744,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useSubmit } from '@mk/app/hooks.js';
-import { date, money } from '@mk/app/format.js';
+import { date, day, money } from '@mk/app/format.js';
 import { Dialog } from '@mk/components/dialog.js';
 import { useDialogGuide } from '@mk/components/help.js';
 import { errAt, Field, FormError, Input, SwitchRow } from '@mk/components/fields.js';
@@ -14792,7 +14812,7 @@ export function ReceiptCard({ r, onOpen }) {
       <div class="meta">
         <div class="ellipsis" style=${{ fontWeight: 550 }}>${r.payee ||
           r.fileName}</div>
-        <div class="dim">${r.date ? date(r.date) : date(r.uploadedAt)}${r.amount
+        <div class="dim">${r.date ? date(r.date) : day(r.uploadedAt)}${r.amount
           ? html`
             ${'\u00a0· '}<span class="amt">${money(r.amount)}</span>
           `
@@ -14956,7 +14976,7 @@ export function ReceiptDialog({ close, id }) {
           `}
           <p class="small dim">${KIND[r.mediaType]} · ${(r.size / 1024).toFixed(
             0,
-          )} KB · uploaded ${date(r.uploadedAt)}${r.level !== 'owner'
+          )} KB · uploaded ${day(r.uploadedAt)}${r.level !== 'owner'
             ? ` by ${r.ownerName}`
             : ''}</p>
         </div>
@@ -15825,7 +15845,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useSubmit } from '@mk/app/hooks.js';
-import { date, quantity } from '@mk/app/format.js';
+import { date, quantity, today } from '@mk/app/format.js';
 import { Amt } from '@mk/components/amount.js';
 import { Dec, dec } from '@mk/app/dec.js';
 import { Empty, Failed, Loading } from '@mk/components/bits.js';
@@ -16028,7 +16048,7 @@ function AdjustDialog({ close }) {
   const groups = /** @type {any[] | null} */ ((/** @type {any} */ (res.data))?.items ?? null);
   const [under, setUnder] = useState('');
   const [rows, setRows] = useState(/** @type {Record<string, any>} */ ({}));
-  const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
+  const [day, setDay] = useState(today());
   const g = groups?.find((x) => x.underlyingId === under) || groups?.[0];
   const row = (/** @type {any} */ c) =>
     rows[c.instrumentId] || {
@@ -16891,7 +16911,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useList, useSubmit } from '@mk/app/hooks.js';
-import { ago, date } from '@mk/app/format.js';
+import { ago, day } from '@mk/app/format.js';
 import { Dialog, openDialog } from '@mk/components/dialog.js';
 import { useDialogGuide } from '@mk/components/help.js';
 import { errAt, Field, FormError, Input, Select } from '@mk/components/fields.js';
@@ -16938,7 +16958,7 @@ export function AccessTokens() {
                 ? 'everything I can see'
                 : t.items.map((/** @type {any} */ i) => i.name).join(', ')} · ${t.expired
                 ? html`<span class="pill warn">expired</span>`
-                : `expires ${date(t.expiresAt)}`} · ${t.lastUsedAt
+                : `expires ${day(t.expiresAt)}`} · ${t.lastUsedAt
                 ? `last used ${ago(t.lastUsedAt)}`
                 : 'never used'}</div></div><button class="btn sm danger" disabled=${revoke.busy}
                         onClick=${() =>
@@ -17612,7 +17632,7 @@ import { SyncCard } from '@mk/components/connections.js';
 import { Contributions, Goal, PlanCard, PlanFacts, Withdrawals } from '@mk/components/edu.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
-import { ago, bitcoin, date, price, quantity } from '@mk/app/format.js';
+import { ago, bitcoin, date, price, quantity, today } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useGuide } from '@mk/components/help.js';
 import { Amt } from '@mk/components/amount.js';
@@ -18193,7 +18213,7 @@ function Mismatch({ a, check, all, again }) {
 function TypeBalance({ close, a }) {
   useDialogGuide('dialog-type-balance');
   const [balance, setBalance] = useState('');
-  const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
+  const [day, setDay] = useState(today());
   const save = useSubmit(async () => {
     await api.post(`/accounts/${a.id}/anchors`, {
       date: day,
@@ -19089,7 +19109,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
-import { date, money } from '@mk/app/format.js';
+import { date, money, today } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useDialogGuide, useGuide } from '@mk/components/help.js';
 import { Empty, Failed, Loading, Tabs } from '@mk/components/bits.js';
@@ -19131,7 +19151,8 @@ export default function Budgets({ id, tab }) {
   const budgets = /** @type {any[]} */ (list.data);
   if (list.error) return html`<${Failed} error=${list.error} />`;
   if (!budgets) return html`<${Loading} lines=${6} />`;
-  const now = new Date();
+  const [y, m] = today().split('-').map(Number);
+  const now = new Date(y, m - 1, 1);
   if (!shown.value) shown.value = monthKey(now);
   const months = Array.from(
     { length: 13 },
@@ -19767,7 +19788,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
-import { date } from '@mk/app/format.js';
+import { date, thisYear } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useDialogGuide, useGuide } from '@mk/components/help.js';
 import { Amt } from '@mk/components/amount.js';
@@ -20012,7 +20033,7 @@ function GiftList() {
 }
 
 function Spending() {
-  const now = new Date().getFullYear();
+  const now = thisYear();
   const [year, setYear] = useState(String(now));
   const res = useApi('/gifts/spending', { year });
   const v = /** @type {any} */ (res.data);
@@ -20468,7 +20489,7 @@ function GiftDialog({ close, gift, start }) {
   const set = (/** @type {string} */ k) => (/** @type {any} */ x) => setF({ ...f, [k]: x });
   const list = /** @type {any[]} */ (people.data) || [];
   const canWrite = !gift || gift.canWrite;
-  const year = new Date().getFullYear();
+  const year = thisYear();
   // The occasions of the chosen people, this year and next.
   const chosen = list.filter((p) => f.people.includes(p.id));
   /** @type {[string, string][]} */
@@ -20650,7 +20671,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
-import { date, money, quantity } from '@mk/app/format.js';
+import { date, money, quantity, thisYear, today } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useDialogGuide, useGuide } from '@mk/components/help.js';
 import { Amt } from '@mk/components/amount.js';
@@ -20679,12 +20700,11 @@ const KINDS = /** @type {[string, string][]} */ ([
   ['daf-grant', 'Grant from a donor-advised fund'],
 ]);
 const clean = (/** @type {string} */ s) => (s ? String(s).replace(/[$,\s]/g, '') : '');
-const today = () => new Date().toISOString().slice(0, 10);
 
 /** @param {{ tab?: string }} p */
 export default function Giving({ tab }) {
   const current = TABS.some(([k]) => k === tab) ? /** @type {string} */ (tab) : 'overview';
-  const now = new Date().getFullYear();
+  const now = thisYear();
   const [year, setYear] = useState(String(now));
   useTitle('Giving');
   useGuide('giving-' + current);
@@ -20717,9 +20737,7 @@ function Overview({ v, reload }) {
   const months = v.byMonth.map((/** @type {string} */ x, /** @type {number} */ i) => [
     new Date(Date.UTC(v.year, i + 1, 0)).toISOString().slice(0, 10),
     x,
-  ]).filter((/** @type {[string, string]} */ p) =>
-    p[0] <= today() || v.year < new Date().getFullYear()
-  );
+  ]).filter((/** @type {[string, string]} */ p) => p[0] <= today() || v.year < thisYear());
   const pace = months.map((/** @type {[string, string]} */ [d]) => {
     const start = Date.UTC(v.year, 0, 1);
     const days = (Date.parse(d) - start) / 86400000 + 1;
@@ -24021,7 +24039,7 @@ export default function Portfolios() {
 import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { useApi, useList } from '@mk/app/hooks.js';
-import { bitcoin, date, quantity } from '@mk/app/format.js';
+import { bitcoin, date, quantity, thisYear } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useGuide } from '@mk/components/help.js';
 import { Amt } from '@mk/components/amount.js';
@@ -24080,7 +24098,7 @@ export default function Positions({ tab }) {
                   positions</div>
           </div>
           <div class="card kpi">
-            <div class="label">Realized ${new Date().getFullYear()}</div>
+            <div class="label">Realized ${thisYear()}</div>
             <div
               class="value">
               <${Amt} v=${v.summary.realizedThisYear} signed cents=${false} />
@@ -24398,7 +24416,7 @@ function Trades() {
 }
 
 function Gains() {
-  const now = new Date().getFullYear();
+  const now = thisYear();
   const [by, setBy] = useState('year');
   const [year, setYear] = useState('');
   const res = useApi('/positions/gains', { by, year: year || undefined }, ['import', 'prices']);
@@ -25242,7 +25260,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
-import { date, money } from '@mk/app/format.js';
+import { date, money, thisYear } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useDialogGuide, useGuide } from '@mk/components/help.js';
 import { Chips, Empty, Failed, Loading } from '@mk/components/bits.js';
@@ -25832,7 +25850,7 @@ function NewProjection({ close }) {
   const [child, setChild] = useState('');
   const save = useSubmit(async () => {
     const p = /** @type {any} */ (me.data);
-    const born = p?.birthYear || new Date().getFullYear() - 40;
+    const born = p?.birthYear || thisYear() - 40;
     const people = [{ name: p?.displayName || 'Me', birthYear: born, retireAge: 65 }];
     if (who === 'couple' && p?.spouse) {
       people.push({
@@ -25841,7 +25859,7 @@ function NewProjection({ close }) {
         retireAge: 65,
       });
     }
-    const year = new Date().getFullYear();
+    const year = thisYear();
     const inputs = goal === 'retirement'
       ? {
         people,
@@ -26049,7 +26067,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useSubmit } from '@mk/app/hooks.js';
-import { ago, date, moment } from '@mk/app/format.js';
+import { ago, date, day, moment } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useDialogGuide, useGuide } from '@mk/components/help.js';
 import { Failed, Loading } from '@mk/components/bits.js';
@@ -26855,7 +26873,7 @@ function EmailSection() {
                   </${Field}>
                   <${Field} label="Password" id="smtp-password" error=${errAt(e, 'password')}
                     hint=${v.password
-                      ? `Set ${date(v.password.setAt)}${
+                      ? `Set ${day(v.password.setAt)}${
                         v.password.setBy ? ' by ' + v.password.setBy : ''
                       }. Type a new one to replace it.`
                       : 'Not set.'}>
@@ -27021,7 +27039,7 @@ function BitcoinSection() {
               </${Field}>
               <${Field} label="Node password" id="node-password" error=${errAt(e, 'password')}
                 hint=${v.password
-                  ? `Set ${date(v.password.setAt)}${
+                  ? `Set ${day(v.password.setAt)}${
                     v.password.setBy ? ' by ' + v.password.setBy : ''
                   }. Type a new one to replace it.`
                   : 'Not set.'}>
@@ -27274,7 +27292,7 @@ function Keys() {
       is entered when the server starts, and changed only on the host.</p>
     <div class="list-item"><span class="grow dim">Fingerprint</span><code>${v.fingerprint}</code></div>
     <div class="list-item"><span class="grow dim">Made</span>${
-    date(v.created.slice(0, 10))
+    day(v.created)
   } · ${v.ageDays} days old
       ${
     v.reminderMonths
@@ -27351,7 +27369,7 @@ function Keys() {
           : confirmed.how === 'app'
           ? 'with Verify key'
           : 'with moneykata keys verify'
-      } on ${date(confirmed.at.slice(0, 10))}.`
+      } on ${day(confirmed.at)}.`
       : 'Not confirmed since install. Every unlock confirms it; check each copy once a year with Verify key.'
   }</div></div>
       ${
@@ -27397,7 +27415,7 @@ function Keys() {
         <div class="notice small bad mt" role="status">
           <${Icon} name="alert" />
           <div>The last
-                  re-encryption, ${date(v.lastReencryption.finishedAt)}, set aside ${v
+                  re-encryption, ${day(v.lastReencryption.finishedAt)}, set aside ${v
                     .lastReencryption
                     .receiptsSetAside.length} receipt files and left ${v.lastReencryption
                     .secretsSetAside
@@ -27883,7 +27901,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useApi, useList, useSubmit } from '@mk/app/hooks.js';
-import { date, money } from '@mk/app/format.js';
+import { date, money, thisYear } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useDialogGuide, useGuide } from '@mk/components/help.js';
 import { Amt } from '@mk/components/amount.js';
@@ -28464,7 +28482,7 @@ function NewBook({ close, rows }) {
   useDialogGuide('dialog-tax-book');
   const me = useApi('/profile');
   const p = /** @type {any} */ (me.data);
-  const year = new Date().getFullYear();
+  const year = thisYear();
   const [f, setF] = useState({
     year: String(year - 1),
     joint: false,
@@ -28865,7 +28883,7 @@ import { useDialogGuide } from '@mk/components/help.js';
 import { openRules } from '@mk/components/rules.js';
 import { errAt, Field, FormError, Input, Select } from '@mk/components/fields.js';
 import { toast } from '@mk/components/toast.js';
-import { cents, fromCents, money } from '@mk/app/format.js';
+import { cents, fromCents, money, today } from '@mk/app/format.js';
 import { useCategories } from '@mk/components/txtable.js';
 import { BY_TYPE } from '@mk/account-types/index.js';
 
@@ -28911,7 +28929,7 @@ export function TransactionDialog({ close, txn, start, accounts, accountId }) {
   const cats = useCategories();
   const init = txn || start;
   const [f, setF] = useState({
-    date: init?.date || new Date().toISOString().slice(0, 10),
+    date: init?.date || today(),
     kind: init?.kind || (type.investing ? 'buy' : 'withdrawal'),
     amount: init?.amount || '',
     payee: init?.payee || '',
@@ -29426,7 +29444,7 @@ import { useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { api } from '@mk/api/client.js';
 import { useList, useSubmit } from '@mk/app/hooks.js';
-import { ago, date } from '@mk/app/format.js';
+import { ago, day } from '@mk/app/format.js';
 import { useTitle } from '@mk/components/frame.js';
 import { useDialogGuide, useGuide } from '@mk/components/help.js';
 import { Avatar, Chips, Failed, Loading } from '@mk/components/bits.js';
@@ -29601,7 +29619,7 @@ export default function Users() {
                   `
                   : null;
               })}</td>
-              <td class="dim">${date(x.createdAt.slice(0, 10))}</td>
+              <td class="dim">${day(x.createdAt)}</td>
               <td class="num">${x.active ? 'yes' : 'no'}</td>
             </tr>
           `

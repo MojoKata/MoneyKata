@@ -4,7 +4,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
-import { date, money } from '../app/format.js';
+import { date, day, money } from '../app/format.js';
 import { Dialog } from './dialog.js';
 import { useDialogGuide } from './help.js';
 import { errAt, Field, FormError, Input, SwitchRow } from './fields.js';
@@ -72,7 +72,7 @@ export function ReceiptCard({ r, onOpen }) {
       <div class="meta">
         <div class="ellipsis" style=${{ fontWeight: 550 }}>${r.payee ||
           r.fileName}</div>
-        <div class="dim">${r.date ? date(r.date) : date(r.uploadedAt)}${r.amount
+        <div class="dim">${r.date ? date(r.date) : day(r.uploadedAt)}${r.amount
           ? html`
             ${'\u00a0· '}<span class="amt">${money(r.amount)}</span>
           `
@@ -236,7 +236,7 @@ export function ReceiptDialog({ close, id }) {
           `}
           <p class="small dim">${KIND[r.mediaType]} · ${(r.size / 1024).toFixed(
             0,
-          )} KB · uploaded ${date(r.uploadedAt)}${r.level !== 'owner'
+          )} KB · uploaded ${day(r.uploadedAt)}${r.level !== 'owner'
             ? ` by ${r.ownerName}`
             : ''}</p>
         </div>
