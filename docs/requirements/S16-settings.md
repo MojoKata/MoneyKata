@@ -89,7 +89,7 @@ Backups, and Connector (18), which follows Linked servers; 15 is not a section:
     can't be read: the locked screen and the unlock then answer any address that reaches the
     listener, and the proxy is what limits them. The section also shows, read only, how the
     listener runs: its mode (`proxy` or `tls`), its port, and the trusted proxies' addresses
-    (S13.3), all set in its configuration (`moneykata.toml`, or `MONEYKATA_CONFIG`, S17.8).
+    (S13.3), all set in its configuration (`moolakata.toml`, or `MOOLAKATA_CONFIG`, S17.8).
 15. *Not a section*: `tls` mode is for testing (S13.3), and Settings › Network shows how the
     listener runs.
 16. **Alerts** (S12.11): how long a source may fail before it raises an alert (48 hours by
@@ -99,7 +99,7 @@ Backups, and Connector (18), which follows Linked servers; 15 is not a section:
     expired against the rest, the files no record names with **Remove** (S14.6), what
     expires each coming year by category, **Keep statements for** (years, empty for ever),
     each category's **Keep receipts for**, and **Prune**.
-18. **Connector** (S18): pairing with the MoneyKata Connector (**Pair**, the connector's
+18. **Connector** (S18): pairing with the MoolaKata Connector (**Pair**, the connector's
     fingerprint, **Confirm** once the fingerprints were compared, who confirmed and when,
     **Unpair**), whether it is locked, its last report and the address it reports from (with
     **Accept** when that address changed, S18.2.4.4), and every Connection's state, owner,

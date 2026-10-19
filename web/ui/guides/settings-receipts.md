@@ -10,7 +10,7 @@ and HEIC, checked from each file's content.
 
 ## Read receipts
 
-MoneyKata reads each receipt's date, total and merchant on this server, with RapidOCR, and suggests
+MoolaKata reads each receipt's date, total and merchant on this server, with RapidOCR, and suggests
 the transaction it belongs to. Nothing leaves the server, and no outside service or download is
 involved. A PDF with text in it is read directly; a photo or scan is read by OCR. Turn it off on a
 host too small to run it: receipts still upload and can be filled in by hand.

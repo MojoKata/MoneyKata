@@ -1,16 +1,16 @@
-# The MoneyKata Connector as a TrueNAS custom app of its own (requirements S18.10, S18.11,
+# The MoolaKata Connector as a TrueNAS custom app of its own (requirements S18.10, S18.11,
 # docs/DEPLOY.md §8.2): paste it into Apps › Discover Apps › More Options › Install via YAML.
-# /mnt/tank/moneykata/connector is its dataset; use your pool's name in place of tank, and the
-# NAS's address in MONEYKATA_CONNECTOR_NAMES.
+# /mnt/tank/moolakata/connector is its dataset; use your pool's name in place of tank, and the
+# NAS's address in MOOLAKATA_CONNECTOR_NAMES.
 services:
   # Gives the dataset to the connector's account (uid 10002) before it starts, then ends:
   # root, with the one capability that takes, and no network.
   permissions:
-    image: ghcr.io/mojokata/moneykata-connector:0.1.0
+    image: ghcr.io/mojokata/moolakata-connector:0.1.0
     user: "0:0"
-    entrypoint: ["chown", "10002:10002", "/var/lib/moneykata-connector"]
+    entrypoint: ["chown", "10002:10002", "/var/lib/moolakata-connector"]
     volumes:
-      - /mnt/tank/moneykata/connector:/var/lib/moneykata-connector
+      - /mnt/tank/moolakata/connector:/var/lib/moolakata-connector
     network_mode: none
     read_only: true
     cap_drop: [ALL]
@@ -18,7 +18,7 @@ services:
     security_opt: ["no-new-privileges:true"]
     restart: "no"
   connector:
-    image: ghcr.io/mojokata/moneykata-connector:0.1.0
+    image: ghcr.io/mojokata/moolakata-connector:0.1.0
     restart: unless-stopped
     depends_on:
       permissions:
@@ -26,14 +26,14 @@ services:
     ports:
       - "37374:37374"
     environment:
-      MONEYKATA_CONNECTOR_NAMES: "192.168.1.20"
+      MOOLAKATA_CONNECTOR_NAMES: "192.168.1.20"
     volumes:
-      - /mnt/tank/moneykata/connector:/var/lib/moneykata-connector
+      - /mnt/tank/moolakata/connector:/var/lib/moolakata-connector
       - /etc/localtime:/etc/localtime:ro
     read_only: true
     tmpfs:
       - /tmp
-      - /run/moneykata-connector:uid=10002,gid=10002,mode=0700
+      - /run/moolakata-connector:uid=10002,gid=10002,mode=0700
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s

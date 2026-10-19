@@ -1,8 +1,8 @@
-# Welcome to MoneyKata
+# Welcome to MoolaKata
 
-A new server's first visit: its master key, then the admin's account. Everything MoneyKata keeps
+A new server's first visit: its master key, then the admin's account. Everything MoolaKata keeps
 is encrypted under one master key, which is a recovery phrase of 12 words. You write it down;
-nothing keeps it for you. MoneyKata asks for it after every restart, and nobody can recover it if
+nothing keeps it for you. MoolaKata asks for it after every restart, and nobody can recover it if
 it's lost.
 
 ## Show my recovery phrase

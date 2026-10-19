@@ -25,9 +25,9 @@ py() { (cd "$SERVER" && uv run --frozen --quiet "$@"); }
 deno() { "$WEB/dev.sh" deno "$@"; }
 
 step "uv.lock matches pyproject.toml" bash -c "cd '$SERVER' && uv lock --check --quiet"
-step "every dependency has amd64 and arm64 wheels" py python -m moneykata.dev.wheels
-step "the dependency register is audited (S17.2.1)" py python -m moneykata.dev.audit check
-step "the base image's age (a warning only)" py python -m moneykata.dev.base check
+step "every dependency has amd64 and arm64 wheels" py python -m moolakata.dev.wheels
+step "the dependency register is audited (S17.2.1)" py python -m moolakata.dev.audit check
+step "the base image's age (a warning only)" py python -m moolakata.dev.base check
 step "vendored browser libraries" python3 "$WEB/ui/vendor/vendor.py" extract
 step "ruff" py ruff check src tests ../ui/mockup ../../docs/mockups ../../connector
 step "ruff format" py ruff format --check --quiet src tests ../ui/mockup ../../docs/mockups ../../connector
@@ -38,7 +38,7 @@ done
 step "deno check" deno check --quiet --config "$WEB/ui/deno.json" "${js_dirs[@]}"
 step "deno lint" deno lint --quiet --config "$WEB/ui/deno.json"
 step "deno fmt" deno fmt --check --quiet --config "$WEB/ui/deno.json"
-step "OpenAPI and typedef drift" py python -m moneykata.contract check
+step "OpenAPI and typedef drift" py python -m moolakata.contract check
 if [[ -f "$WEB/ui/mockup/build.py" ]]; then
   step "generated mockup drift" py python "$WEB/ui/mockup/build.py" --check
 fi

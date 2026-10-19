@@ -1,25 +1,25 @@
-# MoneyKata as a TrueNAS custom app (requirements S17.8.3, docs/DEPLOY.md §4): paste it into
-# Apps › Discover Apps › More Options › Install via YAML. /mnt/tank/moneykata holds the two
+# MoolaKata as a TrueNAS custom app (requirements S17.8.3, docs/DEPLOY.md §4): paste it into
+# Apps › Discover Apps › More Options › Install via YAML. /mnt/tank/moolakata holds the two
 # datasets (DEPLOY.md §4.1); use your pool's name in place of tank, and the NAS's address in
 # [tls] names.
 services:
   # Gives the two datasets to the server's account (uid 10001) before it starts, then ends:
   # root, with the one capability that takes, and no network.
   permissions:
-    image: ghcr.io/mojokata/moneykata:0.1.0
+    image: ghcr.io/mojokata/moolakata:0.1.0
     user: "0:0"
-    entrypoint: ["chown", "10001:10001", "/var/lib/moneykata", "/var/backups/moneykata"]
+    entrypoint: ["chown", "10001:10001", "/var/lib/moolakata", "/var/backups/moolakata"]
     volumes:
-      - /mnt/tank/moneykata/data:/var/lib/moneykata
-      - /mnt/tank/moneykata/backups:/var/backups/moneykata
+      - /mnt/tank/moolakata/data:/var/lib/moolakata
+      - /mnt/tank/moolakata/backups:/var/backups/moolakata
     network_mode: none
     read_only: true
     cap_drop: [ALL]
     cap_add: [CHOWN]
     security_opt: ["no-new-privileges:true"]
     restart: "no"
-  moneykata:
-    image: ghcr.io/mojokata/moneykata:0.1.0
+  moolakata:
+    image: ghcr.io/mojokata/moolakata:0.1.0
     restart: unless-stopped
     depends_on:
       permissions:
@@ -27,27 +27,27 @@ services:
     ports:
       - "37373:37373"
     environment:
-      # moneykata.toml, given here rather than as a file (S17.8).
-      MONEYKATA_CONFIG: |
+      # moolakata.toml, given here rather than as a file (S17.8).
+      MOOLAKATA_CONFIG: |
         [server]
-        name = "moneykata"
+        name = "moolakata"
         mode = "tls"
         port = 37373
 
         [paths]
-        data = "/var/lib/moneykata"
-        backups = "/var/backups/moneykata"
+        data = "/var/lib/moolakata"
+        backups = "/var/backups/moolakata"
 
         [tls]
         names = ["192.168.1.20"]
     volumes:
-      - /mnt/tank/moneykata/data:/var/lib/moneykata
-      - /mnt/tank/moneykata/backups:/var/backups/moneykata
+      - /mnt/tank/moolakata/data:/var/lib/moolakata
+      - /mnt/tank/moolakata/backups:/var/backups/moolakata
       - /etc/localtime:/etc/localtime:ro
     read_only: true
     tmpfs:
       - /tmp
-      - /run/moneykata:uid=10001,gid=10001,mode=0700
+      - /run/moolakata:uid=10001,gid=10001,mode=0700
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s

@@ -21,7 +21,7 @@ since the return was filed, and opens the year for edits until it is filed itsel
 
 ## Filing status
 
-As filed. MoneyKata never chooses it.
+As filed. MoolaKata never chooses it.
 
 ## Prepared by
 

@@ -7,9 +7,9 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import clock
-from moneykata import loans as L
-from moneykata.loans import payoff as P
+from moolakata import clock
+from moolakata import loans as L
+from moolakata.loans import payoff as P
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 

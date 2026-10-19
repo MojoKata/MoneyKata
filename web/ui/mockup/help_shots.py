@@ -1,5 +1,5 @@
 """Makes the help guides' screenshots (requirements S12.7.5) from the generated mockup:
-docs/mockups/MoneyKata-app.html opened from disk in headless Chromium, dark theme, 1280 px
+docs/mockups/MoolaKata-app.html opened from disk in headless Chromium, dark theme, 1280 px
 wide, saved as PNG quantized to 256 colours in web/ui/guides/shots/. Run web/dev.sh mockup first
 when the app changed.
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 UI = Path(__file__).resolve().parents[1]
 ROOT = UI.parents[1]
-PAGE = ROOT / "docs" / "mockups" / "MoneyKata-app.html"
+PAGE = ROOT / "docs" / "mockups" / "MoolaKata-app.html"
 SHOTS = UI / "guides" / "shots"
 SIZE = {"width": 1280, "height": 800}
 SETTINGS = (

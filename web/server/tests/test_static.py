@@ -1,6 +1,6 @@
 import re
 
-from moneykata import paths
+from moolakata import paths
 
 
 def test_root_redirects_to_ui(bare_client):

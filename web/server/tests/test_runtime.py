@@ -1,7 +1,7 @@
 """The server as main.py builds it at unlock: its background tasks and start-up work."""
 
-from moneykata.app import Server
-from moneykata.runtime import build
+from moolakata.app import Server
+from moolakata.runtime import build
 
 
 def test_build_registers_every_background_task(keyed_config, master_key):

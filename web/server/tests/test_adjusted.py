@@ -10,8 +10,8 @@ from conftest import make_user, sign_in
 from test_accounts import new_account
 from test_options import opt
 
-from moneykata import clock
-from moneykata.options.adjust import parse_occ
+from moolakata import clock
+from moolakata.options.adjust import parse_occ
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 

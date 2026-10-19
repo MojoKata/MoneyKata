@@ -13,9 +13,9 @@ from urllib.parse import urlencode
 
 import pytest
 from cryptography import x509
-from moneykata_connector import client, page, words
-from moneykata_connector.client import ServerError
-from moneykata_connector.core import ConnectionState, Core
+from moolakata_connector import client, page, words
+from moolakata_connector.client import ServerError
+from moolakata_connector.core import ConnectionState, Core
 
 
 def free_port() -> int:
@@ -79,7 +79,7 @@ def make_vault(running) -> str:
 def test_the_welcome_makes_the_vault_from_three_words_typed_back(running):
     core, _, _ = running
     status, headers, text = call(running, "GET", "/")
-    assert status == 200 and "Welcome to MoneyKata Connector" in text
+    assert status == 200 and "Welcome to MoolaKata Connector" in text
     assert "default-src 'none'" in headers["content-security-policy"]
     assert headers["cache-control"] == "no-store" and headers["x-frame-options"] == "DENY"
     assert "<script" not in text
@@ -255,14 +255,14 @@ def test_the_certificate_names_what_browsers_use_and_follows_them(tmp_path):
 
 def test_its_settings_and_address_come_from_the_environment():
     s = page.Settings.from_env(
-        {"MONEYKATA_CONNECTOR_NAMES": " money.lan , fd00::7 ", "MONEYKATA_CONNECTOR_PORT": "4443"}
+        {"MOOLAKATA_CONNECTOR_NAMES": " money.lan , fd00::7 ", "MOOLAKATA_CONNECTOR_PORT": "4443"}
     )
     assert s.names == ("money.lan", "fd00::7") and s.port == 4443
     assert s.address == "https://money.lan:4443"
     assert page.Settings(names=("fd00::7",)).address == "https://[fd00::7]:37374"
     assert page.Settings.from_env({}).address is None
     with pytest.raises(ValueError, match="go together"):
-        page.Settings.from_env({"MONEYKATA_CONNECTOR_TLS_CERT": "/c.pem"})
+        page.Settings.from_env({"MOOLAKATA_CONNECTOR_TLS_CERT": "/c.pem"})
 
 
 def _block(css: str, start: str) -> dict[str, str]:
@@ -270,8 +270,8 @@ def _block(css: str, start: str) -> dict[str, str]:
     return dict(re.findall(r"--([a-z0-9-]+):\s*([^;]+);", body))
 
 
-def test_its_stylesheet_keeps_moneykatas_colours_and_type():
-    """S18.11.5: the page reads as MoneyKata does, dark and light; a token changed on one side
+def test_its_stylesheet_keeps_moolakatas_colours_and_type():
+    """S18.11.5: the page reads as MoolaKata does, dark and light; a token changed on one side
     only fails here."""
     ours = page.STYLE.read_text()
     theirs = (page.STYLE.parents[2] / "web" / "ui" / "styles" / "tokens.css").read_text()

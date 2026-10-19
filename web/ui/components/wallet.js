@@ -45,7 +45,7 @@ export function looksSecret(text) {
 
 /** @param {string} what */
 const refusal = (what) =>
-  `That looks like a ${what}. MoneyKata never accepts one, and nothing was saved: enter an extended public key (xpub, ypub or zpub), a public descriptor or addresses instead.`;
+  `That looks like a ${what}. MoolaKata never accepts one, and nothing was saved: enter an extended public key (xpub, ypub or zpub), a public descriptor or addresses instead.`;
 
 /**
  * The keys box and gap limit, in the New account form and the wallet's Settings.

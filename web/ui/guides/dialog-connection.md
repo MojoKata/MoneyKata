@@ -1,7 +1,7 @@
 # New connection
 
-A sign-in at one institution, kept by the MoneyKata Connector. What you type is encrypted in
-your browser for the connector before it is sent: MoneyKata keeps only what it can't read, until
+A sign-in at one institution, kept by the MoolaKata Connector. What you type is encrypted in
+your browser for the connector before it is sent: MoolaKata keeps only what it can't read, until
 the connector collects it, and never shows it back. Sealing asks for your password again when it
 was given over 10 minutes ago, and waits until an admin has confirmed the connector's pairing.
 
@@ -52,13 +52,13 @@ sign-in is.
 ## How you sign in {#how-you-sign-in}
 
 **Here, sealed for the connector**: the usual way; your browser encrypts what you type to the
-connector's key, and MoneyKata can't open it. **An admin types it on the connector's host**: the
-stricter way; the dialog shows the command, and MoneyKata never handles the credentials at all.
+connector's key, and MoolaKata can't open it. **An admin types it on the connector's host**: the
+stricter way; the dialog shows the command, and MoolaKata never handles the credentials at all.
 
 ## App secret {#schwab-app-secret}
 
 Your Schwab app's secret, which the driver signs in with beside the app key. A secret: sealed
-for the connector with the sign-in, never seen by MoneyKata.
+for the connector with the sign-in, never seen by MoolaKata.
 
 ## The address you landed on {#landed}
 
@@ -71,7 +71,7 @@ Your username at the institution. Sealed for the connector.
 
 ## Password
 
-Your password at the institution. Sealed for the connector, never seen by MoneyKata.
+Your password at the institution. Sealed for the connector, never seen by MoolaKata.
 
 ## Connect command {#connect-command}
 

@@ -1,4 +1,4 @@
-# MoneyKata is locked
+# MoolaKata is locked
 
 The server has started and holds no key: the master key is the recovery phrase, which is
 never stored. Until an admin enters it, the server serves this screen and nothing else, and
@@ -13,7 +13,7 @@ quarter of an hour. Every attempt is logged.
 
 ## Unlock
 
-Opens the server. On the host, `docker compose exec moneykata moneykata keys unlock` does the
+Opens the server. On the host, `docker compose exec moolakata moolakata keys unlock` does the
 same: the two are equal ways in. Nothing of the phrase is kept once the data key is unwrapped.
 The field doesn't autocorrect, capitalise, spell-check or remember what is typed, and masks it
 until the eye shows it.

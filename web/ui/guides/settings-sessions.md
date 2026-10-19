@@ -6,7 +6,7 @@ How long a sign-in lasts and when repeated failures lock the address they come f
 
 ## Idle timeout {#idle-timeout}
 
-Hours without using MoneyKata before a session ends. 8 by default.
+Hours without using MoolaKata before a session ends. 8 by default.
 
 ## Longest session {#longest-session}
 

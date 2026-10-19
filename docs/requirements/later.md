@@ -15,7 +15,7 @@ it is specified in its section and removed from here; its id is never used again
 
 **What it is:** CBOE's delayed quotes (S4.5) aren't an official API and could change or close. The alternatives, each to be tried before it is relied on:
 
-- **Schwab Trader API** (official, free with a Schwab account): real-time chains and marks; its sign-in token lasts seven days, so it belongs in a driver of the MoneyKata Connector (S18), not the server.
+- **Schwab Trader API** (official, free with a Schwab account): real-time chains and marks; its sign-in token lasts seven days, so it belongs in a driver of the MoolaKata Connector (S18), not the server.
 - **MarketData.app** (official, a free key with a daily request limit): chains and end-of-day quotes.
 - **Massive** (formerly Polygon.io), Basic plan: shipped as the fallback (S4.3) but not yet tried with a live key: its limits, its history for expired contracts.
 - **Tradier** (official, free with an account): delayed chains.

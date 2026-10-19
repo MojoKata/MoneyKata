@@ -8,9 +8,9 @@ import time
 import httpx
 import pytest
 
-from moneykata.config import load
-from moneykata.keys import cli as keys_cli
-from moneykata.keys import phrase
+from moolakata.config import load
+from moolakata.keys import cli as keys_cli
+from moolakata.keys import phrase
 
 pytestmark = pytest.mark.browser
 
@@ -25,7 +25,7 @@ def start(tmp, keyed: bool):
     """A server from this checkout, as the image runs it: with a keyring, locked; without,
     uninitialised (S15.4.4). Its base address, its process and its key (None without)."""
     port = free_port()
-    config = tmp / "moneykata.toml"
+    config = tmp / "moolakata.toml"
     config.write_text(f"""
 [server]
 name = "smoke"
@@ -40,7 +40,7 @@ socket = "{tmp / "run" / "sock"}"
     key = keys_cli.init(load(config), say=lambda _: None, confirm=False) if keyed else None
     log = open(tmp / "server.log", "wb")  # noqa: SIM115 - a file: an unread pipe fills up
     proc = subprocess.Popen(
-        [sys.executable, "-m", "moneykata.main", "--config", str(config), "serve"],
+        [sys.executable, "-m", "moolakata.main", "--config", str(config), "serve"],
         stdout=log,
         stderr=subprocess.STDOUT,
     )

@@ -1,6 +1,6 @@
 # Profile
 
-Your name, email, password, two-step sign-in and how MoneyKata shows things to you.
+Your name, email, password, two-step sign-in and how MoolaKata shows things to you.
 
 ![Profile](shots/profile.png)
 
@@ -75,11 +75,11 @@ Asked again when you last gave it more than 10 minutes ago.
 
 ## Connections {#connections}
 
-Your sign-ins at institutions, kept by the MoneyKata Connector and never by MoneyKata: each with
+Your sign-ins at institutions, kept by the MoolaKata Connector and never by MoolaKata: each with
 its driver (Schwab, OFX Direct Connect or a folder of downloads), the institution accounts the
 driver found, the accounts here it keeps current, and its state from the connector's last
 report. **New connection** starts one; **Sign in again** or **Change credentials** gives the
-connector new ones, sealed in this browser to its key so MoneyKata can't read them; **Remove**
+connector new ones, sealed in this browser to its key so MoolaKata can't read them; **Remove**
 (the click asks again) turns its accounts' sync off, and the connector deletes its credentials.
 A connection that needs a sign-in, as Schwab's does each week, alerts you.
 

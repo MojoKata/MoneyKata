@@ -2,7 +2,7 @@
 
 1. One HTTPS address. `/` redirects to `/ui`. `/ui/*` serves the app and `/ui/api/*` its API.
    `/link/*` is the linked-server API (S11). `/connector/v1/*` is where the paired
-   MoneyKata Connector posts its reports and files (S18.4.3). `/mcp` is the read-only
+   MoolaKata Connector posts its reports and files (S18.4.3). `/mcp` is the read-only
    endpoint for agents (S10.9). `/healthz` is the health check. `/demo` serves the clickable mockup (S12.9) to
    anyone, without signing in: it holds only sample data, runs in a sandbox with an opaque
    origin, and can reach neither the app's cookie nor its API.
@@ -12,7 +12,7 @@
    connector's signed requests for `/connector` (S18.4.3). None is accepted on another's
    path; `/mcp` takes only its access tokens (S10.9).
 3. **Port 37373**, on all of the container's interfaces; the host's port mapping and firewall
-   decide what reaches it. **Two listener modes**, one switch in `moneykata.toml`: **`proxy`**,
+   decide what reaches it. **Two listener modes**, one switch in `moolakata.toml`: **`proxy`**,
    plain HTTP behind haproxy, Caddy or nginx, which ends TLS (forwarded headers are trusted
    only from the configured proxy addresses, each the proxy's own address and never a whole
    private range, since anything else in it could pose as the proxy); or **`tls`**, its own
@@ -77,7 +77,7 @@
    that waits for healthy containers (TrueNAS's catalog among them) lets it wait for its
    phrase; whether it is ready is `/healthz`'s answer, for an uptime monitor. **Host commands**
    (`keys unlock`, `keys rotate`, `db backup`, S15.4.7) reach the running server over its Unix
-   socket, `/run/moneykata/sock`, in a 0700 directory of the server's account on a tmpfs
+   socket, `/run/moolakata/sock`, in a 0700 directory of the server's account on a tmpfs
    (`web/.dev/` in dev mode), never over the listener.
 7. **Security policies**. One place for the rules every request
    passes through; other sections refer here.
@@ -187,7 +187,7 @@
          `"format": "money"` or `"decimal"`, and the browser's types (S17.3) mark it as an
          exact decimal.
       3. **One edge on each side.** The server writes and reads JSON only through its exact
-         encoder (`moneykata/exactjson.py`): the API's responses, the live stream, MCP and
+         encoder (`moolakata/exactjson.py`): the API's responses, the live stream, MCP and
          `/link`. The browser reads it only through `parseJson`, which makes every number with a
          decimal point an exact decimal (S12.12).
       4. **Requests** send amounts the same way, as exact numbers. A decimal string, as a form

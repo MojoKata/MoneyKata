@@ -39,5 +39,5 @@ tax book claims for the same year. A dependent child's unearned income above the
 flagged for Form 8615 (the kiddie tax). A new tax book copies them a year older, and says whom it
 left out as past a qualifying child's age.
 
-MoneyKata gathers what a preparer or tax software needs. It never computes the tax, chooses a filing
+MoolaKata gathers what a preparer or tax software needs. It never computes the tax, chooses a filing
 status, or files.

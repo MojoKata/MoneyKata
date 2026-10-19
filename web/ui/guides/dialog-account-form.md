@@ -47,11 +47,11 @@ What you expect to deduct on your state return each year, typed.
 ## Extended public keys or addresses {#wallet-keys}
 
 A self-custody wallet's public data: an **xpub**, **ypub** or **zpub** (exported from the wallet
-as its account's extended public key), or bitcoin addresses, one a line. From a key, MoneyKata
+as its account's extended public key), or bitcoin addresses, one a line. From a key, MoolaKata
 derives the wallet's receive and change addresses itself.
 
 > Never enter a seed phrase or a private key. The form clears anything that looks like one (12
-> or 24 words, a WIF or 64-hex private key, an xprv) at once, and MoneyKata never stores or
+> or 24 words, a WIF or 64-hex private key, an xprv) at once, and MoolaKata never stores or
 > logs it.
 
 ## Gap limit

@@ -28,7 +28,7 @@ export default function Welcome() {
   if (!who) return null;
   return html`
     <${AuthCard} title=${`Welcome, ${who.displayName}`} guide="welcome"
-      sub=${`You're invited to ${who.household}'s MoneyKata. Your username is ${who.username}.`}>
+      sub=${`You're invited to ${who.household}'s MoolaKata. Your username is ${who.username}.`}>
       <form onSubmit=${(/** @type {Event} */ e) => {
         e.preventDefault();
         accept.run().catch(() => {});

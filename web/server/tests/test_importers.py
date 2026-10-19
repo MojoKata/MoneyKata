@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from moneykata.importers import csvfile, ofx
-from moneykata.importers.parsed import ReadError
+from moolakata.importers import csvfile, ofx
+from moolakata.importers.parsed import ReadError
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -99,7 +99,7 @@ Posted Date,Description,Debit,Credit,Balance
 
 def test_a_newest_first_csv_is_read_oldest_first():
     # B18: each day's last running balance is its latest row's, not its first in the file.
-    from moneykata.ledger import balances
+    from moolakata.ledger import balances
 
     data = (
         b"Date,Description,Amount,Balance\n"

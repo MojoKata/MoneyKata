@@ -1,4 +1,4 @@
-# MoneyKata's API
+# MoolaKata's API
 
 Two HTTP interfaces, both on the server's own address. The requirements set their rules (S13.8
 the conventions, S10.9 agents); this page says how to use them.
@@ -9,7 +9,7 @@ the conventions, S10.9 agents); this page says how to use them.
 | `/mcp`      | an AI assistant, read only (S10.9)      | an access token made in Profile      |
 
 `/link` is the protocol between linked servers (`docs/link-protocol.md`), and `/connector/v1`
-the one between the paired MoneyKata Connector and this server (`docs/connector-protocol.md`);
+the one between the paired MoolaKata Connector and this server (`docs/connector-protocol.md`);
 each is signed, and neither takes a session or a token.
 
 ## 1. `/ui/api`

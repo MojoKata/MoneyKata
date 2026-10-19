@@ -8,7 +8,7 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import clock
+from moolakata import clock
 
 T0 = dt.datetime(2026, 12, 20, 12, tzinfo=dt.UTC)
 
@@ -76,7 +76,7 @@ def test_8949_rows_terms_boxes_and_a_wash_sale(alice):
     csv = alice.get(f"/ui/api/tax-books/{b}/exports/8949.csv")
     assert csv.headers["content-type"].startswith("text/csv")
     assert "D,long,4 VTI,2024-01-05,2026-02-01,600.00,400.00,,,200.00,Brokerage" in csv.text
-    txf = alice.get(f"/ui/api/tax-books/{b}/exports/moneykata.txf").text
+    txf = alice.get(f"/ui/api/tax-books/{b}/exports/moolakata.txf").text
     assert txf.startswith("V042\r\n") and "N323\r\n" in txf and "N321\r\n" in txf
     pdf = alice.get(f"/ui/api/tax-books/{b}/exports/summary.pdf")
     assert pdf.content.startswith(b"%PDF-1.4") and pdf.content.rstrip().endswith(b"%%EOF")

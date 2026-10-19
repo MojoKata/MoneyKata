@@ -1,7 +1,7 @@
 # Connector
 
-The MoneyKata Connector is a second service that keeps people's sign-ins at their institutions,
-fetches with its drivers, and pushes what it fetches into imports. MoneyKata can't reach it or
+The MoolaKata Connector is a second service that keeps people's sign-ins at their institutions,
+fetches with its drivers, and pushes what it fetches into imports. MoolaKata can't reach it or
 read its vault: it only hears its signed reports, every five minutes. Admins only.
 
 ![Connector](shots/settings-connector.png)
@@ -17,7 +17,7 @@ The connector serves a small page of its own, on its own port, linked here once 
 reported. There its vault is made and its words are given: **Unlock** after a restart,
 **Lock**, **Pair** with the code from here, **Unpair** and **Reset**. Anyone on the network can
 see its status there, which names no institution, sign-in or account; every action asks for
-the words. MoneyKata only links to it and never sees the words.
+the words. MoolaKata only links to it and never sees the words.
 
 ## Pair {#pair}
 
@@ -31,7 +31,7 @@ minutes ago.
 ## Confirm {#confirm}
 
 After pairing, compare the fingerprint shown here with the one the connector's page showed (or
-`moneykata-connector pair` printed on its host). If they match, **Confirm**, after your password: only then does
+`moolakata-connector pair` printed on its host). If they match, **Confirm**, after your password: only then does
 the connector get sealed sign-ins and post files. If they differ, someone else answered the
 pairing code first: **Unpair**. Until confirmed, people see in the connection dialog that no
 sign-in can be sealed yet.

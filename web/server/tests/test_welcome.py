@@ -11,10 +11,10 @@ import pytest
 from conftest import ADMIN_PW, LOOPBACK, ORIGIN, make_user, new_client
 from fastapi.testclient import TestClient
 
-from moneykata.app import Server, create_app
-from moneykata.keys import cli as keys_cli
-from moneykata.keys import master, phrase
-from moneykata.store.entities.core import Activity
+from moolakata.app import Server, create_app
+from moolakata.keys import cli as keys_cli
+from moolakata.keys import master, phrase
+from moolakata.store.entities.core import Activity
 
 
 @pytest.fixture
@@ -143,12 +143,12 @@ def test_a_key_made_on_the_host_turns_the_welcome_into_the_locked_screen(new_ser
 def test_a_database_without_its_keyring_refuses_the_start_and_keys_init(config, tmp_path, capsys):
     """A household starting a claimed server over empties its data directory: with the
     keyring alone removed, a new key would not open the database left behind (S15.4.5)."""
-    from moneykata import main
-    from moneykata.config import RefuseStart
+    from moolakata import main
+    from moolakata.config import RefuseStart
 
     config.data_dir.mkdir(parents=True, exist_ok=True)
     config.db_path.write_bytes(b"a database made under a key nobody wrote down")
-    toml = tmp_path / "moneykata.toml"
+    toml = tmp_path / "moolakata.toml"
     toml.write_text(
         f'[server]\nmode = "proxy"\n[paths]\ndata = "{config.data_dir}"\n'
         f'backups = "{config.backup_dir}"\n'
@@ -195,9 +195,9 @@ def test_the_health_check_counts_any_answer_as_alive(config, monkeypatch, capsys
 
     import httpx
 
-    from moneykata import main
+    from moolakata import main
 
-    toml = tmp_path / "moneykata.toml"
+    toml = tmp_path / "moolakata.toml"
     toml.write_text(
         f'[server]\nmode = "proxy"\n[paths]\ndata = "{config.data_dir}"\n'
         f'backups = "{config.backup_dir}"\n'

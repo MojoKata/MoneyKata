@@ -8,8 +8,8 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import alerts, clock
-from moneykata.gifts import holidays
+from moolakata import alerts, clock
+from moolakata.gifts import holidays
 
 T0 = dt.datetime(2026, 10, 11, 12, tzinfo=dt.UTC)
 
@@ -111,7 +111,7 @@ def test_upcoming_with_the_reminder_on_the_dashboard_and_as_an_alert(server, ali
     assert alice.get("/ui/api/gifts/upcoming").json()["items"][0]["planned"] == "35.00"
     alerts.evaluate(server)
     with server.db.read() as s:
-        from moneykata.store.entities.alerts import Alert
+        from moolakata.store.entities.alerts import Alert
 
         a = s.query(Alert).filter_by(kind="occasion").one()
         assert a.resolvedAt is not None

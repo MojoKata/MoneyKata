@@ -184,7 +184,7 @@ export default function SignIn() {
       <${AuthCard} title="Two-step sign-in" guide="signin"
         sub=${recovery
           ? 'Type one of your recovery codes. Each works once.'
-          : 'Type the six-digit code your authenticator app shows for MoneyKata.'}>
+          : 'Type the six-digit code your authenticator app shows for MoolaKata.'}>
         <form onSubmit=${(/** @type {Event} */ e) => {
           e.preventDefault();
           second.run().catch(() => {});

@@ -1,6 +1,6 @@
-# Deploying MoneyKata
+# Deploying MoolaKata
 
-How to put a MoneyKata server where people can start testing it, on the first two hosts it
+How to put a MoolaKata server where people can start testing it, on the first two hosts it
 targets: **a fresh VM on Proxmox VE** and **TrueNAS**. Both run the same image, and
 both serve HTTPS themselves on port 37373 with a self-signed certificate (`tls` mode,
 requirements S13.3), which is what a test on a local network needs. A server the household
@@ -15,7 +15,7 @@ A release's images are published on ghcr.io (§2), and a host pulls them in plac
 
 ## 1. What you need
 
-- **A host**: amd64 or arm64 (S17.8.1), with **2 GB of memory** for MoneyKata (1 GB with
+- **A host**: amd64 or arm64 (S17.8.1), with **2 GB of memory** for MoolaKata (1 GB with
   receipt reading turned off, Settings › Receipts) and about **3 GB of disk** for the image
   and the data.
 - **Internet access** from the host to `ghcr.io`, where the images are published, and to
@@ -27,33 +27,33 @@ A release's images are published on ghcr.io (§2), and a host pulls them in plac
 
 ## 2. The image
 
-Each release is published as `ghcr.io/mojokata/moneykata:<version>`, one tag for amd64 and
+Each release is published as `ghcr.io/mojokata/moolakata:<version>`, one tag for amd64 and
 arm64 (S17.8.2). Docker pulls it the first time a command below needs it; the image is under
 1 GB. This guide installs **0.1.0**. GitHub records how each release's image was built, and
 anyone can check that the one they pulled is it
 ([`gh`](https://cli.github.com/) installed):
 
 ```sh
-gh attestation verify oci://ghcr.io/mojokata/moneykata:0.1.0 --owner MojoKata
+gh attestation verify oci://ghcr.io/mojokata/moolakata:0.1.0 --owner MojoKata
 ```
 
 To build it yourself instead, from a checkout of the source (about three minutes on a VM with
 two cores), and to carry it to a host with no internet access:
 
 ```sh
-docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
-docker save ghcr.io/mojokata/moneykata:0.1.0 | gzip > moneykata-0.1.0.tar.gz   # where it was built
-docker load -i moneykata-0.1.0.tar.gz                                          # on the host
+docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:$(cat web/VERSION) --load .
+docker save ghcr.io/mojokata/moolakata:0.1.0 | gzip > moolakata-0.1.0.tar.gz   # where it was built
+docker load -i moolakata-0.1.0.tar.gz                                          # on the host
 ```
 
-The **MoneyKata Connector** (S18), which signs in to institutions that have a driver, is a
-second image, `ghcr.io/mojokata/moneykata-connector:0.1.0`, and is not needed to try
-MoneyKata: accounts are kept current from the files you upload. §8 adds it.
+The **MoolaKata Connector** (S18), which signs in to institutions that have a driver, is a
+second image, `ghcr.io/mojokata/moolakata-connector:0.1.0`, and is not needed to try
+MoolaKata: accounts are kept current from the files you upload. §8 adds it.
 
 ## 3. A fresh VM on Proxmox VE
 
 [Proxmox VE](https://www.proxmox.com/en/products/proxmox-virtual-environment/overview) runs
-MoneyKata in a Debian VM with Docker. If Proxmox isn't installed yet:
+MoolaKata in a Debian VM with Docker. If Proxmox isn't installed yet:
 [download](https://www.proxmox.com/en/downloads/proxmox-virtual-environment/iso) the ISO and
 follow the [installation guide](https://pve.proxmox.com/wiki/Installation).
 
@@ -72,20 +72,20 @@ In the Proxmox web UI, select the node and open **Shell**, then:
    ```
 
 2. **Put your SSH public key** in a file, for the VM's user: paste it into
-   `/root/moneykata.pub` (`nano /root/moneykata.pub`). It is the `.pub` file in `~/.ssh` on
+   `/root/moolakata.pub` (`nano /root/moolakata.pub`). It is the `.pub` file in `~/.ssh` on
    your own computer; `ssh-keygen -t ed25519` there makes one if you have none.
-3. **Make the VM**: 2 cores, 4 GB of memory (MoneyKata needs 2 GB; the rest leaves the
+3. **Make the VM**: 2 cores, 4 GB of memory (MoolaKata needs 2 GB; the rest leaves the
    receipt reader room), a 32 GB disk made from the image, and a cloud-init drive. `120` is the VM's id
    and `local-lvm` the storage for its disks: use a free id, and your storage if it differs
    (**Datacenter › Storage** lists them; a ZFS install calls it `local-zfs`).
 
    ```sh
-   qm create 120 --name moneykata --cores 2 --memory 4096 --cpu host --ostype l26 \
+   qm create 120 --name moolakata --cores 2 --memory 4096 --cpu host --ostype l26 \
      --scsihw virtio-scsi-single --net0 virtio,bridge=vmbr0 --agent enabled=1 \
      --scsi0 local-lvm:0,import-from=/root/debian-13-genericcloud-amd64.qcow2,discard=on,ssd=1 \
      --ide2 local-lvm:cloudinit --boot order=scsi0 --serial0 socket --vga serial0 --onboot 1
    qm disk resize 120 scsi0 32G
-   qm set 120 --ciuser debian --sshkeys /root/moneykata.pub --ipconfig0 ip=dhcp
+   qm set 120 --ciuser debian --sshkeys /root/moolakata.pub --ipconfig0 ip=dhcp
    qm start 120
    ```
 
@@ -95,7 +95,7 @@ In the Proxmox web UI, select the node and open **Shell**, then:
    ![The node's Shell after the qm commands](deploy/proxmox-shell.png)
 
 4. **Find its address**: your router's list of DHCP leases shows it under the name
-   `moneykata`, unless you gave it a fixed one. (The VM's **Console** shows only its boot and
+   `moolakata`, unless you gave it a fixed one. (The VM's **Console** shows only its boot and
    a login prompt, and the user has no password: sign in over SSH.) Once
    `qemu-guest-agent` runs (§3.2), the VM's **Summary** shows the address under **IPs**. The
    rest of this section calls it `192.168.1.50`.
@@ -135,47 +135,47 @@ UI show the VM's address on its **Summary**; it starts by itself at every boot a
 1. **Make a folder for the server**, with the release's example compose file:
 
    ```sh
-   mkdir ~/moneykata && cd ~/moneykata
+   mkdir ~/moolakata && cd ~/moolakata
    curl -fsSLo compose.yaml https://raw.githubusercontent.com/MojoKata/MoneyKata/v0.1.0/web/install/compose.tls.yaml
    mkdir data backups && sudo chown 10001:10001 data backups
    ```
 
-2. **Write its configuration**, `moneykata-tls.toml`, naming the address browsers will use, so
+2. **Write its configuration**, `moolakata-tls.toml`, naming the address browsers will use, so
    the self-signed certificate covers it:
 
    ```sh
-   cat > moneykata-tls.toml <<'EOF'
+   cat > moolakata-tls.toml <<'EOF'
    [server]
-   name = "moneykata"
+   name = "moolakata"
    mode = "tls"
    port = 37373
 
    [paths]
-   data = "/var/lib/moneykata"
-   backups = "/var/backups/moneykata"
+   data = "/var/lib/moolakata"
+   backups = "/var/backups/moolakata"
 
    [tls]
    names = ["192.168.1.50"]
    EOF
    ```
 
-3. **Start it**: `docker compose up -d moneykata`, which first pulls the image (§2). Name the
+3. **Start it**: `docker compose up -d moolakata`, which first pulls the image (§2). Name the
    service: the compose file's other one is the connector, which needs a setup of its own
    before it starts (operations.md §8).
 4. **Open it** in a browser: the welcome makes its master key and your account (§5).
 
 ### 3.4 After a reboot
 
-The VM starts with the host (`--onboot 1`), and Docker starts MoneyKata with it
+The VM starts with the host (`--onboot 1`), and Docker starts MoolaKata with it
 (`restart: unless-stopped`, S13.6), **locked**: open it and enter the phrase (§5).
-`docker compose ps` in `~/moneykata` shows it `healthy` whenever it answers, locked or not;
+`docker compose ps` in `~/moolakata` shows it `healthy` whenever it answers, locked or not;
 `curl -k https://192.168.1.50:37373/healthz` says whether it is waiting for its phrase
 (`locked`) or open (`ok`).
 
 ## 4. TrueNAS, installed manually
 
 [TrueNAS Community Edition](https://www.truenas.com/truenas-community-edition/) 25.10
-("Goldeye") runs apps as Docker Compose projects. These steps install MoneyKata by hand, as a
+("Goldeye") runs apps as Docker Compose projects. These steps install MoolaKata by hand, as a
 **custom app** from YAML; they work whether or not you use an app from TrueNAS's catalog, and
 give full control of its datasets and configuration. If TrueNAS isn't installed yet:
 [download](https://www.truenas.com/download/) the ISO and follow the
@@ -187,8 +187,8 @@ The steps below use a pool named `tank` and the NAS's address `192.168.1.20`.
 1. **A pool**: **Storage › Create Pool**, if there isn't one.
 2. **Apps**: open **Apps**. Until it has a pool it says *Apps Service Not Configured*:
    **Configuration › Choose Pool**, pick `tank`, **Choose**.
-3. **Datasets**: **Datasets**, select `tank`, **Add Dataset**: name it `moneykata`, preset
-   **Generic**, **Save**. Select `tank/moneykata` and add two datasets inside it the same
+3. **Datasets**: **Datasets**, select `tank`, **Add Dataset**: name it `moolakata`, preset
+   **Generic**, **Save**. Select `tank/moolakata` and add two datasets inside it the same
    way: `data` and `backups`. Separate datasets let snapshots and replication treat them
    apart (operations.md §2.3).
 
@@ -197,7 +197,7 @@ The steps below use a pool named `tank` and the NAS's address `192.168.1.20`.
 ### 4.2 Install the app
 
 **Apps › Discover Apps**, then **⋮** (**More Options**, beside **Custom App**) **› Install
-via YAML**. Name it `moneykata`, paste this as **Custom Config** (it is
+via YAML**. Name it `moolakata`, paste this as **Custom Config** (it is
 `web/install/compose.truenas.yaml`) with the NAS's address under `[tls] names`, so the
 certificate covers it, and your pool's name in place of `tank`, then **Save**:
 
@@ -206,20 +206,20 @@ services:
   # Gives the two datasets to the server's account (uid 10001) before it starts, then ends:
   # root, with the one capability that takes, and no network.
   permissions:
-    image: ghcr.io/mojokata/moneykata:0.1.0
+    image: ghcr.io/mojokata/moolakata:0.1.0
     user: "0:0"
-    entrypoint: ["chown", "10001:10001", "/var/lib/moneykata", "/var/backups/moneykata"]
+    entrypoint: ["chown", "10001:10001", "/var/lib/moolakata", "/var/backups/moolakata"]
     volumes:
-      - /mnt/tank/moneykata/data:/var/lib/moneykata
-      - /mnt/tank/moneykata/backups:/var/backups/moneykata
+      - /mnt/tank/moolakata/data:/var/lib/moolakata
+      - /mnt/tank/moolakata/backups:/var/backups/moolakata
     network_mode: none
     read_only: true
     cap_drop: [ALL]
     cap_add: [CHOWN]
     security_opt: ["no-new-privileges:true"]
     restart: "no"
-  moneykata:
-    image: ghcr.io/mojokata/moneykata:0.1.0
+  moolakata:
+    image: ghcr.io/mojokata/moolakata:0.1.0
     restart: unless-stopped
     depends_on:
       permissions:
@@ -227,27 +227,27 @@ services:
     ports:
       - "37373:37373"
     environment:
-      # moneykata.toml, given here rather than as a file (S17.8).
-      MONEYKATA_CONFIG: |
+      # moolakata.toml, given here rather than as a file (S17.8).
+      MOOLAKATA_CONFIG: |
         [server]
-        name = "moneykata"
+        name = "moolakata"
         mode = "tls"
         port = 37373
 
         [paths]
-        data = "/var/lib/moneykata"
-        backups = "/var/backups/moneykata"
+        data = "/var/lib/moolakata"
+        backups = "/var/backups/moolakata"
 
         [tls]
         names = ["192.168.1.20"]
     volumes:
-      - /mnt/tank/moneykata/data:/var/lib/moneykata
-      - /mnt/tank/moneykata/backups:/var/backups/moneykata
+      - /mnt/tank/moolakata/data:/var/lib/moolakata
+      - /mnt/tank/moolakata/backups:/var/backups/moolakata
       - /etc/localtime:/etc/localtime:ro
     read_only: true
     tmpfs:
       - /tmp
-      - /run/moneykata:uid=10001,gid=10001,mode=0700
+      - /run/moolakata:uid=10001,gid=10001,mode=0700
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s
@@ -259,8 +259,8 @@ services:
 ![Install via YAML](deploy/truenas-install-yaml.png)
 
 Nothing is typed in a shell. The first service, `permissions`, gives the two datasets to the
-server's account (uid 10001) and ends; MoneyKata starts once it has. `MONEYKATA_CONFIG` is the
-server's configuration, the same TOML as `moneykata.toml` on the VM (§3.3), given here so there
+server's account (uid 10001) and ends; MoolaKata starts once it has. `MOOLAKATA_CONFIG` is the
+server's configuration, the same TOML as `moolakata.toml` on the VM (§3.3), given here so there
 is no file to write.
 
 The install pulls the image (§2), and the app shows **Running** within seconds, before anyone
@@ -272,12 +272,12 @@ Localization › Settings**) is the server's, for backups and emails.
 
 ### 4.3 Snapshots and restarts
 
-- **Data Protection › Periodic Snapshot Tasks › Add**: **Dataset** `tank/moneykata`,
+- **Data Protection › Periodic Snapshot Tasks › Add**: **Dataset** `tank/moolakata`,
   **Recursive** ticked, **Save**; by default it keeps two weeks of daily snapshots. Nothing
   in them opens without the phrase; operations.md §2.3 says what a snapshot is and isn't.
 - After the NAS restarts, the app starts again by itself (`restart: unless-stopped`),
   **locked**, until someone enters the phrase (§5).
-- **Running doesn't mean open.** TrueNAS shows **Running** whenever MoneyKata answers: new,
+- **Running doesn't mean open.** TrueNAS shows **Running** whenever MoolaKata answers: new,
   locked or open alike. Whatever restarts the app locks it: the NAS restarting (a TrueNAS
   update among them), the Apps service stopping or moving to another pool, and every **Edit**
   of the app's YAML, upgrades included (§6). `https://192.168.1.20:37373/healthz` says which
@@ -290,25 +290,25 @@ Localization › Settings**) is the server's, for backups and emails.
 
 1. Open `https://<address>:37373` (`https://192.168.1.50:37373` for the VM,
    `https://192.168.1.20:37373` for the NAS). The browser warns that the certificate isn't
-   trusted, since MoneyKata made it itself: continue to the site.
-2. A new server shows **Welcome to MoneyKata**. Have paper and a pen ready, then **Show my
+   trusted, since MoolaKata made it itself: continue to the site.
+2. A new server shows **Welcome to MoolaKata**. Have paper and a pen ready, then **Show my
    recovery phrase**.
 
-   ![The welcome](deploy/moneykata-welcome.png)
+   ![The welcome](deploy/moolakata-welcome.png)
 
 3. **Write the 12 words down**, in order, with the fingerprint. They're the master key, and
    nothing shows them again: keep two copies in two places, one of them offline, and never
    with the backups (S15.6). Every visit, or another browser, shows other words; only the ones
    you confirm become the key. Then **I've written them down**.
 
-   ![The recovery phrase (blurred here: never put a real one in a picture)](deploy/moneykata-phrase.png)
+   ![The recovery phrase (blurred here: never put a real one in a picture)](deploy/moolakata-phrase.png)
 
-4. **Type three of the words back**, by their number, then **Make the key**. MoneyKata writes
+4. **Type three of the words back**, by their number, then **Make the key**. MoolaKata writes
    its key and opens.
 5. **Set up the admin account**: a name, sex, an email address and a password of at least 12
    characters. You sign in as **`admin`** from now on (S10.1.2).
 
-   ![The admin's account](deploy/moneykata-setup.png)
+   ![The admin's account](deploy/moolakata-setup.png)
 
 6. Then the **Dashboard**. **Users and Groups** invites the other testers. An invitation is
    an email: until **Settings › Email** has an SMTP server, each is written to the mail folder
@@ -316,14 +316,14 @@ Localization › Settings**) is the server's, for backups and emails.
    The help pane (**F1**) explains every screen, and `/demo` on the same address is the
    clickable mockup with sample data.
 
-   ![The Dashboard](deploy/moneykata-dashboard.png)
+   ![The Dashboard](deploy/moolakata-dashboard.png)
 
 **After every restart** the server is **locked** until someone enters the phrase: the page
 asks for the 12 words, and sign-in follows. Instead of the browser, the phrase can be entered on
-the host: `docker compose exec moneykata moneykata keys unlock` in `~/moneykata` on the VM;
-`sudo docker exec -it ix-moneykata-moneykata-1 moneykata keys unlock` on TrueNAS.
+the host: `docker compose exec moolakata moolakata keys unlock` in `~/moolakata` on the VM;
+`sudo docker exec -it ix-moolakata-moolakata-1 moolakata keys unlock` on TrueNAS.
 
-![The locked screen](deploy/moneykata-locked.png)
+![The locked screen](deploy/moolakata-locked.png)
 
 **Check a copy of the phrase** once a year with **Verify key** in Settings › Key storage, and
 whenever you make a new copy; the yearly alert opens it.
@@ -331,9 +331,9 @@ whenever you make a new copy; the yearly alert opens it.
 ## 6. A new release
 
 1. Change the image's tag to the new version: in `compose.yaml` on the VM, then
-   `docker compose up -d moneykata`, which pulls it; on TrueNAS, **Edit** under **Application
+   `docker compose up -d moolakata`, which pulls it; on TrueNAS, **Edit** under **Application
    Info** opens **Edit App YAML**, the YAML as TrueNAS keeps it (its comments gone and its keys
-   in alphabetical order, `moneykata` before `permissions`): change the tag on both `image:`
+   in alphabetical order, `moolakata` before `permissions`): change the tag on both `image:`
    lines, and **Save** pulls it and makes the containers again.
 2. Unlock it (§5). At the unlock the server copies the database aside and migrates it;
    operations.md §3 says how to go back.
@@ -344,12 +344,12 @@ whenever you make a new copy; the yearly alert opens it.
 ## 7. When something's wrong
 
 - **It won't start**: `docker compose ps` shows it `Restarting`, since it tries again about
-  once a minute. `docker compose logs moneykata` shows why, in a line beginning `refusing to
+  once a minute. `docker compose logs moolakata` shows why, in a line beginning `refusing to
   start:`; operations.md §5.1 lists the usual causes. On TrueNAS the app shows **Stopped**,
   turning **Deploying** for a moment at each try, and its page has no container to show the
-  log of: in **System › Shell**, `sudo docker logs --tail 5 ix-moneykata-moneykata-1` shows
-  the line. Its paths are the container's: `/var/lib/moneykata` is `data` (on TrueNAS, the
-  `data` dataset), `/var/backups/moneykata` is `backups`, and `/etc/moneykata.toml` is the
+  log of: in **System › Shell**, `sudo docker logs --tail 5 ix-moolakata-moolakata-1` shows
+  the line. Its paths are the container's: `/var/lib/moolakata` is `data` (on TrueNAS, the
+  `data` dataset), `/var/backups/moolakata` is `backups`, and `/etc/moolakata.toml` is the
   configuration.
 - **The page won't load**: it is `https://`, on port 37373. A browser that refuses the
   certificate outright was given an address the certificate doesn't name: add it under
@@ -359,38 +359,38 @@ whenever you make a new copy; the yearly alert opens it.
   new server asks for words you never saw. Stop it, empty its `data` and `backups` folders,
   and start it again: the welcome comes back, and nothing is lost on a new server. Remove
   everything in them, not only the keyring: a new key can't open the database left behind,
-  and the server refuses to start beside it. On the VM, in `~/moneykata`:
-  `docker compose stop moneykata`, then
-  `sudo find data backups -mindepth 1 -delete` and `docker compose up -d moneykata`. On
+  and the server refuses to start beside it. On the VM, in `~/moolakata`:
+  `docker compose stop moolakata`, then
+  `sudo find data backups -mindepth 1 -delete` and `docker compose up -d moolakata`. On
   TrueNAS: **Stop** (■ under **Controls**, in the app's row), then in **System › Shell**
-  `sudo find /mnt/tank/moneykata/data /mnt/tank/moneykata/backups -mindepth 1 -delete`,
+  `sudo find /mnt/tank/moolakata/data /mnt/tank/moolakata/backups -mindepth 1 -delete`,
   and **Start** in the same place.
 - **A lost phrase**: a running, unlocked server can still make a new one,
   `keys rotate` (operations.md §7). Once it restarts without one, nothing opens the data.
 
-## 8. The MoneyKata Connector
+## 8. The MoolaKata Connector
 
 The connector (S18) signs in to institutions that have a driver (Schwab, and banks that run
 OFX Direct Connect) and keeps their accounts current, holding the sign-ins in a vault of its
-own that MoneyKata can't open. It serves a small page of its own on port **37374**, where its
-vault is made, its words are given after every start, and it is paired with MoneyKata. The
-vault's **12 words** are its own, apart from MoneyKata's recovery phrase: keep them in the
+own that MoolaKata can't open. It serves a small page of its own on port **37374**, where its
+vault is made, its words are given after every start, and it is paired with MoolaKata. The
+vault's **12 words** are its own, apart from MoolaKata's recovery phrase: keep them in the
 household's password manager.
 
 ![The connector's page, locked after a restart](deploy/connector-locked.png)
 
 ### 8.1 On the VM
 
-1. In `~/moneykata`, name the address browsers will use for its page, so its certificate
+1. In `~/moolakata`, name the address browsers will use for its page, so its certificate
    covers it, then start it:
 
    ```sh
-   sed -i 's/MONEYKATA_CONNECTOR_NAMES: ""/MONEYKATA_CONNECTOR_NAMES: "192.168.1.50"/' compose.yaml
+   sed -i 's/MOOLAKATA_CONNECTOR_NAMES: ""/MOOLAKATA_CONNECTOR_NAMES: "192.168.1.50"/' compose.yaml
    docker compose up -d connector
    ```
 
-2. Open `https://192.168.1.50:37374`, past the certificate's warning as for MoneyKata. **Welcome
-   to MoneyKata Connector**, then **Show my words**: put the 12 words in the password manager,
+2. Open `https://192.168.1.50:37374`, past the certificate's warning as for MoolaKata. **Welcome
+   to MoolaKata Connector**, then **Show my words**: put the 12 words in the password manager,
    **I've kept them**, type three of them back, and **Make the vault**. The page then shows
    its status, unlocked.
 
@@ -400,27 +400,27 @@ household's password manager.
 
 ### 8.2 On TrueNAS
 
-It is an app of its own, beside MoneyKata's, and like it needs nothing typed in a shell.
+It is an app of its own, beside MoolaKata's, and like it needs nothing typed in a shell.
 
-1. **A dataset**: add a dataset `connector` inside `tank/moneykata`, as in §4.1.
+1. **A dataset**: add a dataset `connector` inside `tank/moolakata`, as in §4.1.
 2. **Apps › Discover Apps › More Options (⋮) › Install via YAML** again: name it
-   `moneykata-connector`, paste this (it is `web/install/compose.connector-truenas.yaml`),
-   with the NAS's address in `MONEYKATA_CONNECTOR_NAMES` and your pool's name in place of
+   `moolakata-connector`, paste this (it is `web/install/compose.connector-truenas.yaml`),
+   with the NAS's address in `MOOLAKATA_CONNECTOR_NAMES` and your pool's name in place of
    `tank`, and **Save**. Its first service, `permissions`, gives the dataset to the
    connector's account (uid 10002) and ends; the connector starts once it has.
 
-   ![The connector's app beside MoneyKata's](deploy/truenas-connector-app.png)
+   ![The connector's app beside MoolaKata's](deploy/truenas-connector-app.png)
 
 ```yaml
 services:
   # Gives the dataset to the connector's account (uid 10002) before it starts, then ends:
   # root, with the one capability that takes, and no network.
   permissions:
-    image: ghcr.io/mojokata/moneykata-connector:0.1.0
+    image: ghcr.io/mojokata/moolakata-connector:0.1.0
     user: "0:0"
-    entrypoint: ["chown", "10002:10002", "/var/lib/moneykata-connector"]
+    entrypoint: ["chown", "10002:10002", "/var/lib/moolakata-connector"]
     volumes:
-      - /mnt/tank/moneykata/connector:/var/lib/moneykata-connector
+      - /mnt/tank/moolakata/connector:/var/lib/moolakata-connector
     network_mode: none
     read_only: true
     cap_drop: [ALL]
@@ -428,7 +428,7 @@ services:
     security_opt: ["no-new-privileges:true"]
     restart: "no"
   connector:
-    image: ghcr.io/mojokata/moneykata-connector:0.1.0
+    image: ghcr.io/mojokata/moolakata-connector:0.1.0
     restart: unless-stopped
     depends_on:
       permissions:
@@ -436,14 +436,14 @@ services:
     ports:
       - "37374:37374"
     environment:
-      MONEYKATA_CONNECTOR_NAMES: "192.168.1.20"
+      MOOLAKATA_CONNECTOR_NAMES: "192.168.1.20"
     volumes:
-      - /mnt/tank/moneykata/connector:/var/lib/moneykata-connector
+      - /mnt/tank/moolakata/connector:/var/lib/moolakata-connector
       - /etc/localtime:/etc/localtime:ro
     read_only: true
     tmpfs:
       - /tmp
-      - /run/moneykata-connector:uid=10002,gid=10002,mode=0700
+      - /run/moolakata-connector:uid=10002,gid=10002,mode=0700
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s
@@ -457,7 +457,7 @@ services:
 
 ### 8.3 Pairing
 
-1. In MoneyKata, **Settings › General › Public URL** must be the address the connector reaches
+1. In MoolaKata, **Settings › General › Public URL** must be the address the connector reaches
    it at (`https://192.168.1.50:37373` on the VM, `https://192.168.1.20:37373` on the NAS):
    the pairing code carries it.
 2. **Settings › Connector › Pair** (your password again) shows a one-time code, good for 24
@@ -471,9 +471,9 @@ services:
 
    ![Settings › Connector, its page linked](deploy/settings-connector-page-link.png)
 5. Each person then adds their sign-ins under **Profile › Connections**, sealed in their
-   browser for the connector: MoneyKata stores them, and can't open them.
+   browser for the connector: MoolaKata stores them, and can't open them.
 
-**After every restart** the connector is **locked** too, and MoneyKata alerts admins until it
+**After every restart** the connector is **locked** too, and MoolaKata alerts admins until it
 is unlocked: open its page and **Unlock** with its words. Its page's other actions (**Lock**,
 **Pair**, **Unpair**, **Reset**) each ask for the words as well; operations.md §8 covers
 running it on another machine, unpairing a lost one, and lost words.

@@ -1,6 +1,6 @@
 # S11. Linked servers
 
-Two households, each with its own MoneyKata on its own LAN, share read-only views with each
+Two households, each with its own MoolaKata on its own LAN, share read-only views with each
 other: a parent and an adult child, partners who keep separate servers, or a client and their
 preparer.
 
@@ -34,7 +34,7 @@ preparer.
       **serves** and the other **pulls**;
    2. both on one overlay network, such as **Tailscale**, **WireGuard** or ZeroTier. This is
       the recommended setup and needs no open port;
-   3. *(not now)* a relay. MoneyKata does not run one ([out of scope](out-of-scope.md)).
+   3. *(not now)* a relay. MoolaKata does not run one ([out of scope](out-of-scope.md)).
 
    A link works when **either** side can reach the other: each exchange carries both
    directions, receipts included (the side that calls sends its own receipts' bytes in it), so
@@ -208,7 +208,7 @@ preparer.
       1. **Header**: magic and version (`MKR1`), a one-time X25519 public key, a random 32-byte
          salt, a 7-byte nonce prefix, and the chunk size (64 KiB).
       2. **Key**: HKDF-SHA256 over the X25519 exchange between the one-time key and the copy's
-         key, with the salt, under the label `moneykata link receipt` or `moneykata link
+         key, with the salt, under the label `moolakata link receipt` or `moolakata link
          change`. Every file therefore has its own key.
       3. **Chunks**: each 64 KiB chunk is sealed with AES-256-GCM. Its nonce is the prefix, a
          4-byte chunk counter and a last-chunk flag, so a chunk cannot be reordered, dropped or

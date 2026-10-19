@@ -10,8 +10,8 @@ from sqlalchemy import select
 from test_accounts import add, new_account
 from test_receipts import png, upload
 
-from moneykata import clock
-from moneykata.store.entities.accounts import Category
+from moolakata import clock
+from moolakata.store.entities.accounts import Category
 
 T0 = dt.datetime(2033, 3, 1, 12, tzinfo=dt.UTC)
 
@@ -108,7 +108,7 @@ def test_a_lots_receipt_is_kept_while_the_lot_is_open(server, frozen):
 def test_pruning_needs_the_password_again_and_the_count_and_keeps_the_record(
     server, frozen, admin_client
 ):
-    from moneykata.store.entities.users import Session
+    from moolakata.store.entities.users import Session
 
     make_user(server, "alice")
     c = sign_in(server, "alice")
@@ -144,8 +144,8 @@ def test_pruning_needs_the_password_again_and_the_count_and_keeps_the_record(
 
 
 def test_a_statement_expires_after_its_period_and_the_storage_setting(server, frozen, admin_client):
-    from moneykata import receipts
-    from moneykata.store.entities.receipts import Receipt
+    from moolakata import receipts
+    from moolakata.store.entities.receipts import Receipt
 
     alice = make_user(server, "alice")
     c = sign_in(server, "alice")
@@ -171,8 +171,8 @@ def test_a_statement_expires_after_its_period_and_the_storage_setting(server, fr
 
 def test_a_file_only_a_deleted_receipt_names_is_pruned(server, frozen):
     # S14.10.5: a file is removed once no live receipt needs it; a deleted one doesn't count.
-    from moneykata.receipts import retention
-    from moneykata.store.entities.receipts import Receipt
+    from moolakata.receipts import retention
+    from moolakata.store.entities.receipts import Receipt
 
     make_user(server, "alice")
     c = sign_in(server, "alice")

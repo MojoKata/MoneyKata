@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from moneykata import ids, money
+from moolakata import ids, money
 
 
 def test_ids_have_the_schema_form_and_sort_by_time():

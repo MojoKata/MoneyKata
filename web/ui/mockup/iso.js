@@ -36,7 +36,7 @@ export function LocationProvider(props) {
   }, []);
 
   const value = useMemo(() => {
-    const u = new URL(nav.url, 'https://moneykata.invalid');
+    const u = new URL(nav.url, 'https://moolakata.invalid');
     return {
       url: nav.url,
       path: u.pathname.replace(/\/+$/g, '') || '/',

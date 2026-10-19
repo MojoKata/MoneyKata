@@ -157,7 +157,7 @@ function Plain({ section }) {
         <h3>Sign-in and sessions</h3>
         <div class="row">
           <${Field} label="Idle timeout (hours)" error=${errAt(e, 'sessionIdleHours')}
-            hint="Signed out after this long without using MoneyKata.">
+            hint="Signed out after this long without using MoolaKata.">
             <${Input} value=${f.sessionIdleHours} onInput=${set(
               'sessionIdleHours',
               true,
@@ -250,7 +250,7 @@ function Plain({ section }) {
               e,
               'networkConnectorRanges',
             )}
-              hint="Where the MoneyKata Connector calls /connector from: the LAN and the overlay by default. A connector on a laptop away from home needs its range added.">
+              hint="Where the MoolaKata Connector calls /connector from: the LAN and the overlay by default. A connector on a laptop away from home needs its range added.">
               ${area('networkConnectorRanges', 'any address')}
               </${Field}>
               <p class="small dim">/healthz and /demo answer any address.</p>
@@ -346,7 +346,7 @@ function Plain({ section }) {
         style=${{
           marginTop: '-6px',
         }}>Accounts are kept current from the files people bring: OFX, QFX and CSV
-            downloads, and statements, and by the MoneyKata Connector for accounts whose sync
+            downloads, and statements, and by the MoolaKata Connector for accounts whose sync
             is on.</p>
       <div
         class="list-item"><span class="grow dim">File types</span>OFX, QFX, CSV; statements as PDF, JPEG, PNG, WebP, HEIC <span class="small dim">· checked from the content</span></div>
@@ -523,7 +523,7 @@ function AddSource({ close, sources }) {
               }</p>`
               : null
           }`
-          : html`<p>Every source MoneyKata ships is added.</p>`}
+          : html`<p>Every source MoolaKata ships is added.</p>`}
         <${FormError} error=${save.error} />
       </${Dialog}>
   `;
@@ -571,7 +571,7 @@ function VerifyKey({ close }) {
     <${Dialog} title="Verify key" close=${close} onSubmit=${() => check.run().catch(() => {})}
       footer=${html`<button class="btn primary" disabled=${check.busy}>Verify</button>`}>
       <p class="small" style=${{ marginTop: 0 }}>Type the 12 words from one copy of the recovery
-        phrase. Nothing changes: MoneyKata checks that they open this server's key, and records the
+        phrase. Nothing changes: MoolaKata checks that they open this server's key, and records the
         check.</p>
       <${Field} label="Recovery phrase" error=${errAt(check.error, 'phrase')}
         hint="Four letters of each word are enough.">
@@ -614,7 +614,7 @@ function SetKey({ close, src }) {
 }
 
 /**
- * Tax tables (S16.11): per year, the figures that ship with MoneyKata, each correctable if the
+ * Tax tables (S16.11): per year, the figures that ship with MoolaKata, each correctable if the
  * IRS changes it before an update; the shipped value again removes the correction.
  */
 function TaxTables() {
@@ -649,7 +649,7 @@ function TaxTables() {
           .map((/** @type {number} */ y) => html`<option value=${y}>${y}</option>`)}</select></h3>
       <p class="small dim" style=${{
         marginTop: '-6px',
-      }}>Shipped with MoneyKata and updated with it.
+      }}>Shipped with MoolaKata and updated with it.
         Correct a figure here if the IRS changes it before an update.</p>
       ${groups.map((g) =>
         html`
@@ -819,7 +819,7 @@ function EmailSection() {
                     </${Field}>
                     </div>
                     <${Field} label="From address" id="smtp-from" error=${errAt(e, 'smtpFrom')}
-                      hint="As emails show it, such as MoneyKata <money@example.com>.">
+                      hint="As emails show it, such as MoolaKata <money@example.com>.">
         <${Input} value=${f.smtpFrom} onInput=${set('smtpFrom')} />
       </${Field}>
       ${v.waiting || v.setAside || v.lastError
@@ -1305,7 +1305,7 @@ function Keys() {
           ? 'by the unlock'
           : confirmed.how === 'app'
           ? 'with Verify key'
-          : 'with moneykata keys verify'
+          : 'with moolakata keys verify'
       } on ${day(confirmed.at)}.`
       : 'Not confirmed since install. Every unlock confirms it; check each copy once a year with Verify key.'
   }</div></div>

@@ -1,4 +1,4 @@
-// Settings › Connector (requirements S16.18, S18.4, S18.5): pairing with the MoneyKata
+// Settings › Connector (requirements S16.18, S18.4, S18.5): pairing with the MoolaKata
 // Connector, whether it is locked, its last report, and every Connection's state, owner and
 // accounts, never their credentials.
 import { useEffect, useState } from 'preact/hooks';
@@ -61,11 +61,11 @@ export function ConnectorSection() {
     : 'paired · unlocked';
   return html`
     <div class="card">
-      <h3>MoneyKata Connector<span class="spacer"></span><span class=${'pill ' + tone}><${Icon}
+      <h3>MoolaKata Connector<span class="spacer"></span><span class=${'pill ' + tone}><${Icon}
           name=${paired && !v.locked ? 'check' : 'lock'} /> ${status}</span></h3>
       <p class="small dim" style=${{ marginTop: '-6px' }}>A second service that holds
         institutions' credentials, fetches with its drivers and pushes into imports.
-        MoneyKata can't reach it or read its vault: it only hears its signed reports.</p>
+        MoolaKata can't reach it or read its vault: it only hears its signed reports.</p>
       ${paired
         ? html`
           <div class="list-item"><span class="grow dim">Connector</span><code
@@ -92,7 +92,7 @@ export function ConnectorSection() {
             `
             : html`<div class="notice"><${Icon} name="alert" /><div>Compare the fingerprint above with
                 the one the connector's page showed, or that${' '}
-                <code>moneykata-connector pair</code>${' '}
+                <code>moolakata-connector pair</code>${' '}
                 printed on its host. If they match, confirm: until then the connector gets no
                 sign-in and posts no file. If they differ, someone else answered the code first:
                 unpair.</div>

@@ -8,13 +8,13 @@ import httpx
 import pytest
 from pydantic import ValidationError
 
-from moneykata import exactjson, net
-from moneykata.events import Broker
-from moneykata.jobs import Jobs
-from moneykata.ratelimit import SignInGuard, Window
-from moneykata.tasks import Daily, Every, ProviderLimits, TaskError, Tasks
-from moneykata.ui.conventions import Model, Money, Paging
-from moneykata.ui.stream import stream
+from moolakata import exactjson, net
+from moolakata.events import Broker
+from moolakata.jobs import Jobs
+from moolakata.ratelimit import SignInGuard, Window
+from moolakata.tasks import Daily, Every, ProviderLimits, TaskError, Tasks
+from moolakata.ui.conventions import Model, Money, Paging
+from moolakata.ui.stream import stream
 
 UTC = dt.UTC
 
@@ -254,7 +254,7 @@ def tls_peer(tmp_path):
     import ssl
     import threading
 
-    from moneykata.listener import self_signed
+    from moolakata.listener import self_signed
 
     cert, key = self_signed(tmp_path, ["peer.lan"])
     ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)

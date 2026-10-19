@@ -3,7 +3,7 @@
 import datetime as dt
 from decimal import Decimal
 
-from moneykata.importers import statements
+from moolakata.importers import statements
 
 TODAY = dt.date(2026, 10, 13)
 

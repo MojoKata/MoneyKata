@@ -1,4 +1,4 @@
-// Generated from the API's OpenAPI document by `python -m moneykata.contract write`.
+// Generated from the API's OpenAPI document by `python -m moolakata.contract write`.
 // Do not edit: web/check fails when this file differs from what the routes give.
 
 /**
@@ -265,7 +265,7 @@
 
 /**
  * @typedef {Object} BitcoinView
- * @property {(moneykata__ui__settings__SecretSet | null)} password
+ * @property {(moolakata__ui__settings__SecretSet | null)} password
  * @property {number} wallets
  * @property {(string | null)} lastRun
  * @property {(string | null)} lastError
@@ -600,20 +600,20 @@
 
 /**
  * @typedef {Object} ContributionsView
- * @property {Array<moneykata__ui__education__ContributionOut>} rows
+ * @property {Array<moolakata__ui__education__ContributionOut>} rows
  * @property {Array<GiftYearOut>} years
  * @property {boolean} canWrite
  */
 
 /**
  * @typedef {Object} CopiesOut
- * @property {Array<moneykata__ui__settings__CopyOut>} copies
+ * @property {Array<moolakata__ui__settings__CopyOut>} copies
  * @property {string} note
  */
 
 /**
  * @typedef {Object} CopyState
- * @property {moneykata__ui__linked__Household} household
+ * @property {moolakata__ui__linked__Household} household
  * @property {boolean} hasKey
  * @property {number} waiting
  * @property {(string | null)} pulledAt
@@ -860,7 +860,7 @@
 
 /**
  * @typedef {Object} EmailView
- * @property {(moneykata__ui__settings__SecretSet | null)} password
+ * @property {(moolakata__ui__settings__SecretSet | null)} password
  * @property {number} waiting
  * @property {number} setAside
  * @property {(string | null)} lastRun
@@ -1122,7 +1122,7 @@
 /**
  * @typedef {Object} GivingView
  * @property {number} year
- * @property {(moneykata__ui__giving__PlanOut | null)} plan
+ * @property {(moolakata__ui__giving__PlanOut | null)} plan
  * @property {import('../app/dec.js').Dec} income
  * @property {import('../app/dec.js').Dec} target
  * @property {import('../app/dec.js').Dec} given
@@ -1337,7 +1337,7 @@
 /**
  * @typedef {Object} Invitation
  * @property {string} code
- * @property {moneykata__ui__links__LinkOut} link
+ * @property {moolakata__ui__links__LinkOut} link
  */
 
 /**
@@ -1565,7 +1565,7 @@
  * @property {string} fingerprint
  * @property {(string | null)} address
  * @property {(string | null)} [certificate]
- * @property {Array<moneykata__ui__links__LinkOut>} links
+ * @property {Array<moolakata__ui__links__LinkOut>} links
  */
 
 /**
@@ -1592,7 +1592,7 @@
  * @property {import('../app/dec.js').Dec} interestAhead
  * @property {import('../app/dec.js').Dec} principalThisYear
  * @property {import('../app/dec.js').Dec} overpaid
- * @property {Array<moneykata__ui__loans__RowOut>} rows
+ * @property {Array<moolakata__ui__loans__RowOut>} rows
  * @property {(ServicerCheck | null)} servicer
  * @property {(Equity | null)} [equity]
  * @property {(Following | null)} [following]
@@ -2025,7 +2025,7 @@
  * @property {import('../app/dec.js').Dec} fees
  * @property {number} monthsSaved
  * @property {import('../app/dec.js').Dec} interestSaved
- * @property {Array<moneykata__ui__loans__Point>} balances
+ * @property {Array<moolakata__ui__loans__Point>} balances
  */
 
 /**
@@ -2142,7 +2142,7 @@
 
 /**
  * @typedef {Object} Page_Household_
- * @property {Array<moneykata__ui__linked__Household>} items
+ * @property {Array<moolakata__ui__linked__Household>} items
  * @property {number} total
  * @property {number} offset
  * @property {number} limit
@@ -2383,7 +2383,7 @@
 /**
  * @typedef {Object} Panels
  * @property {number} year
- * @property {Array<moneykata__ui__taxpanels__RowOut>} rows
+ * @property {Array<moolakata__ui__taxpanels__RowOut>} rows
  * @property {Array<WashOut>} washes
  * @property {ScheduleDOut} scheduleD
  * @property {IncomeOut} income
@@ -2461,8 +2461,8 @@
  * @property {OutcomeOut} plan
  * @property {(OutcomeOut | null)} recast
  * @property {InvestedOut} invested
- * @property {Array<moneykata__ui__loans__RowOut>} planRows
- * @property {Array<moneykata__ui__loans__RowOut>} recastRows
+ * @property {Array<moolakata__ui__loans__RowOut>} planRows
+ * @property {Array<moolakata__ui__loans__RowOut>} recastRows
  * @property {Array<ResetView>} assumedRates
  */
 
@@ -2492,7 +2492,7 @@
  * @property {boolean} canChangePerson
  * @property {boolean} canMakePrivate
  * @property {boolean} isUser
- * @property {Array<moneykata__ui__gifts__RemoteUser>} sameAs
+ * @property {Array<moolakata__ui__gifts__RemoteUser>} sameAs
  * @property {(import('../app/dec.js').Dec | null)} giftBudget
  * @property {number} leadDays
  * @property {(string | null)} notes
@@ -2876,7 +2876,7 @@
  * @property {(string | null)} payee
  * @property {(string | null)} notes
  * @property {Array<string>} tags
- * @property {Array<moneykata__ui__receipts__LinkOut>} links
+ * @property {Array<moolakata__ui__receipts__LinkOut>} links
  * @property {boolean} hasThumbnail
  * @property {string} readStatus
  * @property {(string | null)} readError
@@ -2912,7 +2912,7 @@
  * @property {(string | null)} payee
  * @property {(string | null)} notes
  * @property {Array<string>} tags
- * @property {Array<moneykata__ui__receipts__LinkOut>} links
+ * @property {Array<moolakata__ui__receipts__LinkOut>} links
  * @property {boolean} hasThumbnail
  * @property {string} readStatus
  * @property {(string | null)} readError
@@ -3079,7 +3079,7 @@
 
 /**
  * @typedef {Object} RetirementOut
- * @property {Array<moneykata__ui__taxpanels__ContributionOut>} contributions
+ * @property {Array<moolakata__ui__taxpanels__ContributionOut>} contributions
  * @property {Array<Amount>} distributions
  * @property {Array<RmdOut>} rmds
  * @property {(import('../app/dec.js').Dec | null)} basis8606
@@ -3186,7 +3186,7 @@
 /**
  * @typedef {Object} SavedPlanIn
  * @property {string} name
- * @property {moneykata__ui__loans__PlanIn} inputs
+ * @property {moolakata__ui__loans__PlanIn} inputs
  */
 
 /**
@@ -3217,7 +3217,7 @@
 
 /**
  * @typedef {Object} Series
- * @property {Array<moneykata__ui__accounts__Point>} points
+ * @property {Array<moolakata__ui__accounts__Point>} points
  * @property {string} asOf
  */
 
@@ -3240,7 +3240,7 @@
 /**
  * @typedef {Object} SessionInfo
  * @property {Me} user
- * @property {moneykata__ui__session__Household} household
+ * @property {moolakata__ui__session__Household} household
  * @property {string} version
  * @property {boolean} dev
  * @property {string} serverName
@@ -3379,7 +3379,7 @@
  * @property {string} id
  * @property {boolean} enabled
  * @property {Object<string, number>} preference
- * @property {(moneykata__ui__prices__SecretSet | null)} key
+ * @property {(moolakata__ui__prices__SecretSet | null)} key
  * @property {(string | null)} lastRunAt
  * @property {(string | null)} lastOkAt
  * @property {(string | null)} lastError
@@ -3812,7 +3812,7 @@
  * @property {boolean} reconciled
  * @property {(import('../app/dec.js').Dec | null)} amountWas
  * @property {(string | null)} offChainAt
- * @property {Array<moneykata__ui__transactions__SplitOut>} splits
+ * @property {Array<moolakata__ui__transactions__SplitOut>} splits
  * @property {Array<string>} tags
  * @property {number} receipts
  * @property {string} level
@@ -4035,13 +4035,13 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__accounts__Point
+ * @typedef {Object} moolakata__ui__accounts__Point
  * @property {string} date
  * @property {import('../app/dec.js').Dec} value
  */
 
 /**
- * @typedef {Object} moneykata__ui__education__ContributionOut
+ * @typedef {Object} moolakata__ui__education__ContributionOut
  * @property {string} transactionId
  * @property {string} date
  * @property {import('../app/dec.js').Dec} amount
@@ -4053,12 +4053,12 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__education__DocumentIn
+ * @typedef {Object} moolakata__ui__education__DocumentIn
  * @property {string} receiptId
  */
 
 /**
- * @typedef {Object} moneykata__ui__education__PlanIn
+ * @typedef {Object} moolakata__ui__education__PlanIn
  * @property {(string | null)} [planState]
  * @property {(string | null)} [planName]
  * @property {(BeneficiaryRef | null)} [beneficiary]
@@ -4067,7 +4067,7 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__education__PlanOut
+ * @typedef {Object} moolakata__ui__education__PlanOut
  * @property {(string | null)} planState
  * @property {(string | null)} planName
  * @property {(BeneficiaryOut | null)} beneficiary
@@ -4080,13 +4080,13 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__gifts__DocumentIn
+ * @typedef {Object} moolakata__ui__gifts__DocumentIn
  * @property {string} receiptId
  */
 
 /**
  * A gift plan, and the person it is for: an existing one (`personId`) or a new one.
- * @typedef {Object} moneykata__ui__gifts__PersonIn
+ * @typedef {Object} moolakata__ui__gifts__PersonIn
  * @property {(string | null)} [personId]
  * @property {string} [name]
  * @property {(string | null)} [sex]
@@ -4103,19 +4103,19 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__gifts__RemoteUser
+ * @typedef {Object} moolakata__ui__gifts__RemoteUser
  * @property {string} id
  * @property {string} name
  * @property {string} server
  */
 
 /**
- * @typedef {Object} moneykata__ui__giving__DocumentIn
+ * @typedef {Object} moolakata__ui__giving__DocumentIn
  * @property {string} receiptId
  */
 
 /**
- * @typedef {Object} moneykata__ui__giving__PlanIn
+ * @typedef {Object} moolakata__ui__giving__PlanIn
  * @property {number} year
  * @property {string} [targetKind]
  * @property {(import('../app/dec.js').Dec | null)} [percent]
@@ -4126,7 +4126,7 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__giving__PlanOut
+ * @typedef {Object} moolakata__ui__giving__PlanOut
  * @property {string} id
  * @property {number} year
  * @property {string} targetKind
@@ -4141,12 +4141,12 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__items__DocumentIn
+ * @typedef {Object} moolakata__ui__items__DocumentIn
  * @property {string} receiptId
  */
 
 /**
- * @typedef {Object} moneykata__ui__linked__Household
+ * @typedef {Object} moolakata__ui__linked__Household
  * @property {string} linkId
  * @property {string} colour
  * @property {(string | null)} serverName
@@ -4159,7 +4159,7 @@
 
 /**
  * The link's copy (S11.7): its access key, size, and whether it is unlocked.
- * @typedef {Object} moneykata__ui__links__CopyOut
+ * @typedef {Object} moolakata__ui__links__CopyOut
  * @property {(string | null)} keyMadeAt
  * @property {(string | null)} keyMadeBy
  * @property {number} sizeBytes
@@ -4173,12 +4173,12 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__links__JoinIn
+ * @typedef {Object} moolakata__ui__links__JoinIn
  * @property {string} code
  */
 
 /**
- * @typedef {Object} moneykata__ui__links__LinkOut
+ * @typedef {Object} moolakata__ui__links__LinkOut
  * @property {string} id
  * @property {string} state
  * @property {string} role
@@ -4198,17 +4198,17 @@
  * @property {(string | null)} syncThrough
  * @property {(number | null)} syncBytes
  * @property {(number | null)} syncTotal
- * @property {Array<moneykata__ui__links__RemoteUser>} users
+ * @property {Array<moolakata__ui__links__RemoteUser>} users
  * @property {(string | null)} [certificate]
  * @property {(string | null)} [certificateOffered]
  * @property {(string | null)} [brokenAt]
- * @property {(moneykata__ui__links__CopyOut | null)} [linkedCopy]
+ * @property {(moolakata__ui__links__CopyOut | null)} [linkedCopy]
  * @property {Array<Incoming>} [incoming]
  * @property {Array<Incoming>} [outgoing]
  */
 
 /**
- * @typedef {Object} moneykata__ui__links__RemoteUser
+ * @typedef {Object} moolakata__ui__links__RemoteUser
  * @property {string} id
  * @property {string} username
  * @property {string} displayName
@@ -4216,7 +4216,7 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__loans__PlanIn
+ * @typedef {Object} moolakata__ui__loans__PlanIn
  * @property {import('../app/dec.js').Dec} [monthly]
  * @property {(string | null)} [monthlyFrom]
  * @property {(string | null)} [monthlyUntil]
@@ -4231,13 +4231,13 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__loans__Point
+ * @typedef {Object} moolakata__ui__loans__Point
  * @property {string} date
  * @property {import('../app/dec.js').Dec} balance
  */
 
 /**
- * @typedef {Object} moneykata__ui__loans__RowOut
+ * @typedef {Object} moolakata__ui__loans__RowOut
  * @property {string} date
  * @property {import('../app/dec.js').Dec} payment
  * @property {import('../app/dec.js').Dec} principal
@@ -4250,7 +4250,7 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__loans__SplitOut
+ * @typedef {Object} moolakata__ui__loans__SplitOut
  * @property {import('../app/dec.js').Dec} principal
  * @property {import('../app/dec.js').Dec} interest
  * @property {import('../app/dec.js').Dec} escrowTax
@@ -4261,12 +4261,12 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__people__JoinIn
+ * @typedef {Object} moolakata__ui__people__JoinIn
  * @property {string} userId
  */
 
 /**
- * @typedef {Object} moneykata__ui__people__PersonIn
+ * @typedef {Object} moolakata__ui__people__PersonIn
  * @property {string} name
  * @property {(string | null)} [sex]
  * @property {(number | null)} [birthMonth]
@@ -4278,7 +4278,7 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__prices__SecretSet
+ * @typedef {Object} moolakata__ui__prices__SecretSet
  * @property {string} setAt
  * @property {(string | null)} setBy
  */
@@ -4286,7 +4286,7 @@
 /**
  * A transaction it supports, the account it is kept on (a statement), or what else it is
  * kept with: an item, a qualified expense, a gift, a donation, a tax document.
- * @typedef {Object} moneykata__ui__receipts__LinkOut
+ * @typedef {Object} moolakata__ui__receipts__LinkOut
  * @property {string} kind
  * @property {string} itemId
  * @property {(string | null)} transactionId
@@ -4300,13 +4300,13 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__session__Household
+ * @typedef {Object} moolakata__ui__session__Household
  * @property {string} name
  * @property {Object<string, unknown>} avatar
  */
 
 /**
- * @typedef {Object} moneykata__ui__settings__CopyOut
+ * @typedef {Object} moolakata__ui__settings__CopyOut
  * @property {string} name
  * @property {string} kind
  * @property {string} what
@@ -4318,13 +4318,13 @@
 
 /**
  * A stored secret as the UI shows it: set, when and by whom.
- * @typedef {Object} moneykata__ui__settings__SecretSet
+ * @typedef {Object} moolakata__ui__settings__SecretSet
  * @property {string} setAt
  * @property {(string | null)} setBy
  */
 
 /**
- * @typedef {Object} moneykata__ui__taxes__DocumentIn
+ * @typedef {Object} moolakata__ui__taxes__DocumentIn
  * @property {string} [direction]
  * @property {string} form
  * @property {(string | null)} [issuer]
@@ -4335,7 +4335,7 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__taxpanels__ContributionOut
+ * @typedef {Object} moolakata__ui__taxpanels__ContributionOut
  * @property {string} account
  * @property {string} kind
  * @property {string} owner
@@ -4348,7 +4348,7 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__taxpanels__RowOut
+ * @typedef {Object} moolakata__ui__taxpanels__RowOut
  * @property {string} description
  * @property {(string | null)} acquired
  * @property {string} sold
@@ -4364,7 +4364,7 @@
  */
 
 /**
- * @typedef {Object} moneykata__ui__transactions__SplitOut
+ * @typedef {Object} moolakata__ui__transactions__SplitOut
  * @property {(string | null)} [categoryId]
  * @property {import('../app/dec.js').Dec} amount
  * @property {(string | null)} [memo]

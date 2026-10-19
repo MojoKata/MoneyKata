@@ -12,11 +12,11 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from sqlalchemy import select
 from test_copies import setup  # noqa: F401
 
-from moneykata import clock
-from moneykata.links import changes, copydb, sealed
-from moneykata.links import copy as lcopy
-from moneykata.links.keys import b64
-from moneykata.store.entities.links import Link
+from moolakata import clock
+from moolakata.links import changes, copydb, sealed
+from moolakata.links import copy as lcopy
+from moolakata.links.keys import b64
+from moolakata.store.entities.links import Link
 
 
 def keypair():
@@ -76,7 +76,7 @@ def test_a_changed_cut_reordered_or_renamed_file_fails():
 def signed_change(key, seq, server, link_id, **body):
     """A change as a peer sends it: its registry in the open, the rest sealed to this copy's
     key for the peer-to-here direction, and signed by the peer (link-protocol.md §4.4)."""
-    from moneykata.links.keys import direction, fingerprint, public_of, unb64
+    from moolakata.links.keys import direction, fingerprint, public_of, unb64
 
     part = {"seq": seq, "asOf": clock.now().isoformat(), **body}
     with server.db.tx() as s:  # this server's link key is made on first use

@@ -114,9 +114,9 @@
    showing every screen and dialog on sample data. Its purple **MOCK** pill (where the DEV
    pill goes) jumps to any screen, switches users, opens dialogs and changes state (prices
    stale, privacy mode). There are two files while the app is being built:
-   1. **`docs/mockups/MoneyKata-mock.html`**, hand-written: the design reference for every
+   1. **`docs/mockups/MoolaKata-mock.html`**, hand-written: the design reference for every
       screen. A change to what users see updates it in the same change.
-   2. **`docs/mockups/MoneyKata-app.html`**, generated: `web/ui/mockup/build.py` inlines the
+   2. **`docs/mockups/MoolaKata-app.html`**, generated: `web/ui/mockup/build.py` inlines the
       app and an in-page fake backend, for the screens built so far, the linked household
       window among them (recorded from a seeded peer with its copy unlocked), and `web/check`
       fails while it is out of date.
@@ -170,7 +170,7 @@
           a minute off says *the clocks disagree*, which NTP on one host fixes); a backup that
           failed; the bitcoin node presenting a certificate other than the one trusted
           (S1.6.2.4); a link's first share waiting for its access key (S11.9.2), and a link
-          marked broken (S11.6); the MoneyKata Connector locked, not heard from for 15 minutes,
+          marked broken (S11.6); the MoolaKata Connector locked, not heard from for 15 minutes,
           or reporting from an address other than the one admins know, until one accepts it or
           unpairs (S18.5), and a Connection needing a sign-in or failing; the yearly check of
           the master key's recovery phrase (S15.6.5), due a year after the phrase last opened
@@ -226,12 +226,12 @@
     link, S11.7.2): one or more parts, each a whole number and a unit, `w` (weeks), `d` (days),
     `h` (hours) or `m` (minutes), largest first, each unit at most once, with or without
     spaces between them: `1d`, `90m`, `2w 3d 4h`, `2w3d`. It is read by one helper on each side
-    (`app/duration.js`, `moneykata/duration.py`), which refuses anything else and says why, and
+    (`app/duration.js`, `moolakata/duration.py`), which refuses anything else and says why, and
     shown back the same way, so `2w 3d 4h` reads as typed.
 14. **The welcome and the locked screen** (S13.6, S15.4). Both are outside the frame, in the
     card the sign-in screens use.
     1. **The welcome**, while the server has no keyring: every address under `/ui` shows it.
-       **Welcome to MoneyKata** says the data will be kept under a master key that is a
+       **Welcome to MoolaKata** says the data will be kept under a master key that is a
        recovery phrase of 12 words, written down by the admin, asked for at every restart and
        recoverable by nobody; **Show my recovery phrase** shows a new phrase (S15.4.4): the 12
        words numbered, with the fingerprint, to write on paper. **I've written them down** asks

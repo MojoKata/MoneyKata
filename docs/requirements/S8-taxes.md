@@ -40,7 +40,7 @@ produces worksheets and exports. It never files, and says so (R1.16).
    payments by quarter.
 8. **Documents checklist**: the 1099s, W-2s and statements expected for the year from the
    accounts held, each marked received (attach the PDF, S9) or missing (S8.16). A received 1099-B can
-   be **reconciled** against MoneyKata's own totals, with the differences listed.
+   be **reconciled** against MoolaKata's own totals, with the differences listed.
 9. **Charitable giving** (S7.9): deductible donations by organisation and type (cash,
    goods, appreciated securities, DAF contributions; QCDs apart, since they are not
    deducted), each with its acknowledgement: a written acknowledgement is flagged as
@@ -50,7 +50,7 @@ produces worksheets and exports. It never files, and says so (R1.16).
 10. **Education (529)** (S1.8): contributions per beneficiary and per contributor (with what
     the owner noted about the state deduction), distributions from Form 1099-Q against the
     qualified expenses and their receipts, and the part not covered, whose earnings may be
-    taxable with a 10% additional tax. MoneyKata shows the figures. The preparer applies the
+    taxable with a 10% additional tax. MoolaKata shows the figures. The preparer applies the
     rules, and the coordination with education credits.
 11. **Gifts** (S7.8.7): each person who received more than the annual exclusion in the
     year, from cash gifts and 529 contributions, with the five-year 529 elections still
@@ -82,7 +82,7 @@ produces worksheets and exports. It never files, and says so (R1.16).
        turns last year's received documents into this year's expected ones (S8.16), once every
        filer of the new book has accepted it.
     5. **Dependents**: the people the filers claim for the year, chosen from the household's
-       people (S10.10). MoneyKata doesn't decide who qualifies (S8.18); dependents feed the
+       people (S10.10). MoolaKata doesn't decide who qualifies (S8.18); dependents feed the
        panels, the checklist and a few flags.
        1. **Each** has how they are claimed (*qualifying child* or *qualifying relative*,
           suggested from the family tree: a child or grandchild under 19, or under 24 and a
@@ -102,7 +102,7 @@ produces worksheets and exports. It never files, and says so (R1.16).
           qualifying child's age who isn't claimed as a relative, saying whom.
 15. **Filings**: one per return: federal (Form 1040), a state's or a locality's. An
     **amended return** is a filing of its own that names the one it amends. Each filing has:
-    1. the jurisdiction, the form, and the **filing status** as typed (MoneyKata never
+    1. the jurisdiction, the form, and the **filing status** as typed (MoolaKata never
        chooses it);
     2. who prepared it, and how it was sent (e-file or paper);
     3. its **progress** (not started, in progress, filed, accepted or rejected), the due date
@@ -134,7 +134,7 @@ produces worksheets and exports. It never files, and says so (R1.16).
        held and last year's documents, each received or missing.
     2. **Filed**, kept in a filing: the return as filed with its schedules, the e-file
        acknowledgement, an extension, the preparer's copy and worksheets, and what the tax
-       authority sends, such as notices, letters, the reply and transcripts. MoneyKata
+       authority sends, such as notices, letters, the reply and transcripts. MoolaKata
        doesn't produce these. It keeps them because next year's preparation often needs
        them.
 17. **Carried forward**: on each filing, the figures next year needs, typed from the filed
@@ -144,7 +144,7 @@ produces worksheets and exports. It never files, and says so (R1.16).
     shows them under **From last year**. It also puts the capital-loss carryover in its
     Summary and the 8606 basis in the backdoor-Roth figures (S8.6), and shows last year's
     total tax beside the estimated payments.
-18. **What MoneyKata does not do**: compute the tax owed, choose a filing status, apply state
+18. **What MoolaKata does not do**: compute the tax owed, choose a filing status, apply state
     rules, or decide questions of judgement (substantially identical, cost-basis elections).
     It shows the numbers and their sources.
 19. **Bitcoin network fees**: paying a network fee in bitcoin disposes of that bitcoin, and

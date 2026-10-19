@@ -4,7 +4,7 @@ import datetime as dt
 
 import pytest
 
-from moneykata import duration
+from moolakata import duration
 
 
 @pytest.mark.parametrize(

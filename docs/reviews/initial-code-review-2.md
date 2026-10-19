@@ -2,7 +2,7 @@
 
 **Scope.** Every file under `docs/requirements/`, read whole, with `docs/schema.md`,
 `docs/link-protocol.md`, `docs/connector-protocol.md`, `docs/operations.md` and `docs/api.md`;
-and the code that the requirements describe: the server (`web/server/src/moneykata/`), the
+and the code that the requirements describe: the server (`web/server/src/moolakata/`), the
 browser app where it seals, unlocks or renders what others send (`web/ui/`), the connector
 (`connector/`) and the packaging (`web/install/`). The code was read area by area against
 the sections that describe it. Every finding below was checked in the code. Where one was
@@ -13,8 +13,8 @@ Section 11 records the decisions taken on it. Section 12 says where each finding
 checked against the code rather than the commit messages, and where the next review should
 start.
 
-**Paths.** Code paths are relative to `web/server/src/moneykata/`. `mkc/` is
-`connector/moneykata_connector/`. Other paths start at the repository's root.
+**Paths.** Code paths are relative to `web/server/src/moolakata/`. `mkc/` is
+`connector/moolakata_connector/`. Other paths start at the repository's root.
 
 **Ranks** follow `gaps.md`: **High** blocks the first release, **Med** is needed before it,
 **Low** can follow it.
@@ -46,7 +46,7 @@ protocols (section 9). The serious problems are in the plumbing around them:
   own and delete every backup in one request (K1).
 - **Transport and content from other servers are trusted too far.** Links and the connector
   never verify TLS. A relay in the path reads everything that crosses, and can pair its own
-  keys with MoneyKata in the admin's place (K3). A linked server can run script in this
+  keys with MoolaKata in the admin's place (K3). A linked server can run script in this
   app's origin (K2).
 - **Failures part-way through a key operation can lock the household out.** The cases are a
   re-encryption, a rotation, or a host command running beside the live server (K5, K6).
@@ -74,7 +74,7 @@ protocols (section 9). The serious problems are in the plumbing around them:
 | K9 | Med | After a re-encryption, restoring any earlier copy opens no receipt; the new-host runbook restores none |
 | K10 | Med | The recovery phrase is the everyday unlock, and leaks through the TLS key, Docker's logs and keyboards |
 | K11 | Med | Rotating the master key alone does not cut the old phrase off |
-| K12 | Med | A credential is bound to whatever host MoneyKata names when the connector files it |
+| K12 | Med | A credential is bound to whatever host MoolaKata names when the connector files it |
 | P1 | High | "Last year's tax book" shows a non-consenting filer's figures, through a one-sided spouse |
 | P2 | High | A giving plan reads every holder's income, donations and DAF balance |
 | P3 | Med | A read share re-shares a receipt by attaching it to the reader's own records |
@@ -94,7 +94,7 @@ the authentication".
 **Code.** `POST /ui/api/keys/rotate` and `GET /ui/api/keys/copies` (`ui/unlock.py:103-164`)
 need no session. Their one check is that `request.client.host` is loopback. `ClientAddress`
 (`middleware.py:87-108`) has already replaced that address with the right-most
-`X-Forwarded-For` hop that is not a trusted proxy. The example `moneykata.toml` trusts
+`X-Forwarded-For` hop that is not a trusted proxy. The example `moolakata.toml` trusts
 `172.16.0.0/12`. That range covers every Docker bridge: the connector's container, a proxy
 container, and the gateway address that connections to the host-loopback port arrive from
 (`web/install/compose.yaml:17-18`). The rotate body names the new phrase and, for each copy
@@ -125,10 +125,10 @@ Without any forging, "loopback" also covers:
 - the reader worker (K4).
 
 S18.2.4.2 says what a compromised connector can do: post files, and learn what the report's
-answer carries. Here it can also ransom MoneyKata.
+answer carries. Here it can also ransom MoolaKata.
 
 **Remedy.** Host commands reach the running server over a **Unix socket in a 0700 directory
-of the server's account** (`/run/moneykata/`), as the connector's do (S18.2.2). The TCP
+of the server's account** (`/run/moolakata/`), as the connector's do (S18.2.2). The TCP
 routes go. Until then, the check must use the socket's own peer address, saved before
 `ClientAddress` rewrites it, and the example must trust only the proxy's exact address.
 Rewrite S15.4.2 and S15.7.1.1 to say this.
@@ -179,11 +179,11 @@ S18.1 a connector on a laptop away from home.
 **Code.**
 
 1. Every link call is made with `verify=False` (`links/client.py:26, 49, 85`), and so is every
-   connector call to MoneyKata (`mkc/client.py:56-58, 98, 114`).
+   connector call to MoolaKata (`mkc/client.py:56-58, 98, 114`).
 2. The connector checks `hello`'s `fingerprint` field against the code, then takes the
    server's key from a separate `key` field without hashing it (`mkc/core.py:62-68, 78-86`). It
    does so at pairing and again at every start.
-3. `pair` prints the fingerprint MoneyKata's answer names, not its own (`mkc/core.py:98`).
+3. `pair` prints the fingerprint MoolaKata's answer names, not its own (`mkc/core.py:98`).
 4. A link's signed answer covers status, body hash, time and the call's nonce, not who called
    or what was asked (`links/signing.py:105-117`). Refusals are signed for any caller with a
    nonce (`links/routes.py:49-69`), and a `not-linked` answer ends the link here and deletes
@@ -196,7 +196,7 @@ S18.1 a connector on a laptop away from home.
   link, that is every change, document and receipt, the shared data whole. For the connector,
   it is every statement and export posted, every report and the pairing code.
 - **Taking over a pairing.** The relay answers `hello` with the right fingerprint and its own
-  key, takes the code from `pair`, and pairs its own keys with MoneyKata. It then tells the
+  key, takes the code from `pair`, and pairs its own keys with MoolaKata. It then tells the
   connector its own fingerprint. Both screens show the same one, so the admin confirms (the
   check review 1's F7 added). Browsers then seal every credential to the relay's sealing key.
 - **Ending a link.** The relay takes B's nonce, calls A from a fresh key with it, and hands B
@@ -329,7 +329,7 @@ Settings and make it a host command run with the server stopped.
 
 **Code.**
 
-- `moneykata db backup` calls the full `open_store` (`store/cli.py:41`,
+- `moolakata db backup` calls the full `open_store` (`store/cli.py:41`,
   `store/maintenance.py:55-83`), with no data-directory lock. It finishes or deletes a pending
   `keyring.next` (`:61-62, 181-186`), and migrates the live database, or at head syncs its
   views (`store/migrate.py:68-104`).
@@ -528,24 +528,24 @@ rewriting the receipts. Or say in S15.7.1, S15.7.3 and S15.8.4 that rotation alo
 which phrase unwraps the keyring. Until a re-encryption, an old phrase plus any old copy still
 opens every later copy, and the yearly reminder is for both.
 
-### K12 (Med): a credential is bound to whatever host MoneyKata names when it is filed
+### K12 (Med): a credential is bound to whatever host MoolaKata names when it is filed
 
 **Requirements.** S18.7.3: no one who can change a Connection's settings "can … ever redirect
-a stored password to a host of their choosing". S18.7.1: a compromised MoneyKata "can never
+a stored password to a host of their choosing". S18.7.1: a compromised MoolaKata "can never
 open credentials sent before".
 
 **Code.**
 
 - The browser seals the credentials alone, with the Connection's id as the HKDF salt
   (`web/ui/app/sealed.js:5-7`).
-- The connector binds a box to the host named in MoneyKata's latest answer (`mkc/core.py:217-243`).
+- The connector binds a box to the host named in MoolaKata's latest answer (`mkc/core.py:217-243`).
 - `connect` on the host does the same, and never shows the admin the host
   (`mkc/core.py:142-157`, `mkc/main.py:136-143`).
 - Changing a Connection's settings needs no password again (`ui/connections.py:208-244`).
 
-**The failure.** A box waits in MoneyKata until the connector reports unlocked and confirmed:
+**The failure.** A box waits in MoolaKata until the connector reports unlocked and confirmed:
 minutes, or hours after a restart. Whoever changes the Connection's `url` in that window has
-the password filed bound to their host. That is a session thief, or MoneyKata compromised after
+the password filed bound to their host. That is a session thief, or MoolaKata compromised after
 the owner sealed. The "stricter way" binds to an address the admin never sees.
 
 **Remedy.**
@@ -557,7 +557,7 @@ the owner sealed. The "stricter way" binds to an address the admin never sees.
 - Changing an OFX server address joins S13.7.2's list.
 
 **Alternatives.** Set an OFX server's address on the connector's host, as the watched folder
-is (S18.9.1), so that no setting from MoneyKata names a host at all.
+is (S18.9.1), so that no setting from MoolaKata names a host at all.
 
 ### K13 to K25 (Med and Low): the rest
 
@@ -649,7 +649,7 @@ is (S18.9.1), so that no setting from MoneyKata names a host at all.
       paired.
     - The new-address alert clears whenever the genuine connector reported last
       (`alerts.py:234`, `connector/manage.py:258-271`), against S18.5.4.
-    - A MoneyKata-side Unpair never makes the connector delete its credentials
+    - A MoolaKata-side Unpair never makes the connector delete its credentials
       (`mkc/core.py:163-171`), against S18.4.4.
     - `reset` makes a vault with no sealing key, so every later box fails (`mkc/vault.py:54-68`).
     - **Remedy:** Unpair ends the paired row and withdraws any code out; an address not yet
@@ -659,7 +659,7 @@ is (S18.9.1), so that no setting from MoneyKata names a host at all.
       **Alternative** for `reset`: it unpairs, so the next `pair` makes both keys afresh.
 21. **K21 (Med): the Folder driver follows links.** Each file is read through any symbolic link
     (`mkc/drivers/folder.py:76-91`). A link named `umb-1.csv` pointing at
-    `/var/lib/moneykata-connector/pairing.json` posts the connector's identity key to MoneyKata,
+    `/var/lib/moolakata-connector/pairing.json` posts the connector's identity key to MoolaKata,
     which S18.2.4.1 says no setting can do. (Who can read the folder is P4.)
     - **Remedy:** open each file with `O_NOFOLLOW`, take only regular files whose resolved
       path is inside the root, and say so in S18.9.1. **Alternative:** mount the watched
@@ -677,7 +677,7 @@ is (S18.9.1), so that no setting from MoneyKata names a host at all.
     - Settings › Network's ranges are in the encrypted database, so while locked the locked
       screen and the unlock answer every address (`app.py:107-116`). A14 writes this into
       S16.14. **Remedy:** keep a copy of the app's ranges outside the database (in
-      `moneykata.toml`, or a plain file the server writes), which a locked server applies.
+      `moolakata.toml`, or a plain file the server writes), which a locked server applies.
       **Alternative:** keep the behaviour and tell admins, in Settings › Network, that the
       proxy is what limits the locked screen.
     - Removing a copy needs only the password (`ui/settings.py:710-724`), so a stolen admin
@@ -726,7 +726,7 @@ is (S18.9.1), so that no setting from MoneyKata names a host at all.
       screen reads the alert through the API.
     - Dev mode ships in the image, and runs with `--data /tmp/x` and the seed users' fixed
       password (`main.py:52-57`). **Remedy:** leave `dev/` out of the image. **Alternative:**
-      `moneykata dev` refuses to run outside a checkout.
+      `moolakata dev` refuses to run outside a checkout.
 
 ## 3. Access and privacy (P)
 
@@ -864,7 +864,7 @@ Each fix of a wrong figure comes with a golden-file test of the case (S17.5).
 | B27 | Med | S12.11.2, S13.4 | The alerts run every minute (the sweeper counts as a task end) inside one write transaction that replays every ledger (`runtime.py:39-41, 156-162`, `alerts.py:532`); a failing check resolves its alerts and reopens them, emailing again (`alerts.py:539-592`) | Evaluate in a read transaction and write only what changed; the sweeper doesn't count as a task end; a check that fails leaves its alerts as they were |
 | B28 | Med | S14.9.2, S16.1 | In the container the server's time zone is UTC: compose passes no `TZ` or `/etc/localtime` (`timezones.py:11-25`), so backups, summaries and *Auto* users run on UTC | Mount `/etc/localtime` (and pass `TZ`) in `compose.yaml`, and say so in operations. **Alternative:** Settings › General chooses the server's zone, defaulting to the host's |
 | B29 | Med | S15.4.7, S14.7 | Host commands reach Activity only at the unlock (`runtime.py:202`); `keys verify` against a running server clears no alert until a restart; `keys init` queues nothing | A task takes the host events every few minutes, as S15.4.7 says; every `keys` and `db` command queues one |
-| B30 | Med | S18.3.2, S13.6 | The connector calls `hello` before its socket is up, so with MoneyKata down or locked it crash-loops and can't be unlocked (`mkc/core.py:57-68`, `mkc/main.py:75-79`) | Open the socket first, and retry `hello` with a growing wait; MoneyKata down or locked is a state the connector reports, not a crash |
+| B30 | Med | S18.3.2, S13.6 | The connector calls `hello` before its socket is up, so with MoolaKata down or locked it crash-loops and can't be unlocked (`mkc/core.py:57-68`, `mkc/main.py:75-79`) | Open the socket first, and retry `hello` with a growing wait; MoolaKata down or locked is a state the connector reports, not a crash |
 | B31 | Med | S18.4.2 | A failed `pair` has already written `pairing.json`, destroying a working pairing (`mkc/core.py:85-87`) | Write the new pairing to a temporary file and rename it only once `/pair` succeeds |
 | B32 | Med | S10.9.5 | MCP's `list_transactions` takes any `limit`, −1 and 100,000 included (`mcp.py:143`); the instructions call amounts "decimal strings" (`mcp.py:30-34`) | Check `limit` (1 to 500) through the same model as the API's pages, and every tool's input against its schema; correct the instructions |
 | B33 | Med | S1.3.3.8, S1.11.7 | Retirement, plan and exchange accounts have no Reconcile tab (`ledger/types.py:108-115`), although their statement checks and overdue alerts point to it | Give the tab to every type that S1.11.7.1 expects statements from (C43). **Alternative:** move the plan-statement check to the Overview, and point the alerts there |
@@ -874,7 +874,7 @@ Each fix of a wrong figure comes with a golden-file test of the case (S17.5).
 | B37 | Med | various | Edits of a transfer-in never reach holdings (`ui/transactions.py:698-701`); one bad price answer aborts the whole refresh (`prices/refresh.py:307-313`); wallet keys and projection inputs are unbounded and stall the server (`ui/wallets.py:53-55`, `ui/projections.py:199-232`) | Update the transfer-in's lot on edit; count any error from a source as that source's failure for that instrument; cap the keys' length and count, and bound the projection's years (a birth year in the last 120, a horizon of at most 100) |
 | B38 | Low | S13.8.4, S13.8.7, S13.8.9 | 52 routes answer 201 and about 8 send `Location`; some 202s carry no job; Reset copy is synchronous; OpenAPI names no release (`contract.py:40-42`) | `Location` on every 201, a job on every 202, Reset copy as a job, the release from `web/VERSION`; a route-walking test for each. **Alternative:** S13.8.4 allows 201 without `Location` for what has no URL of its own |
 | B39 | Low | S12, S18 | Settings › Receipts says receipts "go into every backup" (`web/ui/screens/settings.js:265-266`, `web/ui/guides/settings-receipts.md:3-4`); Settings › Imports says "No bank or exchange is connected" (`settings.js:344-345`) | Correct both texts and the guide to S14.6 and S18 |
-| B40 | Low | S13.6 | `moneykata.toml` ignores unknown keys (`config.py:274-291`): a `trusted_proxy` typo starts fine and every change is then refused 403 | Refuse to start on an unknown key, naming it, as an unknown section is refused |
+| B40 | Low | S13.6 | `moolakata.toml` ignores unknown keys (`config.py:274-291`): a `trusted_proxy` typo starts fine and every change is then refused 403 | Refuse to start on an unknown key, naming it, as an unknown section is refused |
 | B41 | Low | S11.8, S11.9.4 | A pull records only a count; *Pull now* records no actor; a copy already unlocked takes any words and records an unlock (`links/copy.py:128-130`); a receipt's hash is checked after it has been sent (`ui/linked.py:326-333`) | Record who and which shares; record *Pull now*'s actor; check the words even when unlocked; check the hash before the last chunk goes, ending the response with an error if it fails. **Alternative** for the hash: check it when the file arrives and when it is rewritten, and not when shown |
 | B42 | Low | S18.5, S18.9 | The Folder driver runs while locked (`mkc/core.py:248`); a failing Connection alerts only its owner; no report follows a run | Hold the Folder driver while locked, or change the terms (C24); alert admins as well; report after each run |
 | B43 | Low | S1.11.2 | Asks for a balance after a fixed 45 days without one, not when a statement or import is overdue (`ledger/reconcile.py:15, 133-138`) | Ask when the statement is overdue (S1.11.7). **Alternative:** S1.11.2 says 45 days |
@@ -945,15 +945,15 @@ usually the cheaper one to keep, and the remedy says when it isn't.
 | C19 | `link-protocol.md` §4.4.1 vs S11.4, S12.10.3.4 | "The latest 500 transactions" vs a first snapshot that fills from the earliest records, and every screen as its owner sees it | Send the whole history, in parts by date (B25). **Alternative:** S11.4 and S12.10.3.4 say a linked window shows the latest 500 transactions per account |
 | C20 | S11.3, S11.1.2 vs `link-protocol.md` §4.1 | User lists "at every pull", after approval, vs both lists cross in `join`, before it (P5) | `join` carries no user list; lists cross from the first exchange after approval |
 | C21 | S10.10.1 vs S10.10.2, S10.10.3 | A remote user adopts a same-named person, filled from its server, vs a person changed only by itself, its creator or an admin, and a private match shows *Ask to share* | S10.10.1 follows P5's remedy |
-| C22 | `link-protocol.md` §1.2, `connector-protocol.md` §1.2, §3.3 vs the transport | "A server pretending to be MoneyKata gets nothing past it: no report, no file" vs request bodies sent under unverified TLS before any answer is checked (K3) | K3's remedy, and both protocols then say TLS is verified and what the signatures add |
+| C22 | `link-protocol.md` §1.2, `connector-protocol.md` §1.2, §3.3 vs the transport | "A server pretending to be MoolaKata gets nothing past it: no report, no file" vs request bodies sent under unverified TLS before any answer is checked (K3) | K3's remedy, and both protocols then say TLS is verified and what the signatures add |
 | C23 | `connector-protocol.md` §4, §4.1.2, S18.4.2 | `hello` was `{protocol, version, fingerprint}` (A20 adds `key`), and §4.1.2 checks "the key it answers with" vs the code checks only the `fingerprint` field (K3) | The code checks the key, as §4.1.2 says (K3) |
 | C24 | S18 terms vs S18.9.1 | "Locked, it reports and nothing more" vs the Folder driver needs no vault (B42) | Hold the Folder driver while locked, keeping the terms. **Alternative:** the terms say a locked connector runs only drivers that need no credentials |
 | C25 | `connector-protocol.md` §4.2.2 vs S18.6 | `removed` includes Connections "whose accounts all turned sync off" vs Connections independent of accounts until removed | §4.2.2 follows S18.6, which the code does |
 | C26 | R3.1 vs S18 | The only outbound calls are price sources, the bitcoin explorer or node, SMTP and links, each in Settings vs the connector's institutions, which no Settings screen lists | R3.1 names the connector's calls, and Settings › Connector lists each Connection's host |
-| C27 | S18.4.4, `operations.md` §10 vs S18.2.2 | The connector deletes its credentials on a MoneyKata-side Unpair vs MoneyKata has nothing to call, and no mechanism is stated (K20) | S18.4.4 says a signed `not-paired` answer is the signal (K20) |
+| C27 | S18.4.4, `operations.md` §10 vs S18.2.2 | The connector deletes its credentials on a MoolaKata-side Unpair vs MoolaKata has nothing to call, and no mechanism is stated (K20) | S18.4.4 says a signed `not-paired` answer is the signal (K20) |
 | C28 | S13.5 vs S16 | Hosts "allowed by name" vs no list in Settings to name them in; the code counts every admin-entered host, and peers' link hosts (K18) | S13.5 says which hosts count as named (the Email and Bitcoin hosts), and that a peer's never does (K18). **Alternative:** a list of allowed names in Settings › Network |
 | C29 | S11.2 vs S16.9; S17.6; S17.2.1 | The link address set in Settings › Linked servers vs S16.9 doesn't list it; `web/dev.sh`'s list omits `vendor`, `audit`, `base-update`, `mocks`; the register "records the hashes" vs `docs/dependencies.md` says `web/audit.json` does | Add the link address to S16.9, the four commands to S17.6, and `web/audit.json` to S17.2.1 |
-| C30 | `connector-protocol.md` intro; §3.1, §3.2; §4.3.1 | Names `connector/core/` (it is `connector/moneykata_connector/`); sends the protocol version to "section 7" and the codes to "section 8" (they are §5 and §7); "its fingerprint" without saying which key's | Correct the path and the two references, and say "the identity key's fingerprint" |
+| C30 | `connector-protocol.md` intro; §3.1, §3.2; §4.3.1 | Names `connector/core/` (it is `connector/moolakata_connector/`); sends the protocol version to "section 7" and the codes to "section 8" (they are §5 and §7); "its fingerprint" without saying which key's | Correct the path and the two references, and say "the identity key's fingerprint" |
 
 ### 6.3 Users, sharing and the rest
 
@@ -1019,7 +1019,7 @@ certificate dialog, the *no longer on the chain* mark).
 | A17 | S18.2.1, S18.3.1, S18.3.2 | The connector's files, modes, socket and variables; the vault's format and how its key is derived; `lock` and `status`, the image's health check | `mkc/vault.py:20-38, 134-186`, `mkc/keys.py:77-88`, `mkc/sock.py:16-23`, `mkc/main.py:17-18, 150-159`, `connector/Dockerfile:20-34` | |
 | A18 | S18.2.2, S18.8 | The connector follows no redirect and waits 60 s; files waiting are held in memory, a restart fetches again and the import drops repeats, and a file refused for another reason is dropped, its Connection showing the refusal | `mkc/client.py:51-70`, `mkc/core.py:296-314` | K24 |
 | A19 | S18.9.1–3 | Each driver's schedule and limits: the Folder driver every 5 minutes, the folder's own files, `.ofx .qfx .csv .pdf` up to 25 MB, hidden files skipped, a file posted again only when its size or time changes; OFX daily, `https` only, OFX 1.0.2, 45 days (90 while no account matches), codes 15500–15503 as *needs a sign-in*; Schwab daily, 45 days, the callback `https://127.0.0.1`, an access token used until a minute before it runs out | `mkc/drivers/folder.py:16-34, 75-91`, `ofx_direct.py:14-19, 60-95`, `schwab.py:18-22, 199-251` | |
-| A20 | `connector-protocol.md` §4, §7 | `hello` answers `key` too; the codes the code uses (`not-found`, `address-invalid`, `too-large`, `locked`, `limit`, and the connector's `fingerprint-mismatch`, `answer-unsigned`, `code-invalid`, `not-moneykata`) | `connector/routes.py:65-93, 157-158`, `mkc/client.py:115-121` | K3 |
+| A20 | `connector-protocol.md` §4, §7 | `hello` answers `key` too; the codes the code uses (`not-found`, `address-invalid`, `too-large`, `locked`, `limit`, and the connector's `fingerprint-mismatch`, `answer-unsigned`, `code-invalid`, `not-moolakata`) | `connector/routes.py:65-93, 157-158`, `mkc/client.py:115-121` | K3 |
 | A21 | `link-protocol.md` §1.4, §4, §4.2, §4.4, §7 | Timeouts and ceilings; `hello` answers `key`; `POST /link/v1/file`; the directory's field limits; a large change's parts kept in memory; `not-linked` ends the link here; pulls before the access key exists; `not-shared` and `answer-unsigned` | `links/routes.py:82, 184-208`, `links/client.py:66-101`, `links/manage.py:209-226, 331-347, 416-435`, `links/receive.py:56-57, 64` | K3 |
 | A22 | S1.7 | Opposite amounts of cash, not trades, in two of the owner's accounts within 4 days are linked as a transfer, the closest in date; when two are equally close neither is, and the owner links one | `ledger/transfers.py:6-29`, `store/repos/ledger.py:181-204` | |
 | A23 | S1.3.2, S1.3.3.8.1 | An OFX file holds one account's statement, and one with several is refused; the value check is within half a percent or $1, whichever is more | `importers/ofx.py:80-86`, `ledger/reconcile.py:158` | B43 |
@@ -1139,7 +1139,7 @@ commit. This section says what has become of each finding since. Each one was ch
 the code at `328589f`, not taken from the commit messages, which in places claim more than
 was built (part 9's "the rest of the review's findings" among them); the rows still open then
 were built in milestone 9, which no review has checked yet. Paths are relative to
-`web/server/src/moneykata/` unless they say otherwise, and are at `328589f`.
+`web/server/src/moolakata/` unless they say otherwise, and are at `328589f`.
 
 ### 12.1 What changed after the review
 
@@ -1200,7 +1200,7 @@ were built in milestone 9, which no review has checked yet. Paths are relative t
 | K16 | Med | Nothing of the remedy: the pending two-step token survives wrong codes, the sign-in lockout counts the exact address (`ui/session.py:148`; only the separate throttle counts the /64), two guesses on one token can run at once, and the slowdown still follows the count (S10.1.6.3) | part 1, `7ee1789` |
 | K17 | Med | Reactivation still answers `bad-credentials`, `account-active` or `asked-recently` by the account's state, outside the sign-in guard (`auth/users.py:615`); re-authentication uses the throttle, not the guard (`ui/session.py:380`); sign-up returns before hashing when the address is taken (`auth/signup.py:95-103`) (S13.7.5.1) | part 1, `7ee1789` |
 | K19 | Med | No engine sets `hide_parameters` (`store/db.py:47`); refusals aren't logged with their error id (`errors.py:89`); a read error's `detail` can hold a host path (`ui/receipts.py:504`); a peer's `message` is copied into `lastError` and its alert (`links/client.py:107`) (S13.7.8–9) | part 1, `7ee1789` |
-| K12 | Med | `moneykata-connector connect` files the credentials at once, under whatever host the settings name, without showing it for the admin to confirm (connector `main.py:175-186`; S18.7.2). The host in the sealed box is checked (connector `core.py:331`) | part 3, `42a225b` |
+| K12 | Med | `moolakata-connector connect` files the credentials at once, under whatever host the settings name, without showing it for the admin to confirm (connector `main.py:175-186`; S18.7.2). The host in the sealed box is checked (connector `core.py:331`) | part 3, `42a225b` |
 | P6 | Med | A shared budget's recurring rows still carry the `accountId` and `accountName` of the owner's accounts the viewer can't see, and cross to linked servers (`ui/budgets.py:423`, `links/serve.py:158`); S11.3.1 says *an account not shared*. Gifts are done | part 4, `ce12371` |
 | K22 | Low-Med | `own()` opens a write transaction and decrypts the link key on every `/link` call, `hello` included, before any signature check (`links/routes.py:36`); an unknown key is rate-limited but not refused before its body is read | part 4, `ce12371` (see 12.5) |
 | K23 | Low-Med | Remove copy asks for the password only, not the phrase too (S16.13, S13.7.2); Settings › Network and its guide don't say the proxy is what limits the locked screen (S16.14, A14). The S11.9.10 point is done | part 5, `d678e48` |

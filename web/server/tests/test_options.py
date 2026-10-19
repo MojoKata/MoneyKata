@@ -8,7 +8,7 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import clock
+from moolakata import clock
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 
@@ -168,7 +168,7 @@ def test_a_short_put_assigned_folds_the_credit_into_the_stock_basis(alice):
 def test_an_assignment_follows_its_opening_trade_and_goes_with_its_stock_trade(server, alice):
     # B12: the premium is folded in at replay, so a change to the opening trade (a re-import
     # with a corrected amount) follows through; deleting the assignment deletes its stock trade.
-    from moneykata.store.entities.accounts import Transaction
+    from moolakata.store.entities.accounts import Transaction
 
     brk = new_account(alice, name="Brokerage", type="brokerage")
     sold = opt(alice, brk["id"], "sell-to-open", "2026-09-02", "6.40", fees="0").json()
@@ -228,12 +228,12 @@ def test_a_long_call_exercised_adds_its_premium_to_the_basis(alice):
 
 
 def test_out_of_the_money_expires_the_day_after(server, alice):
-    from moneykata import options
-    from moneykata.prices import refresh as pricing
-    from moneykata.store.entities.accounts import Instrument
+    from moolakata import options
+    from moolakata.prices import refresh as pricing
+    from moolakata.store.entities.accounts import Instrument
 
     pricing.install()
-    from moneykata.store.entities.prices import Price
+    from moolakata.store.entities.prices import Price
 
     brk = new_account(alice, name="Brokerage", type="brokerage")
     opt(alice, brk["id"], "sell-to-open", "2026-09-02", "6.40", expiry="2026-10-09", fees="0")
@@ -265,7 +265,7 @@ def test_out_of_the_money_expires_the_day_after(server, alice):
     assert [r["symbol"] for r in v["open"]] == ["MSFT 09OCT26 530 P"]
     expired = next(r for r in v["closed"] if r["how"] == "expired")
     assert expired["realized"] == "640.00"
-    from moneykata import alerts
+    from moolakata import alerts
 
     assert [a.kind for a in alerts.evaluate(server)] == ["option-expired"]
 
@@ -335,10 +335,10 @@ def test_assigned_a_call_with_no_shares_opens_a_short_stock_lot(alice):
 
 def test_only_the_expiry_days_close_decides_an_expiry(server, alice):
     # S3.6, A26: a close from before the expiry day decides nothing; the user is asked.
-    from moneykata import options
-    from moneykata.prices import refresh as pricing
-    from moneykata.store.entities.accounts import Instrument
-    from moneykata.store.entities.prices import Price
+    from moolakata import options
+    from moolakata.prices import refresh as pricing
+    from moolakata.store.entities.accounts import Instrument
+    from moolakata.store.entities.prices import Price
 
     pricing.install()
     brk = new_account(alice, name="Brokerage", type="brokerage")
@@ -363,7 +363,7 @@ def test_a_split_strike_is_rounded_to_the_thousandth():
     # S3.10.1: as the OCC prints it.
     from decimal import Decimal
 
-    from moneykata.options.adjust import adjusted_strike
+    from moolakata.options.adjust import adjusted_strike
 
     assert adjusted_strike(Decimal("100"), Decimal("3")) == Decimal("33.333")
     assert adjusted_strike(Decimal("50"), Decimal("1.5")) == Decimal("33.333")

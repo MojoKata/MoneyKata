@@ -58,7 +58,7 @@ export function whenSignedOut(fn) {
  */
 async function call(method, path, opts = {}) {
   // A placeholder base: only the path and query are sent, so this works without an origin.
-  const url = new URL('/ui/api' + path, 'https://moneykata.invalid');
+  const url = new URL('/ui/api' + path, 'https://moolakata.invalid');
   for (const [k, v] of Object.entries(opts.params || {})) {
     if (Array.isArray(v)) v.forEach((x) => url.searchParams.append(k, String(x)));
     else if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));

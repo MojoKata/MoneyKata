@@ -1,33 +1,33 @@
-# MoneyKata behind the household's reverse proxy (requirements S17.8). Start from this file:
+# MoolaKata behind the household's reverse proxy (requirements S17.8). Start from this file:
 #   1. make the directories:   mkdir -p data backups && sudo chown 10001:10001 data backups
-#   2. make the master key:    docker compose run --rm moneykata keys init
+#   2. make the master key:    docker compose run --rm moolakata keys init
 #      (it shows the recovery phrase, which is the key and is never stored: write it down, S15.6)
 #   3. start:                  docker compose up -d
-#   4. unlock:                 docker compose exec moneykata moneykata keys unlock
+#   4. unlock:                 docker compose exec moolakata moolakata keys unlock
 #      (or open the app: it asks for the phrase; after every restart, S15.4.3)
 # Put a reverse proxy (proxy/ has Caddy, nginx and haproxy examples) in front of port 37373.
 
 services:
-  moneykata:
-    image: ghcr.io/mojokata/moneykata:0.1.0
+  moolakata:
+    image: ghcr.io/mojokata/moolakata:0.1.0
     restart: unless-stopped   # back after every reboot, locked; a refused start (exit 78)
                               # is retried at most once a minute (S13.6)
     # Plain HTTP in proxy mode, so it is published on the host's loopback only: a proxy on
     # the host reaches 127.0.0.1:37373, and one in this compose project reaches
-    # moneykata:37373 by name (proxy/) with no published port needed at all.
+    # moolakata:37373 by name (proxy/) with no published port needed at all.
     ports:
       - "127.0.0.1:37373:37373"
     volumes:
-      - ./data:/var/lib/moneykata
-      - ./backups:/var/backups/moneykata
-      - ./moneykata.toml:/etc/moneykata.toml:ro
+      - ./data:/var/lib/moolakata
+      - ./backups:/var/backups/moolakata
+      - ./moolakata.toml:/etc/moolakata.toml:ro
       - /etc/localtime:/etc/localtime:ro   # the host's time zone, which backups and emails follow
     environment:
       TZ: ${TZ:-}   # or name it here, or in .env beside this file: TZ=America/Denver (S14.9.2)
     read_only: true
     tmpfs:
       - /tmp
-      - /run/moneykata:uid=10001,gid=10001,mode=0700   # where host commands reach it (S13.6)
+      - /run/moolakata:uid=10001,gid=10001,mode=0700   # where host commands reach it (S13.6)
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s
@@ -36,8 +36,8 @@ services:
       options: { max-size: "10m", max-file: "5" }
 
   # A reverse proxy in this project (proxy/ has Caddy, nginx and haproxy configurations)
-  # reaches moneykata:37373 by name, from the one fixed address that trusted_proxies in
-  # moneykata.toml names (S13.3):
+  # reaches moolakata:37373 by name, from the one fixed address that trusted_proxies in
+  # moolakata.toml names (S13.3):
   # proxy:
   #   image: caddy:2
   #   ports: ["443:443"]
@@ -45,24 +45,24 @@ services:
   #   networks:
   #     default: { ipv4_address: 172.30.37.10 }
 
-  # The MoneyKata Connector (S18.10, S18.11): a second service with a volume of its own, which
-  # MoneyKata never mounts. It calls out, and publishes one port: its own page, where its vault
+  # The MoolaKata Connector (S18.10, S18.11): a second service with a volume of its own, which
+  # MoolaKata never mounts. It calls out, and publishes one port: its own page, where its vault
   # is made, its words given after every start and its pairing done (operations.md §8).
   connector:
-    image: ghcr.io/mojokata/moneykata-connector:0.1.0
+    image: ghcr.io/mojokata/moolakata-connector:0.1.0
     restart: unless-stopped
     ports:
       - "37374:37374"
     environment:
       # The addresses browsers use for its page, separated by commas: its certificate names
-      # them, and MoneyKata links to the first. "192.168.1.50", say.
-      MONEYKATA_CONNECTOR_NAMES: ""
+      # them, and MoolaKata links to the first. "192.168.1.50", say.
+      MOOLAKATA_CONNECTOR_NAMES: ""
     volumes:
-      - connector-data:/var/lib/moneykata-connector
+      - connector-data:/var/lib/moolakata-connector
     read_only: true
     tmpfs:
       - /tmp
-      - /run/moneykata-connector:uid=10002,gid=10002,mode=0700   # its admin socket, inside the container only
+      - /run/moolakata-connector:uid=10002,gid=10002,mode=0700   # its admin socket, inside the container only
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stop_grace_period: 10s

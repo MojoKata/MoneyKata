@@ -1,23 +1,23 @@
 """Profile › Connections and an account's sync (requirements S18.6, S18.7): a user's own
-sign-ins kept by the connector, credentials sealed in the browser that MoneyKata can't open,
-the account's Sync using MoneyKata Connector switch for its owner alone, and Remove."""
+sign-ins kept by the connector, credentials sealed in the browser that MoolaKata can't open,
+the account's Sync using MoolaKata Connector switch for its owner alone, and Remove."""
 
 import pytest
 from conftest import make_user, sign_in
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from test_connector import FakeConnector, pair_code
 
-from moneykata import ids
-from moneykata.connector import sealed
-from moneykata.links import keys
-from moneykata.store.entities.accounts import Account
+from moolakata import ids
+from moolakata.connector import sealed
+from moolakata.links import keys
+from moolakata.store.entities.accounts import Account
 
 
 @pytest.fixture
 def paired(server, admin, client):
     fake = FakeConnector(server, client)
     fake.sealing_private = X25519PrivateKey.generate()
-    from moneykata.connector.manage import SEALING_LABEL
+    from moolakata.connector.manage import SEALING_LABEL
 
     raw = fake.sealing_private.public_key().public_bytes_raw()
     r = fake.call(
@@ -39,7 +39,7 @@ def paired(server, admin, client):
 def admin(server, admin_client):
     from conftest import ORIGIN
 
-    from moneykata import settings
+    from moolakata import settings
 
     with server.db.tx() as s:
         settings.put(s, "publicUrl", ORIGIN, None)
@@ -87,7 +87,7 @@ def test_a_user_makes_a_connection_seals_credentials_and_the_connector_collects_
     made = r.json()
     cid = made["connection"]["id"]
     assert made["connection"]["state"] == "new" and made["connection"]["driver"] == "schwab"
-    assert made["command"] == f"docker compose exec connector moneykata-connector connect {cid}"
+    assert made["command"] == f"docker compose exec connector moolakata-connector connect {cid}"
     # The same name twice, an unknown driver and missing settings are refused at their field.
     r = c.post(
         "/ui/api/profile/connections",
@@ -115,7 +115,7 @@ def test_a_user_makes_a_connection_seals_credentials_and_the_connector_collects_
     assert sealed.open_box(conn["sealed"]["ciphertext"], paired.sealing_private, cid) == (
         b'{"code": "oauth-code"}'
     )
-    # MoneyKata never shows it back, and it never reaches Activity.
+    # MoolaKata never shows it back, and it never reaches Activity.
     mine = c.get("/ui/api/profile/connections").json()["items"]
     assert "sealed" not in str(mine) and mine[0]["credentialWaiting"] is True
     acts = c.get("/ui/api/activity").json()

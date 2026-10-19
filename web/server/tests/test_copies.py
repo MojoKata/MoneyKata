@@ -8,9 +8,9 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import wait_job
 
-from moneykata import clock, ids
-from moneykata.links import copy as lcopy
-from moneykata.store.entities.links import Link, LinkedItem
+from moolakata import clock, ids
+from moolakata.links import copy as lcopy
+from moolakata.store.entities.links import Link, LinkedItem
 
 
 @pytest.fixture
@@ -109,7 +109,7 @@ def test_an_unused_copy_locks_and_reset_starts_again(server, setup):
     now = [1000.0]
     server.copies.clock = lambda: now[0]
     alice.post(f"/ui/api/linked/{link_id}/unlock", json={"words": " ".join(words)})
-    from moneykata.links import copies
+    from moolakata.links import copies
 
     now[0] += 59 * 60
     assert copies.sweep(server) == []
@@ -133,8 +133,8 @@ def test_files_no_row_names_are_swept_once_old_enough(server, setup):
     import os
     import time
 
-    from moneykata.links import copies
-    from moneykata.links.routes import DELIVERED
+    from moolakata.links import copies
+    from moolakata.links.routes import DELIVERED
 
     link_id, admin, alice, _ = setup
     words = admin.post(f"/ui/api/settings/links/{link_id}/copy-key").json()["words"]
@@ -155,7 +155,7 @@ def test_files_no_row_names_are_swept_once_old_enough(server, setup):
 
 def test_who_viewed_linked_data_is_recorded_once_an_hour(server, setup):
     # N11: the receiving side records who viewed linked data (S11.8).
-    from moneykata.ui import linked
+    from moolakata.ui import linked
 
     link_id, admin, alice, _ = setup
     words = admin.post(f"/ui/api/settings/links/{link_id}/copy-key").json()["words"]

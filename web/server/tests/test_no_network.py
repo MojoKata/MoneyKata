@@ -48,9 +48,9 @@ def watched(monkeypatch):
 
 
 def test_nothing_leaves_the_server_with_no_network(server, admin_client, watched, tmp_path):
-    from moneykata import alerts, settings
-    from moneykata.prices import refresh
-    from moneykata.store import maintenance
+    from moolakata import alerts, settings
+    from moolakata.prices import refresh
+    from moolakata.store import maintenance
 
     with server.db.tx() as s:
         settings.put(s, "readReceipts", True, None)
@@ -58,7 +58,7 @@ def test_nothing_leaves_the_server_with_no_network(server, admin_client, watched
     # only), a backup, and every alert check.
     from test_reading import _png, draw
 
-    from moneykata.receipts.reading import Worker
+    from moolakata.receipts.reading import Worker
 
     w = Worker()
     try:
@@ -66,10 +66,10 @@ def test_nothing_leaves_the_server_with_no_network(server, admin_client, watched
     finally:
         w.stop()
     assert status == "ok" and lines
-    from moneykata.dev import devmode
+    from moolakata.dev import devmode
 
     devmode.enable_stub_prices(server)
-    from moneykata.tasks import TaskContext
+    from moolakata.tasks import TaskContext
 
     refresh.refresh(server, TaskContext("prices", __import__("threading").Event(), None))
     maintenance.backup(server.config, server.store)

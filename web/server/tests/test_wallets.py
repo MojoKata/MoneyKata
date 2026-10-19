@@ -7,7 +7,7 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import new_account
 
-from moneykata.bitcoin import keys
+from moolakata.bitcoin import keys
 
 # The BIP84, BIP49 and BIP44 test wallets ("abandon abandon … about"), whose addresses are
 # published with those standards.
@@ -95,7 +95,7 @@ def bitcoin_saved(request):
     """Settings › Bitcoin as an admin saved it: no wallet is read before (S16.7)."""
     if "server" not in request.fixturenames:
         return
-    from moneykata import settings
+    from moolakata import settings
 
     srv = request.getfixturevalue("server")
     with srv.db.tx() as s:
@@ -166,7 +166,7 @@ import dataclasses  # noqa: E402
 import datetime as dt  # noqa: E402
 from decimal import Decimal as D  # noqa: E402
 
-from moneykata.bitcoin import sources, sync  # noqa: E402
+from moolakata.bitcoin import sources, sync  # noqa: E402
 
 FIRST = "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu"  # receive 0
 SECOND = "bc1qnjg0jd8228aq7egyzacy8cys3knf9xvrerkf9g"  # receive 1
@@ -236,7 +236,7 @@ def test_a_sync_records_each_transaction_once_and_extends_the_gap(server, alice,
 def test_a_coinjoins_fee_is_the_wallets_share_never_the_whole(server, alice):
     # B13: others' inputs paid most of the 12,000-sat fee; the wallet put in 1,500 net, so its
     # share is 1,500, and nothing else left it.
-    from moneykata.store.entities.accounts import Transaction
+    from moolakata.store.entities.accounts import Transaction
 
     w = new_account(alice, name="Mixer", type="crypto-wallet")
     with server.db.tx() as s:
@@ -279,7 +279,7 @@ def test_the_stub_source_gives_dev_wallets_a_history(server, alice):
 def sync_count(server, account_id):
     from sqlalchemy import func, select
 
-    from moneykata.store.entities.accounts import Transaction
+    from moolakata.store.entities.accounts import Transaction
 
     with server.db.read() as s:
         return s.scalar(
@@ -359,7 +359,7 @@ def test_an_electrum_servers_history_is_read_from_raw_transactions(monkeypatch):
 
 
 def test_core_gets_the_keys_as_watch_only_descriptors():
-    from moneykata.store.entities.accounts import WalletKey
+    from moolakata.store.entities.accounts import WalletKey
 
     k = WalletKey(id="WKey_x", accountId="a", kind="xpub", value=ZPUB, script="p2wpkh")
     (recv, top), (chg, _) = sources.descriptors(k, 24)
@@ -410,9 +410,9 @@ def test_settings_bitcoin_keeps_the_password_secret_and_tests_the_source(server,
 
 
 def test_a_transfer_between_the_owners_wallets_carries_its_lots(server, alice, monkeypatch):
-    from moneykata import ids
-    from moneykata.store.entities.accounts import Lot, Transaction
-    from moneykata.store.repos import ledger as repo
+    from moolakata import ids
+    from moolakata.store.entities.accounts import Lot, Transaction
+    from moolakata.store.repos import ledger as repo
 
     one = new_account(alice, name="Hot wallet", type="crypto-wallet")
     two = new_account(alice, name="Cold storage", type="crypto-wallet")
@@ -453,7 +453,7 @@ def test_a_transfer_between_the_owners_wallets_carries_its_lots(server, alice, m
                     fitId=f"btc:{kind}",
                 )
             )
-        from moneykata.bitcoin import transfers
+        from moolakata.bitcoin import transfers
 
         users = alice.get("/ui/api/session").json()["user"]["id"]
         assert transfers.propose(s, users) == 1
@@ -502,7 +502,7 @@ def test_a_transaction_that_leaves_the_chain_is_marked_and_kept_or_deleted(
 
     assert gone() == [], "one read that misses it isn't enough"
     assert [t["quantity"] for t in gone()] == ["0.5"], "two in a row: marked, never deleted"
-    from moneykata import alerts
+    from moolakata import alerts
 
     alerts.evaluate(server)
     titles = [a["title"] for a in alice.get("/ui/api/alerts").json()["open"]]
@@ -543,7 +543,7 @@ def test_one_wallet_failing_leaves_the_others_read(server, alice, monkeypatch):
 
 
 def test_a_node_certificate_is_trusted_once_confirmed(server, admin_client):
-    from moneykata import alerts, settings
+    from moolakata import alerts, settings
 
     with server.db.tx() as s:
         settings.put(s, "bitcoinNodeCertOffered", "ab" * 32, None)
@@ -561,9 +561,9 @@ def test_a_node_certificate_is_trusted_once_confirmed(server, admin_client):
 
 def test_no_wallet_is_read_until_settings_bitcoin_is_saved(server, alice):
     # S16.7, R3.5: nothing asked of a public explorer before an admin chooses it.
-    from moneykata import settings
-    from moneykata.bitcoin import sync
-    from moneykata.store.entities.core import Setting
+    from moolakata import settings
+    from moolakata.bitcoin import sync
+    from moolakata.store.entities.core import Setting
 
     w = new_account(alice, name="Cold storage", type="crypto-wallet")
     alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB})
@@ -584,7 +584,7 @@ def test_a_wallets_keys_are_bounded(alice):
     w = new_account(alice, name="Huge", type="crypto-wallet")
     r = alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": "x" * 200_001})
     assert r.status_code == 422 and r.json()["code"] == "too-long"
-    from moneykata.ui import wallets
+    from moolakata.ui import wallets
 
     z = keys.extended(ZPUB)
     lines = "\n".join(z.address(0, i) for i in range(wallets.MAX_ENTRIES + 1))

@@ -1,6 +1,6 @@
 // Profile › Connections and an account's sync (requirements S18.6, S18.7): a user's own
-// sign-ins at institutions, kept by the MoneyKata Connector. Credentials typed here are sealed
-// in this browser to the connector's key before anything is sent: MoneyKata can't read them.
+// sign-ins at institutions, kept by the MoolaKata Connector. Credentials typed here are sealed
+// in this browser to the connector's key before anything is sent: MoolaKata can't read them.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { api } from '../api/client.js';
@@ -61,7 +61,7 @@ export function Connections() {
             connection</button>`
         : null}</h3>
       <p class="small dim" style=${{ marginTop: '-6px' }}>Your sign-ins at institutions, kept by
-        the MoneyKata Connector, never by MoneyKata.</p>
+        the MoolaKata Connector, never by MoolaKata.</p>
       ${res.error
         ? html`<${Failed} error=${res.error} />`
         : !rows || !info.data
@@ -189,7 +189,7 @@ export function ConnectionDialog({ close, connection }) {
         onSubmit=${() => close(made.connection)}
         footer=${html`<button class="btn primary">Done</button>`}>
         <p class="small dim" style=${{ marginTop: 0 }}>An admin runs this on the connector's
-          host and types the credentials there. MoneyKata never handles them.</p>
+          host and types the credentials there. MoolaKata never handles them.</p>
         <div class="field"
           data-help="connect-command"><code class="mono" style=${{
             display: 'block',
@@ -209,8 +209,8 @@ export function ConnectionDialog({ close, connection }) {
         f.how === 'host' ? 'Show the command' : 'Seal and send'
       }</button>`}>
       <p class="small dim" style=${{ marginTop: 0 }}>A sign-in at one institution, kept by the
-        MoneyKata Connector. What you type here is encrypted in your browser for the connector
-        before it is sent: MoneyKata can't read it.</p>
+        MoolaKata Connector. What you type here is encrypted in your browser for the connector
+        before it is sent: MoolaKata can't read it.</p>
       ${v.paired && !v.confirmed
         ? html`
           <div class="notice">
@@ -335,11 +335,11 @@ export function ConnectionDialog({ close, connection }) {
 
 /** @param {any} c */
 function command(c) {
-  return `docker compose exec connector moneykata-connector connect ${c.id}`;
+  return `docker compose exec connector moolakata-connector connect ${c.id}`;
 }
 
 /**
- * Sync using MoneyKata Connector (S18.6.2), on an account's Settings tab, for its owner: which
+ * Sync using MoolaKata Connector (S18.6.2), on an account's Settings tab, for its owner: which
  * Connection keeps it current and which of its institution accounts this is.
  * @param {{ a: any, reload: () => void }} p
  */
@@ -384,7 +384,7 @@ export function SyncCard({ a, reload }) {
   const found = chosen ? accountsOf(chosen) : [];
   return html`
     <div style=${{ marginTop: '12px' }}>
-      <${SwitchRow} label="Sync using MoneyKata Connector" on=${on}
+      <${SwitchRow} label="Sync using MoolaKata Connector" on=${on}
         onChange=${(/** @type {boolean} */ v) => setOn(v)}
         hint=${a.connectionId && chosen
           ? `${chosen.label}${a.syncAccount ? ` · ${a.syncAccount}` : ''}`

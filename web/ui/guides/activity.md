@@ -10,7 +10,7 @@ Shows what happened to one account.
 
 ## Who
 
-The person, or MoneyKata itself for what a background task did, or the host for key commands run
+The person, or MoolaKata itself for what a background task did, or the host for key commands run
 there.
 
 ## +N new

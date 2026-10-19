@@ -135,7 +135,7 @@ export default function Profile() {
           <${Field} label="Alert emails" error=${errAt(
             e,
             'alertEmails',
-          )} hint="Alerts always show in MoneyKata; this is only about email.">
+          )} hint="Alerts always show in MoolaKata; this is only about email.">
             <${Select} value=${f.alertEmails} onChange=${set('alertEmails')} options=${[
               ['each', 'Each alert'],
               ['daily', 'A daily summary'],
@@ -601,7 +601,7 @@ function RecoveryCodes({ close, codes, fresh }) {
       footer=${html`
         <button type="button" class="btn" onClick=${() =>
           navigator.clipboard?.writeText(text).then(() => toast('Copied'))}>Copy</button>
-        <a class="btn" download="moneykata-recovery-codes.txt"
+        <a class="btn" download="moolakata-recovery-codes.txt"
           href=${'data:text/plain;charset=utf-8,' + encodeURIComponent(text)}>Download</a>
         <button class="btn primary">I've saved them</button>
       `}>
@@ -739,7 +739,7 @@ function BitcoinModels({ close }) {
             style=${{ marginTop: 0 }}>Each model's median path from today's price${v.price
               ? ` (${fmt(v.price)})`
               : ''}, on a log scale. These are models other people publish, shown so you can compare them,
-            not MoneyKata's view or advice.</p>
+            not MoolaKata's view or advice.</p>
           <${ModelsChart} rows=${v.rows} names=${MODEL_NAMES} />
           <div class="table-wrap mt">
             <table class="t">
@@ -760,7 +760,7 @@ function BitcoinModels({ close }) {
             </table>
           </div>
           <p
-            class="small dim">Their figures ship with MoneyKata, dated, in Settings › Tax tables (${v
+            class="small dim">Their figures ship with MoolaKata, dated, in Settings › Tax tables (${v
               .figuresYear}).</p>
         `
         : html`<p class="dim">Loading…</p>`}

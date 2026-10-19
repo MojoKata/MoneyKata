@@ -53,7 +53,7 @@ export default function Locked() {
     const r = lock.reencrypting;
     const pct = r.total ? Math.round((r.done / r.total) * 100) : 0;
     return html`
-      <${AuthCard} title="MoneyKata is re-encrypting" guide="locked"
+      <${AuthCard} title="MoolaKata is re-encrypting" guide="locked"
         sub="The phrase opened the keyring. The data is being rewritten under a new data key before the server serves; this takes a few minutes.">
         <div class="list-item"><span class="grow">${STAGES[r.stage] || r.stage}</span>${r.total
           ? `${r.done.toLocaleString()} of ${r.total.toLocaleString()}`
@@ -74,7 +74,7 @@ export default function Locked() {
     `;
   }
   return html`
-    <${AuthCard} title="MoneyKata is locked" guide="locked"
+    <${AuthCard} title="MoolaKata is locked" guide="locked"
       sub="The server started and holds no key. An admin enters the recovery phrase to open it; everyone signs in after that.">
       <form onSubmit=${(/** @type {Event} */ e) => {
         e.preventDefault();
@@ -101,7 +101,7 @@ export default function Locked() {
           <button class="btn primary" style=${{ width: '100%', justifyContent: 'center' }}
             disabled=${unlock.busy}>${unlock.busy ? 'Opening…' : 'Unlock'}</button>
           <p class="small dim" style=${{ marginTop: '12px' }}>Or on the host: <code
-            >docker compose exec moneykata moneykata keys unlock</code>. The server locks
+            >docker compose exec moolakata moolakata keys unlock</code>. The server locks
             again at every restart; nothing of the phrase is kept.</p>
           </form>
           </${AuthCard}>

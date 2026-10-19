@@ -1,26 +1,26 @@
 # Linked servers
 
-Other MoneyKata servers that share read-only with this one: another household's, or a
+Other MoolaKata servers that share read-only with this one: another household's, or a
 preparer's. Admins only.
 
 ![Linked servers](shots/settings-links.png)
 
 **Invite a server** makes a one-time code for the other server's admin. **Enter a link code**
-answers one: MoneyKata connects to the address in the code, checks the server's key against the
+answers one: MoolaKata connects to the address in the code, checks the server's key against the
 fingerprint in it, and asks to link. The inviting side then lists it as **wants to link**: compare
 the fingerprint shown with what the other admin sees for their own server (by phone, in person)
 and **Approve** or **Reject** it.
 
 ## This server's link address {#link-address}
 
-Where other servers reach this one, as `https://…` without a path: MoneyKata answers them under
+Where other servers reach this one, as `https://…` without a path: MoolaKata answers them under
 `/link/`. It must be reachable from the other server: a forwarded port, a reverse proxy that
 passes `/link/`, or both servers on one overlay network such as Tailscale or WireGuard (the easy
 way, with no open port). Empty, the public URL is used.
 
 A link works when either side can reach the other: each exchange carries both directions.
 
-Each link shows its state, its fingerprint and MoneyKata version, and when the last exchange
+Each link shows its state, its fingerprint and MoolaKata version, and when the last exchange
 worked. **Pull now** exchanges at once rather than at the next hour. **Pause** stops this side
 exchanging for a time you choose; it shows **paused until** then and resumes on its own, or at
 once with **Resume now**. **End link** ends it on both sides: the other side learns at once, or
@@ -52,7 +52,7 @@ it has reached and how much of the change has arrived.
 
 What each link brings in is kept apart from this household's data, in its own encrypted copy under
 its own **access key**: 12 words. This server's master key can't open it, and backups leave it
-out. **Create the access key** once the link is active: MoneyKata shows the words once, for the
+out. **Create the access key** once the link is active: MoolaKata shows the words once, for the
 household's password manager, where the people its shares name can reach them. Pulls into the copy
 begin then.
 

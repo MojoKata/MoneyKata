@@ -7,14 +7,14 @@ import { screenGuide } from './help.js';
 export function AuthCard({ title, sub, children, guide }) {
   useEffect(() => {
     screenGuide.value = { key: guide };
-    document.title = `${title} · MoneyKata`;
+    document.title = `${title} · MoolaKata`;
   }, [guide, title]);
   return html`
     <main class="auth" id="main">
       <div class="card">
           <div class="acct-row"><div class="logo" aria-hidden="true">M</div><div><b style=${{
             fontSize: '17px',
-          }}>MoneyKata</b></div></div>
+          }}>MoolaKata</b></div></div>
           <h2>${title}</h2>
           ${sub ? html`<p class="small dim" style=${{ marginTop: 0 }}>${sub}</p>` : null}
           ${children}

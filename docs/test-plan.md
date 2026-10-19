@@ -41,7 +41,7 @@ descriptor) and a few of whose transactions are known. Mainnet.
    recorded.
 4. Receive a small amount to a fresh address past the gap. Passing: within an hour (or at
    once with Check now) the transaction appears and more addresses are derived.
-5. For Core (T3): the node shows a wallet `moneykata-<account id>` with the descriptors
+5. For Core (T3): the node shows a wallet `moolakata-<account id>` with the descriptors
    imported, watch-only, rescanned from the start.
 6. Stop the node for longer than Settings › Alerts allows. Passing: one alert for admins and
    one for the wallet's owner, naming no address or amount; both resolve when it is back.
@@ -96,7 +96,7 @@ with `--platform linux/amd64,linux/arm64`.
    Passing: the sign-in address showed `api.schwabapi.com` as its host; the state turns *ok*
    within a minute (the landed address is exchanged within seconds, S18.5), listing the account
    by its last four digits.
-3. On the brokerage account's Settings, turn on Sync using MoneyKata Connector, choose the
+3. On the brokerage account's Settings, turn on Sync using MoolaKata Connector, choose the
    connection and the account. Passing: within a day (or sooner after the connector's next
    run) positions, the last 45 days of trades and dividends, and the cash balance appear,
    matching Schwab's own pages; Activity shows each post as by the connector.
@@ -138,12 +138,12 @@ again. Record the time it took.
 Network › Allowed to connect.
 
 1. Run the connector image on the laptop with its own volume, its page's address in
-   `MONEYKATA_CONNECTOR_NAMES`; make its vault on its page; restart it and unlock it there;
+   `MOOLAKATA_CONNECTOR_NAMES`; make its vault on its page; restart it and unlock it there;
    pair it there with a code from the server. Passing: both fingerprints match; the server shows
    it paired, linked to its page, and, until Confirm is pressed, no sign-in can be sealed for
    it, and its page says *not confirmed yet*; Pair with wrong words is refused, and logged with
    the address it came from.
-2. Over a network you don't trust (a café's Wi-Fi), with MoneyKata behind a public certificate,
+2. Over a network you don't trust (a café's Wi-Fi), with MoolaKata behind a public certificate,
    let the connector report. Passing: the reports go through; with a relay in the path that
    presents another certificate, the connector sends nothing and says why; the laptop's address
    outside the allowed ranges is refused (404) until it is added.

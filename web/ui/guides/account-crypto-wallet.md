@@ -1,6 +1,6 @@
 @@ overview
 
-> A self-custody bitcoin wallet, read from its extended public key or addresses. MoneyKata can
+> A self-custody bitcoin wallet, read from its extended public key or addresses. MoolaKata can
 > see it, never spend from it.
 
 @@ settings
@@ -18,7 +18,7 @@ bc1q…), an **output descriptor** as Sparrow, Nunchuk or Bitcoin Core export it
 addresses come from all its keys. Taking a key out stops watching its addresses.
 
 > Never enter a seed phrase or a private key: the form clears anything that looks like one at
-> once, and MoneyKata never stores or logs it.
+> once, and MoolaKata never stores or logs it.
 
 ## Gap limit
 

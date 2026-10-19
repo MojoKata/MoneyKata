@@ -34,7 +34,7 @@ export default function Setup() {
     <${AuthCard} title="Set up the admin account" guide="setup"
       sub=${first
         ? html`
-          The key is made and MoneyKata is open. Now your account: you'll sign in as <b
+          The key is made and MoolaKata is open. Now your account: you'll sign in as <b
           >admin</b>.
         `
         : "This server is new. Choose the admin's password and email before anything else."}>

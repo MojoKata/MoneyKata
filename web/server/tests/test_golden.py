@@ -11,7 +11,7 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import clock
+from moolakata import clock
 
 GOLDEN = Path(__file__).parent / "golden"
 T0 = dt.datetime(2026, 12, 20, 12, tzinfo=dt.UTC)
@@ -92,7 +92,7 @@ def portfolio(c) -> str:
 
 @pytest.mark.parametrize(
     ("export", "golden"),
-    [("8949.csv", "form-8949-2026.csv"), ("moneykata.txf", "moneykata-2026.txf")],
+    [("8949.csv", "form-8949-2026.csv"), ("moolakata.txf", "moolakata-2026.txf")],
 )
 def test_the_exports_match_their_golden_files(alice, export, golden):
     book = portfolio(alice)

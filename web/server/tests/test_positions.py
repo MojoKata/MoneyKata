@@ -8,7 +8,7 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import add, new_account
 
-from moneykata import clock
+from moolakata import clock
 
 T0 = dt.datetime(2026, 10, 13, 12, tzinfo=dt.UTC)
 
@@ -143,8 +143,8 @@ def _ca(c, acct, inst_id, **body):
 
 
 def _lots(server, acct):
-    from moneykata.store.entities.accounts import Account, Instrument
-    from moneykata.store.repos import ledger as repo
+    from moolakata.store.entities.accounts import Account, Instrument
+    from moolakata.store.repos import ledger as repo
 
     with server.db.read() as s:
         rp = repo.load(s, s.get(Account, acct)).replay()

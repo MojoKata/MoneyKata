@@ -7,10 +7,10 @@ from conftest import make_user, new_client, sign_in
 from sqlalchemy import select
 from test_users import kinds, mails
 
-from moneykata import clock
-from moneykata.auth import twostep
-from moneykata.store.entities.core import Secret
-from moneykata.store.entities.users import RecoveryCode, Session
+from moolakata import clock
+from moolakata.auth import twostep
+from moolakata.store.entities.core import Secret
+from moolakata.store.entities.users import RecoveryCode, Session
 
 PW = "a long user passphrase"
 T0 = dt.datetime(2026, 10, 13, 12, 0, 0, tzinfo=dt.UTC)
@@ -135,7 +135,7 @@ def test_a_recovery_code_works_once(server, frozen):
 def test_five_wrong_codes_end_the_sign_in_and_ten_lock_the_address(server, frozen, monkeypatch):
     # S10.1.6.3: five wrong codes end a sign-in, so the password is needed again; wrong codes
     # count toward the address's lockout as wrong passwords do (S13.7.5.1).
-    from moneykata.ui import session
+    from moolakata.ui import session
 
     monkeypatch.setattr(session.time, "sleep", lambda s: None)
     make_user(server, "alice")
@@ -222,7 +222,7 @@ def test_an_admins_reset_turns_it_off_and_ends_the_users_sessions(server, admin_
 
 def test_a_two_step_sign_in_from_a_new_address_is_emailed(server, frozen):
     # N12: the second step notes the address as a password-only sign-in does (S10.1.9).
-    from moneykata.store.entities.users import User
+    from moolakata.store.entities.users import User
 
     make_user(server, "alice")
     seed, _ = turn_on(sign_in(server, "alice"))

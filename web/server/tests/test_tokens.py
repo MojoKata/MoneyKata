@@ -7,7 +7,7 @@ import pytest
 from conftest import make_user, sign_in
 from test_accounts import new_account
 
-from moneykata import clock, tokens
+from moolakata import clock, tokens
 
 
 @pytest.fixture
@@ -73,7 +73,7 @@ def test_a_token_dies_when_revoked_expired_or_its_user_is_inactive(server, alice
     with server.db.read() as s:
         assert tokens.find(s, one["secret"]) is None
         assert tokens.find(s, two["secret"]) is not None
-    from moneykata.store.entities.users import AccessToken
+    from moolakata.store.entities.users import AccessToken
 
     with server.db.tx() as s:
         s.get(AccessToken, two["token"]["id"]).expiresAt = clock.now() - dt.timedelta(seconds=1)
@@ -81,7 +81,7 @@ def test_a_token_dies_when_revoked_expired_or_its_user_is_inactive(server, alice
         assert tokens.find(s, two["secret"]) is None
     assert alice.get("/ui/api/profile/tokens").json()["items"][0]["expired"] is True
     three = make()
-    from moneykata.store.entities.users import User
+    from moolakata.store.entities.users import User
 
     with server.db.tx() as s:
         s.get(User, tokens.find(s, three["secret"])[1].id).active = False
@@ -102,7 +102,7 @@ def test_making_a_token_needs_the_password_again_and_is_emailed(server, alice):
     from sqlalchemy import select
     from test_users import PW, mails
 
-    from moneykata.store.entities.users import Session
+    from moolakata.store.entities.users import Session
 
     with server.db.tx() as s:
         s.scalars(select(Session)).one().authAt -= dt.timedelta(minutes=11)

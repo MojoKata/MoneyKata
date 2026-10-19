@@ -8,8 +8,8 @@ import pytest
 from conftest import make_user, new_client
 from test_users import kinds, mails, set_public_url
 
-from moneykata import settings
-from moneykata.mail import smtp_settings, written
+from moolakata import settings
+from moolakata.mail import smtp_settings, written
 
 PW = "a long user passphrase"
 
@@ -54,7 +54,7 @@ def smtp(monkeypatch, server):
     monkeypatch.setattr(smtplib, "SMTP", FakeSmtp)
     monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSmtp)
     # The mail server's name resolves on the LAN, and the guard connects to what it found.
-    from moneykata import net
+    from moolakata import net
 
     server.guard = net.Guard(resolver=lambda host, port: ["192.0.2.25"])
     server.guard.allow(["smtp.home.lan"], allowed_by_name=["smtp.home.lan"])
@@ -67,7 +67,7 @@ def set_up_smtp(admin_client, password="app password"):
         json={
             "smtpHost": "smtp.home.lan",
             "smtpUsername": "money@home.lan",
-            "smtpFrom": "MoneyKata <money@home.lan>",
+            "smtpFrom": "MoolaKata <money@home.lan>",
         },
     )
     assert r.status_code == 200, r.text
@@ -111,7 +111,7 @@ def test_with_smtp_emails_go_through_the_outbox(admin_client, server, smtp):
     assert server.services.mailer.send_waiting(_smtp(server), server.guard) == 1
     assert server.services.mailer.waiting() == []
     from_addr, msg = smtp.sent[0]
-    assert from_addr == "money@home.lan" and msg["From"] == "MoneyKata <money@home.lan>"
+    assert from_addr == "money@home.lan" and msg["From"] == "MoolaKata <money@home.lan>"
     assert msg["To"] == "dave@x.lan" and smtp.starttls_done
     assert smtp.logins == [("money@home.lan", "app password")]
 
@@ -143,8 +143,8 @@ def test_emails_wait_in_the_database_until_sent_or_their_link_expires(admin_clie
     # whose link has expired is dropped unsent; a refused one keeps only who, what and why.
     import datetime as dt
 
-    from moneykata import clock
-    from moneykata.store.entities.core import QueuedEmail
+    from moolakata import clock
+    from moolakata.store.entities.core import QueuedEmail
 
     set_up_smtp(admin_client)
     set_public_url(server)
@@ -199,7 +199,7 @@ def test_a_written_invitation_stays_a_week_and_the_rest_a_day(server):
     # S16.2: a written email stays as long as its link works.
     import datetime as dt
 
-    from moneykata.mail import Email, expire_written
+    from moolakata.mail import Email, expire_written
 
     with server.db.tx() as s:
         server.services.mailer.send(
@@ -216,7 +216,7 @@ def test_the_egress_guard_refuses_a_host_not_in_settings(admin_client, server, s
     set_up_smtp(admin_client)
     server.guard.allow([])
     r = admin_client.post("/ui/api/settings/email/test")
-    assert r.status_code == 502 and "not a host MoneyKata is set up to reach" in r.json()["detail"]
+    assert r.status_code == 502 and "not a host MoolaKata is set up to reach" in r.json()["detail"]
 
 
 def test_send_a_test_email(admin_client, server, smtp):
@@ -225,7 +225,7 @@ def test_send_a_test_email(admin_client, server, smtp):
     set_up_smtp(admin_client)
     r = admin_client.post("/ui/api/settings/email/test")
     assert r.status_code == 200 and r.json()["to"] == "admin@home.lan"
-    assert smtp.sent[0][1]["Subject"] == "MoneyKata test email"
+    assert smtp.sent[0][1]["Subject"] == "MoolaKata test email"
     smtp.fail = OSError("Connection refused")
     r = admin_client.post("/ui/api/settings/email/test")
     assert r.status_code == 502 and "could not reach the SMTP server" in r.json()["detail"]
@@ -300,7 +300,7 @@ def test_sign_up_confirm_and_approve(admin_client, server, smtp):
         r = c.post("/ui/api/session", json={"login": "erin@shaw.family", "password": PW})
         assert r.status_code == 200
     assert {"signup.requested", "signup.approved"} <= set(kinds(server))
-    assert "Your MoneyKata account is ready" in server.services.mailer.waiting()[-1].subject
+    assert "Your MoolaKata account is ready" in server.services.mailer.waiting()[-1].subject
 
 
 def test_sign_up_rejected(admin_client, server, smtp):
@@ -320,7 +320,7 @@ def test_sign_up_never_says_an_email_has_an_account(admin_client, server, smtp):
     make_user(server, "bob", email="bob@home.lan")
     waiting = len(server.services.mailer.waiting())
     hashed = []
-    from moneykata.auth import passwords
+    from moolakata.auth import passwords
 
     real = passwords.hash_password
     passwords.hash_password = lambda pw: hashed.append(pw) or real(pw)
@@ -366,7 +366,7 @@ def test_written_emails_are_listed_for_admins_and_expire(admin_client, server, t
 
     from conftest import ORIGIN
 
-    from moneykata import mail, settings
+    from moolakata import mail, settings
 
     with server.db.tx() as s:
         settings.put(s, "publicUrl", ORIGIN, None)
@@ -389,8 +389,8 @@ def test_written_emails_are_listed_for_admins_and_expire(admin_client, server, t
     r = admin_client.get(f"/ui/api/settings/email/written/{name}")
     assert r.status_code == 200 and "https://" in r.json()["text"]
     # Opening one is recorded for the person it is addressed to (S10.2).
-    from moneykata.store.entities.core import Activity
-    from moneykata.store.entities.users import User
+    from moolakata.store.entities.core import Activity
+    from moolakata.store.entities.users import User
 
     with server.db.read() as s:
         dave = s.query(User).filter_by(username="dave").one()
@@ -409,8 +409,8 @@ def test_a_new_smtp_host_needs_the_password_again_and_clears_the_old_password(
     """S16.2, S13.7.2: the stored password belongs to its host, so it never goes to a new one."""
     from conftest import stale
 
-    from moneykata.mail import SMTP_SECRET
-    from moneykata.store.repos import secrets as secret_repo
+    from moolakata.mail import SMTP_SECRET
+    from moolakata.store.repos import secrets as secret_repo
 
     set_up_smtp(admin_client)
     stale(server)

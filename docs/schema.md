@@ -1,8 +1,8 @@
-# MoneyKata: database schema conventions
+# MoolaKata: database schema conventions
 
 These conventions apply to the main database and to every linked copy (requirements S11.9,
 S14.1). The tables are declared with SQLAlchemy Core in
-`web/server/src/moneykata/store/tables/` (requirements S17.1).
+`web/server/src/moolakata/store/tables/` (requirements S17.1).
 
 ## 1. Naming
 
@@ -79,7 +79,7 @@ The prefixes of the tables that exist.
 | BdgLn  | BudgetLine       | One category's planned amount in a budget, from a month on, monthly or yearly.                        |
 | Bdgt   | Budget           | A user's plan per category over chosen accounts; shared with a group for a household.                 |
 | Cat    | Category         | A budget category given to bank transactions.                                                         |
-| Cnctr  | Connector        | The MoneyKata Connector paired with this server: its public keys, its reports' state (S18.4).         |
+| Cnctr  | Connector        | The MoolaKata Connector paired with this server: its public keys, its reports' state (S18.4).         |
 | Cntrb  | Contribution     | Who a deposit into a 529 came from, and whether it is a five-year election.                           |
 | Conn   | Connection       | One sign-in at one institution, kept by the connector and owned by a user (S18.6).                    |
 | Dnatn  | Donation         | One charitable gift to an organisation, into a donor-advised fund, or a grant from one.               |
@@ -98,7 +98,7 @@ The prefixes of the tables that exist.
 | Instr  | Instrument       | A thing with a price: a stock, fund, coin, option contract or currency.                               |
 | Item   | Item             | A physical asset: metals, a collectable, a property or a vehicle, with how it is valued.              |
 | LItem  | LinkedItem       | An item a link brings in, as the main database knows it: kind, owner and who it names.                |
-| Link   | Link             | A link with another MoneyKata server: its state, address and key.                                     |
+| Link   | Link             | A link with another MoolaKata server: its state, address and key.                                     |
 | Loan   | Loan             | A loan account's terms: principal, rate, term, escrow, PMI, resets and recasts.                       |
 | Lot    | Lot              | One acquisition of an instrument, and what remains open.                                              |
 | Lyout  | StatementLayout  | What statement import learned of an institution's layout: section signs, lines to skip.               |

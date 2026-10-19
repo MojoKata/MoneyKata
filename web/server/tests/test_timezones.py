@@ -3,7 +3,7 @@
 from pathlib import Path
 from zoneinfo import TZPATH
 
-from moneykata.timezones import zone_from, zone_of
+from moolakata.timezones import zone_from, zone_of
 
 
 def test_a_mounted_localtime_is_known_by_its_content():

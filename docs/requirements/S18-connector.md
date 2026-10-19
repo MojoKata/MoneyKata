@@ -1,9 +1,9 @@
-# S18. MoneyKata Connector
+# S18. MoolaKata Connector
 
-The **MoneyKata Connector** keeps accounts current from their institutions without MoneyKata
+The **MoolaKata Connector** keeps accounts current from their institutions without MoolaKata
 ever holding, using or seeing an institution's credentials. It is a second service: it keeps
 the credentials in a vault of its own, its **drivers** fetch from each institution, and it
-pushes what they fetch into MoneyKata's import. MoneyKata can't reach it, read its vault or
+pushes what they fetch into MoolaKata's import. MoolaKata can't reach it, read its vault or
 ask it for anything. People give it its words on **its page**, which it serves itself.
 
 **Terms used here.**
@@ -14,11 +14,11 @@ ask it for anything. People give it its words on **its page**, which it serves i
 | **the words** | 12 BIP-39 words that are the vault's key, kept in the household's password manager and never stored. |
 | **locked / unlocked** | whether the words have been given since the connector last started. Locked, it reports and nothing more. |
 | **its page** | the connector's own HTTPS page, on a port of its own, where its vault is made, its words given and its pairing done; anyone on the network sees its status, and every action asks for the words (S18.11). |
-| **identity key** | an Ed25519 key pair made at pairing, kept **beside** the vault (not in it), whose private half signs every call so MoneyKata knows the paired connector. A locked connector can still report with it (S18.4.5). |
-| **sealing key** | an X25519 key pair made at pairing. MoneyKata holds the public half and gives it to browsers; the private half lives **in** the vault and is the only thing that opens a sealed box (S18.4.5). |
-| **sealed box** | a credential encrypted in the owner's browser to the sealing key, which MoneyKata stores and hands over but cannot open (S18.7.1). |
-| **pairing / pairing code** | the one-time introduction of a connector to a MoneyKata server, from a code Settings shows (S18.4). |
-| **Connection** | one sign-in at one institution, owned by a user; its record is in MoneyKata, its credentials in the vault (S18.6). |
+| **identity key** | an Ed25519 key pair made at pairing, kept **beside** the vault (not in it), whose private half signs every call so MoolaKata knows the paired connector. A locked connector can still report with it (S18.4.5). |
+| **sealing key** | an X25519 key pair made at pairing. MoolaKata holds the public half and gives it to browsers; the private half lives **in** the vault and is the only thing that opens a sealed box (S18.4.5). |
+| **sealed box** | a credential encrypted in the owner's browser to the sealing key, which MoolaKata stores and hands over but cannot open (S18.7.1). |
+| **pairing / pairing code** | the one-time introduction of a connector to a MoolaKata server, from a code Settings shows (S18.4). |
+| **Connection** | one sign-in at one institution, owned by a user; its record is in MoolaKata, its credentials in the vault (S18.6). |
 | **bound host** | the host a Connection's credentials may be sent to: the one the owner's browser sealed with them, or the admin confirmed on the host, fixed when they are filed in the vault (S18.7.3). |
 | **driver** | the part of the connector for one institution, which fetches from it (R2.22). Where nothing can be fetched, the file is uploaded by hand (S1.3). |
 
@@ -29,7 +29,7 @@ ask it for anything. People give it its words on **its page**, which it serves i
         |  seals a credential to the sealing key's public half
         v
  +------------------------------+                              +--------------------------------+
- | MoneyKata                    |   signed report, every 5 min |  MoneyKata Connector            |
+ | MoolaKata                    |   signed report, every 5 min |  MoolaKata Connector            |
  |                              | <--------------------------- |                                 |
  |  holds: identity public key  |   answer: Connections, their |  beside the vault:              |
  |         sealing public key   |   settings and accounts, and |    identity key (signs calls)   |
@@ -45,16 +45,16 @@ ask it for anything. People give it its words on **its page**, which it serves i
                                                    an institution (Schwab, an OFX server)
 ```
 
-1. **What it is**: one program, `moneykata-connector`, built from `connector/` in this
-   repository into an image of its own, run beside MoneyKata as a second compose service
-   (`connector`) or on another machine that can reach MoneyKata's address, such as a laptop.
-   1. **A core** (the vault, the schedule, the pairing, the signed calls to MoneyKata and an
+1. **What it is**: one program, `moolakata-connector`, built from `connector/` in this
+   repository into an image of its own, run beside MoolaKata as a second compose service
+   (`connector`) or on another machine that can reach MoolaKata's address, such as a laptop.
+   1. **A core** (the vault, the schedule, the pairing, the signed calls to MoolaKata and an
       egress allowlist) and **drivers**, one per institution or method, each fetching what
-      its institution offers and turning it into files MoneyKata already imports (S18.8).
+      its institution offers and turning it into files MoolaKata already imports (S18.8).
    2. **Small enough to read.** Python with the standard library, plus the `cryptography`
       wheel for the core alone (its Ed25519 and X25519 keys and the vault's AES-GCM, which
       the standard library doesn't provide) and at most one pinned, hashed dependency per
-      driver; no import from MoneyKata. Each driver declares the hosts it talks to, the
+      driver; no import from MoolaKata. Each driver declares the hosts it talks to, the
       credentials it needs and what it sends, and a test fails when a driver reaches another
       host.
       1. **A driver's size is tracked**, since a driver holds its institution's credentials
@@ -68,33 +68,33 @@ ask it for anything. People give it its words on **its page**, which it serves i
          command line) has no limit: there is one core, kept as small as it can be.
 2. **Isolation**: the rules the design rests on.
    1. **Separate**: its own process, unprivileged user (uid 10002), image and volume
-      (`connector-data`: the vault and the connector's identity key). MoneyKata never mounts
-      that volume; the connector never mounts MoneyKata's data, keys or backups. The volume is
-      `/var/lib/moneykata-connector` (mode 0700): `vault.json`, and `pairing.json` (mode 0600:
-      MoneyKata's address and fingerprint, the identity key's private half and the sealing
+      (`connector-data`: the vault and the connector's identity key). MoolaKata never mounts
+      that volume; the connector never mounts MoolaKata's data, keys or backups. The volume is
+      `/var/lib/moolakata-connector` (mode 0700): `vault.json`, and `pairing.json` (mode 0600:
+      MoolaKata's address and fingerprint, the identity key's private half and the sealing
       key's public half), and `tls/`, its page's certificate when it makes its own (S18.11.1).
-      The socket is `/run/moneykata-connector/sock` (mode 0600, on a tmpfs).
-      `MONEYKATA_CONNECTOR_DATA` and `MONEYKATA_CONNECTOR_SOCKET` move the volume and the
+      The socket is `/run/moolakata-connector/sock` (mode 0600, on a tmpfs).
+      `MOOLAKATA_CONNECTOR_DATA` and `MOOLAKATA_CONNECTOR_SOCKET` move the volume and the
       socket.
-   2. **One way.** The connector only opens connections: to its institutions and to MoneyKata.
+   2. **One way.** The connector only opens connections: to its institutions and to MoolaKata.
       It listens on one network port, for its own page (S18.11), which serves that page and
       its forms and nothing else; its other way in is a Unix socket inside its own container,
-      for the commands an admin runs there (S18.3). MoneyKata has nothing to call and no way to
+      for the commands an admin runs there (S18.3). MoolaKata has nothing to call and no way to
       ask for a credential. A call it makes follows no redirect (a 3xx answer is a failure, so
       nothing is sent again elsewhere), waits at most 60 seconds, and reads at most 25 MB of an
       answer. Its allowlist is kept per driver run: a run reaches its own driver's hosts and
-      no other, not another driver's and not MoneyKata's, which only the connector's own calls
+      no other, not another driver's and not MoolaKata's, which only the connector's own calls
       reach; a test runs a driver with every other host refused. It refuses loopback,
-      link-local and cloud metadata addresses, as MoneyKata's egress guard does (S13.5). It verifies every TLS
-      certificate: an institution's against the system's roots, MoneyKata's against those roots
-      or, for a certificate of MoneyKata's own, against the fingerprint the pairing code
+      link-local and cloud metadata addresses, as MoolaKata's egress guard does (S13.5). It verifies every TLS
+      certificate: an institution's against the system's roots, MoolaKata's against those roots
+      or, for a certificate of MoolaKata's own, against the fingerprint the pairing code
       carried (S18.4.1).
-   3. **What each side holds.** MoneyKata holds the connector's public keys and the records
+   3. **What each side holds.** MoolaKata holds the connector's public keys and the records
       of S18.6, never a credential. The connector holds the credentials and the sealing
       key's private half, sealed in its vault, and beside the vault an identity key that can
       only sign its calls.
    4. **What a compromise costs**, stated for each thing that can be taken:
-      1. **A compromised MoneyKata** gets no credential: the boxes it holds open only in the
+      1. **A compromised MoolaKata** gets no credential: the boxes it holds open only in the
          vault. It can serve altered code to a browser and capture credentials typed after the
          compromise (S18.7.1), and it can change a Connection's settings; but a credential is
          bound to the host the owner's browser sealed with it (S18.7.3), so a changed address
@@ -102,7 +102,7 @@ ask it for anything. People give it its words on **its page**, which it serves i
          anything.
       2. **A compromised connector**, running and unlocked, holds the credentials it was
          given and can post files into the accounts whose owners turned it on (S18.6), which
-         their owners would see. From MoneyKata it learns what the report's answer carries:
+         their owners would see. From MoolaKata it learns what the report's answer carries:
          each Connection's owner name, label, settings (an OFX server's address and account
          number, a routing number, a Schwab app key) and its accounts' names and last four
          digits; never an amount, a transaction or a password.
@@ -110,8 +110,8 @@ ask it for anything. People give it its words on **its page**, which it serves i
          words and all, and no design changes that.
       4. **A stolen volume, disk or backup of the connector**, or its powered-off machine,
          yields the identity key and the pairing: whoever has it can report as the connector,
-         read the answers of S18.2.4.2 and post files, until MoneyKata **unpairs** it
-         (S18.4.4), which an admin does at once when a connector's host is lost. MoneyKata
+         read the answers of S18.2.4.2 and post files, until MoolaKata **unpairs** it
+         (S18.4.4), which an admin does at once when a connector's host is lost. MoolaKata
          helps notice it: the address a connector's reports come from is recorded, the first
          one as known, and a report from another address alerts admins until one **accepts**
          the new address (the connector moved) or unpairs (S18.5.4). The vault stays closed
@@ -135,16 +135,16 @@ ask it for anything. People give it its words on **its page**, which it serves i
       private half (S18.4.5); a Schwab Connection's entry also holds the app's secret and its
       tokens with when they run out. It is one file, `vault.json`: its format's name, the
       vault's fingerprint, a nonce and the contents, sealed with AES-256-GCM under a key that
-      HKDF-SHA256 derives from the words' 128 bits (label `moneykata connector vault key`),
+      HKDF-SHA256 derives from the words' 128 bits (label `moolakata connector vault key`),
       with the fingerprint as associated data. The words are a random key, not a password, so
       nothing stretches them. Each change seals the whole vault again with a fresh nonce,
       through a temporary file and a rename. The fingerprint, the first 16 hex digits of
-      `SHA-256("moneykata connector vault" ‖ key)`, is kept in the clear, to tell another
+      `SHA-256("moolakata connector vault" ‖ key)`, is kept in the clear, to tell another
       vault's words from a damaged file.
    2. **Locked at every start**: the connector starts locked, fetches nothing, and reports that
-      it is locked (S18.5); MoneyKata down or locked is a state it reports and retries with a
+      it is locked (S18.5); MoolaKata down or locked is a state it reports and retries with a
       growing wait, never a reason to stop. An admin unlocks it on its page (S18.11.4), or
-      with `docker compose exec connector moneykata-connector unlock`, which asks for the
+      with `docker compose exec connector moolakata-connector unlock`, which asks for the
       words without echo and hands them to the running connector over its Unix socket; the
       key stays in memory only. A restart, a crash or the host's reboot locks it again.
       **Lock** on its page, or `lock`, locks it at once, and `status` says what the connector
@@ -155,21 +155,21 @@ ask it for anything. People give it its words on **its page**, which it serves i
       valid one but not this vault's is refused by the vault's fingerprint. Five wrong
       attempts in a row, on its page and at the command line alike, make the next wait 15
       minutes. Each wrong attempt on its page is logged with the address it came from.
-   4. **Lost words**: the vault can't be opened. `moneykata-connector reset` on its host asks
+   4. **Lost words**: the vault can't be opened. `moolakata-connector reset` on its host asks
       for it to be confirmed, deletes the vault, makes new words (shown as at `init`, three
       typed back), and unpairs, so the next `pair` makes a new identity key and a new sealing
       key and every Connection's credentials are entered again (S18.7). **Reset** on its page
       does the same for a household that still has the words but wants new ones (some were
       seen): it asks for the words, then shows new ones as its welcome does. Without the
       words, reset is done on the host, whose access is the authority.
-4. **Pairing with MoneyKata**, once, as two servers are linked (S11.1).
-   1. An admin chooses **Settings › Connector › Pair** in MoneyKata, which shows a one-time
-      **pairing code**: MoneyKata's address, its link key's fingerprint, a one-time secret,
-      and, when MoneyKata's certificate is its own rather than a public one, the fingerprint of
+4. **Pairing with MoolaKata**, once, as two servers are linked (S11.1).
+   1. An admin chooses **Settings › Connector › Pair** in MoolaKata, which shows a one-time
+      **pairing code**: MoolaKata's address, its link key's fingerprint, a one-time secret,
+      and, when MoolaKata's certificate is its own rather than a public one, the fingerprint of
       the certificate's key, valid 24 hours, in the form of a link code (`mkp1.`,
-      `docs/link-protocol.md` §4.1), of which MoneyKata keeps only the secret's hash.
+      `docs/link-protocol.md` §4.1), of which MoolaKata keeps only the secret's hash.
    2. On the connector's page, **Pair** with the code and the words (S18.11.4), or on its host
-      with the vault unlocked: `docker compose exec connector moneykata-connector pair
+      with the vault unlocked: `docker compose exec connector moolakata-connector pair
       <code>`. The connector makes its **identity key** (Ed25519, for
       signing) and its **sealing key** (X25519, for credentials sent to it, S18.7.1), files the
       sealing key's private half in the vault (so `pair` is refused while the vault is locked),
@@ -177,7 +177,7 @@ ask it for anything. People give it its words on **its page**, which it serves i
       two public keys, the sealing key signed with the identity key), and both sides show the
       connector's fingerprint for the admin to compare: the connector shows its own, worked out
       from its identity key, never one an answer names. Before anything is sent, the connector
-      checks that the key MoneyKata's `hello` gives hashes to the code's fingerprint, and keeps
+      checks that the key MoolaKata's `hello` gives hashes to the code's fingerprint, and keeps
       that key with the pairing; a failed `pair` leaves any earlier pairing as it was. **The
       pairing is not trusted until an admin confirms it** (Settings › Connector › **Confirm**,
       the password again): a pairing code is a 24-hour bearer secret, and whoever answers it
@@ -188,7 +188,7 @@ ask it for anything. People give it its words on **its page**, which it serves i
       the code: Unpair.
 
       ```
-       admin                MoneyKata                        connector host          connector
+       admin                MoolaKata                        connector host          connector
         | Pair (password again) |                                  |                     |
         |---------------------->| code mkp1.{address, fingerprint, |                     |
         |<----------------------| secret}; keeps SHA-256(secret)   |                     |
@@ -208,17 +208,17 @@ ask it for anything. People give it its words on **its page**, which it serves i
         |  both sides show the connector's fingerprint; the admin compares them         |
       ```
    3. **Every call it makes is signed** with its identity key, with a timestamp and a nonce,
-      as link calls are (S11.1.3), at `/connector/v1/` on MoneyKata's address, and every
-      answer is signed by MoneyKata's link key, so the connector knows it reached the server
+      as link calls are (S11.1.3), at `/connector/v1/` on MoolaKata's address, and every
+      answer is signed by MoolaKata's link key, so the connector knows it reached the server
       it paired with. The path carries the protocol's version; a call also names it in a
-      header, and one MoneyKata doesn't speak is refused naming the versions it does, as
+      header, and one MoolaKata doesn't speak is refused naming the versions it does, as
       links are (`docs/link-protocol.md` §5). `docs/connector-protocol.md` states the
-      protocol in the link protocol's form. MoneyKata keeps only the public keys. One
+      protocol in the link protocol's form. MoolaKata keeps only the public keys. One
       connector is paired with a server at a time: pairing another replaces it, as Unpair
       would (S18.4.4).
    4. **Unpair** (Settings › Connector) ends the paired connector, never a pairing code still
       waiting (which it withdraws as well), refuses its key from then on, stops every
-      Connection, and turns every account's sync off. MoneyKata answers the connector's next
+      Connection, and turns every account's sync off. MoolaKata answers the connector's next
       call with a signed `not-paired`, at which the connector deletes the credentials it held
       for that server and its sealing key.
    5. **Where the two keys live, and why.** The identity key sits beside the vault, not in
@@ -226,7 +226,7 @@ ask it for anything. People give it its words on **its page**, which it serves i
       connector*: fetching anything still needs the vault. The sealing key's private half
       lives **in** the vault: a locked connector has no use for it (it can't fetch), and a
       copy of the connector's volume without the words must not open the boxes sealed to it.
-      MoneyKata hands a sealed box only to a connector that reports unlocked (S18.5), and
+      MoolaKata hands a sealed box only to a connector that reports unlocked (S18.5), and
       pairing needs the vault unlocked to file the key.
 5. **Status and alerts.** Every 5 minutes, after each run, and every 15 seconds for up to 10
    minutes while a Connection waits for a sign-in (so an address pasted back is exchanged at
@@ -237,11 +237,11 @@ ask it for anything. People give it its words on **its page**, which it serves i
    accounts, sealed credentials to collect, by Connection (S18.7.1), **only when the report
    says the connector is unlocked** (a locked one couldn't open them, S18.4.5) **and the
    pairing is confirmed** (S18.4.2), and Connections removed (S18.6.4), whose credentials it
-   then deletes. MoneyKata shows the report and alerts admins (S12.11):
+   then deletes. MoolaKata shows the report and alerts admins (S12.11):
    1. **the connector is locked**: unlock it on its page, which Settings › Connector links to
       (S18.11.1), or on its host;
    2. **the connector hasn't been heard from for 15 minutes**: it is stopped, down, or can't
-      reach MoneyKata;
+      reach MoolaKata;
    3. **a Connection needs a sign-in or is failing**, to admins and to the owner of each
       account it keeps current;
    4. **the connector reports from a new address** (S18.2.4.4): the alert names the address
@@ -252,11 +252,11 @@ ask it for anything. People give it its words on **its page**, which it serves i
    digits.
 6. **Connections.** A **Connection** is one sign-in at one institution, kept by the
    connector: *Alice's Schwab login*, using the Schwab driver.
-   1. **Owned by a user**, the one whose sign-in it is, who names it. MoneyKata holds its
+   1. **Owned by a user**, the one whose sign-in it is, who names it. MoolaKata holds its
       record (owner, driver, label, state, last run) and, after its first run, **the
       institution accounts the driver found**, by name and last four digits. Its credentials
       exist only in the connector's vault.
-   2. **An account's sync**: an account's settings carry **Sync using MoneyKata Connector**,
+   2. **An account's sync**: an account's settings carry **Sync using MoolaKata Connector**,
       offered once a connector is paired. Turning it on asks which Connection (one of the
       owner's, or **New connection…**) and which of its institution accounts this account
       is. Only the account's owner turns it on; an account shared with write can't be.
@@ -268,26 +268,26 @@ ask it for anything. People give it its words on **its page**, which it serves i
       every Connection's state for admins, never its credentials.
 7. **Entering credentials**, chosen per Connection.
    1. **Sealed for the connector** (the usual way): the owner types the credentials in
-      MoneyKata, with their password again (S13.7.2) and only once an admin confirmed the
+      MoolaKata, with their password again (S13.7.2) and only once an admin confirmed the
       pairing (S18.4.2), and **the browser encrypts them to the connector's sealing key**
       before anything is sent (an X25519 sealed box, made with the browser's own WebCrypto,
       which current Chrome, Edge, Safari and Firefox provide; a browser without it is offered
       only the stricter way below). The browser first checks the sealing key's signature by the
       identity key the admin confirmed (S18.4.2), and seals, with the credentials, the host the
       dialog shows the owner they go to and the time; the connector refuses a box older than
-      the credential it holds. MoneyKata keeps only the ciphertext, which it can't open, until
+      the credential it holds. MoolaKata keeps only the ciphertext, which it can't open, until
       the connector collects it on its next report, files it in its vault and confirms which
-      box it took (by its time); MoneyKata then deletes that box. A sign-in through the
+      box it took (by its time); MoolaKata then deletes that box. A sign-in through the
       institution's own page (OAuth, as Schwab's) works the same way: the connector reports the
-      sign-in address, which MoneyKata takes only on the driver's own sign-in host and shows
+      sign-in address, which MoolaKata takes only on the driver's own sign-in host and shows
       with that host; the owner opens it, and pastes back the address they land on, sealed the
       same way, which the connector checks against the random `state` it put in the sign-in
-      address. **What this trusts**: the encryption runs in the code MoneyKata serves, so a
-      compromised MoneyKata could serve altered code and capture credentials typed after the
+      address. **What this trusts**: the encryption runs in the code MoolaKata serves, so a
+      compromised MoolaKata could serve altered code and capture credentials typed after the
       compromise. It can never open credentials sent before.
 
       ```
-       owner's browser              MoneyKata                      connector (unlocked)
+       owner's browser              MoolaKata                      connector (unlocked)
         | GET /ui/api/connector        |                                 |
         |----------------------------->| sealing public key, fingerprint |
         | seals {username, password,   |                                 |
@@ -305,9 +305,9 @@ ask it for anything. People give it its words on **its page**, which it serves i
         |                              |<--------------------------------|
         |                              | deletes the box                 |
       ```
-   2. **Typed on the connector's host** (the stricter way): MoneyKata shows the command,
-      `docker compose exec connector moneykata-connector connect <connection id>`, and an admin
-      runs it and types the credentials there. MoneyKata never handles them at all; the admin
+   2. **Typed on the connector's host** (the stricter way): MoolaKata shows the command,
+      `docker compose exec connector moolakata-connector connect <connection id>`, and an admin
+      runs it and types the credentials there. MoolaKata never handles them at all; the admin
       does. The connector files them bound as below, so it must already know the Connection
       from a report; `connect` reports first when it doesn't, and shows the host the
       credentials will go to, and files them only once the admin confirms it.
@@ -318,7 +318,7 @@ ask it for anything. People give it its words on **its page**, which it serves i
       Connection's settings name. Before every run it compares that bound host with what the
       settings name now: if they differ, it sends nothing, drops the credential, and reports
       the Connection as *needs a sign-in: the server address changed from A to B*, so the owner
-      enters the credentials again, knowingly, for the new host. A compromised MoneyKata, or
+      enters the credentials again, knowingly, for the new host. A compromised MoolaKata, or
       anyone who can change a Connection's settings, can therefore never redirect a stored
       password to a host of their choosing.
 
@@ -328,7 +328,7 @@ ask it for anything. People give it its words on **its page**, which it serves i
         |     yes -> POST the OFX request to that host, and only there
         |     no  -> send nothing; delete the credential; report needs-sign-in
       ```
-8. **What drivers send**: files MoneyKata already imports, posted for one account through the
+8. **What drivers send**: files MoolaKata already imports, posted for one account through the
    same import as an upload (S1.3): OFX or QFX, CSV with the account's saved mapping, or a PDF
    statement. Imports are idempotent, so a repeated post adds nothing. A post counts against
    the upload limit of the Connection's owner (S13.7.5.3); refused for the limit, the connector
@@ -337,9 +337,9 @@ ask it for anything. People give it its words on **its page**, which it serves i
    pairing's confirmation, are held in memory: after a restart the drivers fetch again, and the
    import's idempotence drops what arrived before. A file refused for any other reason is
    dropped, and its Connection shows the refusal. A PDF is kept without reading (S1.3.3.6), or,
-   where MoneyKata reads that kind, waits in the account's inbox for its owner to check:
+   where MoolaKata reads that kind, waits in the account's inbox for its owner to check:
    nothing read from a PDF is saved unchecked. Every post is recorded in Activity as *by
-   MoneyKata Connector, Alice's Schwab login*.
+   MoolaKata Connector, Alice's Schwab login*.
 9. **The first drivers**, for the average cases. A driver pushes what it fetches from its
    institution; an institution with nothing to fetch from, such as UMB, is kept current by
    files its owner downloads and uploads (S1.3), since the downloads land on the owner's
@@ -362,44 +362,44 @@ ask it for anything. People give it its words on **its page**, which it serves i
       notes](https://schwab-py.readthedocs.io/en/latest/auth.html), kept in
       `docs/external/schwab-py-auth.rst`.
 10. **Packaging**: `install/compose.yaml` carries the `connector` service, from the
-    `moneykata-connector` image of the same version, `restart: unless-stopped`, read only, all
+    `moolakata-connector` image of the same version, `restart: unless-stopped`, read only, all
     capabilities dropped, its page's port (37374) its only published one, and its own volume.
     On TrueNAS it is an app of its own (`install/compose.connector-truenas.yaml`).
     `docs/operations.md` covers installing it, its words, unlocking after a restart, pairing,
     running it on another machine instead, and unpairing a lost one.
 11. **Its page.** The connector serves one small page of its own, so a household makes its
-    vault, gives its words after a restart and pairs it from a browser, as MoneyKata's own
-    welcome and locked screen work (S15.4), while MoneyKata never sees the words: the page is
-    the connector's, on its own port, and MoneyKata only links to it.
-    1. **Where**: HTTPS on port 37374 (`MONEYKATA_CONNECTOR_PORT`), with a certificate of its
+    vault, gives its words after a restart and pairs it from a browser, as MoolaKata's own
+    welcome and locked screen work (S15.4), while MoolaKata never sees the words: the page is
+    the connector's, on its own port, and MoolaKata only links to it.
+    1. **Where**: HTTPS on port 37374 (`MOOLAKATA_CONNECTOR_PORT`), with a certificate of its
        own, made at its first start, kept in `tls/` in its volume and good for 825 days,
-       naming `localhost` and each name in `MONEYKATA_CONNECTOR_NAMES` (the addresses
+       naming `localhost` and each name in `MOOLAKATA_CONNECTOR_NAMES` (the addresses
        browsers use, separated by commas); or the certificate and key named by
-       `MONEYKATA_CONNECTOR_TLS_CERT` and `MONEYKATA_CONNECTOR_TLS_KEY`. Its address, the
+       `MOOLAKATA_CONNECTOR_TLS_CERT` and `MOOLAKATA_CONNECTOR_TLS_KEY`. Its address, the
        first of those names with the port, goes in every report (`page`,
        `docs/connector-protocol.md`), and Settings › Connector links to it.
-    2. **The welcome**: with no vault, the page says **Welcome to MoneyKata Connector** and
+    2. **The welcome**: with no vault, the page says **Welcome to MoolaKata Connector** and
        offers **Show my words**: a new key on every visit, held in memory only (an hour each,
        20 at most), shown as its 12 words with the vault's fingerprint; three of them typed
        back make the vault, unlocked, and drop every other key on offer. Whoever reaches a
        connector with no vault first can make it: one whose page asks for words nobody wrote
        down is stopped, its volume emptied, and started again.
-    3. **Its status, for anyone who opens it**: locked or unlocked, the MoneyKata address it
+    3. **Its status, for anyone who opens it**: locked or unlocked, the MoolaKata address it
        is paired with (or not paired) and the connector's fingerprint, whether the pairing is
-       confirmed, its last report and whether MoneyKata answered, how many Connections are
+       confirmed, its last report and whether MoolaKata answered, how many Connections are
        working and how many need attention, and its version. Never an institution, a
        Connection's name, an account or a credential.
     4. **Its actions, each a form that takes the words**: **Unlock**; **Lock**; **Pair**, with
-       MoneyKata's pairing code (the words unlock a locked vault first), after which it shows
+       MoolaKata's pairing code (the words unlock a locked vault first), after which it shows
        the connector's fingerprint to compare with Settings › Connector, where an admin
        confirms it (S18.4.2); **Unpair**, which forgets the pairing and the credentials kept
-       for that server, as MoneyKata's Unpair makes it do (S18.4.4); and **Reset**, which
+       for that server, as MoolaKata's Unpair makes it do (S18.4.4); and **Reset**, which
        also asks for RESET to be typed (S18.3.4). The page never takes or shows a
-       credential: those are sealed in MoneyKata (S18.7.1) or typed on the host (S18.7.2).
+       credential: those are sealed in MoolaKata (S18.7.1) or typed on the host (S18.7.2).
     5. **How it is built**: forms the connector renders itself, with no JavaScript, from the
        standard library's HTTP server and `ssl` and the `cryptography` the core has
        (S18.1.2). Its content policy allows its own stylesheet and nothing else; forms post
        only to itself, and one from another origin is refused; no answer is cached or framed;
-       a form's body is at most 16 KB. Its stylesheet uses MoneyKata's colour and type tokens,
+       a form's body is at most 16 KB. Its stylesheet uses MoolaKata's colour and type tokens,
        light and dark as the browser prefers, and a test fails when the two differ, so they
        read as one product.

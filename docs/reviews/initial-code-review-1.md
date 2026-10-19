@@ -4,8 +4,8 @@
 out-of-scope, rejected ideas), read whole; `docs/schema.md`, `docs/link-protocol.md`,
 `docs/connector-protocol.md` and `docs/operations.md` where the requirements lean on them;
 and, to check what the requirements claim against what was built, a reading of
-`web/server/src/moneykata/keys/`, `store/maintenance.py`, `store/repos/secrets.py`,
-`auth/twostep.py`, `links/copy.py` and `connector/moneykata_connector/{keys,vault}.py`.
+`web/server/src/moolakata/keys/`, `store/maintenance.py`, `store/repos/secrets.py`,
+`auth/twostep.py`, `links/copy.py` and `connector/moolakata_connector/{keys,vault}.py`.
 
 **Ranks** follow `gaps.md`: **High** blocks the first release, **Med** is needed before it,
 **Low** can follow it. Nothing here has been written into the requirements, `gaps.md` or
@@ -23,7 +23,7 @@ where a section states a protection that the surrounding design does not deliver
 |---|---|---|
 | F1 | High | A leaked master key or phrase is handled as a key problem (rotate); it is a data problem (every copy ever made is open), and the text points admins the wrong way |
 | F2 | High | The connector's identity and sealing keys sit unencrypted beside the vault, so "a stolen disk yields nothing" (S18.2.4) is false: it yields impersonation and every credential entered afterwards |
-| F3 | High | A compromised MoneyKata can steer the connector: Connection `settings` (`url`, `path`, `rules`) come from MoneyKata, so it can redirect OFX credentials to any host and read files off the connector's volume. S18.2.4 says it "gets no credential" |
+| F3 | High | A compromised MoolaKata can steer the connector: Connection `settings` (`url`, `path`, `rules`) come from MoolaKata, so it can redirect OFX credentials to any host and read files off the connector's volume. S18.2.4 says it "gets no credential" |
 | F4 | Med | The per-secret layer protects against a threat that does not exist in this design; S14.4 and S15.3.3 disagree on what wraps what; the lists of secrets disagree; the link key contradicts "decrypted only when used" |
 | F5 | Med | The default admin starts with a published password on a network-reachable port, with no setup token |
 | F6 | Med | Until SMTP is set, invitation and reset links sit as plain files in the data directory; S15.1 does not list the mail folder, and nothing says how an admin reads them |
@@ -55,9 +55,9 @@ it is the case S15.7.2 calls "the data key may have been exposed", and even re-e
 only protects copies made *after* it. Three consequences the text gets wrong or leaves out:
 
 1. **"The date after which the previous key is no longer needed"** is computed from
-   MoneyKata's own backup pruning (S14.6). A NAS snapshot, a cloud bucket with versioning,
+   MoolaKata's own backup pruning (S14.6). A NAS snapshot, a cloud bucket with versioning,
    a Proxmox or TrueNAS replication (operations §2.1–2.2) and any copy made by hand keep
-   backups that MoneyKata never prunes. The date is wrong for every household that followed
+   backups that MoolaKata never prunes. The date is wrong for every household that followed
    S15.6.7's advice, and destroying the previous key on that date can also strand their own
    off-site backups.
 2. **The only remedy for a leaked phrase is**: revoke secrets at source (S15.8.3), re-encrypt
@@ -94,24 +94,24 @@ so a locked connector can still report." `connector-protocol.md` §2.1: both the
 (Ed25519) and the **sealing key** (X25519) are "kept beside its vault, not in it".
 `keys.py` saves both private keys base64 in a plain file. S18.2.4 then claims: "a stolen
 disk, backup or powered-off machine yields nothing, since the vault opens only with the
-words", and "a compromised connector … can read nothing from MoneyKata".
+words", and "a compromised connector … can read nothing from MoolaKata".
 
 **The problem.** A copy of the connector's volume gives the thief:
 
-- the **identity key**: they are now the paired connector to MoneyKata. Every report
+- the **identity key**: they are now the paired connector to MoolaKata. Every report
   answer hands them every live Connection's `settings` (OFX `url`, `accountId`, `bankId`
   routing numbers, Schwab `appKey`), owner names, labels, account ids, institution-account
   names with last four digits, and they can post files into every synced account;
 - the **sealing key**: every credential sealed in the browser from then on (S18.7.1) is
   collected in a report answer and opens with it. The owner typing their Schwab password
-  into MoneyKata has no way to know a clone is collecting it.
+  into MoolaKata has no way to know a clone is collecting it.
 
 Only the credentials already in the vault stay closed. "Yields nothing" and "can read
 nothing" are both false, and the gap is exploitable from a lost laptop (S18.1 invites running
 the connector on one).
 
 **Done.** The sealing key's private half is made at pairing and filed in the vault (`pair`
-needs the vault unlocked); `pairing.json` holds only the public half; MoneyKata hands a sealed
+needs the vault unlocked); `pairing.json` holds only the public half; MoolaKata hands a sealed
 box only to a connector reporting unlocked; S18.2.4 states what each thing taken yields;
 operations §8.13 says to Unpair a lost host.
 
@@ -119,38 +119,38 @@ operations §8.13 says to Unpair a lost host.
 **put the sealing key in the vault**: a locked connector cannot use a credential anyway, so
 it has no need to open a box. State plainly what the identity key alone yields (impersonation
 until Unpair, settings and account labels), tell admins to **Unpair when a connector host is
-lost**, and have MoneyKata alert when a report arrives from a new client address or with a
+lost**, and have MoolaKata alert when a report arrives from a new client address or with a
 new `MK-Conn-Version` after a silence, since nothing else distinguishes a clone. Consider
-letting MoneyKata hold the sealed box only while the connector reports *unlocked*.
+letting MoolaKata hold the sealed box only while the connector reports *unlocked*.
 
-### F3 (High): MoneyKata controls where the connector sends credentials and what it reads
+### F3 (High): MoolaKata controls where the connector sends credentials and what it reads
 
 **What the requirements say.** `connector-protocol.md` §4.2: the report's answer carries each
 Connection's `settings`; §6: `ofx-direct`'s settings include `url`, and "a driver's host is
 the one it declares, or, for OFX Direct Connect, **the server its owner named in the
 settings**"; the Folder driver's `path` and `rules` likewise. S18.2.4: "A compromised
-MoneyKata gets no credential, and can't reach or command the connector."
+MoolaKata gets no credential, and can't reach or command the connector."
 
-**The problem.** Settings are commands. A compromised MoneyKata (or an admin with a Share
+**The problem.** Settings are commands. A compromised MoolaKata (or an admin with a Share
 write on the owner's settings, if ever allowed) changes a Connection's `url` to a host it
 controls, and the connector's next run sends the stored OFX username and password there,
 inside the allowlist, because the allowlist is derived from the same settings. For the
 Folder driver it sets `path` to the connector's own volume and `rules` to `* → <any
 account>`: the connector then posts its vault file and its **plain keys file** (F2) to
-MoneyKata as "statements". `file-refused` does not help when the receiver is the attacker.
+MoolaKata as "statements". `file-refused` does not help when the receiver is the attacker.
 
 **Done.** A credential is filed with the host its Connection's settings name (S18.7.3); a
 changed host sends nothing, drops the credential and reports *needs a sign-in*; the Folder
-driver is rooted at the watched folder mounted at `/watch`, and MoneyKata refuses a path that
+driver is rooted at the watched folder mounted at `/watch`, and MoolaKata refuses a path that
 reaches outside it at the form.
 
 **Suggested change.** The connector must **bind a credential to its destination when the
 credential is filed**: the OFX `url` (host) is stored in the vault entry next to the
-password, and a later change from MoneyKata is refused until the owner re-enters the
+password, and a later change from MoolaKata is refused until the owner re-enters the
 credentials, with the Connection reported as *needs a sign-in: the server address changed*.
 The Folder driver's root is **fixed on the connector's host** (the mount point in
-`compose.yaml`), and `path` from MoneyKata is relative to it, with `..` refused. Rewrite
-S18.2.4 to say what a compromised MoneyKata can still do: alter the code that seals (already
+`compose.yaml`), and `path` from MoolaKata is relative to it, with `..` refused. Rewrite
+S18.2.4 to say what a compromised MoolaKata can still do: alter the code that seals (already
 admitted in S18.7.1), and steer drivers within what they are pinned to.
 
 ### F4 (Med): the per-secret layer's rationale, and three disagreements about it
@@ -295,7 +295,7 @@ S15.6.2, 7 and 9 are reworded, 8 signs manifests, 10 locks the address.
    rotation. Showing the phrase again (S15.6.1), and writing it to `--file`, is the more
    sensitive act and is recorded nowhere. Record it in Activity, and tell the admin to
    delete the sheet file after printing.
-2. **S15.4.6 "to record the previous key in it"** reads as key material in `moneykata.toml`,
+2. **S15.4.6 "to record the previous key in it"** reads as key material in `moolakata.toml`,
    which operations §1 calls "never a secret". The code records a path and a fingerprint.
    Say "to record the previous key's file and fingerprint".
 3. **The SQLCipher key travels inside SQL text** (`PRAGMA key = "x'…'"`, `PRAGMA rekey`).
@@ -336,8 +336,8 @@ queuing host commands for Activity with no "who", which S15.4.7 says.
 | C2 | S14.4 vs S15.3.3 | Secrets' data keys wrapped under "a key derived from the master key" vs under the secrets key from the data key (F4.2). |
 | C3 | S15.1.3 vs S14.4 | Two-step seeds are secrets in one list and absent from the other (F4.3). |
 | C4 | S18.2.4 vs S18.4.5, `connector-protocol.md` §2.1 | "A stolen disk yields nothing" vs private keys kept plain beside the vault (F2). |
-| C5 | S18.2.4 vs `connector-protocol.md` §4.2, §6 | "A compromised MoneyKata gets no credential, and can't … command the connector" vs settings, including the OFX host and the folder path, sent by MoneyKata (F3). |
-| C6 | S18.2.4 vs `connector-protocol.md` §4.2 | "A compromised connector … can read nothing from MoneyKata" vs the report answer carrying every Connection's settings, labels, owner names and account last-fours. |
+| C5 | S18.2.4 vs `connector-protocol.md` §4.2, §6 | "A compromised MoolaKata gets no credential, and can't … command the connector" vs settings, including the OFX host and the folder path, sent by MoolaKata (F3). |
+| C6 | S18.2.4 vs `connector-protocol.md` §4.2 | "A compromised connector … can read nothing from MoolaKata" vs the report answer carrying every Connection's settings, labels, owner names and account last-fours. |
 | C7 | R1.13 vs S15.1.7, S16.2, S13.3 | "Everything the server stores is encrypted at rest" vs the mail folder (F6) and the TLS key (F10), neither listed among the exceptions. |
 | C8 | S15.3.4 vs `link-protocol.md` §2.1 | "Decrypted only when used, for that one call" vs the link key signing every call and answer (F4.4). |
 | C9 | S15.7.2 vs S15.8.1.2 | Re-encryption "rarely needed, only when the data key may have been exposed" vs a lost sheet or key file, which exposes the data key through any copy (F1). |
@@ -395,7 +395,7 @@ Each would take the next free G id when recorded. Ranked as `gaps.md` ranks.
 ## 5. Observations that need no change, recorded so they are not re-raised
 
 - **The key hierarchy as built matches S15.3**: 16-byte master, HKDF with the labels
-  `moneykata master`, `moneykata database`, `moneykata receipts`, `moneykata secrets`,
+  `moolakata master`, `moolakata database`, `moolakata receipts`, `moolakata secrets`,
   keyring with AAD naming the master key id, per-secret AES-GCM with AAD
   `record type ␟ id ␟ field`, `PRAGMA rekey` and file re-wrapping for Re-encrypt.
 - **Nonce use is safe**: one message per secret data key, random 96-bit nonces for the

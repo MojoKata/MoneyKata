@@ -44,7 +44,7 @@ When money in has its own column.
 
 ## Running balance column {#map-balance}
 
-Optional. Every row's balance is then checked against MoneyKata's.
+Optional. Every row's balance is then checked against MoolaKata's.
 
 ## Memo column {#map-memo}
 

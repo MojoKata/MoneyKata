@@ -1,0 +1,244 @@
+/* The connector's page (requirements S18.11.5): MoolaKata's colour and type tokens, dark first
+   and light as the browser prefers, held equal to web/ui/styles/tokens.css by a test. */
+:root {
+  color-scheme: dark;
+  --sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --bg: #0e1013;
+  --bg-2: #14171c;
+  --bg-3: #1b1f26;
+  --bg-4: #232832;
+  --inset: #0a0c0f;
+  --fg: #e7eaf0;
+  --fg-dim: #b0b7c3;
+  --fg-muted: #8a93a1;
+  --border: #252a33;
+  --border-strong: #353c48;
+  --accent: #8fd3a6;
+  --on-accent: #0b1f13;
+  --ok: #6fcf8e;
+  --deny: #f06b78;
+  --ask: #f2c14e;
+  --ok-bg: #6fcf8e1f;
+  --deny-bg: #f06b781f;
+  --ask-bg: #f2c14e1f;
+  --info-bg: #7aa7ff1f;
+  --r: 10px;
+  --control: 38px;
+  --c1: #7aa7ff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f6f7f9;
+    --bg-2: #ffffff;
+    --bg-3: #f0f2f5;
+    --bg-4: #e6e9ee;
+    --inset: #ffffff;
+    --fg: #161a20;
+    --fg-dim: #444c58;
+    --fg-muted: #626a77;
+    --border: #e1e4ea;
+    --border-strong: #cdd2da;
+    --accent: #237a49;
+    --on-accent: #ffffff;
+    --ok: #1f8a4c;
+    --deny: #c43345;
+    --ask: #8a5f00;
+    --ok-bg: #1f8a4c14;
+    --deny-bg: #c4334514;
+    --ask-bg: #9a6a0014;
+    --info-bg: #2f5fd014;
+    --c1: #2f6fd0;
+  }
+}
+
+html,
+body {
+  margin: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.45 var(--sans);
+}
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+h2 {
+  margin: 14px 0 4px;
+  font-size: 21px;
+}
+p {
+  margin: 0 0 12px;
+}
+code,
+.mono {
+  font-family: var(--mono);
+}
+.small {
+  font-size: 12.5px;
+}
+.dim {
+  color: var(--fg-muted);
+}
+.auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  width: 380px;
+  max-width: 100%;
+  padding: 28px;
+  box-sizing: border-box;
+}
+.acct-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand {
+  font-size: 17px;
+}
+.logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--c1));
+  display: grid;
+  place-items: center;
+  color: var(--on-accent);
+  font-weight: 800;
+  flex: none;
+}
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.list-item:last-child {
+  border-bottom: 0;
+}
+.list-item .grow {
+  flex: 1;
+  color: var(--fg-muted);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 99px;
+  padding: 1px 8px;
+  font-size: 11.5px;
+  border: 1px solid var(--border-strong);
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+.pill.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-color: transparent;
+}
+.pill.warn {
+  background: var(--ask-bg);
+  color: var(--ask);
+  border-color: transparent;
+}
+.notice {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--info-bg);
+  color: var(--fg-dim);
+  font-size: 13px;
+  margin: 12px 0;
+}
+.notice.bad {
+  background: var(--deny-bg);
+  color: var(--fg);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 14px 0;
+}
+.field span {
+  font-size: 12.5px;
+  color: var(--fg-dim);
+}
+.field small {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+input.in {
+  height: var(--control);
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--inset);
+  padding: 0 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.btn {
+  height: var(--control);
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-3);
+  color: var(--fg);
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--bg-4);
+}
+.btn.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.btn.danger {
+  color: var(--deny);
+}
+.btn.wide {
+  width: 100%;
+  justify-content: center;
+}
+.row,
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 14px 0 10px;
+}
+.spacer {
+  flex: 1;
+}
+.words {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 14px;
+  margin: 6px 0 12px;
+}
+.fingerprint {
+  font-family: var(--mono);
+  font-size: 22px;
+  text-align: center;
+  margin: 10px 0 14px;
+}

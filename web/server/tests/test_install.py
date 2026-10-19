@@ -8,9 +8,9 @@ import tomllib
 
 import yaml
 
-from moneykata import config, paths
-from moneykata.dev import wheels
-from moneykata.keys.cli import SERVER_UID
+from moolakata import config, paths
+from moolakata.dev import wheels
+from moolakata.keys.cli import SERVER_UID
 
 INSTALL = paths.WEB / "install"
 REGISTRY = "ghcr.io/mojokata"  # where releases are published (S17.8.2)
@@ -19,7 +19,7 @@ COMPOSE = {
     name: yaml.safe_load((INSTALL / name).read_text())
     for name in ("compose.yaml", "compose.tls.yaml")
 }
-EXAMPLE = config.parse(tomllib.loads((INSTALL / "moneykata.toml").read_text()), "moneykata.toml")
+EXAMPLE = config.parse(tomllib.loads((INSTALL / "moolakata.toml").read_text()), "moolakata.toml")
 
 
 def _mounts(service: dict) -> dict[str, tuple[str, bool]]:
@@ -35,8 +35,8 @@ def test_the_image_runs_as_the_server_account_on_its_port():
     assert f"USER {SERVER_UID}:{SERVER_UID}" in DOCKERFILE
     assert f"useradd --uid {SERVER_UID} --gid {SERVER_UID}" in DOCKERFILE
     assert f"EXPOSE {config.DEFAULT_PORT}" in DOCKERFILE
-    assert 'ENTRYPOINT ["moneykata"]' in DOCKERFILE and 'CMD ["serve"]' in DOCKERFILE
-    assert re.search(r'HEALTHCHECK .*\n\s+CMD \["moneykata", "health"\]', DOCKERFILE)
+    assert 'ENTRYPOINT ["moolakata"]' in DOCKERFILE and 'CMD ["serve"]' in DOCKERFILE
+    assert re.search(r'HEALTHCHECK .*\n\s+CMD \["moolakata", "health"\]', DOCKERFILE)
 
 
 def test_the_image_is_built_from_pinned_sources():
@@ -60,43 +60,43 @@ def test_the_image_makes_the_directories_the_example_config_names():
 
 def test_every_compose_service_runs_the_image_of_this_version():
     tags = {
-        f"{REGISTRY}/moneykata:{paths.version()}",
-        f"{REGISTRY}/moneykata-connector:{paths.version()}",
+        f"{REGISTRY}/moolakata:{paths.version()}",
+        f"{REGISTRY}/moolakata-connector:{paths.version()}",
     }
     for name, compose in COMPOSE.items():
         for service, spec in compose["services"].items():
             assert spec["image"] in tags, f"{name}: {service} runs {spec['image']}"
         assert compose["services"]["connector"]["image"].startswith(
-            f"{REGISTRY}/moneykata-connector:"
+            f"{REGISTRY}/moolakata-connector:"
         )
 
 
 CONNECTOR_PORT = int(
     re.search(
         r"^PORT = (\d+)$",
-        (paths.ROOT / "connector" / "moneykata_connector" / "page.py").read_text(),
+        (paths.ROOT / "connector" / "moolakata_connector" / "page.py").read_text(),
         re.M,
     ).group(1)
 )
 
 
 def test_the_connector_service_is_apart_locked_down_and_reaches_nothing_in():
-    """Its own volume that MoneyKata never mounts, its page's port the only one published,
+    """Its own volume that MoolaKata never mounts, its page's port the only one published,
     read only, all capabilities dropped (S18.2.1, S18.10, S18.11); its socket on a tmpfs
     inside the container."""
     for name, compose in COMPOSE.items():
         c = compose["services"]["connector"]
         assert c["ports"] == [f"{CONNECTOR_PORT}:{CONNECTOR_PORT}"], name
-        assert "MONEYKATA_CONNECTOR_NAMES" in c["environment"], name
+        assert "MOOLAKATA_CONNECTOR_NAMES" in c["environment"], name
         assert c["restart"] == "unless-stopped", name
         assert c["read_only"] is True and c["cap_drop"] == ["ALL"], name
         assert "no-new-privileges:true" in c["security_opt"], name
-        assert any(x.startswith("/run/moneykata-connector:uid=10002") for x in c["tmpfs"]), name
+        assert any(x.startswith("/run/moolakata-connector:uid=10002") for x in c["tmpfs"]), name
         mounts = _mounts(c)
-        assert "/var/lib/moneykata-connector" in mounts, name
-        assert mounts["/var/lib/moneykata-connector"][0] == "connector-data", name
+        assert "/var/lib/moolakata-connector" in mounts, name
+        assert mounts["/var/lib/moolakata-connector"][0] == "connector-data", name
         assert "connector-data" in compose["volumes"], name
-        server = _mounts(compose["services"]["moneykata"])
+        server = _mounts(compose["services"]["moolakata"])
         assert not any(h == "connector-data" for h, _ in server.values()), name
         for h, _ in mounts.values():
             assert h not in {h2 for h2, _ in server.values()}, f"{name}: a mount shared"
@@ -109,7 +109,7 @@ def test_the_connector_service_is_apart_locked_down_and_reaches_nothing_in():
 def test_the_server_service_is_locked_down_and_mounts_no_key():
     """The master key is a phrase, never a file (S15.4): nothing named keys is mounted."""
     for name, compose in COMPOSE.items():
-        service = compose["services"]["moneykata"]
+        service = compose["services"]["moolakata"]
         assert service["read_only"] is True, name
         assert service["cap_drop"] == ["ALL"], name
         assert "no-new-privileges:true" in service["security_opt"], name
@@ -118,7 +118,7 @@ def test_the_server_service_is_locked_down_and_mounts_no_key():
         # on-failure would leave down (S13.6).
         assert service["restart"] == "unless-stopped", name
         mounts = _mounts(service)
-        assert mounts[str(config.DEFAULT_CONFIG)][1], f"{name}: moneykata.toml must be read only"
+        assert mounts[str(config.DEFAULT_CONFIG)][1], f"{name}: moolakata.toml must be read only"
         assert not mounts[str(EXAMPLE.data_dir)][1] and not mounts[str(EXAMPLE.backup_dir)][1]
         # And the host's time zone, read only, which backups and daily emails follow (S14.9.2).
         assert mounts["/etc/localtime"] == ("/etc/localtime", True), name
@@ -142,7 +142,7 @@ def test_host_commands_have_their_socket_and_the_proxy_is_trusted_alone():
 
     folder = str(config.DEFAULT_SOCKET.parent)
     for name, compose in COMPOSE.items():
-        tmpfs = compose["services"]["moneykata"]["tmpfs"]
+        tmpfs = compose["services"]["moolakata"]["tmpfs"]
         assert f"{folder}:uid={SERVER_UID},gid={SERVER_UID},mode=0700" in tmpfs, name
     assert EXAMPLE.trusted_proxies
     subnet = ipaddress.ip_network(
@@ -160,10 +160,10 @@ def test_the_published_port_fits_each_mode():
     """Behind a reverse proxy the plain-HTTP listener is published on the host's loopback only;
     the proxy examples reach it by service name. The tls example serves the LAN itself."""
     port = config.DEFAULT_PORT
-    assert COMPOSE["compose.yaml"]["services"]["moneykata"]["ports"] == [f"127.0.0.1:{port}:{port}"]
-    assert COMPOSE["compose.tls.yaml"]["services"]["moneykata"]["ports"] == [f"{port}:{port}"]
+    assert COMPOSE["compose.yaml"]["services"]["moolakata"]["ports"] == [f"127.0.0.1:{port}:{port}"]
+    assert COMPOSE["compose.tls.yaml"]["services"]["moolakata"]["ports"] == [f"{port}:{port}"]
     for example in (INSTALL / "proxy").iterdir():
-        assert f"moneykata:{port}" in example.read_text(), example.name
+        assert f"moolakata:{port}" in example.read_text(), example.name
 
 
 def test_no_service_runs_as_root_and_the_key_commands_need_none():
@@ -171,11 +171,11 @@ def test_no_service_runs_as_root_and_the_key_commands_need_none():
     directory, which the server's account owns (S15.4.4)."""
     for name, compose in COMPOSE.items():
         services = compose["services"]
-        assert set(services) == {"moneykata", "connector"}, name
+        assert set(services) == {"moolakata", "connector"}, name
         for service, spec in services.items():
             assert "user" not in spec, f"{name}: {service} must run as the image's user"
     text = (INSTALL / "compose.yaml").read_text()
-    assert "docker compose run --rm moneykata keys init" in text
+    assert "docker compose run --rm moolakata keys init" in text
     assert "keys unlock" in text
 
 
@@ -210,7 +210,7 @@ def _one_time_step(compose: dict, service: str, uid: int, owned: list[str]) -> N
 def test_the_truenas_app_keeps_the_compose_files_promises():
     """install/compose.truenas.yaml (S17.8.3), which docs/DEPLOY.md shows to paste, is the tls
     example's server with the datasets for host paths and its configuration in
-    MONEYKATA_CONFIG (S17.8), after a one-time step that gives the datasets to its account:
+    MOOLAKATA_CONFIG (S17.8), after a one-time step that gives the datasets to its account:
     the same lockdown, port, restart and logs, and the version being built; nothing typed in a
     shell."""
     truenas = yaml.safe_load((INSTALL / "compose.truenas.yaml").read_text())
@@ -229,11 +229,11 @@ def test_the_truenas_app_keeps_the_compose_files_promises():
     assert {k: v for k, v in app.items() if k not in differ} == {
         k: v for k, v in example.items() if k not in differ
     }
-    assert set(_mounts(app)) == {"/var/lib/moneykata-connector", "/etc/localtime"}
-    assert app["environment"]["MONEYKATA_CONNECTOR_NAMES"]
-    _one_time_step(connector, "connector", 10002, ["/var/lib/moneykata-connector"])
-    app = truenas["services"]["moneykata"]
-    tls = COMPOSE["compose.tls.yaml"]["services"]["moneykata"]
+    assert set(_mounts(app)) == {"/var/lib/moolakata-connector", "/etc/localtime"}
+    assert app["environment"]["MOOLAKATA_CONNECTOR_NAMES"]
+    _one_time_step(connector, "connector", 10002, ["/var/lib/moolakata-connector"])
+    app = truenas["services"]["moolakata"]
+    tls = COMPOSE["compose.tls.yaml"]["services"]["moolakata"]
     differ = {"volumes", "environment", "depends_on"}
     assert {k: v for k, v in app.items() if k not in differ} == {
         k: v for k, v in tls.items() if k not in differ
@@ -243,9 +243,9 @@ def test_the_truenas_app_keeps_the_compose_files_promises():
     given = config.configured(None, app["environment"])
     assert (given.mode, given.port) == ("tls", 37373) and given.cert_names
     assert {str(given.data_dir), str(given.backup_dir)} <= set(_mounts(app))
-    _one_time_step(truenas, "moneykata", SERVER_UID, [str(given.data_dir), str(given.backup_dir)])
+    _one_time_step(truenas, "moolakata", SERVER_UID, [str(given.data_dir), str(given.backup_dir)])
     version = paths.version()
-    tags = re.findall(r"moneykata[:-](\d+\.\d+\.\d+)", guide)
+    tags = re.findall(r"moolakata[:-](\d+\.\d+\.\d+)", guide)
     assert tags and set(tags) == {version}, f"the guide names {set(tags)}, the build {version}"
 
 

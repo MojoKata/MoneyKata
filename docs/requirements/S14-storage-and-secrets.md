@@ -55,9 +55,9 @@
    written once and rewritten only by a re-encryption (S15.7.2). The backup directory therefore
    belongs inside what the host backs up, not on a disk apart. The server makes and verifies
    (`PRAGMA integrity_check`) the copies itself, never while a re-encryption runs (S15.7.2),
-   and prunes the oldest beyond the number kept (**backup pruning**). `moneykata db backup`
+   and prunes the oldest beyond the number kept (**backup pruning**). `moolakata db backup`
    makes one at once, through the running server or, with the server stopped, on its own
-   (S15.4.7), and `moneykata db verify-backup` checks one (the newest by default) without
+   (S15.4.7), and `moolakata db verify-backup` checks one (the newest by default) without
    changing it: every file against the manifest's hashes, the manifest against its own
    authentication code (HMAC-SHA256 under a key derived from the backup's data key, so a backup
    swapped for an older one or a manifest rewritten to match a changed file is caught by
@@ -70,7 +70,7 @@
    pulled again (S11.9.9); files the restored database does not name are counted in Settings ›
    Storage, with **Remove** (S16.17). The restore is documented, and tested by a check.
 7. **Financial data at rest** is encrypted with the rest of the database (S15.1). Ordinary
-   SQLite tools can't read it. `moneykata db shell` opens it on the host, with the recovery
+   SQLite tools can't read it. `moolakata db shell` opens it on the host, with the recovery
    phrase typed; that it was opened, like every `db` and `keys` command run on the host, is
    queued in the data directory and recorded in Activity for admins at the next unlock or
    within a quarter of an hour (S15.4.7).

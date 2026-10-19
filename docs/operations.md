@@ -1,24 +1,24 @@
-# Running MoneyKata
+# Running MoolaKata
 
-How to install, upgrade, watch, back up and restore a MoneyKata server. The requirements say
+How to install, upgrade, watch, back up and restore a MoolaKata server. The requirements say
 what the server does (S13 architecture, S14 storage, S15 the master key, S17.8 packaging);
 this page says what to do. Commands are run from the folder holding `compose.yaml`.
 
 ## 1. What runs where
 
-One container, from one image (`moneykata:<version>`), as an unprivileged user (uid 10001),
+One container, from one image (`moolakata:<version>`), as an unprivileged user (uid 10001),
 listening on port 37373. It needs three things from the host, and one thing from a person:
 
 | On the host     | In the container          | Holds                                          |
 |-----------------|---------------------------|------------------------------------------------|
-| `data/`         | `/var/lib/moneykata`      | the database, its keyring, receipts, linked copies, copies made before upgrades |
-| `backups/`      | `/var/backups/moneykata`  | the daily backups                               |
-| `moneykata.toml`| `/etc/moneykata.toml` (read only) | the configuration; never a secret       |
+| `data/`         | `/var/lib/moolakata`      | the database, its keyring, receipts, linked copies, copies made before upgrades |
+| `backups/`      | `/var/backups/moolakata`  | the daily backups                               |
+| `moolakata.toml`| `/etc/moolakata.toml` (read only) | the configuration; never a secret       |
 
 The master key is the **recovery phrase**, and it is never stored: a new server's page
 welcomes its first admin and shows the phrase once, and after that the server starts locked
 after every start (a restart, an upgrade, a reboot) until someone enters the phrase, on the
-locked screen in a browser or with `docker compose exec moneykata moneykata keys unlock`
+locked screen in a browser or with `docker compose exec moolakata moolakata keys unlock`
 (S15.4). Nothing on the host holds a key, so the host can be snapshotted and backed up whole.
 
 `install/compose.yaml` runs it behind the household's reverse proxy (`proxy` mode);
@@ -35,7 +35,7 @@ pass only that path from the outside, for example with Caddy:
 money.example.org {
     @link path /link/*
     handle @link {
-        reverse_proxy moneykata:37373
+        reverse_proxy moolakata:37373
     }
     respond 404
 }
@@ -45,17 +45,17 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 
 ## 2. Installing
 
-1. **Get the image.** Each release is published as `ghcr.io/mojokata/moneykata:<version>`
-   (and `ghcr.io/mojokata/moneykata-connector`), one tag for amd64 and arm64 (S17.8.2), which
+1. **Get the image.** Each release is published as `ghcr.io/mojokata/moolakata:<version>`
+   (and `ghcr.io/mojokata/moolakata-connector`), one tag for amd64 and arm64 (S17.8.2), which
    the compose files name: Docker pulls it the first time a command needs it.
-   `gh attestation verify oci://ghcr.io/mojokata/moneykata:0.1.0 --owner MojoKata` checks
+   `gh attestation verify oci://ghcr.io/mojokata/moolakata:0.1.0 --owner MojoKata` checks
    that the image is the one the release workflow built. To build it yourself instead, or to
    carry it to a host with no internet access:
 
    ```sh
-   docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moneykata:$(cat web/VERSION) --load .
-   docker save ghcr.io/mojokata/moneykata:0.1.0 | gzip > moneykata-0.1.0.tar.gz   # on the build machine
-   docker load < moneykata-0.1.0.tar.gz                                           # on the server
+   docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:$(cat web/VERSION) --load .
+   docker save ghcr.io/mojokata/moolakata:0.1.0 | gzip > moolakata-0.1.0.tar.gz   # on the build machine
+   docker load < moolakata-0.1.0.tar.gz                                           # on the server
    ```
 
    `web/install/smoke.sh [linux/arm64]` builds both images for a platform and runs them
@@ -74,13 +74,13 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    database only, and the host's own backup of both is what keeps the receipts. A further copy
    off the host is welcome, as long as the phrase never goes with it.
 3. **Start it**: `docker compose up -d`, then point the reverse proxy at it and set
-   `trusted_proxies` in `moneykata.toml` to the proxy's own address, never a whole range
+   `trusted_proxies` in `moolakata.toml` to the proxy's own address, never a whole range
    (S13.3): anything else in the range could pose as the proxy. The listener speaks plain HTTP
    in `proxy` mode, so the compose file publishes it on the host's loopback only. A proxy in
-   the same compose project (`proxy/` is written that way) reaches `moneykata:37373` by name
+   the same compose project (`proxy/` is written that way) reaches `moolakata:37373` by name
    and has an address of its own to trust, which is the setup to prefer: the compose file fixes
    the project's range at `172.30.37.0/24` and gives its commented-out proxy `172.30.37.10`,
-   the address the example `moneykata.toml` trusts. A proxy on the host reaches
+   the address the example `moolakata.toml` trusts. A proxy on the host reaches
    `127.0.0.1:37373` from the bridge's gateway, `172.30.37.1`, as every other process on the
    host does. The compose file gives the container the host's time zone (`/etc/localtime` and
    `TZ`), which backups and daily emails follow.
@@ -92,11 +92,11 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    Whoever reaches a new server first can finish its welcome; one that asks for words nobody
    wrote down is stopped, its `data/` emptied (the database too: a new key can't open the
    one left behind), and started again. On a terminal instead,
-   `docker compose run --rm moneykata keys init` makes the key before the first start (it
+   `docker compose run --rm moolakata keys init` makes the key before the first start (it
    shows the phrase on the terminal only, never in Docker's logs); the page then sets up the
    first admin at the first unlock.
 5. **Unlock it after every start**: it starts locked. Open the app and enter the phrase on the
-   locked screen, or run `docker compose exec moneykata moneykata keys unlock` and type it
+   locked screen, or run `docker compose exec moolakata moolakata keys unlock` and type it
    there.
 
 ### 2.1 On Proxmox
@@ -116,7 +116,7 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 with nothing typed in a shell: two datasets for data and backups; a **custom app** from
 **Install via YAML** (`install/compose.truenas.yaml`), with the datasets as host paths, a
 one-time `permissions` step that gives them to uid 10001, and the configuration in
-`MONEYKATA_CONFIG` (the same TOML as `moneykata.toml`, which the server reads when no file is
+`MOOLAKATA_CONFIG` (the same TOML as `moolakata.toml`, which the server reads when no file is
 named with `--config`); and the welcome, which makes the key and the admin.
 Both datasets go into snapshot and replication tasks as they are: nothing in them opens
 without the phrase. Unlock after each start (§2 step 5).
@@ -127,7 +127,7 @@ without the phrase. Unlock after each start (§2 step 5).
   the host: nothing in them opens without the phrase, and a raw send of an encrypted dataset
   opens only with the dataset's own key as well. Keep the phrase out of them.
 - Every snapshot and replica is a **copy** (S15.8): it opens with the phrase of its day for
-  as long as it exists, and MoneyKata cannot see or prune it. After a rotation or a leak,
+  as long as it exists, and MoolaKata cannot see or prune it. After a rotation or a leak,
   the snapshots made before are yours to destroy, on both ends of the replication.
 - The live database file in a snapshot is crash-consistent at best; the verified copy in
   `backups/` from the same day is the one to restore from.
@@ -135,7 +135,7 @@ without the phrase. Unlock after each start (§2 step 5).
 ## 3. Upgrading
 
 1. Load the new image (`docker load`), change the image's tag in `compose.yaml` (both the
-   `moneykata` service and the key commands), and run `docker compose up -d`.
+   `moolakata` service and the key commands), and run `docker compose up -d`.
 2. At the unlock the server copies the database into `data/pre-upgrade/` and checks the copy,
    then migrates it one revision at a time. The three newest copies are kept.
 3. Unlock it (§2 step 5), then watch it come up: `/healthz` answers `ok` once it serves.
@@ -147,19 +147,19 @@ start:` line (§5.1).
 
 ## 4. Backups
 
-- **The host backs up the files.** MoneyKata's own backup never copies the receipt files,
+- **The host backs up the files.** MoolaKata's own backup never copies the receipt files,
   the linked copies or anything else in `data/`: your backup of the host does (snapshots,
   replication, any backup tool), and `data/` is safe to back up whole, since nothing in it
   opens without the phrase. Put `backups/` inside what the host backs up too.
 - **Every day** at the time in Settings › Backups, the server writes a coherent, verified
-  copy of the database with its keyring into `backups/moneykata-<date>-<time>/`, with a
+  copy of the database with its keyring into `backups/moolakata-<date>-<time>/`, with a
   `manifest.json` of each file's size and hash, so the host's backup holds a consistent
   database beside the live one it also picks up. **Backup pruning** keeps the number of
   copies set there (14 by default) and removes older ones. No backup runs while a
   re-encryption does; each waits for the other.
-- **Now**: Settings › Backups › **Back up now**, or `docker compose exec moneykata moneykata db
+- **Now**: Settings › Backups › **Back up now**, or `docker compose exec moolakata moolakata db
   backup` on the host, which asks the running server; with the server stopped, `docker compose
-  run --rm moneykata db backup`, with the phrase.
+  run --rm moolakata db backup`, with the phrase.
 - A backup opens only with the phrase of its day; each carries its own keyring, and a rotation
   re-encrypts them (§7).
 - A backup that fails raises an alert for admins (and an email, for those who chose it).
@@ -169,7 +169,7 @@ start:` line (§5.1).
 - **Clocks**: keep the host's clock with NTP (as the connector's host and every linked
   household do): signed calls between servers and from the connector are refused when the
   clocks differ by more than a minute, and two-step codes drift with them.
-- **Health**: the image checks itself every 30 seconds (`moneykata health`, which asks
+- **Health**: the image checks itself every 30 seconds (`moolakata health`, which asks
   `/healthz`): it is healthy whenever the server answers, ready, locked or uninitialised, so
   `docker compose ps` (and an orchestrator waiting for healthy containers) shows `healthy`
   while the server waits for its phrase, and `unhealthy` only when nothing answers (S13.6).
@@ -182,7 +182,7 @@ start:` line (§5.1).
 - **Alerts**: problems that need someone show in Alerts for admins, and are emailed to those
   who chose it: a failed backup, a price source, email, the bitcoin node or a linked server
   failing for longer than Settings › Alerts allows, and a recovery phrase not confirmed.
-- **Logs**: one line per event on the container's output, `docker compose logs -f moneykata`.
+- **Logs**: one line per event on the container's output, `docker compose logs -f moolakata`.
   They never hold amounts, names of accounts or payees, secrets or passwords. The example
   compose files keep five files of 10 MB each.
 - **Space**: Settings › Storage shows the size of the database and the receipts, and what
@@ -193,18 +193,18 @@ start:` line (§5.1).
 A problem only you can fix stops the start with one line beginning `refusing to start:`
 and exit code 78. The compose file tries again with Docker's back-off, which reaches once a
 minute, so `docker compose ps` shows it `Restarting` until the cause is fixed or it is stopped
-(`docker compose stop moneykata`). `docker compose logs moneykata` shows the line. The usual
+(`docker compose stop moolakata`). `docker compose logs moolakata` shows the line. The usual
 causes:
 
 | The line says                         | Do                                                      |
 |---------------------------------------|---------------------------------------------------------|
 | the keyring can't be read              | restore it with a backup (§6); a new server has no keyring at all, and starts uninitialised |
 | the database has no keyring beside it  | restore a backup, which brings its keyring (§6); a new server whose welcome someone else finished is emptied instead (§2 step 4) |
-| the config file has a problem, or a key it doesn't know | fix `moneykata.toml` as the line says |
+| the config file has a problem, or a key it doesn't know | fix `moolakata.toml` as the line says |
 | the data directory is in use          | another server, or a host command, is using the same `data/`: stop it |
 
 A server that started but stays locked after the phrase was entered says why in its log
-(`refusing to unlock:`): a database from a newer MoneyKata (run that release or a later one,
+(`refusing to unlock:`): a database from a newer MoolaKata (run that release or a later one,
 or restore a backup made by this one), or a keyring the phrase doesn't open (the wrong
 phrase, or the keyring from another server: the line names its fingerprint).
 
@@ -213,11 +213,11 @@ phrase, or the keyring from another server: the line names its fingerprint).
 ### 6.1 A backup onto the same server
 
 1. Choose the backup: `ls backups/`. Check it first:
-   `docker compose run --rm moneykata db verify-backup /var/backups/moneykata/<backup>`,
+   `docker compose run --rm moolakata db verify-backup /var/backups/moolakata/<backup>`,
    which asks for the phrase and says when the backup was made, by its manifest; it refuses a
    backup whose name says another time.
-2. Stop the server: `docker compose stop moneykata`.
-3. Restore it: `docker compose run --rm moneykata db restore /var/backups/moneykata/<backup>`,
+2. Stop the server: `docker compose stop moolakata`.
+3. Restore it: `docker compose run --rm moolakata db restore /var/backups/moolakata/<backup>`,
    with the phrase. It checks the backup again, refuses one from a newer release, and moves
    what it replaces (the database, its keyring and the linked copies) into
    `data/before-restore-<time>/` rather than deleting it. The receipt files stay where they
@@ -242,28 +242,28 @@ phrase, or the keyring from another server: the line names its fingerprint).
 
 ### 6.3 Drills
 
-- **Monthly**: `docker compose run --rm moneykata db verify-backup`, with the phrase. It
+- **Monthly**: `docker compose run --rm moolakata db verify-backup`, with the phrase. It
   checks the newest backup's hashes, when it was made and that it opens, and changes nothing.
 - **Yearly**: rehearse §6.2 into a throwaway folder on another machine or a scratch VM, with
   the phrase from its offline copy. That proves the backups, the phrase and these steps
   together. In the same sitting, check the phrase's copies are readable and check each with
-  **Verify key** in Settings › Key storage (or `docker compose run --rm moneykata keys verify`,
+  **Verify key** in Settings › Key storage (or `docker compose run --rm moolakata keys verify`,
   S15.6.5). Every unlock after a restart is a check as well.
 
 ## 7. Keys
 
-- **Unlock after a start**: `docker compose exec moneykata moneykata keys unlock`, which hands
+- **Unlock after a start**: `docker compose exec moolakata moolakata keys unlock`, which hands
   the phrase to the server over its socket, or the locked screen in a browser. Nothing shows
   the phrase again: it is never stored.
 - **Check a copy of the phrase**: **Verify key** in Settings › Key storage, or `docker compose
-  run --rm moneykata keys verify`.
+  run --rm moolakata keys verify`.
 - **Rotate the master key** (S15.7.1): a rotation brings a new data key as well, so the data is
-  re-encrypted. With the server running, `docker compose exec moneykata moneykata keys rotate`.
+  re-encrypted. With the server running, `docker compose exec moolakata moolakata keys rotate`.
   It needs no old phrase (the running server holds the data key), shows the new one on the
   terminal and asks three words back, so it is also the way out of a lost phrase: do it before
   the server ever restarts. Its re-encryption runs at the next unlock, with the new phrase:
   restart when a few minutes' downtime suits. With the server stopped, `docker compose run --rm
-  moneykata keys rotate` asks for the current phrase first and re-encrypts at once. It lists
+  moolakata keys rotate` asks for the current phrase first and re-encrypts at once. It lists
   every copy on the host (backups, pre-upgrade copies, before-restore folders) and asks for
   each: **re-encrypt** (Enter), **delete**, or **leave**; `--reencrypt-all` answers for all of
   them. Store the new phrase; the server unlocks with it from its next start. Settings › Key
@@ -273,7 +273,7 @@ phrase, or the keyring from another server: the line names its fingerprint).
 - **Re-encrypt the data** (S15.7.2), the phrase unchanged: Settings › Key storage ›
   **Re-encrypt at the next restart**, then restart and unlock; the re-encryption runs before
   the server serves, with its progress on the locked screen. Or, with the server stopped,
-  `docker compose run --rm moneykata keys reencrypt`. For when the data key may have been read:
+  `docker compose run --rm moolakata keys reencrypt`. For when the data key may have been read:
   a memory dump, or a debugging session on the live server. A leaked phrase calls for a
   rotation (below).
 
@@ -284,31 +284,31 @@ A leaked phrase is a leaked copy (S15.8): whoever has the phrase and any backup 
 
 1. Revoke and reissue every secret at its source: price-source keys, the bitcoin node's
    password, the SMTP password; unpair the connector and pair it again (§8).
-2. `docker compose exec moneykata moneykata keys rotate`, store the new phrase in two places,
+2. `docker compose exec moolakata moolakata keys rotate`, store the new phrase in two places,
    then restart and unlock with it, so its re-encryption runs. The leaked phrase no longer
    unlocks the server, and copies made from then on don't open with it.
 3. Delete every backup and copy made before step 2, wherever it is: `backups/` (prune by hand:
-   `rm -r backups/moneykata-<date>-*` for the old ones), the NAS or bucket, snapshots and VM
+   `rm -r backups/moolakata-<date>-*` for the old ones), the NAS or bucket, snapshots and VM
    images, `data/pre-upgrade/` and `data/before-restore-*/`. A copy you cannot delete is one
    the finder can read.
 4. Then destroy the old phrase's sheet and password-manager entry.
 
-## 8. The MoneyKata Connector
+## 8. The MoolaKata Connector
 
 The connector (S18) keeps accounts current from their institutions, holding their credentials
-where MoneyKata can't. It is the `connector` service in `compose.yaml`, from the
-`moneykata-connector` image of the same version (`connector/Dockerfile`, built from
-`connector/`), with a volume of its own, `connector-data`, that MoneyKata never mounts. It
-calls out, to MoneyKata and to each driver's institution, and publishes one port, **37374**: its
+where MoolaKata can't. It is the `connector` service in `compose.yaml`, from the
+`moolakata-connector` image of the same version (`connector/Dockerfile`, built from
+`connector/`), with a volume of its own, `connector-data`, that MoolaKata never mounts. It
+calls out, to MoolaKata and to each driver's institution, and publishes one port, **37374**: its
 own page, where its vault is made, its words given and its pairing done (S18.11). On TrueNAS it
 is an app of its own (DEPLOY.md §8.2).
 
-1. **Its image** is published beside MoneyKata's, as
-   `ghcr.io/mojokata/moneykata-connector:<version>`, and pulled by the steps below; or build it
-   (`docker buildx build -f connector/Dockerfile -t ghcr.io/mojokata/moneykata-connector:0.1.0
+1. **Its image** is published beside MoolaKata's, as
+   `ghcr.io/mojokata/moolakata-connector:<version>`, and pulled by the steps below; or build it
+   (`docker buildx build -f connector/Dockerfile -t ghcr.io/mojokata/moolakata-connector:0.1.0
    --load connector`) and carry it over as in §2.
-2. **Start it and make its vault**: set `MONEYKATA_CONNECTOR_NAMES` in `compose.yaml` to the
-   addresses browsers use for its page (its certificate names them, and MoneyKata links to the
+2. **Start it and make its vault**: set `MOOLAKATA_CONNECTOR_NAMES` in `compose.yaml` to the
+   addresses browsers use for its page (its certificate names them, and MoolaKata links to the
    first), `docker compose up -d connector`, and open `https://<address>:37374`. Its welcome
    shows **12 words**: save them in the household's password manager, type three back, and the
    vault is made, unlocked. They open the connector's vault, and nothing else can. On a
@@ -317,39 +317,39 @@ is an app of its own (DEPLOY.md §8.2).
 3. **Its page for anyone on the network** shows whether it is locked, what it is paired with,
    its last report and how many Connections work, never a name, an account or a credential;
    every action there asks for the words, and wrong ones are logged with their address. A
-   certificate of your own instead of its self-signed one: `MONEYKATA_CONNECTOR_TLS_CERT` and
-   `MONEYKATA_CONNECTOR_TLS_KEY`, mounted read only.
+   certificate of your own instead of its self-signed one: `MOOLAKATA_CONNECTOR_TLS_CERT` and
+   `MOOLAKATA_CONNECTOR_TLS_KEY`, mounted read only.
 4. **Unlock it after every start** (a restart, an update, the host's reboot): **Unlock** on its
-   page with the 12 words, or `docker compose exec connector moneykata-connector unlock`. They
-   are never stored. MoneyKata alerts admins while it is locked.
-5. **Pair it**: in MoneyKata, Settings › Connector › Pair shows a code; paste it into **Pair**
+   page with the 12 words, or `docker compose exec connector moolakata-connector unlock`. They
+   are never stored. MoolaKata alerts admins while it is locked.
+5. **Pair it**: in MoolaKata, Settings › Connector › Pair shows a code; paste it into **Pair**
    on the connector's page with the words (or run `docker compose exec connector
-   moneykata-connector pair <code>` with the vault unlocked) and compare the fingerprints both
+   moolakata-connector pair <code>` with the vault unlocked) and compare the fingerprints both
    sides show. If they match, **Confirm** in Settings › Connector: until then
    the connector gets no sign-in and posts no file. If they differ, someone else answered the
    code: Unpair. Pairing makes the connector's sealing key and files its private half in the
-   vault, so `pair` is refused while the vault is locked. The connector reaches MoneyKata at
+   vault, so `pair` is refused while the vault is locked. The connector reaches MoolaKata at
    the address in the code (the public URL, or the link address), so that address must resolve
    from inside the container: on one host, the compose service name or the host's LAN address,
-   not `localhost`. It verifies MoneyKata's certificate: a public one, or one of MoneyKata's
+   not `localhost`. It verifies MoolaKata's certificate: a public one, or one of MoolaKata's
    own whose fingerprint the code carries.
 6. **Banks with nothing to fetch from** (UMB, say) have no driver: download their statements
    and exports and upload them to the account as usual (S1.3).
 7. **Credentials typed on the host** (the stricter way, S18.7.2): `docker compose exec
-   connector moneykata-connector connect <connection id>`, which shows the host the credentials
+   connector moolakata-connector connect <connection id>`, which shows the host the credentials
    will go to and asks you to confirm it, then asks for each field without echo and files them
    in the vault.
-8. **Watching it**: `docker compose exec connector moneykata-connector status` says whether
-   it is paired and locked, when it last reported, and each Connection's state; MoneyKata's
+8. **Watching it**: `docker compose exec connector moolakata-connector status` says whether
+   it is paired and locked, when it last reported, and each Connection's state; MoolaKata's
    Settings › Connector shows the same from its reports, and alerts when the connector is
    locked or silent for 15 minutes.
 9. **On another machine** instead (a laptop): run the same image there with its own
-   `connector-data` volume, reaching MoneyKata's address, and add where it calls from to
+   `connector-data` volume, reaching MoolaKata's address, and add where it calls from to
    Settings › Network › Allowed to connect; nothing else changes.
-10. **Unpair**: Settings › Connector › Unpair in MoneyKata, or **Unpair** on the connector's
-    page (or `moneykata-connector unpair` on the host); either way the connector deletes the credentials it held for that server, at its
-    next report after an Unpair in MoneyKata.
-11. **Lost words**: `docker compose exec connector moneykata-connector reset` makes a new vault
+10. **Unpair**: Settings › Connector › Unpair in MoolaKata, or **Unpair** on the connector's
+    page (or `moolakata-connector unpair` on the host); either way the connector deletes the credentials it held for that server, at its
+    next report after an Unpair in MoolaKata.
+11. **Lost words**: `docker compose exec connector moolakata-connector reset` makes a new vault
     and new words and unpairs; pair again (step 5), and every Connection's credentials are
     entered again. **Reset** on its page does the same with the words still known, when some
     may have been seen. A new connector whose page asks for words nobody wrote down (someone
@@ -357,7 +357,7 @@ is an app of its own (DEPLOY.md §8.2).
 12. **Its logs** say what it did and what failed, never a credential, an amount or an account
     number beyond its last four digits: `docker compose logs -f connector`.
 13. **A lost host or volume** (a stolen laptop, a disk sold with the volume on it): Unpair in
-    MoneyKata at once. The copy holds the identity key, so until then whoever has it can
+    MoolaKata at once. The copy holds the identity key, so until then whoever has it can
     report as the connector and post files; the vault stays closed without the words, so no
     sign-in and no sealed credential, before or after, opens for them. Then make a fresh vault
     on the new host (its page's welcome), pair again, and have each owner enter their sign-ins again.
