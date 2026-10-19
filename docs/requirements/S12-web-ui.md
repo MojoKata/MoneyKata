@@ -96,14 +96,24 @@
    4. **What a guide holds**: a short paragraph on what the screen is for, a screenshot, and a
       heading for every field, switch and button (what it is for, what to enter, its default),
       with examples for anything typed in a language of its own (rules, patterns, mappings).
-      The Markdown is a subset: headings, paragraphs, lists, tables, code, quotes (shown as
-      notes), images, links, bold, italic; raw HTML is shown as text.
+      Finance terms (cost basis, wash sale, RMD, TWR and IRR) get a short plain-language
+      explanation in the guide of the screen where they appear. The Markdown is a subset:
+      headings, paragraphs, lists, tables, code, quotes (shown as notes), images, links, bold,
+      italic; raw HTML is shown as text.
    5. **Screenshots** come from the clickable mockup (`web/dev.sh help-shots`, dark theme,
       1280 px, PNG quantized to 256 colours) and are committed.
    6. **Checks**: a test fails when a screen has no guide, a guide's screenshot is missing,
-      a field's label finds no heading, or the next field down the page sends the guide up. Finance terms (cost basis, wash
-   sale, RMD, TWR and IRR) get a short plain-language explanation in the guide of the screen
-   where they appear.
+      a field's label finds no heading, the next field down the page sends the guide up, or a
+      guide uses an acronym the terms (S12.7.7) don't explain. Tickers and banks in examples,
+      form names (1099-DIV) and words everyone knows (PDF, URL) are listed as plain.
+   7. **Terms**: an acronym in a guide (AGI, OFX, HELOC), or its plural, has a dashed underline
+      the first time it appears under each heading, never in code or a link. On hover or
+      keyboard focus a tooltip card shows the acronym, what it stands for, and a sentence or
+      two on what it means, above the term when there's no room below; screen readers read
+      what it stands for after it. The terms are one Markdown file, `guides/terms.md`: a
+      heading per acronym and what it stands for (`## AGI: Adjusted Gross Income`), the
+      explanation under it, in alphabetical order. The hand-written mockup carries the same
+      terms, and a test keeps the two alike.
 8. **Accessibility**: everything works by keyboard, every control is labelled, contrast
    meets WCAG AA, and `prefers-reduced-motion` turns transitions off. Dark theme first, with
    light and system. **Desktop browsers only**: phone layouts are not built or tested, since

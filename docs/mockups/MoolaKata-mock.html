@@ -113,6 +113,15 @@ main { overflow-y: auto; min-width: 0; position: relative; }
 .help p, .help li { color: var(--fg-dim); font-size: 13px; }
 .help code { font-family: var(--mono); font-size: 12px; background: var(--bg-3); padding: 1px 5px; border-radius: 4px; }
 .help blockquote { margin: 10px 0; border-left: 3px solid var(--info); padding: 4px 12px; background: var(--info-bg); border-radius: 0 6px 6px 0; }
+.help abbr.term { text-decoration: underline dashed var(--fg-muted) 1px; text-underline-offset: 3px; cursor: help; border-radius: 3px; }
+.help abbr.term:hover, .help abbr.term:focus-visible { text-decoration-color: var(--accent); color: var(--fg); }
+.help h2.active abbr.term { text-decoration-line: none; }
+.term-tip { position: fixed; z-index: 80; pointer-events: none; display: none; width: max-content; max-width: 300px; background: var(--bg-4); border: 1px solid var(--border-strong); border-top: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px 11px; font-size: 12px; box-shadow: var(--shadow); }
+.term-tip .term-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.term-tip .term-abbr { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--accent); background: var(--accent-dim); padding: 1px 6px; border-radius: 5px; }
+.term-tip b { font-size: 13px; color: var(--fg); }
+.term-tip .term-text { color: var(--fg-dim); line-height: 1.5; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .help-close { position: absolute; top: 14px; right: 12px; }
 .help .shot { border: 1px solid var(--border); border-radius: 8px; height: 90px; background: repeating-linear-gradient(45deg, var(--bg-3) 0 10px, var(--bg-2) 10px 20px); display: grid; place-items: center; color: var(--fg-muted); font-size: 12px; margin: 10px 0; }
 
@@ -383,6 +392,7 @@ code.key { font-family: var(--mono); font-size: 13px; letter-spacing: .04em; use
 </svg>
 <div id="root"></div>
 <div class="tip" id="tip"></div>
+<div class="term-tip" id="term-tip" role="tooltip"></div>
 <div class="toasts" id="toasts"></div>
 
 <script>
@@ -2432,10 +2442,89 @@ const GUIDES = {
     <h2>Sharing a portfolio</h2><p>People see only the accounts in it that are shared with them; the rest are hidden and left out of its value. The dialog names them and offers to share them too.</p><h2>A tax book</h2><p>The filers own it; give <b>Write</b> to someone who helps prepare the return.</p>`,
 };
 const HELP_ALIAS = { verifyKey: 'settings', reencrypt: 'settings', removeCopy: 'settings', dependent: 'taxes', optionAdjust: 'positions', strategy: 'positions', brokerageStatement: 'account', category: 'budgets', personDuplicate: 'gifts', relationship: 'profile', prune: 'settings', newConnection: 'profile', connectorPair: 'settings', linkPause: 'settings', nodeCert: 'settings', transferMatch: 'account', statementSplit: 'account', statementKeep: 'account', statementColumns: 'account', newBudget: 'budgets', editPlan: 'budgets', twoStepSetup: 'profile', recoveryCodes: 'profile', resetTwoStep: 'users', newUser: 'users', newGroup: 'users', taxBook: 'taxes', filing: 'taxes', taxDoc: 'taxes', typeBalance: 'account', loanPayment: 'account', tickOff: 'account', statementImport: 'account', addSource: 'settings', btcModels: 'profile', newProjection: 'projections', makeActive: 'projections', newToken: 'profile', tokenShown: 'profile', sharePortfolio: 'share', householdColour: 'linked', copyKey: 'settings', person: 'gifts', gift: 'gifts', donation: 'giving', givingPlan: 'giving', organisation: 'giving', assetItem: 'account', account: 'account', portfolios: 'portfolios', trade: 'positions', optionSettle: 'positions', optionMark: 'positions', acctForm: 'account', newAccount: 'accounts', import: 'transactions', upload: 'receipts', receipt: 'receipts', linkInvite: 'settings', linkAccept: 'settings', share: 'share', rules: 'rules', rule: 'rule', editTx: 'editTx', editTxClosed: 'editTx', corporateAction: 'corporateAction' };
+/* ---------- terms: the guides' acronyms, explained on hover and focus (the app's are in
+   web/ui/guides/terms.md; a test keeps the two the same) ---------- */
+const TERMS = {
+  AGI: ['Adjusted Gross Income', 'Your total income less certain adjustments, such as deductible IRA and HSA contributions. It is on the first page of Form 1040, and many deductions, credits and limits are measured against it.'],
+  API: ['Application Programming Interface', 'The requests a program accepts from other programs, as its buttons are for people. A key or token decides what another program may ask for.'],
+  APR: ['Annual Percentage Rate', 'A loan’s or card’s yearly cost of borrowing, as a percentage. A loan’s includes some fees on top of the interest rate; a card charges interest from it, usually daily.'],
+  BIP39: ['Bitcoin Improvement Proposal 39', 'A standard list of 2,048 short words for recovery phrases. Each word carries 11 bits, and the last word also carries a short checksum that catches most mistyped words.'],
+  BTC: ['Bitcoin', 'Bitcoin’s ticker symbol. One BTC is 100,000,000 satoshis, or sats.'],
+  CD: ['Certificate of Deposit', 'Money deposited at a bank for a fixed term at a fixed rate. Taking it out before it matures usually costs a penalty, often a few months’ interest.'],
+  CSV: ['Comma-Separated Values', 'A table written as plain text: one row per line, its columns split by commas. Each institution chooses its own columns, so an import maps them once.'],
+  DAF: ['Donor-Advised Fund', 'A giving account held by a sponsoring charity, such as Fidelity Charitable. You deduct a contribution the year you make it, then recommend grants from it to charities over time.'],
+  EIN: ['Employer Identification Number', 'The nine-digit number the IRS gives a business or a charity, written 12-3456789. It identifies an organisation on tax forms as a Social Security number does a person.'],
+  ETF: ['Exchange-Traded Fund', 'A fund that trades on an exchange like a stock, priced throughout the day. Most follow an index, such as VT for the world’s stocks.'],
+  FID: ['Financial Institution ID', 'The id, up to 32 letters and digits, that identifies a bank or broker to OFX servers. It is sent with the institution’s ORG when signing in, and both come from the OFX directory.'],
+  FIFO: ['First In, First Out', 'Sells the oldest shares first. It is the IRS’s default when you don’t name the lots you sold.'],
+  HEIC: ['High Efficiency Image Container', 'The format iPhones save photos in by default: smaller than a JPEG of the same quality.'],
+  HELOC: ['Home Equity Line of Credit', 'A revolving loan secured by your home. During the draw period you borrow up to a limit and pay interest on what’s drawn; after it, the balance is repaid over the repayment period.'],
+  HIFO: ['Highest In, First Out', 'Sells the shares that cost the most first, which usually makes the smallest gain or the largest loss.'],
+  HSA: ['Health Savings Account', 'An account paired with a high-deductible health plan. Contributions are deductible, growth isn’t taxed, and withdrawals for medical costs are tax-free.'],
+  IRA: ['Individual Retirement Account', 'A retirement account you open yourself, outside an employer’s plan; the IRS calls it an individual retirement arrangement. A traditional IRA’s contributions may be deductible and its withdrawals are taxed; a Roth IRA’s are taxed going in and come out tax-free in retirement.'],
+  IRC: ['Internal Revenue Code', 'The US federal tax law, Title 26 of the United States Code. Its sections, such as §1091 on wash sales, are cited for the rules MoolaKata follows.'],
+  IRR: ['Internal Rate of Return', 'The yearly rate that makes your deposits, withdrawals and ending value balance out. It measures how your money did, counting when you added it or took it out.'],
+  IRS: ['Internal Revenue Service', 'The US federal tax agency. Its forms, limits and tables are the ones MoolaKata’s tax figures follow.'],
+  LAN: ['Local Area Network', 'The network in your home or office: the devices behind your router, which reach each other but can’t be reached from the internet.'],
+  LIFO: ['Last In, First Out', 'Sells the newest shares first. Shares bought lately are often held under a year, so their gains are short-term.'],
+  MAGI: ['Modified Adjusted Gross Income', 'AGI with certain deductions and exclusions added back; each rule that uses it says which. It decides who may contribute to a Roth IRA and who may deduct a traditional IRA contribution.'],
+  MCP: ['Model Context Protocol', 'An open standard that lets an AI assistant use outside tools and data. MoolaKata’s MCP endpoint lets an assistant read what its token allows.'],
+  MS: ['Mint State', 'A grade for a coin that never circulated, from MS-60 to a flawless MS-70 on the 70-point Sheldon scale. Dealers commonly call MS-65 Gem Uncirculated.'],
+  NAV: ['Net Asset Value', 'A fund’s value per share: what it holds less what it owes, divided by its shares. Mutual funds are bought and sold at the NAV struck after each day’s close.'],
+  OCC: ['Options Clearing Corporation', 'The clearinghouse behind every US-listed option. When a company splits, merges or pays a large special dividend, it adjusts the open contracts and says how in an information memo.'],
+  OCR: ['Optical Character Recognition', 'Reading the text in a photo or a scanned page, so a receipt’s date, total and merchant can be filled in for you.'],
+  OFX: ['Open Financial Exchange', 'The standard file format banks and brokers use for downloads and direct connections. Each transaction carries an id of its own, so importing the same file again adds only what’s new.'],
+  ORG: ['Organisation', 'The name that identifies a bank or broker to OFX servers, sent with its FID when signing in. Both come from the OFX directory.'],
+  PCGS: ['Professional Coin Grading Service', 'A company that grades coins and seals each in a labelled holder. Its grade, such as PCGS MS-64, moves a coin’s value.'],
+  PMI: ['Private Mortgage Insurance', 'Insurance a lender usually requires when a conventional mortgage is more than 80% of the home’s value. It protects the lender, and ends when the balance is scheduled to reach 78% of the original value, or from 80% if you ask.'],
+  QCD: ['Qualified Charitable Distribution', 'A gift paid straight from an IRA to a charity, allowed from age 70½. It counts toward that year’s RMD and is left out of your income.'],
+  QFX: ['Quicken Financial Exchange', 'Quicken’s version of OFX, with a few fields of its own. MoolaKata reads it as OFX.'],
+  RMD: ['Required Minimum Distribution', 'The least you must withdraw each year from traditional IRAs and most workplace plans, from age 73 (75 if born in 1960 or later). It is last year-end’s balance divided by an IRS life-expectancy factor.'],
+  RPC: ['Remote Procedure Call', 'A way for one program to ask another, over the network, to run a command for it. Bitcoin Core takes requests this way, with a user and password of its own.'],
+  SHA: ['Secure Hash Algorithm', 'A family of functions that turn any data into a short fingerprint; SHA-256’s is 64 hex digits. Matching fingerprints mean the same certificate or file.'],
+  SMTP: ['Simple Mail Transfer Protocol', 'How email is sent between servers. MoolaKata hands its mail to your provider’s SMTP server, which delivers it.'],
+  TLS: ['Transport Layer Security', 'The encryption behind https: it keeps a connection private and proves, with a certificate, which server you reached.'],
+  TOTP: ['Time-based One-Time Password', 'A code, usually six digits, that an authenticator app works out from a shared key and the time, new every 30 seconds.'],
+  TXF: ['Tax Exchange Format', 'A plain-text file of tax figures that TurboTax, H&R Block and other tax programs import.'],
+  UTC: ['Coordinated Universal Time', 'The world’s reference clock, with no time zones or daylight saving. Midnight UTC is 7 or 8 in the evening before, US Eastern time.'],
+  VIN: ['Vehicle Identification Number', 'The 17-character code on a vehicle’s dashboard and title that identifies that one vehicle. It decodes to its maker, model and year.'],
+  WIF: ['Wallet Import Format', 'A way of writing one bitcoin private key as text, starting with 5, K or L, so a wallet can import it.'],
+};
+const TERM_RE = new RegExp(`\\b(${Object.keys(TERMS).sort((a, b) => b.length - a.length).join('|')})s?\\b`, 'g');
+// A section's first use of each term, plural or not, never inside code or a link; a heading starts a section.
+function markTerms(root) {
+  const seen = new Set(), nodes = [];
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.nodeType === 1 && /^(CODE|PRE|A)$/.test(n.tagName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+  for (let n = w.nextNode(); n; n = w.nextNode()) if (n.nodeType === 3 || /^H[1-3]$/.test(n.tagName)) nodes.push(n);
+  for (const n of nodes) {
+    if (n.nodeType === 1) { seen.clear(); continue; }
+    const s = n.nodeValue, frag = document.createDocumentFragment(); let last = 0;
+    for (const m of s.matchAll(TERM_RE)) {
+      if (seen.has(m[1])) continue;
+      seen.add(m[1]);
+      const a = document.createElement('abbr'); a.className = 'term'; a.tabIndex = 0; a.dataset.term = m[1];
+      a.innerHTML = `${m[0]}<span class="sr-only"> (${esc(TERMS[m[1]][0])})</span>`;
+      frag.append(s.slice(last, m.index), a); last = m.index + m[0].length;
+    }
+    if (last) { frag.append(s.slice(last)); n.replaceWith(frag); }
+  }
+}
+function termTip(e) {
+  const t = e.target.closest?.('abbr.term'), tip = $('#term-tip');
+  if (!t || e.type === 'mouseout' || e.type === 'focusout') { tip.style.display = 'none'; return; }
+  const [title, text] = TERMS[t.dataset.term];
+  tip.innerHTML = `<div class="term-head"><span class="term-abbr">${t.dataset.term}</span><b>${esc(title)}</b></div><div class="term-text">${esc(text)}</div>`;
+  tip.style.display = 'block';
+  const r = t.getBoundingClientRect(), Z = zoomOf(), h = tip.offsetHeight, below = r.bottom / Z + 6;
+  tip.style.left = Math.min(r.left / Z, innerWidth / Z - tip.offsetWidth - 10) + 'px';
+  tip.style.top = (below + h <= innerHeight / Z - 8 ? below : Math.max(8, r.top / Z - 6 - h)) + 'px';
+}
+['mouseover', 'mouseout', 'focusin', 'focusout'].forEach((ev) => document.addEventListener(ev, termTip));
 function helpFor(dialog) {
   const pane = $('#help-body'); if (!pane) return;
   const key = dialog ? HELP_ALIAS[dialog] || route().screen : route().screen;
   pane.innerHTML = GUIDES[key] || `<h1>${esc(key)}</h1><p>This screen’s guide is written with the screen.</p>`;
+  markTerms(pane);
 }
 document.addEventListener('focusin', (e) => {
   const el = e.target; if (!el.id || !el.id.startsWith('f-')) return;

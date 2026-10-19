@@ -342,6 +342,20 @@
     background: var(--info-bg);
     border-radius: 0 6px 6px 0;
   }
+  .help abbr.term {
+    text-decoration: underline dashed var(--fg-muted) 1px;
+    text-underline-offset: 3px;
+    cursor: help;
+    border-radius: 3px;
+  }
+  .help abbr.term:hover,
+  .help abbr.term:focus-visible {
+    text-decoration-color: var(--accent);
+    color: var(--fg);
+  }
+  .help h2.active abbr.term {
+    text-decoration-line: none;
+  }
   .help-close {
     position: absolute;
     top: 14px;
@@ -1527,6 +1541,36 @@
     font-size: 12px;
     box-shadow: var(--shadow);
     max-width: 320px;
+  }
+  .tooltip.term-tip {
+    width: max-content;
+    max-width: 300px;
+    padding: 10px 12px 11px;
+    border-radius: 10px;
+    border-top: 3px solid var(--accent);
+  }
+  .term-tip .term-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .term-tip .term-abbr {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 1px 6px;
+    border-radius: 5px;
+  }
+  .term-tip b {
+    font-size: 13px;
+    color: var(--fg);
+  }
+  .term-tip .term-text {
+    color: var(--fg-dim);
+    line-height: 1.5;
   }
   .chart-box {
     width: 100%;

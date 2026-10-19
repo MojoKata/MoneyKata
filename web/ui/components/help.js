@@ -1,12 +1,13 @@
 // The help pane (requirements S12.7): F1 toggles it; it shows the guide of the screen, tab or
 // dialog in view, and follows the focus to the field's heading. Its width drags (up to half the
-// window) and moves with the arrow keys; the browser remembers both.
+// window) and moves with the arrow keys; the browser remembers both. The acronyms of
+// guides/terms.md show what they stand for on hover and focus.
 import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { guides } from '../app/config.js';
 import { helpOpen, helpWidth } from '../store/prefs.js';
-import { assemble, render } from './markdown.js';
+import { assemble, glossary, render } from './markdown.js';
 import { Icon } from './icon.js';
 
 /** The guide of the screen in view: its key, and values its parts need (the account type). */
@@ -57,8 +58,14 @@ function load(name) {
 export function HelpPane() {
   const ref = useRef(/** @type {HTMLElement | null} */ (null));
   const [md, setMd] = useState(/** @type {string | null} */ (null));
+  const [terms, setTerms] = useState(/** @type {import('./markdown.js').Glossary} */ (new Map()));
   const key = dialogGuide.value || screenGuide.value.key;
   const vars = dialogGuide.value ? {} : screenGuide.value.vars || {};
+
+  // Without its glossary a guide still shows, its acronyms plain.
+  useEffect(() => {
+    load('terms').then((text) => setTerms(glossary(text)), () => {});
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -126,7 +133,7 @@ export function HelpPane() {
         onClick=${() => (helpOpen.value = false)}><${Icon} name="x" /></button>
       <div class="guide" data-guide=${key}>${md === null
         ? null
-        : render(md, (src) => /^https?:|^\//.test(src) ? src : `${guides}/${src}`)}</div>
+        : render(md, (src) => /^https?:|^\//.test(src) ? src : `${guides}/${src}`, terms)}</div>
     </aside>
   `;
 }

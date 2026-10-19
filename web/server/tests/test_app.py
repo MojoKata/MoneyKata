@@ -262,6 +262,42 @@ def test_every_screen_and_tab_has_its_guide(page):
     assert page.problems == []
 
 
+def test_a_guides_acronyms_show_what_they_stand_for(page):
+    """The first OFX under a heading has a dashed underline, and on hover or keyboard focus a
+    card says what it stands for and means (S12.7.7); a section names each term once."""
+    visit(page, "/ui/accounts")
+    wait_guide(page, "accounts")
+    page.wait_for_selector(".help .guide abbr.term")
+    repeats = page.evaluate("""() => {
+      const out = [];
+      let seen = new Set();
+      for (const el of document.querySelectorAll('.help .guide > *')) {
+        if (/^H[1-3]$/.test(el.tagName)) seen = new Set();
+        for (const a of el.querySelectorAll('abbr.term')) {
+          if (seen.has(a.dataset.tipTerm)) out.push(a.dataset.tipTerm);
+          seen.add(a.dataset.tipTerm);
+        }
+      }
+      return out;
+    }""")
+    assert repeats == []
+    assert page.locator(".help .guide code abbr, .help .guide a abbr").count() == 0
+    ofx = page.locator(".help .guide abbr.term", has_text="OFX").first
+    assert ofx.evaluate("a => a.firstChild.nodeValue") == "OFX"
+    assert ofx.locator(".sr-only").text_content() == " (Open Financial Exchange)"
+    ofx.hover()
+    card = page.locator(".tooltip.term-tip")
+    assert card.locator(".term-abbr").inner_text() == "OFX"
+    assert card.locator("b").inner_text() == "Open Financial Exchange"
+    assert "file format banks and brokers use" in card.locator(".term-text").inner_text()
+    page.mouse.move(5, 5)
+    assert card.count() == 0
+    ofx.focus()
+    assert card.locator("b").inner_text() == "Open Financial Exchange"
+    page.keyboard.press("Tab")
+    assert page.problems == []
+
+
 def test_a_linked_households_window_opens_with_its_words(page):
     """griffin-parents' window (S12.10): locked, then opened with the dev copy's words, then
     each of its screens with its guide."""
