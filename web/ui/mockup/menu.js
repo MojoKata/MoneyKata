@@ -1,5 +1,6 @@
 // The generated mockup's MOCK pill (requirements S12.9): it jumps to any screen, opens the
-// dialogs, switches between the sample users, and changes state (stale prices, privacy mode).
+// dialogs, switches between the sample users, and changes state (stale prices, a locked or new
+// server, privacy mode).
 import { openMenu } from '../components/menu.js';
 import { privacy } from '../store/prefs.js';
 
@@ -12,6 +13,7 @@ const DIALOGS = [
   ['New user', '/ui/users', 'New user', true],
   ['New group', '/ui/users', 'New group', true],
   ['Add a price source', '/ui/settings/prices', 'Add a source', true],
+  ['Verify key', '/ui/settings/keys', 'Verify key', true],
 ];
 
 /**
@@ -64,6 +66,11 @@ export function openMockMenu(at, nav, route) {
       label: 'Server locked (after a restart)',
       on: mock.locked,
       onSelect: () => mock.setLocked(!mock.locked),
+    },
+    {
+      label: 'New server (the welcome)',
+      on: mock.fresh,
+      onSelect: () => mock.setFresh(!mock.fresh),
     },
     { label: 'Privacy mode', on: privacy.value, onSelect: () => (privacy.value = !privacy.value) },
   ]);

@@ -1,7 +1,8 @@
 # Settings: Key storage
 
-Read only. Everything the server stores is encrypted under one master key, which is the
-recovery phrase: never stored, entered when the server starts, and changed only on the host.
+Read only, but for **Verify key**. Everything the server stores is encrypted under one master
+key, which is the recovery phrase: never stored, entered when the server starts, and changed only
+on the host.
 
 ![Settings: Key storage](shots/settings-keys.png)
 
@@ -16,9 +17,14 @@ enters the phrase on the locked screen or with `moneykata keys unlock` on the ho
 
 ## Recovery phrase
 
-The master key written as 12 words. It is shown once, at install, and never again: without it
-nothing here, no backup, and no restart of the server opens. Check a copy once a year on the
-host with `moneykata keys verify`.
+The master key written as 12 words. The welcome showed it once, when the server was new, and
+nothing shows it again: without it nothing here, no backup, and no restart of the server opens.
+
+## Verify key
+
+Type the 12 words from one of your copies: MoneyKata checks that they open this server's key,
+changes nothing, and records the check. Do it once a year for each copy, and whenever you make a
+new one; the yearly alert opens it. `moneykata keys verify` on the host does the same.
 
 ## Test
 

@@ -1741,3 +1741,16 @@ label.drop {
   border-color: var(--accent);
   color: var(--fg);
 }
+
+/* A recovery phrase to write down (the welcome, S12.14.1): 12 numbered words, three across. */
+ol.phrase {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 14px;
+  margin: 6px 0 12px;
+  padding-left: 1.8em;
+}
+ol.phrase li::marker {
+  color: var(--fg-muted);
+  font-size: 12px;
+}

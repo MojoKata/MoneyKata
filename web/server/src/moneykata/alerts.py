@@ -412,9 +412,10 @@ def recovery_phrase(s: Session, server) -> Iterable[Cause]:
     from .store.entities.core import Activity
 
     last = s.scalars(
-        # `keys verify` on the host, or any unlock: both opened the keyring (S15.6.5).
+        # Verify key, `keys verify` on the host, or any unlock: each opened the keyring
+        # (S15.6.5).
         select(Activity.at)
-        .where(Activity.kind.in_(("key.verified", "key.unlocked")))
+        .where(Activity.kind.in_(("key.verified", "key.checked", "key.unlocked")))
         .order_by(Activity.at.desc())
     ).first()
     since = last or server.store.keys.ring.master_created
@@ -424,9 +425,9 @@ def recovery_phrase(s: Session, server) -> Iterable[Cause]:
             key="keys:phrase",
             kind="phrase-check",
             title="Check the recovery phrase: it's been a year",
-            about="run `moneykata keys verify` on the host with a copy of the phrase",
-            link="/ui/settings/keys",
-            fix="Key storage",
+            about="type a copy of the phrase into Verify key, in Settings › Key storage",
+            link="/ui/settings/keys?verify",
+            fix="Verify key",
             icon="lock",
             since=due,
         )

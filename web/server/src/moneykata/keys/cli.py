@@ -108,7 +108,7 @@ def confirm_three(master_key: bytes, ask: Ask, say: Say, tries: int = 3) -> bool
     return False
 
 
-def _owner() -> int | None:
+def owner() -> int | None:
     """Run as root (the one-off container), the files go to the server's account."""
     return SERVER_UID if os.geteuid() == 0 else None
 
@@ -136,6 +136,7 @@ def init(
             f"{config.keyring_path} already exists: this data directory has a key. A backup "
             "brings its own keyring back with `db restore`; `keys init` is for a new server."
         )
+    master.refuse_a_database_without_its_keyring(config)
     if say is None or (confirm and ask is None):
         tty = Terminal()
         ask, say = ask or tty.ask, say or tty.say
@@ -148,7 +149,7 @@ def init(
             raise RefuseStart("the words were not confirmed; no key was made")
     now = master.now()
     ring = master.wrap(master_key, master.new_data_key(), now, now)
-    master.write_keyring(config.keyring_path, ring, _owner())
+    master.write_keyring(config.keyring_path, ring, owner())
     say(
         f"Made the keyring for {master.fingerprint(master_key)}. The phrase is the key and is "
         "not stored: start the server, then unlock it with the phrase."
@@ -304,7 +305,7 @@ def rotate(
             raise RefuseStart("the words were not confirmed; the key was not rotated")
         at = master.now()
         master.write_keyring(
-            config.keyring_path, master.rotated(ring, data_key, new_key, at), _owner()
+            config.keyring_path, master.rotated(ring, data_key, new_key, at), owner()
         )
         old_fp, new_fp = master.fingerprint(old_key), master.fingerprint(new_key)
         say(f"Rotated: {old_fp} → {new_fp}. Re-encrypting under a new data key…")

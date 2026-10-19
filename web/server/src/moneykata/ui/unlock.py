@@ -33,6 +33,10 @@ class Reencrypting(Model):
 
 class LockState(Model):
     locked: bool
+    # No keyring yet: the page shows the welcome, which makes the key (S15.4.4).
+    uninitialised: bool = False
+    # Unlocked with no users yet: the welcome's last step, the first admin (S10.1.2).
+    needsAdmin: bool = False
     fingerprint: str | None  # of the key the keyring is wrapped under
     version: str
     # A re-encryption under way before the server serves (S15.7.2), and why the last unlock
@@ -47,9 +51,17 @@ def state(srv) -> LockState:
     except RefuseStart:
         fp = None
     progress = srv.reencrypting.as_dict() if srv.reencrypting is not None else None
+    needs_admin = False
+    if srv.ready and srv.store is not None:
+        from ..auth import users
+
+        with srv.db.read() as s:
+            needs_admin = not users.has_users(s)
     return LockState(
         # Locked until the server serves: the store opens a moment before its tasks start.
         locked=srv.store is None or not srv.ready,
+        uninitialised=srv.store is None and not srv.config.keyring_path.exists(),
+        needsAdmin=needs_admin,
         fingerprint=fp,
         version=srv.version,
         reencrypting=Reencrypting(**progress) if progress else None,

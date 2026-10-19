@@ -392,11 +392,22 @@ class SessionCookie:
 
 
 class Locked:
-    """While the server is locked (S13.6, S15.4.3), only what unlocking needs answers: the
-    app's page and files, the health check, the demo and the unlock route. Everything else,
-    the API, the link, connector and MCP listeners included, answers 503 `locked`."""
+    """While the server is locked or uninitialised (S13.6, S15.4), only what unlocking or the
+    welcome needs answers: the app's page and files, the health check, the demo, the unlock
+    route and the welcome's phrase and key. Everything else, the API, the link, connector and
+    MCP listeners included, answers 503 `locked`."""
 
-    OPEN = frozenset({"/", "/healthz", "/demo", "/ui", "/ui/api/unlock"})
+    OPEN = frozenset(
+        {
+            "/",
+            "/healthz",
+            "/demo",
+            "/ui",
+            "/ui/api/unlock",
+            "/ui/api/welcome/phrase",
+            "/ui/api/welcome/key",
+        }
+    )
 
     def __init__(self, app, locked: Callable[[], bool]):
         self.app = app

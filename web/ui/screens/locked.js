@@ -1,5 +1,6 @@
 // The locked screen (requirements S13.6, S15.4.3): the server has started and holds no key
-// until an admin enters the recovery phrase here. The phrase is the authentication: nobody
+// until an admin enters the recovery phrase here; with no keyring at all, a new server's
+// welcome takes its place (new-server.js, S15.4.4). The phrase is the authentication: nobody
 // can sign in before the database is open. A re-encryption the unlock brings runs before the
 // server serves, its progress shown here (S15.7.2).
 import { useEffect, useState } from 'preact/hooks';
@@ -10,6 +11,7 @@ import { loadSession } from '../store/session.js';
 import { AuthCard } from '../components/auth.js';
 import { Field, FormError } from '../components/fields.js';
 import { Icon } from '../components/icon.js';
+import NewServer from './new-server.js';
 
 const STAGES = /** @type {Record<string, string>} */ ({
   starting: 'Starting',
@@ -46,6 +48,7 @@ export default function Locked() {
     setLock(s);
     if (!s.locked) await loadSession();
   });
+  if (lock?.uninitialised) return html`<${NewServer} refresh=${poll} />`;
   if (lock?.reencrypting) {
     const r = lock.reencrypting;
     const pct = r.total ? Math.round((r.done / r.total) * 100) : 0;

@@ -58,6 +58,33 @@
   } catch {
     // no storage: unlocked
   }
+  // A new server (S15.4.4): its welcome, then the first admin's account; also the mockup's own.
+  const FRESH = 'mk-mockup-fresh';
+  let fresh = false;
+  let needsAdmin = false;
+  try {
+    fresh = localStorage.getItem(FRESH) === '1';
+  } catch {
+    // no storage: an older server
+  }
+  // The welcome's sample phrase: the same words every time, so the page draws the same.
+  const OFFER = {
+    token: 'mock-token',
+    words: 'harbor velvet pencil orbit lucky tribe canyon modify gallery reward almost shiver'
+      .split(' '),
+    fingerprint: 'mk-b7ef…5f6d',
+    serverName: 'griffin-home',
+    made: '2026-10-12',
+    check: [3, 7, 11],
+  };
+  const setFresh = (/** @type {boolean} */ on) => {
+    fresh = on;
+    try {
+      localStorage.setItem(FRESH, on ? '1' : '0');
+    } catch {
+      // without storage the page comes back as an older server
+    }
+  };
 
   /** A request's key: its path and its query in order, less what only says "now". */
   const keyOf = (/** @type {string} */ url) => {
@@ -91,6 +118,62 @@
       );
     }
     const key = keyOf(url);
+    if (fresh || needsAdmin) {
+      let sent = /** @type {any} */ ({});
+      try {
+        sent = typeof init.body === 'string' ? JSON.parse(init.body) : {};
+      } catch {
+        // nothing sent
+      }
+      if (key === '/ui/api/unlock') {
+        return Promise.resolve(json(200, {
+          locked: fresh,
+          uninitialised: fresh,
+          needsAdmin,
+          fingerprint: fresh ? null : OFFER.fingerprint,
+          version: data.version || '',
+        }));
+      }
+      if (key === '/ui/api/welcome/phrase') return Promise.resolve(json(200, OFFER));
+      if (key === '/ui/api/welcome/key') {
+        const wrong = OFFER.check.filter((n) => {
+          const typed = String(sent.words?.[n] || '').trim().toLowerCase();
+          const word = OFFER.words[n - 1];
+          return !(typed === word || (typed.length >= 4 && word.startsWith(typed)));
+        });
+        if (wrong.length) {
+          return Promise.resolve(json(422, {
+            code: 'words-wrong',
+            title: 'Not the words shown',
+            detail: "Those aren't the words shown: check your sheet.",
+            errors: wrong.map((n) => ({
+              field: `word${n}`,
+              code: 'word-wrong',
+              message: 'Not the word shown: check your sheet.',
+            })),
+          }));
+        }
+        setFresh(false);
+        needsAdmin = true;
+        return Promise.resolve(json(200, { locked: false, needsAdmin: true }));
+      }
+      if (key === '/ui/api/welcome/admin') {
+        needsAdmin = false;
+        signedIn = true;
+        user = data.users.some((/** @type {any} */ u) => u.username === 'admin') ? 'admin' : user;
+        return Promise.resolve(json(200, data.api[user]['GET /ui/api/session'].body));
+      }
+      return Promise.resolve(
+        fresh
+          ? json(503, { code: 'locked', title: 'Not available', detail: 'MoneyKata is new.' })
+          : json(401, { code: 'signed-out' }),
+      );
+    }
+    if (key === '/ui/api/settings/keys/verify' && method === 'POST') {
+      return Promise.resolve(
+        json(200, { fingerprint: 'mk-b7ef…5f6d', at: new Date().toISOString() }),
+      );
+    }
     if (key === '/ui/api/unlock') {
       if (method === 'POST') {
         locked = false;
@@ -167,6 +250,11 @@
     user,
     stale,
     locked,
+    fresh,
+    setFresh(/** @type {boolean} */ on) {
+      setFresh(on);
+      location.reload();
+    },
     setLocked(/** @type {boolean} */ on) {
       try {
         localStorage.setItem(LOCKED, on ? '1' : '0');

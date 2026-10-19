@@ -129,6 +129,7 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       made under a key opens with that key for as long as the copy exists.
 4. **Entering the phrase: the locked start.**
    1. **The server starts locked.** It holds no key until an admin enters the recovery phrase.
+      (With no keyring yet, it starts **uninitialised** and welcomes its first admin, S15.4.4.)
       Locked, it serves only what unlocking needs: `/healthz` answers 503 `locked`, `/ui` shows
       the locked screen (S12.14), and every other path answers 503 (S13.6). Nothing runs: no
       prices, no backups, no link exchanges, and the connector's reports are refused until the
@@ -152,18 +153,31 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       one, and at a re-encryption, which runs with the phrase given at the unlock or typed on
       the host. Python cannot promise that no copy lingers in memory until it is reclaimed, the
       caveat of S11.9.4.2.
-   4. **Made by** `moneykata keys init`, on a new server: it makes the key from the operating
-      system's random source, shows the **recovery phrase** with the fingerprint on the
-      terminal, never on standard output, so that no log keeps it (it refuses to run without a
-      terminal), asks for three of its words back (S15.6.1), and only then writes the keyring,
-      the data key wrapped under the master key, into the data directory. Nothing else is
-      written. It refuses to run where a keyring exists: a backup brings its own keyring back
-      with `db restore`.
-   5. **Refused and locked.** The server **refuses to start** (exit 78, S13.6) when the
-      keyring is missing or cannot be read. A wrong phrase at unlock is refused and the
-      server stays locked. A database the phrase opens the keyring for but the server cannot
-      use (one from a newer release) is refused at the unlock, with the reason in the log,
-      and the server stays locked.
+   4. **Made by the welcome** (S12.14), on a new server. With no keyring the server starts
+      **uninitialised**, and its page welcomes the household's first admin: **Show my recovery
+      phrase** makes a master key from the operating system's random source, in the server's
+      memory only, and shows its 12 words with the fingerprint. Every visit makes a new one,
+      and none is written until it is confirmed, so whoever only looked at a phrase knows
+      nothing of the key the server keeps. Three of its words typed back (S15.6.1) write the
+      keyring, the data key wrapped under the master key, into the data directory, and the
+      server is unlocked at once; the welcome goes on to the admin's account (S10.1.2).
+      Nothing else is written. On a terminal, `moneykata keys init` does the same: it shows
+      the phrase on the terminal, never on standard output, so that no log keeps it (it
+      refuses to run without a terminal), asks for three words back and writes the keyring,
+      which the running server finds at its next request; it is then locked and opens with
+      the phrase. Both refuse where a keyring exists: a backup brings its own keyring back
+      with `db restore`. Whoever reaches an uninitialised server first can make its key: a
+      household that finds its new server asking for words nobody wrote down empties its
+      data directory (or reinstalls) and starts again, with nothing lost.
+   5. **Uninitialised, refused and locked.** With no keyring the server is uninitialised:
+      `/healthz` answers 503 `uninitialised`, `/ui` shows only the welcome, and every other
+      path answers 503 (S13.6). It **refuses to start** (exit 78, S13.6) when the keyring
+      cannot be read, and when the database is there without its keyring: a key made then
+      could not open it, so neither the welcome nor `keys init` makes one, and the refusal
+      names the two ways on, `db restore` or an emptied data directory. A wrong phrase at unlock is refused and the server stays locked. A
+      database the phrase opens the keyring for but the server cannot use (one from a newer
+      release) is refused at the unlock, with the reason in the log, and the server stays
+      locked.
    6. **Never** in a file, an environment variable, the image, the configuration or a
       script. A phrase pasted into a chat, a ticket or a screenshot is a leaked phrase
       (S15.8).
@@ -222,9 +236,11 @@ replica holds only the right-hand side, and the whole host can be backed up as i
       database and the phrase protects nothing.
    4. **Never put it** in git, a ticket, a chat message, email, a shared drive, a container
       image, or a screenshot.
-   5. **Check the backup.** `moneykata keys verify` asks for the whole phrase and says whether
-      it unwraps the keyring, without changing anything. Settings › Key storage records each
-      confirmation: which fingerprint, and when. Check the copies once a year: that the sheet
+   5. **Check the backup.** **Verify key** in Settings › Key storage, or `moneykata keys
+      verify` on the host, asks for the whole phrase and says whether it unwraps the keyring,
+      without changing anything; a wrong phrase counts toward the lockout, as at the unlock
+      (S15.4.2). Settings › Key storage records each confirmation: which fingerprint, and
+      when. Check the copies once a year: that the sheet
       is readable, and that the password manager entry still verifies. Settings reminds admins
       when a year has passed. Every unlock is a check as well: a copy that unlocks the server
       is a good copy, and Settings › Key storage and the yearly reminder count it as a

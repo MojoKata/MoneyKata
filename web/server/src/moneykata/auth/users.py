@@ -1,4 +1,4 @@
-"""Users and groups (requirements S10.1): the default admin, invitations, password reset and
+"""Users and groups (requirements S10.1): the first admin, invitations, password reset and
 change, email changes, the active flag, and groups with the built-in Admins group.
 
 Every function works inside the caller's unit of work and records what Activity shows.
@@ -21,7 +21,8 @@ from . import passwords, sessions
 from .tokens import digest, new_token
 
 DEFAULT_ADMIN = "admin"
-# Published: it reaches only the setup step (S10.1.2).
+# The password a server made before the welcome (S10.1.2) published for its first admin, which
+# reached only the setup step; refused as anyone's new password.
 DEFAULT_PASSWORD = "moneykata-setup"  # noqa: S105
 INVITATION_DAYS = 7
 RESET_HOURS = 1
@@ -124,48 +125,60 @@ def invited(s: Db, user_id: str) -> bool:
     )
 
 
-# ---------- the default admin (S10.1.2) ----------
+# ---------- the first admin (S10.1.2) ----------
 
 
-def ensure_default_admin(s: Db) -> bool:
-    """A server with no users gets `admin`, with the published default password."""
-    if s.scalar(select(func.count()).select_from(User)) > 0:
-        return False
+def has_users(s: Db) -> bool:
+    return s.scalar(select(func.count()).select_from(User)) > 0
+
+
+def make_first_admin(s: Db, display_name: str, sex: str, email: str, password: str) -> User:
+    """The welcome's last step: `admin`, with the name, sex, email address and password given,
+    made only while the server has no users, and an admin at once (S10.1.2)."""
     from .. import people
 
+    if has_users(s):
+        raise Problem(409, "admin-exists", "This server's admin is set up already: sign in.")
+    errors = _setup_problems(s, password, email, None, sex)
+    name = (display_name or "").strip()
+    if not name or len(name) > 80:
+        errors.insert(
+            0, FieldError("displayName", "name-invalid", "Your name, 80 characters at most.")
+        )
+    if sex is None:
+        errors.append(FieldError("sex", "sex-invalid", "Female or male."))
+    if errors:
+        raise Problem(422, errors[0].code, errors[0].message, errors)
+    at = now()
     u = User(
         id=ids.new_id("User"),
-        # Its sex is asked at the setup step; until then male, the default (S10.1.2).
-        personId=people.make(s, "Admin", "male").id,
+        personId=people.make(s, name, sex).id,
         username=DEFAULT_ADMIN,
-        displayName="Admin",
-        passwordHash=passwords.hash_password(DEFAULT_PASSWORD),
-        needsSetup=True,
+        displayName=name,
+        email=email.strip().lower(),
+        passwordHash=passwords.hash_password(password),
+        passwordChangedAt=at,
+        needsSetup=False,
         alertEmails="each",
     )
     s.add(u)
     s.flush()
-    s.add(UserGroup(userId=u.id, groupId=admins_group(s).id, createdAt=now()))
+    s.add(UserGroup(userId=u.id, groupId=admins_group(s).id, createdAt=at))
     activity.record(
         s,
-        "user.created-default-admin",
-        actor=None,
+        "user.created-first-admin",
+        actor=u.id,
         subject_kind="user",
         subject_id=u.id,
         owner=u.id,
         for_admins=True,
     )
-    return True
+    return u
 
 
-def finish_setup(
-    s: Db,
-    user: User,
-    password: str,
-    email: str,
-    display_name: str | None,
-    sex: str | None = None,
-) -> None:
+def _setup_problems(
+    s: Db, password: str, email: str, user_id: str | None, sex: str | None
+) -> list[FieldError]:
     from .. import people
 
     errors = []
@@ -181,7 +194,22 @@ def finish_setup(
                 "password", "password-is-default", "Choose a password other than the published one."
             )
         )
-    errors += _email_problems(s, email, user.id)
+    return errors + _email_problems(s, email, user_id)
+
+
+def finish_setup(
+    s: Db,
+    user: User,
+    password: str,
+    email: str,
+    display_name: str | None,
+    sex: str | None = None,
+) -> None:
+    """The setup step of an admin a server made before the welcome, with the published
+    password (S10.1.2): a password, an email address, a name and a sex."""
+    from .. import people
+
+    errors = _setup_problems(s, password, email, user.id, sex)
     if errors:
         raise Problem(422, errors[0].code, errors[0].message, errors)
     user.passwordHash = passwords.hash_password(password)

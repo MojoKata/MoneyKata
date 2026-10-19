@@ -73,6 +73,7 @@ def db(store):
 
 passwords.use_fast_hashing_for_tests()
 ORIGIN = "https://mk.test"
+ADMIN_PW = "a long admin passphrase"
 # Where a test client calls from: an address, as a real client has (Settings › Network, S16.14).
 LOOPBACK = ("127.0.0.1", 50000)
 
@@ -83,7 +84,8 @@ def server(store, keyed_config):
 
     srv = Server(config=keyed_config, store=store, ready=True)
     with srv.db.tx() as s:
-        accounts.ensure_default_admin(s)
+        # The first admin, as the welcome makes it (S10.1.2).
+        accounts.make_first_admin(s, "Ada Admin", "male", "admin@home.lan", ADMIN_PW)
         ensure_categories(s)
     return srv
 
@@ -152,18 +154,9 @@ def client(server):
 
 @pytest.fixture
 def admin_client(server):
-    """Signed in as an admin who has finished the setup step."""
+    """Signed in as the first admin."""
     with new_client(server) as c:
-        r = c.post("/ui/api/session", json={"login": "admin", "password": "moneykata-setup"})
-        assert r.status_code == 200, r.text
-        r = c.post(
-            "/ui/api/session/setup",
-            json={
-                "password": "a long admin passphrase",
-                "email": "admin@home.lan",
-                "displayName": "Ada Admin",
-            },
-        )
+        r = c.post("/ui/api/session", json={"login": "admin", "password": ADMIN_PW})
         assert r.status_code == 200, r.text
         yield c
 

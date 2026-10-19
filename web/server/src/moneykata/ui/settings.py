@@ -526,7 +526,7 @@ class Confirmation(Model):
     at: dt.datetime
     fingerprint: str
     matched: bool
-    how: str = "verify"  # verify (`keys verify` on the host) or unlock (S15.6.5)
+    how: str = "verify"  # verify (`keys verify` on the host), app (Verify key) or unlock (S15.6.5)
 
 
 class RestoreReport(Model):
@@ -610,13 +610,27 @@ def key_storage(request: Request, c: Caller = Depends(admin)):
             Confirmation(
                 at=a.at,
                 fingerprint=json.loads(a.detail).get("fingerprint", ""),
-                matched=a.kind in ("key.verified", "key.unlocked"),
-                how="unlock" if a.kind == "key.unlocked" else "verify",
+                matched=a.kind in ("key.verified", "key.checked", "key.unlocked"),
+                how="unlock"
+                if a.kind == "key.unlocked"
+                else "app"
+                if a.kind.startswith("key.check")
+                else "verify",
             )
             for a in s.scalars(
                 select(Activity)
-                # An unlock counts as a confirmation, as `keys verify` does (S15.6.5).
-                .where(Activity.kind.in_(("key.verified", "key.unlocked", "key.verify-failed")))
+                # An unlock counts as a confirmation, as Verify key and `keys verify` do (S15.6.5).
+                .where(
+                    Activity.kind.in_(
+                        (
+                            "key.verified",
+                            "key.checked",
+                            "key.unlocked",
+                            "key.verify-failed",
+                            "key.check-failed",
+                        )
+                    )
+                )
                 .order_by(Activity.at.desc())
                 .limit(10)
             )
@@ -693,6 +707,64 @@ def _last(config) -> ReencryptReport | None:
         secretsSetAside=r.get("secretsSetAside") or [],
         copies=r.get("copies") or {},
     )
+
+
+class Verified(Model):
+    fingerprint: str
+    at: dt.datetime
+
+
+@router.post("/settings/keys/verify", response_model=Verified)
+async def verify_key(body: PhraseIn, request: Request, c: Caller = Depends(admin)):
+    """Verify key (S15.6.5): the 12 words of a copy of the phrase, checked against the keyring
+    without changing anything, and recorded as a confirmation. A wrong phrase counts toward
+    the lockout, as at the unlock (S15.4.2)."""
+    import asyncio
+
+    from ..keys import master, phrase
+    from .unlock import LOGIN
+
+    srv = server(request)
+    address = request.client.host if request.client else "-"
+    guard = srv.sign_in
+    wait = guard.locked(address)
+    if wait:
+        raise Problem(
+            429,
+            "locked-out",
+            "Too many wrong phrases: try again later.",
+            headers={"Retry-After": str(int(wait) + 1)},
+        )
+    delay = guard.delay(LOGIN, address)
+    if delay:
+        await asyncio.sleep(delay)
+    try:
+        key = phrase.from_words(body.phrase)
+    except phrase.PhraseError as e:
+        guard.failed(LOGIN, address)
+        raise Problem(422, "phrase-invalid", f"Not a recovery phrase: {e}") from None
+    ring = master.read_keyring(srv.config.keyring_path)
+    try:
+        master.unwrap(key, ring)
+    except ValueError:  # a valid phrase, but not the key that wrapped this keyring
+        guard.failed(LOGIN, address)
+        with srv.db.tx() as s:
+            activity.record(
+                s,
+                "key.check-failed",
+                actor=c.id,
+                for_admins=True,
+                detail={"fingerprint": master.fingerprint(key)},
+            )
+        raise Problem(403, "phrase-wrong", "Those words are not this server's key.") from None
+    fingerprint = master.fingerprint(key)
+    with srv.db.tx() as s:
+        entry = activity.record(
+            s, "key.checked", actor=c.id, for_admins=True, detail={"fingerprint": fingerprint}
+        )
+        at = entry.at
+    srv.tasks.run_now("alerts")
+    return Verified(fingerprint=fingerprint, at=at)
 
 
 @router.post("/settings/keys/test", response_model=KeyTest)

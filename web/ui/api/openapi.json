@@ -2824,6 +2824,27 @@
         "title": "Colour",
         "type": "object"
       },
+      "Confirm": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          },
+          "words": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Words",
+            "type": "object"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "Confirm",
+        "type": "object"
+      },
       "Confirmation": {
         "additionalProperties": false,
         "properties": {
@@ -5602,6 +5623,35 @@
           "version"
         ],
         "title": "FilingOut",
+        "type": "object"
+      },
+      "FirstAdmin": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "sex": {
+            "title": "Sex",
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName",
+          "sex",
+          "email",
+          "password"
+        ],
+        "title": "FirstAdmin",
         "type": "object"
       },
       "Flag": {
@@ -9504,6 +9554,11 @@
             "title": "Locked",
             "type": "boolean"
           },
+          "needsAdmin": {
+            "default": false,
+            "title": "Needsadmin",
+            "type": "boolean"
+          },
           "reencrypting": {
             "anyOf": [
               {
@@ -9513,6 +9568,11 @@
                 "type": "null"
               }
             ]
+          },
+          "uninitialised": {
+            "default": false,
+            "title": "Uninitialised",
+            "type": "boolean"
           },
           "version": {
             "title": "Version",
@@ -11037,6 +11097,52 @@
           "next"
         ],
         "title": "OccasionOut",
+        "type": "object"
+      },
+      "Offered": {
+        "additionalProperties": false,
+        "properties": {
+          "check": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Check",
+            "type": "array"
+          },
+          "fingerprint": {
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "made": {
+            "format": "date",
+            "title": "Made",
+            "type": "string"
+          },
+          "serverName": {
+            "title": "Servername",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          },
+          "words": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Words",
+            "type": "array"
+          }
+        },
+        "required": [
+          "token",
+          "words",
+          "fingerprint",
+          "serverName",
+          "made",
+          "check"
+        ],
+        "title": "Offered",
         "type": "object"
       },
       "OpenContract": {
@@ -15001,6 +15107,7 @@
               "account-unknown",
               "accounts-unknown",
               "action-invalid",
+              "admin-exists",
               "admins-only",
               "already-joined",
               "amends-itself",
@@ -15085,6 +15192,7 @@
               "http-error",
               "image-too-large",
               "income-missing",
+              "initialised",
               "input-invalid",
               "instrument-unknown",
               "invalid-request",
@@ -15184,6 +15292,7 @@
               "person-is-user",
               "person-read-only",
               "person-unknown",
+              "phrase-gone",
               "phrase-invalid",
               "phrase-wrong",
               "place-missing",
@@ -15289,6 +15398,8 @@
               "value-missing",
               "version-required",
               "weight-invalid",
+              "word-wrong",
+              "words-wrong",
               "year-invalid",
               "year-missing",
               "year-unknown",
@@ -15343,6 +15454,7 @@
                   "account-unknown",
                   "accounts-unknown",
                   "action-invalid",
+                  "admin-exists",
                   "admins-only",
                   "already-joined",
                   "amends-itself",
@@ -15427,6 +15539,7 @@
                   "http-error",
                   "image-too-large",
                   "income-missing",
+                  "initialised",
                   "input-invalid",
                   "instrument-unknown",
                   "invalid-request",
@@ -15526,6 +15639,7 @@
                   "person-is-user",
                   "person-read-only",
                   "person-unknown",
+                  "phrase-gone",
                   "phrase-invalid",
                   "phrase-wrong",
                   "place-missing",
@@ -15631,6 +15745,8 @@
                   "value-missing",
                   "version-required",
                   "weight-invalid",
+                  "word-wrong",
+                  "words-wrong",
                   "year-invalid",
                   "year-missing",
                   "year-unknown",
@@ -22464,6 +22580,26 @@
           "ok"
         ],
         "title": "ValueCheckRow",
+        "type": "object"
+      },
+      "Verified": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "fingerprint": {
+            "title": "Fingerprint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fingerprint",
+          "at"
+        ],
+        "title": "Verified",
         "type": "object"
       },
       "Via": {
@@ -35591,6 +35727,44 @@
         ]
       }
     },
+    "/ui/api/settings/keys/verify": {
+      "post": {
+        "description": "Verify key (S15.6.5): the 12 words of a copy of the phrase, checked against the keyring\nwithout changing anything, and recorded as a confirmation. A wrong phrase counts toward\nthe lockout, as at the unlock (S15.4.2).",
+        "operationId": "verify_key_ui_api_settings_keys_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhraseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Verified"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "summary": "Verify Key",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
     "/ui/api/settings/links": {
       "get": {
         "operationId": "list_links_ui_api_settings_links_get",
@@ -38716,6 +38890,107 @@
         "summary": "Reset Two Step",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/ui/api/welcome/admin": {
+      "post": {
+        "description": "The welcome's last step: the first admin, signed in at once (S10.1.2).",
+        "operationId": "first_admin_ui_api_welcome_admin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FirstAdmin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "summary": "First Admin",
+        "tags": [
+          "welcome"
+        ]
+      }
+    },
+    "/ui/api/welcome/key": {
+      "post": {
+        "description": "Three of the words typed back make the key: the keyring is written and the server\nunlocks with it (S15.4.4).",
+        "operationId": "make_key_ui_api_welcome_key_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Confirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LockState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "summary": "Make Key",
+        "tags": [
+          "welcome"
+        ]
+      }
+    },
+    "/ui/api/welcome/phrase": {
+      "post": {
+        "description": "A new master key's phrase, held in memory only, until its words are typed back.",
+        "operationId": "offer_ui_api_welcome_phrase_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Offered"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "summary": "Offer",
+        "tags": [
+          "welcome"
         ]
       }
     }

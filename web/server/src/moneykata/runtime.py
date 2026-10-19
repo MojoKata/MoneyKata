@@ -11,6 +11,7 @@ from . import clock, figures, listener, settings, timezones
 from .app import Server, create_app
 from .auth import sessions, users
 from .config import Config, RefuseStart
+from .keys import master
 from .prices import refresh as pricing
 from .store import maintenance
 from .store.entities.core import TaskRun
@@ -184,8 +185,8 @@ def build(server: Server, master_key: bytes) -> None:
     pricing.install()
     server.store = store
     with server.db.tx() as s:
-        if users.ensure_default_admin(s):
-            log.info("made the default admin: sign in as %s to set it up", users.DEFAULT_ADMIN)
+        if not users.has_users(s):
+            log.info("no users yet: the page sets up the first admin (S10.1.2)")
         ledger.ensure_categories(s)
         figures.ensure_benchmarks(s)
     if config.dev and config.stubs:
@@ -402,11 +403,11 @@ async def start(config: Config, seed: bool = False) -> int:
     from .store.maintenance import lock_data_dir
 
     lock = lock_data_dir(config, "only one server may use a data directory")  # noqa: F841 - held while running
-    if not config.keyring_path.exists():
-        raise RefuseStart(
-            f"the keyring {config.keyring_path} is missing: run `moneykata keys init` on a new "
-            "server, or `db restore` a backup"
-        )
+    # No keyring: the server starts uninitialised and its page makes the key (S15.4.4). One
+    # it can't read, or a database without one, refuses the start (S15.4.5).
+    master.refuse_a_database_without_its_keyring(config)
+    if config.keyring_path.exists():
+        master.read_keyring(config.keyring_path)
     # No other process of this account reads the server's memory, keys and all (S9.8.4.2);
     # the reader's workers are kept out of the data directory.
     from . import parsing, sandbox
@@ -439,7 +440,11 @@ async def start(config: Config, seed: bool = False) -> int:
         scheme,
         config.host,
         config.port,
-        "" if server.store is not None else ": locked until the recovery phrase is entered",
+        ""
+        if server.store is not None
+        else ": locked until the recovery phrase is entered"
+        if config.keyring_path.exists()
+        else ": uninitialised, the page makes the key (S15.4.4)",
     )
     try:
         await listener.run(app, config, on_stop, host_app)

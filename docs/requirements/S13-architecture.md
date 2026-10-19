@@ -53,13 +53,16 @@
 6. **Stopping**: on SIGTERM the server ends every event stream, lets requests in flight finish
    for up to 5 seconds, and stops; a second signal stops at once. **A refused start**: when it
    cannot start for a reason only an operator can fix (a config file it can't use or with a key
-   it doesn't know, a missing or unreadable keyring, a certificate it can't load, a data
-   directory another server is using), it says why in one `refusing to start:` line and exits
-   78 (`EX_CONFIG`). The example compose files restart it unless it was stopped
+   it doesn't know, a keyring it can't read, a certificate it can't load, a data directory
+   another server is using), it says why in one `refusing to start:` line and exits 78
+   (`EX_CONFIG`). The example compose files restart it unless it was stopped
    (`unless-stopped`), so it comes back after every reboot, locked: a server stopped by a
    shutdown stopped cleanly, and a policy of restarting only on failure would leave it down. A
    refused start is retried with Docker's back-off, which reaches once a minute, each try
-   saying why in its one line, until an operator fixes the cause or stops it. **A locked
+   saying why in its one line, until an operator fixes the cause or stops it. **An
+   uninitialised start**: with no keyring, the server comes up **uninitialised**: `/healthz`
+   answers 503 `uninitialised`, `/ui` serves only the welcome (S12.14.1) and the routes it
+   calls, and every other path answers 503, until the key is made (S15.4.4). **A locked
    start**: with no key anywhere (S15.4), the server comes up **locked**: `/healthz` answers
    503 `locked`, `/ui` serves only the locked screen, and every other path, `/link`,
    `/connector` and `/mcp` included, answers 503 `locked` with `Retry-After`, until an admin
@@ -67,11 +70,15 @@
    newer release) is refused at the unlock, with the reason in the log, and the server stays
    locked. `/healthz` answers 503 `re-encrypting` while a re-encryption runs at the unlock
    (S15.7.2) and `starting` between the unlock and readiness, and `GET /ui/api/unlock` tells
-   anyone who reaches `/ui` whether the server is locked, the fingerprint its keyring is
-   wrapped under, and the version. **Host commands** (`keys unlock`, `keys rotate`,
-   `db backup`, S15.4.7) reach the running server over its Unix socket, `/run/moneykata/sock`,
-   in a 0700 directory of the server's account on a tmpfs (`web/.dev/` in dev mode), never
-   over the listener.
+   anyone who reaches `/ui` whether the server is uninitialised or locked, the fingerprint its
+   keyring is wrapped under, the version, and, once unlocked, whether the first admin is still
+   to be set up (S10.1.2). The image's own health check asks only whether the server answers:
+   ready, starting, re-encrypting, locked or uninitialised, it is alive, so an orchestrator
+   that waits for healthy containers (TrueNAS's catalog among them) lets it wait for its
+   phrase; whether it is ready is `/healthz`'s answer, for an uptime monitor. **Host commands**
+   (`keys unlock`, `keys rotate`, `db backup`, S15.4.7) reach the running server over its Unix
+   socket, `/run/moneykata/sock`, in a 0700 directory of the server's account on a tmpfs
+   (`web/.dev/` in dev mode), never over the listener.
 7. **Security policies**. One place for the rules every request
    passes through; other sections refer here.
    1. **Sessions**: a 256-bit random token in a cookie named `mk_session`, `HttpOnly`,

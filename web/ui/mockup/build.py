@@ -15,6 +15,7 @@ import base64
 import difflib
 import itertools
 import json
+import os
 import re
 import socket
 import subprocess
@@ -22,6 +23,7 @@ import sys
 import tempfile
 import time
 from collections import deque
+from decimal import Decimal
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
@@ -96,6 +98,27 @@ IMPORTS = re.compile(r"""(\bfrom\s*|\bimport\s*\(?\s*)(['"])(\.{1,2}/[^'"]+)\2""
 SCREENS = re.compile(r"import\(`\.\./screens/\$\{name\}\.js`\)")
 
 
+def steady(value):
+    """A recorded answer without the last digits of floating-point arithmetic, which differ
+    from one CPU to the next (a projection's percentiles): a decimal of more than 12
+    significant digits is kept to 10, which no screen shows the difference of."""
+    if isinstance(value, Decimal) and len(value.as_tuple().digits) > 12:
+        return Decimal(format(value, ".10g"))
+    if isinstance(value, dict):
+        return {k: steady(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [steady(v) for v in value]
+    return value
+
+
+# The backup made at the server's start races the stub prices' first fill, so its size differs
+# from one run to the next: the mockup shows the size of one run.
+SHOWN_BACKUP_BYTES = {
+    "/ui/api/settings/backups": ("backups", 2642261),
+    "/ui/api/settings/keys/copies": ("copies", 2642771),
+}
+
+
 def free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -127,6 +150,8 @@ class Server:
             ],
             stdout=self.log,
             stderr=subprocess.STDOUT,
+            # The zone is pinned as the day is, so every machine records the same answers.
+            env={**os.environ, "TZ": "UTC"},
         )
         deadline = time.monotonic() + 90
         while time.monotonic() < deadline:
@@ -229,10 +254,14 @@ class Recorder:
         # Where this run kept its data is a temporary directory; the mockup shows a fixed one.
         text = r.text().replace(self.data, SHOWN_DIR)
         text = OWN_CERT.sub(lambda m: m.group(1) + SHOWN_CERT + m.group(2), text)
-        self.answers["GET " + key_of(req.url)] = {
-            "status": r.status,
-            "body": exactjson.loads(text) if text else None,
-        }
+        body = steady(exactjson.loads(text)) if text else None
+        shown = SHOWN_BACKUP_BYTES.get(urlsplit(req.url).path)
+        if shown and body:
+            listed, size = shown
+            for item in body[listed]:
+                if item.get("kind", "backup") == "backup":
+                    item["bytes"] = size
+        self.answers["GET " + key_of(req.url)] = {"status": r.status, "body": body}
         route.fulfill(response=r, body=text)
 
     def visit(self, path: str) -> None:
@@ -507,6 +536,48 @@ def assemble(answers: dict, hellos: dict, users: list) -> str:
     return page
 
 
+def drift(old: str, new: str):
+    """What changed, for a reader: a recorded answer by its fields, each with both values,
+    and any other line as it is, cut short. An answer is one line of the file, often long."""
+
+    def answer(line: str):
+        try:
+            return json.loads("{" + line.rstrip(",") + "}")
+        except ValueError:
+            return None
+
+    def fields(a, b, path=""):
+        if isinstance(a, dict) and isinstance(b, dict):
+            for k in sorted(set(a) | set(b)):
+                yield from fields(a.get(k), b.get(k), f"{path}.{k}" if path else k)
+        elif isinstance(a, list) and isinstance(b, list) and len(a) == len(b):
+            for i, (x, y) in enumerate(zip(a, b, strict=True)):
+                yield from fields(x, y, f"{path}[{i}]")
+        elif a != b:
+            yield f"    {path}: {json.dumps(a)[:80]} -> {json.dumps(b)[:80]}"
+
+    before, after = old.splitlines(), new.splitlines()
+    ops = difflib.SequenceMatcher(None, before, after, autojunk=False).get_opcodes()
+    for tag, i1, i2, j1, j2 in ops:
+        if tag == "equal":
+            continue
+        pairs = zip(before[i1:i2], after[j1:j2], strict=False) if tag == "replace" else []
+        for a, b in pairs:
+            x, y = answer(a), answer(b)
+            if x and y and x.keys() == y.keys():
+                for key in x:
+                    yield f"~ {key}"
+                    yield from itertools.islice(fields(x[key], y[key]), 6)
+            else:
+                yield f"- {a[:160]}"
+                yield f"+ {b[:160]}"
+        if tag != "replace" or i2 - i1 != j2 - j1:
+            for a in before[i1 + (j2 - j1) if tag == "replace" else i1 : i2]:
+                yield f"- {a[:160]}"
+            for b in after[j1 + (i2 - i1) if tag == "replace" else j1 : j2]:
+                yield f"+ {b[:160]}"
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--check", action="store_true", help="fail if the file is out of date")
@@ -515,9 +586,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         now = OUT.read_text() if OUT.exists() else ""
         if now != html:
-            diff = difflib.unified_diff(now.splitlines(), html.splitlines(), lineterm="", n=0)
-            for line in itertools.islice(diff, 2, 22):
-                print(line[:200], file=sys.stderr)
+            for line in itertools.islice(drift(now, html), 400):
+                print(line, file=sys.stderr)
             print(f"{OUT.relative_to(ROOT)} is out of date: run web/dev.sh mockup", file=sys.stderr)
             return 1
         return 0

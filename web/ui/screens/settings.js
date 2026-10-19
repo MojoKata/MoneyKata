@@ -559,6 +559,30 @@ function RemoveCopy({ close, c }) {
   `;
 }
 
+/** Verify key (S15.6.5): a copy of the recovery phrase, checked against the keyring. */
+/** @param {{ close: (v?: any) => void }} p */
+function VerifyKey({ close }) {
+  useDialogGuide('dialog-verify-key');
+  const [words, setWords] = useState('');
+  const check = useSubmit(async () => {
+    close(await api.post('/settings/keys/verify', { phrase: words }));
+  });
+  return html`
+    <${Dialog} title="Verify key" close=${close} onSubmit=${() => check.run().catch(() => {})}
+      footer=${html`<button class="btn primary" disabled=${check.busy}>Verify</button>`}>
+      <p class="small" style=${{ marginTop: 0 }}>Type the 12 words from one copy of the recovery
+        phrase. Nothing changes: MoneyKata checks that they open this server's key, and records the
+        check.</p>
+      <${Field} label="Recovery phrase" error=${errAt(check.error, 'phrase')}
+        hint="Four letters of each word are enough.">
+        <${Input} type="password" value=${words} onInput=${setWords} autocomplete="off"
+          autocorrect="off" autocapitalize="off" spellcheck=${false} required />
+        </${Field}>
+        <${FormError} error=${check.error} shown=${['phrase']} />
+        </${Dialog}>
+  `;
+}
+
 function SetKey({ close, src }) {
   useDialogGuide('dialog-source-key');
   const [key, setKey] = useState('');
@@ -1145,6 +1169,19 @@ function Keys() {
   const copies = /** @type {any} */ (cps.data)?.copies || [];
   const [test, setTest] = useState(/** @type {any} */ (null));
   const [armed, setArmed] = useState(false);
+  const verify = async () => {
+    const r = await openDialog(VerifyKey);
+    if (r) {
+      toast(`These words open this server's key ${r.fingerprint}: recorded as checked`);
+      res.reload();
+    }
+  };
+  // The yearly alert opens Verify key itself (S12.11): /ui/settings/keys?verify.
+  useEffect(() => {
+    if (!new URLSearchParams(location.search).has('verify')) return;
+    history.replaceState(null, '', location.pathname);
+    verify().catch((e) => toast(e.message));
+  }, []);
   const [choices, setChoices] = useState(/** @type {Record<string, string>} */ ({}));
   // A copy under an earlier phrase can only be left or deleted (S15.7.2).
   const choiceOf = (/** @type {any} */ c) =>
@@ -1188,8 +1225,8 @@ function Keys() {
   }</h3>
     <p class="small dim" style=${{
     marginTop: 0,
-  }}>Read only here. The master key is the recovery phrase, never stored: it is entered
-      when the server starts, and changed only on the host.</p>
+  }}>Read only here, but for Verify key. The master key is the recovery phrase, never stored: it
+      is entered when the server starts, and changed only on the host.</p>
     <div class="list-item"><span class="grow dim">Fingerprint</span><code>${v.fingerprint}</code></div>
     <div class="list-item"><span class="grow dim">Made</span>${
     date(v.created.slice(0, 10))
@@ -1249,9 +1286,7 @@ function Keys() {
                 <td>${moment(c.made)}</td>
                 <td class="num">${(c.bytes / 1048576).toFixed(1)} MB</td>
                 <td class="small">${opensWith(c.opens)}${c.masterKey
-                  ? html`
-                    <code>${c.masterKey}</code>
-                  `
+                  ? html`${' '}<code>${c.masterKey}</code>`
                   : null}</td>
                 <td><button type="button" class="btn sm" onClick=${() =>
                   removeCopy(c).catch((e) => toast(e.message))}>Remove</button></td>
@@ -1266,15 +1301,20 @@ function Keys() {
     <div class="list-item"><div class="grow">Recovery phrase<div class="small dim">${
     confirmed
       ? `Last confirmed ${
-        confirmed.how === 'unlock' ? 'by the unlock' : 'with moneykata keys verify'
+        confirmed.how === 'unlock'
+          ? 'by the unlock'
+          : confirmed.how === 'app'
+          ? 'with Verify key'
+          : 'with moneykata keys verify'
       } on ${date(confirmed.at.slice(0, 10))}.`
-      : 'Not confirmed since install. Every unlock confirms it; check the copies once a year with moneykata keys verify.'
+      : 'Not confirmed since install. Every unlock confirms it; check each copy once a year with Verify key.'
   }</div></div>
       ${
     confirmed
       ? html`<span class="pill ok"><${Icon} name="check" /> confirmed</span>`
       : html`<span class="pill warn">unchecked</span>`
-  }</div>
+  }<button type="button" class="btn sm" onClick=${() =>
+    verify().catch((e) => toast(e.message))}>Verify key</button></div>
     <div class="notice mt"><${Icon} name="alert" /><div>Without the recovery phrase, nothing here and no backup can be
       opened, and the server cannot even start serving. Keep the phrase in two places, one offline.</div></div>
     ${

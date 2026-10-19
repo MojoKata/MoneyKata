@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Build both images for one platform and run them once, as the release gate asks
-# (requirements S17.8.1, S17.9.7.8): the server makes its keyring, starts locked down as
-# compose runs it and locked until the phrase is given, is unlocked with `keys unlock`,
-# answers /healthz and a sign-in, reads a receipt, and stops cleanly; the connector refuses
-# to start without a vault, then serves, unlocks and stops.
+# (requirements S17.8.1, S17.9.7.8): the server refuses a keyring it can't read; starts
+# uninitialised, locked down as compose runs it, and alive to its health check; makes its key
+# and first admin through the welcome's routes; stops cleanly, starts again locked, is unlocked
+# with `keys unlock`, answers /healthz and a sign-in, reads a receipt, and stops cleanly; the
+# connector refuses to start without a vault, then serves, unlocks and stops.
 #
 #   web/install/smoke.sh                 the host's own platform
 #   web/install/smoke.sh linux/arm64     under QEMU: docker run --privileged --rm \
@@ -41,41 +42,56 @@ LOCKED=(--read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges
 # The server's host-command socket (S13.6), on a tmpfs of its account as compose.yaml has it.
 SOCK=(--tmpfs /run/moneykata:uid=10001,gid=10001,mode=0700)
 
-echo "== the server: a refused start without a keyring (exit 78)"
+URL=http://127.0.0.1:37399
+JSON=(-H "Origin: $URL" -H 'Content-Type: application/json')
+# Wait until /healthz answers with this status, at most this many seconds.
+wait_for() {
+  for i in $(seq 1 "$2"); do
+    [[ "$(curl -s "$URL/healthz" || true)" == *"\"$1\""* ]] && return 0
+    sleep 1
+  done
+  echo "FAILED: /healthz never answered $1"
+  docker logs mk-smoke 2>&1 | tail -20
+  exit 1
+}
+post() { curl -s -o /dev/null -w '%{http_code}' -X POST "${JSON[@]}" -d "$2" "$URL$1"; }
+
+echo "== the server: a refused start, with a keyring it can't read (exit 78)"
+echo "not a keyring" > "$WORK/data/keyring"
 set +e
 docker run --rm "${PF[@]}" "${LOCKED[@]}" "${SOCK[@]}" "${MOUNTS[@]}" "moneykata:$TAG" >/dev/null 2>&1
 [[ $? -eq 78 ]] || { echo "FAILED: expected exit 78"; exit 1; }
 set -e
-echo "== the server: the keyring and its phrase (never stored)"
-PHRASE="$(docker run --rm "${PF[@]}" --user 0:0 "${MOUNTS[@]}" --entrypoint python "moneykata:$TAG" -c '
-from pathlib import Path
-from moneykata.config import load
-from moneykata.keys import cli, phrase
-key = cli.init(load(Path("/etc/moneykata.toml")), say=lambda _: None, confirm=False)
-print(" ".join(phrase.to_words(key)))')"
-echo "== the server: start locked, unlock, health, sign-in, stop"
+rm -f "$WORK/data/keyring"
+echo "== the server: new, uninitialised; the welcome makes its key and its first admin"
 docker run -d --name mk-smoke "${PF[@]}" "${LOCKED[@]}" "${SOCK[@]}" "${MOUNTS[@]}" \
   -p 127.0.0.1:37399:37373 "moneykata:$TAG" >/dev/null
-for i in $(seq 1 240); do
-  code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:37399/healthz || true)"
-  [[ "$code" == 503 ]] && break
-  sleep 1
-done
-[[ "$code" == 503 ]] || { echo "FAILED: /healthz never answered 503 (locked)"; docker logs mk-smoke | tail -20; exit 1; }
-curl -s http://127.0.0.1:37399/healthz | grep -q '"locked"' || { echo "FAILED: not locked"; exit 1; }
+wait_for uninitialised 240
+echo "   uninitialised after ${i}s"
+docker exec mk-smoke moneykata health >/dev/null || { echo "FAILED: not alive while uninitialised"; exit 1; }
+OFFER="$(curl -s -X POST "${JSON[@]}" "$URL/ui/api/welcome/phrase")"
+PHRASE="$(printf '%s' "$OFFER" | python3 -c 'import json, sys; print(" ".join(json.load(sys.stdin)["words"]))')"
+BACK="$(printf '%s' "$OFFER" | python3 -c 'import json, sys
+o = json.load(sys.stdin)
+print(json.dumps({"token": o["token"], "words": {str(n): o["words"][n - 1] for n in o["check"]}}))')"
+code="$(post /ui/api/welcome/key "$BACK")"
+[[ "$code" == 200 ]] || { echo "FAILED: the key answered $code"; exit 1; }
+wait_for ok 60
+code="$(post /ui/api/welcome/admin '{"displayName":"Smoke Test","sex":"female","email":"smoke@example.org","password":"a long smoke passphrase"}')"
+[[ "$code" == 200 ]] || { echo "FAILED: the first admin answered $code"; exit 1; }
+echo "   key made, unlocked, first admin set up"
+docker stop -t 10 mk-smoke >/dev/null
+[[ "$(docker inspect mk-smoke --format '{{.State.ExitCode}}')" == 0 ]] || { echo "FAILED: unclean stop"; exit 1; }
+echo "   stopped cleanly"
+echo "== the server: restarted, locked; the phrase opens it from the host; sign-in, stop"
+docker start mk-smoke >/dev/null
+wait_for locked 240
 echo "   locked after ${i}s"
+docker exec mk-smoke moneykata health >/dev/null || { echo "FAILED: not alive while locked"; exit 1; }
 echo "$PHRASE" | docker exec -i mk-smoke moneykata keys unlock >/dev/null
-for i in $(seq 1 60); do
-  code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:37399/healthz || true)"
-  [[ "$code" == 200 ]] && break
-  sleep 1
-done
-[[ "$code" == 200 ]] || { echo "FAILED: /healthz never answered 200 after the unlock"; docker logs mk-smoke | tail -20; exit 1; }
+wait_for ok 60
 echo "   unlocked and healthy"
-docker exec mk-smoke moneykata health >/dev/null
-code="$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: http://127.0.0.1:37399' \
-  -H 'Content-Type: application/json' -d '{"login":"admin","password":"moneykata-setup"}' \
-  http://127.0.0.1:37399/ui/api/session)"
+code="$(post /ui/api/session '{"login":"admin","password":"a long smoke passphrase"}')"
 [[ "$code" == 200 ]] || { echo "FAILED: sign-in answered $code"; exit 1; }
 echo "   signed in"
 docker stop -t 10 mk-smoke >/dev/null

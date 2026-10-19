@@ -6,6 +6,7 @@ from conftest import make_user, new_client, sign_in
 from sqlalchemy import select
 
 from moneykata import settings
+from moneykata.auth import passwords
 from moneykata.auth import users as accounts
 from moneykata.store.entities.core import Activity
 from moneykata.store.entities.users import Session, User
@@ -42,11 +43,31 @@ def set_public_url(server):
         settings.put(s, "publicUrl", "https://money.home.lan", None)
 
 
-# ---------- the default admin (S10.1.2) ----------
+# ---------- an admin from before the welcome (S10.1.2) ----------
 
 
-def test_default_admin_only_reaches_setup(client, server):
-    r = client.post("/ui/api/session", json={"login": "ADMIN", "password": "moneykata-setup"})
+def _legacy_admin(server) -> None:
+    """The admin a server made before the welcome: the published password, setup to do."""
+    from moneykata import ids, people
+    from moneykata.store.entities.users import User, UserGroup
+
+    with server.db.tx() as s:
+        u = User(
+            id=ids.new_id("User"),
+            personId=people.make(s, "Admin", "male").id,
+            username="legacy",
+            displayName="Admin",
+            passwordHash=passwords.hash_password(accounts.DEFAULT_PASSWORD),
+            needsSetup=True,
+        )
+        s.add(u)
+        s.flush()
+        s.add(UserGroup(userId=u.id, groupId=accounts.admins_group(s).id, createdAt=accounts.now()))
+
+
+def test_an_admin_from_before_the_welcome_only_reaches_setup(client, server):
+    _legacy_admin(server)
+    r = client.post("/ui/api/session", json={"login": "LEGACY", "password": "moneykata-setup"})
     assert r.status_code == 200
     assert r.json()["user"]["needsSetup"] is True
     first = client.cookies.get("mk_session")
@@ -68,7 +89,7 @@ def test_default_admin_only_reaches_setup(client, server):
 
     r = client.post(
         "/ui/api/session/setup",
-        json={"password": "a long admin passphrase", "email": "Admin@Home.lan"},
+        json={"password": "a long legacy passphrase", "email": "Legacy@Home.lan"},
     )
     assert r.status_code == 200 and r.json()["user"]["needsSetup"] is False
     assert client.cookies.get("mk_session") != first
@@ -77,7 +98,7 @@ def test_default_admin_only_reaches_setup(client, server):
         old.cookies.set("mk_session", first, domain="mk.test", path="/ui")
         assert old.get("/ui/api/session").status_code == 401
     with new_client(server) as c2:
-        r = c2.post("/ui/api/session", json={"login": "admin", "password": "moneykata-setup"})
+        r = c2.post("/ui/api/session", json={"login": "legacy", "password": "moneykata-setup"})
         assert r.status_code == 401
 
 
