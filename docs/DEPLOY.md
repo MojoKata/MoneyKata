@@ -9,9 +9,9 @@ relies on goes behind its reverse proxy instead ([`operations.md`](operations.md
 keys and the connector.
 
 The steps were run on Proxmox VE 9.2 with a Debian 13 guest and Docker Engine 29, and on
-TrueNAS Community Edition 25.10.7, with the image built on each host; their screenshots are from
-those runs, and §5's are from a server built from the same source. A release's images are
-published on ghcr.io (§2), and a host pulls them in place of that build.
+TrueNAS Community Edition 25.10.7, with the image built from the source rather than pulled;
+their screenshots are from those runs, and §5's are from a server built from the same source.
+A release's images are published on ghcr.io (§2), and a host pulls them in place of that build.
 
 ## 1. What you need
 
@@ -253,10 +253,12 @@ services:
 
 ![Install via YAML](deploy/truenas-install-yaml.png)
 
-The install pulls the image (§2) and finishes once the container answers: the app shows
-**Running**. Then open it: the welcome makes its master key and your account (§5). The NAS's
-time zone (**System › General Settings › Localization › Settings**) is the server's, for
-backups and emails.
+The install pulls the image (§2), and the app shows **Running** within seconds, before anyone
+has opened it: Running means it answers, not that it is open (§4.4). Then open it: the welcome
+makes its master key and your account (§5). The NAS's time zone (**System › General Settings ›
+Localization › Settings**) is the server's, for backups and emails.
+
+![The app, Running before the welcome](deploy/truenas-app-running.png)
 
 ### 4.4 Snapshots and restarts
 
@@ -320,7 +322,9 @@ whenever you make a new copy; the yearly alert opens it.
 
 1. Change the image's tag to the new version: in `compose.yaml` on the VM, then
    `docker compose up -d moneykata`, which pulls it; on TrueNAS, **Edit** under **Application
-   Info** opens **Edit App YAML**, and **Save** there pulls it and makes the container again.
+   Info** opens **Edit App YAML**, the YAML as TrueNAS keeps it (its keys in alphabetical
+   order): change the tag on the `image:` line, and **Save** pulls it and makes the container
+   again.
 2. Unlock it (§5). At the unlock the server copies the database aside and migrates it;
    operations.md §3 says how to go back.
 
@@ -328,8 +332,12 @@ whenever you make a new copy; the yearly alert opens it.
 
 - **It won't start**: `docker compose ps` shows it `Restarting`, since it tries again about
   once a minute. `docker compose logs moneykata` shows why, in a line beginning `refusing to
-  start:`; operations.md §5.1 lists the usual causes. On TrueNAS, the app's page lists its
-  container under **Workloads**, and its **View Logs** icon shows the log.
+  start:`; operations.md §5.1 lists the usual causes. On TrueNAS the app shows **Stopped**,
+  turning **Deploying** for a moment at each try, and its page has no container to show the
+  log of: in **System › Shell**, `sudo docker logs --tail 5 ix-moneykata-moneykata-1` shows
+  the line. Its paths are the container's: `/var/lib/moneykata` is `data` (on TrueNAS, the
+  `data` dataset), `/var/backups/moneykata` is `backups`, and `/etc/moneykata.toml` is the
+  configuration.
 - **The page won't load**: it is `https://`, on port 37373. A browser that refuses the
   certificate outright was given an address the certificate doesn't name: add it under
   `[tls] names` and restart; the server makes a new certificate.
@@ -341,8 +349,8 @@ whenever you make a new copy; the yearly alert opens it.
   and the server refuses to start beside it. On the VM, in `~/moneykata`:
   `docker compose stop moneykata`, then
   `sudo find data backups -mindepth 1 -delete` and `docker compose up -d moneykata`. On
-  TrueNAS: the app's **Stop**, then in **System › Shell**
+  TrueNAS: **Stop** (■ under **Controls**, in the app's row), then in **System › Shell**
   `sudo find /mnt/tank/moneykata/data /mnt/tank/moneykata/backups -mindepth 1 -delete`,
-  and **Start**.
+  and **Start** in the same place.
 - **A lost phrase**: a running, unlocked server can still make a new one,
   `keys rotate` (operations.md §7). Once it restarts without one, nothing opens the data.
