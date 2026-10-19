@@ -350,7 +350,7 @@ whenever you make a new copy; the yearly alert opens it.
   log of: in **System › Shell**, `sudo docker logs --tail 5 ix-moolakata-moolakata-1` shows
   the line. Its paths are the container's: `/var/lib/moolakata` is `data` (on TrueNAS, the
   `data` dataset), `/var/backups/moolakata` is `backups`, and `/etc/moolakata.toml` is the
-  configuration.
+  configuration (on TrueNAS, `MOOLAKATA_CONFIG` in the app's YAML).
 - **The page won't load**: it is `https://`, on port 37373. A browser that refuses the
   certificate outright was given an address the certificate doesn't name: add it under
   `[tls] names` and restart; the server makes a new certificate.
