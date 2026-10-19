@@ -1,16 +1,48 @@
 # MoneyKata as a TrueNAS custom app (requirements S17.8.3, docs/DEPLOY.md §4): paste it into
-# Apps › Discover Apps › ⋮ › Install via YAML. /mnt/tank/moneykata holds the two datasets and
-# moneykata.toml (DEPLOY.md §4.1-4.2); use your pool's name in place of tank.
+# Apps › Discover Apps › More Options › Install via YAML. /mnt/tank/moneykata holds the two
+# datasets (DEPLOY.md §4.1); use your pool's name in place of tank, and the NAS's address in
+# [tls] names.
 services:
-  moneykata:
+  # Gives the two datasets to the server's account (uid 10001) before it starts, then ends:
+  # root, with the one capability that takes, and no network.
+  permissions:
     image: ghcr.io/mojokata/moneykata:0.1.0
-    restart: unless-stopped
-    ports:
-      - "37373:37373"
+    user: "0:0"
+    entrypoint: ["chown", "10001:10001", "/var/lib/moneykata", "/var/backups/moneykata"]
     volumes:
       - /mnt/tank/moneykata/data:/var/lib/moneykata
       - /mnt/tank/moneykata/backups:/var/backups/moneykata
-      - /mnt/tank/moneykata/moneykata.toml:/etc/moneykata.toml:ro
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+  moneykata:
+    image: ghcr.io/mojokata/moneykata:0.1.0
+    restart: unless-stopped
+    depends_on:
+      permissions:
+        condition: service_completed_successfully
+    ports:
+      - "37373:37373"
+    environment:
+      # moneykata.toml, given here rather than as a file (S17.8).
+      MONEYKATA_CONFIG: |
+        [server]
+        name = "moneykata"
+        mode = "tls"
+        port = 37373
+
+        [paths]
+        data = "/var/lib/moneykata"
+        backups = "/var/backups/moneykata"
+
+        [tls]
+        names = ["192.168.1.20"]
+    volumes:
+      - /mnt/tank/moneykata/data:/var/lib/moneykata
+      - /mnt/tank/moneykata/backups:/var/backups/moneykata
       - /etc/localtime:/etc/localtime:ro
     read_only: true
     tmpfs:

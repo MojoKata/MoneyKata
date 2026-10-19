@@ -182,21 +182,40 @@ def test_the_smoke_script_is_there_for_each_platform():
 
 def test_the_truenas_app_keeps_the_compose_files_promises():
     """install/compose.truenas.yaml (S17.8.3), which docs/DEPLOY.md shows to paste, is the tls
-    example's server with the datasets for host paths: the same lockdown, port, restart and
-    logs, and the version being built."""
+    example's server with the datasets for host paths and its configuration in
+    MONEYKATA_CONFIG (S17.8), after a one-time step that gives the datasets to its account:
+    the same lockdown, port, restart and logs, and the version being built; nothing typed in a
+    shell."""
     truenas = yaml.safe_load((INSTALL / "compose.truenas.yaml").read_text())
     guide = (paths.ROOT / "docs" / "DEPLOY.md").read_text()
     blocks = re.findall(r"^```yaml\n(.*?)^```", guide, re.M | re.S)
     assert [yaml.safe_load(b) for b in blocks] == [truenas], "the guide shows the file as it is"
     app = truenas["services"]["moneykata"]
     tls = COMPOSE["compose.tls.yaml"]["services"]["moneykata"]
-    differ = {"volumes", "environment"}
+    differ = {"volumes", "environment", "depends_on"}
     assert {k: v for k, v in app.items() if k not in differ} == {
         k: v for k, v in tls.items() if k not in differ
     }
-    assert {t: ro for t, (_, ro) in _mounts(app).items()} == {
-        t: ro for t, (_, ro) in _mounts(tls).items()
-    }
+    want = {t: ro for t, (_, ro) in _mounts(tls).items() if t != str(config.DEFAULT_CONFIG)}
+    assert {t: ro for t, (_, ro) in _mounts(app).items()} == want
+    given = config.configured(None, app["environment"])
+    assert (given.mode, given.port) == ("tls", 37373) and given.cert_names
+    assert {str(given.data_dir), str(given.backup_dir)} <= set(_mounts(app))
+    # The one-time step: root with CHOWN alone, no network, the datasets and nothing else, run
+    # once before the server, which waits for it to succeed.
+    step = truenas["services"]["permissions"]
+    assert app["depends_on"] == {"permissions": {"condition": "service_completed_successfully"}}
+    assert step["image"] == app["image"] and step["user"] == "0:0"
+    assert step["entrypoint"] == [
+        "chown",
+        f"{SERVER_UID}:{SERVER_UID}",
+        str(given.data_dir),
+        str(given.backup_dir),
+    ]
+    assert step["cap_drop"] == ["ALL"] and step["cap_add"] == ["CHOWN"]
+    assert step["network_mode"] == "none" and step["restart"] == "no" and step["read_only"]
+    assert "no-new-privileges:true" in step["security_opt"]
+    assert _mounts(step) == {t: m for t, m in _mounts(app).items() if t != "/etc/localtime"}
     version = paths.version()
     tags = re.findall(r"moneykata[:-](\d+\.\d+\.\d+)", guide)
     assert tags and set(tags) == {version}, f"the guide names {set(tags)}, the build {version}"

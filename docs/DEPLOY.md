@@ -194,50 +194,55 @@ The steps below use a pool named `tank` and the NAS's address `192.168.1.20`.
 
 ![The datasets](deploy/truenas-datasets.png)
 
-### 4.2 The configuration
-
-Open **System › Shell**; `sudo` asks for `truenas_admin`'s password. Keep the page open
-until each command has finished. (SSH works as well, once it is turned on under **System ›
-Services**; it is off by default.)
-
-**Give the datasets to the container's user** (uid 10001) and **write the configuration**
-beside them:
-
-   ```sh
-   sudo chown 10001:10001 /mnt/tank/moneykata/data /mnt/tank/moneykata/backups
-   sudo tee /mnt/tank/moneykata/moneykata.toml >/dev/null <<'EOF'
-   [server]
-   name = "moneykata"
-   mode = "tls"
-   port = 37373
-
-   [paths]
-   data = "/var/lib/moneykata"
-   backups = "/var/backups/moneykata"
-
-   [tls]
-   names = ["192.168.1.20"]
-   EOF
-   ```
-
-
-### 4.3 Install the app
+### 4.2 Install the app
 
 **Apps › Discover Apps**, then **⋮** (**More Options**, beside **Custom App**) **› Install
 via YAML**. Name it `moneykata`, paste this as **Custom Config** (it is
-`web/install/compose.truenas.yaml`), and **Save**:
+`web/install/compose.truenas.yaml`) with the NAS's address under `[tls] names`, so the
+certificate covers it, and your pool's name in place of `tank`, then **Save**:
 
 ```yaml
 services:
-  moneykata:
+  # Gives the two datasets to the server's account (uid 10001) before it starts, then ends:
+  # root, with the one capability that takes, and no network.
+  permissions:
     image: ghcr.io/mojokata/moneykata:0.1.0
-    restart: unless-stopped
-    ports:
-      - "37373:37373"
+    user: "0:0"
+    entrypoint: ["chown", "10001:10001", "/var/lib/moneykata", "/var/backups/moneykata"]
     volumes:
       - /mnt/tank/moneykata/data:/var/lib/moneykata
       - /mnt/tank/moneykata/backups:/var/backups/moneykata
-      - /mnt/tank/moneykata/moneykata.toml:/etc/moneykata.toml:ro
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+  moneykata:
+    image: ghcr.io/mojokata/moneykata:0.1.0
+    restart: unless-stopped
+    depends_on:
+      permissions:
+        condition: service_completed_successfully
+    ports:
+      - "37373:37373"
+    environment:
+      # moneykata.toml, given here rather than as a file (S17.8).
+      MONEYKATA_CONFIG: |
+        [server]
+        name = "moneykata"
+        mode = "tls"
+        port = 37373
+
+        [paths]
+        data = "/var/lib/moneykata"
+        backups = "/var/backups/moneykata"
+
+        [tls]
+        names = ["192.168.1.20"]
+    volumes:
+      - /mnt/tank/moneykata/data:/var/lib/moneykata
+      - /mnt/tank/moneykata/backups:/var/backups/moneykata
       - /etc/localtime:/etc/localtime:ro
     read_only: true
     tmpfs:
@@ -253,14 +258,19 @@ services:
 
 ![Install via YAML](deploy/truenas-install-yaml.png)
 
+Nothing is typed in a shell. The first service, `permissions`, gives the two datasets to the
+server's account (uid 10001) and ends; MoneyKata starts once it has. `MONEYKATA_CONFIG` is the
+server's configuration, the same TOML as `moneykata.toml` on the VM (§3.3), given here so there
+is no file to write.
+
 The install pulls the image (§2), and the app shows **Running** within seconds, before anyone
-has opened it: Running means it answers, not that it is open (§4.4). Then open it: the welcome
+has opened it: Running means it answers, not that it is open (§4.3). Then open it: the welcome
 makes its master key and your account (§5). The NAS's time zone (**System › General Settings ›
 Localization › Settings**) is the server's, for backups and emails.
 
 ![The app, Running before the welcome](deploy/truenas-app-running.png)
 
-### 4.4 Snapshots and restarts
+### 4.3 Snapshots and restarts
 
 - **Data Protection › Periodic Snapshot Tasks › Add**: **Dataset** `tank/moneykata`,
   **Recursive** ticked, **Save**; by default it keeps two weeks of daily snapshots. Nothing
@@ -322,9 +332,9 @@ whenever you make a new copy; the yearly alert opens it.
 
 1. Change the image's tag to the new version: in `compose.yaml` on the VM, then
    `docker compose up -d moneykata`, which pulls it; on TrueNAS, **Edit** under **Application
-   Info** opens **Edit App YAML**, the YAML as TrueNAS keeps it (its keys in alphabetical
-   order): change the tag on the `image:` line, and **Save** pulls it and makes the container
-   again.
+   Info** opens **Edit App YAML**, the YAML as TrueNAS keeps it (its comments gone and its keys
+   in alphabetical order, `moneykata` before `permissions`): change the tag on both `image:`
+   lines, and **Save** pulls it and makes the containers again.
 2. Unlock it (§5). At the unlock the server copies the database aside and migrates it;
    operations.md §3 says how to go back.
 

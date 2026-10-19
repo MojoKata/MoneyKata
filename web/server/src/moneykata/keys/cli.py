@@ -14,7 +14,7 @@ import secrets as pysecrets
 from collections.abc import Callable
 from pathlib import Path
 
-from ..config import Config, RefuseStart, load
+from ..config import Config, RefuseStart, configured
 from . import master, phrase
 
 SERVER_UID = 10001
@@ -494,7 +494,7 @@ def register(sub) -> None:
 def _init_cmd(args) -> int:
     from ..store.maintenance import queue_host_event
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     key = init(config)
     queue_host_event(config, "key.made", {"fingerprint": master.fingerprint(key)})
     return 0
@@ -503,7 +503,7 @@ def _init_cmd(args) -> int:
 def _fingerprint_cmd(args) -> int:
     from ..store.maintenance import queue_host_event
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     fp = fingerprint_of(config)
     print(fp)
     queue_host_event(config, "key.fingerprint-shown", {"fingerprint": fp})
@@ -513,7 +513,7 @@ def _fingerprint_cmd(args) -> int:
 def _unlock_cmd(args) -> int:
     from ..store.maintenance import queue_host_event
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     code = unlock(config)
     if code != 0:  # the server records an unlock itself, however it came
         queue_host_event(config, "key.unlock-refused", {})
@@ -523,7 +523,7 @@ def _unlock_cmd(args) -> int:
 def _verify_cmd(args) -> int:
     from ..store.maintenance import queue_host_event
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     ok = verify(
         config,
         record=lambda kid, ok: queue_host_event(
@@ -538,7 +538,7 @@ def _verify_cmd(args) -> int:
 def _rotate_cmd(args) -> int:
     from ..store.maintenance import queue_host_event
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     running = _running(config)
     flags = {"reencrypt": args.reencrypt_all, "delete": args.delete_old, "leave": args.leave_all}
     all_copies = next((k for k, on in flags.items() if on), None)
@@ -551,7 +551,7 @@ def _rotate_cmd(args) -> int:
 def _reencrypt_cmd(args) -> int:
     from ..store.maintenance import queue_host_event
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     flags = {"reencrypt": args.reencrypt_all, "delete": args.delete_old, "leave": args.leave_all}
     done = reencrypt_offline(config, all_copies=next((k for k, on in flags.items() if on), None))
     queue_host_event(

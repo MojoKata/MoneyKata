@@ -3,7 +3,7 @@ there is (S15.4)."""
 
 from pathlib import Path
 
-from ..config import load
+from ..config import configured
 from ..keys.cli import read_phrase
 
 
@@ -28,7 +28,7 @@ def register(sub) -> None:
 def _shell(args) -> int:
     from .maintenance import queue_host_event, shell
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     queue_host_event(config, "db.shell", {})
     return shell(config, read_phrase())
 
@@ -40,7 +40,7 @@ def _backup(args) -> int:
     from ..config import RefuseStart
     from .maintenance import backup, open_store, prune, queue_host_event
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     try:
         with host.client(config, timeout=600) as c:
             r = c.post("/host/backup")
@@ -75,7 +75,7 @@ def _backup(args) -> int:
 def _verify_backup(args) -> int:
     from .maintenance import made_of, queue_host_event, verify_backup
 
-    config = load(Path(args.config))
+    config = configured(args.config)
     path = verify_backup(config, read_phrase(), Path(args.path) if args.path else None)
     queue_host_event(config, "db.verify-backup", {"name": path.name})
     made = made_of(path)
@@ -88,7 +88,7 @@ def _restore(args) -> int:
     from ..keys.cli import Terminal
     from .maintenance import queue_host_event, restore
 
-    config = load(Path(args.config))
+    config = configured(args.config)
 
     def confirm(question: str) -> bool:
         tty = Terminal()
