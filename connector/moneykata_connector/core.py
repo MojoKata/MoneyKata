@@ -60,6 +60,9 @@ class Core:
         self.connections: dict[str, ConnectionState] = {}
         self.last_report: float | None = None
         self.last_error: str | None = None
+        self.confirmed: bool | None = None  # what MoneyKata's last answer said (S18.4.2)
+        self.page: str | None = None  # its page's address, for every report (S18.11.1)
+        self.unlocked_at: float | None = None
         self._lock = threading.RLock()
         self._wake = threading.Event()
         self._stop = threading.Event()
@@ -150,22 +153,26 @@ class Core:
         keys.forget(self.data / "pairing.json")
         self.pairing = self.server = None
         self.connections = {}
+        self.confirmed = None
         if not self.vault.locked:
             for cid in self.vault.ids():
                 self.vault.delete(cid)
             self.vault.keep_sealing_key(b"")
 
     def reset(self, phrase: str) -> str:
-        """Lost words (S18.3.4): a new vault under the words typed at the command line, and
-        unpaired, so the next `pair` makes both keys afresh. Returns its fingerprint."""
+        """New words (S18.3.4): a new vault under the words typed at the command line or
+        confirmed on its page, and unpaired, so the next `pair` makes both keys afresh. Returns
+        its fingerprint."""
         with self._lock:
             keys.forget(self.data / "pairing.json")
             self.pairing = self.server = None
             self.connections = {}
+            self.confirmed = None
             try:
                 self.vault.reset(phrase)
             except PhraseError as e:
                 raise VaultError(str(e)) from None
+            self.unlocked_at = time.time()
             return self.vault.fingerprint()
 
     # ----- the loop -----
@@ -178,6 +185,9 @@ class Core:
                 "fingerprint": keys.short(self.pairing.fingerprint) if self.pairing else None,
                 "locked": self.vault.locked,
                 "vault": self.vault.fingerprint(),
+                "confirmed": self.confirmed,
+                "unlockedAt": self.unlocked_at,
+                "page": self.page,
                 "lastReport": self.last_report,
                 "lastError": self.last_error,
                 "reachable": self.server is not None,
@@ -189,7 +199,19 @@ class Core:
 
     def unlock(self, phrase: str) -> None:
         self.vault.unlock(phrase)
+        self.unlocked_at = time.time()
         self._wake.set()
+
+    def made(self, key: bytes) -> None:
+        """A vault made on its page (S18.11.2), unlocked under its new key."""
+        with self._lock:
+            self.vault.create(key)
+            self.unlocked_at = time.time()
+        self._wake.set()
+
+    def lock(self) -> None:
+        self.vault.lock()
+        self.unlocked_at = None
 
     def _known(self, connection_id: str) -> ConnectionState:
         c = self.connections.get(connection_id)
@@ -302,6 +324,7 @@ class Core:
     def _report(self) -> dict:
         return {
             "locked": self.vault.locked,
+            **({"page": self.page} if self.page else {}),
             "connections": [
                 {
                     "id": c.id,
@@ -317,6 +340,8 @@ class Core:
         }
 
     def _apply(self, answer: dict) -> None:
+        if "confirmed" in answer:
+            self.confirmed = bool(answer["confirmed"])
         seen = set()
         for rep in answer.get("connections") or []:
             cid = rep["id"]

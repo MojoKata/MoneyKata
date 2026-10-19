@@ -59,7 +59,7 @@ def handle(core, request: dict) -> dict:
             core.unlock(request.get("words", ""))
             return {"ok": True, "locked": False}
         if what == "lock":
-            core.vault.lock()
+            core.lock()
             return {"ok": True, "locked": True}
         if what == "pair":
             return {"ok": True, "fingerprint": core.pair(request.get("code", ""))}

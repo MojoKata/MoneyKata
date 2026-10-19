@@ -1,6 +1,7 @@
-"""`moneykata-connector` (requirements S18.3, S18.4, S18.7.2): `serve` runs the connector;
-`init` makes the vault and its words; the rest talk to the running connector over its socket:
-`unlock`, `lock`, `status`, `pair <code>`, `unpair`, `connect <connection id>`, `reset`."""
+"""`moneykata-connector` (requirements S18.3, S18.4, S18.7.2, S18.11): `serve` runs the
+connector and its page; `init` makes the vault and its words on a terminal, the other way to
+the page's welcome; the rest talk to the running connector over its socket: `unlock`, `lock`,
+`status`, `pair <code>`, `unpair`, `connect <connection id>`, `reset`."""
 
 import argparse
 import contextlib
@@ -120,18 +121,34 @@ def cmd_reset(args, tty=None) -> int:
 
 
 def cmd_serve(args) -> int:
+    from . import page
     from .core import Core
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     DATA.mkdir(parents=True, exist_ok=True)
-    core = Core(DATA)
-    if not core.vault.exists():
-        print("refusing to start: no vault; run `moneykata-connector init` first", file=sys.stderr)
+    try:
+        settings = page.Settings.from_env()
+    except ValueError as e:
+        print(f"refusing to start: {e}", file=sys.stderr)
         return 78
+    core = Core(DATA)
+    core.page = settings.address
     sock.serve(core, SOCKET)
-    logging.info(
-        "MoneyKata Connector %s: locked, %s", VERSION, "paired" if core.pairing else "not paired"
-    )
+    try:
+        page.serve(core, settings, DATA)
+    except OSError as e:
+        print(f"refusing to start: its page can't listen on {settings.port}: {e}", file=sys.stderr)
+        return 78
+    where = settings.address or f"port {settings.port}"
+    if not core.vault.exists():
+        logging.info("MoneyKata Connector %s: no vault yet; its page makes one, %s", VERSION, where)
+    else:
+        logging.info(
+            "MoneyKata Connector %s: locked, %s; its page is %s",
+            VERSION,
+            "paired" if core.pairing else "not paired",
+            where,
+        )
     signal.signal(signal.SIGTERM, lambda *_: core.stop())  # docker stop: a clean exit
     with contextlib.suppress(KeyboardInterrupt):
         core.run_forever()

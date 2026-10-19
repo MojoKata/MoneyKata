@@ -77,6 +77,14 @@ class Vault:
         return max(0.0, self._wait_until - time.monotonic())
 
     def unlock(self, phrase: str) -> None:
+        self._key = self._key_of(phrase)
+
+    def check(self, phrase: str) -> None:
+        """Whether these are the vault's words, changing nothing: what each action on the page
+        asks first (S18.11.4). Wrong ones count toward the wait as at the unlock."""
+        self._key_of(phrase)
+
+    def _key_of(self, phrase: str) -> bytes:
         if self.waiting():
             raise VaultError(f"wait {int(self.waiting() // 60) + 1} minutes: too many wrong words")
         try:
@@ -88,8 +96,8 @@ class Vault:
         if stored["fingerprint"] != fingerprint(key):
             self._wrong_one()
             raise VaultError("those words are a valid phrase, but not this vault's")
-        self._key = key
         self._wrong = 0
+        return key
 
     def _wrong_one(self) -> None:
         self._wrong += 1
