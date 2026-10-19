@@ -17,6 +17,11 @@ milestone 9 made. What the build couldn't try for real is in
 [`docs/test-plan.md`](docs/test-plan.md); the gaps and the open questions are listed in the
 requirements' README.
 
+**Release:** 0.1.0, a pre-release for testers. Its images are `ghcr.io/mojokata/moolakata` and
+`ghcr.io/mojokata/moolakata-connector`, for amd64 and arm64, each with a provenance attestation
+`gh attestation verify` checks; [`docs/DEPLOY.md`](docs/DEPLOY.md) installs it on a Proxmox VE
+VM or on TrueNAS.
+
 ## Where to start
 
 1. [`docs/requirements/`](docs/requirements/README.md): what MoolaKata is and does, in the
