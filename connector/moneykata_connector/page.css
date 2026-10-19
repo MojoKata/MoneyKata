@@ -196,6 +196,7 @@ input.in {
   border: 1px solid var(--border-strong);
   background: var(--bg-3);
   color: var(--fg);
+  box-sizing: border-box;
   cursor: pointer;
   display: inline-flex;
   align-items: center;

@@ -91,8 +91,9 @@ export function ConnectorSection() {
                   : ''} <span class="small dim">· the fingerprints were compared</span></div>
             `
             : html`<div class="notice"><${Icon} name="alert" /><div>Compare the fingerprint above with
-                the one the connector's page showed (or <code>moneykata-connector pair</code>
-                printed on its host). If they match, confirm: until then the connector gets no
+                the one the connector's page showed, or that${' '}
+                <code>moneykata-connector pair</code>${' '}
+                printed on its host. If they match, confirm: until then the connector gets no
                 sign-in and posts no file. If they differ, someone else answered the code first:
                 unpair.</div>
                 <button class="btn primary" onClick=${() =>
@@ -236,8 +237,8 @@ function PairDialog({ close }) {
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-all',
             }}>${made.code}</code></div>
-          <p class="small dim">Or on the connector's host: <code class="mono">${made
-            .command}</code></p>
+          <p class="small dim">Or, with Docker Compose on the connector's host: <code
+              class="mono">${made.command}</code></p>
         `
         : html`<${Loading} lines=${2} />`}
       <div class="notice mt"><${Icon} name="info" /><div>Pairing another connector replaces

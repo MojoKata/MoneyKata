@@ -192,6 +192,21 @@ def test_the_smoke_script_is_there_for_each_platform():
     assert "wait_for locked" in text
 
 
+def _one_time_step(compose: dict, service: str, uid: int, owned: list[str]) -> None:
+    """A TrueNAS app's `permissions` step: root with CHOWN alone, no network, its datasets and
+    nothing else, giving them to the service's account once before it starts, which waits for
+    it to succeed; so nothing is typed in a shell."""
+    app, step = compose["services"][service], compose["services"]["permissions"]
+    assert app["depends_on"] == {"permissions": {"condition": "service_completed_successfully"}}
+    assert step["image"] == app["image"] and step["user"] == "0:0"
+    assert step["entrypoint"] == ["chown", f"{uid}:{uid}", *owned]
+    assert step["cap_drop"] == ["ALL"] and step["cap_add"] == ["CHOWN"]
+    assert step["network_mode"] == "none" and step["restart"] == "no" and step["read_only"]
+    assert "no-new-privileges:true" in step["security_opt"]
+    assert _mounts(step) == {t: m for t, m in _mounts(app).items() if t != "/etc/localtime"}
+    assert set(owned) == set(_mounts(step))
+
+
 def test_the_truenas_app_keeps_the_compose_files_promises():
     """install/compose.truenas.yaml (S17.8.3), which docs/DEPLOY.md shows to paste, is the tls
     example's server with the datasets for host paths and its configuration in
@@ -206,15 +221,17 @@ def test_the_truenas_app_keeps_the_compose_files_promises():
         "the guide shows the files as they are"
     )
     # The connector's app (S18.10) is the compose file's connector, with a dataset for its
-    # volume and the NAS's address for its page.
+    # volume, given to its account by the same kind of one-time step, and the NAS's address
+    # for its page.
     app = connector["services"]["connector"]
     example = COMPOSE["compose.tls.yaml"]["services"]["connector"]
-    differ = {"volumes", "environment"}
+    differ = {"volumes", "environment", "depends_on"}
     assert {k: v for k, v in app.items() if k not in differ} == {
         k: v for k, v in example.items() if k not in differ
     }
     assert set(_mounts(app)) == {"/var/lib/moneykata-connector", "/etc/localtime"}
     assert app["environment"]["MONEYKATA_CONNECTOR_NAMES"]
+    _one_time_step(connector, "connector", 10002, ["/var/lib/moneykata-connector"])
     app = truenas["services"]["moneykata"]
     tls = COMPOSE["compose.tls.yaml"]["services"]["moneykata"]
     differ = {"volumes", "environment", "depends_on"}
@@ -226,21 +243,7 @@ def test_the_truenas_app_keeps_the_compose_files_promises():
     given = config.configured(None, app["environment"])
     assert (given.mode, given.port) == ("tls", 37373) and given.cert_names
     assert {str(given.data_dir), str(given.backup_dir)} <= set(_mounts(app))
-    # The one-time step: root with CHOWN alone, no network, the datasets and nothing else, run
-    # once before the server, which waits for it to succeed.
-    step = truenas["services"]["permissions"]
-    assert app["depends_on"] == {"permissions": {"condition": "service_completed_successfully"}}
-    assert step["image"] == app["image"] and step["user"] == "0:0"
-    assert step["entrypoint"] == [
-        "chown",
-        f"{SERVER_UID}:{SERVER_UID}",
-        str(given.data_dir),
-        str(given.backup_dir),
-    ]
-    assert step["cap_drop"] == ["ALL"] and step["cap_add"] == ["CHOWN"]
-    assert step["network_mode"] == "none" and step["restart"] == "no" and step["read_only"]
-    assert "no-new-privileges:true" in step["security_opt"]
-    assert _mounts(step) == {t: m for t, m in _mounts(app).items() if t != "/etc/localtime"}
+    _one_time_step(truenas, "moneykata", SERVER_UID, [str(given.data_dir), str(given.backup_dir)])
     version = paths.version()
     tags = re.findall(r"moneykata[:-](\d+\.\d+\.\d+)", guide)
     assert tags and set(tags) == {version}, f"the guide names {set(tags)}, the build {version}"

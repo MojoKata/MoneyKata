@@ -400,20 +400,39 @@ household's password manager.
 
 ### 8.2 On TrueNAS
 
-It is an app of its own, beside MoneyKata's.
+It is an app of its own, beside MoneyKata's, and like it needs nothing typed in a shell.
 
-1. **Datasets**: add a dataset `connector` inside `tank/moneykata`, as in §4.1, and give it to
-   the connector's user (uid 10002) in **System › Shell**:
-   `sudo chown 10002:10002 /mnt/tank/moneykata/connector`.
-2. **Apps › Discover Apps › ⋮ › Install via YAML** again: name it `moneykata-connector`, paste
-   this (it is `web/install/compose.connector-truenas.yaml`), with the NAS's address in
-   `MONEYKATA_CONNECTOR_NAMES`, and **Save**:
+1. **A dataset**: add a dataset `connector` inside `tank/moneykata`, as in §4.1.
+2. **Apps › Discover Apps › More Options (⋮) › Install via YAML** again: name it
+   `moneykata-connector`, paste this (it is `web/install/compose.connector-truenas.yaml`),
+   with the NAS's address in `MONEYKATA_CONNECTOR_NAMES` and your pool's name in place of
+   `tank`, and **Save**. Its first service, `permissions`, gives the dataset to the
+   connector's account (uid 10002) and ends; the connector starts once it has.
+
+   ![The connector's app beside MoneyKata's](deploy/truenas-connector-app.png)
 
 ```yaml
 services:
+  # Gives the dataset to the connector's account (uid 10002) before it starts, then ends:
+  # root, with the one capability that takes, and no network.
+  permissions:
+    image: ghcr.io/mojokata/moneykata-connector:0.1.0
+    user: "0:0"
+    entrypoint: ["chown", "10002:10002", "/var/lib/moneykata-connector"]
+    volumes:
+      - /mnt/tank/moneykata/connector:/var/lib/moneykata-connector
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
   connector:
     image: ghcr.io/mojokata/moneykata-connector:0.1.0
     restart: unless-stopped
+    depends_on:
+      permissions:
+        condition: service_completed_successfully
     ports:
       - "37374:37374"
     environment:
@@ -447,7 +466,10 @@ services:
    connector's fingerprint.
 4. Back in **Settings › Connector**, compare that fingerprint with the one shown there. If they
    match, **Confirm** (your password again); until then it gets no sign-in and posts no file.
-   Settings › Connector links to the connector's page from its first report.
+   Settings › Connector links to the connector's page from its first report, and the page
+   shows the pairing confirmed from its next one, within 5 minutes.
+
+   ![Settings › Connector, its page linked](deploy/settings-connector-page-link.png)
 5. Each person then adds their sign-ins under **Profile › Connections**, sealed in their
    browser for the connector: MoneyKata stores them, and can't open them.
 

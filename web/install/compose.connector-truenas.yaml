@@ -1,11 +1,28 @@
 # The MoneyKata Connector as a TrueNAS custom app of its own (requirements S18.10, S18.11,
-# docs/DEPLOY.md §8.2): paste it into Apps › Discover Apps › ⋮ › Install via YAML.
-# /mnt/tank/moneykata/connector is its dataset, owned by uid 10002; use your pool's name in
-# place of tank, and the NAS's address in MONEYKATA_CONNECTOR_NAMES.
+# docs/DEPLOY.md §8.2): paste it into Apps › Discover Apps › More Options › Install via YAML.
+# /mnt/tank/moneykata/connector is its dataset; use your pool's name in place of tank, and the
+# NAS's address in MONEYKATA_CONNECTOR_NAMES.
 services:
+  # Gives the dataset to the connector's account (uid 10002) before it starts, then ends:
+  # root, with the one capability that takes, and no network.
+  permissions:
+    image: ghcr.io/mojokata/moneykata-connector:0.1.0
+    user: "0:0"
+    entrypoint: ["chown", "10002:10002", "/var/lib/moneykata-connector"]
+    volumes:
+      - /mnt/tank/moneykata/connector:/var/lib/moneykata-connector
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
   connector:
     image: ghcr.io/mojokata/moneykata-connector:0.1.0
     restart: unless-stopped
+    depends_on:
+      permissions:
+        condition: service_completed_successfully
     ports:
       - "37374:37374"
     environment:
