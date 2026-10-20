@@ -3,29 +3,38 @@
 // so raw HTML in a guide is shown as text, never parsed.
 import { h } from 'preact';
 import { slug } from '../app/format.js';
+import { Term } from './term.js';
 
-/** @typedef {Map<string, { title: string, text: string }>} Glossary */
+/** @typedef {Map<string, import('./term.js').Entry>} Glossary */
 /** @typedef {{ terms: Glossary, re: RegExp, seen: Set<string> }} Marking */
 
 /**
  * The guides' glossary (S12.7.7): each "## AGI: Adjusted Gross Income" heading of
- * guides/terms.md, and the paragraph under it as the explanation.
+ * guides/terms.md, the paragraph under it as the explanation, and a last line that is only a
+ * link, "[IRS Publication 590-A](https://…)", as the official document.
  * @param {string} md
  * @returns {Glossary}
  */
 export function glossary(md) {
   const out = new Map();
   for (const part of md.replace(/\r/g, '').split(/^## /m).slice(1)) {
-    const [head, ...body] = part.split('\n');
+    const [head, ...body] = part.trim().split('\n');
     const m = head.match(/^([A-Z][A-Z0-9]*): (.+)$/);
-    if (m) out.set(m[1], { title: m[2].trim(), text: body.join(' ').replace(/\s+/g, ' ').trim() });
+    if (!m) continue;
+    const link = body.at(-1)?.match(/^\[([^\]]+)\]\((https:\/\/[^)\s]+)\)$/);
+    if (link) body.pop();
+    out.set(m[1], {
+      title: m[2].trim(),
+      text: body.join(' ').replace(/\s+/g, ' ').trim(),
+      source: link ? { label: link[1], href: link[2] } : undefined,
+    });
   }
   return out;
 }
 
 /**
- * A section's first use of each glossary term, plural or not: its expansion and explanation
- * show as a tooltip, and screen readers read the expansion after it (S12.7.7).
+ * Each use of a glossary term, plural or not, as a Term: a section's first underlined, later
+ * ones quiet (S12.7.7).
  * @param {string} text
  * @param {Marking | null} marking
  * @returns {any[]}
@@ -36,24 +45,12 @@ function mark(text, marking) {
   let last = 0;
   for (const m of text.matchAll(marking.re)) {
     const term = m[1];
-    if (marking.seen.has(term) || m.index === undefined) continue;
+    if (m.index === undefined) continue;
+    const quiet = marking.seen.has(term);
     marking.seen.add(term);
-    const { title, text: tip } = /** @type {{ title: string, text: string }} */ (
-      marking.terms.get(term)
-    );
     if (m.index > last) out.push(text.slice(last, m.index));
-    out.push(h(
-      'abbr',
-      {
-        class: 'term',
-        tabindex: 0,
-        'data-tip': tip,
-        'data-tip-title': title,
-        'data-tip-term': term,
-      },
-      m[0],
-      h('span', { class: 'sr-only' }, ` (${title})`),
-    ));
+    const entry = /** @type {import('./term.js').Entry} */ (marking.terms.get(term));
+    out.push(h(Term, { ...entry, term, word: m[0], quiet }));
     last = m.index + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));

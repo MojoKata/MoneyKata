@@ -264,7 +264,9 @@ def test_every_screen_and_tab_has_its_guide(page):
 
 def test_a_guides_acronyms_show_what_they_stand_for(page):
     """The first OFX under a heading has a dashed underline, and on hover or keyboard focus a
-    card says what it stands for and means (S12.7.7); a section names each term once."""
+    card says what it stands for and means, its title row ending in an icon that links to the
+    official document, which the pointer and Tab can reach; a later SMTP under the same heading
+    is plain until hovered (S12.7.7)."""
     visit(page, "/ui/accounts")
     wait_guide(page, "accounts")
     page.wait_for_selector(".help .guide abbr.term")
@@ -273,9 +275,9 @@ def test_a_guides_acronyms_show_what_they_stand_for(page):
       let seen = new Set();
       for (const el of document.querySelectorAll('.help .guide > *')) {
         if (/^H[1-3]$/.test(el.tagName)) seen = new Set();
-        for (const a of el.querySelectorAll('abbr.term')) {
-          if (seen.has(a.dataset.tipTerm)) out.push(a.dataset.tipTerm);
-          seen.add(a.dataset.tipTerm);
+        for (const a of el.querySelectorAll('abbr.term:not(.quiet)')) {
+          if (seen.has(a.dataset.term)) out.push(a.dataset.term);
+          seen.add(a.dataset.term);
         }
       }
       return out;
@@ -285,16 +287,73 @@ def test_a_guides_acronyms_show_what_they_stand_for(page):
     ofx = page.locator(".help .guide abbr.term", has_text="OFX").first
     assert ofx.evaluate("a => a.firstChild.nodeValue") == "OFX"
     assert ofx.locator(".sr-only").text_content() == " (Open Financial Exchange)"
+    shown = ".help .term-tip:not([hidden])"
+    card = page.locator(shown)
+    assert card.count() == 0
     ofx.hover()
-    card = page.locator(".tooltip.term-tip")
     assert card.locator(".term-abbr").inner_text() == "OFX"
     assert card.locator("b").inner_text() == "Open Financial Exchange"
-    assert "file format banks and brokers use" in card.locator(".term-text").inner_text()
+    text = card.locator(".term-text")
+    assert "file format banks and brokers use" in text.inner_text()
+    assert ofx.get_attribute("aria-describedby") == text.get_attribute("id")
+    source = card.locator(".term-head a.term-source")
+    assert source.get_attribute("aria-label") == (
+        "OFX specification (Financial Data Exchange), opens in a new tab"
+    )
+    assert source.get_attribute("href") == (
+        "https://financialdataexchange.org/about-fdx/ofx-work-group/"
+    )
+    assert source.get_attribute("target") == "_blank"
+    assert source.locator("svg.i").count() == 1
+    icon, title, box = (x.bounding_box() for x in (source, card.locator("b"), card))
+    assert icon["x"] > title["x"] + title["width"], "the icon follows the title"
+    assert box["x"] + box["width"] - (icon["x"] + icon["width"]) < 16, "at the card's right"
+    assert abs((icon["y"] + icon["height"] / 2) - (title["y"] + title["height"] / 2)) < 3
+    source.hover()
+    page.wait_for_timeout(300)
+    assert card.count() == 1, "the card closed under the pointer"
     page.mouse.move(5, 5)
-    assert card.count() == 0
+    page.wait_for_selector(shown, state="detached")
     ofx.focus()
     assert card.locator("b").inner_text() == "Open Financial Exchange"
     page.keyboard.press("Tab")
+    assert page.evaluate("document.activeElement.className") == "term-source"
+    assert card.count() == 1
+    page.keyboard.press("Escape")
+    page.wait_for_selector(shown, state="detached")
+    # A later use under the same heading: plain, no tab stop, underlined and its card on hover.
+    visit(page, "/ui/settings/email")
+    wait_guide(page, "settings-email")
+    later = page.locator(".help .guide abbr.term.quiet", has_text="SMTP").first
+    underline = "a => getComputedStyle(a).textDecorationColor"
+    assert later.evaluate(underline) == "rgba(0, 0, 0, 0)"
+    assert later.get_attribute("tabindex") is None
+    later.hover()
+    assert later.evaluate(underline) != "rgba(0, 0, 0, 0)"
+    assert card.locator("b").inner_text() == "Simple Mail Transfer Protocol"
+    page.mouse.move(5, 5)
+    page.wait_for_selector(shown, state="detached")
+    # Focus scrolls a term below the fold into view; its card opens there and follows it, and
+    # closes once the term scrolls out of sight. A short window puts the last one below it.
+    page.set_viewport_size({"width": 1440, "height": 420})
+    visit(page, "/ui/taxes/summary")
+    wait_guide(page, "taxes-summary")
+    page.wait_for_selector(".help .guide abbr.term")
+    page.evaluate("document.querySelector('.help').scrollTop = 0")
+    last = page.locator(".help .guide abbr.term").last
+    assert not last.evaluate(
+        "a => a.getBoundingClientRect().top < a.closest('.help').getBoundingClientRect().bottom"
+    ), "the last term shows without scrolling"
+    last.focus()
+    page.wait_for_timeout(300)
+    assert card.count() == 1
+    top = card.bounding_box()["y"]
+    page.evaluate("document.querySelector('.help').scrollTop -= 30")
+    page.wait_for_timeout(300)
+    assert card.count() == 1 and abs(card.bounding_box()["y"] - (top + 30)) < 2
+    page.evaluate("document.querySelector('.help').scrollTop = 0")
+    page.wait_for_selector(shown, state="detached")
+    page.set_viewport_size({"width": 1440, "height": 900})
     assert page.problems == []
 
 

@@ -353,6 +353,12 @@
     text-decoration-color: var(--accent);
     color: var(--fg);
   }
+  .help abbr.term.quiet {
+    text-decoration-color: transparent;
+  }
+  .help abbr.term.quiet:hover {
+    text-decoration-color: var(--accent);
+  }
   .help h2.active abbr.term {
     text-decoration-line: none;
   }
@@ -1542,16 +1548,27 @@
     box-shadow: var(--shadow);
     max-width: 320px;
   }
-  .tooltip.term-tip {
+  .term-tip {
+    position: fixed;
+    z-index: 80;
+    display: block;
     width: max-content;
     max-width: 300px;
-    padding: 10px 12px 11px;
-    border-radius: 10px;
+    background: var(--bg-4);
+    border: 1px solid var(--border-strong);
     border-top: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 10px 12px 11px;
+    font-size: 12px;
+    font-weight: 400;
+    box-shadow: var(--shadow);
+  }
+  .term-tip[hidden] {
+    display: none;
   }
   .term-tip .term-head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
     margin-bottom: 5px;
   }
@@ -1569,8 +1586,25 @@
     color: var(--fg);
   }
   .term-tip .term-text {
+    display: block;
     color: var(--fg-dim);
     line-height: 1.5;
+  }
+  .term-tip .term-source {
+    display: inline-flex;
+    margin: -2px -4px -2px auto;
+    padding: 3px;
+    border-radius: 6px;
+    color: var(--fg-muted);
+  }
+  .term-tip .term-source:hover,
+  .term-tip .term-source:focus-visible {
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .term-tip .term-source svg.i {
+    width: 15px;
+    height: 15px;
   }
   .chart-box {
     width: 100%;

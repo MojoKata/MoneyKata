@@ -106,13 +106,22 @@
       a field's label finds no heading, the next field down the page sends the guide up, or a
       guide uses an acronym the terms (S12.7.7) don't explain. Tickers and banks in examples,
       form names (1099-DIV) and words everyone knows (PDF, URL) are listed as plain.
-   7. **Terms**: an acronym in a guide (AGI, OFX, HELOC), or its plural, has a dashed underline
-      the first time it appears under each heading, never in code or a link. On hover or
-      keyboard focus a tooltip card shows the acronym, what it stands for, and a sentence or
-      two on what it means, above the term when there's no room below; screen readers read
-      what it stands for after it. The terms are one Markdown file, `guides/terms.md`: a
-      heading per acronym and what it stands for (`## AGI: Adjusted Gross Income`), the
-      explanation under it, in alphabetical order. The hand-written mockup carries the same
+   7. **Terms**: an acronym in a guide (AGI, OFX, HELOC), or its plural, never in code or a
+      link. Its first use under each heading has a dashed underline and is a tab stop; later
+      uses under the same heading look like the text around them until hovered, when they show
+      the same underline. On hover, or keyboard focus of a first use, a card shows the acronym,
+      what it stands for, and a sentence or two on what it means. Where an official document
+      defines it (an IRS publication, a CFPB answer, an RFC), an external-link icon at the
+      right of the card's title row links to it: a plain link, opened in a new tab, that can be
+      right-clicked or opened in a tab of one's choosing, and named for screen readers by the
+      document. The card shows below the term, or above it when there's no room below, and
+      stays open while the pointer or focus is on the term or the card, so the pointer and Tab
+      both reach the link; leaving both or Escape closes it. It moves with the term as the
+      guide scrolls, and closes when the term scrolls out of sight. Screen readers read what a
+      first use stands for after it, and its explanation as its description. The terms are one
+      Markdown file, `guides/terms.md`: a heading per acronym and what it stands for
+      (`## AGI: Adjusted Gross Income`), the explanation under it, and the document as a last
+      line that is only a link, in alphabetical order. The hand-written mockup carries the same
       terms, and a test keeps the two alike.
 8. **Accessibility**: everything works by keyboard, every control is labelled, contrast
    meets WCAG AA, and `prefers-reduced-motion` turns transitions off. Dark theme first, with

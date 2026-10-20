@@ -1,5 +1,6 @@
 """The guides' acronyms (requirements S12.7.7): each one a guide uses is explained in
-guides/terms.md, in a sentence or two, and the hand-written mockup carries the same terms."""
+guides/terms.md, in a sentence or two with its official document where there is one, and the
+hand-written mockup carries the same terms."""
 
 import re
 
@@ -19,13 +20,17 @@ PLAIN = {
 }
 
 
-def glossary() -> dict[str, tuple[str, str]]:
+def glossary() -> dict[str, tuple[str, ...]]:
+    """Each term's expansion and explanation, and its document's name and address if it has one."""
     out = {}
     for part in re.split(r"^## ", (GUIDES / "terms.md").read_text(), flags=re.M)[1:]:
-        head, _, body = part.partition("\n")
+        head, *body = part.strip().split("\n")
         m = re.fullmatch(r"([A-Z][A-Z0-9]*): (.+)", head)
         assert m, f"terms.md: '## {head}' isn't 'ACRONYM: What it stands for'"
-        out[m[1]] = (m[2], " ".join(body.split()))
+        link = re.fullmatch(r"\[([^\]]+)\]\((\S+)\)", body[-1])
+        if link:
+            body.pop()
+        out[m[1]] = (m[2], " ".join(" ".join(body).split()), *(link.groups() if link else ()))
     return out
 
 
@@ -46,18 +51,23 @@ def test_every_acronym_in_a_guide_is_explained():
 def test_each_term_says_what_it_stands_for_in_a_sentence_or_two():
     terms = glossary()
     assert list(terms) == sorted(terms), "terms.md is kept in alphabetical order"
-    for term, (title, text) in terms.items():
+    for term, (title, text, *source) in terms.items():
         sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z0-9])", text)
         assert text and len(sentences) <= 2, f"{term}: {len(sentences)} sentences"
         assert title[0].isupper() and not title.endswith("."), f"{term}: '{title}' is a name"
         assert term not in PLAIN, f"{term} is both a term and plain"
+        assert "](" not in text, f"{term}: a link goes on its own last line, the document's"
+        if source:
+            assert source[1].startswith("https://"), f"{term}: {source[1]} isn't https"
 
 
 def test_the_hand_written_mockup_carries_the_same_terms():
     page = MOCKUP.read_text()
     block = page[page.index("const TERMS = {\n") : page.index("\n};\nconst TERM_RE")]
     mock = {
-        m[1]: (m[2].replace("’", "'"), m[3].replace("’", "'"))
-        for m in re.finditer(r"^  ([A-Z][A-Z0-9]*): \['(.*)', '(.*)'\],$", block, re.M)
+        m[1]: tuple(g.replace("’", "'") for g in m.groups()[1:] if g is not None)
+        for m in re.finditer(
+            r"^  ([A-Z][A-Z0-9]*): \['(.*?)', '(.*?)'(?:, '(.*?)', '(.*?)')?\],$", block, re.M
+        )
     }
     assert mock == glossary()
