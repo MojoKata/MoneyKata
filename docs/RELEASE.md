@@ -8,16 +8,28 @@ to `ghcr.io/mojokata`, joins each image's two architectures under the version's 
 attests both images (S17.8.2). Everything before the tag happens in an ordinary pull request.
 Everything after it is checking what was published.
 
-The steps were written from 0.1.0's release, made through GitHub's web pages.
+The steps were written from 0.1.0's release. Every release from then on has a tag its
+maintainer signs (§5).
 
 ## 1. Before you start
 
 - **Write access to `MojoKata/MoolaKata`.** The release and its tag are made there; a fork
   can open the release's pull request but not tag it.
-- **[`gh`](https://cli.github.com/)**, signed in, and **Docker** with buildx, to check what
-  was published (§7).
+- **A GPG key on your GitHub account** (**Settings › SSH and GPG keys**), to sign the tag
+  (§5).
+- **[`gh`](https://cli.github.com/)**, GitHub's command line. Get it from
+  [cli.github.com](https://cli.github.com/) (for Linux, its
+  [install page](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) adds GitHub's
+  package repository), and sign in once with `gh auth login`.
+- **Docker** with buildx, to check what was published (§7).
 - **A checkout set up for development** (`web/dev.sh setup`, README), for the regenerated
-  files and `web/check`.
+  files and `web/check`. Its remote for MojoKata/MoolaKata is called `upstream` below. In a
+  clone of MojoKata/MoolaKata itself, that remote is `origin`.
+- **The release tags' ruleset**, set once. In MojoKata/MoolaKata, go to **Settings › Rules ›
+  Rulesets › New ruleset › New tag ruleset**. Set its target to tags matching `v*`, turn on
+  **Restrict creations**, **Restrict updates** and **Restrict deletions**, and put the
+  maintainers in its bypass list. Only a maintainer can then create a release tag, and only a
+  maintainer can move or delete one (§9).
 - **Done once, at 0.1.0; don't repeat it.** A new package on ghcr.io starts private. MojoKata's
   **Settings › Packages › Package creation** allows public packages, and both packages,
   `moolakata` and `moolakata-connector`, were made public under each package's **Package
@@ -49,8 +61,8 @@ git diff --stat v0.1.0..upstream/main -- web/server/src/moolakata/store/alembic/
 ```
 
 The rule holds from 0.1.0 on, with no exception for 0.x. The first upgrade that needs a guide
-is 1.0.0, unless 1.0.0 is released earlier by choice. A release for testers is marked by
-GitHub's pre-release checkbox (§5) and the README's **Release** line, not by its number.
+is 1.0.0, unless 1.0.0 is released earlier by choice. What marks a release for testers is
+being a pre-release on GitHub (§5) and the README's **Release** line, not its number.
 
 A version is never reused. Browsers keep the app's files for a year under `/ui/v/<version>/`,
 and testers may already have pulled the images under that tag. A second build under the same
@@ -180,9 +192,10 @@ gh attestation verify oci://ghcr.io/mojokata/moolakata:0.2.0 --owner MojoKata
   upgrades without reading it. Leave the section out of any other release.
 - **What's new**: list the pull requests since the last tag with
   `git log --format='- %s' v0.1.0..upstream/main`. Each squash commit's subject ends in its
-  number, and GitHub links `(#9)` to the pull request. Or use the release form's **Generate
-  release notes** button, which does the same with authors. Add the base image's move from
-  §3 step 3, naming the Debian packages it picked up.
+  number, and GitHub links `(#9)` to the pull request. GitHub's own list, with authors,
+  comes from `gh api repos/MojoKata/MoolaKata/releases/generate-notes -f tag_name=v0.2.0
+  -f previous_tag_name=v0.1.0 --jq .body`. Add the base image's move from §3 step 3, naming
+  the Debian packages it picked up.
 - **Compatibility**: comes from the protocol changes found in §3 step 5.
 - **Tried by hand**: the manual test plan requires every release to say which of T1–T13
   were run, by whom and on what, and which were not (S17.9.7.8). That includes T7, the arm64
@@ -190,30 +203,49 @@ gh attestation verify oci://ghcr.io/mojokata/moolakata:0.2.0 --owner MojoKata
 - Link to the documents at the tag (`https://github.com/MojoKata/MoolaKata/blob/v0.2.0/docs/DEPLOY.md`),
   so a later change on `main` doesn't move the instructions under an old release.
 
-## 5. Publish the release
+## 5. Tag and publish the release
 
-On GitHub, **Releases › Draft a new release**
-(`https://github.com/MojoKata/MoolaKata/releases/new`):
+The maintainer signs the tag by hand with their own GPG key and pushes it. They then make
+the GitHub release from that tag with [`gh`](https://cli.github.com/) (§1). GitHub's
+**Draft a new release** form isn't used: a tag it makes carries no signature.
 
-1. **Tag**: type `v0.2.0` and choose **Create new tag: v0.2.0 on publish**. **Target**:
-   `main`. If something merged after the release's pull request, pick that pull request's
-   commit under **Recent commits** instead.
-2. **Previous tag**: the last release (`v0.1.0`), which **Generate release notes** compares
-   against.
-3. **Release title**: `MoolaKata 0.2.0`. **Description**: the notes from §4.
-4. **Set as a pre-release**: ticked while releases are for testers (0.1.0 was one).
-5. **Publish release.** That makes the tag, and the tag starts the workflow. The release page
-   is up about two minutes before its images are (§6).
+1. **Find the release's commit**:
 
-Or from a terminal, with a GPG-signed tag in place of the one GitHub makes:
+   ```sh
+   git fetch upstream
+   git log --oneline -1 upstream/main       # Release 0.2.0 (#NN)
+   ```
 
-```sh
-git fetch upstream
-git tag -s v0.2.0 -m "MoolaKata 0.2.0" upstream/main     # the release's commit
-git push upstream v0.2.0                                 # starts the workflow
-gh release create v0.2.0 -R MojoKata/MoolaKata --verify-tag --prerelease \
-  --title "MoolaKata 0.2.0" --notes-file notes.md
-```
+   If something merged after the release's pull request, tag that pull request's commit
+   instead of `upstream/main`.
+2. **Sign the tag**, and check its signature:
+
+   ```sh
+   git tag -s v0.2.0 -m "MoolaKata 0.2.0" upstream/main
+   git tag -v v0.2.0                        # gpg: Good signature from …
+   ```
+
+   GitHub shows the tag as **Verified** when two things hold. The key must be on your GitHub
+   account. The tagger's email (`git config user.email`) must be one of the key's addresses,
+   verified on that account.
+3. **Push the tag.** The push starts `release.yml` (§6):
+
+   ```sh
+   git push upstream v0.2.0
+   ```
+
+4. **Make the release** from the pushed tag, with the notes from §4 saved as
+   `notes-0.2.0.md`:
+
+   ```sh
+   gh release create v0.2.0 -R MojoKata/MoolaKata --verify-tag --prerelease \
+     --title "MoolaKata 0.2.0" --notes-file notes-0.2.0.md
+   ```
+
+   `--verify-tag` stops the command when the tag isn't on GitHub yet, so `gh` never makes an
+   unsigned tag of its own. Keep `--prerelease` while releases are for testers (0.1.0 was
+   one), and leave it out for a release meant for households. The release page is up about
+   two minutes before its images are (§6).
 
 ## 6. Watch the workflow
 
@@ -272,10 +304,13 @@ images:
 ## 9. When something goes wrong
 
 - **The tag doesn't name the version** (*the tag names this version* fails): nothing was
-  pushed. Delete the release and its tag, then publish again from §5 on the right commit:
+  pushed. A maintainer deletes the release and its tag (the ruleset lets only them), then
+  repeats §5 on the right commit:
 
   ```sh
-  gh release delete v0.2.0 -R MojoKata/MoolaKata --cleanup-tag --yes
+  gh release delete v0.2.0 -R MojoKata/MoolaKata --cleanup-tag --yes   # the release and GitHub's tag
+  git push upstream :refs/tags/v0.2.0                                   # the tag alone, when there's no release yet
+  git tag -d v0.2.0                                                     # your own copy
   ```
 
 - **A build or smoke run fails.** No `0.2.0` tag exists on ghcr.io yet, only possibly the
