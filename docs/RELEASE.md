@@ -26,11 +26,27 @@ The steps were written from 0.1.0's release, made through GitHub's web pages.
 
 ## 2. Pick the version
 
-A version is three numbers, `MAJOR.MINOR.PATCH` (`0.2.0`), and its tag is `v` and the same
-numbers (`v0.2.0`). `release.yml` refuses a tag that isn't `v` followed by `web/VERSION`'s
-text. The tests read `DEPLOY.md`'s image tags as three numbers. While releases are for
-testers, the first number stays 0. A release of fixes alone takes the next patch (`0.1.1`).
-Anything else, such as a new screen or a database migration, takes the next minor (`0.2.0`).
+MoolaKata uses [semantic versioning](https://semver.org): `MAJOR.MINOR.PATCH` (`1.4.2`),
+tagged `v` and the same numbers (`v1.4.2`). `release.yml` refuses a tag that isn't `v`
+followed by `web/VERSION`'s text. The tests read `DEPLOY.md`'s image tags as three numbers.
+
+1. **MAJOR**: the release upgrades the database, which means it adds a migration (a new
+   revision in `web/server/src/moolakata/store/alembic/versions/`). The server migrates at
+   its first unlock. After that an older release refuses the database, so going back means
+   restoring the copy made before the upgrade (`operations.md` §3).
+2. **MINOR**: new features, with the database left as it was.
+3. **PATCH**: fixes alone.
+
+To see whether the database has changed since the last release:
+
+```sh
+git diff --stat v0.1.0..upstream/main -- web/server/src/moolakata/store/alembic/versions/
+```
+
+**Before 1.0.0**, while releases are for testers, each kind of release moves down one
+place, as semantic versioning allows for 0.x. A migration takes the next minor (`0.2.0`), and
+anything else takes the next patch (`0.1.1`). 1.0.0 is the first release meant for
+households to rely on.
 
 A version is never reused. Browsers keep the app's files for a year under `/ui/v/<version>/`,
 and testers may already have pulled the images under that tag. A second build under the same
@@ -62,7 +78,18 @@ version would be served stale to the first group and silently replaced for the s
 
    The `0.1.0`s left in the dev seed (`seed_connector.py`, `seed_links.py`), in the tests and
    in the hand-written mockup are sample data, and stay as they are.
-3. **Regenerate what carries the version**: the API's OpenAPI document (S13.8.9), in a few
+3. **Move the base image** (S17.8.5). Both Dockerfiles pin `python:3.14-slim-bookworm` by
+   digest, and the digest moves with each release:
+
+   ```sh
+   web/dev.sh base-update --packages
+   ```
+
+   It writes the new digest into both Dockerfiles and records the move in `web/audit.json`.
+   It also prints the Debian packages that changed, for the commit message and the release
+   notes. Bring the base image's row in `docs/dependencies.md` up to date by hand: the date
+   it last moved and what the move picked up.
+4. **Regenerate what carries the version**: the API's OpenAPI document (S13.8.9), in a few
    seconds, and the generated mockup, in about ten minutes:
 
    ```sh
@@ -73,18 +100,41 @@ version would be served stale to the first group and silently replaced for the s
    The mockup's diff is the version alone, in its `mk-version` meta tag and the recorded
    `/ui/api/session` and `/ui/api/unlock` answers. Anything more means `main` had drifted
    already. Find out why before going on.
-4. **Run every check**: `web/check`, which takes about 20 minutes, and look for its last line,
+5. **Bring every document that goes with the release up to date**, in this same pull
+   request. Its documents describe the release from the moment it is tagged. Start from
+   what changed since the last release, `git log --oneline v0.1.0..upstream/main`, and
+   check each document against it:
+   1. **README**: the **Release** line and the **Status** paragraph.
+   2. **`docs/DEPLOY.md`**: every step the release changed (a setting, a screen, a port, a
+      file), and new screenshots of the screens that now look different. Its second
+      paragraph waits for §8.
+   3. **`docs/operations.md`**: the runbook for anything the release changed, such as
+      upgrading, commands, configuration keys and backups.
+   4. **`docs/test-plan.md`**: a test for anything new that the build can't try by itself.
+   5. **The app's guides** (`web/ui/guides/`), which ship inside the image. Each screen the
+      release changed must still read true. Retake the screenshots of those screens with
+      `web/dev.sh help-shots <key> …`.
+   6. **`docs/api.md`, `docs/connector-protocol.md` and `docs/link-protocol.md`**: every
+      change to the API, the connector's protocol or the link protocol since the last
+      release. The release notes say what each change means for a server and a connector,
+      or for two linked servers, that are at different releases (§4).
+   7. **`docs/dependencies.md`**: the base image's row (step 3), and any library whose
+      **Revisit** has come due.
+   8. **`docs/requirements/`**: they carry no versions, so nothing changes for the release
+      itself. Check that the README's tables of gaps and open questions match what this
+      release leaves open.
+6. **Run every check**: `web/check`, which takes about 20 minutes, and look for its last line,
    `all checks passed`. A compose file or a `DEPLOY.md` tag left at the old version fails
    `test_install.py`.
    The generated mockup's crawl sometimes fails without a diff: a Playwright route-handler
    error, or a screen that *drew nothing in 20 s*. When that is the only failure, run it
    again alone, `(cd web/server && uv run --frozen python ../ui/mockup/build.py --check)`.
-5. **Commit and open the pull request** against `MojoKata/MoolaKata`'s `main`, titled
+7. **Commit and open the pull request** against `MojoKata/MoolaKata`'s `main`, titled
    `Release 0.2.0`. Because it touches `web/install/`, two workflows run on it: `check`
    (`web/check`, about half an hour) and `release`, which builds both images and smoke-runs
    them on both architectures without pushing anything. A green pull request means the tag
    will build.
-6. **Squash-merge it.** Nothing else should merge between this and the tag. If something
+8. **Squash-merge it.** Nothing else should merge between this and the tag. If something
    does, the tag goes on the release's commit rather than on `main`'s head (§5).
 
 ## 4. The release notes
@@ -100,8 +150,14 @@ DEPLOY.md §6, then unlocks.
 - (one line for each pull request merged since v0.1.0)
 
 ## Upgrading
-At its first unlock the server copies its database to data/pre-upgrade/ and migrates it;
-docs/operations.md §3 says how to go back. The connector takes the same version.
+(A release that upgrades the database:) At its first unlock the server copies its database
+to data/pre-upgrade/ and migrates it, and an older release can't open it after that;
+docs/operations.md §3 says how to go back. (Any other release:) The database stays as it is.
+The connector takes the same version.
+
+## Compatibility
+(What a server at this release and a connector or linked server at the last one do
+together, or that both must be upgraded.)
 
 ## Tried by hand (docs/test-plan.md)
 Run: T10 on Proxmox VE 9.2 with a Debian 13 guest; T11 on TrueNAS 25.10.7 (by whom).
@@ -116,7 +172,9 @@ gh attestation verify oci://ghcr.io/mojokata/moolakata:0.2.0 --owner MojoKata
 - **What's new**: list the pull requests since the last tag with
   `git log --format='- %s' v0.1.0..upstream/main`. Each squash commit's subject ends in its
   number, and GitHub links `(#9)` to the pull request. Or use the release form's **Generate
-  release notes** button, which does the same with authors.
+  release notes** button, which does the same with authors. Add the base image's move from
+  §3 step 3, naming the Debian packages it picked up.
+- **Compatibility**: comes from the protocol changes found in §3 step 5.
 - **Tried by hand**: the manual test plan requires every release to say which of T1–T13
   were run, by whom and on what, and which were not (S17.9.7.8). That includes T7, the arm64
   image on household hardware, which no runner replaces.
@@ -194,10 +252,11 @@ images:
 
    ![The version on the connector's page](release/version-connector.png)
 
-2. **Bring `DEPLOY.md` up to date** in a small pull request: its second paragraph names
-   this release and the hosts' versions it was run on, and any step that changed is
-   corrected, with new screenshots where a screen did. 0.1.0's was the pull request
-   *0.1.0 is published: DEPLOY.md run with the release itself*.
+2. **Record the run** in a small pull request. `DEPLOY.md`'s second paragraph names this
+   release and the versions of the hosts it was run on. Every other document already went
+   with the release (§3 step 5), so the only other changes are fixes the run found. For
+   0.1.0 this was the pull request *0.1.0 is published: DEPLOY.md run with the release
+   itself*.
 3. **Add the runs to the release's notes** (T10, T11 and any other test from the plan) with
    the release page's **Edit**.
 
