@@ -1,8 +1,9 @@
 # Releases (requirements S17.8.1, S17.8.2, S17.10). On a v<version> tag: both images for amd64
 # and arm64, each built and smoke-run natively on a runner of its architecture, pushed to
 # ghcr.io under the repository's owner, joined into one tag per image, and attested (build
-# provenance, Sigstore). On a pull request that touches what goes into the images: the same
-# builds and smoke runs, and nothing is pushed.
+# provenance, Sigstore); then the GitHub release drafted with the tag's install files, for a
+# maintainer to publish with its notes (docs/RELEASE.md §8). On a pull request that touches
+# what goes into the images: the same builds and smoke runs, and nothing is pushed.
 name: release
 
 on:
@@ -95,3 +96,31 @@ jobs:
           subject-name: ${{ steps.join.outputs.registry }}/moolakata-connector
           subject-digest: ${{ steps.join.outputs.moolakata_connector }}
           push-to-registry: true
+
+  draft:
+    name: the release drafted, with the tag's install files
+    needs: publish
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # A draft is seen only by people with write access and isn't locked until it is
+      # published, so testers see nothing yet. A rerun replaces the draft an earlier run made.
+      - name: draft the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+              --jq ".[] | select(.draft and .tag_name == \"$tag\") | .id"); do
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id"
+          done
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "MoolaKata ${tag#v}" \
+            --notes "Drafted by the release workflow: a maintainer publishes it with its notes." \
+            web/install/compose*.yaml web/install/moolakata.toml web/install/proxy/*

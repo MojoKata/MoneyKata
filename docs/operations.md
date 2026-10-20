@@ -23,7 +23,9 @@ locked screen in a browser or with `docker compose exec moolakata moolakata keys
 
 `install/compose.yaml` runs it behind the household's reverse proxy (`proxy` mode);
 `install/proxy/` has Caddy, nginx and haproxy examples. `install/compose.tls.yaml` runs its
-own HTTPS with a self-signed certificate, for trying it on a local network.
+own HTTPS with a self-signed certificate, for trying it on a local network. Each release
+has these files attached as they are at its tag
+(`https://github.com/MojoKata/MoolaKata/releases/download/v<version>/<file>`).
 
 ### 1.1 Exposing only `/link/`
 

@@ -216,16 +216,18 @@ The tag and the release are made separately, about five minutes apart:
 
 1. The maintainer signs the tag by hand with their own GPG key and pushes it (this section).
 2. The push starts `release.yml`. It builds both images, smoke-runs them, publishes them to
-   ghcr.io, and joins and attests each one (§6).
+   ghcr.io, and joins and attests each one. It then drafts the GitHub release, with the
+   tag's install files attached (§6).
 3. The maintainer checks the published images (§7).
-4. Only then does the maintainer make the GitHub release from the tag with `gh release create`
+4. Only then does the maintainer publish the draft with its notes, using `gh release edit`
    (§8).
 
-Until that last step there is no release. Testers see nothing, never a release page without
-its images. A failed build can be fixed and tagged again under the same version (§10). Once
-published, the release is immutable (§1). Its tag and files are locked for good, and only its
-title and notes can still change. GitHub's **Draft a new release** form isn't used at any
-point, because a tag it makes carries no signature.
+Until that last step there is only a draft, which only people with write access can see.
+Testers see nothing, never a release page without its images. A failed build can be fixed
+and tagged again under the same version (§10). Once published, the release is immutable
+(§1). Its tag and files are locked for good, and only its title and notes can still change.
+GitHub's **Draft a new release** form isn't used at any point, because a tag it makes
+carries no signature.
 
 1. **Find the release's commit**:
 
@@ -261,13 +263,22 @@ gh run watch -R MojoKata/MoolaKata "$(gh run list -R MojoKata/MoolaKata --workfl
   --branch v0.2.0 --limit 1 --json databaseId --jq '.[0].databaseId')"
 ```
 
-Three jobs, about two minutes in all at 0.1.0:
+Four jobs. The first three took about two minutes in all at 0.1.0:
 
 1. **build and smoke (amd64)** and **build and smoke (arm64)**, side by side, on runners
    of their own architecture. Each first checks that the tag names `web/VERSION`, then runs
    `smoke.sh`, then pushes its images as `0.2.0-amd64` or `0.2.0-arm64`.
 2. **one tag per image, attested**, once both have passed. It joins each image's two
    architectures under `0.2.0` and attests each joined image.
+3. **the release drafted, with the tag's install files**. It drafts the release *MoolaKata
+   0.2.0* and attaches, from the tagged commit:
+   1. the four `compose*.yaml` files;
+   2. the example `moolakata.toml`;
+   3. the proxy examples (`Caddyfile`, `nginx.conf`, `haproxy.cfg`).
+
+   This is the only job whose token can write to the repository. The ruleset (§1) still
+   keeps it from creating or moving a release tag. The draft shows under **Releases** to
+   people with write access, or with `gh release list -R MojoKata/MoolaKata`.
 
 A failure says which step failed in the run's annotations (the job's page, or
 `gh api repos/MojoKata/MoolaKata/check-runs/<job id>/annotations`). §10 says what to do next.
@@ -294,18 +305,20 @@ docker logout ghcr.io && docker pull ghcr.io/mojokata/moolakata:0.2.0          #
 
 ## 8. Publish the release
 
-Once §7's checks pass, make the release from the pushed tag, with the notes from §4 saved as
-`notes-0.2.0.md`:
+Once §7's checks pass, publish the draft that §6 made, with the notes from §4 saved as
+`notes-0.2.0.md`. Then check what GitHub attested:
 
 ```sh
-gh release create v0.2.0 -R MojoKata/MoolaKata --verify-tag --prerelease \
-  --title "MoolaKata 0.2.0" --notes-file notes-0.2.0.md
-gh release verify v0.2.0 -R MojoKata/MoolaKata     # the release attestation GitHub signed
+gh release edit v0.2.0 -R MojoKata/MoolaKata --draft=false --prerelease \
+  --notes-file notes-0.2.0.md
+gh release verify v0.2.0 -R MojoKata/MoolaKata                   # the release attestation GitHub signed
+gh release download v0.2.0 -R MojoKata/MoolaKata -p compose.yaml -D /tmp/v0.2.0
+gh release verify-asset v0.2.0 /tmp/v0.2.0/compose.yaml -R MojoKata/MoolaKata   # one of its files
 ```
 
-`--verify-tag` stops the command when the tag isn't on GitHub, so `gh` never makes an
-unsigned tag of its own. Keep `--prerelease` while releases are for testers (0.1.0 was one),
-and leave it out for a release meant for households.
+Keep `--prerelease` while releases are for testers (0.1.0 was one), and leave it out for a
+release meant for households. Before publishing, check that the draft's **Assets** list all
+eight install files.
 
 Publishing makes the release immutable. From then on its tag can't be moved or deleted,
 nothing can be attached to it or removed from it, and deleting the release would retire its
@@ -335,8 +348,9 @@ images:
 
 ## 10. When something goes wrong
 
-Before §8 there is no release yet, so a version can still be tagged again. A wrong tag is
-deleted by a maintainer, because the ruleset (§1) lets only them:
+Before §8 there is only a draft, so a version can still be tagged again. The next run's
+draft replaces any draft an earlier run made. A wrong tag is deleted by a maintainer, because
+the ruleset (§1) lets only them:
 
 ```sh
 git push upstream :refs/tags/v0.2.0      # GitHub's tag
@@ -352,6 +366,8 @@ git tag -d v0.2.0                        # your own copy
   per-architecture tags.
 - **The joining or attesting job fails**: **Re-run failed jobs**. It reads only the
   per-architecture images the builds pushed, so it can run again on its own.
+- **The drafting job fails**: **Re-run failed jobs**. It deletes any draft for the tag before
+  making its own, so a rerun never leaves two.
 - **§7 finds something wrong with the joined images**: `0.2.0` is on ghcr.io, and anyone may
   have pulled it. Don't publish its release and don't move its image. Fix forward with a new
   patch (`0.2.1`), whose notes say that 0.2.0 was skipped and why.
