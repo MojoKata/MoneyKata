@@ -19,8 +19,9 @@ requirements' README.
 
 **Release:** 0.1.0, a pre-release for testers. Its images are `ghcr.io/mojokata/moolakata` and
 `ghcr.io/mojokata/moolakata-connector`, for amd64 and arm64, each with a provenance attestation
-`gh attestation verify` checks; [`docs/DEPLOY.md`](docs/DEPLOY.md) installs it on a Proxmox VE
-VM or on TrueNAS.
+`gh attestation verify` checks. The same images, with the same digests, are on Docker Hub as
+`mojokata/moolakata` and `mojokata/moolakata-connector`. [`docs/DEPLOY.md`](docs/DEPLOY.md)
+installs it on a Proxmox VE VM or on TrueNAS.
 
 ## Where to start
 

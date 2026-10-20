@@ -49,7 +49,9 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
 
 1. **Get the image.** Each release is published as `ghcr.io/mojokata/moolakata:<version>`
    (and `ghcr.io/mojokata/moolakata-connector`), one tag for amd64 and arm64 (S17.8.2), which
-   the compose files name: Docker pulls it the first time a command needs it.
+   the compose files name: Docker pulls it the first time a command needs it. The same
+   images, with the same digests, are on Docker Hub as `mojokata/moolakata` and
+   `mojokata/moolakata-connector`, and either registry works in the `image:` lines.
    `gh attestation verify` checks that the image is the one the release workflow built from
    the release's tag ([`DEPLOY.md`](DEPLOY.md) §2 has the command). To build it yourself
    instead, or to carry it to a host with no internet access:

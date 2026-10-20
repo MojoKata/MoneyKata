@@ -81,7 +81,18 @@ you see.
      without limits. Membership lasts a year and is renewed each year. Until then, Docker
      Hub limits anyone who isn't signed in to 100 pulls every 6 hours per address
      ([usage and limits](https://docs.docker.com/docker-hub/usage/)). ghcr.io sets no such
-     limit for public images.
+     limit for public images, which is why the compose files and the docs name ghcr.io and
+     give Docker Hub as the alternative.
+  6. **The releases made before.** Copy each earlier release's images once, the way the
+     workflow does. They keep their digests, so their attestations verify the copies. For
+     0.1.0:
+
+     ```sh
+     docker login docker.io -u mojokata
+     for image in moolakata moolakata-connector; do
+       docker buildx imagetools create -t docker.io/mojokata/$image:0.1.0 ghcr.io/mojokata/$image:0.1.0
+     done
+     ```
 - **Done once, at 0.1.0; don't repeat it.** A new package on ghcr.io starts private. MojoKata's
   **Settings › Packages › Package creation** allows public packages, and both packages,
   `moolakata` and `moolakata-connector`, were made public under each package's **Package

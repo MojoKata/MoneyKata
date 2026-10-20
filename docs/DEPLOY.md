@@ -42,6 +42,12 @@ gh attestation verify oci://ghcr.io/mojokata/moolakata:0.1.0 -R MojoKata/MoolaKa
 It passes only for an image that MoolaKata's own release workflow built from the release's
 tag, on GitHub's runners.
 
+The same images, with the same digests, are on Docker Hub as `mojokata/moolakata` and
+`mojokata/moolakata-connector`. To pull from there instead, change `ghcr.io/mojokata/` to
+`mojokata/` in the compose file's `image:` lines. The check above works for them too, with
+`oci://docker.io/mojokata/moolakata:0.1.0`. Docker Hub limits how often anyone not signed in
+can pull. ghcr.io sets no such limit, which is why this guide uses it.
+
 To build it yourself instead, from a checkout of the source (about three minutes on a VM with
 two cores), and to carry it to a host with no internet access:
 
