@@ -190,7 +190,9 @@ Not run: T1–T9, T12, T13.
 ## Images
 ghcr.io/mojokata/moolakata:0.2.0 and ghcr.io/mojokata/moolakata-connector:0.2.0, for amd64
 and arm64, each with a build-provenance attestation:
-gh attestation verify oci://ghcr.io/mojokata/moolakata:0.2.0 --owner MojoKata
+gh attestation verify oci://ghcr.io/mojokata/moolakata:0.2.0 -R MojoKata/MoolaKata \
+  --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml \
+  --source-ref refs/tags/v0.2.0 --deny-self-hosted-runners
 ```
 
 - **Before you upgrade**: a major release's guide (§2), placed first so that nobody
@@ -275,13 +277,20 @@ A failure says which step failed in the run's annotations (the job's page, or
 ```sh
 docker buildx imagetools inspect ghcr.io/mojokata/moolakata:0.2.0              # linux/amd64 and linux/arm64
 docker buildx imagetools inspect ghcr.io/mojokata/moolakata-connector:0.2.0
-gh attestation verify oci://ghcr.io/mojokata/moolakata:0.2.0 --owner MojoKata
-gh attestation verify oci://ghcr.io/mojokata/moolakata-connector:0.2.0 --owner MojoKata
+for image in moolakata moolakata-connector; do
+  gh attestation verify oci://ghcr.io/mojokata/$image:0.2.0 -R MojoKata/MoolaKata \
+    --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml \
+    --source-ref refs/tags/v0.2.0 --deny-self-hosted-runners
+done
 docker logout ghcr.io && docker pull ghcr.io/mojokata/moolakata:0.2.0          # pulls without signing in
 ```
 
-Each `inspect` lists both platforms under one index. Each `verify` names the tag's run of
-`release.yml` as the image's build. The anonymous pull proves the packages are still public.
+1. Each `inspect` lists both platforms under one index.
+2. Each `verify` passes only for an image that this repository's `release.yml` built from the
+   tag `v0.2.0`, on GitHub's own runners. The image's attestation was signed through Sigstore
+   by the workflow's own identity, so no key is kept anywhere. Docker's own signing, Content
+   Trust, isn't used: it is being retired.
+3. The anonymous pull proves the packages are still public.
 
 ## 8. Publish the release
 

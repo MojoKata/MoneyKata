@@ -194,8 +194,11 @@
       run.
    2. **Published images.** Each release is published as `ghcr.io/mojokata/moolakata` and
       `ghcr.io/mojokata/moolakata-connector`, tagged with the version, one tag for both
-      architectures, with a build-provenance attestation that anyone can check
-      (`gh attestation verify oci://ghcr.io/mojokata/moolakata:<version> --owner MojoKata`).
+      architectures, with a build-provenance attestation that anyone can check. The check
+      `gh attestation verify oci://ghcr.io/mojokata/moolakata:<version> -R MojoKata/MoolaKata
+      --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml --source-ref
+      refs/tags/v<version> --deny-self-hosted-runners` passes only for an image that
+      `release.yml` built from the version's tag on GitHub's own runners.
       The compose files name them, so a host pulls them. The image can still be built from
       the source, and carried to a host with no internet access (`docker save` and
       `docker load`). Catalogs make the install a form rather than a file: TrueNAS's apps

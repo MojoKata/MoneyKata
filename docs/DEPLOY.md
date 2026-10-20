@@ -34,8 +34,13 @@ anyone can check that the one they pulled is it
 ([`gh`](https://cli.github.com/) installed):
 
 ```sh
-gh attestation verify oci://ghcr.io/mojokata/moolakata:0.1.0 --owner MojoKata
+gh attestation verify oci://ghcr.io/mojokata/moolakata:0.1.0 -R MojoKata/MoolaKata \
+  --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml \
+  --source-ref refs/tags/v0.1.0 --deny-self-hosted-runners
 ```
+
+It passes only for an image that MoolaKata's own release workflow built from the release's
+tag, on GitHub's runners.
 
 To build it yourself instead, from a checkout of the source (about three minutes on a VM with
 two cores), and to carry it to a host with no internet access:
