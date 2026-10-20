@@ -35,6 +35,30 @@ maintainer signs (§5).
   Releases** and turn on **Enable release immutability**. A published release's tag and
   files are then locked, and GitHub signs an attestation of the release (§8). Releases
   published before the setting was turned on, 0.1.0 among them, stay as they were.
+- **Docker Hub**, set up once by a maintainer. These are what `release.yml` needs to publish
+  there:
+  1. **The namespace.** Sign up at [hub.docker.com](https://hub.docker.com/signup) for a free
+     account whose Docker ID is `mojokata`. An *organization* on Docker Hub needs a paid Team
+     plan. An account can be turned into an organization of the same name later, if one is
+     ever needed. Turn on two-factor authentication, and keep the password and recovery
+     codes in the maintainers' password manager.
+  2. **The two repositories.** Create `mojokata/moolakata` and `mojokata/moolakata-connector`,
+     both **Public**. Give each a short description that links to this repository and
+     `docs/DEPLOY.md`.
+  3. **The workflow's token.** Go to **Account settings › Personal access tokens › Generate
+     new token**. Describe it as *MoolaKata releases*, give it **Read & Write** access, never
+     Delete, and set an expiry date with a reminder to renew it
+     ([Docker's guide](https://docs.docker.com/security/access-tokens/)). It is shown once.
+  4. **Where GitHub keeps it.** In MojoKata/MoolaKata, go to **Settings › Environments › New
+     environment** and create `docker-hub`. Under **Deployment branches and tags**, choose
+     **Selected branches and tags** and add the tag rule `v*`. Add the secret
+     `DOCKERHUB_TOKEN` (the token) and the variable `DOCKERHUB_USERNAME` (`mojokata`). Only a
+     job that runs for a release tag can read them. Pull requests, a fork's included, never
+     can.
+  5. **No pull limits.** Apply for the namespace to join
+     [Docker-Sponsored Open Source](https://www.docker.com/community/open-source/application).
+     Until it is accepted, Docker Hub limits anyone who isn't signed in to 10 pulls an hour
+     from one address. ghcr.io has no such limit.
 - **Done once, at 0.1.0; don't repeat it.** A new package on ghcr.io starts private. MojoKata's
   **Settings › Packages › Package creation** allows public packages, and both packages,
   `moolakata` and `moolakata-connector`, were made public under each package's **Package
