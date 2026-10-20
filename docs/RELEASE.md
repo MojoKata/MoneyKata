@@ -30,23 +30,27 @@ MoolaKata uses [semantic versioning](https://semver.org): `MAJOR.MINOR.PATCH` (`
 tagged `v` and the same numbers (`v1.4.2`). `release.yml` refuses a tag that isn't `v`
 followed by `web/VERSION`'s text. The tests read `DEPLOY.md`'s image tags as three numbers.
 
-1. **MAJOR**: the release upgrades the database, which means it adds a migration (a new
-   revision in `web/server/src/moolakata/store/alembic/versions/`). The server migrates at
-   its first unlock. After that an older release refuses the database, so going back means
-   restoring the copy made before the upgrade (`operations.md` §3).
-2. **MINOR**: new features, with the database left as it was.
-3. **PATCH**: fixes alone.
+1. **MAJOR**: the upgrade needs something from the people who run or use the server, beyond
+   changing the tag and unlocking. Examples are a migration that needs a step by hand or a
+   guide, a configuration key to edit, a new mount, re-pairing the connector, and linked
+   servers that must upgrade together. The release ships with its guide, and its notes open
+   with it (§4).
+2. **MINOR**: new features.
+3. **PATCH**: fixes.
 
-To see whether the database has changed since the last release:
+Any of them can carry a migration that the server runs by itself at the unlock. Once that
+migration has run, an older release refuses the database. Going back then means restoring the
+copy made before the upgrade (`operations.md` §3), and the notes' **Upgrading** section says
+so. This lists the migrations since the last release. Read each one to decide whether any of
+them needs something from people:
 
 ```sh
 git diff --stat v0.1.0..upstream/main -- web/server/src/moolakata/store/alembic/versions/
 ```
 
-**Before 1.0.0**, while releases are for testers, each kind of release moves down one
-place, as semantic versioning allows for 0.x. A migration takes the next minor (`0.2.0`), and
-anything else takes the next patch (`0.1.1`). 1.0.0 is the first release meant for
-households to rely on.
+The rule holds from 0.1.0 on, with no exception for 0.x. The first upgrade that needs a guide
+is 1.0.0, unless 1.0.0 is released earlier by choice. A release for testers is marked by
+GitHub's pre-release checkbox (§5) and the README's **Release** line, not by its number.
 
 A version is never reused. Browsers keep the app's files for a year under `/ui/v/<version>/`,
 and testers may already have pulled the images under that tag. A second build under the same
@@ -146,14 +150,17 @@ before tagging, so the release page is complete the moment it appears. A startin
 For testers. A new install follows docs/DEPLOY.md; a server you already run upgrades with
 DEPLOY.md §6, then unlocks.
 
+## Before you upgrade
+(A major release only: what the upgrade needs from you, step by step.)
+
 ## What's new
 - (one line for each pull request merged since v0.1.0)
 
 ## Upgrading
-(A release that upgrades the database:) At its first unlock the server copies its database
-to data/pre-upgrade/ and migrates it, and an older release can't open it after that;
-docs/operations.md §3 says how to go back. (Any other release:) The database stays as it is.
-The connector takes the same version.
+(A release with a migration:) At its first unlock the server copies its database to
+data/pre-upgrade/ and migrates it by itself; an older release can't open it after that, so
+going back means restoring that copy (docs/operations.md §3). (A release without one:) Going
+back is setting the old tag again. The connector takes the same version.
 
 ## Compatibility
 (What a server at this release and a connector or linked server at the last one do
@@ -169,6 +176,8 @@ and arm64, each with a build-provenance attestation:
 gh attestation verify oci://ghcr.io/mojokata/moolakata:0.2.0 --owner MojoKata
 ```
 
+- **Before you upgrade**: a major release's guide (§2), placed first so that nobody
+  upgrades without reading it. Leave the section out of any other release.
 - **What's new**: list the pull requests since the last tag with
   `git log --format='- %s' v0.1.0..upstream/main`. Each squash commit's subject ends in its
   number, and GitHub links `(#9)` to the pull request. Or use the release form's **Generate
