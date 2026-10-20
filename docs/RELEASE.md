@@ -265,8 +265,8 @@ The tag and the release are made separately, about five minutes apart:
 
 1. The maintainer signs the tag by hand with their own GPG key and pushes it (this section).
 2. The push starts `release.yml`. It builds both images, smoke-runs them, publishes them to
-   ghcr.io, and joins and attests each one. It then drafts the GitHub release, with the
-   tag's install files attached (§6).
+   ghcr.io, and joins and attests each one. It then copies them to Docker Hub with the same
+   digests, and drafts the GitHub release with the tag's install files attached (§6).
 3. The maintainer checks the published images (§7).
 4. Only then does the maintainer publish the draft with its notes, using `gh release edit`
    (§8).
@@ -313,14 +313,20 @@ gh run watch -R MojoKata/MoolaKata "$(gh run list -R MojoKata/MoolaKata --workfl
   --branch v0.2.0 --limit 1 --json databaseId --jq '.[0].databaseId')"
 ```
 
-Four jobs. The first three took about two minutes in all at 0.1.0:
+Five jobs. The first three took about two minutes in all at 0.1.0:
 
 1. **build and smoke (amd64)** and **build and smoke (arm64)**, side by side, on runners
    of their own architecture. Each first checks that the tag names `web/VERSION`, then runs
    `smoke.sh`, then pushes its images as `0.2.0-amd64` or `0.2.0-arm64`.
 2. **one tag per image, attested**, once both have passed. It joins each image's two
    architectures under `0.2.0` and attests each joined image.
-3. **the release drafted, with the tag's install files**. It drafts the release *MoolaKata
+3. **the images copied to Docker Hub**, after that. It copies both joined images to
+   `docker.io/mojokata/…:0.2.0` as they are, and checks that each copy's digest is the
+   original's. The attestations were made for those digests, so they verify the copies too.
+   It runs in the `docker-hub` environment, the only place Docker Hub's token can be read
+   (§1). If Docker Hub isn't set up yet, the job copies nothing and leaves a warning on the
+   run.
+4. **the release drafted, with the tag's install files**, beside the copy. It drafts the release *MoolaKata
    0.2.0* and attaches, from the tagged commit:
    1. the four `compose*.yaml` files;
    2. the example `moolakata.toml`;
@@ -336,24 +342,27 @@ A failure says which step failed in the run's annotations (the job's page, or
 ## 7. Check what was published
 
 ```sh
-docker buildx imagetools inspect ghcr.io/mojokata/moolakata:0.2.0              # linux/amd64 and linux/arm64
-docker buildx imagetools inspect ghcr.io/mojokata/moolakata-connector:0.2.0
-for image in moolakata moolakata-connector; do
-  gh attestation verify oci://ghcr.io/mojokata/$image:0.2.0 -R MojoKata/MoolaKata \
-    --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml \
-    --source-ref refs/tags/v0.2.0 --deny-self-hosted-runners
+for registry in ghcr.io docker.io; do
+  for image in moolakata moolakata-connector; do
+    docker buildx imagetools inspect $registry/mojokata/$image:0.2.0                # linux/amd64 and linux/arm64
+    gh attestation verify oci://$registry/mojokata/$image:0.2.0 -R MojoKata/MoolaKata \
+      --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml \
+      --source-ref refs/tags/v0.2.0 --deny-self-hosted-runners
+  done
 done
-docker logout ghcr.io && docker pull ghcr.io/mojokata/moolakata:0.2.0          # pulls without signing in
+docker logout ghcr.io && docker pull ghcr.io/mojokata/moolakata:0.2.0            # pulls without signing in
+docker logout docker.io && docker pull docker.io/mojokata/moolakata:0.2.0
 ```
 
-1. Each `inspect` lists both platforms under one index.
+1. Each `inspect` lists both platforms under one index, and shows the same digest on both
+   registries.
 2. Each `verify` passes only for an image that this repository's `release.yml` built from the
    tag `v0.2.0`, on GitHub's own runners
    ([`gh attestation verify`](https://cli.github.com/manual/gh_attestation_verify)). The
    image's attestation was signed through Sigstore by the workflow's own identity, so no key
    is kept anywhere. Docker's own signing, Content Trust, isn't used: Docker is
    [retiring it](https://www.docker.com/blog/docker-content-trust-retirement-and-migration-guidance/).
-3. The anonymous pull proves the packages are still public.
+3. The anonymous pulls prove both registries serve the images to anyone.
 
 ## 8. Publish the release
 
@@ -426,6 +435,9 @@ git tag -d v0.2.0                        # your own copy
   per-architecture tags.
 - **The joining or attesting job fails**: **Re-run failed jobs**. It reads only the
   per-architecture images the builds pushed, so it can run again on its own.
+- **The Docker Hub job fails** (Docker Hub down, or the token expired): renew the token if
+  it has expired (§1), then **Re-run failed jobs**. The copy can run again on its own, and
+  ghcr.io and the draft don't depend on it.
 - **The drafting job fails**: **Re-run failed jobs**. It deletes any draft for the tag before
   making its own, so a rerun never leaves two.
 - **§7 finds something wrong with the joined images**: `0.2.0` is on ghcr.io, and anyone may

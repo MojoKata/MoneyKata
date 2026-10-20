@@ -1,8 +1,9 @@
 # Releases (requirements S17.8.1, S17.8.2, S17.10). On a v<version> tag: both images for amd64
 # and arm64, each built and smoke-run natively on a runner of its architecture, pushed to
 # ghcr.io under the repository's owner, joined into one tag per image, and attested (build
-# provenance, Sigstore); then the GitHub release drafted with the tag's install files, for a
-# maintainer to publish with its notes (docs/RELEASE.md §8). On a pull request that touches
+# provenance, Sigstore); then copied to Docker Hub with the same digests, and the GitHub
+# release drafted with the tag's install files, for a maintainer to publish with its notes
+# (docs/RELEASE.md §8). On a pull request that touches
 # what goes into the images: the same builds and smoke runs, and nothing is pushed.
 name: release
 
@@ -96,6 +97,41 @@ jobs:
           subject-name: ${{ steps.join.outputs.registry }}/moolakata-connector
           subject-digest: ${{ steps.join.outputs.moolakata_connector }}
           push-to-registry: true
+
+  docker-hub:
+    name: the images copied to Docker Hub
+    needs: publish
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # The environment holds Docker Hub's token and lets only v* tags read it (RELEASE.md §1).
+    environment: docker-hub
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      # The joined images, copied as they are: the same digests, so the attestations made
+      # for ghcr.io verify the copies too.
+      - name: copy both images, their digests unchanged
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HUB_USER: ${{ vars.DOCKERHUB_USERNAME }}
+          HUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$HUB_USER" ] || [ -z "$HUB_TOKEN" ]; then
+            echo "::warning::Docker Hub isn't set up (docs/RELEASE.md §1): nothing copied"
+            exit 0
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          echo "$HUB_TOKEN" | docker login docker.io -u "$HUB_USER" --password-stdin
+          digest() { docker buildx imagetools inspect "$1" --format '{{json .Manifest}}' | jq -r .digest; }
+          for image in moolakata moolakata-connector; do
+            from="ghcr.io/$owner/$image:$version" to="docker.io/$owner/$image:$version"
+            docker buildx imagetools create -t "$to" "$from"
+            test "$(digest "$to")" = "$(digest "$from")"
+          done
 
   draft:
     name: the release drafted, with the tag's install files

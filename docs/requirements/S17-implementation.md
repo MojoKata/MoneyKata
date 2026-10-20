@@ -198,11 +198,14 @@
       `gh attestation verify oci://ghcr.io/mojokata/moolakata:<version> -R MojoKata/MoolaKata
       --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml --source-ref
       refs/tags/v<version> --deny-self-hosted-runners` passes only for an image that
-      `release.yml` built from the version's tag on GitHub's own runners.
+      `release.yml` built from the version's tag on GitHub's own runners. Each release is
+      also on Docker Hub, as `docker.io/mojokata/moolakata` and
+      `docker.io/mojokata/moolakata-connector`, copied with the same digests, so the same
+      attestation and the same check cover those copies.
       The compose files name them, so a host pulls them. The image can still be built from
       the source, and carried to a host with no internet access (`docker save` and
       `docker load`). Catalogs make the install a form rather than a file: TrueNAS's apps
-      catalog first (S17.8.3); others, such as Docker Hub, may follow.
+      catalog first (S17.8.3); others may follow.
    3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
       on) and **TrueNAS** (a custom app from `install/compose.truenas.yaml`, its configuration
       in `MOOLAKATA_CONFIG` and a one-time step giving the datasets to the server's account,
@@ -518,7 +521,8 @@
        `smoke.sh` on each (S17.8.1), pushes the images that passed to `ghcr.io/mojokata`
        under per-architecture tags, joins them under the version's tag, and attests each
        (GitHub's build provenance, signed through Sigstore's public instance and recorded in
-       its transparency log). Last, it drafts the GitHub release with the tag's install
+       its transparency log). Then it copies both joined images to Docker Hub with their
+       digests unchanged (S17.8.2), and drafts the GitHub release with the tag's install
        files attached: the compose files, the example `moolakata.toml` and the proxy
        examples. On a pull request that touches what goes into the images, it builds and
        smoke-runs both and pushes nothing. A new package on ghcr.io starts private: after the
@@ -533,4 +537,6 @@
        (S17.2.1). Everything else is the repository's own scripts and the runners' own
        `gh`. Each job's token has only the permissions it needs: `contents: read`
        everywhere, `packages: write` to push, `id-token` and `attestations: write` for the
-       attestation alone, and `contents: write` only to draft the release.
+       attestation alone, and `contents: write` only to draft the release. The one secret,
+       Docker Hub's token, lives in an environment (`docker-hub`) that only runs for `v*`
+       tags can read.
