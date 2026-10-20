@@ -20,7 +20,8 @@ maintainer signs (§5).
 - **[`gh`](https://cli.github.com/)**, GitHub's command line. Get it from
   [cli.github.com](https://cli.github.com/) (for Linux, its
   [install page](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) adds GitHub's
-  package repository), and sign in once with `gh auth login`.
+  package repository), and sign in once with `gh auth login`. `gh release verify` (§8) needs
+  version 2.81 or later.
 - **Docker** with buildx, to check what was published (§7).
 - **A checkout set up for development** (`web/dev.sh setup`, README), for the regenerated
   files and `web/check`. Its remote for MojoKata/MoolaKata is called `upstream` below. In a
@@ -29,7 +30,11 @@ maintainer signs (§5).
   Rulesets › New ruleset › New tag ruleset**. Set its target to tags matching `v*`, turn on
   **Restrict creations**, **Restrict updates** and **Restrict deletions**, and put the
   maintainers in its bypass list. Only a maintainer can then create a release tag, and only a
-  maintainer can move or delete one (§9).
+  maintainer can move or delete one (§10).
+- **Immutable releases**, set once. In MojoKata/MoolaKata, go to **Settings › General ›
+  Releases** and turn on **Enable release immutability**. A published release's tag and
+  files are then locked, and GitHub signs an attestation of the release (§8). Releases
+  published before the setting was turned on, 0.1.0 among them, stay as they were.
 - **Done once, at 0.1.0; don't repeat it.** A new package on ghcr.io starts private. MojoKata's
   **Settings › Packages › Package creation** allows public packages, and both packages,
   `moolakata` and `moolakata-connector`, were made public under each package's **Package
@@ -62,7 +67,7 @@ git diff --stat v0.1.0..upstream/main -- web/server/src/moolakata/store/alembic/
 
 The rule holds from 0.1.0 on, with no exception for 0.x. The first upgrade that needs a guide
 is 1.0.0, unless 1.0.0 is released earlier by choice. What marks a release for testers is
-being a pre-release on GitHub (§5) and the README's **Release** line, not its number.
+being a pre-release on GitHub (§8) and the README's **Release** line, not its number.
 
 A version is never reused. Browsers keep the app's files for a year under `/ui/v/<version>/`,
 and testers may already have pulled the images under that tag. A second build under the same
@@ -88,7 +93,7 @@ version would be served stale to the first group and silently replaced for the s
 
    Then read the diff for two lines that need a person's judgement:
    - `DEPLOY.md`'s second paragraph says which release its steps were run with. Put the old
-     version back there until §8 has run them with the new one.
+     version back there until §9 has run them with the new one.
    - The README's **Release** line still says *a pre-release for testers*. Keep that
      unless this release is meant for households to rely on.
 
@@ -123,7 +128,7 @@ version would be served stale to the first group and silently replaced for the s
    1. **README**: the **Release** line and the **Status** paragraph.
    2. **`docs/DEPLOY.md`**: every step the release changed (a setting, a screen, a port, a
       file), and new screenshots of the screens that now look different. Its second
-      paragraph waits for §8.
+      paragraph waits for §9.
    3. **`docs/operations.md`**: the runbook for anything the release changed, such as
       upgrading, commands, configuration keys and backups.
    4. **`docs/test-plan.md`**: a test for anything new that the build can't try by itself.
@@ -203,11 +208,22 @@ gh attestation verify oci://ghcr.io/mojokata/moolakata:0.2.0 --owner MojoKata
 - Link to the documents at the tag (`https://github.com/MojoKata/MoolaKata/blob/v0.2.0/docs/DEPLOY.md`),
   so a later change on `main` doesn't move the instructions under an old release.
 
-## 5. Tag and publish the release
+## 5. Tag the release
 
-The maintainer signs the tag by hand with their own GPG key and pushes it. They then make
-the GitHub release from that tag with [`gh`](https://cli.github.com/) (§1). GitHub's
-**Draft a new release** form isn't used: a tag it makes carries no signature.
+The tag and the release are made separately, about five minutes apart:
+
+1. The maintainer signs the tag by hand with their own GPG key and pushes it (this section).
+2. The push starts `release.yml`. It builds both images, smoke-runs them, publishes them to
+   ghcr.io, and joins and attests each one (§6).
+3. The maintainer checks the published images (§7).
+4. Only then does the maintainer make the GitHub release from the tag with `gh release create`
+   (§8).
+
+Until that last step there is no release. Testers see nothing, never a release page without
+its images. A failed build can be fixed and tagged again under the same version (§10). Once
+published, the release is immutable (§1). Its tag and files are locked for good, and only its
+title and notes can still change. GitHub's **Draft a new release** form isn't used at any
+point, because a tag it makes carries no signature.
 
 1. **Find the release's commit**:
 
@@ -234,19 +250,6 @@ the GitHub release from that tag with [`gh`](https://cli.github.com/) (§1). Git
    git push upstream v0.2.0
    ```
 
-4. **Make the release** from the pushed tag, with the notes from §4 saved as
-   `notes-0.2.0.md`:
-
-   ```sh
-   gh release create v0.2.0 -R MojoKata/MoolaKata --verify-tag --prerelease \
-     --title "MoolaKata 0.2.0" --notes-file notes-0.2.0.md
-   ```
-
-   `--verify-tag` stops the command when the tag isn't on GitHub yet, so `gh` never makes an
-   unsigned tag of its own. Keep `--prerelease` while releases are for testers (0.1.0 was
-   one), and leave it out for a release meant for households. The release page is up about
-   two minutes before its images are (§6).
-
 ## 6. Watch the workflow
 
 **Actions › release** shows the tag's run, or from a terminal:
@@ -265,7 +268,7 @@ Three jobs, about two minutes in all at 0.1.0:
    architectures under `0.2.0` and attests each joined image.
 
 A failure says which step failed in the run's annotations (the job's page, or
-`gh api repos/MojoKata/MoolaKata/check-runs/<job id>/annotations`). §9 says what to do next.
+`gh api repos/MojoKata/MoolaKata/check-runs/<job id>/annotations`). §10 says what to do next.
 
 ## 7. Check what was published
 
@@ -280,7 +283,27 @@ docker logout ghcr.io && docker pull ghcr.io/mojokata/moolakata:0.2.0          #
 Each `inspect` lists both platforms under one index. Each `verify` names the tag's run of
 `release.yml` as the image's build. The anonymous pull proves the packages are still public.
 
-## 8. Run DEPLOY.md with the release
+## 8. Publish the release
+
+Once §7's checks pass, make the release from the pushed tag, with the notes from §4 saved as
+`notes-0.2.0.md`:
+
+```sh
+gh release create v0.2.0 -R MojoKata/MoolaKata --verify-tag --prerelease \
+  --title "MoolaKata 0.2.0" --notes-file notes-0.2.0.md
+gh release verify v0.2.0 -R MojoKata/MoolaKata     # the release attestation GitHub signed
+```
+
+`--verify-tag` stops the command when the tag isn't on GitHub, so `gh` never makes an
+unsigned tag of its own. Keep `--prerelease` while releases are for testers (0.1.0 was one),
+and leave it out for a release meant for households.
+
+Publishing makes the release immutable. From then on its tag can't be moved or deleted,
+nothing can be attached to it or removed from it, and deleting the release would retire its
+version for good. Its title and notes can still be edited, with `gh release edit` or the
+release page's **Edit**.
+
+## 9. Run DEPLOY.md with the release
 
 The release isn't finished until its documented install has been run with the published
 images:
@@ -298,28 +321,30 @@ images:
    with the release (§3 step 5), so the only other changes are fixes the run found. For
    0.1.0 this was the pull request *0.1.0 is published: DEPLOY.md run with the release
    itself*.
-3. **Add the runs to the release's notes** (T10, T11 and any other test from the plan) with
-   the release page's **Edit**.
+3. **Add the runs to the release's notes** (T10, T11 and any other test from the plan):
+   `gh release edit v0.2.0 -R MojoKata/MoolaKata --notes-file notes-0.2.0.md`.
 
-## 9. When something goes wrong
+## 10. When something goes wrong
+
+Before §8 there is no release yet, so a version can still be tagged again. A wrong tag is
+deleted by a maintainer, because the ruleset (§1) lets only them:
+
+```sh
+git push upstream :refs/tags/v0.2.0      # GitHub's tag
+git tag -d v0.2.0                        # your own copy
+```
 
 - **The tag doesn't name the version** (*the tag names this version* fails): nothing was
-  pushed. A maintainer deletes the release and its tag (the ruleset lets only them), then
-  repeats §5 on the right commit:
-
-  ```sh
-  gh release delete v0.2.0 -R MojoKata/MoolaKata --cleanup-tag --yes   # the release and GitHub's tag
-  git push upstream :refs/tags/v0.2.0                                   # the tag alone, when there's no release yet
-  git tag -d v0.2.0                                                     # your own copy
-  ```
-
-- **A build or smoke run fails.** No `0.2.0` tag exists on ghcr.io yet, only possibly the
-  other architecture's `0.2.0-<arch>`. If the cause is outside the code (a runner, the
-  network), use **Re-run failed jobs** on the run. If the code is at fault, delete the release
-  and its tag as above, fix it in a pull request, and publish again with the same version.
-  The next run overwrites the per-architecture tags.
+  pushed. Delete the tag and repeat §5 on the right commit.
+- **A build or smoke run fails.** No `0.2.0` exists on ghcr.io yet, at most the other
+  architecture's `0.2.0-<arch>`. If the cause is outside the code (a runner, the network),
+  use **Re-run failed jobs** on the run. If the code is at fault, delete the tag, fix the
+  code in a pull request, and tag the same version again (§5). The next run overwrites the
+  per-architecture tags.
 - **The joining or attesting job fails**: **Re-run failed jobs**. It reads only the
   per-architecture images the builds pushed, so it can run again on its own.
-- **Something is wrong after `0.2.0` was joined and published**: don't move the tag or the
-  image. Fix forward with a new patch release (`0.2.1`) and say in `0.2.0`'s notes what is
-  wrong with it.
+- **§7 finds something wrong with the joined images**: `0.2.0` is on ghcr.io, and anyone may
+  have pulled it. Don't publish its release and don't move its image. Fix forward with a new
+  patch (`0.2.1`), whose notes say that 0.2.0 was skipped and why.
+- **Something is wrong after the release is published**: the release is immutable. Fix
+  forward with a new patch (`0.2.1`), and say in `0.2.0`'s notes what is wrong with it.
