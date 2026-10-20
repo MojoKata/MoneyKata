@@ -87,7 +87,8 @@ def test_the_mock_pill_opens_dialogs_and_switches_users(browser):
     for label in ("New account", "Import", "Add a transaction", "New portfolio", "New user"):
         page.click(".pill-mock")
         page.get_by_role("menuitem", name=label).click()
-        page.wait_for_selector(".dialog")
+        # Focus in the dialog: it listens for Escape from then on.
+        page.wait_for_selector(".dialog :focus")
         page.keyboard.press("Escape")
         page.wait_for_selector(".dialog", state="detached")
     page.click(".pill-mock")
@@ -96,5 +97,14 @@ def test_the_mock_pill_opens_dialogs_and_switches_users(browser):
     page.click(".pill-mock")
     page.get_by_role("menuitem", name="Prices stale").click()
     page.wait_for_selector(".price-status .dot.stale")
+    url = page.url
     ctx.close()
     assert page.problems == []
+    # The address alone brings them back: Chromium can reload a page opened from disk with its
+    # storage empty.
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(url)
+    page.wait_for_selector(".user-text >> text=bob")
+    page.wait_for_selector(".price-status .dot.stale")
+    ctx.close()

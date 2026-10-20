@@ -31,42 +31,45 @@
   }
   globalThis.Date = /** @type {any} */ (MockDate);
 
-  const KEY = 'mk-mockup-user';
-  const stored = () => {
+  // The state the MOCK pill switches with a reload. The browser remembers it, and the address
+  // carries it across the reload too ('?user=bob&stale=1'), since Chromium can reload a page
+  // opened from disk with its storage empty. The address wins.
+  const address = new URLSearchParams(location.search);
+  const recall = (/** @type {string} */ name) => {
+    if (address.has('user')) return address.get(name);
     try {
-      return localStorage.getItem(KEY);
+      return localStorage.getItem('mk-mockup-' + name);
     } catch {
-      return null;
+      return null; // no storage: the first user, fresh prices, an unlocked older server
     }
   };
-  let user = stored() || data.users[0].username;
+  let user = recall('user') || data.users[0].username;
   if (!data.api[user]) user = data.users[0].username;
   let signedIn = true;
-  const STALE = 'mk-mockup-stale';
-  let stale = false;
-  try {
-    stale = localStorage.getItem(STALE) === '1';
-  } catch {
-    // no storage: prices are fresh
-  }
+  const stale = recall('stale') === '1';
   // The server locked after a restart (S15.4.3), until the phrase is entered: a state of the
   // mockup's own, since the recorded server was unlocked for the crawl.
-  const LOCKED = 'mk-mockup-locked';
-  let locked = false;
-  try {
-    locked = localStorage.getItem(LOCKED) === '1';
-  } catch {
-    // no storage: unlocked
-  }
+  let locked = recall('locked') === '1';
   // A new server (S15.4.4): its welcome, then the first admin's account; also the mockup's own.
-  const FRESH = 'mk-mockup-fresh';
-  let fresh = false;
+  let fresh = recall('fresh') === '1';
   let needsAdmin = false;
-  try {
-    fresh = localStorage.getItem(FRESH) === '1';
-  } catch {
-    // no storage: an older server
-  }
+  /**
+   * Keep the state, with these changes, for the page that comes back.
+   * @param {{ user?: string, stale?: boolean, locked?: boolean }} [changes]
+   */
+  const remember = (changes = {}) => {
+    const s = { user, stale, locked, fresh, ...changes };
+    const flags = /** @type {const} */ (['stale', 'locked', 'fresh']);
+    try {
+      localStorage.setItem('mk-mockup-user', s.user);
+      for (const f of flags) localStorage.setItem('mk-mockup-' + f, s[f] ? '1' : '0');
+    } catch {
+      // without storage the address alone carries it
+    }
+    const q = new URLSearchParams({ user: s.user });
+    for (const f of flags) if (s[f]) q.set(f, '1');
+    history.replaceState(history.state, '', `?${q}${location.hash}`);
+  };
   // The welcome's sample phrase: the same words every time, so the page draws the same.
   const OFFER = {
     token: 'mock-token',
@@ -79,11 +82,7 @@
   };
   const setFresh = (/** @type {boolean} */ on) => {
     fresh = on;
-    try {
-      localStorage.setItem(FRESH, on ? '1' : '0');
-    } catch {
-      // without storage the page comes back as an older server
-    }
+    remember();
   };
 
   /** A request's key: its path and its query in order, less what only says "now". */
@@ -177,11 +176,7 @@
     if (key === '/ui/api/unlock') {
       if (method === 'POST') {
         locked = false;
-        try {
-          localStorage.setItem(LOCKED, '0');
-        } catch {
-          // without storage the page comes back unlocked anyway
-        }
+        remember();
       }
       return Promise.resolve(
         json(200, { locked, fingerprint: 'mk-b7ef…5f6d', version: data.version || '' }),
@@ -256,28 +251,16 @@
       location.reload();
     },
     setLocked(/** @type {boolean} */ on) {
-      try {
-        localStorage.setItem(LOCKED, on ? '1' : '0');
-      } catch {
-        // without storage the page comes back unlocked
-      }
+      remember({ locked: on });
       location.reload();
     },
     setStale(/** @type {boolean} */ on) {
-      try {
-        localStorage.setItem(STALE, on ? '1' : '0');
-      } catch {
-        // without storage the page comes back fresh
-      }
+      remember({ stale: on });
       location.reload();
     },
     signInAs(/** @type {string} */ name) {
-      try {
-        localStorage.setItem(KEY, name);
-      } catch {
-        // without storage the page comes back as the first user
-      }
       user = name;
+      remember();
       location.reload();
     },
   };
