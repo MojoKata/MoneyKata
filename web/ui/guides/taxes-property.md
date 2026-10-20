@@ -12,7 +12,7 @@ out.
 ## Loans (1098, 1098-E)
 
 Interest, PMI and property tax through escrow per loan, from the payments' splits; compare with the
-1098 when it arrives.
+Form 1098 when it arrives.
 
 ## Physical assets sold
 

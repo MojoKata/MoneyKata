@@ -527,6 +527,26 @@
     background: var(--info-bg);
     border-radius: 0 6px 6px 0;
   }
+  .help abbr.term {
+    text-decoration: underline dashed var(--fg-muted) 1px;
+    text-underline-offset: 3px;
+    cursor: help;
+    border-radius: 3px;
+  }
+  .help abbr.term:hover,
+  .help abbr.term:focus-visible {
+    text-decoration-color: var(--accent);
+    color: var(--fg);
+  }
+  .help abbr.term.quiet {
+    text-decoration-color: transparent;
+  }
+  .help abbr.term.quiet:hover {
+    text-decoration-color: var(--accent);
+  }
+  .help h2.active abbr.term {
+    text-decoration-line: none;
+  }
   .help-close {
     position: absolute;
     top: 14px;
@@ -1713,6 +1733,66 @@
     box-shadow: var(--shadow);
     max-width: 320px;
   }
+  .term-tip {
+    position: fixed;
+    z-index: 80;
+    display: block;
+    width: max-content;
+    max-width: 300px;
+    background: var(--bg-4);
+    border: 1px solid var(--border-strong);
+    border-top: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 10px 12px 11px;
+    font-size: 12px;
+    font-weight: 400;
+    box-shadow: var(--shadow);
+  }
+  .term-tip[hidden] {
+    display: none;
+  }
+  .term-tip .term-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .term-tip .term-abbr {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 1px 6px;
+    border-radius: 5px;
+    white-space: nowrap;
+    flex: none;
+  }
+  .term-tip b {
+    font-size: 13px;
+    color: var(--fg);
+  }
+  .term-tip .term-text {
+    display: block;
+    color: var(--fg-dim);
+    line-height: 1.5;
+  }
+  .term-tip .term-source {
+    display: inline-flex;
+    margin: -2px -4px -2px auto;
+    padding: 3px;
+    border-radius: 6px;
+    color: var(--fg-muted);
+  }
+  .term-tip .term-source:hover,
+  .term-tip .term-source:focus-visible {
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .term-tip .term-source svg.i {
+    width: 15px;
+    height: 15px;
+  }
   .chart-box {
     width: 100%;
     height: 260px;
@@ -2011,6 +2091,9 @@ ol.phrase li::marker {
   <symbol id="i-link" viewBox="0 0 24 24">
     <path
       d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
+  </symbol>
+  <symbol id="i-external" viewBox="0 0 24 24">
+    <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
   </symbol>
   <symbol id="i-plus" viewBox="0 0 24 24">
     <path d="M12 5v14M5 12h14" />
@@ -2808,6 +2891,7 @@ ol.phrase li::marker {
 "dialog-type-balance":"# Type today's balance\n\n## Balance\n\nAs the institution's site shows it.\n\n## As of {#as-of}\n\nThe day it's for.\n",
 "dialog-verify-key":"# Verify key\n\nChecks one copy of the recovery phrase against this server's key, and changes nothing. A check\nhere, the unlock and `moolakata keys verify` on the host each count as a confirmation; the yearly\nalert waits for one.\n\n## Recovery phrase\n\nThe 12 words from the copy, in order. Four letters of each are enough. A wrong phrase counts\ntoward the lockout, as at the locked screen.\n",
 "dialog-written-email":"# A written email\n\nAn email written to the mail folder while SMTP was not set up, as it would have been sent: who\nit is for, its subject and its text, links included. Pass the link on to the person it is for\nby a way you trust; it works once, for a day at most. Your password was asked again to open\nit, since the link signs someone in or resets a password.\n",
+"forms":"# Forms\n\nThe IRS forms the guides name (requirements S12.7.8), shown as the terms are (S12.7.7). Each\nheading is a form and its title; the paragraph under it, a sentence or two of plain text, says\nwhat it is for; a last line that is only a link is the form's page on irs.gov. A guide names a\nform as \"Form 8949\" or \"Schedule D\" in full, or \"1099-DIV\" or \"W-2\" alone, since they can be\nnothing else; a bare number (\"8949\") is never taken for a form. Kept in alphabetical order; a\ntest fails when a guide names a form missing here.\n\n## Form 1040: U.S. Individual Income Tax Return\n\nThe yearly federal income tax return of a US citizen or resident. Its schedules, such as A and\nD, and forms such as 8949 are filed with it.\n\n[IRS: About Form 1040](https://www.irs.gov/forms-pubs/about-form-1040)\n\n## Form 1040-X: Amended U.S. Individual Income Tax Return\n\nCorrects a Form 1040 already filed: each figure as filed, the change, and the corrected amount,\nwith why it changed.\n\n[IRS: About Form 1040-X](https://www.irs.gov/forms-pubs/about-form-1040x)\n\n## Form 1098: Mortgage Interest Statement\n\nSent by your mortgage lender early in the year: the interest you paid on the mortgage last year,\nwhen it was $600 or more. It may be deductible on Schedule A.\n\n[IRS: About Form 1098](https://www.irs.gov/forms-pubs/about-form-1098)\n\n## Form 1098-E: Student Loan Interest Statement\n\nSent by a student loan's lender or servicer: the interest you paid on the loan in the year, when\nit was $600 or more. Some of it may be deductible, within limits.\n\n[IRS: About Form 1098-E](https://www.irs.gov/forms-pubs/about-form-1098-e)\n\n## Form 1098-T: Tuition Statement\n\nSent by a college or other eligible school for each student: the qualified tuition and related\nexpenses paid in the year, and the scholarships and grants. It backs a claim to the education\ncredits.\n\n[IRS: About Form 1098-T](https://www.irs.gov/forms-pubs/about-form-1098-t)\n\n## Form 1099-B: Proceeds from Broker and Barter Exchange Transactions\n\nSent by your broker: each sale in a taxable account in the year, with its proceeds and, where\nthe broker knows it, its cost basis. The sales go on Form 8949.\n\n[IRS: About Form 1099-B](https://www.irs.gov/forms-pubs/about-form-1099-b)\n\n## Form 1099-DIV: Dividends and Distributions\n\nSent by a bank, broker or fund: the dividends and other distributions it paid you in the year,\nordinary and qualified dividends, capital-gain distributions and returns of capital.\n\n[IRS: About Form 1099-DIV](https://www.irs.gov/forms-pubs/about-form-1099-div)\n\n## Form 1099-INT: Interest Income\n\nSent by a bank, broker or other payer: the interest it paid you in the year, usually when it was\n$10 or more.\n\n[IRS: About Form 1099-INT](https://www.irs.gov/forms-pubs/about-form-1099-int)\n\n## Form 1099-Q: Payments from Qualified Education Programs (Under Sections 529 and 530)\n\nSent by a 529 plan or Coverdell account for a year it paid out: the distributions, and how much\nof them was earnings. The earnings not covered by qualified education expenses may be taxed.\n\n[IRS: About Form 1099-Q](https://www.irs.gov/forms-pubs/about-form-1099-q)\n\n## Form 709: United States Gift (and Generation-Skipping Transfer) Tax Return\n\nThe return for gifts to one person in a year above the annual exclusion, and for spreading a\nlarge 529 contribution over five years. Tax is rarely due: the gifts count against a lifetime\nexemption.\n\n[IRS: About Form 709](https://www.irs.gov/forms-pubs/about-form-709)\n\n## Form 8283: Noncash Charitable Contributions\n\nFiled with your return to deduct donated goods and other property worth more than $500 in the\nyear. An item worth more than $5,000 usually needs a qualified appraisal too.\n\n[IRS: About Form 8283](https://www.irs.gov/forms-pubs/about-form-8283)\n\n## Form 8606: Nondeductible IRAs\n\nRecords nondeductible contributions to a traditional IRA, the basis they build, and the taxable\npart of IRA distributions and Roth conversions. The basis carries from year to year.\n\n[IRS: About Form 8606](https://www.irs.gov/forms-pubs/about-form-8606)\n\n## Form 8615: Tax for Certain Children Who Have Unearned Income\n\nFigures the tax on a child's interest, dividends and gains above a yearly threshold at the\na parent's rate: the kiddie tax. It applies under age 18, and to some older children.\n\n[IRS: About Form 8615](https://www.irs.gov/forms-pubs/about-form-8615)\n\n## Form 8937: Report of Organizational Actions Affecting Basis of Securities\n\nPublished by a company after a split, spin-off, merger or similar action: how it changes the cost\nbasis of the shares you held.\n\n[IRS: About Form 8937](https://www.irs.gov/forms-pubs/about-form-8937)\n\n## Form 8949: Sales and Other Dispositions of Capital Assets\n\nLists each sale of shares, funds, bitcoin and other capital assets in the year: when it was\nbought and sold, the proceeds, the basis and the gain or loss. Its totals go on Schedule D.\n\n[IRS: About Form 8949](https://www.irs.gov/forms-pubs/about-form-8949)\n\n## Form W-2: Wage and Tax Statement\n\nSent by your employer early in the year: the wages you were paid last year, and the income,\nSocial Security and Medicare taxes withheld from them.\n\n[IRS: About Form W-2](https://www.irs.gov/forms-pubs/about-form-w-2)\n\n## Schedule A: Itemized Deductions\n\nThe part of Form 1040 that lists itemized deductions, such as mortgage interest, state and local\ntaxes, gifts to charity and large medical costs. It is used when they come to more than the\nstandard deduction.\n\n[IRS: About Schedule A (Form 1040)](https://www.irs.gov/forms-pubs/about-schedule-a-form-1040)\n\n## Schedule D: Capital Gains and Losses\n\nThe part of Form 1040 that totals the year's capital gains and losses, short and long term, from\nForm 8949 and capital-gain distributions, with last year's loss carryover.\n\n[IRS: About Schedule D (Form 1040)](https://www.irs.gov/forms-pubs/about-schedule-d-form-1040)\n",
 "gifts-gifts":"# Gifts: Gifts\n\nEvery gift, from idea to given, and those you've received.\n\n![Gifts](shots/gifts-gifts.png)\n\n## Show\n\nOnly the ideas, or only what's planned, bought, given or received.\n\n## Gifts\n\nFor whom, for which occasion, its status and cost. Ideas have no date: a running list per person, to\npick from when an occasion comes.\n",
 "gifts-people":"# Gifts: People\n\nYour gift plans for the people you give gifts to: their dates, your budget, what you've spent on\nthem this year and the last gift you gave.\n\n![People](shots/gifts-people.png)\n\n## People\n\nClick a person to change their dates, budget and notes, see what you gave before, or share the\nplan. People are the household's, each shown with how they're related to you; your gift plans\nare yours alone, unless you share one: a couple plans their children's gifts together that way. A\ngift for someone who is a user here is never shown to them, even through a share. **Add a gift\nplan** starts one for someone already here, or adds them.\n",
 "gifts-spending":"# Gifts: Spending\n\nWhat gifts cost, by person against their budget, by occasion, and by year.\n\n![Spending](shots/gifts-spending.png)\n\n## Year\n\nThe year shown.\n\n## By person\n\nWhat was spent on each person this year against their yearly budget. A gift for several people\ncounts a share for each.\n\n## By occasion\n\nBirthdays, each holiday, and anniversaries and other dates.\n\n## By year\n\nGift spending each year, to see how it grows.\n\nMoney given to one person in a year, cash gifts and contributions to their 529, above the annual\ngift exclusion is flagged: a gift-tax return (Form 709) is needed, even when no tax is due.\n",
@@ -2876,9 +2960,10 @@ ol.phrase li::marker {
 "taxes-giving":"# Taxes: Giving\n\nCharitable donations for Schedule A, with their acknowledgements.\n\n![Giving](shots/taxes-giving.png)\n\n## Tax book\n\nThe book shown, for one tax year. Its panels count the book's accounts only, and say which were left\nout.\n\n## Deductible\n\nDeductible donations: cash, goods, appreciated shares and donor-advised-fund contributions, each\nwith its acknowledgement. One is needed for any single gift of $250 or more.\n\n## Not deducted\n\nQCDs (excluded from income instead), grants from a donor-advised fund, and gifts to organisations\nthat aren't deductible.\n",
 "taxes-income":"# Taxes: Income\n\nInterest and dividends in the book's taxable accounts, as the 1099s report them.\n\n![Income](shots/taxes-income.png)\n\n## Tax book\n\nThe book shown, for one tax year. Its panels count the book's accounts only, and say which were left\nout.\n\n## Interest (1099-INT)\n\nInterest by payer.\n\n## Dividends (1099-DIV)\n\nOrdinary dividends (qualified ones included), qualified dividends, capital-gain distributions and\nreturns of capital, with the totals by payer.\n",
 "taxes-issues":"# Taxes: Issues\n\nMissing or doubtful data to look at before the return is prepared.\n\n![Issues](shots/taxes-issues.png)\n\n## Tax book\n\nThe book shown, for one tax year. Its panels count the book's accounts only, and say which were left\nout.\n\n## Issues\n\nSales without a matching lot, lots and sales without a basis, shares received from another person's\naccount (which keep the giver's basis), and accounts left out of the book.\n\nAn edit made anyway to a year whose federal return is filed is listed first, with how far it moved\nthe realized gains and in which accounts. **Add an amended return** goes to Filings: adding one that\namends the federal return settles the edits, and opens the year for edits until it is filed.\n**No amendment needed** settles them instead.\n",
-"taxes-property":"# Taxes: Loans and property\n\nMortgage and student-loan interest, and physical assets sold.\n\n![Loans and property](shots/taxes-property.png)\n\n## Tax book\n\nThe book shown, for one tax year. Its panels count the book's accounts only, and say which were left\nout.\n\n## Loans (1098, 1098-E)\n\nInterest, PMI and property tax through escrow per loan, from the payments' splits; compare with the\n1098 when it arrives.\n\n## Physical assets sold\n\nEach item sold in the year with its gain; collectables are marked, and a loss on personal-use\nproperty isn't deductible. A sold primary residence shows its gain and the years owned; the\nexclusion is the preparer's to apply.\n",
+"taxes-property":"# Taxes: Loans and property\n\nMortgage and student-loan interest, and physical assets sold.\n\n![Loans and property](shots/taxes-property.png)\n\n## Tax book\n\nThe book shown, for one tax year. Its panels count the book's accounts only, and say which were left\nout.\n\n## Loans (1098, 1098-E)\n\nInterest, PMI and property tax through escrow per loan, from the payments' splits; compare with the\nForm 1098 when it arrives.\n\n## Physical assets sold\n\nEach item sold in the year with its gain; collectables are marked, and a loss on personal-use\nproperty isn't deductible. A sold primary residence shows its gain and the years owned; the\nexclusion is the preparer's to apply.\n",
 "taxes-retirement":"# Taxes: Retirement\n\nContributions against the year's limits, distributions, and the required minimum distributions due.\n\n![Retirement](shots/taxes-retirement.png)\n\n## Tax book\n\nThe book shown, for one tax year. Its panels count the book's accounts only, and say which were left\nout.\n\n## Contributions against the limits\n\nWhat went into each retirement account for the year, against its limit from the tax tables, with the\ncatch-up by age. Roth eligibility depends on MAGI, which is the preparer's to check.\n\n## Distributions\n\nWhat came out of each retirement account. Form 8606's basis, carried from last year, is shown for a\nbackdoor Roth's conversion.\n\n## Required minimum distributions {#rmds}\n\nFor an owner at the RMD age: the account's value at the end of last year divided by the Uniform\nLifetime Table's factor for their age.\n",
 "taxes-summary":"# Taxes: Summary\n\nWhat a tax book holds: its filers, the accounts it counts, its filings and documents, and the\nfigures carried from last year.\n\n![The tax summary](shots/taxes-summary.png)\n\n## Tax book\n\nThe book shown: one tax year, for you alone or for you and your spouse filing jointly. **New tax\nbook** starts the next one; **Share** lets someone help, such as a preparer with an account here or\na grown child.\n\n## Exports\n\nForm 8949 and Schedule D as CSV, a TXF file that TurboTax, H&R Block and others import, and a PDF\nsummary for a preparer. Each says what it covers and what it doesn't.\n\n## Accounts counted\n\nThe filers' own accounts, each once even when they share them with each other. **Leave out** one\nthat doesn't belong; the panels say what was left out.\n\n## Add an account\n\nAn account you can see but don't own that belongs in this return, such as a custodial account in a\nchild's name.\n\n## From last year\n\nWhat last year's filings carried forward: the AGI needed to sign this year's e-filed return,\ncapital-loss and charitable carryovers, and the Form 8606 basis.\n\n## Dependents\n\nThe people the filers claim this year, each with how they're claimed, the months they lived with\nyou, whether a student, and their age on Dec 31. **Also claimed elsewhere** marks someone another\ntax book claims for the same year. A dependent child's unearned income above the year's threshold is\nflagged for Form 8615 (the kiddie tax). A new tax book copies them a year older, and says whom it\nleft out as past a qualifying child's age.\n\nMoolaKata gathers what a preparer or tax software needs. It never computes the tax, chooses a filing\nstatus, or files.\n",
+"terms":"# Terms\n\nThe acronyms the guides use (requirements S12.7.7). Each heading is an acronym and what it\nstands for; the paragraph under it, a sentence or two of plain text, says what it means; a last\nline that is only a link names the official document, where there is one. A guide's acronym\nshows them on hover, and on keyboard focus of its first use under each heading, which is\nunderlined. Kept in alphabetical order; a test fails when a guide uses an acronym missing here.\n\n## AGI: Adjusted Gross Income\n\nYour total income less certain adjustments, such as deductible IRA and HSA contributions. It is\non the first page of Form 1040, and many deductions, credits and limits are measured against it.\n\n[IRS: Definition of adjusted gross income](https://www.irs.gov/e-file-providers/definition-of-adjusted-gross-income)\n\n## API: Application Programming Interface\n\nThe requests a program accepts from other programs, as its buttons are for people. A key or\ntoken decides what another program may ask for.\n\n## APR: Annual Percentage Rate\n\nA loan's or card's yearly cost of borrowing, as a percentage. A loan's includes some fees on top\nof the interest rate; a card charges interest from it, usually daily.\n\n[CFPB: A mortgage interest rate and an APR](https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-a-mortgage-interest-rate-and-an-apr-en-135/)\n\n## BIP39: Bitcoin Improvement Proposal 39\n\nA standard list of 2,048 short words for recovery phrases. Each word carries 11 bits, and the\nlast word also carries a short checksum that catches most mistyped words.\n\n[BIP-0039](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki)\n\n## BTC: Bitcoin\n\nBitcoin's ticker symbol. One BTC is 100,000,000 satoshis, or sats.\n\n## CD: Certificate of Deposit\n\nMoney deposited at a bank for a fixed term at a fixed rate. Taking it out before it matures\nusually costs a penalty, often a few months' interest.\n\n[Investor.gov: Certificates of deposit](https://www.investor.gov/introduction-investing/investing-basics/investment-products/certificates-deposit-cds)\n\n## CSV: Comma-Separated Values\n\nA table written as plain text: one row per line, its columns split by commas. Each institution\nchooses its own columns, so an import maps them once.\n\n[RFC 4180](https://www.rfc-editor.org/rfc/rfc4180)\n\n## DAF: Donor-Advised Fund\n\nA giving account held by a sponsoring charity, such as Fidelity Charitable. You deduct a\ncontribution the year you make it, then recommend grants from it to charities over time.\n\n[IRS: Donor-advised funds](https://www.irs.gov/charities-non-profits/charitable-organizations/donor-advised-funds)\n\n## EIN: Employer Identification Number\n\nThe nine-digit number the IRS gives a business or a charity, written 12-3456789. It identifies\nan organisation on tax forms as a Social Security number does a person.\n\n[IRS: Employer identification number](https://www.irs.gov/businesses/employer-identification-number)\n\n## ETF: Exchange-Traded Fund\n\nA fund that trades on an exchange like a stock, priced throughout the day. Most follow an index,\nsuch as VT for the world's stocks.\n\n[Investor.gov: Exchange-traded funds](https://www.investor.gov/additional-resources/news-alerts/alerts-bulletins/investor-bulletin-exchange-traded-funds-etfs)\n\n## FID: Financial Institution ID\n\nThe id, up to 32 letters and digits, that identifies a bank or broker to OFX servers. It is sent\nwith the institution's ORG when signing in, and both come from the OFX directory.\n\n[OFX specification (Financial Data Exchange)](https://financialdataexchange.org/about-fdx/ofx-work-group/)\n\n## FIFO: First In, First Out\n\nSells the oldest shares first. It is the IRS's default when you don't name the lots you sold.\n\n[IRS Publication 550](https://www.irs.gov/publications/p550)\n\n## HEIC: High Efficiency Image Container\n\nThe format iPhones save photos in by default: smaller than a JPEG of the same quality.\n\n[Apple: HEIF and HEVC media on Apple devices](https://support.apple.com/116944)\n\n## HELOC: Home Equity Line of Credit\n\nA revolving loan secured by your home. During the draw period you borrow up to a limit and pay\ninterest on what's drawn; after it, the balance is repaid over the repayment period.\n\n[CFPB: What is a HELOC?](https://www.consumerfinance.gov/ask-cfpb/my-lender-offered-me-a-home-equity-line-of-credit-heloc-what-is-a-heloc-en-107/)\n\n## HIFO: Highest In, First Out\n\nSells the shares that cost the most first, which usually makes the smallest gain or the largest\nloss.\n\n[IRS Publication 550](https://www.irs.gov/publications/p550)\n\n## HSA: Health Savings Account\n\nAn account paired with a high-deductible health plan. Contributions are deductible, growth isn't\ntaxed, and withdrawals for medical costs are tax-free.\n\n[IRS Publication 969](https://www.irs.gov/publications/p969)\n\n## IRA: Individual Retirement Account\n\nA retirement account you open yourself, outside an employer's plan; the IRS calls it an\nindividual retirement arrangement. A traditional IRA's contributions may be deductible and its\nwithdrawals are taxed; a Roth IRA's are taxed going in and come out tax-free in retirement.\n\n[IRS Publication 590-A](https://www.irs.gov/publications/p590a)\n\n## IRC: Internal Revenue Code\n\nThe US federal tax law, Title 26 of the United States Code. Its sections, such as §1091 on wash\nsales, are cited for the rules MoolaKata follows.\n\n[IRS: Tax code, regulations and official guidance](https://www.irs.gov/privacy-disclosure/tax-code-regulations-and-official-guidance)\n\n## IRR: Internal Rate of Return\n\nThe yearly rate that makes your deposits, withdrawals and ending value balance out. It measures\nhow your money did, counting when you added it or took it out.\n\n## IRS: Internal Revenue Service\n\nThe US federal tax agency. Its forms, limits and tables are the ones MoolaKata's tax figures\nfollow.\n\n[irs.gov](https://www.irs.gov/)\n\n## LAN: Local Area Network\n\nThe network in your home or office: the devices behind your router, which reach each other but\ncan't be reached from the internet.\n\n## LIFO: Last In, First Out\n\nSells the newest shares first. Shares bought lately are often held under a year, so their gains\nare short-term.\n\n[IRS Publication 550](https://www.irs.gov/publications/p550)\n\n## MAGI: Modified Adjusted Gross Income\n\nAGI with certain deductions and exclusions added back; each rule that uses it says which. It\ndecides who may contribute to a Roth IRA and who may deduct a traditional IRA contribution.\n\n[IRS Publication 590-A](https://www.irs.gov/publications/p590a)\n\n## MCP: Model Context Protocol\n\nAn open standard that lets an AI assistant use outside tools and data. MoolaKata's MCP endpoint\nlets an assistant read what its token allows.\n\n[Model Context Protocol](https://modelcontextprotocol.io/)\n\n## MS: Mint State\n\nA grade for a coin that never circulated, from MS-60 to a flawless MS-70 on the 70-point\nSheldon scale. Dealers commonly call MS-65 Gem Uncirculated.\n\n[PCGS: Grading Mint State coins](https://www.pcgs.com/news/a-quick-reference-guide-to-grading-mint-state-coins)\n\n## NAV: Net Asset Value\n\nA fund's value per share: what it holds less what it owes, divided by its shares. Mutual funds\nare bought and sold at the NAV struck after each day's close.\n\n[Investor.gov: Net asset value](https://www.investor.gov/introduction-investing/investing-basics/glossary/net-asset-value-nav)\n\n## OCC: Options Clearing Corporation\n\nThe clearinghouse behind every US-listed option. When a company splits, merges or pays a large\nspecial dividend, it adjusts the open contracts and says how in an information memo.\n\n[OCC information memos](https://infomemo.theocc.com/infomemo)\n\n## OCR: Optical Character Recognition\n\nReading the text in a photo or a scanned page, so a receipt's date, total and merchant can be\nfilled in for you.\n\n## OFX: Open Financial Exchange\n\nThe standard file format banks and brokers use for downloads and direct connections. Each\ntransaction carries an id of its own, so importing the same file again adds only what's new.\n\n[OFX specification (Financial Data Exchange)](https://financialdataexchange.org/about-fdx/ofx-work-group/)\n\n## ORG: Organisation\n\nThe name that identifies a bank or broker to OFX servers, sent with its FID when signing in.\nBoth come from the OFX directory.\n\n[OFX specification (Financial Data Exchange)](https://financialdataexchange.org/about-fdx/ofx-work-group/)\n\n## PCGS: Professional Coin Grading Service\n\nA company that grades coins and seals each in a labelled holder. Its grade, such as PCGS MS-64,\nmoves a coin's value.\n\n[pcgs.com](https://www.pcgs.com/)\n\n## PMI: Private Mortgage Insurance\n\nInsurance a lender usually requires when a conventional mortgage is more than 80% of the home's\nvalue. It protects the lender, and ends when the balance is scheduled to reach 78% of the\noriginal value, or from 80% if you ask.\n\n[CFPB: When can I remove PMI?](https://www.consumerfinance.gov/ask-cfpb/when-can-i-remove-private-mortgage-insurance-pmi-from-my-loan-en-202/)\n\n## QCD: Qualified Charitable Distribution\n\nA gift paid straight from an IRA to a charity, allowed from age 70½. It counts toward that\nyear's RMD and is left out of your income.\n\n[IRS Publication 590-B](https://www.irs.gov/publications/p590b)\n\n## QFX: Quicken Financial Exchange\n\nQuicken's version of OFX, with a few fields of its own. MoolaKata reads it as OFX.\n\n## RMD: Required Minimum Distribution\n\nThe least you must withdraw each year from traditional IRAs and most workplace plans, from age\n73 (75 if born in 1960 or later). It is last year-end's balance divided by an IRS life-expectancy\nfactor.\n\n[IRS: Required minimum distribution FAQs](https://www.irs.gov/retirement-plans/retirement-plan-and-ira-required-minimum-distributions-faqs)\n\n## RPC: Remote Procedure Call\n\nA way for one program to ask another, over the network, to run a command for it. Bitcoin Core\ntakes requests this way, with a user and password of its own.\n\n[Bitcoin Core: JSON-RPC interface](https://github.com/bitcoin/bitcoin/blob/master/doc/JSON-RPC-interface.md)\n\n## SHA: Secure Hash Algorithm\n\nA family of functions that turn any data into a short fingerprint; SHA-256's is 64 hex digits.\nMatching fingerprints mean the same certificate or file.\n\n[NIST FIPS 180-4](https://csrc.nist.gov/pubs/fips/180-4/upd1/final)\n\n## SMTP: Simple Mail Transfer Protocol\n\nHow email is sent between servers. MoolaKata hands its mail to your provider's SMTP server,\nwhich delivers it.\n\n[RFC 5321](https://www.rfc-editor.org/rfc/rfc5321)\n\n## TLS: Transport Layer Security\n\nThe encryption behind https: it keeps a connection private and proves, with a certificate,\nwhich server you reached.\n\n[RFC 8446](https://www.rfc-editor.org/rfc/rfc8446)\n\n## TOTP: Time-based One-Time Password\n\nA code, usually six digits, that an authenticator app works out from a shared key and the time,\nnew every 30 seconds.\n\n[RFC 6238](https://www.rfc-editor.org/rfc/rfc6238)\n\n## TXF: Tax Exchange Format\n\nA plain-text file of tax figures that TurboTax, H&R Block and other tax programs import.\n\n## UTC: Coordinated Universal Time\n\nThe world's reference clock, with no time zones or daylight saving. Midnight UTC is 7 or 8 in\nthe evening before, US Eastern time.\n\n## VIN: Vehicle Identification Number\n\nThe 17-character code on a vehicle's dashboard and title that identifies that one vehicle. It\ndecodes to its maker, model and year.\n\n[NHTSA: VIN decoder (vPIC)](https://vpic.nhtsa.dot.gov/)\n\n## WIF: Wallet Import Format\n\nA way of writing one bitcoin private key as text, starting with 5, K or L, so a wallet can\nimport it.\n",
 "transactions":"# Transactions\n\nEvery account's transactions together, newest first.\n\n![Transactions](shots/transactions.png)\n\n## Search {#search}\n\nFinds a payee or memo containing what you type.\n\n## Account\n\nShows one account's transactions.\n\n## Category\n\nShows one category's transactions, or the **uncategorised** ones to sort.\n\n## Rules\n\nYour categorisation rules: what a payee looks like, and the category, payee and tags to set.\nThey run on what you import, and on the uncategorised when you choose. A transaction's own dialog\noffers **Make a rule** from it.\n\n## Import\n\nOFX, QFX or CSV into one of your accounts.\n\n## Add\n\nTypes a transaction by hand.\n\n## From\n\nThe earliest date to show.\n\n## To\n\nThe latest date to show.\n\n## At least {#min}\n\nAmounts at least this size, in or out: `25` finds −$30.00 and +$40.00.\n\n## At most {#max}\n\nAmounts at most this size.\n\n## Tag\n\nYour own tags; others who share the account don't see them.\n\n## Categorise as\n\nSelect rows with their boxes, choose a category, and **Categorise** them together.\n\n## +N new\n\nTransactions that arrived while you were reading. A click shows them.\n",
 "users":"# Users and Groups\n\nFor admins: who uses this server and the groups shares are given to.\n\n![Users and Groups](shots/users.png)\n\n## Requests\n\nPeople who asked for an account from the sign-in screen and confirmed their email. **Approve** makes\nthe user, in the group chosen beside it if any; **Reject** turns the request down. They get an email\neither way.\n\n## Group {#request-group}\n\nThe group an approved request joins. More can be added later with **Edit**.\n\n## Asked to be made active again\n\nPeople whose account is inactive and who asked, from the sign-in screen, to be made active.\n\n## Show\n\n**Active** users, or **all** of them with the inactive ones.\n\n## New user\n\nA name, username and email: they get an invitation and choose their own password. Admins never set\npasswords.\n\n## Resend invitation\n\nA new invitation link, for someone who hasn't joined yet.\n\n## Edit\n\nA user's name and groups, and their email before they join. **two-step** beside a user means they\nsign in with a code from an app; **Reset two-step** in Edit turns it off when they've lost the app\nand their recovery codes.\n\n## Active {#active}\n\nOff ends the user's sessions at once and stops them signing in; shares they hold give them nothing\nwhile they're inactive. Users are made inactive, never deleted. The last active admin can't be.\n\n## New group\n\nA named set of users that accounts and portfolios can be shared with. **Admins** is built in: its\nmembers manage users, groups and Settings, and see others' money only when it's shared with them.\n",
 "welcome":"# Welcome\n\nAn invitation: choose your password to join.\n\n## Choose a password {#password}\n\nAt least the minimum length, and not a common password.\n"
@@ -10392,11 +10477,28 @@ export function CorporateAction({ close, accountId }) {
 </script>
 <script type="text/plain" data-module="@mk/components/dialog.js">
 // Dialogs (requirements S12.1.3): one at a time, trapping focus and returning it when closed.
-// openDialog() resolves with what the dialog closes with.
+// A dialog masks the content, not the guide beside it: the sidebar and the page are out of reach
+// while it is open, and Tab goes round the dialog and the help pane. openDialog() resolves with
+// what the dialog closes with.
 import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
+import { paneWidth } from '@mk/components/help.js';
 import { Icon } from '@mk/components/icon.js';
+
+const FOCUSABLE =
+  'a[href],button,input:not([type=hidden]),select,textarea,summary,[tabindex],[contenteditable]';
+
+/**
+ * The first and last places Tab stops in a part of the page.
+ * @param {Element | null} part
+ * @returns {(HTMLElement | undefined)[]}
+ */
+function ends(part) {
+  const all = /** @type {HTMLElement[]} */ ([...(part?.querySelectorAll(FOCUSABLE) || [])])
+    .filter((x) => x.tabIndex >= 0 && !(/** @type {any} */ (x).disabled) && x.offsetParent);
+  return [all[0], all.at(-1)];
+}
 
 /** @type {import('@preact/signals').Signal<{ comp: any, props: any, resolve: (v: any) => void,
  *   back: HTMLElement | null } | null>} */
@@ -10448,34 +10550,42 @@ export function Dialog({ title, wide, close, footer, note, children, onSubmit })
       'input:not([type=hidden]),select,textarea,button:not(.dialog-x)',
     );
     /** @type {HTMLElement | null} */ (first)?.focus();
+    // Everything in the frame but the help pane: the sidebar and the page.
+    const masked =
+      /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.app > :not(.help)')]);
+    for (const m of masked) m.inert = true;
     const onKey = (/** @type {KeyboardEvent} */ e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         close();
       } else if (e.key === 'Tab') {
-        const all = [...el.querySelectorAll(
-          'a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])',
-        )].filter((x) => /** @type {HTMLElement} */ (x).offsetParent !== null);
-        if (!all.length) return;
-        const firstEl = /** @type {HTMLElement} */ (all[0]);
-        const lastEl = /** @type {HTMLElement} */ (all[all.length - 1]);
-        if (e.shiftKey && document.activeElement === firstEl) {
+        // Round the dialog's fields, then the guide's links and terms, and back.
+        const [d0, d1] = ends(el);
+        const [g0, g1] = ends(document.querySelector('.app > .help'));
+        // From the end of one part to the start of the other; round the dialog alone without one.
+        const to = new Map(e.shiftKey ? [[d0, g1 || d1], [g0, d1]] : [[d1, g0 || d0], [g1, d0]])
+          .get(/** @type {HTMLElement} */ (document.activeElement));
+        if (to) {
           e.preventDefault();
-          lastEl.focus();
-        } else if (!e.shiftKey && document.activeElement === lastEl) {
-          e.preventDefault();
-          firstEl.focus();
+          to.focus();
         }
       }
     };
     // On the document: a button that disables while it works drops the focus to the body.
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      for (const m of masked) m.inert = false;
+    };
   }, []);
+  // The mask stops at the help pane, which stays in reach, and so isn't hidden from screen
+  // readers either: the masked content is inert instead.
+  const beside = paneWidth.value;
   return html`
-    <div class="scrim" onClick=${(/** @type {any} */ e) => e.target === e.currentTarget && close()}>
-      <div class=${'dialog' + (wide ? ' wide' : '')} role="dialog" aria-modal="true"
-        aria-labelledby="dialog-title" ref=${box}>
+    <div class="scrim" style=${{ right: beside + 'px' }} onClick=${(/** @type {any} */ e) =>
+      e.target === e.currentTarget && close()}>
+      <div class=${'dialog' + (wide ? ' wide' : '')} role="dialog"
+        aria-modal=${beside ? undefined : 'true'} aria-labelledby="dialog-title" ref=${box}>
         <form onSubmit=${(/** @type {Event} */ e) => {
           e.preventDefault();
           onSubmit?.();
@@ -11517,13 +11627,14 @@ export function Frame({ children, onSignOut }) {
 <script type="text/plain" data-module="@mk/components/help.js">
 // The help pane (requirements S12.7): F1 toggles it; it shows the guide of the screen, tab or
 // dialog in view, and follows the focus to the field's heading. Its width drags (up to half the
-// window) and moves with the arrow keys; the browser remembers both.
+// window) and moves with the arrow keys; the browser remembers both. The acronyms of
+// guides/terms.md, and the IRS forms of guides/forms.md, show what they are on hover and focus.
 import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { guides } from '@mk/app/config.js';
 import { helpOpen, helpWidth } from '@mk/store/prefs.js';
-import { assemble, render } from '@mk/components/markdown.js';
+import { assemble, glossary, render } from '@mk/components/markdown.js';
 import { Icon } from '@mk/components/icon.js';
 
 /** The guide of the screen in view: its key, and values its parts need (the account type). */
@@ -11534,6 +11645,8 @@ export const screenGuide = signal(
 );
 /** A dialog's guide, while it is open. */
 export const dialogGuide = signal(/** @type {string | null} */ (null));
+/** The help pane's width while it is on screen, else 0: where a dialog's mask stops (S12.1.3). */
+export const paneWidth = signal(0);
 
 /**
  * @param {string} key
@@ -11574,8 +11687,16 @@ function load(name) {
 export function HelpPane() {
   const ref = useRef(/** @type {HTMLElement | null} */ (null));
   const [md, setMd] = useState(/** @type {string | null} */ (null));
+  const [terms, setTerms] = useState(/** @type {import('@mk/components/markdown.js').Glossary} */ (new Map()));
+  const [forms, setForms] = useState(/** @type {import('@mk/components/markdown.js').Glossary} */ (new Map()));
   const key = dialogGuide.value || screenGuide.value.key;
   const vars = dialogGuide.value ? {} : screenGuide.value.vars || {};
+
+  // Without the terms or the forms a guide still shows, its acronyms and forms plain.
+  useEffect(() => {
+    load('terms').then((text) => setTerms(glossary(text)), () => {});
+    load('forms').then((text) => setForms(glossary(text)), () => {});
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -11603,6 +11724,16 @@ export function HelpPane() {
   };
 
   useEffect(() => mark(heading(document.activeElement)), [md]);
+
+  useEffect(() => {
+    const el = /** @type {HTMLElement} */ (ref.current);
+    const size = new ResizeObserver(() => (paneWidth.value = el.offsetWidth));
+    size.observe(el);
+    return () => {
+      size.disconnect();
+      paneWidth.value = 0;
+    };
+  }, []);
 
   useEffect(() => {
     const follow = (/** @type {FocusEvent} */ e) => {
@@ -11641,9 +11772,12 @@ export function HelpPane() {
         tabindex="0" onPointerDown=${drag} onKeyDown=${keys}></div>
       <button type="button" class="icon-btn help-close" aria-label="Close help (F1)"
         onClick=${() => (helpOpen.value = false)}><${Icon} name="x" /></button>
-      <div class="guide" data-guide=${key}>${md === null
-        ? null
-        : render(md, (src) => /^https?:|^\//.test(src) ? src : `${guides}/${src}`)}</div>
+      <div class="guide" data-guide=${key}>${md === null ? null : render(
+        md,
+        (src) => /^https?:|^\//.test(src) ? src : `${guides}/${src}`,
+        terms,
+        forms,
+      )}</div>
     </aside>
   `;
 }
@@ -13645,14 +13779,84 @@ function Dated({ label, what, add, rows, hint, onChange }) {
 // so raw HTML in a guide is shown as text, never parsed.
 import { h } from 'preact';
 import { slug } from '@mk/app/format.js';
+import { Term } from '@mk/components/term.js';
+
+/** @typedef {Map<string, import('@mk/components/term.js').Entry>} Glossary */
+/**
+ * @typedef {{ terms: Glossary, forms: Glossary, words: Map<string, string>, re: RegExp,
+ *   seen: Set<string> }} Marking  `words`: how a guide names each form ("1099-DIV")
+ */
+
+/**
+ * The guides' glossary (S12.7.7): each "## AGI: Adjusted Gross Income" heading of
+ * guides/terms.md, the paragraph under it as the explanation, and a last line that is only a
+ * link, "[IRS Publication 590-A](https://…)", as the official document. guides/forms.md lists the
+ * IRS forms the same way, "## Form 1099-DIV: Dividends and Distributions" (S12.7.8).
+ * @param {string} md
+ * @returns {Glossary}
+ */
+export function glossary(md) {
+  const out = new Map();
+  for (const part of md.replace(/\r/g, '').split(/^## /m).slice(1)) {
+    const [head, ...body] = part.trim().split('\n');
+    const m = head.match(/^([A-Z][A-Z0-9]*|(?:Form|Schedule) [0-9A-Z-]+): (.+)$/);
+    if (!m) continue;
+    const link = body.at(-1)?.match(/^\[([^\]]+)\]\((https:\/\/[^)\s]+)\)$/);
+    if (link) body.pop();
+    out.set(m[1], {
+      title: m[2].trim(),
+      text: body.join(' ').replace(/\s+/g, ' ').trim(),
+      source: link ? { label: link[1], href: link[2] } : undefined,
+    });
+  }
+  return out;
+}
+
+/**
+ * How a guide names a form: "Form 8949" and "Schedule D" in full, and "1099-DIV" or "W-2" alone
+ * too, since they can be nothing else. A bare number is never taken for a form.
+ * @param {string} name
+ */
+function wordsFor(name) {
+  const bare = name.replace(/^Form /, '');
+  return bare !== name && /[A-Z]/.test(bare) ? [name, bare] : [name];
+}
+
+/**
+ * Each use of a glossary term, plural or not, and of a form, as a Term: a section's first
+ * underlined, later ones quiet (S12.7.7, S12.7.8).
+ * @param {string} text
+ * @param {Marking | null} marking
+ * @returns {any[]}
+ */
+function mark(text, marking) {
+  if (!marking) return [text];
+  const out = [];
+  let last = 0;
+  for (const m of text.matchAll(marking.re)) {
+    if (m.index === undefined) continue;
+    const key = /** @type {string} */ (m[1] ? marking.words.get(m[1]) : m[2]);
+    const quiet = marking.seen.has(key);
+    marking.seen.add(key);
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const entry = /** @type {import('@mk/components/term.js').Entry} */ (
+      (m[1] ? marking.forms : marking.terms).get(key)
+    );
+    out.push(h(Term, { ...entry, term: key, word: m[0], quiet }));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
 
 /**
  * Inline spans: `code`, **bold**, *italic* or _italic_, [links](url) and ![images](src).
  * @param {string} text
  * @param {(src: string) => string} resolve
+ * @param {Marking | null} marking  the terms and forms to mark, none inside code or a link
  * @returns {any[]}
  */
-function inline(text, resolve) {
+function inline(text, resolve, marking) {
   const out = [];
   const re =
     /(`[^`]+`)|(!\[[^\]]*\]\([^)]+\))|(\[[^\]]+\]\([^)]+\))|(\*\*[^*]+\*\*)|(\*[^*]+\*)|(\b_[^_]+_\b)/;
@@ -13660,10 +13864,10 @@ function inline(text, resolve) {
   while (rest) {
     const m = rest.match(re);
     if (!m || m.index === undefined) {
-      out.push(rest);
+      out.push(...mark(rest, marking));
       break;
     }
-    if (m.index) out.push(rest.slice(0, m.index));
+    if (m.index) out.push(...mark(rest.slice(0, m.index), marking));
     const t = m[0];
     if (t.startsWith('`')) out.push(h('code', null, t.slice(1, -1)));
     else if (t.startsWith('![')) {
@@ -13676,9 +13880,10 @@ function inline(text, resolve) {
         href,
         target: external ? '_blank' : undefined,
         rel: external ? 'noopener noreferrer' : undefined,
-      }, inline(label, resolve)));
-    } else if (t.startsWith('**')) out.push(h('b', null, inline(t.slice(2, -2), resolve)));
-    else out.push(h('i', null, inline(t.slice(1, -1), resolve)));
+      }, inline(label, resolve, null)));
+    } else if (t.startsWith('**')) {
+      out.push(h('b', null, inline(t.slice(2, -2), resolve, marking)));
+    } else out.push(h('i', null, inline(t.slice(1, -1), resolve, marking)));
     rest = rest.slice(m.index + t.length);
   }
   return out;
@@ -13696,12 +13901,27 @@ export function anchorOf(text) {
 /**
  * @param {string} md
  * @param {(src: string) => string} resolve  where an image's path points
+ * @param {Glossary} [terms]  the acronyms to explain on hover and focus (S12.7.7)
+ * @param {Glossary} [forms]  the IRS forms, shown as the terms are (S12.7.8)
  */
-export function render(md, resolve = (s) => s) {
+export function render(md, resolve = (s) => s, terms = new Map(), forms = new Map()) {
   const lines = md.replace(/\r/g, '').split('\n');
   const out = [];
   let i = 0;
   let key = 0;
+  /** @type {Map<string, string>} */
+  const words = new Map([...forms.keys()].flatMap((f) => wordsFor(f).map((w) => [w, f])));
+  // Each list longest first; '(?!)' matches nothing.
+  const any = (/** @type {string[]} */ xs) =>
+    xs.length ? xs.sort((a, b) => b.length - a.length).join('|') : '(?!)';
+  // Group 1 a form, group 2 a term.
+  const re = new RegExp(
+    `(?<![\\w-])(${any([...words.keys()])})(?![\\w-])|\\b(${any([...terms.keys()])})s?\\b`,
+    'g',
+  );
+  /** @type {Marking | null} */
+  const marking = terms.size || forms.size ? { terms, forms, words, re, seen: new Set() } : null;
+  const span = (/** @type {string} */ text) => inline(text, resolve, marking);
   while (i < lines.length) {
     const line = lines[i];
     if (!line.trim()) {
@@ -13720,11 +13940,12 @@ export function render(md, resolve = (s) => s) {
     if (head) {
       const level = head[1].length;
       const { text, id } = anchorOf(head[2]);
+      marking?.seen.clear();
       out.push(h('h' + level, {
         key: key++,
         id: level === 2 ? 'h-' + id : undefined,
         'data-anchor': level === 2 ? id : undefined,
-      }, inline(text, resolve)));
+      }, span(text)));
       i++;
       continue;
     }
@@ -13733,7 +13954,7 @@ export function render(md, resolve = (s) => s) {
       while (i < lines.length && lines[i].startsWith('>')) {
         quote.push(lines[i++].replace(/^>\s?/, ''));
       }
-      out.push(h('blockquote', { key: key++ }, inline(quote.join(' '), resolve)));
+      out.push(h('blockquote', { key: key++ }, span(quote.join(' '))));
       continue;
     }
     if (/^\s*([-*]|\d+\.)\s+/.test(line)) {
@@ -13746,7 +13967,7 @@ export function render(md, resolve = (s) => s) {
         ) {
           item += ' ' + lines[i++].trim();
         }
-        items.push(h('li', null, inline(item, resolve)));
+        items.push(h('li', null, span(item)));
       }
       out.push(h(ordered ? 'ol' : 'ul', { key: key++ }, items));
       continue;
@@ -13762,14 +13983,14 @@ export function render(md, resolve = (s) => s) {
           ? h(
             'thead',
             null,
-            h('tr', null, cells(first).map((c) => h('th', null, inline(c, resolve)))),
+            h('tr', null, cells(first).map((c) => h('th', null, span(c)))),
           )
           : null,
         h(
           'tbody',
           null,
           (hasHead ? body : rows).map((r) =>
-            h('tr', null, cells(r).map((c) => h('td', null, inline(c, resolve))))
+            h('tr', null, cells(r).map((c) => h('td', null, span(c))))
           ),
         ),
       ]));
@@ -13782,7 +14003,7 @@ export function render(md, resolve = (s) => s) {
     ) {
       para.push(lines[i++]);
     }
-    out.push(h('p', { key: key++ }, inline(para.join(' '), resolve)));
+    out.push(h('p', { key: key++ }, span(para.join(' '))));
   }
   return out;
 }
@@ -16891,6 +17112,103 @@ function Issues({ p, b, reload }) {
         `
       )
       : html`<p class="small dim">Nothing to look at: every sale has a lot and a basis.</p>`}</div>
+  `;
+}
+</script>
+<script type="text/plain" data-module="@mk/components/term.js">
+// A guide's acronym (requirements S12.7.7): its first use under a heading has a dashed
+// underline, later ones show it on hover; on hover, or keyboard focus of the first, a card says
+// what it stands for and what it means, with an external-link icon to the official document
+// where there is one. The card follows the term in the page, so Tab reaches its link, and stays
+// open while the pointer or focus is on either; Escape closes it. It moves with the term as the
+// guide scrolls, and closes when the term scrolls out of sight.
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { html } from '@mk/app/html.js';
+import { Icon } from '@mk/components/icon.js';
+
+/**
+ * @typedef {{ title: string, text: string, source?: { label: string, href: string } }} Entry
+ * @param {Entry & { term: string, word: string, quiet?: boolean }} props  `word` as the guide
+ *   wrote it ("IRAs"); `quiet` for a later use under the same heading: no underline until
+ *   hovered, and neither a tab stop nor read out again
+ */
+export function Term({ term, word, title, text, source, quiet = false }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const wrap = useRef(/** @type {HTMLElement | null} */ (null));
+  const card = useRef(/** @type {HTMLElement | null} */ (null));
+  const timer = useRef(/** @type {number | undefined} */ (undefined));
+  const show = () => {
+    clearTimeout(timer.current);
+    setOpen(true);
+  };
+  // A moment's grace, so the pointer can cross from the term to its card.
+  const hide = (delay = 150) => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setOpen(false), delay);
+  };
+
+  /** Below the term, or above it when there's no room; false once the term is out of sight. */
+  const place = () => {
+    const el = card.current;
+    const at = wrap.current?.firstElementChild;
+    if (!el || !at) return false;
+    const r = at.getBoundingClientRect();
+    const view = at.closest('.help')?.getBoundingClientRect();
+    if (view && (r.bottom < view.top || r.top > view.bottom)) return false;
+    const below = r.bottom + 6;
+    el.style.left = Math.max(8, Math.min(r.left, innerWidth - el.offsetWidth - 8)) + 'px';
+    el.style.top =
+      (below + el.offsetHeight <= innerHeight - 8
+        ? below
+        : Math.max(8, r.top - 6 - el.offsetHeight)) + 'px';
+    return true;
+  };
+
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const follow = () => place() || setOpen(false);
+    addEventListener('scroll', follow, true);
+    return () => removeEventListener('scroll', follow, true);
+  }, [open]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const leave = (/** @type {FocusEvent} */ e) => {
+    if (!wrap.current?.contains(/** @type {Node | null} */ (e.relatedTarget))) hide(0);
+  };
+  const keys = (/** @type {KeyboardEvent} */ e) => {
+    if (e.key === 'Escape' && open) {
+      e.stopPropagation();
+      setOpen(false);
+    }
+  };
+  const link = source
+    ? html`
+      <a class="term-source" href=${source.href} target="_blank" rel="noopener noreferrer"
+        aria-label=${`${source.label}, opens in a new tab`}>
+        <${Icon} name="external" />
+      </a>
+    `
+    : null;
+  const abbr = quiet
+    ? html`<abbr class="term quiet" data-term=${term}>${word}</abbr>`
+    : html`<abbr class="term" tabindex="0" data-term=${term} aria-describedby=${id}>${word}<span
+        class="sr-only"> (${title})</span></abbr>`;
+  const tip = html`
+    <span class="term-tip" ref=${card} hidden=${!open}>
+      <span class="term-head">
+        <span class="term-abbr">${term}</span><b>${title}</b>${link}
+      </span>
+      <span class="term-text" id=${id}>${text}</span>
+    </span>
+  `;
+  return html`
+    <span class="term-wrap" ref=${wrap} onMouseEnter=${show} onMouseLeave=${() => hide()}
+      onFocusIn=${show} onFocusOut=${leave} onKeyDown=${keys}>${abbr}${tip}</span>
   `;
 }
 </script>
@@ -30571,42 +30889,45 @@ import{Component as t,options as i,isValidElement as n,Fragment as e}from"preact
   }
   globalThis.Date = /** @type {any} */ (MockDate);
 
-  const KEY = 'mk-mockup-user';
-  const stored = () => {
+  // The state the MOCK pill switches with a reload. The browser remembers it, and the address
+  // carries it across the reload too ('?user=bob&stale=1'), since Chromium can reload a page
+  // opened from disk with its storage empty. The address wins.
+  const address = new URLSearchParams(location.search);
+  const recall = (/** @type {string} */ name) => {
+    if (address.has('user')) return address.get(name);
     try {
-      return localStorage.getItem(KEY);
+      return localStorage.getItem('mk-mockup-' + name);
     } catch {
-      return null;
+      return null; // no storage: the first user, fresh prices, an unlocked older server
     }
   };
-  let user = stored() || data.users[0].username;
+  let user = recall('user') || data.users[0].username;
   if (!data.api[user]) user = data.users[0].username;
   let signedIn = true;
-  const STALE = 'mk-mockup-stale';
-  let stale = false;
-  try {
-    stale = localStorage.getItem(STALE) === '1';
-  } catch {
-    // no storage: prices are fresh
-  }
+  const stale = recall('stale') === '1';
   // The server locked after a restart (S15.4.3), until the phrase is entered: a state of the
   // mockup's own, since the recorded server was unlocked for the crawl.
-  const LOCKED = 'mk-mockup-locked';
-  let locked = false;
-  try {
-    locked = localStorage.getItem(LOCKED) === '1';
-  } catch {
-    // no storage: unlocked
-  }
+  let locked = recall('locked') === '1';
   // A new server (S15.4.4): its welcome, then the first admin's account; also the mockup's own.
-  const FRESH = 'mk-mockup-fresh';
-  let fresh = false;
+  let fresh = recall('fresh') === '1';
   let needsAdmin = false;
-  try {
-    fresh = localStorage.getItem(FRESH) === '1';
-  } catch {
-    // no storage: an older server
-  }
+  /**
+   * Keep the state, with these changes, for the page that comes back.
+   * @param {{ user?: string, stale?: boolean, locked?: boolean }} [changes]
+   */
+  const remember = (changes = {}) => {
+    const s = { user, stale, locked, fresh, ...changes };
+    const flags = /** @type {const} */ (['stale', 'locked', 'fresh']);
+    try {
+      localStorage.setItem('mk-mockup-user', s.user);
+      for (const f of flags) localStorage.setItem('mk-mockup-' + f, s[f] ? '1' : '0');
+    } catch {
+      // without storage the address alone carries it
+    }
+    const q = new URLSearchParams({ user: s.user });
+    for (const f of flags) if (s[f]) q.set(f, '1');
+    history.replaceState(history.state, '', `?${q}${location.hash}`);
+  };
   // The welcome's sample phrase: the same words every time, so the page draws the same.
   const OFFER = {
     token: 'mock-token',
@@ -30619,11 +30940,7 @@ import{Component as t,options as i,isValidElement as n,Fragment as e}from"preact
   };
   const setFresh = (/** @type {boolean} */ on) => {
     fresh = on;
-    try {
-      localStorage.setItem(FRESH, on ? '1' : '0');
-    } catch {
-      // without storage the page comes back as an older server
-    }
+    remember();
   };
 
   /** A request's key: its path and its query in order, less what only says "now". */
@@ -30717,11 +31034,7 @@ import{Component as t,options as i,isValidElement as n,Fragment as e}from"preact
     if (key === '/ui/api/unlock') {
       if (method === 'POST') {
         locked = false;
-        try {
-          localStorage.setItem(LOCKED, '0');
-        } catch {
-          // without storage the page comes back unlocked anyway
-        }
+        remember();
       }
       return Promise.resolve(
         json(200, { locked, fingerprint: 'mk-b7ef…5f6d', version: data.version || '' }),
@@ -30796,28 +31109,16 @@ import{Component as t,options as i,isValidElement as n,Fragment as e}from"preact
       location.reload();
     },
     setLocked(/** @type {boolean} */ on) {
-      try {
-        localStorage.setItem(LOCKED, on ? '1' : '0');
-      } catch {
-        // without storage the page comes back unlocked
-      }
+      remember({ locked: on });
       location.reload();
     },
     setStale(/** @type {boolean} */ on) {
-      try {
-        localStorage.setItem(STALE, on ? '1' : '0');
-      } catch {
-        // without storage the page comes back fresh
-      }
+      remember({ stale: on });
       location.reload();
     },
     signInAs(/** @type {string} */ name) {
-      try {
-        localStorage.setItem(KEY, name);
-      } catch {
-        // without storage the page comes back as the first user
-      }
       user = name;
+      remember();
       location.reload();
     },
   };

@@ -79,6 +79,47 @@ def main(out: Path) -> int:
             missing_help(f"dialog {dialog}", ".dialog")
             page.evaluate("closeDialog()")
 
+        # A guide's acronyms (S12.7.7): the first under a heading underlined, a later one plain
+        # until hovered; hovering either opens its card, whose icon links to the document.
+        page.evaluate("state.help = true; location.hash = '#/transactions'; render()")
+        page.wait_for_timeout(120)
+        card = page.locator(".help .term-tip:not([hidden])")
+        for kind, selector in (("first", "abbr.term:not(.quiet)"), ("later", "abbr.term.quiet")):
+            term = page.locator(f".help {selector}").first
+            if not term.count():
+                errors.append(f"term card: the Transactions guide has no {kind} use of a term")
+                continue
+            name = term.get_attribute("data-term")
+            term.hover()
+            page.wait_for_timeout(100)
+            link = card.locator("a.term-source[href^='https://'][target='_blank'] svg")
+            if card.count() != 1:
+                errors.append(f"term card: hovering the {kind} {name} opened no card")
+            elif page.evaluate(f"!!TERMS[{name!r}][3]") and link.count() != 1:
+                errors.append(f"term card: {name}'s card has no link to its document")
+            shot(f"term-card-{kind}")
+            page.mouse.move(5, 5)
+            page.wait_for_timeout(250)
+            if card.count():
+                errors.append(f"term card: {name}'s card stayed open after the pointer left")
+
+        # A guide's forms (S12.7.8), marked as its terms are: the Taxes guide's first form
+        # opens a card whose icon links to the form's page on irs.gov.
+        page.evaluate("location.hash = '#/taxes'; render()")
+        page.wait_for_timeout(120)
+        form = page.locator(".help abbr.term[data-term^='Form ']").first
+        if not form.count():
+            errors.append("forms: the Taxes guide marks no form")
+        else:
+            name = form.get_attribute("data-term")
+            form.hover()
+            page.wait_for_timeout(100)
+            irs = "a.term-source[href^='https://www.irs.gov/forms-pubs/'][target='_blank'] svg"
+            if card.count() != 1 or card.locator(irs).count() != 1:
+                errors.append(f"forms: hovering {name} opened no card linking to its page")
+            shot("form-card")
+            page.mouse.move(5, 5)
+
         page.evaluate("state.theme = 'light'; location.hash = '#/dashboard'; render()")
         page.wait_for_timeout(120)
         shot("dashboard-light")

@@ -262,6 +262,208 @@ def test_every_screen_and_tab_has_its_guide(page):
     assert page.problems == []
 
 
+def test_a_guides_acronyms_show_what_they_stand_for(page):
+    """The first OFX under a heading has a dashed underline, and on hover or keyboard focus a
+    card says what it stands for and means, its title row ending in an icon that links to the
+    official document, which the pointer and Tab can reach; a later SMTP under the same heading
+    is plain until hovered (S12.7.7)."""
+    visit(page, "/ui/accounts")
+    wait_guide(page, "accounts")
+    page.wait_for_selector(".help .guide abbr.term")
+    repeats = page.evaluate("""() => {
+      const out = [];
+      let seen = new Set();
+      for (const el of document.querySelectorAll('.help .guide > *')) {
+        if (/^H[1-3]$/.test(el.tagName)) seen = new Set();
+        for (const a of el.querySelectorAll('abbr.term:not(.quiet)')) {
+          if (seen.has(a.dataset.term)) out.push(a.dataset.term);
+          seen.add(a.dataset.term);
+        }
+      }
+      return out;
+    }""")
+    assert repeats == []
+    assert page.locator(".help .guide code abbr, .help .guide a abbr").count() == 0
+    ofx = page.locator(".help .guide abbr.term", has_text="OFX").first
+    assert ofx.evaluate("a => a.firstChild.nodeValue") == "OFX"
+    assert ofx.locator(".sr-only").text_content() == " (Open Financial Exchange)"
+    shown = ".help .term-tip:not([hidden])"
+    card = page.locator(shown)
+    assert card.count() == 0
+    ofx.hover()
+    assert card.locator(".term-abbr").inner_text() == "OFX"
+    assert card.locator("b").inner_text() == "Open Financial Exchange"
+    text = card.locator(".term-text")
+    assert "file format banks and brokers use" in text.inner_text()
+    assert ofx.get_attribute("aria-describedby") == text.get_attribute("id")
+    source = card.locator(".term-head a.term-source")
+    assert source.get_attribute("aria-label") == (
+        "OFX specification (Financial Data Exchange), opens in a new tab"
+    )
+    assert source.get_attribute("href") == (
+        "https://financialdataexchange.org/about-fdx/ofx-work-group/"
+    )
+    assert source.get_attribute("target") == "_blank"
+    assert source.locator("svg.i").count() == 1
+    icon, title, box = (x.bounding_box() for x in (source, card.locator("b"), card))
+    assert icon["x"] > title["x"] + title["width"], "the icon follows the title"
+    assert box["x"] + box["width"] - (icon["x"] + icon["width"]) < 16, "at the card's right"
+    assert abs((icon["y"] + icon["height"] / 2) - (title["y"] + title["height"] / 2)) < 3
+    source.hover()
+    page.wait_for_timeout(300)
+    assert card.count() == 1, "the card closed under the pointer"
+    page.mouse.move(5, 5)
+    page.wait_for_selector(shown, state="detached")
+    ofx.focus()
+    assert card.locator("b").inner_text() == "Open Financial Exchange"
+    page.keyboard.press("Tab")
+    assert page.evaluate("document.activeElement.className") == "term-source"
+    assert card.count() == 1
+    page.keyboard.press("Escape")
+    page.wait_for_selector(shown, state="detached")
+    # A later use under the same heading: plain, no tab stop, underlined and its card on hover.
+    visit(page, "/ui/settings/email")
+    wait_guide(page, "settings-email")
+    later = page.locator(".help .guide abbr.term.quiet", has_text="SMTP").first
+    underline = "a => getComputedStyle(a).textDecorationColor"
+    assert later.evaluate(underline) == "rgba(0, 0, 0, 0)"
+    assert later.get_attribute("tabindex") is None
+    later.hover()
+    assert later.evaluate(underline) != "rgba(0, 0, 0, 0)"
+    assert card.locator("b").inner_text() == "Simple Mail Transfer Protocol"
+    page.mouse.move(5, 5)
+    page.wait_for_selector(shown, state="detached")
+    # Focus scrolls a term below the fold into view; its card opens there and follows it, and
+    # closes once the term scrolls out of sight. A short window puts the last one below it.
+    page.set_viewport_size({"width": 1440, "height": 420})
+    visit(page, "/ui/taxes/summary")
+    wait_guide(page, "taxes-summary")
+    page.wait_for_selector(".help .guide abbr.term")
+    page.evaluate("document.querySelector('.help').scrollTop = 0")
+    last = page.locator(".help .guide abbr.term").last
+    assert not last.evaluate(
+        "a => a.getBoundingClientRect().top < a.closest('.help').getBoundingClientRect().bottom"
+    ), "the last term shows without scrolling"
+    last.focus()
+    page.wait_for_timeout(300)
+    assert card.count() == 1
+    top = card.bounding_box()["y"]
+    page.evaluate("document.querySelector('.help').scrollTop -= 30")
+    page.wait_for_timeout(300)
+    assert card.count() == 1 and abs(card.bounding_box()["y"] - (top + 30)) < 2
+    page.evaluate("document.querySelector('.help').scrollTop = 0")
+    page.wait_for_selector(shown, state="detached")
+    page.set_viewport_size({"width": 1440, "height": 900})
+    assert page.problems == []
+
+
+def test_a_guides_forms_show_what_they_are(page):
+    """A form is marked as a term is: the first 1099-DIV under a heading has a dashed underline,
+    and on hover or keyboard focus a card names the form, its title and what it is for, its icon
+    linking to the form's page on irs.gov; a later Form 8949 under the same heading is plain
+    until hovered, and no tab stop (S12.7.8)."""
+    visit(page, "/ui/taxes/income")
+    wait_guide(page, "taxes-income")
+    div = page.locator(".help .guide h2 abbr.term", has_text="1099-DIV")
+    div.wait_for()
+    assert div.get_attribute("data-term") == "Form 1099-DIV"
+    assert div.evaluate("a => a.firstChild.nodeValue") == "1099-DIV"
+    assert div.locator(".sr-only").text_content() == " (Dividends and Distributions)"
+    card = page.locator(".help .term-tip:not([hidden])")
+    div.hover()
+    assert card.locator(".term-abbr").inner_text() == "Form 1099-DIV"
+    assert card.locator("b").inner_text() == "Dividends and Distributions"
+    assert "dividends and other distributions" in card.locator(".term-text").inner_text()
+    source = card.locator("a.term-source")
+    assert source.get_attribute("href") == "https://www.irs.gov/forms-pubs/about-form-1099-div"
+    assert source.get_attribute("target") == "_blank"
+    assert source.get_attribute("aria-label") == "IRS: About Form 1099-DIV, opens in a new tab"
+    page.mouse.move(5, 5)
+    card.wait_for(state="detached")
+    # A long title wraps; the form's name beside it doesn't.
+    visit(page, "/ui/taxes/education")
+    wait_guide(page, "taxes-education")
+    page.locator(".help .guide abbr.term", has_text="Form 709").first.hover()
+    assert card.locator("b").inner_text().startswith("United States Gift")
+    lines = """a => {
+      const r = document.createRange();
+      r.selectNodeContents(a);
+      return r.getClientRects().length;
+    }"""
+    assert card.locator(".term-abbr").evaluate(lines) == 1, "Form 709 on one line"
+    assert card.locator("b").evaluate(lines) > 1
+    page.mouse.move(5, 5)
+    card.wait_for(state="detached")
+    # A later use under the same heading, in a dialog's guide.
+    open_dialog(page, "/ui/taxes/summary", "New tax book", "dialog-tax-book")
+    first, later = page.locator(".help .guide abbr.term", has_text="Form 8949").all()
+    assert first.get_attribute("tabindex") == "0"
+    assert later.get_attribute("class") == "term quiet"
+    assert later.get_attribute("tabindex") is None
+    underline = "a => getComputedStyle(a).textDecorationColor"
+    assert later.evaluate(underline) == "rgba(0, 0, 0, 0)"
+    later.hover()
+    assert later.evaluate(underline) != "rgba(0, 0, 0, 0)"
+    assert card.locator("b").inner_text() == "Sales and Other Dispositions of Capital Assets"
+    close_dialog(page)
+    assert page.problems == []
+
+
+# Focus the first or last place Tab stops in a part of the page; say which it is.
+TAB_END = """([sel, last]) => {
+  const all = [...document.querySelector(sel).querySelectorAll(
+    'a[href],button,input,select,textarea,[tabindex]',
+  )].filter((x) => x.tabIndex >= 0 && !x.disabled && x.offsetParent);
+  const x = last ? all.at(-1) : all[0];
+  x.focus();
+  return x.outerHTML.slice(0, 80);
+}"""
+FOCUSED = "() => document.activeElement.outerHTML.slice(0, 80)"
+
+
+def test_a_dialog_masks_the_content_not_the_guide(page):
+    """While a dialog is open the sidebar and the page are dimmed and inert; the help pane
+    beside it isn't covered, its terms answer the pointer, and Tab goes round the dialog's
+    fields and the guide's. With the pane closed the mask covers everything (S12.1.3)."""
+    visit(page, "/ui/taxes/summary")
+    page.get_by_role("button", name="New tax book").click()
+    page.wait_for_selector(".dialog :focus")
+    wait_guide(page, "dialog-tax-book")
+    scrim, pane = page.locator(".scrim").bounding_box(), page.locator(".help").bounding_box()
+    assert abs(scrim["x"] + scrim["width"] - pane["x"]) < 1, "the mask stops at the pane"
+    inert = "() => [...document.querySelectorAll('.app > *')].map((e) => [e.tagName, e.inert])"
+    assert page.evaluate(inert) == [["ASIDE", True], ["MAIN", True], ["ASIDE", False]]
+    assert page.get_attribute(".dialog", "aria-modal") is None
+    page.locator(".help .guide abbr.term").first.hover()
+    page.wait_for_selector(".help .term-tip:not([hidden])")
+    # Tab: from the dialog's last field into the guide, and from the guide's last back round.
+    d1 = page.evaluate(TAB_END, [".dialog", True])
+    page.keyboard.press("Tab")
+    assert page.evaluate(FOCUSED) == page.evaluate(TAB_END, [".help", False])
+    page.keyboard.press("Shift+Tab")
+    assert page.evaluate(FOCUSED) == d1
+    page.evaluate(TAB_END, [".help", True])
+    page.evaluate(TAB_END, [".help", True])  # a term's card, opened by its focus, comes last
+    page.keyboard.press("Tab")
+    got = page.evaluate(FOCUSED)
+    assert got == page.evaluate(TAB_END, [".dialog", False])
+    # F1 closes the pane: the mask covers the window and the dialog is modal again.
+    page.keyboard.press("F1")
+    page.wait_for_selector(".help", state="detached")
+    edge = "document.querySelector('.scrim').getBoundingClientRect().right === innerWidth"
+    for _ in range(40):
+        if page.evaluate(edge):
+            break
+        page.wait_for_timeout(50)
+    assert page.evaluate(edge), "the mask covers the window"
+    assert page.get_attribute(".dialog", "aria-modal") == "true"
+    page.keyboard.press("F1")
+    page.wait_for_selector(".help")
+    close_dialog(page)
+    assert page.evaluate(inert) == [["ASIDE", False], ["MAIN", False], ["ASIDE", False]]
+    assert page.problems == []
+
+
 def test_a_linked_households_window_opens_with_its_words(page):
     """griffin-parents' window (S12.10): locked, then opened with the dev copy's words, then
     each of its screens with its guide."""
