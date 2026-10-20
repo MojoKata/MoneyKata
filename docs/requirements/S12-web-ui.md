@@ -10,14 +10,19 @@
       to icons and opens it again; the browser remembers which.
    2. The **help pane** on the right (S12.7), and a **toast** area for confirmations.
    3. Shared components: one popup menu (closes on choosing, Escape, or a click or focus
-      outside), dialogs that trap focus and return it, styled tooltips that also show on
-      keyboard focus and reach screen readers, and a **pager** for long lists (Transactions,
-      Activity): a page size of 100, 500 or 1000 kept per browser, the rows shown out of the
-      list's total ("1–500 of 2,624") with a jump to its pages (S13.8.5), and rows that arrive
-      while reading counted on an orange **+N new** pill instead of shifting the page. Every
-      password field (a password, an API key, the SMTP or node password) carries an **eye**
-      button at its right end that shows what was typed and hides it again (the eye struck
-      through while shown), labelled for screen readers.
+      outside), dialogs, styled tooltips that also show on keyboard focus and reach screen
+      readers, and a **pager** for long lists (Transactions, Activity): a page size of 100,
+      500 or 1000 kept per browser, the rows shown out of the list's total ("1–500 of 2,624")
+      with a jump to its pages (S13.8.5), and rows that arrive while reading counted on an
+      orange **+N new** pill instead of shifting the page. Every password field (a password,
+      an API key, the SMTP or node password) carries an **eye** button at its right end that
+      shows what was typed and hides it again (the eye struck through while shown), labelled
+      for screen readers. A **dialog** masks the content, not the guide: the sidebar and the
+      page are dimmed and out of reach, for the pointer, the keyboard and screen readers,
+      while the help pane beside it shows the dialog's guide and stays in reach, its links and
+      terms working. The dialog is centred over the content; Tab goes round its fields and
+      then the guide's, Escape or a click on the dimmed content closes it, and focus returns
+      to where it was.
    4. An orange **update** pill under the brand when the server was upgraded since the page
       loaded; a click reloads.
 2. **Navigation** (in this order):
@@ -103,9 +108,10 @@
    5. **Screenshots** come from the clickable mockup (`web/dev.sh help-shots`, dark theme,
       1280 px, PNG quantized to 256 colours) and are committed.
    6. **Checks**: a test fails when a screen has no guide, a guide's screenshot is missing,
-      a field's label finds no heading, the next field down the page sends the guide up, or a
-      guide uses an acronym the terms (S12.7.7) don't explain. Tickers and banks in examples,
-      form names (1099-DIV) and words everyone knows (PDF, URL) are listed as plain.
+      a field's label finds no heading, the next field down the page sends the guide up, a
+      guide uses an acronym the terms (S12.7.7) don't explain, or it names a form the forms
+      (S12.7.8) don't list. Tickers and banks in examples and words everyone knows (PDF, URL)
+      are listed as plain; a listed form's name (1099-DIV) is no acronym.
    7. **Terms**: an acronym in a guide (AGI, OFX, HELOC), or its plural, never in code or a
       link. Its first use under each heading has a dashed underline and is a tab stop; later
       uses under the same heading look like the text around them until hovered, when they show
@@ -123,6 +129,18 @@
       (`## AGI: Adjusted Gross Income`), the explanation under it, and the document as a last
       line that is only a link, in alphabetical order. The hand-written mockup carries the same
       terms, and a test keeps the two alike.
+   8. **Forms**: an IRS form a guide names, never in code or a link, links to the form's page
+      on irs.gov ("About Form 1099-DIV"), opened in a new tab. "Form 8949" and "Schedule D" are
+      named in full, "1099-DIV" or "W-2" alone too, since they can be nothing else; a bare
+      number ("8949") is never taken for a form. Its first use under each heading looks like
+      any link, and screen readers read the form's title after it; later uses under the same
+      heading look like the text around them until hovered, when they show as links, and are
+      no tab stop. Its tooltip names the form and its title ("Form 1099-DIV: Dividends and
+      Distributions · irs.gov").
+      The forms are one Markdown file, `guides/forms.md`: a heading per form and its title
+      (`## Form 8949: Sales and Other Dispositions of Capital Assets`) and the line under it,
+      only a link to its page, in alphabetical order. The hand-written mockup carries the same
+      forms, and a test keeps the two alike.
 8. **Accessibility**: everything works by keyboard, every control is labelled, contrast
    meets WCAG AA, and `prefers-reduced-motion` turns transitions off. Dark theme first, with
    light and system. **Desktop browsers only**: phone layouts are not built or tested, since

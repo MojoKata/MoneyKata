@@ -6,7 +6,11 @@ import { slug } from '../app/format.js';
 import { Term } from './term.js';
 
 /** @typedef {Map<string, import('./term.js').Entry>} Glossary */
-/** @typedef {{ terms: Glossary, re: RegExp, seen: Set<string> }} Marking */
+/** @typedef {Map<string, { title: string, href: string }>} Forms */
+/**
+ * @typedef {{ terms: Glossary, forms: Forms, words: Map<string, string>, re: RegExp,
+ *   seen: Set<string> }} Marking  `words`: how a guide names each form ("1099-DIV")
+ */
 
 /**
  * The guides' glossary (S12.7.7): each "## AGI: Adjusted Gross Income" heading of
@@ -33,8 +37,35 @@ export function glossary(md) {
 }
 
 /**
- * Each use of a glossary term, plural or not, as a Term: a section's first underlined, later
- * ones quiet (S12.7.7).
+ * The IRS forms the guides name (S12.7.8): each "## Form 1099-DIV: Dividends and Distributions"
+ * heading of guides/forms.md, and the line under it, only a link, to its page on irs.gov.
+ * @param {string} md
+ * @returns {Forms}
+ */
+export function formList(md) {
+  const out = new Map();
+  for (const part of md.replace(/\r/g, '').split(/^## /m).slice(1)) {
+    const [head, ...body] = part.trim().split('\n');
+    const m = head.match(/^((?:Form|Schedule) [0-9A-Z-]+): (.+)$/);
+    const link = body.at(-1)?.match(/^\[[^\]]+\]\((https:\/\/[^)\s]+)\)$/);
+    if (m && link) out.set(m[1], { title: m[2].trim(), href: link[1] });
+  }
+  return out;
+}
+
+/**
+ * How a guide names a form: "Form 8949" and "Schedule D" in full, and "1099-DIV" or "W-2" alone
+ * too, since they can be nothing else. A bare number is never taken for a form.
+ * @param {string} name
+ */
+function wordsFor(name) {
+  const bare = name.replace(/^Form /, '');
+  return bare !== name && /[A-Z]/.test(bare) ? [name, bare] : [name];
+}
+
+/**
+ * Each use of a glossary term, plural or not, as a Term, and of a form as a link to its page:
+ * a section's first underlined or a link, later ones quiet (S12.7.7, S12.7.8).
  * @param {string} text
  * @param {Marking | null} marking
  * @returns {any[]}
@@ -44,13 +75,30 @@ function mark(text, marking) {
   const out = [];
   let last = 0;
   for (const m of text.matchAll(marking.re)) {
-    const term = m[1];
     if (m.index === undefined) continue;
-    const quiet = marking.seen.has(term);
-    marking.seen.add(term);
+    const key = m[1] ? /** @type {string} */ (marking.words.get(m[1])) : m[2];
+    const quiet = marking.seen.has(key);
+    marking.seen.add(key);
     if (m.index > last) out.push(text.slice(last, m.index));
-    const entry = /** @type {import('./term.js').Entry} */ (marking.terms.get(term));
-    out.push(h(Term, { ...entry, term, word: m[0], quiet }));
+    if (m[1]) {
+      const form = /** @type {{ title: string, href: string }} */ (marking.forms.get(key));
+      out.push(h(
+        'a',
+        {
+          class: quiet ? 'form quiet' : 'form',
+          href: form.href,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          tabindex: quiet ? -1 : undefined,
+          'data-tip': `${key}: ${form.title} · irs.gov`,
+        },
+        m[1],
+        quiet ? null : h('span', { class: 'sr-only' }, ` (${form.title}, on irs.gov)`),
+      ));
+    } else {
+      const entry = /** @type {import('./term.js').Entry} */ (marking.terms.get(key));
+      out.push(h(Term, { ...entry, term: key, word: m[0], quiet }));
+    }
     last = m.index + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));
@@ -61,7 +109,7 @@ function mark(text, marking) {
  * Inline spans: `code`, **bold**, *italic* or _italic_, [links](url) and ![images](src).
  * @param {string} text
  * @param {(src: string) => string} resolve
- * @param {Marking | null} marking  the glossary's terms to mark, none inside code or a link
+ * @param {Marking | null} marking  the terms and forms to mark, none inside code or a link
  * @returns {any[]}
  */
 function inline(text, resolve, marking) {
@@ -110,17 +158,25 @@ export function anchorOf(text) {
  * @param {string} md
  * @param {(src: string) => string} resolve  where an image's path points
  * @param {Glossary} [terms]  the acronyms to explain on hover and focus (S12.7.7)
+ * @param {Forms} [forms]  the forms to link to their pages (S12.7.8)
  */
-export function render(md, resolve = (s) => s, terms = new Map()) {
+export function render(md, resolve = (s) => s, terms = new Map(), forms = new Map()) {
   const lines = md.replace(/\r/g, '').split('\n');
   const out = [];
   let i = 0;
   let key = 0;
-  const names = [...terms.keys()].sort((a, b) => b.length - a.length);
+  /** @type {Map<string, string>} */
+  const words = new Map([...forms.keys()].flatMap((f) => wordsFor(f).map((w) => [w, f])));
+  // Each list longest first; '(?!)' matches nothing.
+  const any = (/** @type {string[]} */ xs) =>
+    xs.length ? xs.sort((a, b) => b.length - a.length).join('|') : '(?!)';
+  // Group 1 a form, group 2 a term.
+  const re = new RegExp(
+    `(?<![\\w-])(${any([...words.keys()])})(?![\\w-])|\\b(${any([...terms.keys()])})s?\\b`,
+    'g',
+  );
   /** @type {Marking | null} */
-  const marking = names.length
-    ? { terms, re: new RegExp(`\\b(${names.join('|')})s?\\b`, 'g'), seen: new Set() }
-    : null;
+  const marking = terms.size || forms.size ? { terms, forms, words, re, seen: new Set() } : null;
   const span = (/** @type {string} */ text) => inline(text, resolve, marking);
   while (i < lines.length) {
     const line = lines[i];

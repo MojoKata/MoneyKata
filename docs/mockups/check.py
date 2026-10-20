@@ -103,6 +103,23 @@ def main(out: Path) -> int:
             if card.count():
                 errors.append(f"term card: {name}'s card stayed open after the pointer left")
 
+        # A guide's forms (S12.7.8): each a link to the form's page on irs.gov, in a new tab.
+        page.evaluate("location.hash = '#/taxes'; render()")
+        page.wait_for_timeout(120)
+        forms = page.locator(".help a.form")
+        if not forms.count():
+            errors.append("forms: the Taxes guide links no form")
+        for i in range(forms.count()):
+            form = forms.nth(i)
+            href, target = form.get_attribute("href") or "", form.get_attribute("target")
+            if not href.startswith("https://www.irs.gov/forms-pubs/") or target != "_blank":
+                errors.append(f"forms: {form.inner_text()} doesn't open its irs.gov page in a tab")
+        if forms.count():
+            forms.first.hover()
+            page.wait_for_timeout(100)
+            shot("form-link")
+            page.mouse.move(5, 5)
+
         page.evaluate("state.theme = 'light'; location.hash = '#/dashboard'; render()")
         page.wait_for_timeout(120)
         shot("dashboard-light")

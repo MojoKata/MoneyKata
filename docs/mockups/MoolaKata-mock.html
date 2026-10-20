@@ -117,6 +117,8 @@ main { overflow-y: auto; min-width: 0; position: relative; }
 .help abbr.term:hover, .help abbr.term:focus-visible { text-decoration-color: var(--accent); color: var(--fg); }
 .help abbr.term.quiet { text-decoration-color: transparent; }
 .help abbr.term.quiet:hover { text-decoration-color: var(--accent); }
+.help a.form.quiet { color: inherit; }
+.help a.form.quiet:hover { color: var(--info); text-decoration: underline; }
 .help h2.active abbr.term { text-decoration-line: none; }
 .term-tip { position: fixed; z-index: 80; display: block; width: max-content; max-width: 300px; background: var(--bg-4); border: 1px solid var(--border-strong); border-top: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px 11px; font-size: 12px; font-weight: 400; box-shadow: var(--shadow); }
 .term-tip[hidden] { display: none; }
@@ -2017,12 +2019,21 @@ function showDialog(name, data = {}) {
   const s = document.createElement('div');
   s.className = 'scrim';
   s.innerHTML = `<div class="dialog ${d.wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(d.title)}"><header><h2>${esc(d.title)}</h2><button class="icon-btn" data-act="close" title="Close">${icon('x')}</button></header><div class="body">${d.body}</div><footer>${d.note ? `<span class="note">${d.note}</span>` : ''}<button class="btn" data-act="close">${d.ok ? 'Cancel' : 'Close'}</button>${d.ok ? `<button class="btn primary" data-act="ok" data-v="${esc(d.ok)}">${esc(d.ok)}</button>` : ''}</footer></div>`;
-  document.body.append(s); openDialog = s;
+  document.body.append(s); openDialog = s; maskContent();
   s.addEventListener('mousedown', (e) => { if (e.target === s) closeDialog(); });
   const f = s.querySelector('input,select,textarea,button:not([data-act=close])'); if (f) f.focus();
   helpFor(name);
 }
-function closeDialog() { if (openDialog) { openDialog.remove(); openDialog = null; helpFor(null); } }
+function closeDialog() { if (openDialog) { openDialog.remove(); openDialog = null; maskContent(); helpFor(null); } }
+// A dialog masks the content, not the guide beside it: the sidebar and the page are inert, and the help pane
+// stays in reach, so the dialog isn't aria-modal while it shows.
+function maskContent() {
+  document.querySelectorAll('.app > :not(.help)').forEach((el) => (el.inert = !!openDialog));
+  if (!openDialog) return;
+  const help = document.querySelector('.app.help-open > .help'), d = openDialog.querySelector('.dialog');
+  openDialog.style.right = help ? help.offsetWidth + 'px' : '';
+  if (help) d.removeAttribute('aria-modal'); else d.setAttribute('aria-modal', 'true');
+}
 
 function simulateUpload() {
   const r = { name: 'IMG_2310.jpg', kind: 'JPG', d: '2026-10-10', amt: null, payee: '', link: null, status: 'reading' };
@@ -2497,9 +2508,40 @@ const TERMS = {
   WIF: ['Wallet Import Format', 'A way of writing one bitcoin private key as text, starting with 5, K or L, so a wallet can import it.'],
 };
 const TERM_RE = new RegExp(`\\b(${Object.keys(TERMS).sort((a, b) => b.length - a.length).join('|')})s?\\b`, 'g');
+/* ---------- forms: the IRS forms the guides name, linked to their pages on irs.gov (the app's are in
+   web/ui/guides/forms.md; a test keeps the two the same) ---------- */
+const FORMS = {
+  'Form 1040': ['U.S. Individual Income Tax Return', 'https://www.irs.gov/forms-pubs/about-form-1040'],
+  'Form 1040-X': ['Amended U.S. Individual Income Tax Return', 'https://www.irs.gov/forms-pubs/about-form-1040x'],
+  'Form 1098': ['Mortgage Interest Statement', 'https://www.irs.gov/forms-pubs/about-form-1098'],
+  'Form 1098-E': ['Student Loan Interest Statement', 'https://www.irs.gov/forms-pubs/about-form-1098-e'],
+  'Form 1098-T': ['Tuition Statement', 'https://www.irs.gov/forms-pubs/about-form-1098-t'],
+  'Form 1099-B': ['Proceeds from Broker and Barter Exchange Transactions', 'https://www.irs.gov/forms-pubs/about-form-1099-b'],
+  'Form 1099-DIV': ['Dividends and Distributions', 'https://www.irs.gov/forms-pubs/about-form-1099-div'],
+  'Form 1099-INT': ['Interest Income', 'https://www.irs.gov/forms-pubs/about-form-1099-int'],
+  'Form 1099-Q': ['Payments from Qualified Education Programs (Under Sections 529 and 530)', 'https://www.irs.gov/forms-pubs/about-form-1099-q'],
+  'Form 709': ['United States Gift (and Generation-Skipping Transfer) Tax Return', 'https://www.irs.gov/forms-pubs/about-form-709'],
+  'Form 8283': ['Noncash Charitable Contributions', 'https://www.irs.gov/forms-pubs/about-form-8283'],
+  'Form 8606': ['Nondeductible IRAs', 'https://www.irs.gov/forms-pubs/about-form-8606'],
+  'Form 8615': ['Tax for Certain Children Who Have Unearned Income', 'https://www.irs.gov/forms-pubs/about-form-8615'],
+  'Form 8937': ['Report of Organizational Actions Affecting Basis of Securities', 'https://www.irs.gov/forms-pubs/about-form-8937'],
+  'Form 8949': ['Sales and Other Dispositions of Capital Assets', 'https://www.irs.gov/forms-pubs/about-form-8949'],
+  'Form W-2': ['Wage and Tax Statement', 'https://www.irs.gov/forms-pubs/about-form-w-2'],
+  'Schedule A': ['Itemized Deductions', 'https://www.irs.gov/forms-pubs/about-schedule-a-form-1040'],
+  'Schedule D': ['Capital Gains and Losses', 'https://www.irs.gov/forms-pubs/about-schedule-d-form-1040'],
+};
+// How a guide names a form: "Form 8949" and "Schedule D" in full, and "1099-DIV" or "W-2" alone too, since
+// they can be nothing else. A bare number is never taken for a form.
+const FORM_WORDS = Object.fromEntries(Object.keys(FORMS).flatMap((f) => {
+  const bare = f.replace(/^Form /, '');
+  return (bare !== f && /[A-Z]/.test(bare) ? [f, bare] : [f]).map((w) => [w, f]);
+}));
+// Group 1 a form, group 2 a term.
+const MARK_RE = new RegExp(`(?<![\\w-])(${Object.keys(FORM_WORDS).sort((a, b) => b.length - a.length).join('|')})(?![\\w-])|${TERM_RE.source}`, 'g');
 // Each use of a term, plural or not, never inside code or a link: a section's first underlined, later ones
 // quiet (underlined on hover, not a tab stop); a heading starts a section. Its card follows it in the page,
-// so Tab reaches the card's link.
+// so Tab reaches the card's link. A form is a link to its page the same way: a section's first a link,
+// later ones like the text around them until hovered, and no tab stop.
 function markTerms(root) {
   const seen = new Set(), nodes = [];
   const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.nodeType === 1 && /^(CODE|PRE|A)$/.test(n.tagName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
@@ -2507,13 +2549,21 @@ function markTerms(root) {
   for (const n of nodes) {
     if (n.nodeType === 1) { seen.clear(); continue; }
     const s = n.nodeValue, frag = document.createDocumentFragment(); let last = 0;
-    for (const m of s.matchAll(TERM_RE)) {
-      const quiet = seen.has(m[1]); seen.add(m[1]);
-      const [title, text, label, href] = TERMS[m[1]], id = `term-${++termIds}`;
+    for (const m of s.matchAll(MARK_RE)) {
+      const key = m[1] ? FORM_WORDS[m[1]] : m[2], quiet = seen.has(key); seen.add(key);
+      if (m[1]) {
+        const [title, href] = FORMS[key], a = document.createElement('a');
+        Object.assign(a, { className: quiet ? 'form quiet' : 'form', href, target: '_blank', rel: 'noopener noreferrer', title: `${key}: ${title} · irs.gov` });
+        if (quiet) a.tabIndex = -1;
+        a.innerHTML = esc(m[1]) + (quiet ? '' : `<span class="sr-only"> (${esc(title)}, on irs.gov)</span>`);
+        frag.append(s.slice(last, m.index), a); last = m.index + m[0].length;
+        continue;
+      }
+      const [title, text, label, href] = TERMS[key], id = `term-${++termIds}`;
       const wrap = document.createElement('span'); wrap.className = 'term-wrap';
-      const abbr = quiet ? `<abbr class="term quiet" data-term="${m[1]}">${m[0]}</abbr>` : `<abbr class="term" tabindex="0" data-term="${m[1]}" aria-describedby="${id}">${m[0]}<span class="sr-only"> (${esc(title)})</span></abbr>`;
+      const abbr = quiet ? `<abbr class="term quiet" data-term="${key}">${m[0]}</abbr>` : `<abbr class="term" tabindex="0" data-term="${key}" aria-describedby="${id}">${m[0]}<span class="sr-only"> (${esc(title)})</span></abbr>`;
       const link = href ? `<a class="term-source" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(label)}, opens in a new tab">${icon('external')}</a>` : '';
-      wrap.innerHTML = `${abbr}<span class="term-tip" hidden><span class="term-head"><span class="term-abbr">${m[1]}</span><b>${esc(title)}</b>${link}</span><span class="term-text" id="${id}">${esc(text)}</span></span>`;
+      wrap.innerHTML = `${abbr}<span class="term-tip" hidden><span class="term-head"><span class="term-abbr">${key}</span><b>${esc(title)}</b>${link}</span><span class="term-text" id="${id}">${esc(text)}</span></span>`;
       frag.append(s.slice(last, m.index), wrap); last = m.index + m[0].length;
     }
     if (last) { frag.append(s.slice(last)); n.replaceWith(frag); }
@@ -2589,6 +2639,7 @@ function render() {
   </div>`;
   document.body.classList.toggle('privacy', state.privacy);
   helpFor(openDialog ? null : null);
+  maskContent();
 }
 
 /* ---------- linked household window ---------- */

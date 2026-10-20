@@ -1,9 +1,26 @@
 // Dialogs (requirements S12.1.3): one at a time, trapping focus and returning it when closed.
-// openDialog() resolves with what the dialog closes with.
+// A dialog masks the content, not the guide beside it: the sidebar and the page are out of reach
+// while it is open, and Tab goes round the dialog and the help pane. openDialog() resolves with
+// what the dialog closes with.
 import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { html } from '../app/html.js';
+import { paneWidth } from './help.js';
 import { Icon } from './icon.js';
+
+const FOCUSABLE =
+  'a[href],button,input:not([type=hidden]),select,textarea,summary,[tabindex],[contenteditable]';
+
+/**
+ * The first and last places Tab stops in a part of the page.
+ * @param {Element | null} part
+ * @returns {(HTMLElement | undefined)[]}
+ */
+function ends(part) {
+  const all = /** @type {HTMLElement[]} */ ([...(part?.querySelectorAll(FOCUSABLE) || [])])
+    .filter((x) => x.tabIndex >= 0 && !(/** @type {any} */ (x).disabled) && x.offsetParent);
+  return [all[0], all.at(-1)];
+}
 
 /** @type {import('@preact/signals').Signal<{ comp: any, props: any, resolve: (v: any) => void,
  *   back: HTMLElement | null } | null>} */
@@ -55,34 +72,42 @@ export function Dialog({ title, wide, close, footer, note, children, onSubmit })
       'input:not([type=hidden]),select,textarea,button:not(.dialog-x)',
     );
     /** @type {HTMLElement | null} */ (first)?.focus();
+    // Everything in the frame but the help pane: the sidebar and the page.
+    const masked =
+      /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.app > :not(.help)')]);
+    for (const m of masked) m.inert = true;
     const onKey = (/** @type {KeyboardEvent} */ e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         close();
       } else if (e.key === 'Tab') {
-        const all = [...el.querySelectorAll(
-          'a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])',
-        )].filter((x) => /** @type {HTMLElement} */ (x).offsetParent !== null);
-        if (!all.length) return;
-        const firstEl = /** @type {HTMLElement} */ (all[0]);
-        const lastEl = /** @type {HTMLElement} */ (all[all.length - 1]);
-        if (e.shiftKey && document.activeElement === firstEl) {
+        // Round the dialog's fields, then the guide's links and terms, and back.
+        const [d0, d1] = ends(el);
+        const [g0, g1] = ends(document.querySelector('.app > .help'));
+        // From the end of one part to the start of the other; round the dialog alone without one.
+        const to = new Map(e.shiftKey ? [[d0, g1 || d1], [g0, d1]] : [[d1, g0 || d0], [g1, d0]])
+          .get(/** @type {HTMLElement} */ (document.activeElement));
+        if (to) {
           e.preventDefault();
-          lastEl.focus();
-        } else if (!e.shiftKey && document.activeElement === lastEl) {
-          e.preventDefault();
-          firstEl.focus();
+          to.focus();
         }
       }
     };
     // On the document: a button that disables while it works drops the focus to the body.
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      for (const m of masked) m.inert = false;
+    };
   }, []);
+  // The mask stops at the help pane, which stays in reach, and so isn't hidden from screen
+  // readers either: the masked content is inert instead.
+  const beside = paneWidth.value;
   return html`
-    <div class="scrim" onClick=${(/** @type {any} */ e) => e.target === e.currentTarget && close()}>
-      <div class=${'dialog' + (wide ? ' wide' : '')} role="dialog" aria-modal="true"
-        aria-labelledby="dialog-title" ref=${box}>
+    <div class="scrim" style=${{ right: beside + 'px' }} onClick=${(/** @type {any} */ e) =>
+      e.target === e.currentTarget && close()}>
+      <div class=${'dialog' + (wide ? ' wide' : '')} role="dialog"
+        aria-modal=${beside ? undefined : 'true'} aria-labelledby="dialog-title" ref=${box}>
         <form onSubmit=${(/** @type {Event} */ e) => {
           e.preventDefault();
           onSubmit?.();

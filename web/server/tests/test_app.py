@@ -357,6 +357,94 @@ def test_a_guides_acronyms_show_what_they_stand_for(page):
     assert page.problems == []
 
 
+def test_a_guides_forms_link_to_their_pages(page):
+    """The first 1099-DIV under a heading links to the form's page on irs.gov, in a new tab, its
+    tooltip naming the form; a later Form 8949 under the same heading is plain until hovered,
+    and no tab stop (S12.7.8)."""
+    visit(page, "/ui/taxes/income")
+    wait_guide(page, "taxes-income")
+    div = page.locator(".help .guide h2 a.form", has_text="1099-DIV")
+    div.wait_for()
+    assert div.evaluate("a => a.firstChild.nodeValue") == "1099-DIV"
+    assert div.get_attribute("href") == "https://www.irs.gov/forms-pubs/about-form-1099-div"
+    assert div.get_attribute("target") == "_blank"
+    assert div.get_attribute("rel") == "noopener noreferrer"
+    assert div.locator(".sr-only").text_content() == " (Dividends and Distributions, on irs.gov)"
+    div.hover()
+    tip = page.locator(".tooltip")
+    assert tip.inner_text() == "Form 1099-DIV: Dividends and Distributions · irs.gov"
+    page.mouse.move(5, 5)
+    tip.wait_for(state="detached")
+    open_dialog(page, "/ui/taxes/summary", "New tax book", "dialog-tax-book")
+    first, later = page.locator(".help .guide a.form", has_text="Form 8949").all()
+    assert first.get_attribute("class") == "form" and first.get_attribute("tabindex") is None
+    assert later.get_attribute("class") == "form quiet"
+    assert later.get_attribute("tabindex") == "-1"
+    assert later.locator(".sr-only").count() == 0
+    colour = "a => getComputedStyle(a).color"
+    around = "a => getComputedStyle(a.parentElement).color"
+    assert later.evaluate(colour) == later.evaluate(around) != first.evaluate(colour)
+    later.hover()
+    assert later.evaluate(colour) == first.evaluate(colour)
+    close_dialog(page)
+    assert page.problems == []
+
+
+# Focus the first or last place Tab stops in a part of the page; say which it is.
+TAB_END = """([sel, last]) => {
+  const all = [...document.querySelector(sel).querySelectorAll(
+    'a[href],button,input,select,textarea,[tabindex]',
+  )].filter((x) => x.tabIndex >= 0 && !x.disabled && x.offsetParent);
+  const x = last ? all.at(-1) : all[0];
+  x.focus();
+  return x.outerHTML.slice(0, 80);
+}"""
+FOCUSED = "() => document.activeElement.outerHTML.slice(0, 80)"
+
+
+def test_a_dialog_masks_the_content_not_the_guide(page):
+    """While a dialog is open the sidebar and the page are dimmed and inert; the help pane
+    beside it isn't covered, its links answer the pointer, and Tab goes round the dialog's
+    fields and the guide's. With the pane closed the mask covers everything (S12.1.3)."""
+    visit(page, "/ui/taxes/summary")
+    page.get_by_role("button", name="New tax book").click()
+    page.wait_for_selector(".dialog :focus")
+    wait_guide(page, "dialog-tax-book")
+    scrim, pane = page.locator(".scrim").bounding_box(), page.locator(".help").bounding_box()
+    assert abs(scrim["x"] + scrim["width"] - pane["x"]) < 1, "the mask stops at the pane"
+    inert = "() => [...document.querySelectorAll('.app > *')].map((e) => [e.tagName, e.inert])"
+    assert page.evaluate(inert) == [["ASIDE", True], ["MAIN", True], ["ASIDE", False]]
+    assert page.get_attribute(".dialog", "aria-modal") is None
+    page.locator(".help .guide a.form").first.hover()
+    page.wait_for_selector(".tooltip")
+    # Tab: from the dialog's last field into the guide, and from the guide's last back round.
+    d1 = page.evaluate(TAB_END, [".dialog", True])
+    page.keyboard.press("Tab")
+    assert page.evaluate(FOCUSED) == page.evaluate(TAB_END, [".help", False])
+    page.keyboard.press("Shift+Tab")
+    assert page.evaluate(FOCUSED) == d1
+    page.evaluate(TAB_END, [".help", True])
+    page.evaluate(TAB_END, [".help", True])  # a term's card, opened by its focus, comes last
+    page.keyboard.press("Tab")
+    got = page.evaluate(FOCUSED)
+    assert got == page.evaluate(TAB_END, [".dialog", False])
+    # F1 closes the pane: the mask covers the window and the dialog is modal again.
+    page.keyboard.press("F1")
+    page.wait_for_selector(".help", state="detached")
+    edge = "document.querySelector('.scrim').getBoundingClientRect().right === innerWidth"
+    for _ in range(40):
+        if page.evaluate(edge):
+            break
+        page.wait_for_timeout(50)
+    assert page.evaluate(edge), "the mask covers the window"
+    assert page.get_attribute(".dialog", "aria-modal") == "true"
+    page.keyboard.press("F1")
+    page.wait_for_selector(".help")
+    close_dialog(page)
+    assert page.evaluate(inert) == [["ASIDE", False], ["MAIN", False], ["ASIDE", False]]
+    assert page.problems == []
+
+
 def test_a_linked_households_window_opens_with_its_words(page):
     """griffin-parents' window (S12.10): locked, then opened with the dev copy's words, then
     each of its screens with its guide."""
