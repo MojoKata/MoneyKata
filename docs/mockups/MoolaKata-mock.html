@@ -117,13 +117,11 @@ main { overflow-y: auto; min-width: 0; position: relative; }
 .help abbr.term:hover, .help abbr.term:focus-visible { text-decoration-color: var(--accent); color: var(--fg); }
 .help abbr.term.quiet { text-decoration-color: transparent; }
 .help abbr.term.quiet:hover { text-decoration-color: var(--accent); }
-.help a.form.quiet { color: inherit; }
-.help a.form.quiet:hover { color: var(--info); text-decoration: underline; }
 .help h2.active abbr.term { text-decoration-line: none; }
 .term-tip { position: fixed; z-index: 80; display: block; width: max-content; max-width: 300px; background: var(--bg-4); border: 1px solid var(--border-strong); border-top: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px 11px; font-size: 12px; font-weight: 400; box-shadow: var(--shadow); }
 .term-tip[hidden] { display: none; }
 .term-tip .term-head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-.term-tip .term-abbr { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--accent); background: var(--accent-dim); padding: 1px 6px; border-radius: 5px; }
+.term-tip .term-abbr { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--accent); background: var(--accent-dim); padding: 1px 6px; border-radius: 5px; white-space: nowrap; flex: none; }
 .term-tip b { font-size: 13px; color: var(--fg); }
 .term-tip .term-text { display: block; color: var(--fg-dim); line-height: 1.5; }
 .term-tip .term-source { display: inline-flex; margin: -2px -4px -2px auto; padding: 3px; border-radius: 6px; color: var(--fg-muted); }
@@ -2508,27 +2506,27 @@ const TERMS = {
   WIF: ['Wallet Import Format', 'A way of writing one bitcoin private key as text, starting with 5, K or L, so a wallet can import it.'],
 };
 const TERM_RE = new RegExp(`\\b(${Object.keys(TERMS).sort((a, b) => b.length - a.length).join('|')})s?\\b`, 'g');
-/* ---------- forms: the IRS forms the guides name, linked to their pages on irs.gov (the app's are in
+/* ---------- forms: the IRS forms the guides name, shown as the terms are (the app's are in
    web/ui/guides/forms.md; a test keeps the two the same) ---------- */
 const FORMS = {
-  'Form 1040': ['U.S. Individual Income Tax Return', 'https://www.irs.gov/forms-pubs/about-form-1040'],
-  'Form 1040-X': ['Amended U.S. Individual Income Tax Return', 'https://www.irs.gov/forms-pubs/about-form-1040x'],
-  'Form 1098': ['Mortgage Interest Statement', 'https://www.irs.gov/forms-pubs/about-form-1098'],
-  'Form 1098-E': ['Student Loan Interest Statement', 'https://www.irs.gov/forms-pubs/about-form-1098-e'],
-  'Form 1098-T': ['Tuition Statement', 'https://www.irs.gov/forms-pubs/about-form-1098-t'],
-  'Form 1099-B': ['Proceeds from Broker and Barter Exchange Transactions', 'https://www.irs.gov/forms-pubs/about-form-1099-b'],
-  'Form 1099-DIV': ['Dividends and Distributions', 'https://www.irs.gov/forms-pubs/about-form-1099-div'],
-  'Form 1099-INT': ['Interest Income', 'https://www.irs.gov/forms-pubs/about-form-1099-int'],
-  'Form 1099-Q': ['Payments from Qualified Education Programs (Under Sections 529 and 530)', 'https://www.irs.gov/forms-pubs/about-form-1099-q'],
-  'Form 709': ['United States Gift (and Generation-Skipping Transfer) Tax Return', 'https://www.irs.gov/forms-pubs/about-form-709'],
-  'Form 8283': ['Noncash Charitable Contributions', 'https://www.irs.gov/forms-pubs/about-form-8283'],
-  'Form 8606': ['Nondeductible IRAs', 'https://www.irs.gov/forms-pubs/about-form-8606'],
-  'Form 8615': ['Tax for Certain Children Who Have Unearned Income', 'https://www.irs.gov/forms-pubs/about-form-8615'],
-  'Form 8937': ['Report of Organizational Actions Affecting Basis of Securities', 'https://www.irs.gov/forms-pubs/about-form-8937'],
-  'Form 8949': ['Sales and Other Dispositions of Capital Assets', 'https://www.irs.gov/forms-pubs/about-form-8949'],
-  'Form W-2': ['Wage and Tax Statement', 'https://www.irs.gov/forms-pubs/about-form-w-2'],
-  'Schedule A': ['Itemized Deductions', 'https://www.irs.gov/forms-pubs/about-schedule-a-form-1040'],
-  'Schedule D': ['Capital Gains and Losses', 'https://www.irs.gov/forms-pubs/about-schedule-d-form-1040'],
+  'Form 1040': ['U.S. Individual Income Tax Return', 'The yearly federal income tax return of a US citizen or resident. Its schedules, such as A and D, and forms such as 8949 are filed with it.', 'IRS: About Form 1040', 'https://www.irs.gov/forms-pubs/about-form-1040'],
+  'Form 1040-X': ['Amended U.S. Individual Income Tax Return', 'Corrects a Form 1040 already filed: each figure as filed, the change, and the corrected amount, with why it changed.', 'IRS: About Form 1040-X', 'https://www.irs.gov/forms-pubs/about-form-1040x'],
+  'Form 1098': ['Mortgage Interest Statement', 'Sent by your mortgage lender early in the year: the interest you paid on the mortgage last year, when it was $600 or more. It may be deductible on Schedule A.', 'IRS: About Form 1098', 'https://www.irs.gov/forms-pubs/about-form-1098'],
+  'Form 1098-E': ['Student Loan Interest Statement', 'Sent by a student loan’s lender or servicer: the interest you paid on the loan in the year, when it was $600 or more. Some of it may be deductible, within limits.', 'IRS: About Form 1098-E', 'https://www.irs.gov/forms-pubs/about-form-1098-e'],
+  'Form 1098-T': ['Tuition Statement', 'Sent by a college or other eligible school for each student: the qualified tuition and related expenses paid in the year, and the scholarships and grants. It backs a claim to the education credits.', 'IRS: About Form 1098-T', 'https://www.irs.gov/forms-pubs/about-form-1098-t'],
+  'Form 1099-B': ['Proceeds from Broker and Barter Exchange Transactions', 'Sent by your broker: each sale in a taxable account in the year, with its proceeds and, where the broker knows it, its cost basis. The sales go on Form 8949.', 'IRS: About Form 1099-B', 'https://www.irs.gov/forms-pubs/about-form-1099-b'],
+  'Form 1099-DIV': ['Dividends and Distributions', 'Sent by a bank, broker or fund: the dividends and other distributions it paid you in the year, ordinary and qualified dividends, capital-gain distributions and returns of capital.', 'IRS: About Form 1099-DIV', 'https://www.irs.gov/forms-pubs/about-form-1099-div'],
+  'Form 1099-INT': ['Interest Income', 'Sent by a bank, broker or other payer: the interest it paid you in the year, usually when it was $10 or more.', 'IRS: About Form 1099-INT', 'https://www.irs.gov/forms-pubs/about-form-1099-int'],
+  'Form 1099-Q': ['Payments from Qualified Education Programs (Under Sections 529 and 530)', 'Sent by a 529 plan or Coverdell account for a year it paid out: the distributions, and how much of them was earnings. The earnings not covered by qualified education expenses may be taxed.', 'IRS: About Form 1099-Q', 'https://www.irs.gov/forms-pubs/about-form-1099-q'],
+  'Form 709': ['United States Gift (and Generation-Skipping Transfer) Tax Return', 'The return for gifts to one person in a year above the annual exclusion, and for spreading a large 529 contribution over five years. Tax is rarely due: the gifts count against a lifetime exemption.', 'IRS: About Form 709', 'https://www.irs.gov/forms-pubs/about-form-709'],
+  'Form 8283': ['Noncash Charitable Contributions', 'Filed with your return to deduct donated goods and other property worth more than $500 in the year. An item worth more than $5,000 usually needs a qualified appraisal too.', 'IRS: About Form 8283', 'https://www.irs.gov/forms-pubs/about-form-8283'],
+  'Form 8606': ['Nondeductible IRAs', 'Records nondeductible contributions to a traditional IRA, the basis they build, and the taxable part of IRA distributions and Roth conversions. The basis carries from year to year.', 'IRS: About Form 8606', 'https://www.irs.gov/forms-pubs/about-form-8606'],
+  'Form 8615': ['Tax for Certain Children Who Have Unearned Income', 'Figures the tax on a child’s interest, dividends and gains above a yearly threshold at the a parent’s rate: the kiddie tax. It applies under age 18, and to some older children.', 'IRS: About Form 8615', 'https://www.irs.gov/forms-pubs/about-form-8615'],
+  'Form 8937': ['Report of Organizational Actions Affecting Basis of Securities', 'Published by a company after a split, spin-off, merger or similar action: how it changes the cost basis of the shares you held.', 'IRS: About Form 8937', 'https://www.irs.gov/forms-pubs/about-form-8937'],
+  'Form 8949': ['Sales and Other Dispositions of Capital Assets', 'Lists each sale of shares, funds, bitcoin and other capital assets in the year: when it was bought and sold, the proceeds, the basis and the gain or loss. Its totals go on Schedule D.', 'IRS: About Form 8949', 'https://www.irs.gov/forms-pubs/about-form-8949'],
+  'Form W-2': ['Wage and Tax Statement', 'Sent by your employer early in the year: the wages you were paid last year, and the income, Social Security and Medicare taxes withheld from them.', 'IRS: About Form W-2', 'https://www.irs.gov/forms-pubs/about-form-w-2'],
+  'Schedule A': ['Itemized Deductions', 'The part of Form 1040 that lists itemized deductions, such as mortgage interest, state and local taxes, gifts to charity and large medical costs. It is used when they come to more than the standard deduction.', 'IRS: About Schedule A (Form 1040)', 'https://www.irs.gov/forms-pubs/about-schedule-a-form-1040'],
+  'Schedule D': ['Capital Gains and Losses', 'The part of Form 1040 that totals the year’s capital gains and losses, short and long term, from Form 8949 and capital-gain distributions, with last year’s loss carryover.', 'IRS: About Schedule D (Form 1040)', 'https://www.irs.gov/forms-pubs/about-schedule-d-form-1040'],
 };
 // How a guide names a form: "Form 8949" and "Schedule D" in full, and "1099-DIV" or "W-2" alone too, since
 // they can be nothing else. A bare number is never taken for a form.
@@ -2540,8 +2538,7 @@ const FORM_WORDS = Object.fromEntries(Object.keys(FORMS).flatMap((f) => {
 const MARK_RE = new RegExp(`(?<![\\w-])(${Object.keys(FORM_WORDS).sort((a, b) => b.length - a.length).join('|')})(?![\\w-])|${TERM_RE.source}`, 'g');
 // Each use of a term, plural or not, never inside code or a link: a section's first underlined, later ones
 // quiet (underlined on hover, not a tab stop); a heading starts a section. Its card follows it in the page,
-// so Tab reaches the card's link. A form is a link to its page the same way: a section's first a link,
-// later ones like the text around them until hovered, and no tab stop.
+// so Tab reaches the card's link. A form is marked the same way.
 function markTerms(root) {
   const seen = new Set(), nodes = [];
   const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.nodeType === 1 && /^(CODE|PRE|A)$/.test(n.tagName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
@@ -2551,15 +2548,7 @@ function markTerms(root) {
     const s = n.nodeValue, frag = document.createDocumentFragment(); let last = 0;
     for (const m of s.matchAll(MARK_RE)) {
       const key = m[1] ? FORM_WORDS[m[1]] : m[2], quiet = seen.has(key); seen.add(key);
-      if (m[1]) {
-        const [title, href] = FORMS[key], a = document.createElement('a');
-        Object.assign(a, { className: quiet ? 'form quiet' : 'form', href, target: '_blank', rel: 'noopener noreferrer', title: `${key}: ${title} · irs.gov` });
-        if (quiet) a.tabIndex = -1;
-        a.innerHTML = esc(m[1]) + (quiet ? '' : `<span class="sr-only"> (${esc(title)}, on irs.gov)</span>`);
-        frag.append(s.slice(last, m.index), a); last = m.index + m[0].length;
-        continue;
-      }
-      const [title, text, label, href] = TERMS[key], id = `term-${++termIds}`;
+      const [title, text, label, href] = (m[1] ? FORMS : TERMS)[key], id = `term-${++termIds}`;
       const wrap = document.createElement('span'); wrap.className = 'term-wrap';
       const abbr = quiet ? `<abbr class="term quiet" data-term="${key}">${m[0]}</abbr>` : `<abbr class="term" tabindex="0" data-term="${key}" aria-describedby="${id}">${m[0]}<span class="sr-only"> (${esc(title)})</span></abbr>`;
       const link = href ? `<a class="term-source" href="${esc(href)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(label)}, opens in a new tab">${icon('external')}</a>` : '';

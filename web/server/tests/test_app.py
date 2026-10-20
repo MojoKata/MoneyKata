@@ -357,35 +357,54 @@ def test_a_guides_acronyms_show_what_they_stand_for(page):
     assert page.problems == []
 
 
-def test_a_guides_forms_link_to_their_pages(page):
-    """The first 1099-DIV under a heading links to the form's page on irs.gov, in a new tab, its
-    tooltip naming the form; a later Form 8949 under the same heading is plain until hovered,
-    and no tab stop (S12.7.8)."""
+def test_a_guides_forms_show_what_they_are(page):
+    """A form is marked as a term is: the first 1099-DIV under a heading has a dashed underline,
+    and on hover or keyboard focus a card names the form, its title and what it is for, its icon
+    linking to the form's page on irs.gov; a later Form 8949 under the same heading is plain
+    until hovered, and no tab stop (S12.7.8)."""
     visit(page, "/ui/taxes/income")
     wait_guide(page, "taxes-income")
-    div = page.locator(".help .guide h2 a.form", has_text="1099-DIV")
+    div = page.locator(".help .guide h2 abbr.term", has_text="1099-DIV")
     div.wait_for()
+    assert div.get_attribute("data-term") == "Form 1099-DIV"
     assert div.evaluate("a => a.firstChild.nodeValue") == "1099-DIV"
-    assert div.get_attribute("href") == "https://www.irs.gov/forms-pubs/about-form-1099-div"
-    assert div.get_attribute("target") == "_blank"
-    assert div.get_attribute("rel") == "noopener noreferrer"
-    assert div.locator(".sr-only").text_content() == " (Dividends and Distributions, on irs.gov)"
+    assert div.locator(".sr-only").text_content() == " (Dividends and Distributions)"
+    card = page.locator(".help .term-tip:not([hidden])")
     div.hover()
-    tip = page.locator(".tooltip")
-    assert tip.inner_text() == "Form 1099-DIV: Dividends and Distributions · irs.gov"
+    assert card.locator(".term-abbr").inner_text() == "Form 1099-DIV"
+    assert card.locator("b").inner_text() == "Dividends and Distributions"
+    assert "dividends and other distributions" in card.locator(".term-text").inner_text()
+    source = card.locator("a.term-source")
+    assert source.get_attribute("href") == "https://www.irs.gov/forms-pubs/about-form-1099-div"
+    assert source.get_attribute("target") == "_blank"
+    assert source.get_attribute("aria-label") == "IRS: About Form 1099-DIV, opens in a new tab"
     page.mouse.move(5, 5)
-    tip.wait_for(state="detached")
+    card.wait_for(state="detached")
+    # A long title wraps; the form's name beside it doesn't.
+    visit(page, "/ui/taxes/education")
+    wait_guide(page, "taxes-education")
+    page.locator(".help .guide abbr.term", has_text="Form 709").first.hover()
+    assert card.locator("b").inner_text().startswith("United States Gift")
+    lines = """a => {
+      const r = document.createRange();
+      r.selectNodeContents(a);
+      return r.getClientRects().length;
+    }"""
+    assert card.locator(".term-abbr").evaluate(lines) == 1, "Form 709 on one line"
+    assert card.locator("b").evaluate(lines) > 1
+    page.mouse.move(5, 5)
+    card.wait_for(state="detached")
+    # A later use under the same heading, in a dialog's guide.
     open_dialog(page, "/ui/taxes/summary", "New tax book", "dialog-tax-book")
-    first, later = page.locator(".help .guide a.form", has_text="Form 8949").all()
-    assert first.get_attribute("class") == "form" and first.get_attribute("tabindex") is None
-    assert later.get_attribute("class") == "form quiet"
-    assert later.get_attribute("tabindex") == "-1"
-    assert later.locator(".sr-only").count() == 0
-    colour = "a => getComputedStyle(a).color"
-    around = "a => getComputedStyle(a.parentElement).color"
-    assert later.evaluate(colour) == later.evaluate(around) != first.evaluate(colour)
+    first, later = page.locator(".help .guide abbr.term", has_text="Form 8949").all()
+    assert first.get_attribute("tabindex") == "0"
+    assert later.get_attribute("class") == "term quiet"
+    assert later.get_attribute("tabindex") is None
+    underline = "a => getComputedStyle(a).textDecorationColor"
+    assert later.evaluate(underline) == "rgba(0, 0, 0, 0)"
     later.hover()
-    assert later.evaluate(colour) == first.evaluate(colour)
+    assert later.evaluate(underline) != "rgba(0, 0, 0, 0)"
+    assert card.locator("b").inner_text() == "Sales and Other Dispositions of Capital Assets"
     close_dialog(page)
     assert page.problems == []
 
@@ -404,7 +423,7 @@ FOCUSED = "() => document.activeElement.outerHTML.slice(0, 80)"
 
 def test_a_dialog_masks_the_content_not_the_guide(page):
     """While a dialog is open the sidebar and the page are dimmed and inert; the help pane
-    beside it isn't covered, its links answer the pointer, and Tab goes round the dialog's
+    beside it isn't covered, its terms answer the pointer, and Tab goes round the dialog's
     fields and the guide's. With the pane closed the mask covers everything (S12.1.3)."""
     visit(page, "/ui/taxes/summary")
     page.get_by_role("button", name="New tax book").click()
@@ -415,8 +434,8 @@ def test_a_dialog_masks_the_content_not_the_guide(page):
     inert = "() => [...document.querySelectorAll('.app > *')].map((e) => [e.tagName, e.inert])"
     assert page.evaluate(inert) == [["ASIDE", True], ["MAIN", True], ["ASIDE", False]]
     assert page.get_attribute(".dialog", "aria-modal") is None
-    page.locator(".help .guide a.form").first.hover()
-    page.wait_for_selector(".tooltip")
+    page.locator(".help .guide abbr.term").first.hover()
+    page.wait_for_selector(".help .term-tip:not([hidden])")
     # Tab: from the dialog's last field into the guide, and from the guide's last back round.
     d1 = page.evaluate(TAB_END, [".dialog", True])
     page.keyboard.press("Tab")

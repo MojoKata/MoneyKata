@@ -129,18 +129,14 @@
       (`## AGI: Adjusted Gross Income`), the explanation under it, and the document as a last
       line that is only a link, in alphabetical order. The hand-written mockup carries the same
       terms, and a test keeps the two alike.
-   8. **Forms**: an IRS form a guide names, never in code or a link, links to the form's page
-      on irs.gov ("About Form 1099-DIV"), opened in a new tab. "Form 8949" and "Schedule D" are
-      named in full, "1099-DIV" or "W-2" alone too, since they can be nothing else; a bare
-      number ("8949") is never taken for a form. Its first use under each heading looks like
-      any link, and screen readers read the form's title after it; later uses under the same
-      heading look like the text around them until hovered, when they show as links, and are
-      no tab stop. Its tooltip names the form and its title ("Form 1099-DIV: Dividends and
-      Distributions · irs.gov").
-      The forms are one Markdown file, `guides/forms.md`: a heading per form and its title
-      (`## Form 8949: Sales and Other Dispositions of Capital Assets`) and the line under it,
-      only a link to its page, in alphabetical order. The hand-written mockup carries the same
-      forms, and a test keeps the two alike.
+   8. **Forms**: an IRS form a guide names, never in code or a link, is marked as a term is
+      (S12.7.7): "Form 8949" and "Schedule D" in full, and "1099-DIV" or "W-2" alone too,
+      since they can be nothing else; a bare number ("8949") is never taken for a form. Its
+      card shows the form, its title, a sentence or two on what it is for, and the
+      external-link icon to the form's page on irs.gov ("About Form 1099-DIV"). The forms are
+      one Markdown file, `guides/forms.md`, laid out as the terms are
+      (`## Form 8949: Sales and Other Dispositions of Capital Assets`), in alphabetical order.
+      The hand-written mockup carries the same forms, and a test keeps the two alike.
 8. **Accessibility**: everything works by keyboard, every control is labelled, contrast
    meets WCAG AA, and `prefers-reduced-motion` turns transitions off. Dark theme first, with
    light and system. **Desktop browsers only**: phone layouts are not built or tested, since

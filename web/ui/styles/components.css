@@ -362,13 +362,6 @@
   .help h2.active abbr.term {
     text-decoration-line: none;
   }
-  /* A form's later mention under a heading: like the text around it until hovered. */
-  .help a.form.quiet {
-    color: inherit;
-  }
-  .help a.form.quiet:hover {
-    color: var(--info);
-  }
   .help-close {
     position: absolute;
     top: 14px;
@@ -1587,6 +1580,8 @@
     background: var(--accent-dim);
     padding: 1px 6px;
     border-radius: 5px;
+    white-space: nowrap;
+    flex: none;
   }
   .term-tip b {
     font-size: 13px;

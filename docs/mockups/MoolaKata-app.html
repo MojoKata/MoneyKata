@@ -547,13 +547,6 @@
   .help h2.active abbr.term {
     text-decoration-line: none;
   }
-  /* A form's later mention under a heading: like the text around it until hovered. */
-  .help a.form.quiet {
-    color: inherit;
-  }
-  .help a.form.quiet:hover {
-    color: var(--info);
-  }
   .help-close {
     position: absolute;
     top: 14px;
@@ -1772,6 +1765,8 @@
     background: var(--accent-dim);
     padding: 1px 6px;
     border-radius: 5px;
+    white-space: nowrap;
+    flex: none;
   }
   .term-tip b {
     font-size: 13px;
@@ -2896,7 +2891,7 @@ ol.phrase li::marker {
 "dialog-type-balance":"# Type today's balance\n\n## Balance\n\nAs the institution's site shows it.\n\n## As of {#as-of}\n\nThe day it's for.\n",
 "dialog-verify-key":"# Verify key\n\nChecks one copy of the recovery phrase against this server's key, and changes nothing. A check\nhere, the unlock and `moolakata keys verify` on the host each count as a confirmation; the yearly\nalert waits for one.\n\n## Recovery phrase\n\nThe 12 words from the copy, in order. Four letters of each are enough. A wrong phrase counts\ntoward the lockout, as at the locked screen.\n",
 "dialog-written-email":"# A written email\n\nAn email written to the mail folder while SMTP was not set up, as it would have been sent: who\nit is for, its subject and its text, links included. Pass the link on to the person it is for\nby a way you trust; it works once, for a day at most. Your password was asked again to open\nit, since the link signs someone in or resets a password.\n",
-"forms":"# Forms\n\nThe IRS forms the guides name (requirements S12.7.8). Each heading is a form and its title; the\nline under it, only a link, is the form's page on irs.gov. A guide's mention of a form links\nthere: \"Form 8949\" and \"Schedule D\" in full, and \"1099-DIV\" or \"W-2\" alone, since they can be\nnothing else; a bare number (\"8949\") is never taken for a form. Kept in alphabetical order; a test\nfails when a guide names a form missing here.\n\n## Form 1040: U.S. Individual Income Tax Return\n\n[About Form 1040](https://www.irs.gov/forms-pubs/about-form-1040)\n\n## Form 1040-X: Amended U.S. Individual Income Tax Return\n\n[About Form 1040-X](https://www.irs.gov/forms-pubs/about-form-1040x)\n\n## Form 1098: Mortgage Interest Statement\n\n[About Form 1098](https://www.irs.gov/forms-pubs/about-form-1098)\n\n## Form 1098-E: Student Loan Interest Statement\n\n[About Form 1098-E](https://www.irs.gov/forms-pubs/about-form-1098-e)\n\n## Form 1098-T: Tuition Statement\n\n[About Form 1098-T](https://www.irs.gov/forms-pubs/about-form-1098-t)\n\n## Form 1099-B: Proceeds from Broker and Barter Exchange Transactions\n\n[About Form 1099-B](https://www.irs.gov/forms-pubs/about-form-1099-b)\n\n## Form 1099-DIV: Dividends and Distributions\n\n[About Form 1099-DIV](https://www.irs.gov/forms-pubs/about-form-1099-div)\n\n## Form 1099-INT: Interest Income\n\n[About Form 1099-INT](https://www.irs.gov/forms-pubs/about-form-1099-int)\n\n## Form 1099-Q: Payments from Qualified Education Programs (Under Sections 529 and 530)\n\n[About Form 1099-Q](https://www.irs.gov/forms-pubs/about-form-1099-q)\n\n## Form 709: United States Gift (and Generation-Skipping Transfer) Tax Return\n\n[About Form 709](https://www.irs.gov/forms-pubs/about-form-709)\n\n## Form 8283: Noncash Charitable Contributions\n\n[About Form 8283](https://www.irs.gov/forms-pubs/about-form-8283)\n\n## Form 8606: Nondeductible IRAs\n\n[About Form 8606](https://www.irs.gov/forms-pubs/about-form-8606)\n\n## Form 8615: Tax for Certain Children Who Have Unearned Income\n\n[About Form 8615](https://www.irs.gov/forms-pubs/about-form-8615)\n\n## Form 8937: Report of Organizational Actions Affecting Basis of Securities\n\n[About Form 8937](https://www.irs.gov/forms-pubs/about-form-8937)\n\n## Form 8949: Sales and Other Dispositions of Capital Assets\n\n[About Form 8949](https://www.irs.gov/forms-pubs/about-form-8949)\n\n## Form W-2: Wage and Tax Statement\n\n[About Form W-2](https://www.irs.gov/forms-pubs/about-form-w-2)\n\n## Schedule A: Itemized Deductions\n\n[About Schedule A (Form 1040)](https://www.irs.gov/forms-pubs/about-schedule-a-form-1040)\n\n## Schedule D: Capital Gains and Losses\n\n[About Schedule D (Form 1040)](https://www.irs.gov/forms-pubs/about-schedule-d-form-1040)\n",
+"forms":"# Forms\n\nThe IRS forms the guides name (requirements S12.7.8), shown as the terms are (S12.7.7). Each\nheading is a form and its title; the paragraph under it, a sentence or two of plain text, says\nwhat it is for; a last line that is only a link is the form's page on irs.gov. A guide names a\nform as \"Form 8949\" or \"Schedule D\" in full, or \"1099-DIV\" or \"W-2\" alone, since they can be\nnothing else; a bare number (\"8949\") is never taken for a form. Kept in alphabetical order; a\ntest fails when a guide names a form missing here.\n\n## Form 1040: U.S. Individual Income Tax Return\n\nThe yearly federal income tax return of a US citizen or resident. Its schedules, such as A and\nD, and forms such as 8949 are filed with it.\n\n[IRS: About Form 1040](https://www.irs.gov/forms-pubs/about-form-1040)\n\n## Form 1040-X: Amended U.S. Individual Income Tax Return\n\nCorrects a Form 1040 already filed: each figure as filed, the change, and the corrected amount,\nwith why it changed.\n\n[IRS: About Form 1040-X](https://www.irs.gov/forms-pubs/about-form-1040x)\n\n## Form 1098: Mortgage Interest Statement\n\nSent by your mortgage lender early in the year: the interest you paid on the mortgage last year,\nwhen it was $600 or more. It may be deductible on Schedule A.\n\n[IRS: About Form 1098](https://www.irs.gov/forms-pubs/about-form-1098)\n\n## Form 1098-E: Student Loan Interest Statement\n\nSent by a student loan's lender or servicer: the interest you paid on the loan in the year, when\nit was $600 or more. Some of it may be deductible, within limits.\n\n[IRS: About Form 1098-E](https://www.irs.gov/forms-pubs/about-form-1098-e)\n\n## Form 1098-T: Tuition Statement\n\nSent by a college or other eligible school for each student: the qualified tuition and related\nexpenses paid in the year, and the scholarships and grants. It backs a claim to the education\ncredits.\n\n[IRS: About Form 1098-T](https://www.irs.gov/forms-pubs/about-form-1098-t)\n\n## Form 1099-B: Proceeds from Broker and Barter Exchange Transactions\n\nSent by your broker: each sale in a taxable account in the year, with its proceeds and, where\nthe broker knows it, its cost basis. The sales go on Form 8949.\n\n[IRS: About Form 1099-B](https://www.irs.gov/forms-pubs/about-form-1099-b)\n\n## Form 1099-DIV: Dividends and Distributions\n\nSent by a bank, broker or fund: the dividends and other distributions it paid you in the year,\nordinary and qualified dividends, capital-gain distributions and returns of capital.\n\n[IRS: About Form 1099-DIV](https://www.irs.gov/forms-pubs/about-form-1099-div)\n\n## Form 1099-INT: Interest Income\n\nSent by a bank, broker or other payer: the interest it paid you in the year, usually when it was\n$10 or more.\n\n[IRS: About Form 1099-INT](https://www.irs.gov/forms-pubs/about-form-1099-int)\n\n## Form 1099-Q: Payments from Qualified Education Programs (Under Sections 529 and 530)\n\nSent by a 529 plan or Coverdell account for a year it paid out: the distributions, and how much\nof them was earnings. The earnings not covered by qualified education expenses may be taxed.\n\n[IRS: About Form 1099-Q](https://www.irs.gov/forms-pubs/about-form-1099-q)\n\n## Form 709: United States Gift (and Generation-Skipping Transfer) Tax Return\n\nThe return for gifts to one person in a year above the annual exclusion, and for spreading a\nlarge 529 contribution over five years. Tax is rarely due: the gifts count against a lifetime\nexemption.\n\n[IRS: About Form 709](https://www.irs.gov/forms-pubs/about-form-709)\n\n## Form 8283: Noncash Charitable Contributions\n\nFiled with your return to deduct donated goods and other property worth more than $500 in the\nyear. An item worth more than $5,000 usually needs a qualified appraisal too.\n\n[IRS: About Form 8283](https://www.irs.gov/forms-pubs/about-form-8283)\n\n## Form 8606: Nondeductible IRAs\n\nRecords nondeductible contributions to a traditional IRA, the basis they build, and the taxable\npart of IRA distributions and Roth conversions. The basis carries from year to year.\n\n[IRS: About Form 8606](https://www.irs.gov/forms-pubs/about-form-8606)\n\n## Form 8615: Tax for Certain Children Who Have Unearned Income\n\nFigures the tax on a child's interest, dividends and gains above a yearly threshold at the\na parent's rate: the kiddie tax. It applies under age 18, and to some older children.\n\n[IRS: About Form 8615](https://www.irs.gov/forms-pubs/about-form-8615)\n\n## Form 8937: Report of Organizational Actions Affecting Basis of Securities\n\nPublished by a company after a split, spin-off, merger or similar action: how it changes the cost\nbasis of the shares you held.\n\n[IRS: About Form 8937](https://www.irs.gov/forms-pubs/about-form-8937)\n\n## Form 8949: Sales and Other Dispositions of Capital Assets\n\nLists each sale of shares, funds, bitcoin and other capital assets in the year: when it was\nbought and sold, the proceeds, the basis and the gain or loss. Its totals go on Schedule D.\n\n[IRS: About Form 8949](https://www.irs.gov/forms-pubs/about-form-8949)\n\n## Form W-2: Wage and Tax Statement\n\nSent by your employer early in the year: the wages you were paid last year, and the income,\nSocial Security and Medicare taxes withheld from them.\n\n[IRS: About Form W-2](https://www.irs.gov/forms-pubs/about-form-w-2)\n\n## Schedule A: Itemized Deductions\n\nThe part of Form 1040 that lists itemized deductions, such as mortgage interest, state and local\ntaxes, gifts to charity and large medical costs. It is used when they come to more than the\nstandard deduction.\n\n[IRS: About Schedule A (Form 1040)](https://www.irs.gov/forms-pubs/about-schedule-a-form-1040)\n\n## Schedule D: Capital Gains and Losses\n\nThe part of Form 1040 that totals the year's capital gains and losses, short and long term, from\nForm 8949 and capital-gain distributions, with last year's loss carryover.\n\n[IRS: About Schedule D (Form 1040)](https://www.irs.gov/forms-pubs/about-schedule-d-form-1040)\n",
 "gifts-gifts":"# Gifts: Gifts\n\nEvery gift, from idea to given, and those you've received.\n\n![Gifts](shots/gifts-gifts.png)\n\n## Show\n\nOnly the ideas, or only what's planned, bought, given or received.\n\n## Gifts\n\nFor whom, for which occasion, its status and cost. Ideas have no date: a running list per person, to\npick from when an occasion comes.\n",
 "gifts-people":"# Gifts: People\n\nYour gift plans for the people you give gifts to: their dates, your budget, what you've spent on\nthem this year and the last gift you gave.\n\n![People](shots/gifts-people.png)\n\n## People\n\nClick a person to change their dates, budget and notes, see what you gave before, or share the\nplan. People are the household's, each shown with how they're related to you; your gift plans\nare yours alone, unless you share one: a couple plans their children's gifts together that way. A\ngift for someone who is a user here is never shown to them, even through a share. **Add a gift\nplan** starts one for someone already here, or adds them.\n",
 "gifts-spending":"# Gifts: Spending\n\nWhat gifts cost, by person against their budget, by occasion, and by year.\n\n![Spending](shots/gifts-spending.png)\n\n## Year\n\nThe year shown.\n\n## By person\n\nWhat was spent on each person this year against their yearly budget. A gift for several people\ncounts a share for each.\n\n## By occasion\n\nBirthdays, each holiday, and anniversaries and other dates.\n\n## By year\n\nGift spending each year, to see how it grows.\n\nMoney given to one person in a year, cash gifts and contributions to their 529, above the annual\ngift exclusion is flagged: a gift-tax return (Form 709) is needed, even when no tax is due.\n",
@@ -11633,14 +11628,13 @@ export function Frame({ children, onSignOut }) {
 // The help pane (requirements S12.7): F1 toggles it; it shows the guide of the screen, tab or
 // dialog in view, and follows the focus to the field's heading. Its width drags (up to half the
 // window) and moves with the arrow keys; the browser remembers both. The acronyms of
-// guides/terms.md show what they stand for on hover and focus, and the IRS forms of
-// guides/forms.md link to their pages on irs.gov.
+// guides/terms.md, and the IRS forms of guides/forms.md, show what they are on hover and focus.
 import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { html } from '@mk/app/html.js';
 import { guides } from '@mk/app/config.js';
 import { helpOpen, helpWidth } from '@mk/store/prefs.js';
-import { assemble, formList, glossary, render } from '@mk/components/markdown.js';
+import { assemble, glossary, render } from '@mk/components/markdown.js';
 import { Icon } from '@mk/components/icon.js';
 
 /** The guide of the screen in view: its key, and values its parts need (the account type). */
@@ -11694,14 +11688,14 @@ export function HelpPane() {
   const ref = useRef(/** @type {HTMLElement | null} */ (null));
   const [md, setMd] = useState(/** @type {string | null} */ (null));
   const [terms, setTerms] = useState(/** @type {import('@mk/components/markdown.js').Glossary} */ (new Map()));
-  const [forms, setForms] = useState(/** @type {import('@mk/components/markdown.js').Forms} */ (new Map()));
+  const [forms, setForms] = useState(/** @type {import('@mk/components/markdown.js').Glossary} */ (new Map()));
   const key = dialogGuide.value || screenGuide.value.key;
   const vars = dialogGuide.value ? {} : screenGuide.value.vars || {};
 
   // Without the terms or the forms a guide still shows, its acronyms and forms plain.
   useEffect(() => {
     load('terms').then((text) => setTerms(glossary(text)), () => {});
-    load('forms').then((text) => setForms(formList(text)), () => {});
+    load('forms').then((text) => setForms(glossary(text)), () => {});
   }, []);
 
   useEffect(() => {
@@ -13788,16 +13782,16 @@ import { slug } from '@mk/app/format.js';
 import { Term } from '@mk/components/term.js';
 
 /** @typedef {Map<string, import('@mk/components/term.js').Entry>} Glossary */
-/** @typedef {Map<string, { title: string, href: string }>} Forms */
 /**
- * @typedef {{ terms: Glossary, forms: Forms, words: Map<string, string>, re: RegExp,
+ * @typedef {{ terms: Glossary, forms: Glossary, words: Map<string, string>, re: RegExp,
  *   seen: Set<string> }} Marking  `words`: how a guide names each form ("1099-DIV")
  */
 
 /**
  * The guides' glossary (S12.7.7): each "## AGI: Adjusted Gross Income" heading of
  * guides/terms.md, the paragraph under it as the explanation, and a last line that is only a
- * link, "[IRS Publication 590-A](https://…)", as the official document.
+ * link, "[IRS Publication 590-A](https://…)", as the official document. guides/forms.md lists the
+ * IRS forms the same way, "## Form 1099-DIV: Dividends and Distributions" (S12.7.8).
  * @param {string} md
  * @returns {Glossary}
  */
@@ -13805,7 +13799,7 @@ export function glossary(md) {
   const out = new Map();
   for (const part of md.replace(/\r/g, '').split(/^## /m).slice(1)) {
     const [head, ...body] = part.trim().split('\n');
-    const m = head.match(/^([A-Z][A-Z0-9]*): (.+)$/);
+    const m = head.match(/^([A-Z][A-Z0-9]*|(?:Form|Schedule) [0-9A-Z-]+): (.+)$/);
     if (!m) continue;
     const link = body.at(-1)?.match(/^\[([^\]]+)\]\((https:\/\/[^)\s]+)\)$/);
     if (link) body.pop();
@@ -13814,23 +13808,6 @@ export function glossary(md) {
       text: body.join(' ').replace(/\s+/g, ' ').trim(),
       source: link ? { label: link[1], href: link[2] } : undefined,
     });
-  }
-  return out;
-}
-
-/**
- * The IRS forms the guides name (S12.7.8): each "## Form 1099-DIV: Dividends and Distributions"
- * heading of guides/forms.md, and the line under it, only a link, to its page on irs.gov.
- * @param {string} md
- * @returns {Forms}
- */
-export function formList(md) {
-  const out = new Map();
-  for (const part of md.replace(/\r/g, '').split(/^## /m).slice(1)) {
-    const [head, ...body] = part.trim().split('\n');
-    const m = head.match(/^((?:Form|Schedule) [0-9A-Z-]+): (.+)$/);
-    const link = body.at(-1)?.match(/^\[[^\]]+\]\((https:\/\/[^)\s]+)\)$/);
-    if (m && link) out.set(m[1], { title: m[2].trim(), href: link[1] });
   }
   return out;
 }
@@ -13846,8 +13823,8 @@ function wordsFor(name) {
 }
 
 /**
- * Each use of a glossary term, plural or not, as a Term, and of a form as a link to its page:
- * a section's first underlined or a link, later ones quiet (S12.7.7, S12.7.8).
+ * Each use of a glossary term, plural or not, and of a form, as a Term: a section's first
+ * underlined, later ones quiet (S12.7.7, S12.7.8).
  * @param {string} text
  * @param {Marking | null} marking
  * @returns {any[]}
@@ -13858,29 +13835,14 @@ function mark(text, marking) {
   let last = 0;
   for (const m of text.matchAll(marking.re)) {
     if (m.index === undefined) continue;
-    const key = m[1] ? /** @type {string} */ (marking.words.get(m[1])) : m[2];
+    const key = /** @type {string} */ (m[1] ? marking.words.get(m[1]) : m[2]);
     const quiet = marking.seen.has(key);
     marking.seen.add(key);
     if (m.index > last) out.push(text.slice(last, m.index));
-    if (m[1]) {
-      const form = /** @type {{ title: string, href: string }} */ (marking.forms.get(key));
-      out.push(h(
-        'a',
-        {
-          class: quiet ? 'form quiet' : 'form',
-          href: form.href,
-          target: '_blank',
-          rel: 'noopener noreferrer',
-          tabindex: quiet ? -1 : undefined,
-          'data-tip': `${key}: ${form.title} · irs.gov`,
-        },
-        m[1],
-        quiet ? null : h('span', { class: 'sr-only' }, ` (${form.title}, on irs.gov)`),
-      ));
-    } else {
-      const entry = /** @type {import('@mk/components/term.js').Entry} */ (marking.terms.get(key));
-      out.push(h(Term, { ...entry, term: key, word: m[0], quiet }));
-    }
+    const entry = /** @type {import('@mk/components/term.js').Entry} */ (
+      (m[1] ? marking.forms : marking.terms).get(key)
+    );
+    out.push(h(Term, { ...entry, term: key, word: m[0], quiet }));
     last = m.index + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));
@@ -13940,7 +13902,7 @@ export function anchorOf(text) {
  * @param {string} md
  * @param {(src: string) => string} resolve  where an image's path points
  * @param {Glossary} [terms]  the acronyms to explain on hover and focus (S12.7.7)
- * @param {Forms} [forms]  the forms to link to their pages (S12.7.8)
+ * @param {Glossary} [forms]  the IRS forms, shown as the terms are (S12.7.8)
  */
 export function render(md, resolve = (s) => s, terms = new Map(), forms = new Map()) {
   const lines = md.replace(/\r/g, '').split('\n');

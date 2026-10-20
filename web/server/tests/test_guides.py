@@ -1,7 +1,7 @@
 """The guides' acronyms (requirements S12.7.7): each one a guide uses is explained in
 guides/terms.md, in a sentence or two with its official document where there is one. The IRS
-forms they name (S12.7.8) are listed in guides/forms.md with their pages on irs.gov. The
-hand-written mockup carries the same terms and forms."""
+forms they name (S12.7.8) are explained the same way in guides/forms.md, each with its page on
+irs.gov. The hand-written mockup carries the same terms and forms."""
 
 import re
 
@@ -21,13 +21,13 @@ PLAIN = {
 LISTS = ("terms.md", "forms.md")
 
 
-def glossary() -> dict[str, tuple[str, ...]]:
-    """Each term's expansion and explanation, and its document's name and address if it has one."""
+def entries(name: str, key: str, shape: str) -> dict[str, tuple[str, ...]]:
+    """Each entry's title and explanation, and its document's name and address if it has one."""
     out = {}
-    for part in re.split(r"^## ", (GUIDES / "terms.md").read_text(), flags=re.M)[1:]:
+    for part in re.split(r"^## ", (GUIDES / name).read_text(), flags=re.M)[1:]:
         head, *body = part.strip().split("\n")
-        m = re.fullmatch(r"([A-Z][A-Z0-9]*): (.+)", head)
-        assert m, f"terms.md: '## {head}' isn't 'ACRONYM: What it stands for'"
+        m = re.fullmatch(rf"({key}): (.+)", head)
+        assert m, f"{name}: '## {head}' isn't '{shape}'"
         link = re.fullmatch(r"\[([^\]]+)\]\((\S+)\)", body[-1])
         if link:
             body.pop()
@@ -35,17 +35,19 @@ def glossary() -> dict[str, tuple[str, ...]]:
     return out
 
 
-def forms() -> dict[str, tuple[str, str]]:
-    """Each form's title and the address of its page."""
-    out = {}
-    for part in re.split(r"^## ", (GUIDES / "forms.md").read_text(), flags=re.M)[1:]:
-        head, *body = part.strip().split("\n")
-        m = re.fullmatch(r"((?:Form|Schedule) [0-9A-Z-]+): (.+)", head)
-        assert m, f"forms.md: '## {head}' isn't 'Form 8949: Its title'"
-        link = re.fullmatch(r"\[[^\]]+\]\((\S+)\)", body[-1])
-        assert link and len(body) == 2, f"forms.md: {m[1]} needs a line that is only its link"
-        out[m[1]] = (m[2], link[1])
-    return out
+def glossary() -> dict[str, tuple[str, ...]]:
+    return entries("terms.md", r"[A-Z][A-Z0-9]*", "ACRONYM: What it stands for")
+
+
+def forms() -> dict[str, tuple[str, ...]]:
+    return entries("forms.md", r"(?:Form|Schedule) [0-9A-Z-]+", "Form 8949: Its title")
+
+
+def says_what_it_is(name: str, title: str, text: str) -> None:
+    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z0-9])", text)
+    assert text and len(sentences) <= 2, f"{name}: {len(sentences)} sentences"
+    assert title[0].isupper() and not title.endswith("."), f"{name}: '{title}' is a name"
+    assert "](" not in text, f"{name}: a link goes on its own last line, the document's"
 
 
 def guides() -> dict[str, str]:
@@ -74,11 +76,8 @@ def test_each_term_says_what_it_stands_for_in_a_sentence_or_two():
     terms = glossary()
     assert list(terms) == sorted(terms), "terms.md is kept in alphabetical order"
     for term, (title, text, *source) in terms.items():
-        sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z0-9])", text)
-        assert text and len(sentences) <= 2, f"{term}: {len(sentences)} sentences"
-        assert title[0].isupper() and not title.endswith("."), f"{term}: '{title}' is a name"
+        says_what_it_is(term, title, text)
         assert term not in PLAIN, f"{term} is both a term and plain"
-        assert "](" not in text, f"{term}: a link goes on its own last line, the document's"
         if source:
             assert source[1].startswith("https://"), f"{term}: {source[1]} isn't https"
 
@@ -95,12 +94,13 @@ def test_the_hand_written_mockup_carries_the_same_terms():
     assert mock == glossary()
 
 
-def test_every_form_a_guide_names_is_listed_with_its_page():
+def test_every_form_a_guide_names_is_explained_with_its_page():
     listed = forms()
     assert list(listed) == sorted(listed), "forms.md is kept in alphabetical order"
-    for name, (title, href) in listed.items():
-        assert title[0].isupper() and not title.endswith("."), f"{name}: '{title}' is a title"
-        assert href.startswith("https://www.irs.gov/forms-pubs/about-"), f"{name}: {href}"
+    for name, (title, text, *source) in listed.items():
+        says_what_it_is(name, title, text)
+        assert source, f"{name}: its last line is the link to its page on irs.gov"
+        assert source[1].startswith("https://www.irs.gov/forms-pubs/about-"), f"{name}: {source}"
     # "Form 8949", "Schedule D", and "1099-DIV" or "W-2" alone
     named = (
         r"\bForm (?:\d{3,4}(?:-[A-Z]+)?|W-\d)\b|\bSchedule [A-Z]\b"
@@ -121,7 +121,7 @@ def test_the_hand_written_mockup_carries_the_same_forms():
     start = page.index("const FORMS = {\n")
     block = page[start : page.index("\n};\n", start)]
     mock = {
-        m[1]: (m[2].replace("’", "'"), m[3])
-        for m in re.finditer(r"^  '([^']+)': \['(.*?)', '(.*?)'\],$", block, re.M)
+        m[1]: tuple(g.replace("’", "'") for g in m.groups()[1:])
+        for m in re.finditer(r"^  '([^']+)': \['(.*?)', '(.*?)', '(.*?)', '(.*?)'\],$", block, re.M)
     }
     assert mock == forms()

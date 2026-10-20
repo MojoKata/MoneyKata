@@ -6,16 +6,16 @@ import { slug } from '../app/format.js';
 import { Term } from './term.js';
 
 /** @typedef {Map<string, import('./term.js').Entry>} Glossary */
-/** @typedef {Map<string, { title: string, href: string }>} Forms */
 /**
- * @typedef {{ terms: Glossary, forms: Forms, words: Map<string, string>, re: RegExp,
+ * @typedef {{ terms: Glossary, forms: Glossary, words: Map<string, string>, re: RegExp,
  *   seen: Set<string> }} Marking  `words`: how a guide names each form ("1099-DIV")
  */
 
 /**
  * The guides' glossary (S12.7.7): each "## AGI: Adjusted Gross Income" heading of
  * guides/terms.md, the paragraph under it as the explanation, and a last line that is only a
- * link, "[IRS Publication 590-A](https://…)", as the official document.
+ * link, "[IRS Publication 590-A](https://…)", as the official document. guides/forms.md lists the
+ * IRS forms the same way, "## Form 1099-DIV: Dividends and Distributions" (S12.7.8).
  * @param {string} md
  * @returns {Glossary}
  */
@@ -23,7 +23,7 @@ export function glossary(md) {
   const out = new Map();
   for (const part of md.replace(/\r/g, '').split(/^## /m).slice(1)) {
     const [head, ...body] = part.trim().split('\n');
-    const m = head.match(/^([A-Z][A-Z0-9]*): (.+)$/);
+    const m = head.match(/^([A-Z][A-Z0-9]*|(?:Form|Schedule) [0-9A-Z-]+): (.+)$/);
     if (!m) continue;
     const link = body.at(-1)?.match(/^\[([^\]]+)\]\((https:\/\/[^)\s]+)\)$/);
     if (link) body.pop();
@@ -32,23 +32,6 @@ export function glossary(md) {
       text: body.join(' ').replace(/\s+/g, ' ').trim(),
       source: link ? { label: link[1], href: link[2] } : undefined,
     });
-  }
-  return out;
-}
-
-/**
- * The IRS forms the guides name (S12.7.8): each "## Form 1099-DIV: Dividends and Distributions"
- * heading of guides/forms.md, and the line under it, only a link, to its page on irs.gov.
- * @param {string} md
- * @returns {Forms}
- */
-export function formList(md) {
-  const out = new Map();
-  for (const part of md.replace(/\r/g, '').split(/^## /m).slice(1)) {
-    const [head, ...body] = part.trim().split('\n');
-    const m = head.match(/^((?:Form|Schedule) [0-9A-Z-]+): (.+)$/);
-    const link = body.at(-1)?.match(/^\[[^\]]+\]\((https:\/\/[^)\s]+)\)$/);
-    if (m && link) out.set(m[1], { title: m[2].trim(), href: link[1] });
   }
   return out;
 }
@@ -64,8 +47,8 @@ function wordsFor(name) {
 }
 
 /**
- * Each use of a glossary term, plural or not, as a Term, and of a form as a link to its page:
- * a section's first underlined or a link, later ones quiet (S12.7.7, S12.7.8).
+ * Each use of a glossary term, plural or not, and of a form, as a Term: a section's first
+ * underlined, later ones quiet (S12.7.7, S12.7.8).
  * @param {string} text
  * @param {Marking | null} marking
  * @returns {any[]}
@@ -76,29 +59,14 @@ function mark(text, marking) {
   let last = 0;
   for (const m of text.matchAll(marking.re)) {
     if (m.index === undefined) continue;
-    const key = m[1] ? /** @type {string} */ (marking.words.get(m[1])) : m[2];
+    const key = /** @type {string} */ (m[1] ? marking.words.get(m[1]) : m[2]);
     const quiet = marking.seen.has(key);
     marking.seen.add(key);
     if (m.index > last) out.push(text.slice(last, m.index));
-    if (m[1]) {
-      const form = /** @type {{ title: string, href: string }} */ (marking.forms.get(key));
-      out.push(h(
-        'a',
-        {
-          class: quiet ? 'form quiet' : 'form',
-          href: form.href,
-          target: '_blank',
-          rel: 'noopener noreferrer',
-          tabindex: quiet ? -1 : undefined,
-          'data-tip': `${key}: ${form.title} · irs.gov`,
-        },
-        m[1],
-        quiet ? null : h('span', { class: 'sr-only' }, ` (${form.title}, on irs.gov)`),
-      ));
-    } else {
-      const entry = /** @type {import('./term.js').Entry} */ (marking.terms.get(key));
-      out.push(h(Term, { ...entry, term: key, word: m[0], quiet }));
-    }
+    const entry = /** @type {import('./term.js').Entry} */ (
+      (m[1] ? marking.forms : marking.terms).get(key)
+    );
+    out.push(h(Term, { ...entry, term: key, word: m[0], quiet }));
     last = m.index + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));
@@ -158,7 +126,7 @@ export function anchorOf(text) {
  * @param {string} md
  * @param {(src: string) => string} resolve  where an image's path points
  * @param {Glossary} [terms]  the acronyms to explain on hover and focus (S12.7.7)
- * @param {Forms} [forms]  the forms to link to their pages (S12.7.8)
+ * @param {Glossary} [forms]  the IRS forms, shown as the terms are (S12.7.8)
  */
 export function render(md, resolve = (s) => s, terms = new Map(), forms = new Map()) {
   const lines = md.replace(/\r/g, '').split('\n');

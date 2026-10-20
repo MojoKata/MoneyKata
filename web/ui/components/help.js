@@ -1,14 +1,13 @@
 // The help pane (requirements S12.7): F1 toggles it; it shows the guide of the screen, tab or
 // dialog in view, and follows the focus to the field's heading. Its width drags (up to half the
 // window) and moves with the arrow keys; the browser remembers both. The acronyms of
-// guides/terms.md show what they stand for on hover and focus, and the IRS forms of
-// guides/forms.md link to their pages on irs.gov.
+// guides/terms.md, and the IRS forms of guides/forms.md, show what they are on hover and focus.
 import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
 import { guides } from '../app/config.js';
 import { helpOpen, helpWidth } from '../store/prefs.js';
-import { assemble, formList, glossary, render } from './markdown.js';
+import { assemble, glossary, render } from './markdown.js';
 import { Icon } from './icon.js';
 
 /** The guide of the screen in view: its key, and values its parts need (the account type). */
@@ -62,14 +61,14 @@ export function HelpPane() {
   const ref = useRef(/** @type {HTMLElement | null} */ (null));
   const [md, setMd] = useState(/** @type {string | null} */ (null));
   const [terms, setTerms] = useState(/** @type {import('./markdown.js').Glossary} */ (new Map()));
-  const [forms, setForms] = useState(/** @type {import('./markdown.js').Forms} */ (new Map()));
+  const [forms, setForms] = useState(/** @type {import('./markdown.js').Glossary} */ (new Map()));
   const key = dialogGuide.value || screenGuide.value.key;
   const vars = dialogGuide.value ? {} : screenGuide.value.vars || {};
 
   // Without the terms or the forms a guide still shows, its acronyms and forms plain.
   useEffect(() => {
     load('terms').then((text) => setTerms(glossary(text)), () => {});
-    load('forms').then((text) => setForms(formList(text)), () => {});
+    load('forms').then((text) => setForms(glossary(text)), () => {});
   }, []);
 
   useEffect(() => {
