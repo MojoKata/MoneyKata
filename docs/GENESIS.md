@@ -103,9 +103,9 @@ only while no repository takes it, so `MojoKata/MoneyKata` is never used again.
    branch ruleset**:
    1. Name it *Main rules* and set its **Enforcement status** to **Active**.
    2. Under **Target branches**, choose **Add target › Include default branch**.
-   3. Put the **Organization admin** role in its bypass list, set to **For pull requests
-      only**. A maintainer can then still merge a pull request whose checks failed, by
-      ticking the bypass box when merging, but nobody can push to `main` directly.
+   3. Put the **Organization admin** role in its bypass list, set to **Allow for pull
+      requests only**. A maintainer can then still merge a pull request whose checks failed,
+      by ticking the bypass box when merging, but nobody can push to `main` directly.
    4. Keep **Restrict deletions** and **Block force pushes**, which are on by default.
    5. Turn on **Require a pull request before merging**, with **Required approvals** at 0,
       and under **Allowed merge methods** leave only **Squash**.
@@ -120,8 +120,9 @@ only while no repository takes it, so `MojoKata/MoneyKata` is never used again.
    passed. See GitHub's
    [available rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets).
 
-   **As set up:** *Main rules*, Active, with the settings above. It was first saved
-   Disabled, then set to Active. GitHub's **Require an additional approval for unattributed
+   **As set up:** *Main rules*, Active, with the settings above. Its bypass list holds the
+   **Organization admin** role and the maintainer's own account, both set to **Allow for
+   pull requests only**. It was first saved Disabled, then set to Active. GitHub's **Require an additional approval for unattributed
    Copilot pull requests**, on by default, stays on. It has no effect while 0 approvals are
    required.
 
