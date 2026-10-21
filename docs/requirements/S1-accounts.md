@@ -92,9 +92,10 @@
          this way, and the same file isn't kept twice on an account. An account kept current
          from OFX or CSV is archived this way, its statements kept beside the imports that
          carry its activity.
-      7. **Learned column positions** *(after the first release, S17.9)*, for layouts with
-         no section headings and no running balance, where the sign of an amount comes from
-         the column it is in (separate *Debits* and *Credits* columns):
+      7. **Learned column positions** *(after the first release: [later work](later.md),
+         L10)*, for layouts with no section headings and no running balance, where the sign
+         of an amount comes from the column it is in (separate *Debits* and *Credits*
+         columns):
          1. **Finding the columns**: on each page, the words of the lines that start with a
             date are grouped by where they sit across the page (their left and right edges
             in the PDF's text layer, or in the OCR's boxes), and the amounts fall into a few
@@ -184,7 +185,8 @@
          ending. The descriptor's checksum is checked when it has one. A multisig wallet's
          addresses are derived from all its keys, and only its public keys are ever held.
          Other forms (`sh(wsh(…))`, a taproot descriptor with scripts) are refused, saying
-         so. Miniscript policies beyond these come after the first release (S17.9).
+         so. Miniscript policies beyond these come after the first release
+         ([later work](later.md), L11).
    2. **Where balances and history come from**, set by an admin in Settings › Bitcoin:
       1. a **public explorer** with the Esplora API (mempool.space suggested, or Blockstream).
          No wallet is read until an admin saves Settings › Bitcoin (R3.5), and until then a

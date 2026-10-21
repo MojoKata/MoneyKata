@@ -81,3 +81,24 @@ Settings and on the charts that use it) for coins Coinbase doesn't list. Until t
 are priced by hand (S4.3).
 
 **Touches:** S4.3, S13.5, S16.6.
+
+## L10: Learned column positions for statements
+
+**What it is:** reading a bank or card statement with no section headings and no running
+balance, where an amount's sign comes from the column it is in (*Debits* and *Credits*): the
+columns are found by where the amounts sit across the page, named once in the check dialog,
+and learned per institution, as S1.3.3.7 describes. Until then such a line's sign comes from
+an explicit sign where it has one, else from its words, marked as guessed (S1.3.3.1).
+
+**Touches:** S1.3.3.1, S1.3.3.4, S1.3.3.7.
+
+## L11: Miniscript wallet policies
+
+**What it is:** watching bitcoin wallets whose descriptors are miniscript policies beyond the
+single-key and multisig forms of S1.6.1.4: spending conditions inside `wsh()` (a recovery key
+that can spend after a timelock, a multisig whose threshold drops over time), as Liana and
+Bitcoin Core export them, and taproot descriptors with script trees. Their addresses are
+derived from the policy, and only public keys are held. Until then such a descriptor is
+refused, saying so.
+
+**Touches:** S1.6.1.4.

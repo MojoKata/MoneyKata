@@ -133,6 +133,42 @@ def _txns(c, acct):
     return c.get("/ui/api/transactions", params={"account": acct["id"]}).json()["items"]
 
 
+def test_changing_the_lot_method_works_the_wash_sales_out_again(server, alice):
+    # B7: a change of the account's method reruns the household's wash sales (S2.3), and the
+    # rerun takes each sale by the method recorded on it, not the account's new one.
+    from sqlalchemy import delete
+
+    from moolakata.store.entities.accounts import Transaction, WashSale
+
+    brk = new_account(alice, name="Brokerage", type="brokerage", lotMethod="fifo")
+    trade(alice, brk["id"], "2026-01-05", "buy", "10", "100")
+    trade(alice, brk["id"], "2026-02-02", "buy", "10", "50")
+    trade(alice, brk["id"], "2026-06-01", "sell", "10", "80")  # FIFO: the $100 lot, a 200 loss
+    trade(alice, brk["id"], "2026-06-15", "buy", "10", "80")  # replaces all 10
+
+    def realized():
+        return alice.get("/ui/api/positions").json()["summary"]["realizedThisYear"]
+
+    assert realized() == "0.00", "all 200 disallowed"
+    # Wash sales gone stale, as a rerun would put right.
+    with server.db.tx() as s:
+        s.execute(delete(WashSale))
+    assert realized() == "-200.00"
+    acct = alice.get(f"/ui/api/accounts/{brk['id']}").json()
+    r = alice.patch(
+        f"/ui/api/accounts/{brk['id']}",
+        json={"lotMethod": "lifo"},
+        headers={"If-Match": str(acct["version"])},
+    )
+    assert r.status_code == 200, r.text
+    # By LIFO the sale would take the $50 lot, a 300 gain with nothing to disallow.
+    assert realized() == "0.00", "worked out again, by the FIFO recorded on the sale"
+    with server.db.read() as s:
+        sale = s.query(Transaction).filter_by(accountId=brk["id"], kind="sell").one()
+        assert sale.lotMethod == "fifo"
+        assert s.query(WashSale).filter_by(saleId=sale.id).count() == 1
+
+
 # ---- Corporate actions (S2.4, N4) ----
 
 

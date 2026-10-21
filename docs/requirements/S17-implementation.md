@@ -512,9 +512,7 @@
    10. **The first release** is the nine milestones. The build's branch is committed and pushed
       part by part, and merges into `main` only once all of it is built and the requirements
       have their final approval.
-   11. **After the first release**: learned column positions for statements (S1.3.3.7),
-       miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of [later
-       work](later.md) (L1 to L9).
+   11. **After the first release**: the items of [later work](later.md), L1 to L11.
 10. **Continuous integration and releases**, on GitHub Actions, whose standard runners are
     free for a public repository.
     1. **Checks**: `.github/workflows/check.yml` runs `web/check` on every pull request and
