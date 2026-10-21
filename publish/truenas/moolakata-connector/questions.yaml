@@ -31,7 +31,7 @@ questions:
           label: Page Addresses
           description: |
             The names and addresses browsers use to reach the connector's page: the NAS's IP
-            address, its host name. The first is the address MoolaKata links to.</br>
+            address, its host name. Give at least one: the first is the address MoolaKata links to.</br>
             They go in the certificate the connector makes for itself when no certificate is
             chosen under Network Configuration. It always names localhost.
           schema:
@@ -294,7 +294,10 @@ questions:
                       description: |
                         Give the host path to the user the connector runs as (10002) when its top
                         level directory belongs to anyone else.</br>
-                        A path that already holds files is left as it is.
+                        A path that already holds files is left as it is.</br>
+                        The folders above it must let user 10002 pass through: a dataset made with
+                        the Generic preset does; to one made with the SMB preset, add user 10002
+                        with Traverse in Datasets, Edit Permissions.
                       schema:
                         type: boolean
                         default: true

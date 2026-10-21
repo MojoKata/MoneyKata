@@ -295,7 +295,10 @@ questions:
                       description: |
                         Give the host path to the user MoolaKata runs as (10001) when its top
                         level directory belongs to anyone else.</br>
-                        A path that already holds files is left as it is.
+                        A path that already holds files is left as it is.</br>
+                        The folders above it must let user 10001 pass through: a dataset made with
+                        the Generic preset does; to one made with the SMB preset, add user 10001
+                        with Traverse in Datasets, Edit Permissions.
                       schema:
                         type: boolean
                         default: true
@@ -383,7 +386,10 @@ questions:
                       description: |
                         Give the host path to the user MoolaKata runs as (10001) when its top
                         level directory belongs to anyone else.</br>
-                        A path that already holds files is left as it is.
+                        A path that already holds files is left as it is.</br>
+                        The folders above it must let user 10001 pass through: a dataset made with
+                        the Generic preset does; to one made with the SMB preset, add user 10001
+                        with Traverse in Datasets, Edit Permissions.
                       schema:
                         type: boolean
                         default: true

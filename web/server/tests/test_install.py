@@ -8,6 +8,7 @@ import tomllib
 from pathlib import Path
 
 import yaml
+from PIL import Image
 
 from moolakata import config, paths
 from moolakata.dev import wheels
@@ -391,7 +392,21 @@ def test_the_truenas_catalog_apps_keep_the_compose_files_promises():
                     if certificate
                     else (None, None)
                 )
+        if name == "moolakata-connector":
+            # MoolaKata links to the page at its first address, so the install needs one.
+            assert "{% if not values.moolakata_connector.names %}" in template
+            assert "tpl.funcs.fail(" in template
     _the_installed_release(tags, "publish/truenas's images")
+    # What the request links for TrueNAS's CDN is in the repository: two icons and, for the
+    # catalog's pages, screenshots saved as the help shots are, PNG of 256 colours.
+    script = (CATALOG / "create-pr.sh").read_text()
+    media = re.search(r"^MEDIA=\((.*?)^\)", script, re.M | re.S).group(1).split()
+    assert len([m for m in media if m.endswith(".svg")]) == 2
+    for path in media:
+        assert (paths.ROOT / path).is_file(), path
+        if path.endswith(".png"):
+            with Image.open(paths.ROOT / path) as shot:
+                assert shot.mode == "P" and len(shot.getcolors(256) or []) <= 256, path
 
 
 def test_the_workflows_pin_their_actions_and_the_register_lists_them():

@@ -15,6 +15,10 @@
 {% do c1.healthcheck.set_interval(60) %}
 {% do c1.healthcheck.set_start_period(20) %}
 
+{# MoolaKata links to the page at its first address (S18.11.1): the install needs one. #}
+{% if not values.moolakata_connector.names %}
+  {% do tpl.funcs.fail("Add at least one Page Address: MoolaKata links to the connector's page at the first.") %}
+{% endif %}
 {% do c1.environment.add_env("MOOLAKATA_CONNECTOR_PORT", values.network.web_port.port_number) %}
 {% do c1.environment.add_env("MOOLAKATA_CONNECTOR_NAMES", values.moolakata_connector.names | join(",")) %}
 {% if values.network.certificate_id %}

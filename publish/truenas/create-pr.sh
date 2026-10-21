@@ -104,8 +104,29 @@ PY
   rm -rf "$dir/templates/rendered"
 }
 
+# The icons and screenshots the request links, for TrueNAS's CDN, relative to the repository.
+MEDIA=(
+  web/ui/assets/favicon.svg
+  publish/truenas/media/moolakata-connector-icon.svg
+  publish/truenas/media/moolakata-1.png
+  publish/truenas/media/moolakata-2.png
+  publish/truenas/media/moolakata-3.png
+  publish/truenas/media/moolakata-4.png
+  publish/truenas/media/moolakata-connector-1.png
+  publish/truenas/media/moolakata-connector-2.png
+)
+
+# The links to them at a commit of MojoKata's main, each checked to be there.
+media() {
+  local sha="$1" path
+  for path in "${MEDIA[@]}"; do
+    curl -sfI "https://raw.githubusercontent.com/$REPO/$sha/$path" >/dev/null ||
+      die "$path isn't on $REPO's main at ${sha:0:12} yet"
+  done
+}
+
 body() {
-  local version="$1" raw="https://raw.githubusercontent.com/$REPO/v$1"
+  local version="$1" raw="https://raw.githubusercontent.com/$REPO/$2"
   cat >"$BODY" <<EOF
 # App Addition
 
@@ -147,13 +168,11 @@ All tests passed successfully.
 
 Please upload the following to the CDN:
 
-- Icon (both apps): $raw/web/ui/assets/favicon.svg
-- MoolaKata, screenshot 1: $raw/web/ui/guides/shots/dashboard.png
-- MoolaKata, screenshot 2: $raw/web/ui/guides/shots/accounts.png
-- MoolaKata, screenshot 3: $raw/web/ui/guides/shots/account-holdings.png
-- MoolaKata, screenshot 4: $raw/web/ui/guides/shots/budgets-month.png
-- MoolaKata Connector, screenshot 1: $raw/docs/deploy/connector-welcome.png
-- MoolaKata Connector, screenshot 2: $raw/docs/deploy/connector-locked.png
+- MoolaKata, icon: $raw/${MEDIA[0]}
+- MoolaKata Connector, icon: $raw/${MEDIA[1]}
+- MoolaKata, screenshots: $raw/${MEDIA[2]}, $raw/${MEDIA[3]}, $raw/${MEDIA[4]},
+  $raw/${MEDIA[5]}
+- MoolaKata Connector, screenshots: $raw/${MEDIA[6]}, $raw/${MEDIA[7]}
 
 ## Special Notes
 
@@ -167,6 +186,10 @@ Please upload the following to the CDN:
 - Each serves HTTPS itself: a certificate from System › Certificates, or one it makes for the
   addresses given in its form. The root filesystem is read-only, except when a certificate
   is chosen, since compose can't copy one into a read-only container.
+- Neither has Additional Environment Variables or Additional Storage: neither has a setting
+  to tune or reads anything outside its own storage, and the connector's one other variable,
+  a development switch, would let it reach the loopback and link-local addresses its egress
+  check refuses.
 
 ## Checklist
 
@@ -186,12 +209,15 @@ main() {
   --open) open=1 ;;
   *) die "publish/truenas/create-pr.sh [--open]" ;;
   esac
-  for cmd in gh docker git python3; do
+  for cmd in gh docker git python3 curl; do
     command -v "$cmd" >/dev/null || die "needs $cmd"
   done
   local version me
   version="$(release)"
   me="$(gh api user --jq .login)" || die "gh isn't signed in"
+  local sha
+  sha="$(gh api "repos/$REPO/commits/main" --jq .sha)"
+  media "$sha"
   say "MoolaKata $version, the apps checked first"
   "$HERE/check.sh"
   checkout
@@ -207,7 +233,7 @@ main() {
   local verb=Add
   git -C "$WORK" cat-file -e "FETCH_HEAD:ix-dev/community/moolakata/app.yaml" 2>/dev/null && verb=Update
   git -C "$WORK" commit --quiet -m "$verb MoolaKata and MoolaKata Connector ($version)"
-  body "$version"
+  body "$version" "$sha"
   git -C "$WORK" show --stat --format='%h %s' HEAD | tail -n +1
   say "the request's text: $BODY"
   if [[ "$open" == 0 ]]; then

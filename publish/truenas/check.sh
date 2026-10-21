@@ -3,8 +3,9 @@
 # rendered by TrueNAS's own renderer, in a checkout of their catalog, then started with Docker,
 # and what came up is looked at: the server's /healthz or the connector's status, the account
 # each runs as, a read-only root unless a certificate is chosen, and the certificate each page
-# serves. Needs docker with compose, jq, openssl, curl, git, python3 with PyYAML, and the
-# network, for the catalog and the images.
+# serves. The connector's install must also stop when it has no address. Needs docker with
+# compose, jq, openssl, curl, git, python3 with PyYAML, and the network, for the catalog and
+# the images.
 #
 #   publish/truenas/check.sh                       both apps, every test case
 #   publish/truenas/check.sh moolakata             one app
@@ -108,6 +109,25 @@ try() {
   [[ "$ok" == 1 ]] || fail "$app, $case"
 }
 
+# The connector's install stops when it is given no address, and says why.
+refused() {
+  local app=moolakata-connector dir="$CATALOG/ix-dev/community/moolakata-connector" out
+  say "$app, no address"
+  python3 - "$dir/templates/test_values/basic-values.yaml" "$dir/templates/test_values/check-values.yaml" <<'PY'
+import sys, yaml
+values = yaml.safe_load(open(sys.argv[1]))
+values["moolakata_connector"]["names"] = []
+yaml.safe_dump(values, open(sys.argv[2], "w"))
+PY
+  local stopped=0
+  out="$(cd "$CATALOG" && python3 .github/scripts/ci.py --app "$app" --train community \
+    --test-file check-values.yaml --render-only=true 2>&1)" || stopped=1
+  rm -f "$dir/templates/test_values/check-values.yaml"
+  [[ "$stopped" == 1 ]] || fail "$app: rendered with no address"
+  [[ "$out" == *"Add at least one Page Address"* ]] ||
+    { echo "$out" | tail -n 20; fail "$app: refused, but not for its address"; }
+}
+
 main() {
   local apps=("${APPS[@]}") cases=("${CASES[@]}")
   [[ $# -ge 1 ]] && apps=("$1")
@@ -122,6 +142,7 @@ main() {
     rm -rf "$CATALOG/ix-dev/community/$app"
     cp -r "$HERE/$app" "$CATALOG/ix-dev/community/$app"
     for case in "${cases[@]}"; do try "$app" "$case"; done
+    [[ "$app" != moolakata-connector || $# -ge 2 ]] || refused
   done
   (cd "$CATALOG" && python3 .github/scripts/port_validation.py >/dev/null) ||
     fail "a default port the catalog already uses"

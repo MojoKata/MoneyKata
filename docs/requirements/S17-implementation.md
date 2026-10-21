@@ -233,11 +233,18 @@
          the app when it renews the certificate and the server then starts locked (S15.4);
          the data and the backups storage, each an ixVolume (the default) or a host path,
          a host path given to the server's account when its top directory belongs to
-         anyone else and it holds no files yet; the host network, the Docker networks to
+         anyone else and it holds no files yet, its help saying that the folders above it
+         must let the account through (an SMB dataset needs it given Traverse); the host
+         network, the Docker networks to
          join and labels, as every catalog app has them; and limits of 2 CPUs and 4 GB.
       3. **The connector's form**: the same for its page (S18.11.1): its time zone; its
-         addresses, the first the one MoolaKata links to; its port (37374); a certificate,
-         with the same help; one storage for its data; and limits of 1 CPU and 1 GB.
+         addresses, at least one, since the first is the one MoolaKata links to and the
+         install stops without it; its port (37374); a certificate, with the same help; one
+         storage for its data; and limits of 1 CPU and 1 GB. Neither form offers extra
+         environment variables or storage, which every other catalog app has: neither app
+         has a setting to tune or reads anything outside its own storage, and the
+         connector's one other variable, a development switch, would let it reach the
+         addresses its egress check refuses.
       4. **What the templates fix**: `tls` mode, its configuration in `MOOLAKATA_CONFIG` (the
          connector's in its own variables); each image's own account (10001, 10002), which
          the catalog's permissions step gives the storage to, so there is no user and group
@@ -254,6 +261,9 @@
          `truenas/apps` where TrueNAS's tools add their library and metadata. Nothing leaves
          the machine until the maintainer runs it again with `--open`, which pushes the
          branch to their fork and opens the pull request as a draft, or updates the open one.
+         The request links the icons and screenshots TrueNAS copies to its own servers: the
+         server's favicon, and in `publish/truenas/media/` the connector's icon (its page's
+         mark) and screenshots of the release's pages over the dev seed's household.
    4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
       reverse proxy. A second example runs `tls` mode with a self-signed certificate for
       testing on a local network (S13.3).
