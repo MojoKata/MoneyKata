@@ -33,78 +33,11 @@ you see.
   files and `web/check`. Its remote for MojoKata/MoolaKata is called `upstream` below. In a
   clone of MojoKata/MoolaKata itself, that remote is `origin`. `web/release.sh` finds that
   remote by its address, whatever it is called.
-- **The release tags' ruleset**, set once. In MojoKata/MoolaKata, go to **Settings › Rules ›
-  Rulesets › New ruleset › New tag ruleset**. Set its **Enforcement status** to **Active** (a
-  new ruleset starts disabled), set its target to tags matching `v*`, turn on **Restrict
-  creations**, **Restrict updates** and **Restrict deletions**, and put the maintainers in its
-  bypass list. Only a maintainer can then create a release tag, and only a
-  maintainer can move or delete one (§11). See GitHub's
-  [creating rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository)
-  and [available rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets).
-- **Immutable releases**, set once. In MojoKata/MoolaKata, go to **Settings**, scroll to
-  **Releases** and turn on **Enable release immutability**. A published release's tag and
-  files are then locked, and GitHub signs an attestation of the release (§8). Releases
-  published before the setting was turned on, 0.1.0 among them, stay as they were. See
-  GitHub's [preventing changes to your releases](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes)
-  and [immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases).
-- **Docker Hub**, set up once by a maintainer. These are what `release.yml` needs to publish
-  there:
-  1. **The namespace.** Sign up at [hub.docker.com](https://hub.docker.com/signup) for a free
-     account whose Docker ID is `mojokata`. A Docker Hub *organization* needs a paid Team or
-     Business plan
-     ([create an organization](https://docs.docker.com/accounts/organization/setup/orgs/)).
-     The account can be
-     [converted into an organization](https://docs.docker.com/accounts/organization/setup/convert-account/)
-     of the same name later, if one is ever needed. Turn on two-factor authentication, and
-     keep the password and recovery codes in the maintainers' password manager.
-  2. **The two repositories.** Create `mojokata/moolakata` and `mojokata/moolakata-connector`,
-     both **Public**
-     ([create a repository](https://docs.docker.com/docker-hub/repos/create/)). Give each a
-     short description that links to this repository and `docs/DEPLOY.md`. The description
-     also shows the pull command with a version's tag
-     (`docker pull mojokata/moolakata:0.2.0`). Without a tag, Docker asks for `latest`, which
-     these repositories don't have (§2).
-  3. **The workflow's token.** Sign in to [Docker Home](https://app.docker.com/) and go to
-     your avatar › **Account settings › Personal access tokens › Generate new token**.
-     Describe it as *MoolaKata releases* and give it the repository permission **Repo Read &
-     Write**, never Delete. Its permission covers every repository the account has, which is
-     only these two. Set an expiry date (at most a year), with a reminder to renew it before
-     then. It is shown once. See Docker's
-     [personal access tokens](https://docs.docker.com/security/access-tokens/personal-access-tokens/)
-     and [their permissions](https://docs.docker.com/security/access-tokens/reference/).
-  4. **Where GitHub keeps it.** In MojoKata/MoolaKata, go to **Settings › Environments › New
-     environment** and create `docker-hub`. Under **Deployment branches and tags**, choose
-     **Selected branches and tags** and add the tag rule `v*`. Add the secret
-     `DOCKERHUB_TOKEN` (the token) and the variable `DOCKERHUB_USERNAME` (`mojokata`). Only a
-     job that runs for a release tag can read them. Pull requests, a fork's included, never
-     can. See GitHub's
-     [managing environments](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments).
-  5. **No pull limits.** Apply for the namespace to join the
-     [Docker-Sponsored Open Source program](https://docs.docker.com/docker-hub/repos/manage/trusted-content/dsos-program/)
-     ([application](https://www.docker.com/community/open-source/application/)). It asks for
-     an Open Source Initiative licence, which GPL-3.0 is, active development, and no path to
-     commercial use. Once a project is accepted, everyone pulling its public images pulls
-     without limits. Membership lasts a year and is renewed each year. Until then, Docker
-     Hub limits anyone who isn't signed in to 100 pulls every 6 hours per address
-     ([usage and limits](https://docs.docker.com/docker-hub/usage/)). ghcr.io sets no such
-     limit for public images, which is why the compose files and the docs name ghcr.io and
-     give Docker Hub as the alternative.
-  6. **The releases made before.** Copy each earlier release's images once, the way the
-     workflow does. They keep their digests, so their attestations verify the copies. For
-     0.1.0:
-
-     ```sh
-     docker login docker.io -u mojokata
-     for image in moolakata moolakata-connector; do
-       docker buildx imagetools create -t docker.io/mojokata/$image:0.1.0 ghcr.io/mojokata/$image:0.1.0
-     done
-     ```
-- **Done once, at 0.1.0; don't repeat it.** A new package on ghcr.io starts private. MojoKata's
-  **Settings › Packages › Package creation** allows public packages, and both packages,
-  `moolakata` and `moolakata-connector`, were made public under each package's **Package
-  settings › Change visibility**
-  ([package visibility](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)).
-  Every later version inherits that. A third image would need it again.
+- **The setup done once**, recorded in [`GENESIS.md`](GENESIS.md) with the steps and what was
+  chosen. That covers the organization's package creation setting, the Actions settings,
+  the rulesets on release tags and on `main`, immutable releases, the packages made public
+  on ghcr.io, and Docker Hub's account, repositories, token and `docker-hub` environment.
+  `web/release.sh setup` checks it (§12).
 
 ## 2. Pick the version
 
@@ -310,9 +243,9 @@ The tag and the release are made separately, about five minutes apart:
 Until that last step there is only a draft, which only people with write access can see.
 Testers see nothing, never a release page without its images. A failed build can be fixed
 and tagged again under the same version (§11). Once published, the release is immutable
-(§1). Its tag and files are locked for good, and only its title and notes can still change.
-GitHub's **Draft a new release** form isn't used at any point, because a tag it makes
-carries no signature.
+(GENESIS.md §3 step 3). Its tag and files are locked for good, and only its title and notes
+can still change. GitHub's **Draft a new release** form isn't used at any point, because a
+tag it makes carries no signature.
 
 `web/release.sh sign 0.2.0` does the three steps below. It checks that `web/VERSION` says
 `0.2.0` on the commit it tags (MojoKata's `main`) and that no `v0.2.0` exists yet, shows the
@@ -367,17 +300,17 @@ Five jobs. The first three took about two minutes in all at 0.1.0:
    `docker.io/mojokata/…:0.2.0` as they are, and checks that each copy's digest is the
    original's. The attestations were made for those digests, so they verify the copies too.
    It runs in the `docker-hub` environment, the only place Docker Hub's token can be read
-   (§1). If Docker Hub isn't set up yet, the job copies nothing and leaves a warning on the
-   run.
+   (GENESIS.md §5). If Docker Hub isn't set up yet, the job copies nothing and leaves a
+   warning on the run.
 4. **the release drafted, with the tag's install files**, beside the copy. It drafts the
    release *MoolaKata 0.2.0* and attaches, from the tagged commit:
    1. the four `compose*.yaml` files;
    2. the example `moolakata.toml`;
    3. the proxy examples (`Caddyfile`, `nginx.conf`, `haproxy.cfg`).
 
-   This is the only job whose token can write to the repository. The ruleset (§1) still
-   keeps it from creating or moving a release tag. The draft shows under **Releases** to
-   people with write access, or with `gh release list -R MojoKata/MoolaKata`.
+   This is the only job whose token can write to the repository. The ruleset (GENESIS.md §3
+   step 2) still keeps it from creating or moving a release tag. The draft shows under
+   **Releases** to people with write access, or with `gh release list -R MojoKata/MoolaKata`.
 
 ![0.1.0's run of release.yml: the two builds, then the joining and attesting](release/release-run.png)
 
@@ -461,6 +394,15 @@ The commands are in `gh`'s manual: [`release edit`](https://cli.github.com/manua
 [verifying release integrity](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/verify-release-integrity)
 explains what they check.
 
+Then **move Docker Hub's pull commands to the new tag.** Each repository's overview on Docker
+Hub shows `docker pull mojokata/<image>:<version>` (GENESIS.md §5 step 2), and nothing
+updates it by itself. Sign in to [Docker Hub](https://hub.docker.com) as `mojokata`, go to
+**My Hub › Repositories**, and for `moolakata` and then `moolakata-connector` open the
+repository, choose **Edit** under **Repository overview**, change the version in the pull
+command to `0.2.0`, and choose **Update**
+([repository information](https://docs.docker.com/docker-hub/repos/manage/information/)).
+Change its **Status** line too if the release changes it (from *alpha*, say).
+
 ## 9. Open the next version
 
 As soon as the release is published, `main` moves on to the next minor version with `-dev`
@@ -505,7 +447,7 @@ images:
 
 Before §8 there is only a draft, so a version can still be tagged again. The next run's
 draft replaces any draft an earlier run made. A wrong tag is deleted by a maintainer, because
-the ruleset (§1) lets only them:
+the ruleset (GENESIS.md §3 step 2) lets only them:
 
 ```sh
 git push upstream :refs/tags/v0.2.0      # GitHub's tag
@@ -536,27 +478,29 @@ git tag -d v0.2.0                        # your own copy
 
 ## 12. Upkeep
 
-What keeps releases working between them. `web/release.sh setup` checks everything §1 set
-up: immutable releases, the tag ruleset and its bypass list, the `docker-hub` environment with
-its secret and variable, and both registries' repositories being public. Some of these only
-an admin can read, so run it signed in to `gh` as a maintainer: before each release, and after
-any change below.
+What keeps releases working between them. `web/release.sh setup` checks everything
+`GENESIS.md` set up: immutable releases, the tag ruleset and its bypass list, the
+`docker-hub` environment with its secret and variable, and both registries' repositories
+being public (GENESIS.md §7). Some of these only an admin can read, so run it signed in to
+`gh` as a maintainer: before each release, and after any change below.
 
-- **Docker Hub's token, every year.** The token stops working on the expiry date set in §1
-  step 3, and then only the Docker Hub copy fails (§11). Before that date, make a new token
-  the same way (Repo Read & Write, at most a year), then run `web/release.sh token`. It
-  checks that the token signs in as `mojokata`, without touching your own Docker logins, and
-  stores it as the `docker-hub` environment's secret `DOCKERHUB_TOKEN`. Then revoke the old
-  token in Docker Home (**Account settings › Personal access tokens**) and set the next
-  reminder. `setup` warns once the secret was set more than 11 months ago.
+- **Docker Hub's token, every year.** The token stops working on the expiry date set in
+  GENESIS.md §5 step 3, and then only the Docker Hub copy fails (§11). Before that date, make
+  a new token the same way (Repo Read & Write, at most a year), then run `web/release.sh
+  token`. It checks that the token signs in as `mojokata`, without touching your own Docker
+  logins, and stores it as the `docker-hub` environment's secret `DOCKERHUB_TOKEN`. Then
+  revoke the old token in Docker Home (**Account settings › Personal access tokens**), set
+  the next reminder, and write the new expiry date into GENESIS.md §5 step 3. `setup` warns
+  once the secret was set more than 11 months ago.
 - **A token that may have leaked** (in a log, a screenshot, a lost laptop): revoke it in
   Docker Home at once, then make and store a new one as above. Run `web/release.sh check`
   for each release since the token was made: a Docker Hub copy whose digest isn't ghcr.io's
   wasn't made by `release.yml`, and `web/release.sh copy` puts the right one back. See
   Docker's
   [personal access tokens](https://docs.docker.com/security/access-tokens/personal-access-tokens/).
-- **The open-source program, every year.** The Docker-Sponsored Open Source membership
-  lasts a year (§1 step 5). Renew it when Docker asks, through the same
+- **The open-source program, every year, once joined.** A Docker-Sponsored Open Source
+  membership lasts a year (GENESIS.md §5 step 5, which says whether the namespace has one).
+  Renew it when Docker asks, through the same
   [program](https://docs.docker.com/docker-hub/repos/manage/trusted-content/dsos-program/).
   If it lapses, anyone not signed in is held to the pull limit again.
 - **The Docker Hub account.** Two-factor authentication stays on, and the password and
@@ -570,13 +514,13 @@ any change below.
   own GitHub account (§1), and a place in the tag ruleset's bypass list (**Settings › Rules
   › Rulesets**), unless they are an admin of the MojoKata organization, which the list
   already holds. For Docker Hub they share the `mojokata` sign-in from the password manager,
-  or the account is converted into an organization so that each has their own (§1 step 1).
-  The `docker-hub` environment and its token stay as they are.
-- **Settings that stay on.** Immutable releases and the tag ruleset (§1) are what make a
-  published release trustworthy. Don't turn either off, not even to mend a release: §11
-  fixes forward instead. `setup` reports either one off.
-- **A third image.** Its package on ghcr.io starts private (§1), and it needs its own
-  Docker Hub repository, its place in `release.yml`'s jobs, and in `IMAGES` in
+  or the account is converted into an organization so that each has their own (GENESIS.md
+  §5 step 1). The `docker-hub` environment and its token stay as they are.
+- **Settings that stay on.** Immutable releases and the tag ruleset (GENESIS.md §3) are what
+  make a published release trustworthy. Don't turn either off, not even to mend a release:
+  §11 fixes forward instead. `setup` reports either one off.
+- **A third image.** Its package on ghcr.io starts private (GENESIS.md §4 step 2), and it
+  needs its own Docker Hub repository, its place in `release.yml`'s jobs, and in `IMAGES` in
   `web/release.sh`.
-- **A step that no longer matches** what GitHub or Docker Hub shows: fix this document and
-  `web/release.sh` together, in a pull request.
+- **A step that no longer matches** what GitHub or Docker Hub shows: fix this document,
+  `GENESIS.md` and `web/release.sh` together, in a pull request.

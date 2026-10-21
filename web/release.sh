@@ -44,8 +44,9 @@ can first, and asks before anything that can't be taken back.
                release.yml's copy can't
   token        §12: check a new Docker Hub token, then store it as the docker-hub
                environment's secret
-  setup        §12: check the setup done once (§1): immutable releases, the tag
-               ruleset, the docker-hub environment, both registries
+  setup        §12: check the setup done once (docs/GENESIS.md): immutable releases,
+               the rulesets on tags and main, the docker-hub environment, both
+               registries
 
 Needs git, gh signed in as a maintainer, and Docker with buildx. VERSION is like 0.2.0.
 USAGE
@@ -241,7 +242,8 @@ web/release.sh attach $version adds what is missing"
   done
   local major minor
   IFS=. read -r major minor _ <<<"$version"
-  echo "next: web/release.sh next $major.$((minor + 1)).0 (§9), then §10, run DEPLOY.md with the release"
+  echo "next: the pull command on Docker Hub (§8), web/release.sh next $major.$((minor + 1)).0 (§9),"
+  echo "then §10, run DEPLOY.md with the release"
 }
 
 cmd_next() {
@@ -325,7 +327,7 @@ cmd_token() {
 
 cmd_setup() {
   need gh curl
-  local failed=0 got image ruleset token enforcement include rules bypass
+  local failed=0 got image ruleset token enforcement include rules bypass checks
   # One line per check: ok, or FAIL with what was found.
   report() {
     if [[ $2 == ok ]]; then
@@ -352,6 +354,20 @@ cmd_setup() {
     report "it restricts creating, updating and deleting them" \
       "$([[ $rules == *creation* && $rules == *update* && $rules == *deletion* ]] && echo ok || echo "$rules")"
     report "maintainers can bypass it" "$([[ $bypass -gt 0 ]] && echo ok || echo "no bypass list visible (needs a maintainer's gh login)")"
+  fi
+  ruleset=$(gh api "repos/$REPO/rulesets" --jq '[.[] | select(.target == "branch")][0].id // empty' 2>/dev/null) ||
+    ruleset=""
+  if [[ -z $ruleset ]]; then
+    report "a ruleset on main" "none found (GENESIS.md §3 step 5)"
+  else
+    got=$(gh api "repos/$REPO/rulesets/$ruleset" --jq \
+      '[.enforcement, (.conditions.ref_name.include | join(",")), ([.rules[].type] | sort | join(",")), ([.rules[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context] | join(","))] | join(" ")' 2>/dev/null) ||
+      got="unreadable"
+    read -r enforcement include rules checks <<<"$got"
+    report "main's ruleset is active" "$([[ $enforcement == active ]] && echo ok || echo "$enforcement")"
+    report "it covers main" "$([[ $include == *~DEFAULT_BRANCH* || $include == *refs/heads/main* ]] && echo ok || echo "$include")"
+    report "it takes pull requests only, once check passed" \
+      "$([[ $rules == *pull_request* && $rules == *required_status_checks* && ,$checks, == *,check,* ]] && echo ok || echo "$rules, checks: ${checks:-none}")"
   fi
   got=$(gh api "repos/$REPO/environments/docker-hub/deployment-branch-policies" \
     --jq '[.branch_policies[] | "\(.type):\(.name)"] | join(",")' 2>/dev/null) || got=missing

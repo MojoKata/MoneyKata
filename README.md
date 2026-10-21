@@ -79,8 +79,9 @@ web/check                        # every check, as CI runs it
 server from a browser on another machine (an SSH forward, a name of its own, port 443).
 Releases publish the images to `ghcr.io/mojokata` (`.github/workflows/release.yml`, on a `v*`
 tag); [`docs/RELEASE.md`](docs/RELEASE.md) makes one, step by step, and `web/release.sh`
-runs its steps from a terminal. To build the server's image yourself, from the repository's
-root:
+runs its steps from a terminal. [`docs/GENESIS.md`](docs/GENESIS.md) records how GitHub and
+Docker Hub were set up for publishing. To build the server's image yourself, from the
+repository's root:
 
 ```
 docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:$(cat web/VERSION) --load .
