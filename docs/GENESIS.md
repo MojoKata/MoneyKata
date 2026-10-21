@@ -101,7 +101,7 @@ only while no repository takes it, so `MojoKata/MoneyKata` is never used again.
 4. **The `docker-hub` environment** holds Docker Hub's token (§5 step 4).
 5. **The `main` branch's ruleset.** Go to **Settings › Rules › Rulesets › New ruleset › New
    branch ruleset**:
-   1. Name it *Main branch rules* and set its **Enforcement status** to **Active**.
+   1. Name it *Main rules* and set its **Enforcement status** to **Active**.
    2. Under **Target branches**, choose **Add target › Include default branch**.
    3. Put the **Organization admin** role in its bypass list, set to **For pull requests
       only**. A maintainer can then still merge a pull request whose checks failed, by
@@ -120,9 +120,10 @@ only while no repository takes it, so `MojoKata/MoneyKata` is never used again.
    passed. See GitHub's
    [available rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets).
 
-   **As set up:** not yet. Until it is, nothing stops someone with write access from pushing
-   to `main` or merging a pull request whose checks failed. `web/release.sh setup` reports
-   it missing.
+   **As set up:** *Main rules*, Active, with the settings above. It was first saved
+   Disabled, then set to Active. GitHub's **Require an additional approval for unattributed
+   Copilot pull requests**, on by default, stays on. It has no effect while 0 approvals are
+   required.
 
 ## 4. The images on ghcr.io
 
