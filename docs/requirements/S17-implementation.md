@@ -12,7 +12,7 @@
                          test-plan.md (the manual tests, S17.9.7.8),
                          mockups/MoolaKata-mock.html
    web/
-     VERSION  dev.sh  check  pins
+     VERSION  dev.sh  release.sh  check  pins
      ui/                 index.html, deno.json, app/{main,router,config,hooks,format}.js,
                          api/, store/, screens/, components/, charts/ (the chart wrappers),
                          account-types/ (one module per type: fields, icon, help),
@@ -523,17 +523,18 @@
        `smoke.sh` on each (S17.8.1), pushes the images that passed to `ghcr.io/mojokata`
        under per-architecture tags, joins them under the version's tag, and attests each
        (GitHub's build provenance, signed through Sigstore's public instance and recorded in
-       its transparency log, and kept in GitHub's attestation store, not in the registry). Then it copies both joined images to Docker Hub with their
-       digests unchanged (S17.8.2), and drafts the GitHub release with the tag's install
-       files attached: the compose files, the example `moolakata.toml` and the proxy
-       examples. On a pull request that touches what goes into the images, it builds and
+       its transparency log, and kept in GitHub's attestation store, not in the registry).
+       Then it copies both joined images to Docker Hub with their digests unchanged
+       (S17.8.2), and drafts the GitHub release with the tag's install files attached: the
+       compose files, the example `moolakata.toml` and the proxy examples. On a pull request that touches what goes into the images, it builds and
        smoke-runs both and pushes nothing. A new package on ghcr.io starts private: after the
        first release, an owner of MojoKata makes both public, once.
        1. **Tags and releases**: the maintainer who makes a release signs its tag with their
           own GPG key and pushes it. Once the published images check out, the same
-          maintainer publishes the draft with its notes (`docs/RELEASE.md`). Releases are
-          immutable (GitHub's setting, with a ruleset on `v*` tags): once a release is
-          published, its tag and files can't change, and GitHub attests the release.
+          maintainer publishes the draft with its notes (`docs/RELEASE.md`; `web/release.sh`
+          runs these steps from a terminal, one command each). Releases are immutable
+          (GitHub's setting, with a ruleset on `v*` tags): once a release is published, its
+          tag and files can't change, and GitHub attests the release.
     3. **Their own dependencies**: the actions are GitHub's own (`actions/checkout`,
        `actions/attest-build-provenance`), pinned by commit and listed in the register
        (S17.2.1). Everything else is the repository's own scripts and the runners' own

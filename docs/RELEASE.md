@@ -9,7 +9,8 @@ attests both images (S17.8.2). Everything before the tag happens in an ordinary 
 Everything after it is checking what was published.
 
 The steps were written from 0.1.0's release. Every release from then on has a tag its
-maintainer signs (§5).
+maintainer signs (§5). `web/release.sh` runs the steps done from a terminal, one command each
+(§5–§8), and the checks that keep the setup working (§11). Run alone, it lists them.
 
 ## 1. Before you start
 
@@ -30,7 +31,8 @@ you see.
 - **Docker** with buildx, to check what was published (§7).
 - **A checkout set up for development** (`web/dev.sh setup`, README), for the regenerated
   files and `web/check`. Its remote for MojoKata/MoolaKata is called `upstream` below. In a
-  clone of MojoKata/MoolaKata itself, that remote is `origin`.
+  clone of MojoKata/MoolaKata itself, that remote is `origin`. `web/release.sh` finds that
+  remote by its address, whatever it is called.
 - **The release tags' ruleset**, set once. In MojoKata/MoolaKata, go to **Settings › Rules ›
   Rulesets › New ruleset › New tag ruleset**. Set its **Enforcement status** to **Active** (a
   new ruleset starts disabled), set its target to tags matching `v*`, turn on **Restrict
@@ -298,6 +300,12 @@ and tagged again under the same version (§10). Once published, the release is i
 GitHub's **Draft a new release** form isn't used at any point, because a tag it makes
 carries no signature.
 
+`web/release.sh sign 0.2.0` does the three steps below. It checks that `web/VERSION` says
+`0.2.0` on the commit it tags (MojoKata's `main`) and that no `v0.2.0` exists yet, shows the
+commit, the tagger and the key, and asks before signing and again before pushing. To tag
+another commit (step 1), give it as well: `web/release.sh sign 0.2.0 <commit>`. Run it where your own GPG key and
+your own push access are, since the tag carries the signature of whoever runs it.
+
 1. **Find the release's commit**:
 
    ```sh
@@ -326,7 +334,8 @@ carries no signature.
 
 ## 6. Watch the workflow
 
-**Actions › release** shows the tag's run, or from a terminal:
+**Actions › release** shows the tag's run. `web/release.sh watch 0.2.0` follows it in the
+terminal, names any job that failed, and then lists the draft's files. It runs:
 
 ```sh
 gh run watch -R MojoKata/MoolaKata "$(gh run list -R MojoKata/MoolaKata --workflow release.yml \
@@ -346,8 +355,8 @@ Five jobs. The first three took about two minutes in all at 0.1.0:
    It runs in the `docker-hub` environment, the only place Docker Hub's token can be read
    (§1). If Docker Hub isn't set up yet, the job copies nothing and leaves a warning on the
    run.
-4. **the release drafted, with the tag's install files**, beside the copy. It drafts the release *MoolaKata
-   0.2.0* and attaches, from the tagged commit:
+4. **the release drafted, with the tag's install files**, beside the copy. It drafts the
+   release *MoolaKata 0.2.0* and attaches, from the tagged commit:
    1. the four `compose*.yaml` files;
    2. the example `moolakata.toml`;
    3. the proxy examples (`Caddyfile`, `nginx.conf`, `haproxy.cfg`).
@@ -365,6 +374,12 @@ A failure says which step failed in the run's annotations (the job's page, or
 `gh api repos/MojoKata/MoolaKata/check-runs/<job id>/annotations`). §10 says what to do next.
 
 ## 7. Check what was published
+
+`web/release.sh check 0.2.0` runs these checks and prints a line for each, `ok` or `FAIL`.
+If anything fails, don't publish the release (§10). It checks the Docker Hub copies'
+attestations at `registry-1.docker.io`, the address Docker Hub's registry answers on, because
+`gh` reads `docker.io` as `index.docker.io`, which some networks block. Its pulls use an empty
+Docker configuration, so they sign in nowhere and leave your own logins as they are. By hand:
 
 ```sh
 for registry in ghcr.io docker.io; do
@@ -387,14 +402,18 @@ docker logout docker.io && docker pull docker.io/mojokata/moolakata:0.2.0
    image's attestation was signed through Sigstore by the workflow's own identity, so no key
    is kept anywhere. It is kept in GitHub's attestation store, where `gh attestation verify`
    finds it by the image's digest, rather than as a tag beside the image: on ghcr.io such a
-   tag (`sha256-<digest>`) would show as the package's newest version. Docker's own signing, Content Trust, isn't used: Docker is
+   tag (`sha256-<digest>`) would show as the package's newest version. Docker's own signing,
+   Content Trust, isn't used: Docker is
    [retiring it](https://www.docker.com/blog/docker-content-trust-retirement-and-migration-guidance/).
 3. The anonymous pulls prove both registries serve the images to anyone.
 
 ## 8. Publish the release
 
 Once §7's checks pass, publish the draft that §6 made, with the notes from §4 saved as
-`notes-0.2.0.md`. Then check what GitHub attested:
+`notes-0.2.0.md`. Then check what GitHub attested. `web/release.sh publish 0.2.0
+notes-0.2.0.md` does all of it: it first checks that the draft holds exactly the tag's
+install files, then asks for the tag to be typed back before publishing, and verifies the
+release and each of its files afterwards. By hand:
 
 ```sh
 gh release edit v0.2.0 -R MojoKata/MoolaKata --draft=false --prerelease \
@@ -405,14 +424,15 @@ gh release verify-asset v0.2.0 /tmp/v0.2.0/compose.yaml -R MojoKata/MoolaKata   
 ```
 
 Keep `--prerelease` while releases are for testers (0.1.0 was one), and leave it out for a
-release meant for households.
+release meant for households (`web/release.sh publish 0.2.0 notes-0.2.0.md --households`).
 
 ![0.1.0's release page: a pre-release, its tag and commit, its notes and its files](release/release-page.png)
 
-This is 0.1.0 as published through GitHub's web form, before releases were drafted with
-their files. It shows the pre-release badge, the tag and the commit, the notes, and the
-files under **Assets**. Before publishing, check that the draft's **Assets** list all
-eight install files.
+This is 0.1.0, published through GitHub's web form before releases were drafted with their
+files; its eight install files were attached afterwards (`web/release.sh attach`). It shows
+the pre-release badge, the tag and the commit, the notes, and under **Assets** the eight
+files, each with its SHA-256, beside the two source archives GitHub adds to every release.
+Before publishing, check that the draft's **Assets** list all eight install files.
 
 Publishing makes the release immutable. From then on its tag can't be moved or deleted,
 nothing can be attached to it or removed from it, and deleting the release would retire its
@@ -469,12 +489,61 @@ git tag -d v0.2.0                        # your own copy
 - **The joining or attesting job fails**: **Re-run failed jobs**. It reads only the
   per-architecture images the builds pushed, so it can run again on its own.
 - **The Docker Hub job fails** (Docker Hub down, or the token expired): renew the token if
-  it has expired (§1), then **Re-run failed jobs**. The copy can run again on its own, and
-  ghcr.io and the draft don't depend on it.
+  it has expired (§11), then **Re-run failed jobs**. The copy can run again on its own, and
+  ghcr.io and the draft don't depend on it. If it still can't run, `web/release.sh copy
+  0.2.0` makes the same copy from your terminal, signed in to Docker Hub as `mojokata`.
 - **The drafting job fails**: **Re-run failed jobs**. It deletes any draft for the tag before
-  making its own, so a rerun never leaves two.
+  making its own, so a rerun never leaves two. A draft that ends up without all its files
+  takes them from the tag with `web/release.sh attach 0.2.0`.
 - **§7 finds something wrong with the joined images**: `0.2.0` is on ghcr.io, and anyone may
   have pulled it. Don't publish its release and don't move its image. Fix forward with a new
   patch (`0.2.1`), whose notes say that 0.2.0 was skipped and why.
 - **Something is wrong after the release is published**: the release is immutable. Fix
   forward with a new patch (`0.2.1`), and say in `0.2.0`'s notes what is wrong with it.
+
+## 11. Upkeep
+
+What keeps releases working between them. `web/release.sh setup` checks everything §1 set
+up: immutable releases, the tag ruleset and its bypass list, the `docker-hub` environment with
+its secret and variable, and both registries' repositories being public. Some of these only
+an admin can read, so run it signed in to `gh` as a maintainer: before each release, and after
+any change below.
+
+- **Docker Hub's token, every year.** The token stops working on the expiry date set in §1
+  step 3, and then only the Docker Hub copy fails (§10). Before that date, make a new token
+  the same way (Repo Read & Write, at most a year), then run `web/release.sh token`. It
+  checks that the token signs in as `mojokata`, without touching your own Docker logins, and
+  stores it as the `docker-hub` environment's secret `DOCKERHUB_TOKEN`. Then revoke the old
+  token in Docker Home (**Account settings › Personal access tokens**) and set the next
+  reminder. `setup` warns once the secret was set more than 11 months ago.
+- **A token that may have leaked** (in a log, a screenshot, a lost laptop): revoke it in
+  Docker Home at once, then make and store a new one as above. Run `web/release.sh check`
+  for each release since the token was made: a Docker Hub copy whose digest isn't ghcr.io's
+  wasn't made by `release.yml`, and `web/release.sh copy` puts the right one back. See
+  Docker's
+  [personal access tokens](https://docs.docker.com/security/access-tokens/personal-access-tokens/).
+- **The open-source program, every year.** The Docker-Sponsored Open Source membership
+  lasts a year (§1 step 5). Renew it when Docker asks, through the same
+  [program](https://docs.docker.com/docker-hub/repos/manage/trusted-content/dsos-program/).
+  If it lapses, anyone not signed in is held to the pull limit again.
+- **The Docker Hub account.** Two-factor authentication stays on, and the password and
+  recovery codes stay in the maintainers' password manager. Update them there whenever they
+  change.
+- **Your GPG key.** A key that has expired can't sign the next tag. Before it expires,
+  extend it (`gpg --quick-set-expire <fingerprint> 1y`) and add the updated public key to
+  your GitHub account again
+  ([adding a GPG key](https://docs.github.com/en/authentication/managing-commit-signature-verification/adding-a-gpg-key-to-your-github-account)).
+- **Another maintainer.** They need write access to MojoKata/MoolaKata, a GPG key on their
+  own GitHub account (§1), and a place in the tag ruleset's bypass list (**Settings › Rules
+  › Rulesets**), unless they are an admin of the MojoKata organization, which the list
+  already holds. For Docker Hub they share the `mojokata` sign-in from the password manager,
+  or the account is converted into an organization so that each has their own (§1 step 1).
+  The `docker-hub` environment and its token stay as they are.
+- **Settings that stay on.** Immutable releases and the tag ruleset (§1) are what make a
+  published release trustworthy. Don't turn either off, not even to mend a release: §10
+  fixes forward instead. `setup` reports either one off.
+- **A third image.** Its package on ghcr.io starts private (§1), and it needs its own
+  Docker Hub repository, its place in `release.yml`'s jobs, and in `IMAGES` in
+  `web/release.sh`.
+- **A step that no longer matches** what GitHub or Docker Hub shows: fix this document and
+  `web/release.sh` together, in a pull request.
