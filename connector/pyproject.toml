@@ -1,6 +1,6 @@
 [project]
 name = "moolakata-connector"
-version = "0.1.0"
+version = "0.2.0-dev"
 description = "Keeps MoolaKata's accounts current from their institutions, holding the credentials where MoolaKata can't"
 license = "GPL-3.0-only"
 requires-python = "==3.14.*"

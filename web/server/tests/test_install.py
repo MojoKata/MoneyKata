@@ -20,6 +20,24 @@ COMPOSE = {
     for name in ("compose.yaml", "compose.tls.yaml")
 }
 EXAMPLE = config.parse(tomllib.loads((INSTALL / "moolakata.toml").read_text()), "moolakata.toml")
+VERSION = paths.version()
+
+
+def _numbers(version: str) -> tuple[int, ...]:
+    return tuple(int(n) for n in version.split("."))
+
+
+def _the_installed_release(found: set[str], where: str):
+    """The install files name one release: web/VERSION's on a release's commit, and an
+    earlier one while web/VERSION names the next release with -dev (S17.10.2.2)."""
+    assert len(found) == 1, f"{where} name {found}"
+    (release,) = found
+    if VERSION.endswith("-dev"):
+        assert _numbers(release) < _numbers(VERSION.removesuffix("-dev")), (
+            f"{where} name {release}, not a release before {VERSION}"
+        )
+    else:
+        assert release == VERSION, f"{where} name {release}, the build {VERSION}"
 
 
 def _mounts(service: dict) -> dict[str, tuple[str, bool]]:
@@ -58,17 +76,29 @@ def test_the_image_makes_the_directories_the_example_config_names():
     assert EXAMPLE.mode == "proxy" and EXAMPLE.port == config.DEFAULT_PORT
 
 
-def test_every_compose_service_runs_the_image_of_this_version():
-    tags = {
-        f"{REGISTRY}/moolakata:{paths.version()}",
-        f"{REGISTRY}/moolakata-connector:{paths.version()}",
-    }
+def test_the_version_is_a_release_or_the_next_ones_dev():
+    """S17.10.2.2: a release's three numbers on its commit, the next release's with -dev between
+    releases; the connector carries the server's."""
+    assert re.fullmatch(r"\d+\.\d+\.\d+(-dev)?", VERSION), VERSION
+    connector = paths.ROOT / "connector"
+    project = tomllib.loads((connector / "pyproject.toml").read_text())["project"]
+    package = (connector / "moolakata_connector" / "__init__.py").read_text()
+    assert project["version"] == VERSION and f'VERSION = "{VERSION}"' in package
+
+
+def test_every_compose_service_runs_an_image_of_the_installed_release():
+    found = set()
     for name, compose in COMPOSE.items():
         for service, spec in compose["services"].items():
-            assert spec["image"] in tags, f"{name}: {service} runs {spec['image']}"
+            image = re.fullmatch(
+                rf"{REGISTRY}/moolakata(-connector)?:(\d+\.\d+\.\d+)", spec["image"]
+            )
+            assert image, f"{name}: {service} runs {spec['image']}"
+            found.add(image[2])
         assert compose["services"]["connector"]["image"].startswith(
             f"{REGISTRY}/moolakata-connector:"
         )
+    _the_installed_release(found, "the compose files")
 
 
 CONNECTOR_PORT = int(
@@ -211,8 +241,8 @@ def test_the_truenas_app_keeps_the_compose_files_promises():
     """install/compose.truenas.yaml (S17.8.3), which docs/DEPLOY.md shows to paste, is the tls
     example's server with the datasets for host paths and its configuration in
     MOOLAKATA_CONFIG (S17.8), after a one-time step that gives the datasets to its account:
-    the same lockdown, port, restart and logs, and the version being built; nothing typed in a
-    shell."""
+    the same lockdown, port, restart and logs, and the release they install; nothing typed in
+    a shell."""
     truenas = yaml.safe_load((INSTALL / "compose.truenas.yaml").read_text())
     connector = yaml.safe_load((INSTALL / "compose.connector-truenas.yaml").read_text())
     guide = (paths.ROOT / "docs" / "DEPLOY.md").read_text()
@@ -244,9 +274,9 @@ def test_the_truenas_app_keeps_the_compose_files_promises():
     assert (given.mode, given.port) == ("tls", 37373) and given.cert_names
     assert {str(given.data_dir), str(given.backup_dir)} <= set(_mounts(app))
     _one_time_step(truenas, "moolakata", SERVER_UID, [str(given.data_dir), str(given.backup_dir)])
-    version = paths.version()
     tags = re.findall(r"moolakata[:-](\d+\.\d+\.\d+)", guide)
-    assert tags and set(tags) == {version}, f"the guide names {set(tags)}, the build {version}"
+    assert tags
+    _the_installed_release(set(tags), "the guide's tags")
 
 
 def test_the_workflows_pin_their_actions_and_the_register_lists_them():

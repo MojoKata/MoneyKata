@@ -19,7 +19,7 @@ server built from the same source.
   receipt reading turned off, Settings › Receipts) and about **3 GB of disk** for the image
   and the data.
 - **Internet access** from the host to `ghcr.io`, where the images are published, and to
-  `raw.githubusercontent.com` for the example files.
+  `github.com` and `release-assets.githubusercontent.com` for the release's example files.
 - **Paper and a pen.** The server's master key is a **recovery phrase** of 12 words, shown
   once and never stored (S15). It is asked for after every start of the server: a reboot, an
   upgrade, a restart. Without it the data can't be opened, by anyone.
@@ -34,14 +34,26 @@ anyone can check that the one they pulled is it
 ([`gh`](https://cli.github.com/) installed):
 
 ```sh
-gh attestation verify oci://ghcr.io/mojokata/moolakata:0.1.0 --owner MojoKata
+gh attestation verify oci://ghcr.io/mojokata/moolakata:0.1.0 -R MojoKata/MoolaKata \
+  --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml \
+  --source-ref refs/tags/v0.1.0 --deny-self-hosted-runners
 ```
 
-To build it yourself instead, from a checkout of the source (about three minutes on a VM with
-two cores), and to carry it to a host with no internet access:
+It passes only for an image that MoolaKata's own release workflow built from the release's
+tag, on GitHub's runners.
+
+The same images, with the same digests, are on Docker Hub as `mojokata/moolakata` and
+`mojokata/moolakata-connector`. To pull from there instead, change `ghcr.io/mojokata/` to
+`mojokata/` in the compose file's `image:` lines. The check above works for them too, with
+`oci://docker.io/mojokata/moolakata:0.1.0`. Docker Hub limits how often anyone not signed in
+can pull. ghcr.io sets no such limit, which is why this guide uses it.
+
+To build it yourself instead, from a checkout of the release's tag (about three minutes on a
+VM with two cores), and to carry it to a host with no internet access:
 
 ```sh
-docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:$(cat web/VERSION) --load .
+git checkout v0.1.0                                                            # the release's source
+docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:0.1.0 --load .
 docker save ghcr.io/mojokata/moolakata:0.1.0 | gzip > moolakata-0.1.0.tar.gz   # where it was built
 docker load -i moolakata-0.1.0.tar.gz                                          # on the host
 ```
@@ -136,7 +148,7 @@ UI show the VM's address on its **Summary**; it starts by itself at every boot a
 
    ```sh
    mkdir ~/moolakata && cd ~/moolakata
-   curl -fsSLo compose.yaml https://raw.githubusercontent.com/MojoKata/MoolaKata/v0.1.0/web/install/compose.tls.yaml
+   curl -fsSLo compose.yaml https://github.com/MojoKata/MoolaKata/releases/download/v0.1.0/compose.tls.yaml
    mkdir data backups && sudo chown 10001:10001 data backups
    ```
 
@@ -198,8 +210,9 @@ The steps below use a pool named `tank` and the NAS's address `192.168.1.20`.
 
 **Apps › Discover Apps**, then **⋮** (**More Options**, beside **Custom App**) **› Install
 via YAML**. Name it `moolakata`, paste this as **Custom Config** (it is
-`web/install/compose.truenas.yaml`) with the NAS's address under `[tls] names`, so the
-certificate covers it, and your pool's name in place of `tank`, then **Save**:
+`compose.truenas.yaml` among the release's files) with the NAS's address under
+`[tls] names`, so the certificate covers it, and your pool's name in place of `tank`, then
+**Save**:
 
 ```yaml
 services:
@@ -405,7 +418,8 @@ It is an app of its own, beside MoolaKata's, and like it needs nothing typed in 
 
 1. **A dataset**: add a dataset `connector` inside `tank/moolakata`, as in §4.1.
 2. **Apps › Discover Apps › More Options (⋮) › Install via YAML** again: name it
-   `moolakata-connector`, paste this (it is `web/install/compose.connector-truenas.yaml`),
+   `moolakata-connector`, paste this (it is `compose.connector-truenas.yaml` among the
+   release's files),
    with the NAS's address in `MOOLAKATA_CONNECTOR_NAMES` and your pool's name in place of
    `tank`, and **Save**. Its first service, `permissions`, gives the dataset to the
    connector's account (uid 10002) and ends; the connector starts once it has.

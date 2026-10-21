@@ -25205,7 +25205,7 @@
   "info": {
     "description": "The browser app's API, /ui/api (requirements S13.8). It is served with the app and carries no version of its own.",
     "title": "MoolaKata",
-    "version": "0.1.0"
+    "version": "0.2.0-dev"
   },
   "openapi": "3.1.0",
   "paths": {

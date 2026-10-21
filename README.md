@@ -19,8 +19,9 @@ requirements' README.
 
 **Release:** 0.1.0, a pre-release for testers. Its images are `ghcr.io/mojokata/moolakata` and
 `ghcr.io/mojokata/moolakata-connector`, for amd64 and arm64, each with a provenance attestation
-`gh attestation verify` checks; [`docs/DEPLOY.md`](docs/DEPLOY.md) installs it on a Proxmox VE
-VM or on TrueNAS.
+`gh attestation verify` checks. The same images, with the same digests, are on Docker Hub as
+`mojokata/moolakata` and `mojokata/moolakata-connector`. [`docs/DEPLOY.md`](docs/DEPLOY.md)
+installs it on a Proxmox VE VM or on TrueNAS.
 
 ## Where to start
 
@@ -77,7 +78,10 @@ web/check                        # every check, as CI runs it
 `web/dev.sh` alone lists its commands. [`web/dev.md`](web/dev.md) covers testing the dev
 server from a browser on another machine (an SSH forward, a name of its own, port 443).
 Releases publish the images to `ghcr.io/mojokata` (`.github/workflows/release.yml`, on a `v*`
-tag); to build the server's image yourself, from the repository's root:
+tag); [`docs/RELEASE.md`](docs/RELEASE.md) makes one, step by step, and `web/release.sh`
+runs its steps from a terminal. [`docs/GENESIS.md`](docs/GENESIS.md) records how GitHub and
+Docker Hub were set up for publishing. To build the server's image yourself, from the
+repository's root:
 
 ```
 docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:$(cat web/VERSION) --load .

@@ -1,11 +1,13 @@
 """The browser app's files (requirements S17.3) and the public demo.
 
-The app is served under /ui/v/<version>/ with a one-year cache; its page, index.html, is
-templated with the version and a fresh nonce for the import map, and never cached. Any other
-path under /ui is a screen of the app, so it gets the page too. /demo serves the hand-written
-clickable mockup under a sandbox of its own.
+The app is served under /ui/v/<version>/, with a one-year cache in a release; a build between
+releases (a -dev version) and the dev server send no-cache, since their files change under one
+version. Its page, index.html, is templated with the version and a fresh nonce for the import
+map, and never cached. Any other path under /ui is a screen of the app, so it gets the page
+too. /demo serves the hand-written clickable mockup under a sandbox of its own.
 """
 
+import re
 import secrets
 from pathlib import Path
 
@@ -43,6 +45,8 @@ TYPES = {
     ".json": "application/json",
 }
 YEAR = "public, max-age=31536000, immutable"
+# A release's version, three numbers: only its files are kept a year (S17.3.5, S17.10.2.2).
+RELEASE = re.compile(r"\d+\.\d+\.\d+")
 
 DEMO_CSP = (
     "sandbox allow-scripts allow-popups; default-src 'none'; "
@@ -113,7 +117,7 @@ class Static:
             body = self._cache.get(target)
             if body is None:
                 body = self._cache[target] = target.read_bytes()
-        cache = "no-cache" if self.dev else YEAR
+        cache = YEAR if RELEASE.fullmatch(self.version) and not self.dev else "no-cache"
         return Response(body, media_type=media, headers={"Cache-Control": cache})
 
     def demo_page(self) -> Response:

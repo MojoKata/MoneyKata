@@ -1,6 +1,7 @@
 import re
 
 from moolakata import paths
+from moolakata.static import YEAR, Static
 
 
 def test_root_redirects_to_ui(bare_client):
@@ -26,12 +27,23 @@ def test_page_is_templated_with_version_and_a_fresh_nonce(bare_client):
     assert "frame-ancestors 'none'" in csp
 
 
-def test_versioned_files_are_cached_for_a_year(bare_client):
+def test_versioned_files_are_served(bare_client):
     version = paths.version()
     r = bare_client.get(f"/ui/v/{version}/app/main.js")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("text/javascript")
-    assert "immutable" in r.headers["cache-control"]
+
+
+def test_only_a_releases_files_are_cached_for_a_year():
+    """S17.3.5: a release's files never change under its version; a build between releases
+    (S17.10.2.2) and the dev server change them under one."""
+    for version, dev, cache in (
+        ("0.2.0", False, YEAR),
+        ("0.2.0-dev", False, "no-cache"),
+        ("0.2.0", True, "no-cache"),
+    ):
+        r = Static(version, dev).file(version, "app/main.js")
+        assert r.headers["cache-control"] == cache, (version, dev)
 
 
 def test_an_old_version_is_not_found(bare_client):

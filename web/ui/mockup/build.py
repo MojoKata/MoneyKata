@@ -220,6 +220,21 @@ def key_of(url: str) -> str:
     return u.path + ("?" + urlencode(q, safe="*") if q else "")
 
 
+def fetch(route):
+    """route.fetch(), sent once more when the connection it went out on was being closed.
+
+    The server closes a connection left idle for 5 s. A request Playwright writes to one as it
+    closes dies with "socket hang up", and unlike a browser, Playwright does not send it again.
+    The server never read it; a GET, and the loan calculations, are safe to send twice anyway.
+    """
+    try:
+        return route.fetch()
+    except Exception as e:
+        if not any(s in str(e) for s in ("socket hang up", "ECONNRESET")):
+            raise
+        return route.fetch()
+
+
 class Recorder:
     """Signs in as one user and records every answer the app's GETs receive."""
 
@@ -270,7 +285,7 @@ class Recorder:
             return
         self.pace()
         if req.method == "POST" and COMPUTED.search(key_of(req.url)):
-            r = route.fetch()
+            r = fetch(route)
             self.answers.setdefault(
                 "POST " + key_of(req.url), {"status": r.status, "body": exactjson.loads(r.text())}
             )
@@ -279,7 +294,7 @@ class Recorder:
         if req.method != "GET":
             route.fallback()
             return
-        r = route.fetch()
+        r = fetch(route)
         kind = r.headers.get("content-type", "")
         if not kind.startswith("application/json") and r.status == 200 and r.body():
             # A picture (a receipt's thumbnail): kept as it came, for the page's fetch.
