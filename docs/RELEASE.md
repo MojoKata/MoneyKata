@@ -355,6 +355,11 @@ Five jobs. The first three took about two minutes in all at 0.1.0:
    keeps it from creating or moving a release tag. The draft shows under **Releases** to
    people with write access, or with `gh release list -R MojoKata/MoolaKata`.
 
+![0.1.0's run of release.yml: the two builds, then the joining and attesting](release/release-run.png)
+
+The picture is 0.1.0's run, which had only the first three jobs. From 0.2.0 on, the Docker Hub
+copy and the draft follow the joining job.
+
 A failure says which step failed in the run's annotations (the job's page, or
 `gh api repos/MojoKata/MoolaKata/check-runs/<job id>/annotations`). §10 says what to do next.
 
@@ -397,7 +402,13 @@ gh release verify-asset v0.2.0 /tmp/v0.2.0/compose.yaml -R MojoKata/MoolaKata   
 ```
 
 Keep `--prerelease` while releases are for testers (0.1.0 was one), and leave it out for a
-release meant for households. Before publishing, check that the draft's **Assets** list all
+release meant for households.
+
+![0.1.0's release page: a pre-release, its tag and commit, its notes and its files](release/release-page.png)
+
+This is 0.1.0 as published through GitHub's web form, before releases were drafted with
+their files. It shows the pre-release badge, the tag and the commit, the notes, and the
+files under **Assets**. Before publishing, check that the draft's **Assets** list all
 eight install files.
 
 Publishing makes the release immutable. From then on its tag can't be moved or deleted,
