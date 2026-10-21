@@ -364,7 +364,9 @@ ask it for anything. People give it its words on **its page**, which it serves i
 10. **Packaging**: `install/compose.yaml` carries the `connector` service, from the
     `moolakata-connector` image of the same version, `restart: unless-stopped`, read only, all
     capabilities dropped, its page's port (37374) its only published one, and its own volume.
-    On TrueNAS it is an app of its own (`install/compose.connector-truenas.yaml`).
+    On TrueNAS it is an app of its own: `install/compose.connector-truenas.yaml` for
+    **Install via YAML**, and the MoolaKata Connector app for TrueNAS's catalog
+    (S17.8.3.1).
     `docs/operations.md` covers installing it, its words, unlocking after a restart, pairing,
     running it on another machine instead, and unpairing a lost one.
 11. **Its page.** The connector serves one small page of its own, so a household makes its

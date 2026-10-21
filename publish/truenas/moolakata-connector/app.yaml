@@ -1,0 +1,35 @@
+app_version: 0.1.0
+capabilities: []
+categories:
+- financial
+changelog_url: https://github.com/MojoKata/MoolaKata/releases
+date_added: '2026-10-21'
+description: Keeps a MoolaKata server's accounts current from the household's institutions,
+  holding their credentials sealed apart from the server.
+home: https://github.com/MojoKata/MoolaKata
+host_mounts: []
+icon: https://media.sys.truenas.net/apps/moolakata-connector/icons/icon.svg
+keywords:
+- finance
+- moolakata
+lib_version: 2.3.17
+lib_version_hash: b02a8040f1971a601638300b595bbd5b72f0664ba13fdf7759c212867caeed24
+maintainers:
+- email: dev@truenas.com
+  name: truenas
+  url: https://www.truenas.com/
+name: moolakata-connector
+run_as_context:
+- description: Container [connector] runs as non-root user and group.
+  gid: 10002
+  group_name: Host group is [unknown (10002)]
+  uid: 10002
+  user_name: Host user is [unknown (10002)]
+screenshots: []
+sources:
+- https://apps.truenas.com/catalog/moolakata-connector_community/
+- https://github.com/MojoKata/MoolaKata
+- https://github.com/MojoKata/MoolaKata/pkgs/container/moolakata-connector
+title: MoolaKata Connector
+train: community
+version: 1.0.0

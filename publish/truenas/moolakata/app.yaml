@@ -1,0 +1,38 @@
+app_version: 0.1.0
+capabilities: []
+categories:
+- financial
+changelog_url: https://github.com/MojoKata/MoolaKata/releases
+date_added: '2026-10-21'
+description: A self-hosted personal finance server for a household, its data encrypted
+  and kept on the NAS.
+home: https://github.com/MojoKata/MoolaKata
+host_mounts: []
+icon: https://media.sys.truenas.net/apps/moolakata/icons/icon.svg
+keywords:
+- finance
+- budget
+- portfolio
+- taxes
+- receipts
+lib_version: 2.3.17
+lib_version_hash: b02a8040f1971a601638300b595bbd5b72f0664ba13fdf7759c212867caeed24
+maintainers:
+- email: dev@truenas.com
+  name: truenas
+  url: https://www.truenas.com/
+name: moolakata
+run_as_context:
+- description: Container [moolakata] runs as non-root user and group.
+  gid: 10001
+  group_name: Host group is [unknown (10001)]
+  uid: 10001
+  user_name: Host user is [unknown (10001)]
+screenshots: []
+sources:
+- https://apps.truenas.com/catalog/moolakata_community/
+- https://github.com/MojoKata/MoolaKata
+- https://github.com/MojoKata/MoolaKata/pkgs/container/moolakata
+title: MoolaKata
+train: community
+version: 1.0.0

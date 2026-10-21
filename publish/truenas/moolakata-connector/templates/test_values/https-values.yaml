@@ -1,0 +1,50 @@
+resources:
+  limits:
+    cpus: 1.0
+    memory: 1024
+
+TZ: America/Chicago
+
+moolakata_connector:
+  names:
+    - 192.168.1.20
+    - moolakata.local
+
+network:
+  host_network: false
+  certificate_id: "1"
+  web_port:
+    bind_mode: published
+    port_number: 30374
+
+ix_volumes:
+  data: /opt/tests/mnt/moolakata-connector/data
+
+storage:
+  data:
+    type: ix_volume
+    ix_volume_config:
+      dataset_name: data
+      create_host_path: true
+
+# A certificate and key made for these tests alone, for moolakata.test and 192.168.1.20.
+ix_certificates:
+  "1":
+    certificate: |
+      -----BEGIN CERTIFICATE-----
+      MIIBqjCCAVCgAwIBAgIUWmwAHfmsatgPdvP5P2rTQnih3bQwCgYIKoZIzj0EAwIw
+      GTEXMBUGA1UEAwwObW9vbGFrYXRhLnRlc3QwIBcNMjYxMDIxMTkxMzQxWhgPMjEy
+      NjA5MjcxOTEzNDFaMBkxFzAVBgNVBAMMDm1vb2xha2F0YS50ZXN0MFkwEwYHKoZI
+      zj0CAQYIKoZIzj0DAQcDQgAEeFw6k7200Qy9iF3iK6+bpYuP6VIeQodMlb7zN5jG
+      jwcaBqzexd1DSlCN9JCwL6tTygJvJtWGH7C9Reke0aG236N0MHIwHQYDVR0OBBYE
+      FECmt2jcTk1ue1zMhHEH72N3ZxWhMB8GA1UdIwQYMBaAFECmt2jcTk1ue1zMhHEH
+      72N3ZxWhMA8GA1UdEwEB/wQFMAMBAf8wHwYDVR0RBBgwFoIObW9vbGFrYXRhLnRl
+      c3SHBMCoARQwCgYIKoZIzj0EAwIDSAAwRQIhAOicI7VMQi3GJeGaP3V3zdTp18tW
+      aAYoVsKKkOeBRPGAAiBj4KpM9huhHgETnYsJl0xH5yLiLt20gfLkZJNx09z7+g==
+      -----END CERTIFICATE-----
+    privatekey: |
+      -----BEGIN PRIVATE KEY-----
+      MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg2K5JQ+v0o5Un4xRs
+      tw0ldVo83jFi6A8d9Tycs4vcOSGhRANCAAR4XDqTvbTRDL2IXeIrr5uli4/pUh5C
+      h0yVvvM3mMaPBxoGrN7F3UNKUI30kLAvq1PKAm8m1YYfsL1F6R7Robbf
+      -----END PRIVATE KEY-----

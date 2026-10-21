@@ -1,0 +1,17 @@
+images:
+  image:
+    repository: ghcr.io/mojokata/moolakata
+    tag: "0.1.0"
+  container_utils_image:
+    repository: ghcr.io/truenas/containers/container-utils
+    tag: "1.1.1@sha256:d1bdb3a3ed7fc158eca53cd78486c388345c603fe2bf42fb24a1e03e1068ff38"
+
+consts:
+  moolakata_container_name: moolakata
+  perms_container_name: permissions
+  run_as_user: 10001
+  run_as_group: 10001
+  data_path: /var/lib/moolakata
+  backups_path: /var/backups/moolakata
+  ssl_cert_path: /etc/moolakata/tls/fullchain.pem
+  ssl_key_path: /etc/moolakata/tls/privkey.pem

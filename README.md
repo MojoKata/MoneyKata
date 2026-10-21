@@ -96,7 +96,10 @@ admin: it shows the recovery phrase once, takes three of its words back, and set
 [`docs/DEPLOY.md`](docs/DEPLOY.md) builds the image and puts a server where people can test
 it, step by step, on a fresh VM on Proxmox VE or on TrueNAS.
 [`docs/operations.md`](docs/operations.md) is the runbook from then on: upgrades, backups,
-restoring, keys and the connector.
+restoring, keys and the connector. [`publish/truenas/`](publish/truenas/) holds the server and
+the connector as apps for TrueNAS's community catalog, ready to propose there
+([`docs/RELEASE.md`](docs/RELEASE.md) §12); until TrueNAS takes them, DEPLOY.md's **Install
+via YAML** is how they go on a NAS.
 
 ## License
 
