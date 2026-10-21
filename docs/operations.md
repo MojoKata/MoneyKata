@@ -138,11 +138,24 @@ without the phrase. Unlock after each start (§2 step 5).
 
 ## 3. Upgrading
 
-1. Load the new image (`docker load`), change the image's tag in `compose.yaml` (both the
-   `moolakata` service and the key commands), and run `docker compose up -d`.
-2. At the unlock the server copies the database into `data/pre-upgrade/` and checks the copy,
+1. **Read the release's notes** on the
+   [releases page](https://github.com/MojoKata/MoolaKata/releases). A major release opens
+   with **Before you upgrade**, which says what the upgrade needs from you. Do that first.
+2. **Change the tags** in `compose.yaml` to the new version, on the `moolakata` and
+   `connector` services' `image:` lines. The key commands run through the `moolakata`
+   service, so they follow it. Then pull the new images and restart:
+
+   ```sh
+   docker compose pull
+   docker compose up -d
+   ```
+
+   On TrueNAS, change the tags in each app's YAML instead ([`DEPLOY.md`](DEPLOY.md) §6). A
+   host with no internet access loads the new images first (`docker load`, §2 step 1).
+3. At the unlock the server copies the database into `data/pre-upgrade/` and checks the copy,
    then migrates it one revision at a time. The three newest copies are kept.
-3. Unlock it (§2 step 5), then watch it come up: `/healthz` answers `ok` once it serves.
+4. Unlock it (§2 step 5), and the connector on its page (§8 step 4). Then watch the server
+   come up: `/healthz` answers `ok` once it serves.
 
 **Going back** to the earlier release: stop it, set the old tag again, and restore the copy
 made before the upgrade with `db restore data/pre-upgrade/<copy>` (or the last backup, §6). An
