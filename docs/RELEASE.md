@@ -10,7 +10,7 @@ Everything after it is checking what was published.
 
 The steps were written from 0.1.0's release. Every release from then on has a tag its
 maintainer signs (§5). `web/release.sh` runs the steps done from a terminal, one command each
-(§5–§8), and the checks that keep the setup working (§11). Run alone, it lists them.
+(§5–§9), and the checks that keep the setup working (§12). Run alone, it lists them.
 
 ## 1. Before you start
 
@@ -38,7 +38,7 @@ you see.
   new ruleset starts disabled), set its target to tags matching `v*`, turn on **Restrict
   creations**, **Restrict updates** and **Restrict deletions**, and put the maintainers in its
   bypass list. Only a maintainer can then create a release tag, and only a
-  maintainer can move or delete one (§10). See GitHub's
+  maintainer can move or delete one (§11). See GitHub's
   [creating rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository)
   and [available rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets).
 - **Immutable releases**, set once. In MojoKata/MoolaKata, go to **Settings**, scroll to
@@ -110,7 +110,7 @@ you see.
 
 MoolaKata uses [semantic versioning](https://semver.org): `MAJOR.MINOR.PATCH` (`1.4.2`),
 tagged `v` and the same numbers (`v1.4.2`). `release.yml` refuses a tag that isn't `v`
-followed by `web/VERSION`'s text. The tests read `DEPLOY.md`'s image tags as three numbers.
+followed by `web/VERSION`'s text.
 
 1. **MAJOR**: the upgrade needs something from the people who run or use the server, beyond
    changing the tag and unlocking. Examples are a migration that needs a step by hand or a
@@ -143,27 +143,41 @@ A version is never reused. Browsers keep the app's files for a year under `/ui/v
 and testers may already have pulled the images under that tag. A second build under the same
 version would be served stale to the first group and silently replaced for the second.
 
+**Between releases.** As soon as a release is published, `main` moves to the next minor
+release with `-dev` (§9): once 0.2.0 is out, `web/VERSION` and the connector's version say
+`0.3.0-dev`, so no build from `main` carries a released version. A `-dev` build's files
+change under one version, so the server sends them without the year's cache (S17.3.5). The
+next release's pull request gives the version the number this section picks, which may be a
+patch or a major instead (§3 step 2). Until then the compose files, `DEPLOY.md` and
+`operations.md` name the last release, since that is what they install. The tests check that
+the compose files and `DEPLOY.md` name one release: `web/VERSION`'s on a release's commit, and
+an earlier one between releases.
+
 ## 3. The release's pull request
 
 1. **Branch from an up-to-date `main`**: `git switch -c release-0.2.0 main` once `main`
    matches MojoKata's.
-2. **Change the version everywhere it is written by hand.** These are `web/VERSION` (the
-   server's version, which the app, the API's document and the release workflow all read),
-   the connector's `connector/pyproject.toml` and `connector/moolakata_connector/__init__.py`,
-   the image tags in the four `web/install/compose*.yaml` files, `docs/DEPLOY.md`,
-   `docs/operations.md` and the README's **Release** line. From the repository's root:
+2. **Change the version everywhere it is written by hand.** `web/VERSION` (the server's
+   version, which the app, the API's document and the release workflow all read) and the
+   connector's `connector/pyproject.toml` and `connector/moolakata_connector/__init__.py` go
+   from the `-dev` version (§9) to the release's. The image tags in the four
+   `web/install/compose*.yaml` files, `docs/DEPLOY.md`, `docs/operations.md` and the README's
+   **Release** line go from the last release to this one. From the repository's root:
 
    ```sh
-   old=$(cat web/VERSION) new=0.2.0
-   git grep -lF "$old" -- web/VERSION connector/pyproject.toml connector/moolakata_connector/__init__.py \
-       web/install docs/DEPLOY.md docs/operations.md README.md |
+   git fetch upstream --tags
+   dev=$(cat web/VERSION) new=0.2.0                                  # main's -dev version, and this release
+   old=$(git describe --tags --abbrev=0 --match 'v[0-9]*' upstream/main)
+   old=${old#v}                                                      # the last release, 0.1.0
+   sed -i "s/${dev//./\\.}/$new/" web/VERSION connector/pyproject.toml connector/moolakata_connector/__init__.py
+   git grep -lF "$old" -- web/install docs/DEPLOY.md docs/operations.md README.md |
      xargs sed -i "s/${old//./\\.}/$new/g"
    git diff --stat        # 10 files
    ```
 
    Then read the diff for two lines that need a person's judgement:
    - `DEPLOY.md`'s second paragraph says which release its steps were run with. Put the old
-     version back there until §9 has run them with the new one.
+     version back there until §10 has run them with the new one.
    - The README's **Release** line still says *a pre-release for testers*. Keep that
      unless this release is meant for households to rely on.
 
@@ -198,7 +212,7 @@ version would be served stale to the first group and silently replaced for the s
    1. **README**: the **Release** line and the **Status** paragraph.
    2. **`docs/DEPLOY.md`**: every step the release changed (a setting, a screen, a port, a
       file), and new screenshots of the screens that now look different. Its second
-      paragraph waits for §9.
+      paragraph waits for §10.
    3. **`docs/operations.md`**: the runbook for anything the release changed, such as
       upgrading, commands, configuration keys and backups.
    4. **`docs/test-plan.md`**: a test for anything new that the build can't try by itself.
@@ -295,7 +309,7 @@ The tag and the release are made separately, about five minutes apart:
 
 Until that last step there is only a draft, which only people with write access can see.
 Testers see nothing, never a release page without its images. A failed build can be fixed
-and tagged again under the same version (§10). Once published, the release is immutable
+and tagged again under the same version (§11). Once published, the release is immutable
 (§1). Its tag and files are locked for good, and only its title and notes can still change.
 GitHub's **Draft a new release** form isn't used at any point, because a tag it makes
 carries no signature.
@@ -371,12 +385,12 @@ The picture is 0.1.0's run, which had only the first three jobs. From 0.2.0 on, 
 copy and the draft follow the joining job.
 
 A failure says which step failed in the run's annotations (the job's page, or
-`gh api repos/MojoKata/MoolaKata/check-runs/<job id>/annotations`). §10 says what to do next.
+`gh api repos/MojoKata/MoolaKata/check-runs/<job id>/annotations`). §11 says what to do next.
 
 ## 7. Check what was published
 
 `web/release.sh check 0.2.0` runs these checks and prints a line for each, `ok` or `FAIL`.
-If anything fails, don't publish the release (§10). It checks the Docker Hub copies'
+If anything fails, don't publish the release (§11). It checks the Docker Hub copies'
 attestations at `registry-1.docker.io`, the address Docker Hub's registry answers on, because
 `gh` reads `docker.io` as `index.docker.io`, which some networks block. Its pulls use an empty
 Docker configuration, so they sign in nowhere and leave your own logins as they are. By hand:
@@ -447,7 +461,26 @@ The commands are in `gh`'s manual: [`release edit`](https://cli.github.com/manua
 [verifying release integrity](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/verify-release-integrity)
 explains what they check.
 
-## 9. Run DEPLOY.md with the release
+## 9. Open the next version
+
+As soon as the release is published, `main` moves on to the next minor version with `-dev`
+(`0.3.0-dev` after 0.2.0), so that nothing merged from then on builds under the release's
+number (§2). It waits until the release is published because a failed build is tagged again
+under the same version (§11). The next release's pull request gives the version the number
+it really takes (§3 step 2).
+
+1. **Branch from an up-to-date `main`**: `git switch -c next-0.3.0 upstream/main`.
+2. **Set the version**: `web/release.sh next 0.3.0`. It checks that `web/VERSION` names a
+   published release and that `0.3.0` comes after it. It then writes `0.3.0-dev` into
+   `web/VERSION`, `connector/pyproject.toml` and `connector/moolakata_connector/__init__.py`,
+   and regenerates the API's document, `web/ui/api/openapi.json`.
+3. **Regenerate the generated mockup**: `web/dev.sh mockup`, in about ten minutes. Its diff
+   is the version alone, as in §3 step 4.
+4. **Run every check** (`web/check`), then commit and open the pull request, titled
+   `Open 0.3.0-dev`, and squash-merge it. The compose files and the documents still name
+   the published release, which is what they install.
+
+## 10. Run DEPLOY.md with the release
 
 The release isn't finished until its documented install has been run with the published
 images:
@@ -468,7 +501,7 @@ images:
 3. **Add the runs to the release's notes** (T10, T11 and any other test from the plan):
    `gh release edit v0.2.0 -R MojoKata/MoolaKata --notes-file notes-0.2.0.md`.
 
-## 10. When something goes wrong
+## 11. When something goes wrong
 
 Before §8 there is only a draft, so a version can still be tagged again. The next run's
 draft replaces any draft an earlier run made. A wrong tag is deleted by a maintainer, because
@@ -489,7 +522,7 @@ git tag -d v0.2.0                        # your own copy
 - **The joining or attesting job fails**: **Re-run failed jobs**. It reads only the
   per-architecture images the builds pushed, so it can run again on its own.
 - **The Docker Hub job fails** (Docker Hub down, or the token expired): renew the token if
-  it has expired (§11), then **Re-run failed jobs**. The copy can run again on its own, and
+  it has expired (§12), then **Re-run failed jobs**. The copy can run again on its own, and
   ghcr.io and the draft don't depend on it. If it still can't run, `web/release.sh copy
   0.2.0` makes the same copy from your terminal, signed in to Docker Hub as `mojokata`.
 - **The drafting job fails**: **Re-run failed jobs**. It deletes any draft for the tag before
@@ -501,7 +534,7 @@ git tag -d v0.2.0                        # your own copy
 - **Something is wrong after the release is published**: the release is immutable. Fix
   forward with a new patch (`0.2.1`), and say in `0.2.0`'s notes what is wrong with it.
 
-## 11. Upkeep
+## 12. Upkeep
 
 What keeps releases working between them. `web/release.sh setup` checks everything §1 set
 up: immutable releases, the tag ruleset and its bypass list, the `docker-hub` environment with
@@ -510,7 +543,7 @@ an admin can read, so run it signed in to `gh` as a maintainer: before each rele
 any change below.
 
 - **Docker Hub's token, every year.** The token stops working on the expiry date set in §1
-  step 3, and then only the Docker Hub copy fails (§10). Before that date, make a new token
+  step 3, and then only the Docker Hub copy fails (§11). Before that date, make a new token
   the same way (Repo Read & Write, at most a year), then run `web/release.sh token`. It
   checks that the token signs in as `mojokata`, without touching your own Docker logins, and
   stores it as the `docker-hub` environment's secret `DOCKERHUB_TOKEN`. Then revoke the old
@@ -540,7 +573,7 @@ any change below.
   or the account is converted into an organization so that each has their own (§1 step 1).
   The `docker-hub` environment and its token stay as they are.
 - **Settings that stay on.** Immutable releases and the tag ruleset (§1) are what make a
-  published release trustworthy. Don't turn either off, not even to mend a release: §10
+  published release trustworthy. Don't turn either off, not even to mend a release: §11
   fixes forward instead. `setup` reports either one off.
 - **A third image.** Its package on ghcr.io starts private (§1), and it needs its own
   Docker Hub repository, its place in `release.yml`'s jobs, and in `IMAGES` in

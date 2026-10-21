@@ -48,11 +48,12 @@ The same images, with the same digests, are on Docker Hub as `mojokata/moolakata
 `oci://docker.io/mojokata/moolakata:0.1.0`. Docker Hub limits how often anyone not signed in
 can pull. ghcr.io sets no such limit, which is why this guide uses it.
 
-To build it yourself instead, from a checkout of the source (about three minutes on a VM with
-two cores), and to carry it to a host with no internet access:
+To build it yourself instead, from a checkout of the release's tag (about three minutes on a
+VM with two cores), and to carry it to a host with no internet access:
 
 ```sh
-docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:$(cat web/VERSION) --load .
+git checkout v0.1.0                                                            # the release's source
+docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:0.1.0 --load .
 docker save ghcr.io/mojokata/moolakata:0.1.0 | gzip > moolakata-0.1.0.tar.gz   # where it was built
 docker load -i moolakata-0.1.0.tar.gz                                          # on the host
 ```

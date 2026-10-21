@@ -33,15 +33,18 @@ can first, and asks before anything that can't be taken back.
   publish VERSION NOTES [--households]
                §8: publish the draft with the notes file, as a pre-release unless
                --households; then verify the release and each of its files
+  next VERSION
+               §9: once web/VERSION's release is published, move web/VERSION and the
+               connector to VERSION-dev, and regenerate the API's document
   attach VERSION
                add the tag's eight install files to a release that can still take
                them: a draft, or one published before immutability (0.1.0)
   copy VERSION
-               §10: copy both images to Docker Hub, digests unchanged, when
+               §11: copy both images to Docker Hub, digests unchanged, when
                release.yml's copy can't
-  token        §11: check a new Docker Hub token, then store it as the docker-hub
+  token        §12: check a new Docker Hub token, then store it as the docker-hub
                environment's secret
-  setup        §11: check the setup done once (§1): immutable releases, the tag
+  setup        §12: check the setup done once (§1): immutable releases, the tag
                ruleset, the docker-hub environment, both registries
 
 Needs git, gh signed in as a maintainer, and Docker with buildx. VERSION is like 0.2.0.
@@ -118,7 +121,7 @@ cmd_sign() {
   [[ "$(git -C "$ROOT" show "$commit:web/VERSION")" == "$version" ]] ||
     die "web/VERSION at ${commit:0:12} says $(git -C "$ROOT" show "$commit:web/VERSION"), not $version (§3)"
   [[ -z "$(git -C "$ROOT" ls-remote --tags "$up" "refs/tags/v$version")" ]] ||
-    die "v$version is already on $REPO (§10 says how to delete a wrong one)"
+    die "v$version is already on $REPO (§11 says how to delete a wrong one)"
   ! git -C "$ROOT" rev-parse -q --verify "refs/tags/v$version" >/dev/null ||
     die "v$version is already a tag here, never pushed: git tag -d v$version to start again"
   tagger=$(git -C "$ROOT" var GIT_COMMITTER_IDENT | sed -E 's/ [0-9]+ [-+][0-9]{4}$//')
@@ -145,7 +148,7 @@ cmd_watch() {
     --json databaseId --jq '.[0].databaseId // empty')
   [[ -n $run ]] || die "no release.yml run for v$version yet"
   if ! gh run watch -R "$REPO" --exit-status "$run"; then
-    echo "the run failed: its annotations say which step, and §10 what to do" >&2
+    echo "the run failed: its annotations say which step, and §11 what to do" >&2
     gh run view -R "$REPO" "$run" --json jobs \
       --jq '.jobs[] | select(.conclusion == "failure") | "  \(.name): \(.url)"' >&2
     exit 1
@@ -199,7 +202,7 @@ cmd_check() {
       failed=1
     fi
   done
-  [[ $failed == 0 ]] || die "something above failed: don't publish the release (§10)"
+  [[ $failed == 0 ]] || die "something above failed: don't publish the release (§11)"
   echo "next: web/release.sh publish $version notes-$version.md"
 }
 
@@ -236,7 +239,32 @@ web/release.sh attach $version adds what is missing"
   for name in $wanted; do
     gh release verify-asset "v$version" "$TMP/$name" -R "$REPO"
   done
-  echo "next: §9, run DEPLOY.md with the release"
+  local major minor
+  IFS=. read -r major minor _ <<<"$version"
+  echo "next: web/release.sh next $major.$((minor + 1)).0 (§9), then §10, run DEPLOY.md with the release"
+}
+
+cmd_next() {
+  version_arg "${1:-}"
+  need gh uv
+  local version=$1 current dev file
+  current=$(cat "$WEB/VERSION")
+  [[ $current =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "web/VERSION says $current, not a release"
+  # A failed build is tagged again under the same version (§11), so main keeps it until then.
+  [[ "$(gh release view "v$current" -R "$REPO" --json isDraft --jq .isDraft 2>/dev/null)" == false ]] ||
+    die "v$current isn't published yet (§8)"
+  [[ $version != "$current" && "$(printf '%s\n' "$current" "$version" | sort -V | tail -1)" == "$version" ]] ||
+    die "$version doesn't come after $current"
+  dev="$version-dev"
+  echo "$dev" >"$WEB/VERSION"
+  sed -i "s/^version = \"${current//./\\.}\"$/version = \"$dev\"/" "$ROOT/connector/pyproject.toml"
+  sed -i "s/^VERSION = \"${current//./\\.}\"$/VERSION = \"$dev\"/" "$ROOT/connector/moolakata_connector/__init__.py"
+  for file in connector/pyproject.toml connector/moolakata_connector/__init__.py; do
+    grep -qF "\"$dev\"" "$ROOT/$file" || die "$file didn't say $current: set $dev there by hand"
+  done
+  (cd "$WEB/server" && uv run --frozen python -m moolakata.contract write)
+  git -C "$ROOT" diff --stat
+  echo "next: web/dev.sh mockup, web/check, then the pull request Open $dev (§9)"
 }
 
 cmd_attach() {
@@ -247,7 +275,7 @@ cmd_attach() {
     --jq '"draft: \(.isDraft)  immutable: \(.isImmutable)", "attached: \([.assets[].name] | join(" "))"' ||
     die "no release for v$version"
   [[ "$(gh release view "v$version" -R "$REPO" --json isImmutable --jq .isImmutable)" == false ]] ||
-    die "v$version is immutable: nothing can be attached (§10)"
+    die "v$version is immutable: nothing can be attached (§11)"
   fetch_tag "$version"
   TMP=$(mktemp -d)
   git -C "$ROOT" archive "v$version" web/install | tar -x -C "$TMP"
@@ -281,7 +309,7 @@ cmd_copy() {
 cmd_token() {
   need gh docker
   local token
-  echo "Make the token first (§11): Docker Home › Account settings › Personal access tokens."
+  echo "Make the token first (§12): Docker Home › Account settings › Personal access tokens."
   read -r -s -p "The new token (not shown): " token || true
   echo
   [[ -n $token ]] || die "no token given"
@@ -292,7 +320,7 @@ cmd_token() {
   echo "ok    it signs in as $OWNER"
   printf '%s' "$token" | gh secret set DOCKERHUB_TOKEN --env docker-hub -R "$REPO"
   gh secret list --env docker-hub -R "$REPO"
-  echo "Now revoke the old token in Docker Home, and move the renewal reminder (§11)."
+  echo "Now revoke the old token in Docker Home, and move the renewal reminder (§12)."
 }
 
 cmd_setup() {
@@ -335,7 +363,7 @@ cmd_setup() {
   else
     report "DOCKERHUB_TOKEN, set ${got%%T*}" ok
     if (($(date +%s) - $(date -d "$got" +%s) > 330 * 86400)); then
-      echo "      it was set over 11 months ago: renew it before it expires (§11)"
+      echo "      it was set over 11 months ago: renew it before it expires (§12)"
     fi
   fi
   got=$(gh variable get DOCKERHUB_USERNAME --env docker-hub -R "$REPO" 2>/dev/null) ||
@@ -361,6 +389,7 @@ case "$cmd" in
   watch) cmd_watch "$@" ;;
   check) cmd_check "$@" ;;
   publish) cmd_publish "$@" ;;
+  next) cmd_next "$@" ;;
   attach) cmd_attach "$@" ;;
   copy) cmd_copy "$@" ;;
   token) cmd_token ;;

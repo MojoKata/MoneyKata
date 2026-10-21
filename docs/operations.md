@@ -54,10 +54,12 @@ The app itself (`/ui`) stays reachable only on the household's own network or ov
    `mojokata/moolakata-connector`, and either registry works in the `image:` lines.
    `gh attestation verify` checks that the image is the one the release workflow built from
    the release's tag ([`DEPLOY.md`](DEPLOY.md) §2 has the command). To build it yourself
-   instead, or to carry it to a host with no internet access:
+   instead, from a checkout of the release's tag, or to carry it to a host with no internet
+   access:
 
    ```sh
-   docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:$(cat web/VERSION) --load .
+   git checkout v0.1.0                                                            # the release's source
+   docker buildx build -f web/install/Dockerfile -t ghcr.io/mojokata/moolakata:0.1.0 --load .
    docker save ghcr.io/mojokata/moolakata:0.1.0 | gzip > moolakata-0.1.0.tar.gz   # on the build machine
    docker load < moolakata-0.1.0.tar.gz                                           # on the server
    ```

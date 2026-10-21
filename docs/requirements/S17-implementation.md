@@ -94,7 +94,9 @@
       third-party requests: no CDN, no web fonts, no analytics.
    4. **Size budget**: under 150 KB compressed for the first screen; every other screen is a
       module loaded by a native `import()` on first visit.
-   5. **Cache-busting**: the app is served under `/ui/v/<version>/` with a one-year cache;
+   5. **Cache-busting**: the app is served under `/ui/v/<version>/`, with a one-year cache
+      in a release. A build between releases (a `-dev` version, S17.10.2.2) and the dev server
+      serve the same paths with `no-cache`, since their files change under one version.
       `index.html`, templated with the version and the nonce, is `no-store`.
    6. **Plain CSS** with custom properties and `@layer`: `tokens.css` (colours and sizes, dark
       first), `base.css`, `components.css`. Icons are one SVG sprite.
@@ -535,6 +537,13 @@
           runs these steps from a terminal, one command each). Releases are immutable
           (GitHub's setting, with a ruleset on `v*` tags): once a release is published, its
           tag and files can't change, and GitHub attests the release.
+       2. **The version between releases**: `web/VERSION`, which the server, the app and
+          the API's document read, and the connector's own version name a release only on
+          that release's commit. Once a release is published, `main` moves to the next minor
+          release with `-dev` (after 1.4.2, `1.5.0-dev`), so a build from `main` never
+          carries a released version. The next release's pull request gives it the number that
+          release takes, whether patch, minor or major. The compose files and the install guide
+          keep naming the last release meanwhile, since that is what they install.
     3. **Their own dependencies**: the actions are GitHub's own (`actions/checkout`,
        `actions/attest-build-provenance`), pinned by commit and listed in the register
        (S17.2.1). Everything else is the repository's own scripts and the runners' own
