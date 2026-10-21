@@ -21,6 +21,7 @@ the handoff at the end).
 2. [ ] **Two settings in MojoKata/MoolaKata:**
    1. [ ] **Settings**, scroll to **Releases**, then tick **Enable release immutability**.
    2. [ ] **Settings › Rules › Rulesets › New ruleset › New tag ruleset**:
+      - **Enforcement status**: **Active** (a new ruleset starts disabled);
       - target tags matching `v*`;
       - turn on **Restrict creations**, **Restrict updates** and **Restrict deletions**;
       - put yourself (or the admin role) in the bypass list.

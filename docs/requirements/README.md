@@ -70,7 +70,11 @@ A new gap takes the next id after G24.
 
 What waits on a decision ([questions.md](questions.md)), each ranked High, Med or Low.
 
-None open. A new question takes the next id after Q19.
+| Id | Question | Rank |
+|---|---|---|
+| **Q30** | [How the connector stores its secrets](questions.md#q30-how-the-connector-stores-its-secrets--low) | Low |
+
+A new question takes the next id after Q30.
 
 ## Later work
 

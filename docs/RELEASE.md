@@ -32,9 +32,10 @@ you see.
   files and `web/check`. Its remote for MojoKata/MoolaKata is called `upstream` below. In a
   clone of MojoKata/MoolaKata itself, that remote is `origin`.
 - **The release tags' ruleset**, set once. In MojoKata/MoolaKata, go to **Settings › Rules ›
-  Rulesets › New ruleset › New tag ruleset**. Set its target to tags matching `v*`, turn on
-  **Restrict creations**, **Restrict updates** and **Restrict deletions**, and put the
-  maintainers in its bypass list. Only a maintainer can then create a release tag, and only a
+  Rulesets › New ruleset › New tag ruleset**. Set its **Enforcement status** to **Active** (a
+  new ruleset starts disabled), set its target to tags matching `v*`, turn on **Restrict
+  creations**, **Restrict updates** and **Restrict deletions**, and put the maintainers in its
+  bypass list. Only a maintainer can then create a release tag, and only a
   maintainer can move or delete one (§10). See GitHub's
   [creating rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository)
   and [available rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets).
