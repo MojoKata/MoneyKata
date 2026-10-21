@@ -384,7 +384,9 @@ docker logout docker.io && docker pull docker.io/mojokata/moolakata:0.2.0
    tag `v0.2.0`, on GitHub's own runners
    ([`gh attestation verify`](https://cli.github.com/manual/gh_attestation_verify)). The
    image's attestation was signed through Sigstore by the workflow's own identity, so no key
-   is kept anywhere. Docker's own signing, Content Trust, isn't used: Docker is
+   is kept anywhere. It is kept in GitHub's attestation store, where `gh attestation verify`
+   finds it by the image's digest, rather than as a tag beside the image: on ghcr.io such a
+   tag (`sha256-<digest>`) would show as the package's newest version. Docker's own signing, Content Trust, isn't used: Docker is
    [retiring it](https://www.docker.com/blog/docker-content-trust-retirement-and-migration-guidance/).
 3. The anonymous pulls prove both registries serve the images to anyone.
 

@@ -523,7 +523,7 @@
        `smoke.sh` on each (S17.8.1), pushes the images that passed to `ghcr.io/mojokata`
        under per-architecture tags, joins them under the version's tag, and attests each
        (GitHub's build provenance, signed through Sigstore's public instance and recorded in
-       its transparency log). Then it copies both joined images to Docker Hub with their
+       its transparency log, and kept in GitHub's attestation store, not in the registry). Then it copies both joined images to Docker Hub with their
        digests unchanged (S17.8.2), and drafts the GitHub release with the tag's install
        files attached: the compose files, the example `moolakata.toml` and the proxy
        examples. On a pull request that touches what goes into the images, it builds and
