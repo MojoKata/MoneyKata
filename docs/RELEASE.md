@@ -57,7 +57,10 @@ you see.
   2. **The two repositories.** Create `mojokata/moolakata` and `mojokata/moolakata-connector`,
      both **Public**
      ([create a repository](https://docs.docker.com/docker-hub/repos/create/)). Give each a
-     short description that links to this repository and `docs/DEPLOY.md`.
+     short description that links to this repository and `docs/DEPLOY.md`. The description
+     also shows the pull command with a version's tag
+     (`docker pull mojokata/moolakata:0.2.0`). Without a tag, Docker asks for `latest`, which
+     these repositories don't have (§2).
   3. **The workflow's token.** Sign in to [Docker Home](https://app.docker.com/) and go to
      your avatar › **Account settings › Personal access tokens › Generate new token**.
      Describe it as *MoolaKata releases* and give it the repository permission **Repo Read &
@@ -127,6 +130,11 @@ git diff --stat v0.1.0..upstream/main -- web/server/src/moolakata/store/alembic/
 The rule holds from 0.1.0 on, with no exception for 0.x. The first upgrade that needs a guide
 is 1.0.0, unless 1.0.0 is released earlier by choice. What marks a release for testers is
 being a pre-release on GitHub (§8) and the README's **Release** line, not its number.
+
+**Tags.** Each image gets exactly its version's tag on both registries (`0.2.0`), plus the
+build's per-architecture tags on ghcr.io. There is no `latest`, and no tag that moves to a
+newer release. A server starts locked after every update (S15.4), so an automatic update
+would leave it waiting for its phrase. Every upgrade should be someone's decision.
 
 A version is never reused. Browsers keep the app's files for a year under `/ui/v/<version>/`,
 and testers may already have pulled the images under that tag. A second build under the same

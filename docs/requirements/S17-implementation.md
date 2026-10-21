@@ -194,7 +194,9 @@
       run.
    2. **Published images.** Each release is published as `ghcr.io/mojokata/moolakata` and
       `ghcr.io/mojokata/moolakata-connector`, tagged with the version, one tag for both
-      architectures, with a build-provenance attestation that anyone can check. The check
+      architectures. There is no other tag, no `latest` and none that moves: a server starts
+      locked after every update (S15.4), so an upgrade is always the household's decision.
+      Each image has a build-provenance attestation that anyone can check. The check
       `gh attestation verify oci://ghcr.io/mojokata/moolakata:<version> -R MojoKata/MoolaKata
       --signer-workflow MojoKata/MoolaKata/.github/workflows/release.yml --source-ref
       refs/tags/v<version> --deny-self-hosted-runners` passes only for an image that
