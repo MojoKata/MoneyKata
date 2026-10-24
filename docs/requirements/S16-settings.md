@@ -16,8 +16,9 @@ Backups, and Connector (18), which follows Linked servers; 15 is not a section:
    the section lists them (who for, subject, when) with **Open**, which shows one, links and
    all, after the admin's password again, so an invitation or reset link can be passed on, and
    records the opening in Activity with the user it is addressed to as its owner (S10.2); each
-   file is removed once its link has expired, a week after it was written for an invitation and
-   a day for the rest (S15.1.7). With a host, they go out in the background, queued in the
+   file is removed once its link has expired: an hour after it was written for a password
+   reset, a week for an invitation, and a day for the rest, an email with no link among them
+   (S10.1, S15.1.7). With a host, they go out in the background, queued in the
    database: an email that can't be sent stays queued and is tried again every five minutes,
    until its link expires; one the server refuses outright is set aside, keeping only its
    recipient, subject and the error; and the section shows the queue and the last error.

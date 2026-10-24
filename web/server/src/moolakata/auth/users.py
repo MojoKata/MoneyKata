@@ -460,6 +460,7 @@ def request_reset(s: Db, svc: Services, login: str) -> None:
                 f"new one here:\n\n{url}\n\nThe link works once, for an hour. If it wasn't you, "
                 f"ignore this email: your password stays as it is.\n"
             ),
+            keep=dt.timedelta(hours=RESET_HOURS),
         ),
     )
 
@@ -538,6 +539,7 @@ def request_email_change(s: Db, svc: Services, user: User, email: str) -> None:
                 f"MoolaKata, open this link:\n\n{url}\n\nIt works once, for a day. Until then "
                 "your old address stays in use.\n"
             ),
+            keep=dt.timedelta(hours=EMAIL_CHANGE_HOURS),
         ),
     )
 

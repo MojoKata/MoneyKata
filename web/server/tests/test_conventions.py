@@ -6,8 +6,9 @@ from fastapi.routing import APIRoute
 from moolakata.app import Server, create_app
 from moolakata.ui.conventions import Deleted, if_match
 
-# Changes to what has no version of its own (S13.8.6): pairs that only link two records, and
-# secrets, which are replaced outright. Signing out ends a session, not a record.
+# Changes to what has no version of its own (S13.8.6): pairs that only link two records,
+# secrets, which are replaced outright, and the key files outside the database (S15). Signing
+# out ends a session, not a record.
 NO_VERSION = {
     ("PUT", "/ui/api/linked/{link_id}/colour"): "a pair: the user's colour for a household",
     ("PUT", "/ui/api/tax-books/{book_id}/accounts/{account_id}"): "a pair: a book counts it",
@@ -15,16 +16,35 @@ NO_VERSION = {
     ("PUT", "/ui/api/projections/{projection_id}/shown"): "a pair: shown on the user's Dashboard",
     ("PUT", "/ui/api/settings/email/password"): "a secret, replaced outright",
     ("PUT", "/ui/api/settings/bitcoin/password"): "a secret, replaced outright",
+    (
+        "PUT",
+        "/ui/api/profile/connections/{connection_id}/credential",
+    ): "a secret, replaced outright",
     ("DELETE", "/ui/api/receipts/{receipt_id}/links/{transaction_id}"): "a pair",
     ("DELETE", "/ui/api/items/{item_id}/documents/{receipt_id}"): "a pair",
+    ("DELETE", "/ui/api/receipts/{receipt_id}/kept/{kind}/{item_id}"): "a pair",
+    ("DELETE", "/ui/api/settings/keys/reencrypt"): "a key file: the scheduled re-encryption",
+    ("DELETE", "/ui/api/settings/keys/copies/{name}"): "a key file: a copy, by password and phrase",
+    ("DELETE", "/ui/api/settings/keys/previous/{fingerprint}"): "a key file: the keyring's list",
     ("DELETE", "/ui/api/session"): "signing out",
 }
 
 
+def api_routes(routes):
+    """Every APIRoute, those of included routers too: FastAPI keeps an included router as one
+    entry of the app's routes, holding its own."""
+    for r in routes:
+        inner = getattr(r, "original_router", None)
+        if inner is not None:
+            yield from api_routes(inner.routes)
+        elif isinstance(r, APIRoute):
+            yield r
+
+
 def _routes(store, keyed_config):
     app = create_app(Server(config=keyed_config, store=store, ready=True))
-    for r in app.routes:
-        if isinstance(r, APIRoute) and r.path.startswith("/ui/api"):
+    for r in api_routes(app.routes):
+        if r.path.startswith("/ui/api") and r.path != "/ui/api/{rest:path}":  # not found
             for m in r.methods & {"PATCH", "PUT", "DELETE"}:
                 yield m, r
 
@@ -40,7 +60,9 @@ def test_every_change_sends_the_version_it_was_made_against(store, keyed_config)
     """Every PATCH, PUT and DELETE requires If-Match (S13.8.6), but for the few with no
     version, each listed with why."""
     missing, needless = [], []
-    for method, r in _routes(store, keyed_config):
+    walked = list(_routes(store, keyed_config))
+    assert len(walked) > 80, "the app's routes, those of included routers too"
+    for method, r in walked:
         has = if_match in _calls(r.dependant)
         exempt = (method, r.path) in NO_VERSION
         if not has and not exempt:
@@ -51,10 +73,14 @@ def test_every_change_sends_the_version_it_was_made_against(store, keyed_config)
 
 
 def test_every_delete_answers_what_went_and_its_parent(store, keyed_config):
-    """Every DELETE answers {deleted, parent} (S13.8.1), signing out aside."""
+    """Every DELETE answers {deleted, parent} (S13.8.1), signing out and cancelling the
+    scheduled re-encryption aside, which answers the key storage it changed."""
     wrong = []
     for method, r in _routes(store, keyed_config):
-        if method != "DELETE" or r.path == "/ui/api/session":
+        if method != "DELETE" or r.path in (
+            "/ui/api/session",
+            "/ui/api/settings/keys/reencrypt",
+        ):
             continue
         model = r.response_model
         if not (isinstance(model, type) and issubclass(model, Deleted)):
@@ -108,11 +134,9 @@ def test_every_201_names_what_it_made_and_every_202_is_a_job(store, keyed_config
     from moolakata.ui.imports import JobOut
 
     app = create_app(Server(config=keyed_config, store=store, ready=True))
-    not_jobs = [
-        r.path
-        for r in app.routes
-        if isinstance(r, APIRoute) and r.status_code == 202 and r.response_model is not JobOut
-    ]
+    routes = list(api_routes(app.routes))
+    assert len(routes) > 300, "the app's routes, those of included routers too"
+    not_jobs = [r.path for r in routes if r.status_code == 202 and r.response_model is not JobOut]
     assert not_jobs == []
     doc = contract.openapi_document()
     assert doc["info"]["version"] == app.version, "the document states the release (S13.8.9)"

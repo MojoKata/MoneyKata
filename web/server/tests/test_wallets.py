@@ -264,10 +264,17 @@ def test_a_failing_source_says_what_to_fix_without_naming_an_address(server, ali
         sync.sync_all(server)
 
 
-def test_the_stub_source_gives_dev_wallets_a_history(server, alice):
+def test_the_stub_source_gives_dev_wallets_a_history(server, alice, admin_client):
+    from moolakata.store.entities.core import Setting
+
     server.config = dataclasses.replace(server.config, stubs=True)
     w = new_account(alice, name="Cold storage", type="crypto-wallet")
     alice.put(f"/ui/api/accounts/{w['id']}/wallet", json={"text": ZPUB})
+    # The stub too waits for Settings › Bitcoin (S16.7, S17.7), and is a source saved there.
+    with server.db.tx() as s:
+        s.delete(s.get(Setting, "bitcoinSource"))
+    assert sync.sync_all(server) is None and sync_count(server, w["id"]) == 0
+    assert admin_client.patch("/ui/api/settings", json={"bitcoinSource": "stub"}).status_code == 200
     sync.sync_all(server)
     v = alice.get(f"/ui/api/accounts/{w['id']}/wallet").json()
     assert v["used"] > 0 and v["checkedAt"]
@@ -398,6 +405,8 @@ def test_settings_bitcoin_keeps_the_password_secret_and_tests_the_source(server,
     )
     bad = c.patch("/ui/api/settings", json={"bitcoinSource": "infura"})
     assert bad.status_code == 422
+    stub = c.patch("/ui/api/settings", json={"bitcoinSource": "stub"})
+    assert stub.status_code == 422, "the stub is dev mode's"
     server.config = dataclasses.replace(server.config, stubs=True)
     r = c.post("/ui/api/settings/bitcoin/test")
     assert r.status_code == 200 and "answered" in r.json()["answer"]

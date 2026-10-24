@@ -9,6 +9,7 @@ import hashlib
 import ipaddress
 import json
 import logging
+import re
 import time
 from collections.abc import Callable
 
@@ -435,11 +436,11 @@ class Locked:
         await self.app(scope, receive, send)
 
 
-def location_of(path: str, body: bytes, readable=lambda where: True) -> str:
+def location_of(path: str, body: bytes, readable=lambda where: True) -> str | None:
     """Where a 201's record is read (S13.8.4): the list's path and the new record's id; for an
     answer that is the record it was added to (a tax book with a new filing), that record;
-    and the list itself when the answer names no record, or the record has no path of its own
-    that reads it (`readable`)."""
+    the list itself when the answer names no record, or the record has no path of its own
+    that reads it (`readable`); and None, no `Location`, when nothing reads it."""
     try:
         made = json.loads(body).get("id") if body else None
     except ValueError, AttributeError:
@@ -451,27 +452,31 @@ def location_of(path: str, body: bytes, readable=lambda where: True) -> str:
         )
         if readable(own):
             return own
-    return "/".join(parts)
+    listed = "/".join(parts)
+    return listed if readable(listed) else None
 
 
 def _reads(scope, path: str) -> bool:
     """Whether a GET of the path is answered by one of the API's own routes (never the app's
-    pages, which answer any path under /ui)."""
-    from fastapi.routing import APIRoute
-    from starlette.routing import Match
-
-    probe = {"type": "http", "path": path, "method": "GET"}
-    return any(
-        isinstance(r, APIRoute)
-        and r.path.startswith("/ui/api/")
-        and r.matches(probe)[0] == Match.FULL
-        for r in scope["app"].router.routes
-    )
+    pages, which answer any path under /ui). Read from the app's OpenAPI document: FastAPI
+    keeps included routers' routes out of the app's own route list."""
+    app = scope["app"]
+    readers = getattr(app.state, "api_readers", None)
+    if readers is None:
+        readers = [
+            re.compile(
+                "/".join("[^/]+" if x.startswith("{") else re.escape(x) for x in p.split("/"))
+            )
+            for p, ops in app.openapi()["paths"].items()
+            if p.startswith("/ui/api/") and "get" in ops
+        ]
+        app.state.api_readers = readers
+    return any(r.fullmatch(path) for r in readers)
 
 
 class Created:
-    """Every 201 of the API names what it made in `Location` (S13.8.4): the route's own, or
-    one worked out from its answer."""
+    """A 201 of the API names what it made in `Location` (S13.8.4): the route's own, or one
+    worked out from its answer; none when nothing reads it, rather than a path that doesn't."""
 
     def __init__(self, app):
         self.app = app
@@ -495,8 +500,9 @@ class Created:
                 if message.get("more_body"):
                     return
                 body = b"".join(chunks)
-                where = location_of(scope["path"], body, lambda w: _reads(scope, w)).encode()
-                await send({**held, "headers": [*held.get("headers", []), (b"location", where)]})
+                where = location_of(scope["path"], body, lambda w: _reads(scope, w))
+                found = [(b"location", where.encode())] if where else []
+                await send({**held, "headers": [*held.get("headers", []), *found]})
                 message = {"type": "http.response.body", "body": body}
             await send(message)
 

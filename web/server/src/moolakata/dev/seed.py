@@ -51,6 +51,9 @@ def seed(server) -> None:
         seed_taxes(s, people)
         seed_options(s, people)
         seed_wallets(s, people)
+        if server.config.stubs:
+            # Settings › Bitcoin saved, so the wallets are read (S16.7, S17.7).
+            settings.put(s, "bitcoinSource", "stub", None)
         seed_links(server, s, people)
         seed_connector(s, people)
         seed_sharing(s, people)

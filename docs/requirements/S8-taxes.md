@@ -21,7 +21,9 @@ produces worksheets and exports. It never files, and says so (R1.16).
 2. **Exports**: Form 8949 CSV, **TXF** (which TurboTax and others import), and a PDF summary
    for a preparer. Each export says what it covers and what it does not. TXF (format V042)
    carries boxes A to F and the wash-sale adjustment only: a row with another code (C, L) or in
-   a digital asset's box (G to L) is left out of it, said so, and entered from the CSV.
+   a digital asset's box (G to L) is left out of it and entered from the CSV. A book with such
+   rows counts them by why beside the TXF export (*TXF leaves out 4 sales (3 digital assets,
+   1 collectable): enter them from the CSV.*).
 3. **Wash sales** found (S3.8), with the disallowed amounts and the replacement lots, and
    the flags left for review.
 4. **Missing or doubtful data**: lots without a basis, sales without a matching lot, options

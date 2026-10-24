@@ -43,16 +43,20 @@ def config(s, secrets_key: bytes | None) -> Config:
 def chosen(server, s) -> bool:
     """Whether wallets may be read: no wallet is read until an admin saves Settings › Bitcoin,
     so nothing is asked of a public explorer before then (S16.7, R3.5). Dev mode's stub
-    source always reads."""
-    return bool(server.config.stubs) or settings.saved(s, "bitcoinSource")
+    source too waits for it; a seeded dev server saves the stub (S17.7)."""
+    return settings.saved(s, "bitcoinSource")
 
 
 def source(server, s):
+    """With dev mode's stubs, nothing outside is read: the stub answers whatever is saved."""
     if server.config.stubs:
         from .stub import Stub
 
         return Stub()
-    return sources.make(config(s, server.keys.secrets), server.guard)
+    cfg = config(s, server.keys.secrets)
+    if cfg.kind == "stub":
+        raise SourceError("The stub source is dev mode's: choose an explorer or a node.")
+    return sources.make(cfg, server.guard)
 
 
 def hosts(s) -> tuple[list[str], list[str]]:

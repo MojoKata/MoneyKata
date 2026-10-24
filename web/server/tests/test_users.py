@@ -217,7 +217,7 @@ def test_invite_join_and_sign_in(admin_client, server):
         },
     )
     assert r.status_code == 201, r.text
-    assert r.headers["location"].startswith("/ui/api/users/User_")
+    assert r.headers["location"] == "/ui/api/users", "no route reads one user (S13.8.4)"
     assert r.json()["invited"] is True and r.json()["username"] == "eve"
     msg = mails(server)[-1]
     assert msg["To"] == "eve@home.lan"

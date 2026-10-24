@@ -82,9 +82,13 @@ def change_settings(
             clean[key] = settings.coerce(key, value)
         except Problem as p:
             errors += p.errors
+    srv = server(request)
+    if clean.get("bitcoinSource") == "stub" and not srv.config.stubs:
+        errors.append(
+            FieldError("bitcoinSource", "source-unknown", "Only with dev mode's stubs (--stubs).")
+        )
     if errors:
         raise Problem(422, errors[0].code, errors[0].message, errors)
-    srv = server(request)
     with srv.db.tx() as s:
         check_version(version_of(s, Setting), version, lambda: view(s))
         if any(

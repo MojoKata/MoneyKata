@@ -13419,6 +13419,9 @@
             "title": "Students",
             "type": "array"
           },
+          "txfLeftOut": {
+            "$ref": "#/components/schemas/TxfLeftOut"
+          },
           "washes": {
             "items": {
               "$ref": "#/components/schemas/WashOut"
@@ -13451,6 +13454,7 @@
           "residences",
           "issues",
           "leftOut",
+          "txfLeftOut",
           "covers"
         ],
         "title": "Panels",
@@ -21363,6 +21367,31 @@
         "title": "TwoStepSetup",
         "type": "object"
       },
+      "TxfLeftOut": {
+        "additionalProperties": false,
+        "description": "The sales the TXF file leaves out, by why, to be entered from the CSV (S8.2).",
+        "properties": {
+          "collectable": {
+            "title": "Collectable",
+            "type": "integer"
+          },
+          "digital": {
+            "title": "Digital",
+            "type": "integer"
+          },
+          "personalUse": {
+            "title": "Personaluse",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "digital",
+          "collectable",
+          "personalUse"
+        ],
+        "title": "TxfLeftOut",
+        "type": "object"
+      },
       "TxnChange": {
         "additionalProperties": false,
         "properties": {
@@ -25284,7 +25313,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -25460,7 +25489,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -25515,7 +25544,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -25608,7 +25637,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -25679,7 +25708,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -25777,7 +25806,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -25861,7 +25890,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -26098,7 +26127,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -26302,7 +26331,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -26466,7 +26495,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -26741,7 +26770,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -26821,7 +26850,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -27000,7 +27029,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -27667,7 +27696,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -28207,7 +28236,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -28794,7 +28823,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -29232,7 +29261,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -29462,7 +29491,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -29678,7 +29707,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -30184,7 +30213,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -30584,7 +30613,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -30772,7 +30801,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -31550,7 +31579,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -31733,7 +31762,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -32118,7 +32147,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -32640,7 +32669,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -32927,7 +32956,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -33217,7 +33246,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -33461,7 +33490,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -33857,7 +33886,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -34393,7 +34422,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -34584,7 +34613,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -35294,7 +35323,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -35816,7 +35845,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -35858,7 +35887,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -36838,7 +36867,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -37019,7 +37048,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -37355,7 +37384,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -37411,7 +37440,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -37561,7 +37590,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -38100,7 +38129,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }
@@ -38767,7 +38796,7 @@
             "description": "Successful Response",
             "headers": {
               "Location": {
-                "description": "Where what was made is read.",
+                "description": "Where what was made is read: its own path, or the list or record that holds it. Left out when nothing reads it.",
                 "schema": {
                   "type": "string"
                 }

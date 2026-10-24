@@ -153,9 +153,8 @@ def create_user(body: NewUser, request: Request, c: Caller = Depends(admin)):
             body.sex,
         )
         row = user_row(s, u)
-    return JSONResponse(
-        row.model_dump(mode="json"), status_code=201, headers={"Location": f"/ui/api/users/{u.id}"}
-    )
+    # No route reads one by its id: the middleware's Location is the list (S13.8.4).
+    return JSONResponse(row.model_dump(mode="json"), status_code=201)
 
 
 @router.patch("/users/{user_id}", response_model=UserRow)
@@ -277,9 +276,8 @@ def create_group(body: NewGroup, request: Request, c: Caller = Depends(admin)):
     with server(request).db.tx() as s:
         g = accounts.create_group(s, c.user, body.name, body.memberIds)
         row = group_row(s, g)
-    return JSONResponse(
-        row.model_dump(mode="json"), status_code=201, headers={"Location": f"/ui/api/groups/{g.id}"}
-    )
+    # No route reads one by its id: the middleware's Location is the list (S13.8.4).
+    return JSONResponse(row.model_dump(mode="json"), status_code=201)
 
 
 @router.patch("/groups/{group_id}", response_model=GroupRow)

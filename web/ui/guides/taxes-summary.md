@@ -14,7 +14,9 @@ a grown child.
 ## Exports
 
 Form 8949 and Schedule D as CSV, a TXF file that TurboTax, H&R Block and others import, and a PDF
-summary for a preparer. Each says what it covers and what it doesn't.
+summary for a preparer. Each says what it covers and what it doesn't. TXF has no place for a
+digital asset's box (G to L) or for the codes C (a collectable) and L (a personal-use loss), so
+those sales are left out of it, counted beside it, and entered from the CSV.
 
 ## Accounts counted
 

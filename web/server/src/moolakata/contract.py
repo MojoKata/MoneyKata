@@ -130,13 +130,14 @@ def _problems(doc: dict) -> None:
 
 
 def _created(doc: dict) -> None:
-    """Every 201 names what it made in `Location` (S13.8.4)."""
+    """A 201 names what it made in `Location` (S13.8.4), unless nothing reads it."""
     for ops in doc.get("paths", {}).values():
         for op in ops.values():
             made = op.get("responses", {}).get("201") if isinstance(op, dict) else None
             if made is not None:
                 made.setdefault("headers", {})["Location"] = {
-                    "description": "Where what was made is read.",
+                    "description": "Where what was made is read: its own path, or the list "
+                    "or record that holds it. Left out when nothing reads it.",
                     "schema": {"type": "string"},
                 }
 

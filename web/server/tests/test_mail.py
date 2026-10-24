@@ -212,6 +212,21 @@ def test_a_written_invitation_stays_a_week_and_the_rest_a_day(server):
     assert expire_written(server.config, now + dt.timedelta(days=8)) == 1
 
 
+def test_a_reset_email_goes_when_its_link_stops_working(client, server):
+    # S16.2, C9: a reset link works an hour, so its written email is kept an hour, not a day.
+    import datetime as dt
+
+    from moolakata.mail import expire_written
+
+    set_public_url(server)
+    make_user(server, "fay")
+    assert client.post("/ui/api/password-reset", json={"login": "fay"}).status_code == 204
+    assert [m.subject for m in written(server.config)] == ["Reset your MoolaKata password"]
+    now = dt.datetime.now(dt.UTC)
+    assert expire_written(server.config, now + dt.timedelta(minutes=50)) == 0
+    assert expire_written(server.config, now + dt.timedelta(minutes=70)) == 1
+
+
 def test_the_egress_guard_refuses_a_host_not_in_settings(admin_client, server, smtp):
     set_up_smtp(admin_client)
     server.guard.allow([])

@@ -78,6 +78,7 @@ def test_8949_rows_terms_boxes_and_a_wash_sale(alice):
     assert "D,long,4 VTI,2024-01-05,2026-02-01,600.00,400.00,,,200.00,Brokerage" in csv.text
     txf = alice.get(f"/ui/api/tax-books/{b}/exports/moolakata.txf").text
     assert txf.startswith("V042\r\n") and "N323\r\n" in txf and "N321\r\n" in txf
+    assert p["txfLeftOut"] == {"digital": 0, "collectable": 0, "personalUse": 0}
     pdf = alice.get(f"/ui/api/tax-books/{b}/exports/summary.pdf")
     assert pdf.content.startswith(b"%PDF-1.4") and pdf.content.rstrip().endswith(b"%%EOF")
 
@@ -95,11 +96,41 @@ def test_collectables_and_personal_use_losses(alice):
     ).json()
     alice.put(f"/ui/api/items/{coin['id']}/sale", json={"soldOn": "2026-05-01", "proceeds": "3000"})
     alice.put(f"/ui/api/items/{car['id']}/sale", json={"soldOn": "2026-05-01", "proceeds": "18000"})
-    p = panels(alice, book(alice))
+    book_id = book(alice)
+    p = panels(alice, book_id)
     rows = {r["description"]: r for r in p["rows"]}
     assert rows["Coin"]["collectable"] and rows["Coin"]["box"] == "F"
     assert rows["Car"]["code"] == "L" and rows["Car"]["gain"] == "0.00"
     assert p["scheduleD"]["collectables"] == "2000.00"
+    # TXF has no field for C or L (S8.2): both are left out of it and counted beside it.
+    assert p["txfLeftOut"] == {"digital": 0, "collectable": 1, "personalUse": 1}
+    txf = alice.get(f"/ui/api/tax-books/{book_id}/exports/moolakata.txf").text
+    assert "PCoin" not in txf and "PCar" not in txf
+
+
+def test_txf_counts_what_it_leaves_out_by_why():
+    from decimal import Decimal
+
+    from moolakata.taxes import exports
+    from moolakata.taxes.panels import Row
+
+    def row(box, code=""):
+        return Row(
+            "x",
+            dt.date(2025, 1, 2),
+            dt.date(2026, 3, 4),
+            Decimal(9),
+            Decimal(5),
+            code,
+            Decimal(0),
+            box in "DEFJKL",
+            box,
+            "Acct",
+        )
+
+    rows = [row("A"), row("D", "W"), row("I"), row("K"), row("F", "C"), row("C", "L")]
+    assert [exports.in_txf(r) for r in rows] == [True, True, False, False, False, False]
+    assert exports.txf_left_out(rows) == {"digital": 2, "collectable": 1, "personalUse": 1}
 
 
 def test_income_retirement_and_an_rmd(alice):

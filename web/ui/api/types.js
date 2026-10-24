@@ -2401,6 +2401,7 @@
  * @property {Array<ResidenceOut>} residences
  * @property {Array<IssueOut>} issues
  * @property {Array<string>} leftOut
+ * @property {TxfLeftOut} txfLeftOut
  * @property {string} covers
  */
 
@@ -3739,6 +3740,14 @@
  * @property {string} secret
  * @property {string} uri
  * @property {string} qrImage
+ */
+
+/**
+ * The sales the TXF file leaves out, by why, to be entered from the CSV (S8.2).
+ * @typedef {Object} TxfLeftOut
+ * @property {number} digital
+ * @property {number} collectable
+ * @property {number} personalUse
  */
 
 /**

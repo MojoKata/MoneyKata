@@ -190,6 +190,14 @@ class IssueOut(Model):
     link: str | None
 
 
+class TxfLeftOut(Model):
+    """The sales the TXF file leaves out, by why, to be entered from the CSV (S8.2)."""
+
+    digital: int  # in a digital asset's box, G to L
+    collectable: int  # code C
+    personalUse: int  # code L, a loss on personal-use property
+
+
 class Panels(Model):
     year: int
     rows: list[RowOut]
@@ -210,6 +218,7 @@ class Panels(Model):
     residences: list[ResidenceOut]
     issues: list[IssueOut]
     leftOut: list[str]
+    txfLeftOut: TxfLeftOut
     covers: str
 
 
@@ -337,6 +346,7 @@ def build(s, b) -> Panels:
         residences=[ResidenceOut(**r.__dict__) for r in panels.residences(s, b)],
         issues=[IssueOut(**i.__dict__) for i in panels.issues(s, b, rows)],
         leftOut=[a.name for a in books.counted(s, b).leftOut],
+        txfLeftOut=TxfLeftOut(**exports.txf_left_out(rows)),
         covers=exports.covers(b.bitcoinFees),
     )
 
