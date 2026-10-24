@@ -81,6 +81,22 @@ def in_txf(r: Row) -> bool:
     return r.box in TXF_CODE and r.code in ("", "W")
 
 
+def txf_left_out(rows: list[Row]) -> dict[str, int]:
+    """The rows TXF can't carry, counted by why (S8.2): a digital asset's box (G to L), a
+    collectable's code C, a personal-use loss's code L."""
+    out = {"digital": 0, "collectable": 0, "personalUse": 0}
+    for r in rows:
+        if in_txf(r):
+            continue
+        if r.box not in TXF_CODE:
+            out["digital"] += 1
+        elif r.code == "C":
+            out["collectable"] += 1
+        else:
+            out["personalUse"] += 1
+    return out
+
+
 def txf(rows: list[Row], today: dt.date) -> str:
     lines = ["V042", "AMoolaKata", f"D{today:%m/%d/%Y}", "^"]
     for r in sorted((r for r in rows if in_txf(r)), key=lambda r: (r.box, r.sold)):

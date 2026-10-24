@@ -113,10 +113,35 @@ export function SummaryFigures({ b }) {
       <div class="list-item"><div class="grow">TXF for tax software<div class="small dim">TurboTax,
         H&R Block and others import it</div></div><a class="btn sm" href=${`${base}/moolakata.txf`}
         download><${Icon} name="download" /> TXF</a></div>
+      ${txfLeftOut(p.txfLeftOut)}
       <div class="list-item"><div class="grow">Summary for a preparer (PDF)<div class="small dim">What
         each panel holds, with its sources</div></div><a class="btn sm"
         href=${`${base}/summary.pdf`} download><${Icon} name="download" /> PDF</a></div>
       <p class="small dim">${p.covers}</p>
+    </div>
+  `;
+}
+
+/**
+ * The sales TXF can't carry, counted by why (S8.2): "TXF leaves out 4 sales (3 digital
+ * assets, 1 collectable): enter them from the CSV."
+ * @param {{ digital: number, collectable: number, personalUse: number }} n
+ */
+function txfLeftOut(n) {
+  const kinds = /** @type {[number, string, string][]} */ ([
+    [n.digital, 'digital asset', 'digital assets'],
+    [n.collectable, 'collectable', 'collectables'],
+    [n.personalUse, 'personal-use loss', 'personal-use losses'],
+  ]).filter(([c]) => c);
+  const all = kinds.reduce((t, [c]) => t + c, 0);
+  if (!all) return null;
+  const why = kinds.map(([c, one, many]) => `${c} ${c === 1 ? one : many}`).join(', ');
+  return html`
+    <div class="notice warn" role="status">
+      <${Icon} name="alert" />
+      <div>TXF leaves out ${all} sale${all === 1 ? '' : 's'} (${why}): enter ${all === 1
+        ? 'it'
+        : 'them'} from the CSV.</div>
     </div>
   `;
 }

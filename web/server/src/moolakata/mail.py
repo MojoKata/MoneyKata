@@ -39,8 +39,8 @@ from .errors import refuse
 log = logging.getLogger("moolakata.mail")
 
 
-# How long an email's link works, unless it says otherwise: a day at most (S10.1); an
-# invitation's works for a week. A written or queued email is kept no longer (S16.2).
+# How long an email is kept, written or queued: as long as its link works (S16.2), which each
+# email with a link says (a reset's an hour, an invitation's a week, S10.1); a day otherwise.
 LINK_LIFE = dt.timedelta(days=1)
 EXPIRES = "X-MoolaKata-Expires"
 

@@ -122,6 +122,7 @@ def request(
                 f"{CONFIRM_HOURS} hours. An admin then approves or rejects the request, and "
                 "you'll get an email either way. If you didn't ask, ignore this email.\n"
             ),
+            keep=dt.timedelta(hours=CONFIRM_HOURS),
         ),
     )
 

@@ -2,6 +2,7 @@
 // General first. Each section saves its own keys; a refusal shows at its field.
 import { useEffect, useState } from 'preact/hooks';
 import { html } from '../app/html.js';
+import { dev } from '../app/config.js';
 import { api } from '../api/client.js';
 import { useApi, useSubmit } from '../app/hooks.js';
 import { ago, date, day, moment } from '../app/format.js';
@@ -847,6 +848,10 @@ const NODES = /** @type {[string, string][]} */ ([
   ['esplora', 'Own node: mempool or Esplora'],
   ['electrum', 'Own node: Electrum server (Fulcrum, electrs)'],
   ['core', 'Own node: Bitcoin Core (RPC, watch-only descriptors)'],
+  // Dev mode's made-up history, saved like any source (S17.7).
+  ...(dev
+    ? /** @type {[string, string][]} */ ([['stub', 'Dev mode: the stub (with --stubs)']])
+    : []),
 ]);
 
 /** Settings › Bitcoin (S16.7, S1.6.2): where self-custody wallets are read. */
@@ -1149,7 +1154,7 @@ function WrittenEmails() {
       `
     )
   }
-    <div class="small dim">Each is removed a day after it was written, when its link has expired.</div></div>`;
+    <div class="small dim">Each is removed once its link has expired: a password reset’s after an hour, an invitation’s after a week, the others’ after a day.</div></div>`;
 }
 
 /** @param {{ close: (v?: any) => void, w: any, text: string }} p */

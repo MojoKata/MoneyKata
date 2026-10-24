@@ -219,7 +219,8 @@ _d("passwordMinLength", "passwords", 12, _int(8, 128))
 _d("priceRefreshTime", "prices", "18:00", _time)
 _d("priceRefreshZone", "prices", "America/New_York", _zone)
 # Bitcoin (S16.7, S1.6.2): where self-custody wallets are read; a node's password is a secret
-_d("bitcoinSource", "bitcoin", "esplora", _choice("esplora", "electrum", "core"))
+# "stub" is dev mode's made-up history (S17.7), refused elsewhere (ui/settings.py).
+_d("bitcoinSource", "bitcoin", "esplora", _choice("esplora", "electrum", "core", "stub"))
 _d("bitcoinEsploraUrl", "bitcoin", "https://mempool.space/api", _url)
 _d("bitcoinNodeHost", "bitcoin", None, _host)
 _d("bitcoinNodePort", "bitcoin", 50002, _int(1, 65535))
