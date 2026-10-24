@@ -5,8 +5,10 @@ drift from the server's own constants."""
 
 import re
 import tomllib
+from pathlib import Path
 
 import yaml
+from PIL import Image
 
 from moolakata import config, paths
 from moolakata.dev import wheels
@@ -277,6 +279,134 @@ def test_the_truenas_app_keeps_the_compose_files_promises():
     tags = re.findall(r"moolakata[:-](\d+\.\d+\.\d+)", guide)
     assert tags
     _the_installed_release(set(tags), "the guide's tags")
+
+
+CATALOG = paths.ROOT / "publish" / "truenas"
+
+
+def _catalog_config(template: str, consts: dict, certificate: bool) -> str:
+    """The TOML the server's catalog template gives MOOLAKATA_CONFIG, for one certificate
+    choice, the default port and one address: its block's few substitutions, done here."""
+    block = re.search(r"\{% set config -%\}\n(.*?)\{%- endset %\}", template, re.S).group(1)
+    block = re.sub(
+        r"\{% if values\.network\.certificate_id -%\}\n(.*?)\{% endif -%\}\n",
+        lambda m: m.group(1) if certificate else "",
+        block,
+        flags=re.S,
+    )
+    given = {
+        "values.network.web_port.port_number": str(config.DEFAULT_PORT),
+        "values.moolakata.names | tojson": '["192.168.1.20"]',
+        **{f"values.consts.{k}": str(v) for k, v in consts.items()},
+    }
+    out = re.sub(r"\{\{ (.*?) \}\}", lambda m: given[m.group(1)], block)
+    assert "{%" not in out and "{{" not in out, "the block uses only what is substituted here"
+    return out
+
+
+def test_the_truenas_catalog_apps_keep_the_compose_files_promises():
+    """publish/truenas (S17.8.3.1): each app is its compose service's image and release, run
+    as the image's account with the same memory mounts and health check, from a form with a
+    port, a certificate and a time zone of TrueNAS's, ixVolumes by default and no user section;
+    and the server's template gives it the configuration it reads, tls mode, with or without
+    a certificate. As TrueNAS's tools write them, so they change nothing."""
+    tags = set()
+    services = COMPOSE["compose.yaml"]["services"]
+    for name, service, uid, port, health in (
+        (
+            "moolakata",
+            "moolakata",
+            SERVER_UID,
+            config.DEFAULT_PORT,
+            '["CMD", "moolakata", "health"]',
+        ),
+        (
+            "moolakata-connector",
+            "connector",
+            10002,
+            37374,
+            '["CMD", "moolakata-connector", "status"]',
+        ),
+    ):
+        app = CATALOG / name
+        meta, values, questions = (
+            yaml.safe_load((app / f).read_text())
+            for f in ("app.yaml", "ix_values.yaml", "questions.yaml")
+        )
+        template = (app / "templates" / "docker-compose.yaml").read_text()
+        image = values["images"]["image"]
+        assert f"{image['repository']}:{image['tag']}" == services[service]["image"], name
+        assert meta["app_version"] == image["tag"] and meta["name"] == name
+        tags.add(image["tag"])
+        assert meta["train"] == "community" and meta["lib_version_hash"]
+        assert (app / "item.yaml").exists()
+        assert [c["uid"] for c in meta["run_as_context"]] == [uid]
+        consts = values["consts"]
+        assert (consts["run_as_user"], consts["run_as_group"]) == (uid, uid)
+        assert sorted(p.name for p in (app / "templates" / "test_values").iterdir()) == [
+            "basic-values.yaml",
+            "hostnet-values.yaml",
+            "https-values.yaml",
+        ]
+        # The form.
+        asked = {q["variable"]: q for q in questions["questions"]}
+        assert "run_as" not in asked, "the image's account is fixed"
+        assert asked["TZ"]["schema"]["$ref"] == ["definitions/timezone"]
+        network = {a["variable"]: a["schema"] for a in asked["network"]["schema"]["attrs"]}
+        web = {a["variable"]: a["schema"] for a in network["web_port"]["attrs"]}
+        assert web["port_number"]["default"] == port
+        assert network["certificate_id"]["$ref"] == ["definitions/certificate"]
+        for store in asked["storage"]["schema"]["attrs"]:
+            kinds = {a["variable"]: a["schema"] for a in store["schema"]["attrs"]}
+            assert kinds["type"]["default"] == "ix_volume", store["variable"]
+            host = {a["variable"]: a["schema"] for a in kinds["host_path_config"]["attrs"]}
+            assert host["auto_permissions"]["default"] is True, store["variable"]
+        # The lockdown, as the compose service has it.
+        assert "set_user(values.consts.run_as_user, values.consts.run_as_group)" in template
+        assert "set_read_only(not values.network.certificate_id)" in template
+        assert f"healthcheck.set_custom_test({health})" in template
+        assert "add_caps" not in template and "set_privileged" not in template
+        for mount in services[service]["tmpfs"]:
+            path, _, opts = mount.partition(":")
+            if not opts:
+                assert f'add_storage("{path}", {{"type": "tmpfs"}})' in template
+                continue
+            assert opts == f"uid={uid},gid={uid},mode=0700"
+            assert (
+                f'add_storage("{path}", {{"type": "tmpfs", "tmpfs_config": {{"uid": '
+                f'values.consts.run_as_user, "gid": values.consts.run_as_group, "mode": "0700"}}}})'
+            ) in template
+        if name == "moolakata":
+            for certificate in (False, True):
+                given = config.configured(
+                    None, {"MOOLAKATA_CONFIG": _catalog_config(template, consts, certificate)}
+                )
+                assert (given.mode, given.port) == ("tls", config.DEFAULT_PORT)
+                assert given.cert_names == ("192.168.1.20",)
+                assert (str(given.data_dir), str(given.backup_dir)) == (
+                    consts["data_path"],
+                    consts["backups_path"],
+                )
+                assert (given.tls_cert, given.tls_key) == (
+                    (Path(consts["ssl_cert_path"]), Path(consts["ssl_key_path"]))
+                    if certificate
+                    else (None, None)
+                )
+        if name == "moolakata-connector":
+            # MoolaKata links to the page at its first address, so the install needs one.
+            assert "{% if not values.moolakata_connector.names %}" in template
+            assert "tpl.funcs.fail(" in template
+    _the_installed_release(tags, "publish/truenas's images")
+    # What the request links for TrueNAS's CDN is in the repository: two icons and, for the
+    # catalog's pages, screenshots saved as the help shots are, PNG of 256 colours.
+    script = (CATALOG / "create-pr.sh").read_text()
+    media = re.search(r"^MEDIA=\((.*?)^\)", script, re.M | re.S).group(1).split()
+    assert len([m for m in media if m.endswith(".svg")]) == 2
+    for path in media:
+        assert (paths.ROOT / path).is_file(), path
+        if path.endswith(".png"):
+            with Image.open(paths.ROOT / path) as shot:
+                assert shot.mode == "P" and len(shot.getcolors(256) or []) <= 256, path
 
 
 def test_the_workflows_pin_their_actions_and_the_register_lists_them():

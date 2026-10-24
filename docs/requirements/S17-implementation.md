@@ -34,8 +34,9 @@
                          compose.connector-truenas.yaml, moolakata.toml, smoke.sh, proxy/
                          (reverse-proxy examples)
    connector/            the MoolaKata Connector (S18): its core, drivers, page and image
-   publish/truenas/      the app for TrueNAS's catalog and the script that opens its pull
-                         request there (S17.8.3)
+   publish/truenas/      the server's and the connector's apps for TrueNAS's catalog,
+                         check.sh, which tries them, and create-pr.sh, which proposes them
+                         (S17.8.3.1)
    ```
 
 2. **Server dependencies**, each a ruling, kept short because each runs with the database: fastapi, pydantic,
@@ -209,19 +210,60 @@
       The compose files name them, so a host pulls them. The image can still be built from
       the source, and carried to a host with no internet access (`docker save` and
       `docker load`). Catalogs make the install a form rather than a file: TrueNAS's apps
-      catalog first (S17.8.3); others may follow.
+      catalog first (S17.8.3.1); others may follow.
    3. **Documented hosts**: **Proxmox** (Docker in a VM, or in an LXC container with nesting
       on) and **TrueNAS** (a custom app from `install/compose.truenas.yaml`, its configuration
       in `MOOLAKATA_CONFIG` and a one-time step giving the datasets to the server's account,
       so nothing is typed in a shell). `DEPLOY.md`
       takes a test server onto each, step by step, from a fresh Debian VM on Proxmox VE and
       from TrueNAS Community Edition's **Install via YAML**; `operations.md` covers their
-      mounts, backups and upgrades. `publish/truenas/` holds MoolaKata as an app for
-      TrueNAS's community catalog (`ix-dev/community/moolakata/` in `truenas/apps`): its
-      metadata, the install form, the compose template and its test values, with
-      `create-pr.sh`, which opens or updates the pull request that proposes it there. TrueNAS
-      decides what its catalog includes; until the app is in it, **Install via YAML** is the
-      way.
+      mounts, backups and upgrades.
+      1. **TrueNAS's catalog**: `publish/truenas/` holds MoolaKata and the MoolaKata
+         Connector as two apps for TrueNAS's community catalog (`ix-dev/community/moolakata/`
+         and `ix-dev/community/moolakata-connector/` in `truenas/apps`), each with its
+         metadata, its install form, its compose template and its test values (one plain,
+         one with a certificate, one on host paths and the host network). TrueNAS decides
+         what its catalog includes; until the apps are in it, **Install via YAML** is the
+         way, and once they are, TrueNAS's own update bot moves their images to each new
+         release.
+      2. **The server's form**: its time zone, in TrueNAS's own field, which a user's
+         **Auto** zone follows (S14.9.2); the addresses browsers use, for the certificate the
+         server makes for itself; the web port (37373); a certificate from **System ›
+         Certificates**, or none for the server's own, its help saying that TrueNAS restarts
+         the app when it renews the certificate and the server then starts locked (S15.4);
+         the data and the backups storage, each an ixVolume (the default) or a host path,
+         a host path given to the server's account when its top directory belongs to
+         anyone else and it holds no files yet, its help saying that the folders above it
+         must let the account through (an SMB dataset needs it given Traverse); the host
+         network, the Docker networks to
+         join and labels, as every catalog app has them; and limits of 2 CPUs and 4 GB.
+      3. **The connector's form**: the same for its page (S18.11.1): its time zone; its
+         addresses, at least one, since the first is the one MoolaKata links to and the
+         install stops without it; its port (37374); a certificate, with the same help; one
+         storage for its data; and limits of 1 CPU and 1 GB. Neither form offers extra
+         environment variables or storage, which every other catalog app has: neither app
+         has a setting to tune or reads anything outside its own storage, and the
+         connector's one other variable, a development switch, would let it reach the
+         addresses its egress check refuses.
+      4. **What the templates fix**: `tls` mode, its configuration in `MOOLAKATA_CONFIG` (the
+         connector's in its own variables); each image's own account (10001, 10002), which
+         the catalog's permissions step gives the storage to, so there is no user and group
+         section; the image's health check (alive, S13.6); no capabilities, no new
+         privileges, `/tmp` and the socket's directory in memory; a read-only root
+         filesystem unless a certificate is chosen, since compose copies a chosen
+         certificate into the container and a read-only root can't take it; and notes,
+         shown at install, on the welcome and the locked start.
+      5. **Tried before TrueNAS sees them**: `check.sh` renders each test case with TrueNAS's own
+         renderer, in a checkout of their catalog, starts it, and fails unless it came up
+         alive, as its image's account, with the root filesystem the case calls for and the
+         certificate it was given or made. `create-pr.sh` runs it, checks each image's
+         provenance (S17.8.2) and pins it by its digest, and puts both apps on a branch of
+         `truenas/apps` where TrueNAS's tools add their library and metadata. Nothing leaves
+         the machine until the maintainer runs it again with `--open`, which pushes the
+         branch to their fork and opens the pull request as a draft, or updates the open one.
+         The request links the icons and screenshots TrueNAS copies to its own servers: the
+         server's favicon, and in `publish/truenas/media/` the connector's icon (its page's
+         mark) and screenshots of the release's pages over the dev seed's household.
    4. **TLS**: the example `compose.yaml` runs in `proxy` mode behind the household's
       reverse proxy. A second example runs `tls` mode with a self-signed certificate for
       testing on a local network (S13.3).
@@ -512,9 +554,7 @@
    10. **The first release** is the nine milestones. The build's branch is committed and pushed
       part by part, and merges into `main` only once all of it is built and the requirements
       have their final approval.
-   11. **After the first release**: learned column positions for statements (S1.3.3.7),
-       miniscript wallet policies beyond the descriptors of S1.6.1.4, and the items of [later
-       work](later.md) (L1 to L9).
+   11. **After the first release**: the items of [later work](later.md), L1 to L11.
 10. **Continuous integration and releases**, on GitHub Actions, whose standard runners are
     free for a public repository.
     1. **Checks**: `.github/workflows/check.yml` runs `web/check` on every pull request and

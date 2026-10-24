@@ -91,6 +91,8 @@ Work planned for after the first release ([later.md](later.md), S17.9.11).
 | **L7** | [Limits checked in projections and giving](later.md#l7-limits-checked-in-projections-and-giving) | contribution caps in projections, and QCD age, limit and source checks |
 | **L8** | [`Idempotency-Key` on every create](later.md#l8-idempotency-key-on-every-create) | beyond `POST /ui/api/transactions` |
 | **L9** | [More price sources](later.md#l9-more-price-sources) | Alpha Vantage as the last stock fallback, CoinGecko for coins Coinbase doesn't list |
+| **L10** | [Learned column positions for statements](later.md#l10-learned-column-positions-for-statements) | a statement's Debit and Credit columns found, named once and learned per institution; until then a sign comes from the line itself or its words |
+| **L11** | [Miniscript wallet policies](later.md#l11-miniscript-wallet-policies) | timelocked recovery paths and decaying multisig in `wsh()`, and taproot script trees; until then refused |
 
 ## Also here
 

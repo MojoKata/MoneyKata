@@ -94,8 +94,9 @@ an earlier one between releases.
    version, which the app, the API's document and the release workflow all read) and the
    connector's `connector/pyproject.toml` and `connector/moolakata_connector/__init__.py` go
    from the `-dev` version (§9) to the release's. The image tags in the four
-   `web/install/compose*.yaml` files, `docs/DEPLOY.md`, `docs/operations.md` and the README's
-   **Release** line go from the last release to this one. From the repository's root:
+   `web/install/compose*.yaml` files, the two TrueNAS catalog apps' `ix_values.yaml` and
+   `app_version`s in `publish/truenas/`, `docs/DEPLOY.md`, `docs/operations.md` and the
+   README's **Release** line go from the last release to this one. From the repository's root:
 
    ```sh
    git fetch upstream --tags
@@ -103,9 +104,9 @@ an earlier one between releases.
    old=$(git describe --tags --abbrev=0 --match 'v[0-9]*' upstream/main)
    old=${old#v}                                                      # the last release, 0.1.0
    sed -i "s/${dev//./\\.}/$new/" web/VERSION connector/pyproject.toml connector/moolakata_connector/__init__.py
-   git grep -lF "$old" -- web/install docs/DEPLOY.md docs/operations.md README.md |
+   git grep -lF "$old" -- web/install publish/truenas docs/DEPLOY.md docs/operations.md README.md |
      xargs sed -i "s/${old//./\\.}/$new/g"
-   git diff --stat        # 10 files
+   git diff --stat        # 14 files
    ```
 
    Then read the diff for two lines that need a person's judgement:
@@ -522,5 +523,16 @@ being public (GENESIS.md §7). Some of these only an admin can read, so run it s
 - **A third image.** Its package on ghcr.io starts private (GENESIS.md §4 step 2), and it
   needs its own Docker Hub repository, its place in `release.yml`'s jobs, and in `IMAGES` in
   `web/release.sh`.
+- **TrueNAS's catalog** (S17.8.3.1). Proposing the two apps is the maintainer's decision,
+  made once: open an [issue](https://github.com/truenas/apps/issues) there first, as their
+  pull request template asks, and fork `truenas/apps` under your account (`gh repo fork
+  truenas/apps --clone=false`). Then, after a published release, run
+  `publish/truenas/create-pr.sh`. It runs `publish/truenas/check.sh`, pins both images by
+  digest once their provenance checks out, and leaves a branch and the request's text in
+  `web/.dev/`. Read both, then run it again with `--open`, which pushes the branch to your
+  fork and opens the pull request as a draft, or updates the open one. Once the apps are in
+  the catalog, TrueNAS's update bot moves their images to each new release by itself; run
+  `create-pr.sh --open` again only for a release that changes either app's form or
+  template.
 - **A step that no longer matches** what GitHub or Docker Hub shows: fix this document,
   `GENESIS.md` and `web/release.sh` together, in a pull request.

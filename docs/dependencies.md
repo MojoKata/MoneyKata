@@ -95,6 +95,18 @@ for amd64 and arm64 (S17.8.1). *Direct* means named in `pyproject.toml`.
 | cffi, pycparser | 2.1.1, 3.11 | cryptography's binding | come with it | none known | — |
 | python:3.14-slim-bookworm | by digest in `connector/Dockerfile` | the image's base | the same digest as the server's; moved with it (S17.8.5) | as the server's | with the server's |
 
+## TrueNAS's catalog apps
+
+What the two apps in `publish/truenas/` (S17.8.3.1) run with that is TrueNAS's, on a NAS or
+while they are tried. None of it is in either image or in this repository: TrueNAS's tools copy
+their library into the proposal itself.
+
+| What | Version | Purpose | Risks | Revisit |
+|---|---|---|---|---|
+| TrueNAS's rendering library | `lib_version` in each `app.yaml` (2.3.17) | turns each template and the household's form into the compose file the NAS runs | TrueNAS's code, run by TrueNAS's middleware | when the catalog has a newer one: `lib_version`, then `check.sh` |
+| ghcr.io/truenas/containers/container-utils | 1.1.1, by digest in each `ix_values.yaml` | the permissions step that gives the storage to each app's account before it starts | runs as root with CHOWN, FOWNER and DAC_OVERRIDE and no network, for a moment, on the household's NAS | TrueNAS's bot moves it once the apps are in the catalog; before then, at each proposal |
+| ghcr.io/truenas/apps_validation:slim | TrueNAS's current, unpinned | the renderer `check.sh` and `create-pr.sh` run through TrueNAS's `ci.py` | **the Docker socket**: it renders with the machine's Docker, so run them on a development machine only; **egress** while they run (the catalog and the images) | — |
+
 ## GitHub Actions (checks and releases)
 
 The workflows in `.github/workflows/` (S17.10) use GitHub's own actions only, each pinned by
